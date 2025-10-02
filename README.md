@@ -1,2 +1,2 @@
-# CicuiTry
+# CircuiTry3D
 3D , Interactive , Electric Circuit Builder that utilizes ohms law and visualis s
