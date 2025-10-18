@@ -4,28 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CircuiTry3D</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <style>
-    body{margin:0}
+    * { box-sizing: border-box; }
+    body { margin: 0; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif; }
+    .landing-page { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .landing-logo { font-size: clamp(48px, 10vw, 80px); font-weight: 900; color: #00ff88; text-align: center; text-shadow: 0 0 20px rgba(0,255,136,0.5); }
+    .landing-subtitle { color: #88ccff; margin: 8px 0 24px; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn { padding: 14px 20px; border-radius: 9999px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .btn-launch { background: #00ff88; color: #111827; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
+    .btn-github { background: #111827; color: #fff; border: 1px solid #374151; }
   </style>
 </head>
 <body>
-  <div id="mount"></div>
-  <script>
-    // Extract landing content from legacy by reusing its DOM/CSS subset
-    // For now, we programmatically build a simple version consistent with legacy look
-    const root = document.getElementById(mount);
-    root.innerHTML = `
-      <div class="landing-page" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;box-sizing:border-box;">
-        <div class="landing-logo" style="font-size:64px;font-weight:900;color:#00ff88;text-align:center;text-shadow:0 0 20px rgba(0,255,136,0.5)">CircuiTry</div>
-        <div class="landing-subtitle" style="color:#88ccff;margin:8px 0 24px;text-transform:uppercase;letter-spacing:2px;text-align:center">Professional Circuit Design</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
-          <a href="/app" style="padding:14px 20px;border-radius:9999px;background:#00ff88;color:#111827;font-weight:800;text-decoration:none;box-shadow:0 6px 20px rgba(0,255,136,0.3)">Launch App</a>
-          <a href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer" style="padding:14px 20px;border-radius:9999px;background:#111827;color:#fff;border:1px solid #374151;font-weight:800;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,0.3)">View on GitHub</a>
-        </div>
-      </div>
-    `;
-  </script>
+  <div class="landing-page">
+    <div class="landing-logo">CircuiTry</div>
+    <div class="landing-subtitle">Professional Circuit Design</div>
+    <div class="actions">
+      <a class="btn btn-launch" href="/app">Launch App</a>
+      <a class="btn btn-github" href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer">View on GitHub</a>
+    </div>
+  </div>
 </body>
 </html>
