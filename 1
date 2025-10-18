@@ -2440,6 +2440,8 @@
         
         // Grid and snapping variables
         const GRID_SIZE = 2; // Grid spacing
+        const STUB_LENGTH = GRID_SIZE * 1.5; // Length of straight stub leaving terminals
+        const BRANCH_SPACING = GRID_SIZE * 2; // Spacing between split branches
         let gridHelper = null;
         let snapIndicator = null;
         
@@ -3043,8 +3045,31 @@
                     throw new Error('Wire too short');
                 }
                 
-                // Create right-angled wire path
-                const path = createRightAngledWirePath(startPos, endPos);
+                // Determine branch offsets to evenly split fan-outs and center them
+                const startMatches = wires.filter(w =>
+                    (w.startObj === this.startObj && w.startSide === this.startSide) ||
+                    (w.endObj === this.startObj && w.endSide === this.startSide)
+                );
+                const endMatches = wires.filter(w =>
+                    (w.startObj === this.endObj && w.startSide === this.endSide) ||
+                    (w.endObj === this.endObj && w.endSide === this.endSide)
+                );
+                const startCount = startMatches.length + 1;
+                const endCount = endMatches.length + 1;
+                const startIndex = startMatches.length; // new wire index at tail
+                const endIndex = endMatches.length;
+                const startOffset = (startIndex - (startCount - 1) / 2) * BRANCH_SPACING;
+                const endOffset = (endIndex - (endCount - 1) / 2) * BRANCH_SPACING;
+                
+                // Create right-angled wire path with stubs and branch offsets
+                const path = createRightAngledWirePath(startPos, endPos, {
+                    startObj: this.startObj,
+                    startSide: this.startSide,
+                    endObj: this.endObj,
+                    endSide: this.endSide,
+                    startBranchOffset: startOffset,
+                    endBranchOffset: endOffset
+                });
                 this.createWireSegments(path);
             }
 
@@ -3111,7 +3136,30 @@
                 try {
                     const startPos = this.getStartPosition();
                     const endPos = this.getEndPosition();
-                    const path = createRightAngledWirePath(startPos, endPos);
+                    // Recompute the same branch offsets used in mesh so curve matches geometry
+                    const startMatches = wires.filter(w =>
+                        (w.startObj === this.startObj && w.startSide === this.startSide) ||
+                        (w.endObj === this.startObj && w.endSide === this.startSide)
+                    );
+                    const endMatches = wires.filter(w =>
+                        (w.startObj === this.endObj && w.startSide === this.endSide) ||
+                        (w.endObj === this.endObj && w.endSide === this.endSide)
+                    );
+                    const startCount = startMatches.length + 1;
+                    const endCount = endMatches.length + 1;
+                    const startIndex = startMatches.length;
+                    const endIndex = endMatches.length;
+                    const startOffset = (startIndex - (startCount - 1) / 2) * BRANCH_SPACING;
+                    const endOffset = (endIndex - (endCount - 1) / 2) * BRANCH_SPACING;
+                    
+                    const path = createRightAngledWirePath(startPos, endPos, {
+                        startObj: this.startObj,
+                        startSide: this.startSide,
+                        endObj: this.endObj,
+                        endSide: this.endSide,
+                        startBranchOffset: startOffset,
+                        endBranchOffset: endOffset
+                    });
                     
                     this.curve = {
                         getPoint: (t) => {
@@ -3155,7 +3203,30 @@
                 
                 const startPos = this.getStartPosition();
                 const endPos = this.getEndPosition();
-                const path = createRightAngledWirePath(startPos, endPos);
+                // Recompute offsets on update
+                const startMatches = wires.filter(w =>
+                    (w.startObj === this.startObj && w.startSide === this.startSide) ||
+                    (w.endObj === this.startObj && w.endSide === this.startSide)
+                );
+                const endMatches = wires.filter(w =>
+                    (w.startObj === this.endObj && w.startSide === this.endSide) ||
+                    (w.endObj === this.endObj && w.endSide === this.endSide)
+                );
+                const startCount = startMatches.length + 1;
+                const endCount = endMatches.length + 1;
+                const startIndex = startMatches.length;
+                const endIndex = endMatches.length;
+                const startOffset = (startIndex - (startCount - 1) / 2) * BRANCH_SPACING;
+                const endOffset = (endIndex - (endCount - 1) / 2) * BRANCH_SPACING;
+
+                const path = createRightAngledWirePath(startPos, endPos, {
+                    startObj: this.startObj,
+                    startSide: this.startSide,
+                    endObj: this.endObj,
+                    endSide: this.endSide,
+                    startBranchOffset: startOffset,
+                    endBranchOffset: endOffset
+                });
                 
                 this.createWireSegments(path);
                 this.createCurve();
@@ -3366,6 +3437,13 @@
                         return;
                     }
                     
+                    // Gate animation strictly to completed circuits
+                    if (!lastKnownValues || lastKnownValues.current <= 0 || lastKnownValues.resistance === Infinity) {
+                        scene.remove(particle);
+                        currentFlowParticles.splice(index, 1);
+                        return;
+                    }
+                    
                     const wireData = particle.userData;
                     const wire = wireData.wire;
                     
@@ -3386,6 +3464,16 @@
                         particle.position.copy(position);
                     }
                     
+                    // Dynamic color refresh by current intensity with subtle pulse
+                    const pulse = 0.9 + 0.2 * Math.sin(performance.now() * 0.005 + index);
+                    particle.scale.set(pulse, pulse, pulse);
+                    const newColor = calculateCurrentColor(wireData.currentValue || lastKnownValues.current || 0);
+                    if (particle.material?.color) {
+                        particle.material.color.setHex(newColor.hex);
+                    }
+                    if (particle.material?.emissive) {
+                        particle.material.emissive.setHex(newColor.emissive);
+                    }
                 } catch (error) {
                     console.error(`Error updating particle ${index}:`, error);
                     scene.remove(particle);
@@ -3793,188 +3881,184 @@
             }
         }
 
-        function createRightAngledWirePath(startPos, endPos) {
+        // Compute outward normal for a terminal to create clean stubs
+        function getTerminalNormal(obj, side) {
+            try {
+                // Junctions: choose axis that reduces distance to connected target later
+                if (obj && obj.type === undefined) {
+                    return null; // No preferred normal
+                }
+                if (!obj || !side) return null;
+                // Map local side to local direction
+                let local = null;
+                switch (side) {
+                    case 'left':
+                    case 'negative':
+                        local = new THREE.Vector3(-1, 0, 0);
+                        break;
+                    case 'right':
+                    case 'positive':
+                        local = new THREE.Vector3(1, 0, 0);
+                        break;
+                    default:
+                        local = new THREE.Vector3(1, 0, 0);
+                }
+                const world = local.clone();
+                const rotationY = obj?.mesh?.rotation?.y || 0;
+                world.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationY);
+                // Quantize to axis-aligned (Manhattan)
+                if (Math.abs(world.x) >= Math.abs(world.z)) {
+                    return new THREE.Vector3(Math.sign(world.x) || 1, 0, 0);
+                }
+                return new THREE.Vector3(0, 0, Math.sign(world.z) || 1);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Manhattan router with right-angle stubs and optional branch offsets
+        function createRightAngledWirePath(startPos, endPos, options = {}) {
+            const { startObj = null, startSide = null, endObj = null, endSide = null, startBranchOffset = 0, endBranchOffset = 0 } = options;
+
             const path = [];
-            
+
             // Snap both positions to grid
             const snappedStart = snapToGrid(startPos);
             const snappedEnd = snapToGrid(endPos);
-            
+
+            // Determine terminal normals for clean stubs
+            const startNormal = getTerminalNormal(startObj, startSide) || new THREE.Vector3(0, 0, 0);
+            const endNormal = getTerminalNormal(endObj, endSide) || new THREE.Vector3(0, 0, 0);
+
+            const startStub = snappedStart.clone().add(startNormal.clone().multiplyScalar(STUB_LENGTH));
+            const endStub = snappedEnd.clone().add(endNormal.clone().multiplyScalar(STUB_LENGTH));
+
             path.push(snappedStart.clone());
-            
-            // Professional schematic routing with outside right angles
-            const deltaX = snappedEnd.x - snappedStart.x;
-            const deltaZ = snappedEnd.z - snappedStart.z;
-            
-            // Minimum distance for clean routing
-            const MIN_SEGMENT = GRID_SIZE * 2;
-            
-            // Determine routing style based on component positions and circuit aesthetics
-            if (Math.abs(deltaX) < MIN_SEGMENT && Math.abs(deltaZ) < MIN_SEGMENT) {
-                // Direct connection for very close components
-                path.push(snappedEnd.clone());
-            } else if (Math.abs(deltaX) > Math.abs(deltaZ) * 2) {
-                // Primarily horizontal routing - go out, across, in
-                const outDistance = Math.sign(deltaX) * MIN_SEGMENT;
-                const midX = snappedStart.x + outDistance;
-                
-                // Go out from start
-                const outPoint = new THREE.Vector3(midX, 0, snappedStart.z);
-                if (Math.abs(outDistance) > 0.1) {
-                    path.push(outPoint);
+            if (startNormal.lengthSq() > 0) path.push(snapToGrid(startStub));
+
+            // Choose L-shape preference based on distance between stubs
+            const dx = endStub.x - startStub.x;
+            const dz = endStub.z - startStub.z;
+            const preferHorizontalFirst = Math.abs(dx) >= Math.abs(dz);
+
+            let elbow;
+            if (preferHorizontalFirst) {
+                elbow = new THREE.Vector3(endStub.x, 0, startStub.z);
+                // Apply start branch offset along perpendicular axis (z)
+                if (Math.abs(startBranchOffset) > 0) {
+                    elbow.z = snapToGrid(new THREE.Vector3(0, 0, elbow.z + startBranchOffset)).z;
                 }
-                
-                // Go to end Z level
-                if (Math.abs(deltaZ) > 0.1) {
-                    const acrossPoint = new THREE.Vector3(midX, 0, snappedEnd.z);
-                    path.push(acrossPoint);
-                }
-                
-                // Go to final X position if needed
-                if (Math.abs(snappedEnd.x - midX) > 0.1) {
-                    const inPoint = new THREE.Vector3(snappedEnd.x - Math.sign(deltaX) * MIN_SEGMENT, 0, snappedEnd.z);
-                    path.push(inPoint);
-                }
-                
-            } else if (Math.abs(deltaZ) > Math.abs(deltaX) * 2) {
-                // Primarily vertical routing - go out, across, in
-                const outDistance = Math.sign(deltaZ) * MIN_SEGMENT;
-                const midZ = snappedStart.z + outDistance;
-                
-                // Go out from start
-                const outPoint = new THREE.Vector3(snappedStart.x, 0, midZ);
-                if (Math.abs(outDistance) > 0.1) {
-                    path.push(outPoint);
-                }
-                
-                // Go to end X level
-                if (Math.abs(deltaX) > 0.1) {
-                    const acrossPoint = new THREE.Vector3(snappedEnd.x, 0, midZ);
-                    path.push(acrossPoint);
-                }
-                
-                // Go to final Z position if needed
-                if (Math.abs(snappedEnd.z - midZ) > 0.1) {
-                    const inPoint = new THREE.Vector3(snappedEnd.x, 0, snappedEnd.z - Math.sign(deltaZ) * MIN_SEGMENT);
-                    path.push(inPoint);
-                }
-                
             } else {
-                // Balanced routing - professional L-shape with extensions
-                const preferHorizontalFirst = Math.abs(deltaX) >= Math.abs(deltaZ);
-                
-                if (preferHorizontalFirst) {
-                    // Go out horizontally, then vertically, then in
-                    const midX = snappedStart.x + Math.sign(deltaX) * (Math.abs(deltaX) * 0.7 + MIN_SEGMENT);
-                    
-                    // Horizontal extension from start
-                    const hPoint = new THREE.Vector3(midX, 0, snappedStart.z);
-                    path.push(hPoint);
-                    
-                    // Vertical to end level
-                    if (Math.abs(deltaZ) > 0.1) {
-                        const vPoint = new THREE.Vector3(midX, 0, snappedEnd.z);
-                        path.push(vPoint);
-                    }
-                    
-                } else {
-                    // Go out vertically, then horizontally, then in
-                    const midZ = snappedStart.z + Math.sign(deltaZ) * (Math.abs(deltaZ) * 0.7 + MIN_SEGMENT);
-                    
-                    // Vertical extension from start
-                    const vPoint = new THREE.Vector3(snappedStart.x, 0, midZ);
-                    path.push(vPoint);
-                    
-                    // Horizontal to end level
-                    if (Math.abs(deltaX) > 0.1) {
-                        const hPoint = new THREE.Vector3(snappedEnd.x, 0, midZ);
-                        path.push(hPoint);
-                    }
+                elbow = new THREE.Vector3(startStub.x, 0, endStub.z);
+                // Apply start branch offset along perpendicular axis (x)
+                if (Math.abs(startBranchOffset) > 0) {
+                    elbow.x = snapToGrid(new THREE.Vector3(elbow.x + startBranchOffset, 0, 0)).x;
                 }
             }
-            
+            elbow = snapToGrid(elbow);
+
+            // Optional end branch small correction to center at target fan-in
+            if (Math.abs(endBranchOffset) > 0) {
+                if (preferHorizontalFirst) {
+                    // Nudge near target z
+                    const nearEnd = new THREE.Vector3(endStub.x, 0, endStub.z + endBranchOffset);
+                    path.push(elbow.clone());
+                    path.push(snapToGrid(nearEnd));
+                } else {
+                    const nearEnd = new THREE.Vector3(endStub.x + endBranchOffset, 0, endStub.z);
+                    path.push(elbow.clone());
+                    path.push(snapToGrid(nearEnd));
+                }
+            } else {
+                path.push(elbow.clone());
+            }
+
+            if (endNormal.lengthSq() > 0) path.push(snapToGrid(endStub));
             path.push(snappedEnd.clone());
-            
+
             // Remove any duplicate consecutive points
             const cleanPath = [path[0]];
             for (let i = 1; i < path.length; i++) {
                 const prev = cleanPath[cleanPath.length - 1];
                 const curr = path[i];
-                if (prev.distanceTo(curr) > 0.1) {
+                if (prev.distanceTo(curr) > 0.05) {
                     cleanPath.push(curr);
                 }
             }
-            
             return cleanPath;
         }
 
-        // Auto-arrange circuit for professional schematic layout
+        // Auto-arrange circuit for professional schematic layout (series/parallel grid)
         function arrangeCircuitSchematic() {
             if (components.length === 0) return;
             
             saveState(); // Save for undo
             
-            // Find batteries (power sources)
             const batteries = components.filter(c => c.type === 'battery');
-            const otherComponents = components.filter(c => c.type !== 'battery');
-            
             if (batteries.length === 0) {
                 setStatus('⚠️ Add a battery first for schematic arrangement');
                 return;
             }
-            
-            // Clear existing wires for clean re-routing
-            wires.forEach(wire => wire.remove());
-            wires = [];
-            
-            // Arrange components in schematic style
-            const SPACING = GRID_SIZE * 4;
             const battery = batteries[0];
             
-            // Position battery on the left
-            battery.position.set(-SPACING * 2, 0, 0);
-            battery.mesh.position.copy(battery.position);
-            
-            // Arrange other components in a logical flow
-            otherComponents.forEach((comp, index) => {
-                const angle = (index / otherComponents.length) * Math.PI * 1.5;
-                const radius = SPACING * 1.5;
-                const x = Math.cos(angle) * radius;
-                const z = Math.sin(angle) * radius;
-                
-                comp.position.set(
-                    snapToGrid(new THREE.Vector3(x, 0, z)).x,
-                    0,
-                    snapToGrid(new THREE.Vector3(x, 0, z)).z
-                );
-                comp.mesh.position.copy(comp.position);
+            // Build adjacency from wires (components and junctions)
+            const allNodes = [...components, ...junctions];
+            const nodeSet = new Set(allNodes);
+            const neighbors = new Map();
+            const ensure = (n)=>{ if(!neighbors.has(n)) neighbors.set(n, new Set()); };
+            allNodes.forEach(n=>ensure(n));
+            wires.forEach(w=>{
+                if (!w.startObj || !w.endObj) return;
+                ensure(w.startObj); ensure(w.endObj);
+                neighbors.get(w.startObj).add(w.endObj);
+                neighbors.get(w.endObj).add(w.startObj);
             });
             
-            // Auto-wire in series for demonstration
-            if (otherComponents.length > 0) {
-                // Connect battery positive to first component
-                const firstComp = otherComponents[0];
-                const wire1 = new Wire(battery, 'positive', firstComp, 'left');
-                wires.push(wire1);
-                
-                // Connect components in series
-                for (let i = 0; i < otherComponents.length - 1; i++) {
-                    const comp1 = otherComponents[i];
-                    const comp2 = otherComponents[i + 1];
-                    const wire = new Wire(comp1, 'right', comp2, 'left');
-                    wires.push(wire);
-                }
-                
-                // Connect last component back to battery negative
-                const lastComp = otherComponents[otherComponents.length - 1];
-                const wire2 = new Wire(lastComp, 'right', battery, 'negative');
-                wires.push(wire2);
+            // BFS layering from battery to create columns (x) and rows (z) for branches
+            const SPACING = GRID_SIZE * 4;
+            const levels = new Map();
+            const visited = new Set();
+            const queue = [{ node: battery, depth: 0 }];
+            visited.add(battery);
+            levels.set(0, [battery]);
+            
+            while (queue.length) {
+                const { node, depth } = queue.shift();
+                const nbrs = neighbors.get(node) || new Set();
+                nbrs.forEach(n => {
+                    if (visited.has(n)) return;
+                    visited.add(n);
+                    const d = depth + 1;
+                    if (!levels.has(d)) levels.set(d, []);
+                    levels.get(d).push(n);
+                    queue.push({ node: n, depth: d });
+                });
             }
             
-            // Center the view on the circuit
+            // Position nodes per level; center rows vertically (z), battery at x=-2*SPACING
+            const minDepth = Math.min(...levels.keys());
+            const maxDepth = Math.max(...levels.keys());
+            for (let d = minDepth; d <= maxDepth; d++) {
+                const nodesAtLevel = levels.get(d) || [];
+                if (nodesAtLevel.length === 0) continue;
+                const x = (d - 2) * SPACING; // battery near left
+                const rowCount = nodesAtLevel.length;
+                const totalSpan = (rowCount - 1) * SPACING;
+                nodesAtLevel.forEach((n, idx) => {
+                    const z = -totalSpan / 2 + idx * SPACING;
+                    if (!nodeSet.has(n)) return;
+                    n.position.set(snapToGrid(new THREE.Vector3(x, 0, z)).x, 0, snapToGrid(new THREE.Vector3(x, 0, z)).z);
+                    if (n.mesh) n.mesh.position.copy(n.position);
+                });
+            }
+            
+            // Update all wire paths based on new positions
+            wires.forEach(w => { if (w.updatePath) w.updatePath(); });
+            
+            // Recenter view and recalc
             fitToScreen();
             analyzeCircuit();
-            setStatus('📐 Circuit arranged in professional schematic layout with intelligent routing!');
+            setStatus('📐 Circuit arranged into schematic grid with centered parallel branches');
         }
 
         // Launch application function
@@ -5517,17 +5601,47 @@ Perfect for students, educators, and hobbyists who learn visually!
         }
 
         function calculateCurrentColor(current) {
-            if (current <= 0.02) {
-                return { hex: 0xff3333, emissive: 0x330000 };
-            } else if (current <= 0.05) {
-                return { hex: 0xff8800, emissive: 0x331100 };
-            } else if (current <= 0.1) {
-                return { hex: 0xffff00, emissive: 0x333300 };
-            } else if (current <= 0.2) {
-                return { hex: 0xffffff, emissive: 0x444444 };
+            // Map current to 0..1 intensity range
+            const maxCurrent = 0.5; // heuristic upper bound for full intensity
+            const t = Math.max(0, Math.min(1, current / maxCurrent));
+            // Gradient: red (slow) -> yellow -> white -> cyan/blue (fast)
+            // We'll blend in segments for smoothness
+            let colorHex;
+            let emissiveHex;
+            if (t < 0.25) {
+                // Red -> Orange
+                const k = t / 0.25;
+                const r = 1.0;
+                const g = 0.2 + 0.6 * k;
+                const b = 0.0;
+                colorHex = (Math.floor(r*255) << 16) | (Math.floor(g*255) << 8) | Math.floor(b*255);
+                emissiveHex = (Math.floor(r*85) << 16) | (Math.floor(g*40) << 8) | 0x00;
+            } else if (t < 0.5) {
+                // Orange -> Yellow -> White-ish
+                const k = (t - 0.25) / 0.25;
+                const r = 1.0;
+                const g = 0.8 + 0.2 * k;
+                const b = 0.0 + 0.8 * k;
+                colorHex = (Math.floor(r*255) << 16) | (Math.floor(g*255) << 8) | Math.floor(b*255);
+                emissiveHex = (Math.floor(r*85) << 16) | (Math.floor(g*85) << 8) | Math.floor(b*40);
+            } else if (t < 0.75) {
+                // White -> Light Cyan
+                const k = (t - 0.5) / 0.25;
+                const r = 1.0 - 0.2 * k;
+                const g = 1.0;
+                const b = 0.8 + 0.2 * k;
+                colorHex = (Math.floor(r*255) << 16) | (Math.floor(g*255) << 8) | Math.floor(b*255);
+                emissiveHex = (Math.floor(r*70) << 16) | (Math.floor(g*85) << 8) | Math.floor(b*85);
             } else {
-                return { hex: 0xaaffff, emissive: 0x0044aa };
+                // Light Cyan -> Blue-White
+                const k = (t - 0.75) / 0.25;
+                const r = 0.8 - 0.5 * k;
+                const g = 1.0 - 0.3 * k;
+                const b = 1.0;
+                colorHex = (Math.floor(r*255) << 16) | (Math.floor(g*255) << 8) | Math.floor(b*255);
+                emissiveHex = (Math.floor(r*60) << 16) | (Math.floor(g*75) << 8) | Math.floor(1.0*85);
             }
+            return { hex: colorHex, emissive: emissiveHex };
         }
 
         function calculateFlowSpeed(current) {
