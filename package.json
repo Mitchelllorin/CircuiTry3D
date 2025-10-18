@@ -1,0 +1,38 @@
+{
+  "name": "circu-try-3d",
+  "version": "1.0.0",
+  "description": "3D , Interactive , Electric Circuit Builder that utilizes ohms law and visualises current flow and behavior in a electric circuit down to the atomic level - creating a new way to understand the abstract concepts - Illuminating Electricity",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mitchelllorin/CircuiTry3D.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mitchelllorin/CircuiTry3D/issues"
+  },
+  "homepage": "https://github.com/Mitchelllorin/CircuiTry3D#readme",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.10"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4"
+  }
+}
