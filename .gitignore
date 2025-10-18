@@ -1,0 +1,10 @@
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+
+# Maven
+backend/target/
+
+# Editor / OS
+.DS_Store
+*.log
