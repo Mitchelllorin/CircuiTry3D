@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "CircuiTry3D",
+    "slug": "circuitry3d",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "circuitry3d",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a1a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a1a"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      ["expo-community-flipper"],
+      ["react-native-reanimated/plugin"]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
