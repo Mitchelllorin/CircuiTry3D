@@ -3891,13 +3891,90 @@
             return crosses;
         }
 
-        function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
-            // Manhattan A* with elbow and crossing penalties, outward-biased stubs
-            const A = snapToGrid(startPos.clone());
-            const B = snapToGrid(endPos.clone());
-            const GRID = GRID_SIZE;
+        // Router mode selection
+        function getRouterMode() {
+            // Allow override by query (?router=...), localStorage, or global
+            try {
+                const qs = new URLSearchParams(location.search);
+                const q = qs.get('router');
+                if (q) return q;
+            } catch {}
+            try {
+                const ls = localStorage.getItem('routerMode');
+                if (ls) return ls;
+            } catch {}
+            return (window.ROUTER_MODE || 'simple');
+        }
 
-            // Adaptive stub length: try 1..3 grid units outward
+        function compressPath(points) {
+            if (!points || points.length === 0) return points;
+            const clean = [points[0]];
+            for (let i = 1; i < points.length - 1; i++) {
+                const a = clean[clean.length - 1];
+                const p = points[i];
+                const n = points[i + 1];
+                if ((a.x === p.x && p.x === n.x) || (a.z === p.z && p.z === n.z)) continue;
+                clean.push(p);
+            }
+            clean.push(points[points.length - 1]);
+            return clean;
+        }
+
+        function routeSimple(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const STUB = GRID * 2;
+            function stub(point, side, toward) {
+                const dx = toward.x - point.x, dz = toward.z - point.z;
+                if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
+                if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                return Math.abs(dx) >= Math.abs(dz)
+                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx||1)*STUB, 0, point.z))
+                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz||1)*STUB));
+            }
+            const Astub = stub(A, startSide, B);
+            const Bstub = stub(B, endSide, A);
+            if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
+                return compressPath([A, Astub, Bstub, B]);
+            }
+            // Choose corner that increases distance from A along the first segment (outward)
+            const c1 = new THREE.Vector3(Bstub.x, 0, Astub.z);
+            const c2 = new THREE.Vector3(Astub.x, 0, Bstub.z);
+            const moveXOut = Math.abs(c1.x - A.x) >= Math.abs(Astub.x - A.x);
+            const moveZOut = Math.abs(c2.z - A.z) >= Math.abs(Astub.z - A.z);
+            const C = moveXOut ? c1 : (moveZOut ? c2 : c1);
+            return compressPath([A, Astub, snapToGrid(C), Bstub, B]);
+        }
+
+        function routePerimeter(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const STUB = GRID * 2, OUTER = GRID * 4;
+            function stub(point, side, toward) {
+                const dx = toward.x - point.x, dz = toward.z - point.z;
+                if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
+                if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                return Math.abs(dx) >= Math.abs(dz)
+                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx||1)*STUB, 0, point.z))
+                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz||1)*STUB));
+            }
+            const Astub = stub(A, startSide, B);
+            const Bstub = stub(B, endSide, A);
+            if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
+                return compressPath([A, Astub, Bstub, B]);
+            }
+            const minX = Math.min(Astub.x, Bstub.x), maxX = Math.max(Astub.x, Bstub.x);
+            const minZ = Math.min(Astub.z, Bstub.z), maxZ = Math.max(Astub.z, Bstub.z);
+            const dx = Bstub.x - Astub.x, dz = Bstub.z - Astub.z;
+            if (Math.abs(dx) >= Math.abs(dz)) {
+                const outwardX = dx > 0 ? (maxX + OUTER) : (minX - OUTER);
+                return compressPath([A, Astub, snapToGrid(new THREE.Vector3(outwardX,0,Astub.z)), snapToGrid(new THREE.Vector3(outwardX,0,Bstub.z)), Bstub, B]);
+            } else {
+                const outwardZ = dz > 0 ? (maxZ + OUTER) : (minZ - OUTER);
+                return compressPath([A, Astub, snapToGrid(new THREE.Vector3(Astub.x,0,outwardZ)), snapToGrid(new THREE.Vector3(Bstub.x,0,outwardZ)), Bstub, B]);
+            }
+        }
+
+        function routeAStar(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
             const obstacles = getObstacleRects(GRID * 0.6);
             function outwardDirForSide(side, axisDelta) {
                 if (side === 'left' || side === 'negative') return -1;
@@ -3914,103 +3991,47 @@
                     const p = snapToGrid(new THREE.Vector3(nx, 0, nz));
                     if (!cellBlocked(p.x, p.z, obstacles)) return p;
                 }
-                // fallback
                 return snapToGrid(new THREE.Vector3(point.x + (useX ? dir * GRID : 0), 0, point.z + (!useX ? dir * GRID : 0)));
             }
-
             const Astub = computeStub(A, startSide, B);
             const Bstub = computeStub(B, endSide, A);
-
-            // Straight between stubs
             if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
-                return [A, Astub, Bstub, B];
+                return compressPath([A, Astub, Bstub, B]);
             }
-
-            // A* grid over bounding box + margin
-            const minX = Math.min(Astub.x, Bstub.x) - GRID * 8;
-            const maxX = Math.max(Astub.x, Bstub.x) + GRID * 8;
-            const minZ = Math.min(Astub.z, Bstub.z) - GRID * 8;
-            const maxZ = Math.max(Astub.z, Bstub.z) + GRID * 8;
-
-            function key(x, z) { return x + "," + z; }
-            const start = Astub; const goal = Bstub;
-            const open = new Map();
-            const pq = [];
-            const came = new Map();
-            const gScore = new Map();
-            const fScore = new Map();
-            const dirMap = new Map(); // track direction to penalize elbows
-
-            function push(node, f) { pq.push({ node, f }); pq.sort((a,b)=>a.f-b.f); }
-            function pop() { return pq.shift(); }
-
+            const minX = Math.min(Astub.x, Bstub.x) - GRID * 8, maxX = Math.max(Astub.x, Bstub.x) + GRID * 8;
+            const minZ = Math.min(Astub.z, Bstub.z) - GRID * 8, maxZ = Math.max(Astub.z, Bstub.z) + GRID * 8;
+            function key(x,z){return x+","+z}
+            const start = Astub, goal = Bstub;
+            const pq=[]; const came=new Map(); const g=new Map(); const f=new Map(); const dir=new Map();
+            function push(n,ff){pq.push({n,ff});pq.sort((a,b)=>a.ff-b.ff)} function pop(){return pq.shift().n}
             const existingSegs = getExistingWireSegments();
-            const ELBOW = GRID * 5; // heavy penalty
-            const CROSS = GRID * 3; // crossing penalty
-
-            function heuristic(p) { return Math.abs(p.x - goal.x) + Math.abs(p.z - goal.z); }
-
-            const sKey = key(start.x, start.z);
-            gScore.set(sKey, 0); fScore.set(sKey, heuristic(start)); push(start, fScore.get(sKey)); dirMap.set(sKey, null);
-
-            const dirs = [ [GRID,0,'R'], [0,GRID,'D'], [-GRID,0,'L'], [0,-GRID,'U'] ]; // deterministic order
-
-            while (pq.length) {
-                const current = pop().node;
-                const cKey = key(current.x, current.z);
-                if (current.x === goal.x && current.z === goal.z) {
-                    // reconstruct
-                    const path = [current];
-                    let ck = cKey;
-                    while (came.has(ck)) {
-                        const prev = came.get(ck);
-                        path.unshift(prev);
-                        ck = key(prev.x, prev.z);
-                    }
-                    // prepend A and append B
-                    const coarse = [A].concat(path).concat([B]);
-                    // collapse collinear
-                    const clean = [coarse[0]];
-                    for (let i=1;i<coarse.length-1;i++){
-                        const p=coarse[i], a=clean[clean.length-1], n=coarse[i+1];
-                        if ((a.x===p.x && p.x===n.x) || (a.z===p.z && p.z===n.z)) continue;
-                        clean.push(p);
-                    }
-                    clean.push(coarse[coarse.length-1]);
-                    return clean;
+            const ELBOW = GRID*5, CROSS = GRID*3;
+            function h(p){return Math.abs(p.x-goal.x)+Math.abs(p.z-goal.z)}
+            const sK=key(start.x,start.z); g.set(sK,0); f.set(sK,h(start)); push(start,f.get(sK)); dir.set(sK,null);
+            const dirs=[[GRID,0,'R'],[0,GRID,'D'],[-GRID,0,'L'],[0,-GRID,'U']];
+            while(pq.length){
+                const cur=pop(); const cK=key(cur.x,cur.z);
+                if(cur.x===goal.x && cur.z===goal.z){
+                    const path=[cur]; let ck=cK; while(came.has(ck)){const prev=came.get(ck); path.unshift(prev); ck=key(prev.x,prev.z);} 
+                    return compressPath([A].concat(path).concat([B]));
                 }
-
-                for (const [dx,dz,code] of dirs) {
-                    const nx = current.x + dx, nz = current.z + dz;
-                    if (nx < minX || nx > maxX || nz < minZ || nz > maxZ) continue;
-                    if (cellBlocked(nx, nz, obstacles)) continue;
-                    const nKey = key(nx, nz);
-
-                    // cost components
-                    const stepCost = GRID; // unit length
-                    const prevDir = dirMap.get(cKey);
-                    const newDir = code;
-                    const elbowCost = prevDir && prevDir !== newDir ? ELBOW : 0;
-                    // crossing cost: check segment (current->next) vs existing
-                    const a = current, b = new THREE.Vector3(nx,0,nz);
-                    let crossCost = 0;
-                    for (let s of existingSegs) { if (segIntersect(a,b,s.a,s.b)) { crossCost += CROSS; } }
-
-                    const tentative = (gScore.get(cKey) || Infinity) + stepCost + elbowCost + crossCost;
-                    if (tentative < (gScore.get(nKey) || Infinity)) {
-                        came.set(nKey, current);
-                        gScore.set(nKey, tentative);
-                        const f = tentative + heuristic({x:nx,z:nz});
-                        fScore.set(nKey, f);
-                        dirMap.set(nKey, newDir);
-                        push(new THREE.Vector3(nx,0,nz), f);
-                    }
+                for(const[dX,dZ,code] of dirs){
+                    const nx=cur.x+dX, nz=cur.z+dZ; if(nx<minX||nx>maxX||nz<minZ||nz>maxZ) continue; if(cellBlocked(nx,nz,obstacles)) continue; const nK=key(nx,nz);
+                    const step=GRID; const prev=dir.get(cK); const elbow=(prev&&prev!==code)?ELBOW:0; 
+                    const a=cur, b=new THREE.Vector3(nx,0,nz); let cross=0; for(let s of existingSegs){ if(segIntersect(a,b,s.a,s.b)) cross+=CROSS; }
+                    const tent=(g.get(cK)||Infinity)+step+elbow+cross; if(tent < (g.get(nK)||Infinity)){ came.set(nK,cur); g.set(nK,tent); const ff=tent+h({x:nx,z:nz}); f.set(nK,ff); dir.set(nK,code); push(new THREE.Vector3(nx,0,nz),ff);} 
                 }
             }
+            return compressPath([A, new THREE.Vector3(Bstub.x,0,Astub.z), B]);
+        }
 
-            // Fallback: simple L if A* fails
-            const fallback = [A, new THREE.Vector3(Bstub.x,0,Astub.z), B];
-            return fallback.map(p=>snapToGrid(p));
+        function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
+            const A = snapToGrid(startPos.clone());
+            const B = snapToGrid(endPos.clone());
+            const mode = getRouterMode();
+            if (mode === 'perimeter') return routePerimeter(A, B, startSide, endSide);
+            if (mode === 'astar') return routeAStar(A, B, startSide, endSide);
+            return routeSimple(A, B, startSide, endSide);
         }
 
             // Auto-arrange circuit for professional schematic layout
