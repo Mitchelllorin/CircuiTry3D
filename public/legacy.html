@@ -3794,121 +3794,72 @@
         }
 
         function createRightAngledWirePath(startPos, endPos) {
-            const path = [];
-            
-            // Snap both positions to grid
+            // Strict schematic Manhattan routing with fixed stubs
+            const STUB = GRID_SIZE * 2; // fixed orthogonal stubs out of each terminal
             const snappedStart = snapToGrid(startPos);
             const snappedEnd = snapToGrid(endPos);
-            
-            path.push(snappedStart.clone());
-            
-            // Professional schematic routing with outside right angles
-            const deltaX = snappedEnd.x - snappedStart.x;
-            const deltaZ = snappedEnd.z - snappedStart.z;
-            
-            // Minimum distance for clean routing
-            const MIN_SEGMENT = GRID_SIZE * 2;
-            
-            // Determine routing style based on component positions and circuit aesthetics
-            if (Math.abs(deltaX) < MIN_SEGMENT && Math.abs(deltaZ) < MIN_SEGMENT) {
-                // Direct connection for very close components
-                path.push(snappedEnd.clone());
-            } else if (Math.abs(deltaX) > Math.abs(deltaZ) * 2) {
-                // Primarily horizontal routing - go out, across, in
-                const outDistance = Math.sign(deltaX) * MIN_SEGMENT;
-                const midX = snappedStart.x + outDistance;
-                
-                // Go out from start
-                const outPoint = new THREE.Vector3(midX, 0, snappedStart.z);
-                if (Math.abs(outDistance) > 0.1) {
-                    path.push(outPoint);
-                }
-                
-                // Go to end Z level
-                if (Math.abs(deltaZ) > 0.1) {
-                    const acrossPoint = new THREE.Vector3(midX, 0, snappedEnd.z);
-                    path.push(acrossPoint);
-                }
-                
-                // Go to final X position if needed
-                if (Math.abs(snappedEnd.x - midX) > 0.1) {
-                    const inPoint = new THREE.Vector3(snappedEnd.x - Math.sign(deltaX) * MIN_SEGMENT, 0, snappedEnd.z);
-                    path.push(inPoint);
-                }
-                
-            } else if (Math.abs(deltaZ) > Math.abs(deltaX) * 2) {
-                // Primarily vertical routing - go out, across, in
-                const outDistance = Math.sign(deltaZ) * MIN_SEGMENT;
-                const midZ = snappedStart.z + outDistance;
-                
-                // Go out from start
-                const outPoint = new THREE.Vector3(snappedStart.x, 0, midZ);
-                if (Math.abs(outDistance) > 0.1) {
-                    path.push(outPoint);
-                }
-                
-                // Go to end X level
-                if (Math.abs(deltaX) > 0.1) {
-                    const acrossPoint = new THREE.Vector3(snappedEnd.x, 0, midZ);
-                    path.push(acrossPoint);
-                }
-                
-                // Go to final Z position if needed
-                if (Math.abs(snappedEnd.z - midZ) > 0.1) {
-                    const inPoint = new THREE.Vector3(snappedEnd.x, 0, snappedEnd.z - Math.sign(deltaZ) * MIN_SEGMENT);
-                    path.push(inPoint);
-                }
-                
+
+            // Determine direction preference to reduce crossings
+            const preferHorizontal = Math.abs(snappedEnd.x - snappedStart.x) >= Math.abs(snappedEnd.z - snappedStart.z);
+
+            const points = [];
+            points.push(snappedStart.clone());
+
+            if (preferHorizontal) {
+                // Stub horizontally from start
+                const startStub = new THREE.Vector3(
+                    snappedStart.x + Math.sign(snappedEnd.x - snappedStart.x || 1) * STUB,
+                    0,
+                    snappedStart.z
+                );
+                points.push(startStub);
+
+                // Horizontal run to align with end X minus stub
+                const endStubX = snappedEnd.x - Math.sign(snappedEnd.x - snappedStart.x || 1) * STUB;
+                const mid1 = new THREE.Vector3(endStubX, 0, snappedStart.z);
+                points.push(mid1);
+
+                // Vertical up/down to end Z
+                const mid2 = new THREE.Vector3(endStubX, 0, snappedEnd.z);
+                if (mid2.distanceTo(mid1) > 0.1) points.push(mid2);
+
+                // Final stub into end
+                const endStub = new THREE.Vector3(snappedEnd.x, 0, snappedEnd.z);
+                points.push(endStub);
             } else {
-                // Balanced routing - professional L-shape with extensions
-                const preferHorizontalFirst = Math.abs(deltaX) >= Math.abs(deltaZ);
-                
-                if (preferHorizontalFirst) {
-                    // Go out horizontally, then vertically, then in
-                    const midX = snappedStart.x + Math.sign(deltaX) * (Math.abs(deltaX) * 0.7 + MIN_SEGMENT);
-                    
-                    // Horizontal extension from start
-                    const hPoint = new THREE.Vector3(midX, 0, snappedStart.z);
-                    path.push(hPoint);
-                    
-                    // Vertical to end level
-                    if (Math.abs(deltaZ) > 0.1) {
-                        const vPoint = new THREE.Vector3(midX, 0, snappedEnd.z);
-                        path.push(vPoint);
-                    }
-                    
-                } else {
-                    // Go out vertically, then horizontally, then in
-                    const midZ = snappedStart.z + Math.sign(deltaZ) * (Math.abs(deltaZ) * 0.7 + MIN_SEGMENT);
-                    
-                    // Vertical extension from start
-                    const vPoint = new THREE.Vector3(snappedStart.x, 0, midZ);
-                    path.push(vPoint);
-                    
-                    // Horizontal to end level
-                    if (Math.abs(deltaX) > 0.1) {
-                        const hPoint = new THREE.Vector3(snappedEnd.x, 0, midZ);
-                        path.push(hPoint);
-                    }
-                }
+                // Stub vertically from start
+                const startStub = new THREE.Vector3(
+                    snappedStart.x,
+                    0,
+                    snappedStart.z + Math.sign(snappedEnd.z - snappedStart.z || 1) * STUB
+                );
+                points.push(startStub);
+
+                // Vertical run to align with end Z minus stub
+                const endStubZ = snappedEnd.z - Math.sign(snappedEnd.z - snappedStart.z || 1) * STUB;
+                const mid1 = new THREE.Vector3(snappedStart.x, 0, endStubZ);
+                points.push(mid1);
+
+                // Horizontal left/right to end X
+                const mid2 = new THREE.Vector3(snappedEnd.x, 0, endStubZ);
+                if (mid2.distanceTo(mid1) > 0.1) points.push(mid2);
+
+                // Final stub into end
+                const endStub = new THREE.Vector3(snappedEnd.x, 0, snappedEnd.z);
+                points.push(endStub);
             }
-            
-            path.push(snappedEnd.clone());
-            
-            // Remove any duplicate consecutive points
-            const cleanPath = [path[0]];
-            for (let i = 1; i < path.length; i++) {
-                const prev = cleanPath[cleanPath.length - 1];
-                const curr = path[i];
-                if (prev.distanceTo(curr) > 0.1) {
-                    cleanPath.push(curr);
-                }
+
+            // Collapse duplicates
+            const clean = [points[0]];
+            for (let i = 1; i < points.length; i++) {
+                const prev = clean[clean.length - 1];
+                const curr = points[i];
+                if (prev.distanceTo(curr) > 0.1) clean.push(curr);
             }
-            
-            return cleanPath;
+            return clean;
         }
 
-        // Auto-arrange circuit for professional schematic layout
+            // Auto-arrange circuit for professional schematic layout
         function arrangeCircuitSchematic() {
             if (components.length === 0) return;
             
@@ -3927,28 +3878,22 @@
             wires.forEach(wire => wire.remove());
             wires = [];
             
-            // Arrange components in schematic style
-            const SPACING = GRID_SIZE * 4;
+                // Arrange components in schematic style
+                const SPACING = GRID_SIZE * 4;
             const battery = batteries[0];
             
-            // Position battery on the left
-            battery.position.set(-SPACING * 2, 0, 0);
+                // Position battery on the left aligned to grid row 0
+                battery.position.set(-SPACING * 2, 0, 0);
             battery.mesh.position.copy(battery.position);
             
-            // Arrange other components in a logical flow
-            otherComponents.forEach((comp, index) => {
-                const angle = (index / otherComponents.length) * Math.PI * 1.5;
-                const radius = SPACING * 1.5;
-                const x = Math.cos(angle) * radius;
-                const z = Math.sin(angle) * radius;
-                
-                comp.position.set(
-                    snapToGrid(new THREE.Vector3(x, 0, z)).x,
-                    0,
-                    snapToGrid(new THREE.Vector3(x, 0, z)).z
-                );
-                comp.mesh.position.copy(comp.position);
-            });
+                // Arrange other components in a straight horizontal bus (textbook series chain)
+                otherComponents.forEach((comp, index) => {
+                    const x = -SPACING * 1 + index * SPACING;
+                    const z = 0;
+                    const p = snapToGrid(new THREE.Vector3(x, 0, z));
+                    comp.position.set(p.x, 0, p.z);
+                    comp.mesh.position.copy(comp.position);
+                });
             
             // Auto-wire in series for demonstration
             if (otherComponents.length > 0) {
@@ -5255,6 +5200,48 @@ Perfect for students, educators, and hobbyists who learn visually!
             setStatus(`⚫ Junction node added - drag to grid position and tap to place!`);
             updateCircuitInfo();
             closeAllSubmenus();
+        }
+
+        // Create an equal-spaced parallel bus from a source to N targets (intelligent split)
+        function createParallelBus(sourceObj, targetObjs) {
+            if (!sourceObj || !targetObjs || targetObjs.length === 0) return;
+            const SPREAD = GRID_SIZE * 3;
+            const base = sourceObj.getWorldConnectionPoint ? sourceObj.getWorldConnectionPoint('right') : sourceObj.position;
+            const snappedBase = snapToGrid(base.clone());
+
+            // Create a vertical bus centered around base Z
+            const count = targetObjs.length;
+            const totalHeight = (count - 1) * SPREAD;
+            const busTopZ = snappedBase.z - totalHeight / 2;
+            const busX = snappedBase.x + GRID_SIZE * 4; // a bit to the right of source
+
+            // Build spine junctions
+            const spineJunctions = targetObjs.map((_, i) => {
+                const jPos = snapToGrid(new THREE.Vector3(busX, 0, busTopZ + i * SPREAD));
+                const j = new Junction(jPos);
+                junctions.push(j);
+                return j;
+            });
+
+            // Connect source to middle of spine
+            const midJunction = spineJunctions[Math.floor(count / 2)];
+            const toSpine = new Wire(sourceObj, 'right', midJunction, 'center');
+            wires.push(toSpine);
+
+            // Connect spine segments
+            for (let i = 0; i < spineJunctions.length - 1; i++) {
+                const s1 = spineJunctions[i];
+                const s2 = spineJunctions[i + 1];
+                const seg = new Wire(s1, 'center', s2, 'center');
+                wires.push(seg);
+            }
+
+            // Branch to each target
+            targetObjs.forEach((target, i) => {
+                const j = spineJunctions[i];
+                const branch = new Wire(j, 'center', target, 'left');
+                wires.push(branch);
+            });
         }
 
         function toggleWireMode() {
