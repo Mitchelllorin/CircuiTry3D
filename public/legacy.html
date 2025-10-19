@@ -2098,6 +2098,15 @@
                     </div>
                 </div>
             </div>
+
+            <div class="menu-tab" onclick="toggleSubmenu('arena')">
+                🧪 Arena
+                <div class="submenu" id="submenu-arena">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="openArena()">Open Component Arena</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('help')">
                 ❓ Help
@@ -4501,6 +4510,15 @@
                 if (parentTab) {
                     parentTab.classList.toggle('active', !isActive);
                 }
+            }
+        }
+
+        function openArena() {
+            try {
+                window.open('/arena', '_blank');
+                setStatus('🧪 Component Arena opened');
+            } catch (e) {
+                setStatus('⚠️ Unable to open Arena');
             }
         }
 
