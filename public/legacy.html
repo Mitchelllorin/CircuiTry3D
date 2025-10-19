@@ -3794,69 +3794,20 @@
         }
 
         function createRightAngledWirePath(startPos, endPos) {
-            // Strict schematic Manhattan routing with fixed stubs
-            const STUB = GRID_SIZE * 2; // fixed orthogonal stubs out of each terminal
-            const snappedStart = snapToGrid(startPos);
-            const snappedEnd = snapToGrid(endPos);
-
-            // Determine direction preference to reduce crossings
-            const preferHorizontal = Math.abs(snappedEnd.x - snappedStart.x) >= Math.abs(snappedEnd.z - snappedStart.z);
-
-            const points = [];
-            points.push(snappedStart.clone());
-
-            if (preferHorizontal) {
-                // Stub horizontally from start
-                const startStub = new THREE.Vector3(
-                    snappedStart.x + Math.sign(snappedEnd.x - snappedStart.x || 1) * STUB,
-                    0,
-                    snappedStart.z
-                );
-                points.push(startStub);
-
-                // Horizontal run to align with end X minus stub
-                const endStubX = snappedEnd.x - Math.sign(snappedEnd.x - snappedStart.x || 1) * STUB;
-                const mid1 = new THREE.Vector3(endStubX, 0, snappedStart.z);
-                points.push(mid1);
-
-                // Vertical up/down to end Z
-                const mid2 = new THREE.Vector3(endStubX, 0, snappedEnd.z);
-                if (mid2.distanceTo(mid1) > 0.1) points.push(mid2);
-
-                // Final stub into end
-                const endStub = new THREE.Vector3(snappedEnd.x, 0, snappedEnd.z);
-                points.push(endStub);
-            } else {
-                // Stub vertically from start
-                const startStub = new THREE.Vector3(
-                    snappedStart.x,
-                    0,
-                    snappedStart.z + Math.sign(snappedEnd.z - snappedStart.z || 1) * STUB
-                );
-                points.push(startStub);
-
-                // Vertical run to align with end Z minus stub
-                const endStubZ = snappedEnd.z - Math.sign(snappedEnd.z - snappedStart.z || 1) * STUB;
-                const mid1 = new THREE.Vector3(snappedStart.x, 0, endStubZ);
-                points.push(mid1);
-
-                // Horizontal left/right to end X
-                const mid2 = new THREE.Vector3(snappedEnd.x, 0, endStubZ);
-                if (mid2.distanceTo(mid1) > 0.1) points.push(mid2);
-
-                // Final stub into end
-                const endStub = new THREE.Vector3(snappedEnd.x, 0, snappedEnd.z);
-                points.push(endStub);
+            // Minimal Manhattan path: at most one corner (L shape), snapped to grid
+            const A = snapToGrid(startPos.clone());
+            const B = snapToGrid(endPos.clone());
+            // Same point or aligned axis → straight
+            if (Math.abs(A.x - B.x) < 0.001 || Math.abs(A.z - B.z) < 0.001) {
+                return [A, B];
             }
-
-            // Collapse duplicates
-            const clean = [points[0]];
-            for (let i = 1; i < points.length; i++) {
-                const prev = clean[clean.length - 1];
-                const curr = points[i];
-                if (prev.distanceTo(curr) > 0.1) clean.push(curr);
-            }
-            return clean;
+            // Choose corner to minimize added length and keep shapes clean
+            const horizontalFirst = Math.abs(B.x - A.x) >= Math.abs(B.z - A.z);
+            const corner = horizontalFirst
+                ? new THREE.Vector3(B.x, 0, A.z)
+                : new THREE.Vector3(A.x, 0, B.z);
+            const C = snapToGrid(corner);
+            return [A, C, B];
         }
 
             // Auto-arrange circuit for professional schematic layout
