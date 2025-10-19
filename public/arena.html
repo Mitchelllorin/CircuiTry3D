@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D • Component Arena</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0a0a1a; color: #fff; font-family: system-ui, sans-serif; }
+    .hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2; }
+    .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid #334155; background: #111827; color: #e5e7eb; font-weight: 700; cursor: pointer; }
+    .panel { position: fixed; top: 60px; left: 12px; width: 320px; max-width: calc(100% - 24px); background: rgba(0,0,0,0.65); backdrop-filter: blur(10px); border: 1px solid #334155; border-radius: 12px; padding: 12px; z-index: 2; }
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .row label { width: 120px; font-size: 12px; color: #94a3b8; }
+    .row input, .row select { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #334155; background: #0b1220; color: #e5e7eb; }
+    .stat { font-size: 12px; color: #a5b4fc; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <button class="btn" onclick="resetArena()">Reset</button>
+    <button class="btn" onclick="runTest()">Run Test</button>
+    <button class="btn" onclick="exportResults()">Export</button>
+  </div>
+  <div class="panel">
+    <div class="row"><label>Component</label>
+      <select id="comp-type">
+        <option value="resistor">Resistor</option>
+        <option value="capacitor">Capacitor</option>
+        <option value="inductor">Inductor</option>
+        <option value="led">LED</option>
+      </select>
+    </div>
+    <div class="row"><label>Value</label><input id="comp-value" type="number" value="100" /></div>
+    <div class="row"><label>Voltage (V)</label><input id="test-voltage" type="number" value="5" /></div>
+    <div class="row"><label>Frequency (Hz)</label><input id="test-frequency" type="number" value="1000" /></div>
+    <div class="stat" id="stat-out">Ready.</div>
+  </div>
+  <canvas id="arena"></canvas>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    let scene, camera, renderer, mesh;
+    const canvas = document.getElementById(arena);
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a1a);
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 2, 6);
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const light = new THREE.DirectionalLight(0xffffff, 1.2);
+      light.position.set(2, 4, 2);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight(0x404040, 0.6));
+
+      const geo = new THREE.BoxGeometry(1,1,1);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x88ccff });
+      mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh);
+
+      window.addEventListener(resize, () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      mesh.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+
+    function resetArena(){
+      document.getElementById(stat-out).textContent = Reset
