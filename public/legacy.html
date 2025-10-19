@@ -3803,20 +3803,57 @@
         }
 
         function createRightAngledWirePath(startPos, endPos) {
-            // Minimal Manhattan path: at most one corner (L shape), snapped to grid
+            // Outward-bias L routing using terminal normals (left/right) when available
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
-            // Same point or aligned axis → straight
             if (Math.abs(A.x - B.x) < 0.001 || Math.abs(A.z - B.z) < 0.001) {
                 return [A, B];
             }
-            // Choose corner to minimize added length and keep shapes clean
-            const horizontalFirst = Math.abs(B.x - A.x) >= Math.abs(B.z - A.z);
-            const corner = horizontalFirst
-                ? new THREE.Vector3(B.x, 0, A.z)
-                : new THREE.Vector3(A.x, 0, B.z);
-            const C = snapToGrid(corner);
-            return [A, C, B];
+
+            // Determine outward bias: push corner away from the source component along outward normal
+            const OUT = GRID_SIZE * 2;
+            let Ax = A.x, Az = A.z, Bx = B.x, Bz = B.z;
+
+            // If we can infer terminal normals from proximity to component connection offsets, bias outward
+            // Heuristic: if A.x < B.x, route rightward first (outward from a left terminal), else leftward; same for Z.
+            const dx = Bx - Ax;
+            const dz = Bz - Az;
+            const preferH = Math.abs(dx) >= Math.abs(dz);
+
+            let Cx, Cz;
+            if (preferH) {
+                // Horizontal-first with outward push from A
+                const pushX = Math.sign(dx) * OUT;
+                const AxOut = Ax + pushX;
+                // Corner on the row of A but outward first, then turn to B.z, then finally to B
+                Cx = Bx; Cz = Az;
+                // Ensure outward bias by moving the corner away if it would create an inward bite
+                if ((dx > 0 && Cx < AxOut) || (dx < 0 && Cx > AxOut)) {
+                    // shift corner to outward threshold on X before turning
+                    Cx = AxOut;
+                }
+                const C = snapToGrid(new THREE.Vector3(Cx, 0, Cz));
+                // If corner equals A after snapping, force outward step
+                if (C.distanceTo(A) < 0.001) {
+                    const forced = new THREE.Vector3(AxOut, 0, Az);
+                    return [A, snapToGrid(forced), new THREE.Vector3(Bx, 0, Az), B];
+                }
+                return [A, C, B];
+            } else {
+                // Vertical-first with outward push from A
+                const pushZ = Math.sign(dz) * OUT;
+                const AzOut = Az + pushZ;
+                Cx = Ax; Cz = Bz;
+                if ((dz > 0 && Cz < AzOut) || (dz < 0 && Cz > AzOut)) {
+                    Cz = AzOut;
+                }
+                const C = snapToGrid(new THREE.Vector3(Cx, 0, Cz));
+                if (C.distanceTo(A) < 0.001) {
+                    const forced = new THREE.Vector3(Ax, 0, AzOut);
+                    return [A, snapToGrid(forced), new THREE.Vector3(Ax, 0, Bz), B];
+                }
+                return [A, C, B];
+            }
         }
 
             // Auto-arrange circuit for professional schematic layout
