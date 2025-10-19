@@ -22,15 +22,32 @@
     <button class="btn" onclick="exportResults()">Export</button>
   </div>
   <div class="panel">
-    <div class="row"><label>Component</label>
-      <select id="comp-type">
+    <div class="row"><label>Mode</label>
+      <select id="mode">
+        <option value="single">Single</option>
+        <option value="compare">Compare (A vs B)</option>
+      </select>
+    </div>
+    <hr style="border:none;border-top:1px solid #334155;margin:8px 0" />
+    <div class="row"><label>Comp A</label>
+      <select id="comp-type-a">
         <option value="resistor">Resistor</option>
         <option value="capacitor">Capacitor</option>
         <option value="inductor">Inductor</option>
         <option value="led">LED</option>
       </select>
     </div>
-    <div class="row"><label>Value</label><input id="comp-value" type="number" value="100" /></div>
+    <div class="row"><label>Value A</label><input id="comp-value-a" type="number" value="100" /></div>
+    <div class="row compare-only" style="display:none"><label>Comp B</label>
+      <select id="comp-type-b">
+        <option value="resistor">Resistor</option>
+        <option value="capacitor">Capacitor</option>
+        <option value="inductor">Inductor</option>
+        <option value="led">LED</option>
+      </select>
+    </div>
+    <div class="row compare-only" style="display:none"><label>Value B</label><input id="comp-value-b" type="number" value="200" /></div>
+    <hr style="border:none;border-top:1px solid #334155;margin:8px 0" />
     <div class="row"><label>Voltage (V)</label><input id="test-voltage" type="number" value="5" /></div>
     <div class="row"><label>Frequency (Hz)</label><input id="test-frequency" type="number" value="1000" /></div>
     <div class="stat" id="stat-out">Ready.</div>
@@ -38,7 +55,7 @@
   <canvas id="arena"></canvas>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    let scene, camera, renderer, mesh;
+    let scene, camera, renderer, meshA, meshB;
     const canvas = document.getElementById('arena');
 
     function init() {
@@ -55,9 +72,12 @@
       scene.add(new THREE.AmbientLight(0x404040, 0.6));
 
       const geo = new THREE.BoxGeometry(1,1,1);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x88ccff });
-      mesh = new THREE.Mesh(geo, mat);
-      scene.add(mesh);
+      meshA = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x88ccff }));
+      meshB = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xffa500 }));
+      meshA.position.set(-1.2, 0, 0);
+      meshB.position.set( 1.2, 0, 0);
+      scene.add(meshA);
+      scene.add(meshB);
 
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -70,40 +90,50 @@
 
     function animate() {
       requestAnimationFrame(animate);
-      mesh.rotation.y += 0.01;
+      if (meshA) meshA.rotation.y += 0.01;
+      if (meshB && document.getElementById('mode').value === 'compare') meshB.rotation.y -= 0.01;
       renderer.render(scene, camera);
     }
 
     function resetArena(){
       document.getElementById('stat-out').textContent = 'Reset arena';
+      if (meshA) meshA.rotation.set(0,0,0);
+      if (meshB) meshB.rotation.set(0,0,0);
     }
 
     function runTest(){
-      const type = document.getElementById('comp-type').value;
-      const value = parseFloat(document.getElementById('comp-value').value||0);
+      const mode = document.getElementById('mode').value;
+      const typeA = document.getElementById('comp-type-a').value;
+      const valueA = parseFloat(document.getElementById('comp-value-a').value||0);
+      const typeB = document.getElementById('comp-type-b')?.value || typeA;
+      const valueB = parseFloat(document.getElementById('comp-value-b')?.value||0) || valueA;
       const V = parseFloat(document.getElementById('test-voltage').value||0);
       const f = parseFloat(document.getElementById('test-frequency').value||0);
 
-      let stats = {};
-      if (type === 'resistor') {
-        const I = V / (value || 1);
-        const P = V * I;
-        stats = { I, P };
-      } else if (type === 'capacitor') {
-        const Xc = 1 / (2*Math.PI*f*(value||1e-6));
-        const I = V / Xc;
-        stats = { X: Xc, I };
-      } else if (type === 'inductor') {
-        const Xl = 2*Math.PI*f*(value||1e-3);
-        const I = V / Xl;
-        stats = { X: Xl, I };
-      } else if (type === 'led') {
-        const Vf = 2.0; // simple model
-        const If = Math.max(0, (V - Vf)) / (value || 100);
-        stats = { Vf, I: If };
+      function calc(type, value){
+        if (type === 'resistor') {
+          const I = V / (value || 1);
+          const P = V * I; return { I, P };
+        } else if (type === 'capacitor') {
+          const X = 1 / (2*Math.PI*f*(value||1e-6));
+          const I = V / X; return { X, I };
+        } else if (type === 'inductor') {
+          const X = 2*Math.PI*f*(value||1e-3);
+          const I = V / X; return { X, I };
+        } else if (type === 'led') {
+          const Vf = 2.0; const I = Math.max(0, (V - Vf)) / (value || 100); return { Vf, I };
+        }
+        return {};
       }
 
-      document.getElementById('stat-out').textContent = 'Result: ' + JSON.stringify(stats);
+      if (mode === 'compare') {
+        const A = calc(typeA, valueA);
+        const B = calc(typeB, valueB);
+        document.getElementById('stat-out').textContent = 'A: ' + JSON.stringify(A) + ' | B: ' + JSON.stringify(B);
+      } else {
+        const A = calc(typeA, valueA);
+        document.getElementById('stat-out').textContent = 'A: ' + JSON.stringify(A);
+      }
     }
 
     function exportResults(){
@@ -115,6 +145,10 @@
       a.click();
     }
 
+    document.getElementById('mode').addEventListener('change', (e) => {
+      const compare = e.target.value === 'compare';
+      document.querySelectorAll('.compare-only').forEach(el => el.style.display = compare ? '' : 'none');
+    });
     init();
   </script>
 </body>
