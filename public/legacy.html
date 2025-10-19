@@ -3803,59 +3803,51 @@
         }
 
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
-            // Outward-bias L routing using terminal normals (left/right) when available
+            // Textbook schematic routing with:
+            // - fixed terminal stubs
+            // - outward-first corner relative to start terminal
+            // - single L-bend for aligned rows/columns; two-bend (┐└ style) for offset with centerline guidance
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
-            if (Math.abs(A.x - B.x) < 0.001 || Math.abs(A.z - B.z) < 0.001) {
-                return [A, B];
+            const STUB = GRID_SIZE * 2;
+
+            // Compute start/end stub points based on terminal sides
+            function stubFrom(point, side) {
+                if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
+                if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                // Fallback: choose axis with greater delta
+                return Math.abs(B.x - A.x) >= Math.abs(B.z - A.z)
+                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(B.x - A.x || 1) * STUB, 0, point.z))
+                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(B.z - A.z || 1) * STUB));
             }
 
-            // Determine outward bias: push corner away from the source component along outward normal
-            const OUT = GRID_SIZE * 2;
-            let Ax = A.x, Az = A.z, Bx = B.x, Bz = B.z;
+            const Astub = stubFrom(A, startSide);
+            const Bstub = stubFrom(B, endSide);
 
-            // If we can infer terminal normals from proximity to component connection offsets, bias outward
-            // Heuristic: if A.x < B.x, route rightward first (outward from a left terminal), else leftward; same for Z.
-            const dx = Bx - Ax;
-            const dz = Bz - Az;
+            // If stubs are already aligned horizontally or vertically, connect straight between stubs
+            if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
+                return [A, Astub, Bstub, B];
+            }
+
+            // Determine outward-first L routing using start stub row/column, then move toward end stub
+            const dx = Bstub.x - Astub.x;
+            const dz = Bstub.z - Astub.z;
             const preferH = Math.abs(dx) >= Math.abs(dz);
 
-            let Cx, Cz;
+            // Centerline strategy: route the middle segment along the center between A and B (clean spacing)
+            const midX = snapToGrid(new THREE.Vector3((Astub.x + Bstub.x) / 2, 0, 0)).x;
+            const midZ = snapToGrid(new THREE.Vector3(0, 0, (Astub.z + Bstub.z) / 2)).z;
+
             if (preferH) {
-                // Horizontal-first with outward push from A
-                // If start terminal is known, force outward direction accordingly
-                const outwardDirX = startSide === 'left' || startSide === 'negative' ? -1 : (startSide === 'right' || startSide === 'positive' ? 1 : Math.sign(dx) || 1);
-                const pushX = outwardDirX * OUT;
-                const AxOut = Ax + pushX;
-                // Corner on the row of A but outward first, then turn to B.z, then finally to B
-                Cx = Bx; Cz = Az;
-                // Ensure outward bias by moving the corner away if it would create an inward bite
-                if ((outwardDirX > 0 && Cx < AxOut) || (outwardDirX < 0 && Cx > AxOut)) {
-                    // shift corner to outward threshold on X before turning
-                    Cx = AxOut;
-                }
-                const C = snapToGrid(new THREE.Vector3(Cx, 0, Cz));
-                // If corner equals A after snapping, force outward step
-                if (C.distanceTo(A) < 0.001) {
-                    const forced = new THREE.Vector3(AxOut, 0, Az);
-                    return [A, snapToGrid(forced), new THREE.Vector3(Bx, 0, Az), B];
-                }
-                return [A, C, B];
+                // A → Astub → (midX, Astub.z) → (midX, Bstub.z) → Bstub → B
+                const p1 = new THREE.Vector3(midX, 0, Astub.z);
+                const p2 = new THREE.Vector3(midX, 0, Bstub.z);
+                return [A, Astub, snapToGrid(p1), snapToGrid(p2), Bstub, B];
             } else {
-                // Vertical-first with outward push from A
-                const outwardDirZ = 0 < 0 ? 1 : Math.sign(dz) || 1; // keep dz sign; we don't have explicit up/down terminals
-                const pushZ = outwardDirZ * OUT;
-                const AzOut = Az + pushZ;
-                Cx = Ax; Cz = Bz;
-                if ((outwardDirZ > 0 && Cz < AzOut) || (outwardDirZ < 0 && Cz > AzOut)) {
-                    Cz = AzOut;
-                }
-                const C = snapToGrid(new THREE.Vector3(Cx, 0, Cz));
-                if (C.distanceTo(A) < 0.001) {
-                    const forced = new THREE.Vector3(Ax, 0, AzOut);
-                    return [A, snapToGrid(forced), new THREE.Vector3(Ax, 0, Bz), B];
-                }
-                return [A, C, B];
+                // A → Astub → (Astub.x, midZ) → (Bstub.x, midZ) → Bstub → B
+                const p1 = new THREE.Vector3(Astub.x, 0, midZ);
+                const p2 = new THREE.Vector3(Bstub.x, 0, midZ);
+                return [A, Astub, snapToGrid(p1), snapToGrid(p2), Bstub, B];
             }
         }
 
