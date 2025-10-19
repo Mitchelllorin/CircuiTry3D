@@ -3802,52 +3802,215 @@
             }
         }
 
+        // Helper: get world-space axis-aligned obstacles from components and labels
+        function getObstacleRects(clearance = GRID_SIZE * 1.0) {
+            const rects = [];
+            // Components
+            components.forEach(comp => {
+                const box = new THREE.Box3().setFromObject(comp.selectionBox || comp.mesh);
+                if (box && box.min && box.max) {
+                    rects.push({
+                        minX: box.min.x - clearance,
+                        maxX: box.max.x + clearance,
+                        minZ: box.min.z - clearance,
+                        maxZ: box.max.z + clearance,
+                    });
+                }
+            });
+            // Labels (approximate small rect around projected point)
+            components.forEach(comp => {
+                if (comp.mesh) {
+                    const p = comp.position;
+                    rects.push({
+                        minX: p.x - GRID_SIZE * 0.8,
+                        maxX: p.x + GRID_SIZE * 0.8,
+                        minZ: p.z - GRID_SIZE * 0.8,
+                        maxZ: p.z + GRID_SIZE * 0.8,
+                    });
+                }
+            });
+            return rects;
+        }
+
+        // Helper: check if a grid cell center is blocked by any rect
+        function cellBlocked(x, z, rects) {
+            for (let i = 0; i < rects.length; i++) {
+                const r = rects[i];
+                if (x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ) return true;
+            }
+            return false;
+        }
+
+        // Helper: collect existing wire segments for crossing penalty
+        function getExistingWireSegments() {
+            const segs = [];
+            wires.forEach(w => {
+                if (w.segments) {
+                    w.segments.forEach(s => {
+                        segs.push({ a: s.start.clone(), b: s.end.clone() });
+                    });
+                }
+            });
+            return segs;
+        }
+
+        function segIntersect(a1, a2, b1, b2) {
+            // Axis-aligned only
+            const aMinX = Math.min(a1.x, a2.x), aMaxX = Math.max(a1.x, a2.x);
+            const aMinZ = Math.min(a1.z, a2.z), aMaxZ = Math.max(a1.z, a2.z);
+            const bMinX = Math.min(b1.x, b2.x), bMaxX = Math.max(b1.x, b2.x);
+            const bMinZ = Math.min(b1.z, b2.z), bMaxZ = Math.max(b1.z, b2.z);
+            if (aMinX === aMaxX && bMinX === bMaxX) {
+                // both vertical
+                if (aMinX !== bMinX) return false;
+                return !(aMaxZ < bMinZ || bMaxZ < aMinZ);
+            } else if (aMinZ === aMaxZ && bMinZ === bMaxZ) {
+                // both horizontal
+                if (aMinZ !== bMinZ) return false;
+                return !(aMaxX < bMinX || bMaxX < aMinX);
+            } else {
+                // one vertical, one horizontal
+                if (aMinX === aMaxX) {
+                    // a vertical, b horizontal
+                    return (bMinX <= aMinX && aMinX <= bMaxX) && (aMinZ <= bMinZ && bMinZ <= aMaxZ);
+                } else {
+                    // a horizontal, b vertical
+                    return (aMinX <= bMinX && bMinX <= aMaxX) && (bMinZ <= aMinZ && aMinZ <= bMaxZ);
+                }
+            }
+        }
+
+        function countCrossings(pathPoints, segs) {
+            let crosses = 0;
+            for (let i = 0; i < pathPoints.length - 1; i++) {
+                const a = pathPoints[i], b = pathPoints[i + 1];
+                for (let s of segs) {
+                    if (segIntersect(a, b, s.a, s.b)) crosses++;
+                }
+            }
+            return crosses;
+        }
+
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
-            // Textbook schematic routing with fixed terminal stubs and outward perimeter detour
+            // Manhattan A* with elbow and crossing penalties, outward-biased stubs
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
-            const STUB = GRID_SIZE * 2;
-            const OUTER = GRID_SIZE * 4; // perimeter margin
+            const GRID = GRID_SIZE;
 
-            function stubFrom(point, side) {
-                if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
-                if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
-                return Math.abs(B.x - A.x) >= Math.abs(B.z - A.z)
-                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(B.x - A.x || 1) * STUB, 0, point.z))
-                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(B.z - A.z || 1) * STUB));
+            // Adaptive stub length: try 1..3 grid units outward
+            const obstacles = getObstacleRects(GRID * 0.6);
+            function outwardDirForSide(side, axisDelta) {
+                if (side === 'left' || side === 'negative') return -1;
+                if (side === 'right' || side === 'positive') return 1;
+                return Math.sign(axisDelta) || 1;
+            }
+            function computeStub(point, side, toward) {
+                const dx = toward.x - point.x; const dz = toward.z - point.z;
+                const useX = Math.abs(dx) >= Math.abs(dz);
+                const dir = useX ? outwardDirForSide(side, dx) : outwardDirForSide(side, dz);
+                for (let len = 1; len <= 3; len++) {
+                    const nx = point.x + (useX ? dir * len * GRID : 0);
+                    const nz = point.z + (!useX ? dir * len * GRID : 0);
+                    const p = snapToGrid(new THREE.Vector3(nx, 0, nz));
+                    if (!cellBlocked(p.x, p.z, obstacles)) return p;
+                }
+                // fallback
+                return snapToGrid(new THREE.Vector3(point.x + (useX ? dir * GRID : 0), 0, point.z + (!useX ? dir * GRID : 0)));
             }
 
-            const Astub = stubFrom(A, startSide);
-            const Bstub = stubFrom(B, endSide);
+            const Astub = computeStub(A, startSide, B);
+            const Bstub = computeStub(B, endSide, A);
 
-            // Straight line case between stubs
+            // Straight between stubs
             if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
                 return [A, Astub, Bstub, B];
             }
 
-            // Build a bounding box between stubs and route outside it
-            const minX = Math.min(Astub.x, Bstub.x);
-            const maxX = Math.max(Astub.x, Bstub.x);
-            const minZ = Math.min(Astub.z, Bstub.z);
-            const maxZ = Math.max(Astub.z, Bstub.z);
+            // A* grid over bounding box + margin
+            const minX = Math.min(Astub.x, Bstub.x) - GRID * 8;
+            const maxX = Math.max(Astub.x, Bstub.x) + GRID * 8;
+            const minZ = Math.min(Astub.z, Bstub.z) - GRID * 8;
+            const maxZ = Math.max(Astub.z, Bstub.z) + GRID * 8;
 
-            const dx = Bstub.x - Astub.x;
-            const dz = Bstub.z - Astub.z;
-            const preferH = Math.abs(dx) >= Math.abs(dz);
+            function key(x, z) { return x + "," + z; }
+            const start = Astub; const goal = Bstub;
+            const open = new Map();
+            const pq = [];
+            const came = new Map();
+            const gScore = new Map();
+            const fScore = new Map();
+            const dirMap = new Map(); // track direction to penalize elbows
 
-            if (preferH) {
-                // Outward X coordinate beyond the bounding box, away from the start direction
-                const outwardX = dx > 0 ? (maxX + OUTER) : (minX - OUTER);
-                const p1 = snapToGrid(new THREE.Vector3(outwardX, 0, Astub.z));
-                const p2 = snapToGrid(new THREE.Vector3(outwardX, 0, Bstub.z));
-                return [A, Astub, p1, p2, Bstub, B];
-            } else {
-                // Outward Z coordinate beyond the bounding box, away from the start direction
-                const outwardZ = dz > 0 ? (maxZ + OUTER) : (minZ - OUTER);
-                const p1 = snapToGrid(new THREE.Vector3(Astub.x, 0, outwardZ));
-                const p2 = snapToGrid(new THREE.Vector3(Bstub.x, 0, outwardZ));
-                return [A, Astub, p1, p2, Bstub, B];
+            function push(node, f) { pq.push({ node, f }); pq.sort((a,b)=>a.f-b.f); }
+            function pop() { return pq.shift(); }
+
+            const existingSegs = getExistingWireSegments();
+            const ELBOW = GRID * 5; // heavy penalty
+            const CROSS = GRID * 3; // crossing penalty
+
+            function heuristic(p) { return Math.abs(p.x - goal.x) + Math.abs(p.z - goal.z); }
+
+            const sKey = key(start.x, start.z);
+            gScore.set(sKey, 0); fScore.set(sKey, heuristic(start)); push(start, fScore.get(sKey)); dirMap.set(sKey, null);
+
+            const dirs = [ [GRID,0,'R'], [0,GRID,'D'], [-GRID,0,'L'], [0,-GRID,'U'] ]; // deterministic order
+
+            while (pq.length) {
+                const current = pop().node;
+                const cKey = key(current.x, current.z);
+                if (current.x === goal.x && current.z === goal.z) {
+                    // reconstruct
+                    const path = [current];
+                    let ck = cKey;
+                    while (came.has(ck)) {
+                        const prev = came.get(ck);
+                        path.unshift(prev);
+                        ck = key(prev.x, prev.z);
+                    }
+                    // prepend A and append B
+                    const coarse = [A].concat(path).concat([B]);
+                    // collapse collinear
+                    const clean = [coarse[0]];
+                    for (let i=1;i<coarse.length-1;i++){
+                        const p=coarse[i], a=clean[clean.length-1], n=coarse[i+1];
+                        if ((a.x===p.x && p.x===n.x) || (a.z===p.z && p.z===n.z)) continue;
+                        clean.push(p);
+                    }
+                    clean.push(coarse[coarse.length-1]);
+                    return clean;
+                }
+
+                for (const [dx,dz,code] of dirs) {
+                    const nx = current.x + dx, nz = current.z + dz;
+                    if (nx < minX || nx > maxX || nz < minZ || nz > maxZ) continue;
+                    if (cellBlocked(nx, nz, obstacles)) continue;
+                    const nKey = key(nx, nz);
+
+                    // cost components
+                    const stepCost = GRID; // unit length
+                    const prevDir = dirMap.get(cKey);
+                    const newDir = code;
+                    const elbowCost = prevDir && prevDir !== newDir ? ELBOW : 0;
+                    // crossing cost: check segment (current->next) vs existing
+                    const a = current, b = new THREE.Vector3(nx,0,nz);
+                    let crossCost = 0;
+                    for (let s of existingSegs) { if (segIntersect(a,b,s.a,s.b)) { crossCost += CROSS; } }
+
+                    const tentative = (gScore.get(cKey) || Infinity) + stepCost + elbowCost + crossCost;
+                    if (tentative < (gScore.get(nKey) || Infinity)) {
+                        came.set(nKey, current);
+                        gScore.set(nKey, tentative);
+                        const f = tentative + heuristic({x:nx,z:nz});
+                        fScore.set(nKey, f);
+                        dirMap.set(nKey, newDir);
+                        push(new THREE.Vector3(nx,0,nz), f);
+                    }
+                }
             }
+
+            // Fallback: simple L if A* fails
+            const fallback = [A, new THREE.Vector3(Bstub.x,0,Astub.z), B];
+            return fallback.map(p=>snapToGrid(p));
         }
 
             // Auto-arrange circuit for professional schematic layout
