@@ -3803,19 +3803,15 @@
         }
 
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
-            // Textbook schematic routing with:
-            // - fixed terminal stubs
-            // - outward-first corner relative to start terminal
-            // - single L-bend for aligned rows/columns; two-bend (┐└ style) for offset with centerline guidance
+            // Textbook schematic routing with fixed terminal stubs and outward perimeter detour
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
             const STUB = GRID_SIZE * 2;
+            const OUTER = GRID_SIZE * 4; // perimeter margin
 
-            // Compute start/end stub points based on terminal sides
             function stubFrom(point, side) {
                 if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
                 if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
-                // Fallback: choose axis with greater delta
                 return Math.abs(B.x - A.x) >= Math.abs(B.z - A.z)
                     ? snapToGrid(new THREE.Vector3(point.x + Math.sign(B.x - A.x || 1) * STUB, 0, point.z))
                     : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(B.z - A.z || 1) * STUB));
@@ -3824,30 +3820,33 @@
             const Astub = stubFrom(A, startSide);
             const Bstub = stubFrom(B, endSide);
 
-            // If stubs are already aligned horizontally or vertically, connect straight between stubs
+            // Straight line case between stubs
             if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
                 return [A, Astub, Bstub, B];
             }
 
-            // Determine outward-first L routing using start stub row/column, then move toward end stub
+            // Build a bounding box between stubs and route outside it
+            const minX = Math.min(Astub.x, Bstub.x);
+            const maxX = Math.max(Astub.x, Bstub.x);
+            const minZ = Math.min(Astub.z, Bstub.z);
+            const maxZ = Math.max(Astub.z, Bstub.z);
+
             const dx = Bstub.x - Astub.x;
             const dz = Bstub.z - Astub.z;
             const preferH = Math.abs(dx) >= Math.abs(dz);
 
-            // Centerline strategy: route the middle segment along the center between A and B (clean spacing)
-            const midX = snapToGrid(new THREE.Vector3((Astub.x + Bstub.x) / 2, 0, 0)).x;
-            const midZ = snapToGrid(new THREE.Vector3(0, 0, (Astub.z + Bstub.z) / 2)).z;
-
             if (preferH) {
-                // A → Astub → (midX, Astub.z) → (midX, Bstub.z) → Bstub → B
-                const p1 = new THREE.Vector3(midX, 0, Astub.z);
-                const p2 = new THREE.Vector3(midX, 0, Bstub.z);
-                return [A, Astub, snapToGrid(p1), snapToGrid(p2), Bstub, B];
+                // Outward X coordinate beyond the bounding box, away from the start direction
+                const outwardX = dx > 0 ? (maxX + OUTER) : (minX - OUTER);
+                const p1 = snapToGrid(new THREE.Vector3(outwardX, 0, Astub.z));
+                const p2 = snapToGrid(new THREE.Vector3(outwardX, 0, Bstub.z));
+                return [A, Astub, p1, p2, Bstub, B];
             } else {
-                // A → Astub → (Astub.x, midZ) → (Bstub.x, midZ) → Bstub → B
-                const p1 = new THREE.Vector3(Astub.x, 0, midZ);
-                const p2 = new THREE.Vector3(Bstub.x, 0, midZ);
-                return [A, Astub, snapToGrid(p1), snapToGrid(p2), Bstub, B];
+                // Outward Z coordinate beyond the bounding box, away from the start direction
+                const outwardZ = dz > 0 ? (maxZ + OUTER) : (minZ - OUTER);
+                const p1 = snapToGrid(new THREE.Vector3(Astub.x, 0, outwardZ));
+                const p2 = snapToGrid(new THREE.Vector3(Bstub.x, 0, outwardZ));
+                return [A, Astub, p1, p2, Bstub, B];
             }
         }
 
