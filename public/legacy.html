@@ -1984,7 +1984,7 @@
             </svg>
         </div>
         
-        <button class="launch-button" id="launch-btn" onclick="launchApplication()">
+        <button class="launch-button" id="launch-btn" style="display:none">
             Launch CircuiTry
         </button>
         
@@ -3984,8 +3984,7 @@
             const loadingProgress = document.getElementById('loading-progress');
             const loadingText = document.getElementById('loading-text');
             
-            // Hide launch button and show loading
-            launchBtn.style.display = 'none';
+            // Hide launch button and show loading (button hidden in auto mode)
             loadingProgress.style.display = 'block';
             loadingText.style.display = 'block';
             
@@ -4006,6 +4005,13 @@
                 }, 500);
             }, 2000);
         }
+
+        // Auto-launch shortly after load to simulate splash -> app transition
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                launchApplication();
+            }, 800); // brief splash pause
+        });
 
         // Long press detection functions
         function startLongPressTimer(clientX, clientY) {
