@@ -3053,7 +3053,7 @@
                 }
                 
                 // Create right-angled wire path
-                const path = createRightAngledWirePath(startPos, endPos);
+                const path = createRightAngledWirePath(startPos, endPos, this.startSide, this.endSide);
                 this.createWireSegments(path);
             }
 
@@ -3120,7 +3120,7 @@
                 try {
                     const startPos = this.getStartPosition();
                     const endPos = this.getEndPosition();
-                    const path = createRightAngledWirePath(startPos, endPos);
+                    const path = createRightAngledWirePath(startPos, endPos, this.startSide, this.endSide);
                     
                     this.curve = {
                         getPoint: (t) => {
@@ -3164,7 +3164,7 @@
                 
                 const startPos = this.getStartPosition();
                 const endPos = this.getEndPosition();
-                const path = createRightAngledWirePath(startPos, endPos);
+                const path = createRightAngledWirePath(startPos, endPos, this.startSide, this.endSide);
                 
                 this.createWireSegments(path);
                 this.createCurve();
@@ -3802,7 +3802,7 @@
             }
         }
 
-        function createRightAngledWirePath(startPos, endPos) {
+        function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
             // Outward-bias L routing using terminal normals (left/right) when available
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
@@ -3823,12 +3823,14 @@
             let Cx, Cz;
             if (preferH) {
                 // Horizontal-first with outward push from A
-                const pushX = Math.sign(dx) * OUT;
+                // If start terminal is known, force outward direction accordingly
+                const outwardDirX = startSide === 'left' || startSide === 'negative' ? -1 : (startSide === 'right' || startSide === 'positive' ? 1 : Math.sign(dx) || 1);
+                const pushX = outwardDirX * OUT;
                 const AxOut = Ax + pushX;
                 // Corner on the row of A but outward first, then turn to B.z, then finally to B
                 Cx = Bx; Cz = Az;
                 // Ensure outward bias by moving the corner away if it would create an inward bite
-                if ((dx > 0 && Cx < AxOut) || (dx < 0 && Cx > AxOut)) {
+                if ((outwardDirX > 0 && Cx < AxOut) || (outwardDirX < 0 && Cx > AxOut)) {
                     // shift corner to outward threshold on X before turning
                     Cx = AxOut;
                 }
@@ -3841,10 +3843,11 @@
                 return [A, C, B];
             } else {
                 // Vertical-first with outward push from A
-                const pushZ = Math.sign(dz) * OUT;
+                const outwardDirZ = 0 < 0 ? 1 : Math.sign(dz) || 1; // keep dz sign; we don't have explicit up/down terminals
+                const pushZ = outwardDirZ * OUT;
                 const AzOut = Az + pushZ;
                 Cx = Ax; Cz = Bz;
-                if ((dz > 0 && Cz < AzOut) || (dz < 0 && Cz > AzOut)) {
+                if ((outwardDirZ > 0 && Cz < AzOut) || (outwardDirZ < 0 && Cz > AzOut)) {
                     Cz = AzOut;
                 }
                 const C = snapToGrid(new THREE.Vector3(Cx, 0, Cz));
