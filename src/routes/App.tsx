@@ -8,6 +8,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/app" element={<Builder />} />
+      <Route path="/arena" element={<Arena />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -20,5 +21,16 @@ function NotFound() {
       <p>Page not found.</p>
       <Link to="/">Go Home</Link>
     </div>
+  );
+}
+
+function Arena() {
+  return (
+    <iframe
+      title="Component Arena"
+      src="/arena.html"
+      style={{ width: "100%", height: "100vh", border: 0 }}
+      sandbox="allow-scripts allow-same-origin allow-popups"
+    />
   );
 }

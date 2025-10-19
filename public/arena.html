@@ -39,7 +39,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     let scene, camera, renderer, mesh;
-    const canvas = document.getElementById(arena);
+    const canvas = document.getElementById('arena');
 
     function init() {
       scene = new THREE.Scene();
@@ -59,7 +59,7 @@
       mesh = new THREE.Mesh(geo, mat);
       scene.add(mesh);
 
-      window.addEventListener(resize, () => {
+      window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -75,4 +75,47 @@
     }
 
     function resetArena(){
-      document.getElementById(stat-out).textContent = Reset
+      document.getElementById('stat-out').textContent = 'Reset arena';
+    }
+
+    function runTest(){
+      const type = document.getElementById('comp-type').value;
+      const value = parseFloat(document.getElementById('comp-value').value||0);
+      const V = parseFloat(document.getElementById('test-voltage').value||0);
+      const f = parseFloat(document.getElementById('test-frequency').value||0);
+
+      let stats = {};
+      if (type === 'resistor') {
+        const I = V / (value || 1);
+        const P = V * I;
+        stats = { I, P };
+      } else if (type === 'capacitor') {
+        const Xc = 1 / (2*Math.PI*f*(value||1e-6));
+        const I = V / Xc;
+        stats = { X: Xc, I };
+      } else if (type === 'inductor') {
+        const Xl = 2*Math.PI*f*(value||1e-3);
+        const I = V / Xl;
+        stats = { X: Xl, I };
+      } else if (type === 'led') {
+        const Vf = 2.0; // simple model
+        const If = Math.max(0, (V - Vf)) / (value || 100);
+        stats = { Vf, I: If };
+      }
+
+      document.getElementById('stat-out').textContent = 'Result: ' + JSON.stringify(stats);
+    }
+
+    function exportResults(){
+      const text = document.getElementById('stat-out').textContent;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'arena-results.txt';
+      a.click();
+    }
+
+    init();
+  </script>
+</body>
+</html>
