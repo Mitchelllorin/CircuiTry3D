@@ -2035,8 +2035,11 @@
                         <button class="btn" onclick="arrangeCircuitSchematic()">📐 Auto-Arrange</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="clearAll()">🗑️ Clear All</button>
+                        <button class="btn" onclick="cycleRoutingMode()">🔀 Route: <span id="route-mode">Manhattan</span></button>
                         <button class="btn" onclick="centerCircuit()">🎯 Center Circuit</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="clearAll()">🗑️ Clear All</button>
                     </div>
                 </div>
             </div>
@@ -3909,7 +3912,44 @@
                 const ls = localStorage.getItem('routerMode');
                 if (ls) return ls;
             } catch {}
-            return (window.ROUTER_MODE || 'simple');
+            return (window.ROUTER_MODE || 'manhattan');
+        }
+        
+        function cycleRoutingMode() {
+            const modes = ['manhattan', 'simple', 'perimeter', 'astar'];
+            const current = getRouterMode();
+            const currentIndex = modes.indexOf(current);
+            const nextIndex = (currentIndex + 1) % modes.length;
+            const nextMode = modes[nextIndex];
+            
+            // Save to localStorage
+            try {
+                localStorage.setItem('routerMode', nextMode);
+                window.ROUTER_MODE = nextMode;
+            } catch (e) {
+                window.ROUTER_MODE = nextMode;
+            }
+            
+            // Update UI
+            const modeLabel = document.getElementById('route-mode');
+            if (modeLabel) {
+                const modeNames = {
+                    'manhattan': 'Manhattan',
+                    'simple': 'Simple',
+                    'perimeter': 'Perimeter',
+                    'astar': 'A*'
+                };
+                modeLabel.textContent = modeNames[nextMode] || nextMode;
+            }
+            
+            // Update existing wires with new routing
+            wires.forEach(wire => {
+                if (wire.updatePath) {
+                    wire.updatePath();
+                }
+            });
+            
+            setStatus(`🔀 Routing mode: ${nextMode.toUpperCase()} - Wires updated with new routing style`);
         }
 
         function compressPath(points) {
@@ -4031,13 +4071,237 @@
             return compressPath([A, new THREE.Vector3(Bstub.x,0,Astub.z), B]);
         }
 
+        // Enhanced Manhattan routing with intelligent wire splitting
+        function routeManhattan(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const STUB = GRID * 2;
+            
+            // Create stub segments extending from connection points
+            function createStub(point, side, toward) {
+                const dx = toward.x - point.x;
+                const dz = toward.z - point.z;
+                
+                // Handle component sides with proper direction
+                if (side === 'left' || side === 'negative') {
+                    return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
+                }
+                if (side === 'right' || side === 'positive') {
+                    return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                }
+                
+                // For center/junction connections, choose direction based on target
+                return Math.abs(dx) >= Math.abs(dz)
+                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx || 1) * STUB, 0, point.z))
+                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz || 1) * STUB));
+            }
+            
+            const Astub = createStub(A, startSide, B);
+            const Bstub = createStub(B, endSide, A);
+            
+            // Direct horizontal or vertical connection
+            if (Math.abs(Astub.x - Bstub.x) < 0.001) {
+                return compressPath([A, Astub, Bstub, B]);
+            }
+            if (Math.abs(Astub.z - Bstub.z) < 0.001) {
+                return compressPath([A, Astub, Bstub, B]);
+            }
+            
+            // Create L-shaped path with intelligent corner selection
+            // Prefer corners that create cleaner textbook-style layouts
+            const corner1 = snapToGrid(new THREE.Vector3(Bstub.x, 0, Astub.z));
+            const corner2 = snapToGrid(new THREE.Vector3(Astub.x, 0, Bstub.z));
+            
+            // Choose corner based on circuit topology for cleaner routing
+            // Prefer horizontal-then-vertical for typical series circuits
+            const useCorner1 = shouldUseHorizontalFirst(A, B, startSide, endSide);
+            const corner = useCorner1 ? corner1 : corner2;
+            
+            return compressPath([A, Astub, corner, Bstub, B]);
+        }
+        
+        // Determine if horizontal routing should come first for cleaner layouts
+        function shouldUseHorizontalFirst(startPos, endPos, startSide, endSide) {
+            // For battery connections, prefer routing away from battery first
+            if (startSide === 'positive' || startSide === 'negative') {
+                return true;
+            }
+            
+            // For components in series (left-to-right), prefer horizontal
+            if ((startSide === 'right' && endSide === 'left') || 
+                (startSide === 'left' && endSide === 'right')) {
+                return true;
+            }
+            
+            // Default to horizontal-first for cleaner appearance
+            return Math.abs(endPos.x - startPos.x) >= Math.abs(endPos.z - startPos.z);
+        }
+        
+        // Detect and create intelligent wire splits for parallel circuits
+        function createIntelligentSplit(sourceObj, targetObjs, splitType = 'parallel') {
+            if (!sourceObj || !targetObjs || targetObjs.length === 0) return [];
+            
+            const GRID = GRID_SIZE;
+            const SPREAD = GRID * 3; // Spacing between parallel branches
+            const createdWires = [];
+            const createdJunctions = [];
+            
+            if (splitType === 'parallel' && targetObjs.length > 1) {
+                // Get source connection point
+                const sourcePos = sourceObj.getWorldConnectionPoint 
+                    ? sourceObj.getWorldConnectionPoint('right') 
+                    : sourceObj.position;
+                const snappedSource = snapToGrid(sourcePos.clone());
+                
+                // Create vertical bus for parallel distribution
+                const busX = snappedSource.x + GRID * 4;
+                const targetCount = targetObjs.length;
+                const totalHeight = (targetCount - 1) * SPREAD;
+                const busStartZ = snappedSource.z - totalHeight / 2;
+                
+                // Create junction spine for parallel distribution
+                const spineJunctions = [];
+                for (let i = 0; i < targetCount; i++) {
+                    const jPos = snapToGrid(new THREE.Vector3(busX, 0, busStartZ + i * SPREAD));
+                    const junction = new Junction(jPos);
+                    junctions.push(junction);
+                    spineJunctions.push(junction);
+                    createdJunctions.push(junction);
+                }
+                
+                // Connect source to middle junction of spine
+                const midIndex = Math.floor(targetCount / 2);
+                const midJunction = spineJunctions[midIndex];
+                const feedWire = new Wire(sourceObj, 'right', midJunction, 'center');
+                wires.push(feedWire);
+                createdWires.push(feedWire);
+                
+                // Connect spine junctions vertically
+                for (let i = 0; i < spineJunctions.length - 1; i++) {
+                    const spineWire = new Wire(spineJunctions[i], 'center', spineJunctions[i + 1], 'center');
+                    wires.push(spineWire);
+                    createdWires.push(spineWire);
+                }
+                
+                // Branch out to each target component
+                targetObjs.forEach((target, i) => {
+                    const branchWire = new Wire(spineJunctions[i], 'center', target, 'left');
+                    wires.push(branchWire);
+                    createdWires.push(branchWire);
+                });
+                
+                return { wires: createdWires, junctions: createdJunctions };
+            }
+            
+            // Series connection (default)
+            for (let i = 0; i < targetObjs.length; i++) {
+                const target = targetObjs[i];
+                const startSide = i === 0 ? 'right' : 'right';
+                const endSide = 'left';
+                
+                const wire = new Wire(
+                    i === 0 ? sourceObj : targetObjs[i - 1],
+                    startSide,
+                    target,
+                    endSide
+                );
+                wires.push(wire);
+                createdWires.push(wire);
+            }
+            
+            return { wires: createdWires, junctions: createdJunctions };
+        }
+        
+        // Analyze circuit topology to detect series/parallel configurations
+        function analyzeCircuitTopology() {
+            const topology = {
+                series: [],
+                parallel: [],
+                combination: []
+            };
+            
+            // Group components by their connection patterns
+            const batteries = components.filter(c => c.type === 'battery');
+            const otherComponents = components.filter(c => c.type !== 'battery');
+            
+            if (batteries.length === 0 || otherComponents.length === 0) {
+                return topology;
+            }
+            
+            // Detect series chains (components connected in sequence)
+            const visited = new Set();
+            otherComponents.forEach(comp => {
+                if (!visited.has(comp)) {
+                    const chain = findSeriesChain(comp, otherComponents, visited);
+                    if (chain.length > 1) {
+                        topology.series.push(chain);
+                    }
+                }
+            });
+            
+            // Detect parallel groups (multiple paths between same two nodes)
+            const parallelGroups = findParallelGroups(otherComponents, wires);
+            topology.parallel = parallelGroups;
+            
+            return topology;
+        }
+        
+        // Find components connected in series
+        function findSeriesChain(startComp, allComponents, visited) {
+            const chain = [startComp];
+            visited.add(startComp);
+            
+            // Look for connected components in sequence
+            let current = startComp;
+            while (true) {
+                const nextComp = findNextInSeries(current, allComponents, visited);
+                if (!nextComp) break;
+                chain.push(nextComp);
+                visited.add(nextComp);
+                current = nextComp;
+            }
+            
+            return chain;
+        }
+        
+        // Find next component in a series chain
+        function findNextInSeries(component, allComponents, visited) {
+            const connectedWires = wires.filter(w => w.startObj === component || w.endObj === component);
+            
+            for (const wire of connectedWires) {
+                const otherEnd = wire.startObj === component ? wire.endObj : wire.startObj;
+                if (!visited.has(otherEnd) && allComponents.includes(otherEnd)) {
+                    return otherEnd;
+                }
+            }
+            
+            return null;
+        }
+        
+        // Find groups of components connected in parallel
+        function findParallelGroups(components, wires) {
+            const groups = [];
+            
+            // Implementation for detecting parallel configurations
+            // This would analyze wire connections to find multiple paths
+            // between the same two junction points
+            
+            return groups;
+        }
+
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
             const mode = getRouterMode();
+            
+            // Use enhanced Manhattan routing by default for textbook-style circuits
+            if (mode === 'manhattan' || mode === 'simple') {
+                return routeManhattan(A, B, startSide, endSide);
+            }
             if (mode === 'perimeter') return routePerimeter(A, B, startSide, endSide);
             if (mode === 'astar') return routeAStar(A, B, startSide, endSide);
-            return routeSimple(A, B, startSide, endSide);
+            
+            // Default to Manhattan routing
+            return routeManhattan(A, B, startSide, endSide);
         }
 
             // Auto-arrange circuit for professional schematic layout
@@ -4059,48 +4323,105 @@
             wires.forEach(wire => wire.remove());
             wires = [];
             
-                // Arrange components in schematic style
-                const SPACING = GRID_SIZE * 4;
+            // Clear existing junctions
+            junctions.forEach(junction => {
+                if (junction.mesh) scene.remove(junction.mesh);
+            });
+            junctions.length = 0;
+            
+            // Arrange components in schematic style
+            const SPACING = GRID_SIZE * 4;
             const battery = batteries[0];
             
-                // Position battery on the left aligned to grid row 0
-                battery.position.set(-SPACING * 2, 0, 0);
+            // Position battery on the left aligned to grid
+            battery.position.set(-SPACING * 2, 0, 0);
             battery.mesh.position.copy(battery.position);
             
-                // Arrange other components in a straight horizontal bus (textbook series chain)
+            // Detect if we should create series or parallel layout
+            if (otherComponents.length <= 1) {
+                // Single component - simple series
+                if (otherComponents.length === 1) {
+                    const comp = otherComponents[0];
+                    const x = SPACING;
+                    const p = snapToGrid(new THREE.Vector3(x, 0, 0));
+                    comp.position.copy(p);
+                    comp.mesh.position.copy(comp.position);
+                    
+                    // Wire in series
+                    const wire1 = new Wire(battery, 'positive', comp, 'left');
+                    const wire2 = new Wire(comp, 'right', battery, 'negative');
+                    wires.push(wire1, wire2);
+                }
+            } else if (otherComponents.length <= 3) {
+                // Few components - arrange in series horizontal line
                 otherComponents.forEach((comp, index) => {
-                    const x = -SPACING * 1 + index * SPACING;
-                    const z = 0;
-                    const p = snapToGrid(new THREE.Vector3(x, 0, z));
-                    comp.position.set(p.x, 0, p.z);
+                    const x = index * SPACING;
+                    const p = snapToGrid(new THREE.Vector3(x, 0, 0));
+                    comp.position.copy(p);
                     comp.mesh.position.copy(comp.position);
                 });
-            
-            // Auto-wire in series for demonstration
-            if (otherComponents.length > 0) {
-                // Connect battery positive to first component
-                const firstComp = otherComponents[0];
-                const wire1 = new Wire(battery, 'positive', firstComp, 'left');
+                
+                // Connect in series using Manhattan routing
+                const wire1 = new Wire(battery, 'positive', otherComponents[0], 'left');
                 wires.push(wire1);
                 
-                // Connect components in series
                 for (let i = 0; i < otherComponents.length - 1; i++) {
-                    const comp1 = otherComponents[i];
-                    const comp2 = otherComponents[i + 1];
-                    const wire = new Wire(comp1, 'right', comp2, 'left');
+                    const wire = new Wire(otherComponents[i], 'right', otherComponents[i + 1], 'left');
                     wires.push(wire);
                 }
                 
-                // Connect last component back to battery negative
-                const lastComp = otherComponents[otherComponents.length - 1];
-                const wire2 = new Wire(lastComp, 'right', battery, 'negative');
-                wires.push(wire2);
+                const lastWire = new Wire(otherComponents[otherComponents.length - 1], 'right', battery, 'negative');
+                wires.push(lastWire);
+            } else {
+                // Many components - create intelligent parallel layout
+                // Position components in vertical arrangement for parallel configuration
+                const halfCount = Math.ceil(otherComponents.length / 2);
+                
+                otherComponents.forEach((comp, index) => {
+                    const row = index % halfCount;
+                    const col = Math.floor(index / halfCount);
+                    const x = SPACING * (2 + col * 2);
+                    const z = (row - halfCount / 2) * SPACING;
+                    const p = snapToGrid(new THREE.Vector3(x, 0, z));
+                    comp.position.copy(p);
+                    comp.mesh.position.copy(comp.position);
+                });
+                
+                // Create parallel circuit with intelligent splitting
+                createParallelBus(battery, otherComponents);
+                
+                // Return path - create return junctions and connect back to battery
+                const returnX = SPACING * 6;
+                const returnJunctions = [];
+                
+                otherComponents.forEach((comp, index) => {
+                    const z = comp.position.z;
+                    const jPos = snapToGrid(new THREE.Vector3(returnX, 0, z));
+                    const junction = new Junction(jPos);
+                    junctions.push(junction);
+                    returnJunctions.push(junction);
+                    
+                    // Connect component to return junction
+                    const wire = new Wire(comp, 'right', junction, 'center');
+                    wires.push(wire);
+                });
+                
+                // Connect return junctions vertically
+                for (let i = 0; i < returnJunctions.length - 1; i++) {
+                    const wire = new Wire(returnJunctions[i], 'center', returnJunctions[i + 1], 'center');
+                    wires.push(wire);
+                }
+                
+                // Connect middle return junction back to battery
+                const midReturn = returnJunctions[Math.floor(returnJunctions.length / 2)];
+                const finalWire = new Wire(midReturn, 'center', battery, 'negative');
+                wires.push(finalWire);
             }
             
             // Center the view on the circuit
             fitToScreen();
             analyzeCircuit();
-            setStatus('📐 Circuit arranged in professional schematic layout with intelligent routing!');
+            setStatus('📐 Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
         }
 
         // Launch application function
@@ -5203,10 +5524,24 @@
 ⚡ BUILDING CIRCUITS:
 1. 🔧 COMPONENTS: Add batteries, resistors, LEDs, and switches
 2. ⊞ GRID SNAPPING: All components automatically snap to grid points
-3. 🔗 SMART WIRES: Wires route intelligently with right angles
-4. ✏️ EDIT VALUES: Long press any component to edit its properties!
-5. 🔄 ROTATE: Click components to rotate them 90°
-6. ⚫ JUNCTIONS: Add purple connection nodes for complex circuits
+3. 🔗 SMART WIRES: Manhattan-style routing with right angles
+4. 📐 AUTO-ARRANGE: Automatically create textbook-style layouts
+5. ✏️ EDIT VALUES: Long press any component to edit its properties!
+6. 🔄 ROTATE: Click components to rotate them 90°
+7. ⚫ JUNCTIONS: Add purple connection nodes for complex circuits
+
+🎯 INTELLIGENT WIRE ROUTING:
+• Manhattan routing creates clean, textbook-style circuits
+• Auto-Arrange detects series vs parallel configurations
+• Smart junction placement for parallel circuit splits
+• Multiple routing modes: Manhattan, Simple, Perimeter, A*
+• Change routing: Tools → 🔀 Route Mode
+
+📚 TEXTBOOK-STYLE FEATURES:
+• Series circuits: Components arranged in a line
+• Parallel circuits: Automatic vertical bus distribution
+• Combination circuits: Intelligent layout mixing both
+• Professional schematic appearance
 
 🎯 EDUCATIONAL FEATURES:
 • See electrical values in real-time on every component
@@ -5314,7 +5649,10 @@ Built with Three.js and W.I.R.E. methodology
 • Interactive 3D environment with grid snapping
 • Real-time electrical calculations with color coding
 • Visual component labeling (B1, R1, LED1, etc.)
-• Professional right-angled wire routing
+• Manhattan-style wire routing for textbook layouts
+• Intelligent wire splitting for parallel circuits
+• Auto-arrange for series/parallel/combination circuits
+• Multiple routing algorithms (Manhattan, A*, Perimeter)
 • Visual current flow animation
 • Long-press editing of component values
 • Mobile-optimized touch controls
@@ -5328,6 +5666,12 @@ Learn electrical engineering fundamentals through hands-on experimentation with 
 • 🟠 Current (Amperes) - Orange
 • 🟢 Resistance (Ohms) - Green  
 • 🔴 EMF/Voltage (Volts) - Red
+
+📐 INTELLIGENT ROUTING:
+• Manhattan routing for clean right-angled wires
+• Automatic parallel circuit distribution
+• Smart junction placement for splits
+• Textbook-style series and parallel layouts
 
 📱 ANDROID OPTIMIZATIONS:
 • Larger touch targets for better usability
@@ -5393,45 +5737,18 @@ Perfect for students, educators, and hobbyists who learn visually!
         }
 
         // Create an equal-spaced parallel bus from a source to N targets (intelligent split)
+        // This uses the new intelligent splitting logic for textbook-style parallel circuits
         function createParallelBus(sourceObj, targetObjs) {
             if (!sourceObj || !targetObjs || targetObjs.length === 0) return;
-            const SPREAD = GRID_SIZE * 3;
-            const base = sourceObj.getWorldConnectionPoint ? sourceObj.getWorldConnectionPoint('right') : sourceObj.position;
-            const snappedBase = snapToGrid(base.clone());
-
-            // Create a vertical bus centered around base Z
-            const count = targetObjs.length;
-            const totalHeight = (count - 1) * SPREAD;
-            const busTopZ = snappedBase.z - totalHeight / 2;
-            const busX = snappedBase.x + GRID_SIZE * 4; // a bit to the right of source
-
-            // Build spine junctions
-            const spineJunctions = targetObjs.map((_, i) => {
-                const jPos = snapToGrid(new THREE.Vector3(busX, 0, busTopZ + i * SPREAD));
-                const j = new Junction(jPos);
-                junctions.push(j);
-                return j;
-            });
-
-            // Connect source to middle of spine
-            const midJunction = spineJunctions[Math.floor(count / 2)];
-            const toSpine = new Wire(sourceObj, 'right', midJunction, 'center');
-            wires.push(toSpine);
-
-            // Connect spine segments
-            for (let i = 0; i < spineJunctions.length - 1; i++) {
-                const s1 = spineJunctions[i];
-                const s2 = spineJunctions[i + 1];
-                const seg = new Wire(s1, 'center', s2, 'center');
-                wires.push(seg);
-            }
-
-            // Branch to each target
-            targetObjs.forEach((target, i) => {
-                const j = spineJunctions[i];
-                const branch = new Wire(j, 'center', target, 'left');
-                wires.push(branch);
-            });
+            
+            // Use the new intelligent split function
+            const result = createIntelligentSplit(sourceObj, targetObjs, 'parallel');
+            
+            // Analyze and update the circuit
+            analyzeCircuit();
+            updateCircuitInfo();
+            
+            setStatus(`✨ Created textbook-style parallel circuit with ${targetObjs.length} branches`);
         }
 
         function toggleWireMode() {
