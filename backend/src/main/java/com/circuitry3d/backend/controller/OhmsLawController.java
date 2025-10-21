@@ -30,7 +30,7 @@ public class OhmsLawController {
       if (voltage != null && resistance != null) {
         v = voltage;
         r = resistance == 0 ? Double.POSITIVE_INFINITY : resistance;
-        i = r == 0 || Double.isInfinite(r) ? 0 : v / r;
+        i = Double.isInfinite(r) ? 0 : v / r;
       } else if (voltage != null && current != null) {
         v = voltage;
         i = current;
