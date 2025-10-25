@@ -1587,6 +1587,45 @@
             border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.3);
         }
+        
+        .branding-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 900;
+            color: rgba(0, 255, 136, 0.05);
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
+            pointer-events: none;
+            z-index: 1;
+            user-select: none;
+            letter-spacing: 8px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .polarity-indicator {
+            position: absolute;
+            pointer-events: none;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 15;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.7);
+            padding: 2px 6px;
+            border-radius: 50%;
+            border: 2px solid;
+        }
+        
+        .polarity-positive {
+            color: #ff4444;
+            border-color: #ff4444;
+        }
+        
+        .polarity-negative {
+            color: #4444ff;
+            border-color: #4444ff;
+        }
 
         /* Desktop styles for larger screens */
         @media (min-width: 769px) {
@@ -2035,7 +2074,7 @@
                         <button class="btn" onclick="arrangeCircuitSchematic()">📐 Auto-Arrange</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="cycleRoutingMode()">🔀 Route: <span id="route-mode">Manhattan</span></button>
+                        <button class="btn" onclick="cycleRoutingMode()">🔀 Route: <span id="route-mode">Free-form</span></button>
                         <button class="btn" onclick="centerCircuit()">🎯 Center Circuit</button>
                     </div>
                     <div class="submenu-row">
@@ -2086,6 +2125,14 @@
                     <div class="submenu-row">
                         <button class="btn" onclick="toggleGrid()">⊞ Toggle Grid</button>
                         <button class="btn" onclick="toggleLabels()">🏷️ Labels</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="toggleCurrentFlowStyle()">💫 Flow: <span id="flow-style">Misty</span></button>
+                        <button class="btn" onclick="togglePolarityIndicators()">⚡ Polarity</button>
+                    </div>
+                    <div class="submenu-row">
+                        <button class="btn" onclick="toggleBranding()">🏷️ Branding</button>
+                        <button class="btn" onclick="cycleLayoutMode()">📐 Layout: <span id="layout-mode">Free</span></button>
                     </div>
                 </div>
             </div>
@@ -2407,6 +2454,9 @@
     </div>
     
     <canvas id="canvas" style="display: none;"></canvas>
+    
+    <!-- Branding Overlay -->
+    <div class="branding-overlay" id="branding-overlay">CircuiTry3D</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -2426,6 +2476,12 @@
         let currentPracticeCircuit = null;
         let currentProblemIndex = 0;
         let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'switch_control'];
+        
+        // New features variables
+        let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
+        let layoutMode = 'free'; // 'free', 'square', 'linear'
+        let showPolarityIndicators = true;
+        
         let practiceQuestions = {
             series_basic: {
                 question: "Find the total resistance and current",
@@ -3912,11 +3968,11 @@
                 const ls = localStorage.getItem('routerMode');
                 if (ls) return ls;
             } catch {}
-            return (window.ROUTER_MODE || 'manhattan');
+            return (window.ROUTER_MODE || 'freeform');
         }
         
         function cycleRoutingMode() {
-            const modes = ['manhattan', 'simple', 'perimeter', 'astar'];
+            const modes = ['freeform', 'manhattan', 'simple', 'perimeter', 'astar'];
             const current = getRouterMode();
             const currentIndex = modes.indexOf(current);
             const nextIndex = (currentIndex + 1) % modes.length;
@@ -3934,6 +3990,7 @@
             const modeLabel = document.getElementById('route-mode');
             if (modeLabel) {
                 const modeNames = {
+                    'freeform': 'Free-form',
                     'manhattan': 'Manhattan',
                     'simple': 'Simple',
                     'perimeter': 'Perimeter',
@@ -3964,6 +4021,32 @@
             }
             clean.push(points[points.length - 1]);
             return clean;
+        }
+        
+        // Free-form routing - direct line with minimal bends
+        function routeFreeform(A, B, startSide, endSide) {
+            // Simple direct connection with just one bend if needed
+            const midX = (A.x + B.x) / 2;
+            const midZ = (A.z + B.z) / 2;
+            
+            // Check if we need any bends at all
+            const dx = Math.abs(B.x - A.x);
+            const dz = Math.abs(B.z - A.z);
+            
+            // If points are aligned, just connect directly
+            if (dx < 0.1 || dz < 0.1) {
+                return [A, B];
+            }
+            
+            // Otherwise use a simple corner bend
+            // Choose corner based on which direction has more distance
+            if (dx > dz) {
+                // Horizontal first
+                return [A, new THREE.Vector3(B.x, 0, A.z), B];
+            } else {
+                // Vertical first
+                return [A, new THREE.Vector3(A.x, 0, B.z), B];
+            }
         }
 
         function routeSimple(A, B, startSide, endSide) {
@@ -4292,6 +4375,11 @@
             const A = snapToGrid(startPos.clone());
             const B = snapToGrid(endPos.clone());
             const mode = getRouterMode();
+            
+            // Support free-form routing
+            if (mode === 'freeform') {
+                return routeFreeform(A, B, startSide, endSide);
+            }
             
             // Use enhanced Manhattan routing by default for textbook-style circuits
             if (mode === 'manhattan' || mode === 'simple') {
@@ -5507,11 +5595,85 @@
             });
             setStatus(`🏷️ Component labels ${showLabels ? 'enabled' : 'disabled'}`);
         }
+        
+        // Toggle current flow visualization style
+        function toggleCurrentFlowStyle() {
+            currentFlowStyle = currentFlowStyle === 'misty' ? 'solid' : 'misty';
+            const styleLabel = document.getElementById('flow-style');
+            if (styleLabel) {
+                styleLabel.textContent = currentFlowStyle === 'misty' ? 'Misty' : 'Solid';
+            }
+            
+            // Re-animate current flow with new style
+            const result = performCircuitAnalysis();
+            if (result.isComplete && result.current > 0) {
+                animateCurrentFlow(true, result.current);
+            }
+            
+            setStatus(`💫 Current flow: ${currentFlowStyle.toUpperCase()} - ${currentFlowStyle === 'misty' ? 'Electron probability cloud visualization' : 'Conventional solid flow'}`);
+        }
+        
+        // Toggle polarity indicators
+        function togglePolarityIndicators() {
+            showPolarityIndicators = !showPolarityIndicators;
+            
+            // Update all component polarity displays
+            components.forEach(component => {
+                if (component.updatePolarityDisplay) {
+                    component.updatePolarityDisplay(showPolarityIndicators);
+                }
+            });
+            
+            setStatus(`⚡ Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
+        }
+        
+        // Toggle branding overlay
+        function toggleBranding() {
+            const brandingEl = document.getElementById('branding-overlay');
+            if (brandingEl) {
+                if (brandingEl.style.display === 'none') {
+                    brandingEl.style.display = 'block';
+                    setStatus('🏷️ CircuiTry3D branding shown');
+                } else {
+                    brandingEl.style.display = 'none';
+                    setStatus('🏷️ CircuiTry3D branding hidden');
+                }
+            }
+        }
+        
+        // Cycle through layout modes
+        function cycleLayoutMode() {
+            const modes = ['free', 'square', 'linear'];
+            const currentIndex = modes.indexOf(layoutMode);
+            const nextIndex = (currentIndex + 1) % modes.length;
+            layoutMode = modes[nextIndex];
+            
+            const layoutLabel = document.getElementById('layout-mode');
+            if (layoutLabel) {
+                const modeNames = {
+                    'free': 'Free',
+                    'square': 'Square',
+                    'linear': 'Linear'
+                };
+                layoutLabel.textContent = modeNames[layoutMode];
+            }
+            
+            setStatus(`📐 Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
+        }
+        
+        function getLayoutModeDescription(mode) {
+            const descriptions = {
+                'free': 'Place components anywhere',
+                'square': 'Textbook-style square circuits',
+                'linear': 'Tree layout with battery at top'
+            };
+            return descriptions[mode] || '';
+        }
 
         // Help functions
         function showTutorial() {
             const tutorial = `
-🎓 W.I.R.E. CIRCUIT BUILDER TUTORIAL
+🎓 W.I.R.E. CIRCUIT BUILDER TUTORIAL - ENHANCED EDITION
 
 🏷️ VISUAL W.I.R.E. LEARNING:
 • Components auto-labeled: B1, R1, LED1, SW1
@@ -5520,42 +5682,61 @@
   🟠 Orange = Current (Amps)  
   🟢 Green = Resistance (Ohms)
   🔴 Red = Voltage (Volts)
+• ⚡ Polarity indicators show positive (+) and negative (-) terminals
+• View → ⚡ Polarity to toggle polarity display
 
 ⚡ BUILDING CIRCUITS:
 1. 🔧 COMPONENTS: Add batteries, resistors, LEDs, and switches
-2. ⊞ GRID SNAPPING: All components automatically snap to grid points
-3. 🔗 SMART WIRES: Manhattan-style routing with right angles
-4. 📐 AUTO-ARRANGE: Automatically create textbook-style layouts
-5. ✏️ EDIT VALUES: Long press any component to edit its properties!
-6. 🔄 ROTATE: Click components to rotate them 90°
-7. ⚫ JUNCTIONS: Add purple connection nodes for complex circuits
+2. ⊞ GRID SNAPPING: Components snap to grid points (can be toggled)
+3. 🔗 FLEXIBLE WIRING: Choose your preferred wiring style:
+   • Free-form: Direct connections with minimal bends
+   • Manhattan: Clean right-angle textbook layouts
+   • Simple, Perimeter, A*: Advanced routing options
+4. 📐 AUTO-ARRANGE: Create textbook-style layouts automatically
+5. ✏️ EDIT VALUES: Long press any component to edit properties
+6. 🔄 ROTATE: Tap components to rotate them 90°
+7. ⚫ JUNCTIONS: Add connection nodes anywhere on wires
 
 🎯 INTELLIGENT WIRE ROUTING:
-• Manhattan routing creates clean, textbook-style circuits
+• Free-form: Natural flowing connections (no enforced angles)
+• Manhattan: Clean, textbook-style right-angled circuits
 • Auto-Arrange detects series vs parallel configurations
 • Smart junction placement for parallel circuit splits
-• Multiple routing modes: Manhattan, Simple, Perimeter, A*
-• Change routing: Tools → 🔀 Route Mode
+• Change routing: Tools → 🔀 Route Mode (cycles through modes)
 
-📚 TEXTBOOK-STYLE FEATURES:
-• Series circuits: Components arranged in a line
-• Parallel circuits: Automatic vertical bus distribution
-• Combination circuits: Intelligent layout mixing both
-• Professional schematic appearance
+📐 LAYOUT MODES:
+• Free Mode: Place components anywhere you want
+• Square Mode: Textbook-style square circuits for practice
+• Linear Mode: Tree layout with battery at top (classroom style)
+• Change mode: View → 📐 Layout Mode
+
+💫 CURRENT FLOW VISUALIZATION:
+• Misty Mode: Electron probability cloud (quantum physics)
+• Solid Mode: Conventional current flow visualization
+• Toggle: View → 💫 Flow Style
+• Current only flows in complete circuits
+• Unidirectional flow from negative to positive terminal
 
 🎯 EDUCATIONAL FEATURES:
-• See electrical values in real-time on every component
-• Watch current flow animation through the circuit
+• Real-time electrical calculations on every component
+• Animated current flow through the circuit
 • Learn W.I.R.E. methodology visually
-• Professional grid-based layout like real CAD tools
+• Professional grid-based layout like CAD tools
+• Polarity protection: Can't connect components incorrectly
+
+🏷️ BRANDING:
+• Transparent CircuiTry3D watermark in workspace
+• Toggle: View → 🏷️ Branding
 
 📚 Perfect for visual learners - see the math come alive!
 
 📱 MOBILE CONTROLS:
 • Touch to select and drag components
-• Two-finger pinch to zoom
+• Two-finger pinch to zoom in/out
+• Two-finger drag to pan workspace
 • Single finger drag to rotate view
 • Long press to edit component values
+• Long press wire to edit or rotate connection
             `;
             alert(tutorial);
         }
@@ -5640,26 +5821,52 @@ Practice building circuits to master these relationships!
 
         function showAbout() {
             const about = `
-ℹ️ W.I.R.E. CIRCUIT BUILDER v2.0 - ANDROID OPTIMIZED
+ℹ️ W.I.R.E. CIRCUIT BUILDER v2.5 - ENHANCED EDITION
 
 🎓 Educational 3D Circuit Simulator
 Built with Three.js and W.I.R.E. methodology
 
-✨ FEATURES:
-• Interactive 3D environment with grid snapping
+✨ NEW FEATURES IN v2.5:
+🔀 FLEXIBLE WIRING MODES:
+• Free-form: Natural connections without enforced angles
+• Manhattan: Textbook-style right-angled circuits
+• Simple, Perimeter, A*: Advanced routing algorithms
+• Junction placement anywhere on wire runs
+
+📐 LAYOUT MODES:
+• Free: Place components anywhere
+• Square: Textbook-style for practice problems
+• Linear: Tree layout with battery at top (classroom style)
+
+💫 CURRENT FLOW VISUALIZATION:
+• Misty Mode: Electron probability cloud visualization
+• Solid Mode: Conventional current flow
+• Unidirectional flow from negative to positive
+• Complete circuit requirement for flow
+
+⚡ POLARITY SYSTEM:
+• Visual polarity indicators on all components
+• Prevents incorrect connections
+• Red (+) and Blue (-) terminal marking
+• Educational polarity awareness
+
+🏷️ PROFESSIONAL FEATURES:
+• Transparent CircuiTry3D branding overlay
+• Enhanced touch controls (two-finger drag, pan, zoom)
+• Long-press wire editing and rotation
+• Improved realistic component appearance
+
+✨ CORE FEATURES:
+• Interactive 3D environment with optional grid snapping
 • Real-time electrical calculations with color coding
 • Visual component labeling (B1, R1, LED1, etc.)
-• Manhattan-style wire routing for textbook layouts
-• Intelligent wire splitting for parallel circuits
 • Auto-arrange for series/parallel/combination circuits
-• Multiple routing algorithms (Manhattan, A*, Perimeter)
-• Visual current flow animation
+• Visual current flow animation with multiple styles
 • Long-press editing of component values
 • Mobile-optimized touch controls
-• Android-friendly interface and performance
 
 🎯 PURPOSE:
-Learn electrical engineering fundamentals through hands-on experimentation with virtual circuits.
+Learn electrical engineering fundamentals through hands-on experimentation with virtual circuits. Now with more flexibility and realistic physics visualization!
 
 🧠 W.I.R.E. METHOD:
 • 📘 Watts (Power) - Blue
@@ -5667,21 +5874,18 @@ Learn electrical engineering fundamentals through hands-on experimentation with 
 • 🟢 Resistance (Ohms) - Green  
 • 🔴 EMF/Voltage (Volts) - Red
 
-📐 INTELLIGENT ROUTING:
-• Manhattan routing for clean right-angled wires
-• Automatic parallel circuit distribution
-• Smart junction placement for splits
-• Textbook-style series and parallel layouts
-
-📱 ANDROID OPTIMIZATIONS:
-• Larger touch targets for better usability
-• Optimized rendering for mobile performance
+📱 MOBILE & TOUCH OPTIMIZATIONS:
+• Two-finger pinch to zoom
+• Two-finger drag to pan workspace
+• Single-finger drag to rotate view
+• Long-press for editing
 • Touch-friendly menus and controls
-• Reduced complexity for smooth operation
+• Optimized rendering for mobile performance
 
 Perfect for students, educators, and hobbyists who learn visually!
+Now with more control and realistic visualizations!
 
-© 2025 W.I.R.E. Circuit Builder
+© 2025 CircuiTry3D - W.I.R.E. Circuit Builder
             `;
             alert(about);
         }
@@ -5982,13 +6186,26 @@ Perfect for students, educators, and hobbyists who learn visually!
                     try {
                         const particleSize = 0.08 + (currentIntensity * 0.06);
                         const particleGeometry = new THREE.SphereGeometry(particleSize, isMobile ? 8 : 10, isMobile ? 6 : 8);
-                        const particleMaterial = new THREE.MeshPhongMaterial({ 
+                        
+                        // Apply misty or solid style
+                        const baseMaterialProps = {
                             color: flowColor.hex,
                             emissive: flowColor.emissive,
                             shininess: 150,
-                            transparent: true,
-                            opacity: 0.85 + (currentIntensity * 0.15)
-                        });
+                            transparent: true
+                        };
+                        
+                        if (currentFlowStyle === 'misty') {
+                            // Misty style: lower opacity, more ethereal
+                            baseMaterialProps.opacity = 0.4 + (currentIntensity * 0.3);
+                            baseMaterialProps.emissiveIntensity = 0.8;
+                        } else {
+                            // Solid style: higher opacity, more defined
+                            baseMaterialProps.opacity = 0.85 + (currentIntensity * 0.15);
+                            baseMaterialProps.emissiveIntensity = 1.0;
+                        }
+                        
+                        const particleMaterial = new THREE.MeshPhongMaterial(baseMaterialProps);
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
                         
                         const initialProgress = (i / particleCount) + (wireIndex * 0.1);
@@ -6003,7 +6220,8 @@ Perfect for students, educators, and hobbyists who learn visually!
                             baseSpeed: flowSpeed,
                             currentValue: currentValue,
                             flowColor: flowColor,
-                            isFlowing: true
+                            isFlowing: true,
+                            flowStyle: currentFlowStyle
                         };
                         
                         scene.add(particle);
