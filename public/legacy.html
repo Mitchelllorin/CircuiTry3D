@@ -6305,7 +6305,27 @@ Now with more control and realistic visualizations!
             });
             
             const connectedBatteries = batteries.filter(battery => connectedComponents.has(battery));
+            
+            // Check if we have batteries and they form a closed circuit
             if (connectedBatteries.length > 0 && connectedComponents.size >= 2) {
+                // Verify the circuit is actually closed (has a complete path)
+                const hasClosedPath = connectedBatteries.some(battery => 
+                    hasClosedCircuitPath(battery, wires, components)
+                );
+                
+                if (!hasClosedPath) {
+                    // Circuit has components but no closed loop
+                    const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
+                    updateTopologyDisplay('Incomplete');
+                    return {
+                        voltage: totalVoltage,
+                        current: 0,
+                        resistance: Infinity,
+                        power: 0,
+                        isComplete: false
+                    };
+                }
+                
                 let totalVoltage = 0;
                 batteries.forEach(battery => totalVoltage += battery.properties.voltage);
                 
@@ -6473,6 +6493,66 @@ Now with more control and realistic visualizations!
             
             dfs(start, [start]);
             return paths;
+        }
+        
+        // Check if there's a complete circuit path from battery positive to negative
+        function hasClosedCircuitPath(battery, wires, allComponents) {
+            if (!battery || wires.length === 0) return false;
+            
+            // Build adjacency graph of all connections
+            const graph = new Map();
+            
+            // Add all components and junctions to graph
+            allComponents.forEach(comp => graph.set(comp, []));
+            junctions.forEach(j => graph.set(j, []));
+            
+            // Build connections from wires
+            wires.forEach(wire => {
+                const start = wire.startObj;
+                const end = wire.endObj;
+                
+                if (!graph.has(start)) graph.set(start, []);
+                if (!graph.has(end)) graph.set(end, []);
+                
+                graph.get(start).push(end);
+                graph.get(end).push(start);
+            });
+            
+            // Check if we can reach back to the battery from any connected component
+            // This creates a closed loop
+            const visited = new Set();
+            const startConnections = graph.get(battery) || [];
+            
+            if (startConnections.length === 0) return false;
+            
+            // For each initial connection from battery, try to find path back
+            for (const firstConnection of startConnections) {
+                visited.clear();
+                visited.add(battery); // Don't revisit battery in the middle
+                
+                if (canReachBattery(firstConnection, battery, graph, visited)) {
+                    return true; // Found a closed loop
+                }
+            }
+            
+            return false;
+        }
+        
+        // Helper function to check if we can reach the battery
+        function canReachBattery(current, target, graph, visited) {
+            if (current === target) return true;
+            if (visited.has(current)) return false;
+            
+            visited.add(current);
+            const neighbors = graph.get(current) || [];
+            
+            for (const neighbor of neighbors) {
+                if (canReachBattery(neighbor, target, graph, visited)) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
         // Calculate resistance for combination circuits
@@ -7413,6 +7493,13 @@ Now with more control and realistic visualizations!
                 if (junction?.mesh) scene.remove(junction.mesh);
             });
             junctions = [];
+            
+            // Clean up any orphaned polarity indicators as a safety measure
+            document.querySelectorAll('.polarity-indicator').forEach(el => {
+                if (el.parentNode) {
+                    document.body.removeChild(el);
+                }
+            });
             
             // Reset practice mode UI only if not in a practice sequence
             if (!currentPracticeCircuit) {
