@@ -17,7 +17,6 @@
 </head>
 <body>
   <div class="hud">
-    <button class="btn" onclick="goBack()">← Back</button>
     <button class="btn" onclick="resetArena()">Reset</button>
     <button class="btn" onclick="runTest()">Run Test</button>
     <button class="btn" onclick="exportResults()">Export</button>
@@ -150,16 +149,6 @@
       const compare = e.target.value === 'compare';
       document.querySelectorAll('.compare-only').forEach(el => el.style.display = compare ? '' : 'none');
     });
-    
-    function goBack(){
-      // Use window.history.back() for navigation within iframe context
-      // Or if accessed directly, go to root
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = '/';
-      }
-    }
     
     init();
   </script>
