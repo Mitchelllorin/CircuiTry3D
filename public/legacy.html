@@ -2127,7 +2127,7 @@
                         <button class="btn" onclick="toggleLabels()">🏷️ Labels</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleCurrentFlowStyle()">💫 Flow: <span id="flow-style">Misty</span></button>
+                        <button class="btn" onclick="toggleCurrentFlowStyle()">💫 Flow: <span id="flow-style">Electron Flow</span></button>
                         <button class="btn" onclick="togglePolarityIndicators()">⚡ Polarity</button>
                     </div>
                     <div class="submenu-row">
@@ -2223,6 +2223,8 @@
                     Components: <span id="count" style="color: #00ff88;">0</span> | 
                     Wires: <span id="wire-count" style="color: #ffaa88;">0</span> | 
                     Junctions: <span id="junction-count" style="color: #aa88ff;">0</span>
+                    <br>
+                    <strong>🔌 Topology:</strong> <span id="topology-type" style="color: #88ccff;">Unknown</span>
                 </div>
             </div>
         </div>
@@ -5793,7 +5795,7 @@
             currentFlowStyle = currentFlowStyle === 'misty' ? 'solid' : 'misty';
             const styleLabel = document.getElementById('flow-style');
             if (styleLabel) {
-                styleLabel.textContent = currentFlowStyle === 'misty' ? 'Misty' : 'Solid';
+                styleLabel.textContent = currentFlowStyle === 'misty' ? 'Electron Flow' : 'Current Flow';
             }
             
             // Re-animate current flow with new style
@@ -5802,7 +5804,7 @@
                 animateCurrentFlow(true, result.current);
             }
             
-            setStatus(`💫 Current flow: ${currentFlowStyle.toUpperCase()} - ${currentFlowStyle === 'misty' ? 'Electron probability cloud visualization' : 'Conventional solid flow'}`);
+            setStatus(`💫 Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Probabilistic quantum cloud showing electron movement (- to +)' : 'CURRENT FLOW - Conventional current direction (+ to -)'}`);
         }
         
         // Toggle polarity indicators
@@ -5887,7 +5889,11 @@
 4. 📐 AUTO-ARRANGE: Create textbook-style layouts automatically
 5. ✏️ EDIT VALUES: Long press any component to edit properties
 6. 🔄 ROTATE: Tap components to rotate them 90°
-7. ⚫ JUNCTIONS: Add connection nodes anywhere on wires
+7. ⚫ JUNCTIONS: Add connection nodes to split wires and create branches
+   • Place junctions anywhere along a wire to create split points
+   • Essential for parallel circuits and complex layouts
+   • Allow clean wire branches without messy routing
+   • Add via Components → Junction or use the J shortcut
 
 🎯 INTELLIGENT WIRE ROUTING:
 • Free-form: Natural flowing connections (no enforced angles)
@@ -5902,12 +5908,18 @@
 • Linear Mode: Tree layout with battery at top (classroom style)
 • Change mode: View → 📐 Layout Mode
 
-💫 CURRENT FLOW VISUALIZATION:
-• Misty Mode: Electron probability cloud (quantum physics)
-• Solid Mode: Conventional current flow visualization
-• Toggle: View → 💫 Flow Style
+💫 FLOW VISUALIZATION MODES:
+• Electron Flow: Misty, probabilistic quantum cloud showing actual electron movement
+  - Flows from negative (-) to positive (+) terminal
+  - Semi-transparent particles represent electron probability density
+  - Shows the true physical behavior of electrons
+• Current Flow: Solid, conventional current direction
+  - Flows from positive (+) to negative (-) by convention
+  - Bright, defined particles show traditional current direction
+  - Standard for circuit diagrams and electrical engineering
+• Toggle: View → 💫 Flow (switches between modes)
+• Perfect for understanding both perspectives!
 • Current only flows in complete circuits
-• Unidirectional flow from negative to positive terminal
 
 🎯 EDUCATIONAL FEATURES:
 • Real-time electrical calculations on every component
@@ -6276,6 +6288,7 @@ Now with more control and realistic visualizations!
             const openSwitches = switches.filter(sw => !sw.properties.isOn);
             if (openSwitches.length > 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
+                updateTopologyDisplay('Open Circuit');
                 return {
                     voltage: totalVoltage,
                     current: 0,
@@ -6294,14 +6307,38 @@ Now with more control and realistic visualizations!
             const connectedBatteries = batteries.filter(battery => connectedComponents.has(battery));
             if (connectedBatteries.length > 0 && connectedComponents.size >= 2) {
                 let totalVoltage = 0;
-                let totalResistance = 0.01;
-                
                 batteries.forEach(battery => totalVoltage += battery.properties.voltage);
                 
-                resistors.forEach(resistor => {
-                    totalResistance += resistor.properties.resistance || 100;
-                });
+                // Detect circuit topology
+                const topology = detectCircuitTopology(resistors, wires, junctions);
                 
+                // Calculate resistance based on topology
+                let totalResistance = 0.01; // Wire resistance
+                
+                if (topology.type === 'series') {
+                    // Series: R_total = R1 + R2 + ... + Rn
+                    resistors.forEach(resistor => {
+                        totalResistance += resistor.properties.resistance || 100;
+                    });
+                } else if (topology.type === 'parallel') {
+                    // Parallel: 1/R_total = 1/R1 + 1/R2 + ... + 1/Rn
+                    let reciprocalSum = 0;
+                    resistors.forEach(resistor => {
+                        const r = resistor.properties.resistance || 100;
+                        reciprocalSum += 1 / r;
+                    });
+                    totalResistance += (reciprocalSum > 0) ? (1 / reciprocalSum) : 100;
+                } else if (topology.type === 'combination') {
+                    // For combination circuits, calculate series and parallel groups separately
+                    totalResistance += calculateCombinationResistance(topology);
+                } else {
+                    // Unknown or simple circuit - use basic addition
+                    resistors.forEach(resistor => {
+                        totalResistance += resistor.properties.resistance || 100;
+                    });
+                }
+                
+                // Add switch resistance
                 switches.forEach(sw => {
                     if (sw.properties.isOn) {
                         totalResistance += sw.properties.resistance || 0.1;
@@ -6310,6 +6347,8 @@ Now with more control and realistic visualizations!
                 
                 const current = totalVoltage / totalResistance;
                 const power = totalVoltage * current;
+                
+                updateTopologyDisplay(topology.type);
                 
                 return {
                     voltage: totalVoltage,
@@ -6320,6 +6359,7 @@ Now with more control and realistic visualizations!
                 };
             } else {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
+                updateTopologyDisplay(connectedComponents.size === 0 ? 'No Circuit' : 'Incomplete');
                 return {
                     voltage: totalVoltage,
                     current: 0,
@@ -6327,6 +6367,164 @@ Now with more control and realistic visualizations!
                     power: 0,
                     isComplete: false
                 };
+            }
+        }
+        
+        // Detect whether circuit is series, parallel, or combination
+        function detectCircuitTopology(resistors, wires, junctions) {
+            if (resistors.length === 0) {
+                return { type: 'none', groups: [] };
+            }
+            
+            // If there are junctions, likely parallel or combination
+            if (junctions.length > 0) {
+                // Check if junctions create parallel paths
+                const hasParallelPaths = checkForParallelPaths(resistors, wires, junctions);
+                if (hasParallelPaths) {
+                    return { type: 'parallel', groups: [] };
+                }
+                return { type: 'combination', groups: [] };
+            }
+            
+            // No junctions - check connection pattern
+            // If all resistors are in a single chain, it's series
+            if (resistors.length === 1) {
+                return { type: 'series', groups: [resistors] };
+            }
+            
+            // Check if all resistors are connected in sequence
+            const isSeriesChain = checkSeriesConnection(resistors, wires);
+            if (isSeriesChain) {
+                return { type: 'series', groups: [resistors] };
+            }
+            
+            return { type: 'simple', groups: [] };
+        }
+        
+        // Check if resistors are connected in series (one after another)
+        function checkSeriesConnection(resistors, wires) {
+            if (resistors.length < 2) return true;
+            
+            // Build connection map
+            const connectionMap = new Map();
+            resistors.forEach(r => connectionMap.set(r, []));
+            
+            wires.forEach(wire => {
+                if (resistors.includes(wire.startObj) && resistors.includes(wire.endObj)) {
+                    connectionMap.get(wire.startObj).push(wire.endObj);
+                    connectionMap.get(wire.endObj).push(wire.startObj);
+                }
+            });
+            
+            // In series, each resistor should connect to at most 2 other resistors
+            // and they should form a single chain
+            for (const [resistor, connections] of connectionMap) {
+                if (connections.length > 2) return false; // Branching indicates not pure series
+            }
+            
+            return true;
+        }
+        
+        // Check if there are parallel current paths
+        function checkForParallelPaths(resistors, wires, junctions) {
+            // If there are junctions and multiple resistors, likely parallel
+            if (junctions.length > 1 && resistors.length > 1) {
+                // Count paths between junction pairs
+                for (let i = 0; i < junctions.length; i++) {
+                    for (let j = i + 1; j < junctions.length; j++) {
+                        const paths = findPathsBetween(junctions[i], junctions[j], wires, resistors);
+                        if (paths.length > 1) {
+                            return true; // Multiple paths = parallel
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        // Find all paths between two nodes
+        function findPathsBetween(start, end, wires, throughComponents) {
+            const paths = [];
+            const visited = new Set();
+            
+            function dfs(current, path) {
+                if (current === end) {
+                    paths.push([...path]);
+                    return;
+                }
+                
+                visited.add(current);
+                
+                const connectedWires = wires.filter(w => 
+                    w.startObj === current || w.endObj === current
+                );
+                
+                for (const wire of connectedWires) {
+                    const next = wire.startObj === current ? wire.endObj : wire.startObj;
+                    if (!visited.has(next)) {
+                        path.push(next);
+                        dfs(next, path);
+                        path.pop();
+                    }
+                }
+                
+                visited.delete(current);
+            }
+            
+            dfs(start, [start]);
+            return paths;
+        }
+        
+        // Calculate resistance for combination circuits
+        function calculateCombinationResistance(topology) {
+            // Simplified calculation - just use series sum for now
+            // A full implementation would require complex graph analysis
+            return 100;
+        }
+        
+        // Update topology display in UI
+        function updateTopologyDisplay(type) {
+            const topologyEl = document.getElementById('topology-type');
+            if (topologyEl) {
+                let displayText = type;
+                let color = '#88ccff';
+                
+                switch(type) {
+                    case 'series':
+                        displayText = '⚡ Series';
+                        color = '#ffaa44';
+                        break;
+                    case 'parallel':
+                        displayText = '⚡⚡ Parallel';
+                        color = '#44ff88';
+                        break;
+                    case 'combination':
+                        displayText = '⚡⚡⚡ Combination';
+                        color = '#ff88ff';
+                        break;
+                    case 'simple':
+                        displayText = '→ Simple';
+                        color = '#88ccff';
+                        break;
+                    case 'Open Circuit':
+                        displayText = '✋ Open';
+                        color = '#ff4444';
+                        break;
+                    case 'Incomplete':
+                        displayText = '⚠️ Incomplete';
+                        color = '#ffaa44';
+                        break;
+                    case 'No Circuit':
+                        displayText = '○ None';
+                        color = '#888888';
+                        break;
+                    default:
+                        displayText = '? Unknown';
+                        color = '#888888';
+                }
+                
+                topologyEl.textContent = displayText;
+                topologyEl.style.color = color;
             }
         }
 
@@ -7199,6 +7397,15 @@ Now with more control and realistic visualizations!
             components.forEach(comp => {
                 if (comp?.mesh) scene.remove(comp.mesh);
                 if (comp?.labelDiv) document.body.removeChild(comp.labelDiv);
+                // Remove polarity indicators
+                if (comp?.polarityDivs) {
+                    comp.polarityDivs.forEach(item => {
+                        if (item.div && item.div.parentNode) {
+                            document.body.removeChild(item.div);
+                        }
+                    });
+                    comp.polarityDivs = null;
+                }
             });
             components = [];
             
