@@ -2652,6 +2652,17 @@
             }
         }
 
+        // Helper function to convert 3D world position to 2D screen coordinates
+        function worldToScreen(worldPosition) {
+            const vector = worldPosition.clone();
+            vector.project(camera);
+            
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+            
+            return { x, y, z: vector.z };
+        }
+
         // Component class
         class Component {
             constructor(type, position) {
@@ -2746,19 +2757,17 @@
             updateLabelPosition() {
                 if (!this.labelDiv || !this.mesh) return;
                 
-                const vector = new THREE.Vector3();
-                vector.setFromMatrixPosition(this.mesh.matrixWorld);
-                vector.y += 3; // Position above component
-                vector.project(camera);
+                const worldPos = new THREE.Vector3();
+                worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
+                worldPos.y += 3; // Position above component
                 
-                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                const screenPos = worldToScreen(worldPos);
                 
-                this.labelDiv.style.left = (x - (isMobile ? 40 : 30)) + 'px';
-                this.labelDiv.style.top = (y - (isMobile ? 40 : 30)) + 'px';
+                this.labelDiv.style.left = (screenPos.x - (isMobile ? 40 : 30)) + 'px';
+                this.labelDiv.style.top = (screenPos.y - (isMobile ? 40 : 30)) + 'px';
                 
                 // Hide label if component is behind camera
-                this.labelDiv.style.display = vector.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
+                this.labelDiv.style.display = screenPos.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
             }
 
             updateLabels() {
@@ -3061,27 +3070,25 @@
             }
             
             updatePolarityPositions() {
-                if (!this.polarityDivs || !this.mesh) return;
+                // Skip expensive calculations if indicators are hidden
+                if (!showPolarityIndicators || !this.polarityDivs || !this.mesh) return;
                 
                 this.polarityDivs.forEach(item => {
-                    const vector = new THREE.Vector3();
-                    vector.setFromMatrixPosition(this.mesh.matrixWorld);
+                    const worldPos = new THREE.Vector3();
+                    worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
                     
                     // Offset based on side
                     if (item.side === 'positive') {
-                        vector.x += 1.2;
+                        worldPos.x += 1.2;
                     } else if (item.side === 'negative') {
-                        vector.x -= 1.2;
+                        worldPos.x -= 1.2;
                     }
-                    vector.y += 0.8; // Above the terminal
+                    worldPos.y += 0.8; // Above the terminal
                     
-                    vector.project(camera);
+                    const screenPos = worldToScreen(worldPos);
                     
-                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                    const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
-                    
-                    item.div.style.left = x + 'px';
-                    item.div.style.top = y + 'px';
+                    item.div.style.left = screenPos.x + 'px';
+                    item.div.style.top = screenPos.y + 'px';
                 });
             }
 
@@ -3131,6 +3138,7 @@
                             document.body.removeChild(item.div);
                         }
                     });
+                    this.polarityDivs = null; // Clear to prevent memory leaks
                 }
                 
                 const connectedWires = [...this.connections];
