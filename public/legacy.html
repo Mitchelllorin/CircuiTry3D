@@ -1470,6 +1470,63 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
+        .edit-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .edit-close {
+            background: transparent;
+            border: none;
+            color: #ff4444;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .edit-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .edit-action-btn {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            background: rgba(0,255,136,0.1);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 56px;
+        }
+        
+        .edit-action-btn:hover, .edit-action-btn:active {
+            background: rgba(0,255,136,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,255,136,0.3);
+        }
+        
+        .edit-action-btn.delete-btn {
+            border-color: #ff4444;
+            background: rgba(255,68,68,0.1);
+        }
+        
+        .edit-action-btn.delete-btn:hover, .edit-action-btn.delete-btn:active {
+            background: rgba(255,68,68,0.2);
+            box-shadow: 0 4px 12px rgba(255,68,68,0.3);
+        }
+        
         .wire-analysis {
             text-align: center;
             margin-bottom: 16px;
@@ -4847,7 +4904,106 @@
                     return;
                 }
             }
+            
+            // Check for wires
+            const wireSegments = [];
+            wires.forEach(wire => {
+                if (wire?.segments) {
+                    wire.segments.forEach(segment => {
+                        if (segment.mesh) {
+                            wireSegments.push(segment.mesh);
+                        }
+                    });
+                }
+            });
+            
+            const wireHits = raycaster.intersectObjects(wireSegments, false);
+            if (wireHits.length > 0) {
+                const hitSegment = wireHits[0].object;
+                // Find the wire this segment belongs to
+                const wire = wires.find(w => w.segments.some(s => s.mesh === hitSegment));
+                if (wire) {
+                    showWireEditPopup(wire, clientX, clientY);
+                    
+                    // Add haptic feedback for mobile devices
+                    if (navigator.vibrate && isMobile) {
+                        navigator.vibrate(50);
+                    }
+                    return;
+                }
+            }
         }
+        
+        // Wire edit popup
+        function showWireEditPopup(wire, clientX, clientY) {
+            const popup = document.getElementById('wire-edit-popup');
+            if (!popup) {
+                // Create popup if it doesn't exist
+                createWireEditPopup();
+                return showWireEditPopup(wire, clientX, clientY);
+            }
+            
+            currentEditWire = wire;
+            popup.style.display = 'block';
+            
+            setStatus('🔗 Wire selected - Choose action');
+        }
+        
+        function createWireEditPopup() {
+            const popup = document.createElement('div');
+            popup.id = 'wire-edit-popup';
+            popup.className = 'edit-popup';
+            popup.style.display = 'none';
+            popup.innerHTML = `
+                <div class="edit-popup-content">
+                    <div class="edit-popup-header">
+                        <h3>Edit Wire</h3>
+                        <button onclick="closeWireEditPopup()" class="edit-close">✕</button>
+                    </div>
+                    <div class="edit-actions">
+                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">🗑️ Delete Wire</button>
+                        <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">🔀 Change Routing</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+        }
+        
+        function closeWireEditPopup() {
+            const popup = document.getElementById('wire-edit-popup');
+            if (popup) {
+                popup.style.display = 'none';
+            }
+            currentEditWire = null;
+        }
+        
+        function deleteWireFromPopup() {
+            if (currentEditWire) {
+                saveState(); // Save for undo
+                currentEditWire.remove();
+                const index = wires.indexOf(currentEditWire);
+                if (index > -1) {
+                    wires.splice(index, 1);
+                }
+                analyzeCircuit();
+                setStatus('🗑️ Wire deleted');
+            }
+            closeWireEditPopup();
+        }
+        
+        function changeWireRoutingFromPopup() {
+            if (currentEditWire) {
+                saveState(); // Save for undo
+                // Cycle to next routing mode and update wire
+                cycleRoutingMode();
+                currentEditWire.updatePath();
+                setStatus('🔀 Wire routing updated');
+            }
+            closeWireEditPopup();
+        }
+        
+        // Variable to track current wire being edited
+        let currentEditWire = null;
 
         // Edit popup functions
         function showEditPopup(component, clientX, clientY) {
