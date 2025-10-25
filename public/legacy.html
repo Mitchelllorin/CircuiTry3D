@@ -1470,6 +1470,63 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
+        .edit-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .edit-close {
+            background: transparent;
+            border: none;
+            color: #ff4444;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .edit-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .edit-action-btn {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            background: rgba(0,255,136,0.1);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 56px;
+        }
+        
+        .edit-action-btn:hover, .edit-action-btn:active {
+            background: rgba(0,255,136,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,255,136,0.3);
+        }
+        
+        .edit-action-btn.delete-btn {
+            border-color: #ff4444;
+            background: rgba(255,68,68,0.1);
+        }
+        
+        .edit-action-btn.delete-btn:hover, .edit-action-btn.delete-btn:active {
+            background: rgba(255,68,68,0.2);
+            box-shadow: 0 4px 12px rgba(255,68,68,0.3);
+        }
+        
         .wire-analysis {
             text-align: center;
             margin-bottom: 16px;
@@ -2428,12 +2485,13 @@
                     <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">📚 Basic Series</button>
                     <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">📚 Basic Parallel</button>
                     <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">📚 Mixed Circuit</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">🎓 Advanced Combo</button>
                     <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">🎲 Random</button>
                 </div>
                 
                 <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
                     <strong>🎓 Choose your practice method:</strong><br>
-                    • <strong>Practice Sequence</strong> - Work through problems 1→2→3→4<br>
+                    • <strong>Practice Sequence</strong> - Work through problems in order<br>
                     • <strong>Individual Problems</strong> - Jump to any specific circuit<br>
                     • <strong>Random</strong> - Get randomized component values<br><br>
                     <small>All problems require manual wiring and calculations!</small>
@@ -2477,7 +2535,7 @@
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
         let currentPracticeCircuit = null;
         let currentProblemIndex = 0;
-        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'switch_control'];
+        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced', 'switch_control'];
         
         // New features variables
         let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
@@ -3246,14 +3304,28 @@
 
             getStartPosition() {
                 if (this.startObj.getWorldConnectionPoint) {
-                    return snapToGrid(this.startObj.getWorldConnectionPoint(this.startSide));
+                    const connectionPoint = this.startObj.getWorldConnectionPoint(this.startSide);
+                    // In freeform routing mode, don't snap wire endpoints to grid
+                    // This ensures wires connect exactly to component terminals
+                    const routerMode = getRouterMode();
+                    if (routerMode === 'freeform' || routerMode === 'simple') {
+                        return connectionPoint;
+                    }
+                    return snapToGrid(connectionPoint);
                 }
                 return snapToGrid(this.startObj.position.clone());
             }
 
             getEndPosition() {
                 if (this.endObj.getWorldConnectionPoint) {
-                    return snapToGrid(this.endObj.getWorldConnectionPoint(this.endSide));
+                    const connectionPoint = this.endObj.getWorldConnectionPoint(this.endSide);
+                    // In freeform routing mode, don't snap wire endpoints to grid
+                    // This ensures wires connect exactly to component terminals
+                    const routerMode = getRouterMode();
+                    if (routerMode === 'freeform' || routerMode === 'simple') {
+                        return connectionPoint;
+                    }
+                    return snapToGrid(connectionPoint);
                 }
                 return snapToGrid(this.endObj.position.clone());
             }
@@ -4106,26 +4178,45 @@
         
         // Free-form routing - direct line with minimal bends
         function routeFreeform(A, B, startSide, endSide) {
-            // Simple direct connection with just one bend if needed
-            const midX = (A.x + B.x) / 2;
-            const midZ = (A.z + B.z) / 2;
-            
             // Check if we need any bends at all
             const dx = Math.abs(B.x - A.x);
             const dz = Math.abs(B.z - A.z);
             
-            // If points are aligned, just connect directly
+            // If points are very close or aligned, just connect directly
             if (dx < 0.1 || dz < 0.1) {
                 return [A, B];
             }
             
-            // Otherwise use a simple corner bend
-            // Choose corner based on which direction has more distance
+            // For freeform, choose the most natural bend direction based on terminal sides
+            // This reduces visual clutter and makes connections more intuitive
+            
+            // If components are facing each other (e.g., left-to-right), prefer straight-ish path
+            if ((startSide === 'right' || startSide === 'positive') && 
+                (endSide === 'left' || endSide === 'negative') && B.x > A.x) {
+                // Natural left-to-right connection
+                const midX = (A.x + B.x) / 2;
+                if (dz < GRID_SIZE * 2) {
+                    // Almost aligned - use single midpoint
+                    return [A, new THREE.Vector3(midX, 0, A.z), new THREE.Vector3(midX, 0, B.z), B];
+                }
+            }
+            
+            if ((startSide === 'left' || startSide === 'negative') && 
+                (endSide === 'right' || endSide === 'positive') && B.x < A.x) {
+                // Natural right-to-left connection
+                const midX = (A.x + B.x) / 2;
+                if (dz < GRID_SIZE * 2) {
+                    return [A, new THREE.Vector3(midX, 0, A.z), new THREE.Vector3(midX, 0, B.z), B];
+                }
+            }
+            
+            // Otherwise use a simple L-shaped corner
+            // Choose corner based on which direction has more distance for cleaner look
             if (dx > dz) {
-                // Horizontal first
+                // More horizontal distance - go horizontal first
                 return [A, new THREE.Vector3(B.x, 0, A.z), B];
             } else {
-                // Vertical first
+                // More vertical distance - go vertical first
                 return [A, new THREE.Vector3(A.x, 0, B.z), B];
             }
         }
@@ -4453,9 +4544,17 @@
         }
 
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
-            const A = snapToGrid(startPos.clone());
-            const B = snapToGrid(endPos.clone());
             const mode = getRouterMode();
+            
+            // In freeform and simple modes, don't snap endpoints to preserve exact connections
+            let A, B;
+            if (mode === 'freeform' || mode === 'simple') {
+                A = startPos.clone();
+                B = endPos.clone();
+            } else {
+                A = snapToGrid(startPos.clone());
+                B = snapToGrid(endPos.clone());
+            }
             
             // Support free-form routing
             if (mode === 'freeform') {
@@ -4806,7 +4905,106 @@
                     return;
                 }
             }
+            
+            // Check for wires
+            const wireSegments = [];
+            wires.forEach(wire => {
+                if (wire?.segments) {
+                    wire.segments.forEach(segment => {
+                        if (segment.mesh) {
+                            wireSegments.push(segment.mesh);
+                        }
+                    });
+                }
+            });
+            
+            const wireHits = raycaster.intersectObjects(wireSegments, false);
+            if (wireHits.length > 0) {
+                const hitSegment = wireHits[0].object;
+                // Find the wire this segment belongs to
+                const wire = wires.find(w => w.segments.some(s => s.mesh === hitSegment));
+                if (wire) {
+                    showWireEditPopup(wire, clientX, clientY);
+                    
+                    // Add haptic feedback for mobile devices
+                    if (navigator.vibrate && isMobile) {
+                        navigator.vibrate(50);
+                    }
+                    return;
+                }
+            }
         }
+        
+        // Wire edit popup
+        function showWireEditPopup(wire, clientX, clientY) {
+            const popup = document.getElementById('wire-edit-popup');
+            if (!popup) {
+                // Create popup if it doesn't exist
+                createWireEditPopup();
+                return showWireEditPopup(wire, clientX, clientY);
+            }
+            
+            currentEditWire = wire;
+            popup.style.display = 'block';
+            
+            setStatus('🔗 Wire selected - Choose action');
+        }
+        
+        function createWireEditPopup() {
+            const popup = document.createElement('div');
+            popup.id = 'wire-edit-popup';
+            popup.className = 'edit-popup';
+            popup.style.display = 'none';
+            popup.innerHTML = `
+                <div class="edit-popup-content">
+                    <div class="edit-popup-header">
+                        <h3>Edit Wire</h3>
+                        <button onclick="closeWireEditPopup()" class="edit-close">✕</button>
+                    </div>
+                    <div class="edit-actions">
+                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">🗑️ Delete Wire</button>
+                        <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">🔀 Change Routing</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+        }
+        
+        function closeWireEditPopup() {
+            const popup = document.getElementById('wire-edit-popup');
+            if (popup) {
+                popup.style.display = 'none';
+            }
+            currentEditWire = null;
+        }
+        
+        function deleteWireFromPopup() {
+            if (currentEditWire) {
+                saveState(); // Save for undo
+                currentEditWire.remove();
+                const index = wires.indexOf(currentEditWire);
+                if (index > -1) {
+                    wires.splice(index, 1);
+                }
+                analyzeCircuit();
+                setStatus('🗑️ Wire deleted');
+            }
+            closeWireEditPopup();
+        }
+        
+        function changeWireRoutingFromPopup() {
+            if (currentEditWire) {
+                saveState(); // Save for undo
+                // Cycle to next routing mode and update wire
+                cycleRoutingMode();
+                currentEditWire.updatePath();
+                setStatus('🔀 Wire routing updated');
+            }
+            closeWireEditPopup();
+        }
+        
+        // Variable to track current wire being edited
+        let currentEditWire = null;
 
         // Edit popup functions
         function showEditPopup(component, clientX, clientY) {
@@ -5890,36 +6088,56 @@
 5. ✏️ EDIT VALUES: Long press any component to edit properties
 6. 🔄 ROTATE: Tap components to rotate them 90°
 7. ⚫ JUNCTIONS: Add connection nodes to split wires and create branches
-   • Place junctions anywhere along a wire to create split points
-   • Essential for parallel circuits and complex layouts
-   • Allow clean wire branches without messy routing
-   • Add via Components → Junction or use the J shortcut
+   • Place junctions anywhere on the workspace to connect multiple wires
+   • Essential for parallel circuits and complex topologies
+   • Split existing wires: Add junction, delete old wire, reconnect segments
+   • Connect multiple components to a single junction point
+   • Add via Tools → ⚫ Junction or press J key
+   • Long-press wire to access edit menu (delete or reroute)
 
 🎯 INTELLIGENT WIRE ROUTING:
-• Free-form: Natural flowing connections (no enforced angles)
+• Free-form: Natural flowing connections with exact terminal alignment
+  - No wire gaps at components
+  - Minimal bends for clean appearance
+  - Intelligent direction choice based on terminal orientation
 • Manhattan: Clean, textbook-style right-angled circuits
+  - Grid-aligned paths for professional look
+  - Standard for educational circuit diagrams
 • Auto-Arrange detects series vs parallel configurations
 • Smart junction placement for parallel circuit splits
 • Change routing: Tools → 🔀 Route Mode (cycles through modes)
+• Long-press any wire to delete or change its routing style
 
 📐 LAYOUT MODES:
 • Free Mode: Place components anywhere you want
+  - Maximum flexibility for creative circuits
+  - Best for freeform exploration
 • Square Mode: Textbook-style square circuits for practice
+  - Professional schematic appearance
+  - Great for homework and documentation
 • Linear Mode: Tree layout with battery at top (classroom style)
+  - Vertical hierarchical arrangement
+  - Easy to trace current flow
 • Change mode: View → 📐 Layout Mode
 
 💫 FLOW VISUALIZATION MODES:
-• Electron Flow: Misty, probabilistic quantum cloud showing actual electron movement
+• Electron Flow (Misty Mode): Probabilistic quantum cloud visualization
   - Flows from negative (-) to positive (+) terminal
-  - Semi-transparent particles represent electron probability density
-  - Shows the true physical behavior of electrons
-• Current Flow: Solid, conventional current direction
+  - Semi-transparent particles show electron probability density
+  - Misty appearance represents quantum nature of electrons
+  - Shows the TRUE physical behavior of charge carriers
+  - Perfect for understanding what really happens in a wire!
+  
+• Current Flow (Solid Mode): Conventional current direction
   - Flows from positive (+) to negative (-) by convention
-  - Bright, defined particles show traditional current direction
+  - Bright, well-defined particles show traditional direction
   - Standard for circuit diagrams and electrical engineering
-• Toggle: View → 💫 Flow (switches between modes)
-• Perfect for understanding both perspectives!
-• Current only flows in complete circuits
+  - What textbooks and engineers typically use
+  
+• Toggle: Tools → 💫 Flow or View menu
+• Compare both modes to understand different perspectives!
+• Current only flows when circuit is complete (closed loop)
+• Open switches or incomplete circuits prevent flow
 
 🎯 EDUCATIONAL FEATURES:
 • Real-time electrical calculations on every component
@@ -6305,7 +6523,27 @@ Now with more control and realistic visualizations!
             });
             
             const connectedBatteries = batteries.filter(battery => connectedComponents.has(battery));
+            
+            // Check if we have batteries and they form a closed circuit
             if (connectedBatteries.length > 0 && connectedComponents.size >= 2) {
+                // Verify the circuit is actually closed (has a complete path)
+                const hasClosedPath = connectedBatteries.some(battery => 
+                    hasClosedCircuitPath(battery, wires, components)
+                );
+                
+                if (!hasClosedPath) {
+                    // Circuit has components but no closed loop
+                    const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
+                    updateTopologyDisplay('Incomplete');
+                    return {
+                        voltage: totalVoltage,
+                        current: 0,
+                        resistance: Infinity,
+                        power: 0,
+                        isComplete: false
+                    };
+                }
+                
                 let totalVoltage = 0;
                 batteries.forEach(battery => totalVoltage += battery.properties.voltage);
                 
@@ -6473,6 +6711,66 @@ Now with more control and realistic visualizations!
             
             dfs(start, [start]);
             return paths;
+        }
+        
+        // Check if there's a complete circuit path from battery positive to negative
+        function hasClosedCircuitPath(battery, wires, allComponents) {
+            if (!battery || wires.length === 0) return false;
+            
+            // Build adjacency graph of all connections
+            const graph = new Map();
+            
+            // Add all components and junctions to graph
+            allComponents.forEach(comp => graph.set(comp, []));
+            junctions.forEach(j => graph.set(j, []));
+            
+            // Build connections from wires
+            wires.forEach(wire => {
+                const start = wire.startObj;
+                const end = wire.endObj;
+                
+                if (!graph.has(start)) graph.set(start, []);
+                if (!graph.has(end)) graph.set(end, []);
+                
+                graph.get(start).push(end);
+                graph.get(end).push(start);
+            });
+            
+            // Check if we can reach back to the battery from any connected component
+            // This creates a closed loop
+            const visited = new Set();
+            const startConnections = graph.get(battery) || [];
+            
+            if (startConnections.length === 0) return false;
+            
+            // For each initial connection from battery, try to find path back
+            for (const firstConnection of startConnections) {
+                visited.clear();
+                visited.add(battery); // Don't revisit battery in the middle
+                
+                if (canReachBattery(firstConnection, battery, graph, visited)) {
+                    return true; // Found a closed loop
+                }
+            }
+            
+            return false;
+        }
+        
+        // Helper function to check if we can reach the battery
+        function canReachBattery(current, target, graph, visited) {
+            if (current === target) return true;
+            if (visited.has(current)) return false;
+            
+            visited.add(current);
+            const neighbors = graph.get(current) || [];
+            
+            for (const neighbor of neighbors) {
+                if (canReachBattery(neighbor, target, graph, visited)) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
         // Calculate resistance for combination circuits
@@ -7102,6 +7400,25 @@ Now with more control and realistic visualizations!
                     { type: 'switch', position: [0, 0, 0], properties: { resistance: 0.1, isOn: false } },
                     { type: 'led', position: [4, 0, 0], properties: { resistance: 20 } }
                 ]
+            },
+            combination_advanced: {
+                name: "Advanced Combination Circuit",
+                description: "Complex circuit combining series, parallel, and mixed configurations",
+                objectives: [
+                    "Master combination circuit analysis techniques",
+                    "Use junction nodes to create complex topologies",
+                    "Calculate equivalent resistance step by step",
+                    "Apply W.I.R.E. method to advanced circuits",
+                    "Understand current division in complex paths"
+                ],
+                components: [
+                    { type: 'battery', position: [-6, 0, 0], properties: { voltage: 18 } },
+                    { type: 'resistor', position: [-2, 0, 0], properties: { resistance: 80 } },
+                    { type: 'resistor', position: [2, 0, 3], properties: { resistance: 120 } },
+                    { type: 'resistor', position: [2, 0, 0], properties: { resistance: 180 } },
+                    { type: 'resistor', position: [2, 0, -3], properties: { resistance: 240 } },
+                    { type: 'led', position: [6, 0, 0], properties: { resistance: 30 } }
+                ]
             }
         };
 
@@ -7195,7 +7512,8 @@ Now with more control and realistic visualizations!
             const buttonIds = {
                 'series_basic': 'btn-series',
                 'parallel_basic': 'btn-parallel', 
-                'mixed_circuit': 'btn-mixed'
+                'mixed_circuit': 'btn-mixed',
+                'combination_advanced': 'btn-combination'
             };
             const buttonId = buttonIds[presetName];
             if (buttonId) {
@@ -7413,6 +7731,13 @@ Now with more control and realistic visualizations!
                 if (junction?.mesh) scene.remove(junction.mesh);
             });
             junctions = [];
+            
+            // Clean up any orphaned polarity indicators as a safety measure
+            document.querySelectorAll('.polarity-indicator').forEach(el => {
+                if (el.parentNode) {
+                    document.body.removeChild(el);
+                }
+            });
             
             // Reset practice mode UI only if not in a practice sequence
             if (!currentPracticeCircuit) {
