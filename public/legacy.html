@@ -3246,14 +3246,28 @@
 
             getStartPosition() {
                 if (this.startObj.getWorldConnectionPoint) {
-                    return snapToGrid(this.startObj.getWorldConnectionPoint(this.startSide));
+                    const connectionPoint = this.startObj.getWorldConnectionPoint(this.startSide);
+                    // In freeform routing mode, don't snap wire endpoints to grid
+                    // This ensures wires connect exactly to component terminals
+                    const routerMode = getRouterMode();
+                    if (routerMode === 'freeform' || routerMode === 'simple') {
+                        return connectionPoint;
+                    }
+                    return snapToGrid(connectionPoint);
                 }
                 return snapToGrid(this.startObj.position.clone());
             }
 
             getEndPosition() {
                 if (this.endObj.getWorldConnectionPoint) {
-                    return snapToGrid(this.endObj.getWorldConnectionPoint(this.endSide));
+                    const connectionPoint = this.endObj.getWorldConnectionPoint(this.endSide);
+                    // In freeform routing mode, don't snap wire endpoints to grid
+                    // This ensures wires connect exactly to component terminals
+                    const routerMode = getRouterMode();
+                    if (routerMode === 'freeform' || routerMode === 'simple') {
+                        return connectionPoint;
+                    }
+                    return snapToGrid(connectionPoint);
                 }
                 return snapToGrid(this.endObj.position.clone());
             }
@@ -4106,26 +4120,45 @@
         
         // Free-form routing - direct line with minimal bends
         function routeFreeform(A, B, startSide, endSide) {
-            // Simple direct connection with just one bend if needed
-            const midX = (A.x + B.x) / 2;
-            const midZ = (A.z + B.z) / 2;
-            
             // Check if we need any bends at all
             const dx = Math.abs(B.x - A.x);
             const dz = Math.abs(B.z - A.z);
             
-            // If points are aligned, just connect directly
+            // If points are very close or aligned, just connect directly
             if (dx < 0.1 || dz < 0.1) {
                 return [A, B];
             }
             
-            // Otherwise use a simple corner bend
-            // Choose corner based on which direction has more distance
+            // For freeform, choose the most natural bend direction based on terminal sides
+            // This reduces visual clutter and makes connections more intuitive
+            
+            // If components are facing each other (e.g., left-to-right), prefer straight-ish path
+            if ((startSide === 'right' || startSide === 'positive') && 
+                (endSide === 'left' || endSide === 'negative') && B.x > A.x) {
+                // Natural left-to-right connection
+                const midX = (A.x + B.x) / 2;
+                if (dz < GRID_SIZE * 2) {
+                    // Almost aligned - use single midpoint
+                    return [A, new THREE.Vector3(midX, 0, A.z), new THREE.Vector3(midX, 0, B.z), B];
+                }
+            }
+            
+            if ((startSide === 'left' || startSide === 'negative') && 
+                (endSide === 'right' || endSide === 'positive') && B.x < A.x) {
+                // Natural right-to-left connection
+                const midX = (A.x + B.x) / 2;
+                if (dz < GRID_SIZE * 2) {
+                    return [A, new THREE.Vector3(midX, 0, A.z), new THREE.Vector3(midX, 0, B.z), B];
+                }
+            }
+            
+            // Otherwise use a simple L-shaped corner
+            // Choose corner based on which direction has more distance for cleaner look
             if (dx > dz) {
-                // Horizontal first
+                // More horizontal distance - go horizontal first
                 return [A, new THREE.Vector3(B.x, 0, A.z), B];
             } else {
-                // Vertical first
+                // More vertical distance - go vertical first
                 return [A, new THREE.Vector3(A.x, 0, B.z), B];
             }
         }
@@ -4453,9 +4486,17 @@
         }
 
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
-            const A = snapToGrid(startPos.clone());
-            const B = snapToGrid(endPos.clone());
             const mode = getRouterMode();
+            
+            // In freeform and simple modes, don't snap endpoints to preserve exact connections
+            let A, B;
+            if (mode === 'freeform' || mode === 'simple') {
+                A = startPos.clone();
+                B = endPos.clone();
+            } else {
+                A = snapToGrid(startPos.clone());
+                B = snapToGrid(endPos.clone());
+            }
             
             // Support free-form routing
             if (mode === 'freeform') {
