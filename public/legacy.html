@@ -3025,6 +3025,64 @@
                     this.mesh.add(rightPoint);
                     this.connectionPoints.push(rightPoint);
                 }
+                
+                // Create polarity indicator labels
+                this.createPolarityIndicators();
+            }
+            
+            createPolarityIndicators() {
+                this.polarityDivs = [];
+                
+                if (this.type === 'battery') {
+                    // Create + indicator for positive terminal
+                    const positiveDiv = document.createElement('div');
+                    positiveDiv.className = 'polarity-indicator polarity-positive';
+                    positiveDiv.textContent = '+';
+                    positiveDiv.style.display = showPolarityIndicators ? 'block' : 'none';
+                    document.body.appendChild(positiveDiv);
+                    this.polarityDivs.push({ div: positiveDiv, side: 'positive' });
+                    
+                    // Create - indicator for negative terminal
+                    const negativeDiv = document.createElement('div');
+                    negativeDiv.className = 'polarity-indicator polarity-negative';
+                    negativeDiv.textContent = '−';
+                    negativeDiv.style.display = showPolarityIndicators ? 'block' : 'none';
+                    document.body.appendChild(negativeDiv);
+                    this.polarityDivs.push({ div: negativeDiv, side: 'negative' });
+                }
+            }
+            
+            updatePolarityDisplay(show) {
+                if (this.polarityDivs) {
+                    this.polarityDivs.forEach(item => {
+                        item.div.style.display = show ? 'block' : 'none';
+                    });
+                }
+            }
+            
+            updatePolarityPositions() {
+                if (!this.polarityDivs || !this.mesh) return;
+                
+                this.polarityDivs.forEach(item => {
+                    const vector = new THREE.Vector3();
+                    vector.setFromMatrixPosition(this.mesh.matrixWorld);
+                    
+                    // Offset based on side
+                    if (item.side === 'positive') {
+                        vector.x += 1.2;
+                    } else if (item.side === 'negative') {
+                        vector.x -= 1.2;
+                    }
+                    vector.y += 0.8; // Above the terminal
+                    
+                    vector.project(camera);
+                    
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+                    
+                    item.div.style.left = x + 'px';
+                    item.div.style.top = y + 'px';
+                });
             }
 
             getWorldConnectionPoint(side) {
@@ -3064,6 +3122,15 @@
                 
                 if (this.labelDiv) {
                     document.body.removeChild(this.labelDiv);
+                }
+                
+                // Remove polarity indicators
+                if (this.polarityDivs) {
+                    this.polarityDivs.forEach(item => {
+                        if (item.div && item.div.parentNode) {
+                            document.body.removeChild(item.div);
+                        }
+                    });
                 }
                 
                 const connectedWires = [...this.connections];
@@ -3427,6 +3494,10 @@
             components.forEach(component => {
                 if (component.updateLabelPosition) {
                     component.updateLabelPosition();
+                }
+                // Update polarity indicator positions
+                if (component.updatePolarityPositions) {
+                    component.updatePolarityPositions();
                 }
             });
         }
