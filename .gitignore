@@ -6,3 +6,20 @@ dist
 .env
 .vercel
 .netlify
+
+# Android build artifacts
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+*.aab
+circuitry3d-release.aab
+
+# Keystore (keep the file, but don't commit it publicly in production)
+# For this demo, we include it, but in real production:
+# android/app/keystore/
+# android/key.properties
+
