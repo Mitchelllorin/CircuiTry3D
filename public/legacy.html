@@ -2485,6 +2485,7 @@
                     <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">📚 Basic Series</button>
                     <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">📚 Basic Parallel</button>
                     <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">📚 Mixed Circuit</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">🎓 Advanced Combo</button>
                     <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">🎲 Random</button>
                 </div>
                 
@@ -2534,7 +2535,7 @@
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
         let currentPracticeCircuit = null;
         let currentProblemIndex = 0;
-        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'switch_control'];
+        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced', 'switch_control'];
         
         // New features variables
         let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
@@ -6087,36 +6088,56 @@
 5. ✏️ EDIT VALUES: Long press any component to edit properties
 6. 🔄 ROTATE: Tap components to rotate them 90°
 7. ⚫ JUNCTIONS: Add connection nodes to split wires and create branches
-   • Place junctions anywhere along a wire to create split points
-   • Essential for parallel circuits and complex layouts
-   • Allow clean wire branches without messy routing
-   • Add via Components → Junction or use the J shortcut
+   • Place junctions anywhere on the workspace to connect multiple wires
+   • Essential for parallel circuits and complex topologies
+   • Split existing wires: Add junction, delete old wire, reconnect segments
+   • Connect multiple components to a single junction point
+   • Add via Tools → ⚫ Junction or press J key
+   • Long-press wire to access edit menu (delete or reroute)
 
 🎯 INTELLIGENT WIRE ROUTING:
-• Free-form: Natural flowing connections (no enforced angles)
+• Free-form: Natural flowing connections with exact terminal alignment
+  - No wire gaps at components
+  - Minimal bends for clean appearance
+  - Intelligent direction choice based on terminal orientation
 • Manhattan: Clean, textbook-style right-angled circuits
+  - Grid-aligned paths for professional look
+  - Standard for educational circuit diagrams
 • Auto-Arrange detects series vs parallel configurations
 • Smart junction placement for parallel circuit splits
 • Change routing: Tools → 🔀 Route Mode (cycles through modes)
+• Long-press any wire to delete or change its routing style
 
 📐 LAYOUT MODES:
 • Free Mode: Place components anywhere you want
+  - Maximum flexibility for creative circuits
+  - Best for freeform exploration
 • Square Mode: Textbook-style square circuits for practice
+  - Professional schematic appearance
+  - Great for homework and documentation
 • Linear Mode: Tree layout with battery at top (classroom style)
+  - Vertical hierarchical arrangement
+  - Easy to trace current flow
 • Change mode: View → 📐 Layout Mode
 
 💫 FLOW VISUALIZATION MODES:
-• Electron Flow: Misty, probabilistic quantum cloud showing actual electron movement
+• Electron Flow (Misty Mode): Probabilistic quantum cloud visualization
   - Flows from negative (-) to positive (+) terminal
-  - Semi-transparent particles represent electron probability density
-  - Shows the true physical behavior of electrons
-• Current Flow: Solid, conventional current direction
+  - Semi-transparent particles show electron probability density
+  - Misty appearance represents quantum nature of electrons
+  - Shows the TRUE physical behavior of charge carriers
+  - Perfect for understanding what really happens in a wire!
+  
+• Current Flow (Solid Mode): Conventional current direction
   - Flows from positive (+) to negative (-) by convention
-  - Bright, defined particles show traditional current direction
+  - Bright, well-defined particles show traditional direction
   - Standard for circuit diagrams and electrical engineering
-• Toggle: View → 💫 Flow (switches between modes)
-• Perfect for understanding both perspectives!
-• Current only flows in complete circuits
+  - What textbooks and engineers typically use
+  
+• Toggle: Tools → 💫 Flow or View menu
+• Compare both modes to understand different perspectives!
+• Current only flows when circuit is complete (closed loop)
+• Open switches or incomplete circuits prevent flow
 
 🎯 EDUCATIONAL FEATURES:
 • Real-time electrical calculations on every component
@@ -7379,6 +7400,25 @@ Now with more control and realistic visualizations!
                     { type: 'switch', position: [0, 0, 0], properties: { resistance: 0.1, isOn: false } },
                     { type: 'led', position: [4, 0, 0], properties: { resistance: 20 } }
                 ]
+            },
+            combination_advanced: {
+                name: "Advanced Combination Circuit",
+                description: "Complex circuit combining series, parallel, and mixed configurations",
+                objectives: [
+                    "Master combination circuit analysis techniques",
+                    "Use junction nodes to create complex topologies",
+                    "Calculate equivalent resistance step by step",
+                    "Apply W.I.R.E. method to advanced circuits",
+                    "Understand current division in complex paths"
+                ],
+                components: [
+                    { type: 'battery', position: [-6, 0, 0], properties: { voltage: 18 } },
+                    { type: 'resistor', position: [-2, 0, 0], properties: { resistance: 80 } },
+                    { type: 'resistor', position: [2, 0, 3], properties: { resistance: 120 } },
+                    { type: 'resistor', position: [2, 0, 0], properties: { resistance: 180 } },
+                    { type: 'resistor', position: [2, 0, -3], properties: { resistance: 240 } },
+                    { type: 'led', position: [6, 0, 0], properties: { resistance: 30 } }
+                ]
             }
         };
 
@@ -7472,7 +7512,8 @@ Now with more control and realistic visualizations!
             const buttonIds = {
                 'series_basic': 'btn-series',
                 'parallel_basic': 'btn-parallel', 
-                'mixed_circuit': 'btn-mixed'
+                'mixed_circuit': 'btn-mixed',
+                'combination_advanced': 'btn-combination'
             };
             const buttonId = buttonIds[presetName];
             if (buttonId) {
