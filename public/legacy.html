@@ -2071,7 +2071,7 @@
                     </div>
                     <div class="submenu-row">
                         <button class="btn" onclick="addJunction()">⚫ Junction</button>
-                        <button class="btn" onclick="arrangeCircuitSchematic()">📐 Auto-Arrange</button>
+                        <button class="btn" onclick="arrangeByLayoutMode()">📐 Auto-Arrange</button>
                     </div>
                     <div class="submenu-row">
                         <button class="btn" onclick="cycleRoutingMode()">🔀 Route: <span id="route-mode">Free-form</span></button>
@@ -4511,6 +4511,119 @@
             analyzeCircuit();
             setStatus('📐 Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
         }
+        
+        // Linear/Tree layout with battery at top
+        function arrangeLinearLayout() {
+            if (components.length === 0) return;
+            
+            saveState(); // Save for undo
+            
+            // Find batteries (power sources)
+            const batteries = components.filter(c => c.type === 'battery');
+            const otherComponents = components.filter(c => c.type !== 'battery');
+            
+            if (batteries.length === 0) {
+                setStatus('⚠️ Add a battery first for linear arrangement');
+                return;
+            }
+            
+            // Clear existing wires for clean re-routing
+            wires.forEach(wire => wire.remove());
+            wires = [];
+            
+            // Clear existing junctions
+            junctions.forEach(junction => {
+                if (junction.mesh) scene.remove(junction.mesh);
+            });
+            junctions.length = 0;
+            
+            const SPACING = GRID_SIZE * 3;
+            const battery = batteries[0];
+            
+            // Position battery at the top center
+            battery.position.set(0, 0, -SPACING * 3);
+            battery.mesh.position.copy(battery.position);
+            
+            if (otherComponents.length === 0) {
+                setStatus('⚠️ Add components to arrange');
+                return;
+            }
+            
+            // Arrange components in tree structure below battery
+            const levels = Math.ceil(Math.log2(otherComponents.length + 1));
+            let componentIndex = 0;
+            
+            for (let level = 1; level <= levels && componentIndex < otherComponents.length; level++) {
+                const componentsInLevel = Math.min(Math.pow(2, level - 1), otherComponents.length - componentIndex);
+                const levelZ = -SPACING * 3 + level * SPACING * 2;
+                const totalWidth = (componentsInLevel - 1) * SPACING * 2;
+                const startX = -totalWidth / 2;
+                
+                for (let i = 0; i < componentsInLevel; i++) {
+                    if (componentIndex >= otherComponents.length) break;
+                    
+                    const comp = otherComponents[componentIndex];
+                    const x = startX + i * SPACING * 2;
+                    const p = snapToGrid(new THREE.Vector3(x, 0, levelZ));
+                    comp.position.copy(p);
+                    comp.mesh.position.copy(comp.position);
+                    componentIndex++;
+                }
+            }
+            
+            // Wire in series from top to bottom
+            let prevComp = battery;
+            let prevSide = 'positive';
+            
+            for (let i = 0; i < otherComponents.length; i++) {
+                const comp = otherComponents[i];
+                const wire = new Wire(prevComp, prevSide, comp, 'left');
+                wires.push(wire);
+                prevComp = comp;
+                prevSide = 'right';
+            }
+            
+            // Close the circuit back to battery
+            if (otherComponents.length > 0) {
+                const lastWire = new Wire(prevComp, prevSide, battery, 'negative');
+                wires.push(lastWire);
+            }
+            
+            // Center the view on the circuit
+            fitToScreen();
+            analyzeCircuit();
+            setStatus('🌲 Circuit arranged in linear tree layout with battery at top!');
+        }
+        
+        // Arrange circuit based on current layout mode
+        function arrangeByLayoutMode() {
+            if (layoutMode === 'linear') {
+                arrangeLinearLayout();
+            } else if (layoutMode === 'square') {
+                arrangeCircuitSchematic();
+            } else {
+                // Free mode - just organize components in a grid
+                if (components.length === 0) return;
+                
+                saveState();
+                
+                const SPACING = GRID_SIZE * 3;
+                const cols = Math.ceil(Math.sqrt(components.length));
+                
+                components.forEach((comp, index) => {
+                    const row = Math.floor(index / cols);
+                    const col = index % cols;
+                    const x = (col - cols / 2) * SPACING;
+                    const z = (row - Math.ceil(components.length / cols) / 2) * SPACING;
+                    const p = snapToGrid(new THREE.Vector3(x, 0, z));
+                    comp.position.copy(p);
+                    comp.mesh.position.copy(comp.position);
+                });
+                
+                fitToScreen();
+                setStatus('📐 Components arranged in free-form grid - wire as you like!');
+            }
+        }
 
         // Launch application function
         function launchApplication() {
@@ -5938,6 +6051,42 @@ Now with more control and realistic visualizations!
             setStatus(`⚫ Junction node added - drag to grid position and tap to place!`);
             updateCircuitInfo();
             closeAllSubmenus();
+        }
+        
+        // Split a wire by adding a junction at a specific point
+        function splitWireWithJunction(wire, position) {
+            if (!wire || !position) return null;
+            
+            saveState(); // Save for undo
+            
+            // Create junction at the split point
+            const junction = new Junction(position);
+            junctions.push(junction);
+            
+            // Store original wire info
+            const startObj = wire.startObj;
+            const startSide = wire.startSide;
+            const endObj = wire.endObj;
+            const endSide = wire.endSide;
+            
+            // Remove the original wire
+            wire.remove();
+            const wireIndex = wires.indexOf(wire);
+            if (wireIndex > -1) {
+                wires.splice(wireIndex, 1);
+            }
+            
+            // Create two new wires: start -> junction and junction -> end
+            const wire1 = new Wire(startObj, startSide, junction, 'center');
+            const wire2 = new Wire(junction, 'center', endObj, endSide);
+            
+            wires.push(wire1, wire2);
+            
+            analyzeCircuit();
+            updateCircuitInfo();
+            
+            setStatus('✂️ Wire split with junction - now you can branch from this point!');
+            return junction;
         }
 
         // Create an equal-spaced parallel bus from a source to N targets (intelligent split)
