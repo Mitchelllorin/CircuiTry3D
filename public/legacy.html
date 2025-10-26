@@ -1647,18 +1647,64 @@
         
         .branding-overlay {
             position: fixed;
-            top: 50%;
+            top: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 48px;
+            transform: translateX(-50%);
+            font-size: 32px;
             font-weight: 900;
-            color: rgba(0, 255, 136, 0.05);
-            text-shadow: 0 0 30px rgba(0, 255, 136, 0.1);
             pointer-events: none;
             z-index: 1;
             user-select: none;
-            letter-spacing: 8px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: -1px;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            text-align: center;
+            line-height: 1;
+            animation: brandingFloat 6s ease-in-out infinite;
+        }
+        
+        .branding-overlay .logo-circui {
+            color: rgba(0, 255, 136, 0.15);
+            text-shadow: 0 0 12px rgba(0,255,136,0.3), 0 0 24px rgba(0,136,255,0.1);
+        }
+        
+        .branding-overlay .logo-try {
+            color: rgba(255, 136, 0, 0.15);
+            text-shadow: 0 0 12px rgba(255,136,0,0.3), 0 0 24px rgba(255,255,255,0.08);
+        }
+        
+        .branding-overlay .logo-3d {
+            color: rgba(0, 255, 136, 0.15);
+            text-shadow: 0 0 12px rgba(0,255,136,0.3), 0 0 24px rgba(0,136,255,0.1);
+        }
+        
+        @keyframes brandingFloat {
+            0%, 100% { 
+                transform: translateX(-50%) translateY(0px);
+                opacity: 0.8;
+            }
+            50% { 
+                transform: translateX(-50%) translateY(-10px);
+                opacity: 1;
+            }
+        }
+        
+        .branding-overlay.bounce {
+            animation: brandingBounce 4s ease-in-out infinite;
+        }
+        
+        @keyframes brandingBounce {
+            0%, 100% { 
+                transform: translateX(-50%) translateY(0px);
+            }
+            25% { 
+                transform: translateX(-50%) translateY(-20px);
+            }
+            50% { 
+                transform: translateX(-50%) translateY(0px);
+            }
+            75% { 
+                transform: translateX(-50%) translateY(-10px);
+            }
         }
         
         .polarity-indicator {
@@ -2516,7 +2562,9 @@
     <canvas id="canvas" style="display: none;"></canvas>
     
     <!-- Branding Overlay -->
-    <div class="branding-overlay" id="branding-overlay">CircuiTry3D</div>
+    <div class="branding-overlay" id="branding-overlay">
+        <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
