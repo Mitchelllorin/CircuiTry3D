@@ -75,4 +75,3 @@ export function handleWireDraw(
   console.error('Invalid connection: no path found', { start, end, rawStart, rawEnd });
   return null;
 }
-
