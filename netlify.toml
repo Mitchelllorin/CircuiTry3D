@@ -2,8 +2,11 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  NODE_VERSION = "20.19"
+
 [[redirects]]
-  from = "/app"
+  from = "/"
   to = "/index.html"
   status = 200
 
@@ -13,7 +16,7 @@
   status = 200
 
 [[redirects]]
-  from = "/arena"
+  from = "/"
   to = "/index.html"
   status = 200
 
