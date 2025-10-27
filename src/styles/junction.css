@@ -1,0 +1,195 @@
+/* Junction node styles */
+.junction-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  border: 2px solid #fff;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.junction-handle:hover {
+  background-color: #dc2626;
+  border-color: #fbbf24;
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.junction-handle.active {
+  background-color: #fbbf24;
+  border-color: #fff;
+  transform: translate(-50%, -50%) scale(1.5);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+}
+
+/* Component pin styles */
+.component-pin {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  border: 2px solid #fff;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.component-pin:hover {
+  background-color: #16a34a;
+  border-color: #fbbf24;
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.component-pin.snap-target {
+  background-color: #fbbf24;
+  border-color: #fff;
+  transform: translate(-50%, -50%) scale(1.4);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+}
+
+/* Wire anchor styles */
+.wire-anchor {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #94a3b8;
+  border: 1px solid #fff;
+  cursor: move;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.wire-anchor:hover {
+  background-color: #64748b;
+  border-color: #fbbf24;
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+.wire-anchor.dragging {
+  background-color: #fbbf24;
+  border-color: #fff;
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+/* Wire drawing canvas overlay */
+.wire-canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: all;
+  z-index: 5;
+}
+
+/* Snap indicator */
+.snap-indicator {
+  position: absolute;
+  border: 2px dashed #fbbf24;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: pulse 1s ease-in-out infinite;
+  z-index: 15;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+/* Intersection highlight */
+.intersection-highlight {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  border: 2px solid #fff;
+  transform: translate(-50%, -50%);
+  animation: highlight-flash 0.5s ease-in-out;
+  z-index: 20;
+}
+
+@keyframes highlight-flash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Wire preview styles */
+.wire-preview {
+  stroke: #fbbf24;
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+  fill: none;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Wire segment styles */
+.wire-segment {
+  stroke: #60a5fa;
+  stroke-width: 2;
+  fill: none;
+  cursor: pointer;
+  transition: stroke-width 0.2s ease;
+}
+
+.wire-segment:hover {
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+
+.wire-segment.selected {
+  stroke: #fbbf24;
+  stroke-width: 3;
+}
+
+/* Tooltip styles */
+.wire-tooltip {
+  position: absolute;
+  background-color: rgba(15, 23, 42, 0.95);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+}
+
+.wire-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: rgba(15, 23, 42, 0.95);
+}
