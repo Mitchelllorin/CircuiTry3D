@@ -1,0 +1,17 @@
+.junction-handle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6b21a8; /* purple */
+  border: 2px solid white;
+  box-shadow: 0 0 6px rgba(107,33,168,0.6);
+  transform: translate(-50%, -50%);
+  pointer-events: all;
+}
+.junction-snap-highlight {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(59,130,246,0.18);
+  transform: translate(-50%, -50%);
+}
