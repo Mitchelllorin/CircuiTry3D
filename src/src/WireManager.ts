@@ -76,5 +76,3 @@ export function handleWireDraw(
   return null;
 }
 
-/* Example usage removed from module scope in production.
-   Keep example/test harness in a separate test file. */
