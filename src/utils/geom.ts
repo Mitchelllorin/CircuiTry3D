@@ -54,8 +54,8 @@ export function segmentIntersect(A: Vec2, B: Vec2, C: Vec2, D: Vec2): Vec2 | nul
     return null;
   }
   
-  const dx3 = A.x - C.x;
-  const dy3 = A.y - C.y;
+  const dx3 = C.x - A.x;
+  const dy3 = C.y - A.y;
   
   const t = (dx3 * dy2 - dy3 * dx2) / denominator;
   const s = (dx3 * dy1 - dy3 * dx1) / denominator;
