@@ -1,4 +1,4 @@
-import { Vec2 } from "./node";
+import type { Vec2 } from "../utils/geom";
 
 export interface Wire {
   id: string;

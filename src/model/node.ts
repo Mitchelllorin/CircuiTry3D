@@ -1,6 +1,6 @@
-export type NodeType = "componentPin" | "junction" | "wireAnchor";
+import type { Vec2 } from "../utils/geom";
 
-export interface Vec2 { x: number; y: number; }
+export type NodeType = "componentPin" | "junction" | "wireAnchor";
 
 export interface Node {
   id: string;
