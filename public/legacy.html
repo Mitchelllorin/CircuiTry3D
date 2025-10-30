@@ -4864,7 +4864,7 @@
             loadingProgress.style.display = 'block';
             loadingText.style.display = 'block';
             
-            // Simulate loading and launch main app
+            // Launch main app immediately (skip splash delays)
             setTimeout(() => {
                 landingPage.classList.add('landing-hidden');
                 
@@ -4878,15 +4878,15 @@
                     
                     // Set initial status for CircuiTry
                     setStatus('🚀 CircuiTry Professional Circuit Design Environment Ready!');
-                }, 500);
-            }, 2000);
+                }, 0);
+            }, 0);
         }
 
-        // Auto-launch shortly after load to simulate splash -> app transition
+        // Auto-launch immediately to avoid getting stuck on splash
         window.addEventListener('load', () => {
             setTimeout(() => {
                 launchApplication();
-            }, 800); // brief splash pause
+            }, 0);
         });
 
         // Long press detection functions
