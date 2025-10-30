@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Use relative paths so assets load correctly inside Capacitor (app:// scheme)
+  // Without this, Android may appear stuck after the system splash because the
+  // WebView can't resolve absolute "/assets" URLs.
+  base: '',
   plugins: [react()],
   build: {
     outDir: 'dist',
