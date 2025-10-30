@@ -6,7 +6,8 @@ export default defineConfig({
   // Use relative paths so assets load correctly inside Capacitor (app:// scheme)
   // Without this, Android may appear stuck after the system splash because the
   // WebView can't resolve absolute "/assets" URLs.
-  base: '',
+  // NOTE: Vite recommends './' for truly relative asset URLs in file/protocol environments
+  base: './',
   plugins: [react()],
   build: {
     outDir: 'dist',

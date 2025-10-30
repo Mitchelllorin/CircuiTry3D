@@ -59,7 +59,7 @@ export default function Arena() {
       </div>
       <iframe
         title="Component Arena"
-        src="/arena.html"
+        src="arena.html"
         style={styles.iframe}
         sandbox="allow-scripts allow-same-origin allow-popups"
       />
