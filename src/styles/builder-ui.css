@@ -18,28 +18,28 @@ body.builder-body {
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: 56px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 0 24px;
-  background: rgba(8, 12, 24, 0.78);
-  backdrop-filter: blur(18px);
+  gap: 16px;
+  padding: 0 18px;
+  background: rgba(8, 12, 24, 0.65);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   z-index: 900;
 }
 
 .app-icon-button {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(21, 28, 45, 0.9);
   color: inherit;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 16px;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
@@ -64,22 +64,22 @@ body.builder-body {
 .builder-app-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-left: auto;
 }
 
 .builder-app-link {
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  background: rgba(4, 15, 35, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(4, 15, 35, 0.58);
   color: #94f2ff;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.45);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.34);
   transition: all 0.2s ease;
 }
 
@@ -92,36 +92,36 @@ body.builder-body {
 }
 
 .brand-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .brand-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(230, 237, 255, 0.7);
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .builder-app-actions {
-  margin-left: 16px;
+  margin-left: 14px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .workspace-status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  padding: 6px 12px;
+  font-size: 12px;
+  padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(16, 22, 36, 0.9);
-  color: rgba(230, 237, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(16, 22, 36, 0.85);
+  color: rgba(230, 237, 255, 0.72);
 }
 
 .workspace-status.ready {
@@ -152,14 +152,14 @@ body.builder-body {
 }
 
 .app-action-button {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(18, 26, 44, 0.88);
+  background: rgba(18, 26, 44, 0.84);
   color: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -177,7 +177,7 @@ body.builder-body {
 
 .builder-workspace {
   position: fixed;
-  top: 64px;
+  top: 56px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -195,22 +195,22 @@ body.builder-body {
 
 .library-drawer {
   position: fixed;
-  top: 76px;
-  bottom: 110px;
-  left: 24px;
-  width: 264px;
-  padding: 20px 20px 18px;
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(11, 16, 30, 0.94);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  top: 68px;
+  bottom: 96px;
+  left: 18px;
+  width: 228px;
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(11, 16, 30, 0.9);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   transform: translateX(-115%);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.35s ease, opacity 0.35s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   z-index: 820;
 }
 
@@ -224,7 +224,7 @@ body.builder-body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .drawer-eyebrow {
@@ -237,18 +237,18 @@ body.builder-body {
 
 .drawer-title {
   margin: 4px 0 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .drawer-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(18, 26, 44, 0.86);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 26, 44, 0.82);
   color: inherit;
   cursor: pointer;
 }
@@ -274,18 +274,18 @@ body.builder-body {
 .library-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .library-section-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 13px;
+  gap: 10px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(230, 237, 255, 0.8);
+  color: rgba(230, 237, 255, 0.78);
 }
 
 .library-section-divider {
@@ -298,24 +298,24 @@ body.builder-body {
 .library-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .library-item {
   position: relative;
-  padding: 16px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(18, 26, 44, 0.86);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(18, 26, 44, 0.82);
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-  min-height: 92px;
+  min-height: 82px;
 }
 
 .library-item:hover:not([disabled]) {
@@ -332,60 +332,60 @@ body.builder-body {
 }
 
 .library-icon {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
 }
 
 .library-label {
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .library-hint {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 10px;
-  letter-spacing: 0.18em;
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(230, 237, 255, 0.55);
+  color: rgba(230, 237, 255, 0.52);
 }
 
 .library-handle {
   position: fixed;
-  left: 16px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(15, 21, 36, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 21, 36, 0.84);
   color: inherit;
   cursor: pointer;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   z-index: 825;
 }
 
 .inspector-drawer {
   position: fixed;
-  top: 76px;
-  bottom: 110px;
-  right: 24px;
-  width: 248px;
-  padding: 20px 20px 18px;
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(11, 16, 30, 0.94);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  top: 68px;
+  bottom: 96px;
+  right: 18px;
+  width: 212px;
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(11, 16, 30, 0.9);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   transform: translateX(120%);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.35s ease, opacity 0.35s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   z-index: 820;
 }
 
@@ -400,14 +400,14 @@ body.builder-body {
   padding-right: 4px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .inspector-item {
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(18, 26, 44, 0.84);
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(18, 26, 44, 0.82);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -415,27 +415,27 @@ body.builder-body {
 
 .inspector-name {
   font-size: 11px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(230, 237, 255, 0.6);
+  color: rgba(230, 237, 255, 0.58);
 }
 
 .inspector-value {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 
 .inspector-handle {
   position: fixed;
-  right: 16px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(15, 21, 36, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 21, 36, 0.84);
   color: inherit;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;
   z-index: 825;
@@ -443,22 +443,22 @@ body.builder-body {
 
 .floating-stack {
   position: fixed;
-  right: 28px;
-  bottom: 160px;
+  right: 22px;
+  bottom: 132px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   z-index: 840;
 }
 
 .floating-button {
-  width: 50px;
-  height: 50px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(18, 26, 44, 0.9);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 26, 44, 0.86);
   color: inherit;
-  font-size: 18px;
+  font-size: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -480,22 +480,22 @@ body.builder-body {
 .analysis-sheet {
   position: fixed;
   left: 50%;
-  bottom: 120px;
+  bottom: 104px;
   transform: translate(-50%, 120%);
-  width: min(720px, calc(100vw - 48px));
-  padding: 22px 24px 20px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 14, 26, 0.95);
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(18px);
+  width: min(620px, calc(100vw - 40px));
+  padding: 18px 20px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(10, 14, 26, 0.9);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.35s ease, opacity 0.35s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   z-index: 830;
 }
 
@@ -512,34 +512,34 @@ body.builder-body {
 }
 
 .analysis-close {
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(18, 26, 44, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(18, 26, 44, 0.82);
   color: inherit;
-  font-size: 12px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
 }
 
 .analysis-subtitle {
   margin: 0;
-  font-size: 13px;
-  color: rgba(230, 237, 255, 0.7);
+  font-size: 12px;
+  color: rgba(230, 237, 255, 0.68);
 }
 
 .analysis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
 }
 
 .analysis-metric {
-  padding: 18px 16px;
-  border-radius: 18px;
+  padding: 14px 12px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(18, 26, 44, 0.86);
+  background: rgba(18, 26, 44, 0.82);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -563,7 +563,7 @@ body.builder-body {
 }
 
 .metric-letter {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
 }
 
@@ -575,19 +575,19 @@ body.builder-body {
 }
 
 .metric-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .analysis-help-link {
   align-self: flex-start;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(92, 246, 197, 0.4);
-  background: rgba(14, 24, 36, 0.82);
+  border: 1px solid rgba(92, 246, 197, 0.35);
+  background: rgba(14, 24, 36, 0.78);
   color: #5cf6c5;
-  font-size: 12px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -599,14 +599,14 @@ body.builder-body {
 .analysis-handle {
   position: fixed;
   left: 50%;
-  bottom: 84px;
+  bottom: 76px;
   transform: translateX(-50%);
-  padding: 10px 22px;
+  padding: 8px 18px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(15, 21, 36, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(15, 21, 36, 0.86);
   color: inherit;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
   z-index: 835;
@@ -615,16 +615,16 @@ body.builder-body {
 .component-tray {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: 20px;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
-  padding: 12px 18px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 14, 26, 0.9);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
-  max-width: min(90vw, 720px);
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(10, 14, 26, 0.86);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.4);
+  max-width: min(88vw, 640px);
   width: max-content;
   overflow-x: auto;
   z-index: 840;
@@ -640,16 +640,16 @@ body.builder-body {
 }
 
 .tray-item {
-  min-width: 92px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(18, 26, 44, 0.86);
+  min-width: 80px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(18, 26, 44, 0.82);
   color: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
@@ -667,13 +667,13 @@ body.builder-body {
 }
 
 .tray-icon {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 }
 
 .tray-label {
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
