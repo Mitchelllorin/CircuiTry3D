@@ -266,7 +266,7 @@ export default function Builder() {
   const [isFrameReady, setFrameReady] = useState(false);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
-  const [isLeftOpen, setLeftOpen] = useState(true);
+  const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
