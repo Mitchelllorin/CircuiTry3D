@@ -400,7 +400,7 @@ export default function Builder() {
         <iframe
           className="builder-iframe"
           title="CircuiTry3D Builder"
-          src="legacy.html?embed=builder"
+          src="/legacy.html?embed=builder"
           sandbox="allow-scripts allow-same-origin allow-popups"
         />
       </div>
