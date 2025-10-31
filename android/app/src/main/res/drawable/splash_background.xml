@@ -14,4 +14,9 @@
                 android:type="linear" />
         </shape>
     </item>
+
+    <!-- Center logo artwork -->
+    <item
+        android:gravity="center"
+        android:drawable="@drawable/splash" />
 </layer-list>
