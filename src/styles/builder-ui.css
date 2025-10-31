@@ -453,13 +453,13 @@ body.builder-body {
 
 .toggle-left {
   left: 22px;
-  top: 50%;
+  top: calc(50% + 60px);
   transform: translateY(-50%);
 }
 
 .toggle-right {
   right: 22px;
-  top: 50%;
+  top: calc(50% + 60px);
   transform: translateY(-50%);
 }
 
@@ -725,7 +725,7 @@ body.builder-body {
   .toggle-left,
   .toggle-right {
     top: auto;
-    bottom: 120px;
+    bottom: 168px;
   }
 
   .builder-panel.panel-bottom {
@@ -764,7 +764,7 @@ body.builder-body {
   .builder-help-fab {
     top: auto;
     right: 20px;
-    bottom: 110px;
+    bottom: 56px;
   }
 
   .help-tabs {
