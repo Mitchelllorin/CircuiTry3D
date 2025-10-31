@@ -1,0 +1,656 @@
+body.builder-body {
+  margin: 0;
+  background: linear-gradient(135deg, #0a0e27, #16213e);
+  color: #ffffff;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+.builder-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100vw;
+}
+
+.builder-workspace {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  z-index: 100;
+}
+
+.builder-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #01040f;
+}
+
+.builder-logo-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(180deg, rgba(10, 14, 39, 0.9), transparent);
+  backdrop-filter: blur(12px);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.builder-logo-text {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+  animation: builderLogoFloat 6s ease-in-out infinite;
+}
+
+@keyframes builderLogoFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+    filter: drop-shadow(0 0 18px rgba(0, 255, 136, 0.45));
+  }
+
+  50% {
+    transform: translateY(-6px);
+    filter: drop-shadow(0 0 28px rgba(0, 255, 136, 0.7));
+  }
+}
+
+.builder-panel {
+  position: fixed;
+  background: rgba(15, 20, 40, 0.94);
+  backdrop-filter: blur(22px);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.35);
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.builder-panel.panel-left {
+  left: 0;
+  top: 110px;
+  bottom: 120px;
+  width: 290px;
+  border-radius: 0 18px 18px 0;
+  transform: translateX(-100%);
+  overflow-y: auto;
+}
+
+.builder-panel.panel-left.open {
+  transform: translateX(0);
+}
+
+.builder-panel.panel-right {
+  right: 0;
+  top: 110px;
+  bottom: 120px;
+  width: 320px;
+  border-radius: 18px 0 0 18px;
+  transform: translateX(100%);
+  overflow-y: auto;
+}
+
+.builder-panel.panel-right.open {
+  transform: translateX(0);
+}
+
+.builder-panel.panel-bottom {
+  left: 50%;
+  bottom: 20px;
+  transform: translate(-50%, 110%);
+  width: 90%;
+  max-width: 860px;
+  border-radius: 22px 22px 18px 18px;
+  padding-bottom: 12px;
+}
+
+.builder-panel.panel-bottom.open {
+  transform: translate(-50%, 0);
+}
+
+.builder-panel .panel-header {
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.22);
+}
+
+.builder-panel .panel-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #00ff88;
+}
+
+.builder-panel .panel-subtitle {
+  margin-top: 10px;
+  color: #92a4ff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.builder-panel .panel-section {
+  padding: 22px 26px;
+}
+
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.component-btn {
+  padding: 16px 14px;
+  background: linear-gradient(135deg, #1a2540, #28345a);
+  border: 2px solid rgba(0, 255, 136, 0.32);
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
+}
+
+.component-btn:hover {
+  background: linear-gradient(135deg, #273457, #334268);
+  border-color: #00ff88;
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px rgba(0, 255, 136, 0.25);
+}
+
+.component-icon {
+  font-size: 28px;
+}
+
+.component-label {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: #92a4ff;
+  margin-bottom: 18px;
+}
+
+.tool-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tool-btn {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #1a2540, #27345a);
+  border: 2px solid rgba(136, 153, 255, 0.32);
+  border-radius: 12px;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tool-btn:hover {
+  transform: translateX(6px);
+  border-color: #8899ff;
+  background: linear-gradient(135deg, #27345a, #324168);
+}
+
+.tool-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tool-description {
+  font-size: 12px;
+  color: #b8c2ff;
+}
+
+.property-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.property-name {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #92a4ff;
+  margin-bottom: 10px;
+}
+
+.property-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #00ff88;
+}
+
+.builder-wire-display {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 221, 255, 0.12));
+  border: 2px solid rgba(0, 255, 136, 0.42);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+.wire-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: #00ff88;
+  margin-bottom: 24px;
+}
+
+.wire-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.wire-metric {
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 20px 14px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.wire-metric:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.35);
+}
+
+.wire-metric.watts {
+  border-color: #4488ff;
+}
+
+.wire-metric.current {
+  border-color: #ff8844;
+}
+
+.wire-metric.resistance {
+  border-color: #44ff88;
+}
+
+.wire-metric.voltage {
+  border-color: #ff4444;
+}
+
+.metric-letter {
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.wire-metric.watts .metric-letter {
+  color: #4488ff;
+  text-shadow: 0 0 18px rgba(68, 136, 255, 0.7);
+}
+
+.wire-metric.current .metric-letter {
+  color: #ff8844;
+  text-shadow: 0 0 18px rgba(255, 136, 68, 0.7);
+}
+
+.wire-metric.resistance .metric-letter {
+  color: #44ff88;
+  text-shadow: 0 0 18px rgba(68, 255, 136, 0.7);
+}
+
+.wire-metric.voltage .metric-letter {
+  color: #ff4444;
+  text-shadow: 0 0 18px rgba(255, 68, 68, 0.7);
+}
+
+.metric-label {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: #b8c2ff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.wire-metric.watts .metric-value {
+  color: #4488ff;
+}
+
+.wire-metric.current .metric-value {
+  color: #ff8844;
+}
+
+.wire-metric.resistance .metric-value {
+  color: #44ff88;
+}
+
+.wire-metric.voltage .metric-value {
+  color: #ff4444;
+}
+
+.circuit-stats {
+  text-align: center;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0, 255, 136, 0.2);
+  color: #c4d2ff;
+  font-size: 12px;
+  margin-bottom: 18px;
+}
+
+.builder-help-launch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 14px 36px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #00ff88, #00cc77);
+  color: #001415;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  box-shadow: 0 16px 32px rgba(0, 255, 136, 0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.builder-help-launch:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 38px rgba(0, 255, 136, 0.45);
+}
+
+.builder-panel-toggle {
+  position: fixed;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  color: #001915;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0, 255, 136, 0.35);
+  z-index: 850;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.builder-panel-toggle:hover {
+  transform: scale(1.08);
+  box-shadow: 0 18px 40px rgba(0, 255, 136, 0.5);
+}
+
+.toggle-left {
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.toggle-right {
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.toggle-bottom {
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+}
+
+.builder-status-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 255, 136, 0.12);
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  border-radius: 28px;
+  padding: 12px 26px;
+  color: #00ff88;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  z-index: 750;
+  backdrop-filter: blur(10px);
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #00ff88;
+  display: inline-block;
+  margin-right: 12px;
+  box-shadow: 0 0 14px rgba(0, 255, 136, 0.9);
+}
+
+.builder-help-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 4, 15, 0.88);
+  backdrop-filter: blur(14px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.builder-help-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.builder-help-content {
+  position: relative;
+  max-width: 860px;
+  max-height: 85vh;
+  width: 100%;
+  background: linear-gradient(135deg, #1a2540, #27345a);
+  border: 2px solid #00ff88;
+  border-radius: 24px;
+  padding: 42px;
+  overflow-y: auto;
+  box-shadow: 0 32px 60px rgba(0, 0, 0, 0.5);
+}
+
+.builder-help-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.builder-help-content::-webkit-scrollbar-thumb {
+  background: #00ff88;
+  border-radius: 5px;
+}
+
+.help-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: #ff4444;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(255, 68, 68, 0.35);
+}
+
+.help-title {
+  font-size: 30px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: #00ff88;
+  margin-bottom: 32px;
+}
+
+.help-section {
+  margin-bottom: 28px;
+}
+
+.help-section h3 {
+  font-size: 20px;
+  color: #92a4ff;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.28);
+  padding-bottom: 8px;
+}
+
+.help-section p {
+  color: #d6ddff;
+  line-height: 1.8;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.help-section ul {
+  margin-left: 22px;
+  color: #d6ddff;
+  line-height: 1.9;
+  font-size: 14px;
+}
+
+.wire-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 26px;
+}
+
+.legend-item {
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.legend-item:hover {
+  transform: translateY(-4px);
+}
+
+.legend-item.w {
+  border-color: #4488ff;
+}
+
+.legend-item.i {
+  border-color: #ff8844;
+}
+
+.legend-item.r {
+  border-color: #44ff88;
+}
+
+.legend-item.e {
+  border-color: #ff4444;
+}
+
+.legend-letter {
+  font-size: 30px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.legend-label {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d6ddff;
+}
+
+@media (max-width: 960px) {
+  .builder-panel.panel-left,
+  .builder-panel.panel-right {
+    top: 100px;
+    bottom: 110px;
+    width: min(88vw, 320px);
+  }
+
+  .toggle-left,
+  .toggle-right {
+    top: auto;
+    bottom: 120px;
+  }
+
+  .builder-panel.panel-bottom {
+    width: 94%;
+  }
+}
+
+@media (max-width: 640px) {
+  .builder-panel.panel-left,
+  .builder-panel.panel-right {
+    width: 88vw;
+  }
+
+  .builder-panel.panel-bottom {
+    left: 50%;
+    transform: translate(-50%, 120%);
+  }
+
+  .wire-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-logo-text {
+    font-size: 32px;
+  }
+
+  .builder-status-bar {
+    font-size: 12px;
+    padding: 10px 20px;
+  }
+
+  .builder-help-content {
+    padding: 32px 24px;
+  }
+}
