@@ -45,15 +45,26 @@ body.builder-body {
 }
 
 .builder-logo-text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
   font-size: 40px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #00ff88, #00ddff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+  text-transform: none;
   animation: builderLogoFloat 6s ease-in-out infinite;
+}
+
+.builder-logo-text .logo-circui,
+.builder-logo-text .logo-3d {
+  color: #00ff88;
+  text-shadow: 0 0 18px rgba(0, 255, 136, 0.6), 0 0 32px rgba(0, 136, 255, 0.22);
+}
+
+.builder-logo-text .logo-try {
+  color: #ff8800;
+  text-shadow: 0 0 18px rgba(255, 136, 0, 0.65), 0 0 32px rgba(255, 170, 80, 0.45);
+  margin-left: 2px;
 }
 
 @keyframes builderLogoFloat {
