@@ -2170,117 +2170,117 @@
 
     <div id="loading" class="loading" style="display: none;">Loading CircuiTry...</div>
     
-    <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">☰</button>
+    <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">?</button>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
         <div class="menu-tabs">
             <div class="menu-tab" onclick="toggleSubmenu('components')">
-                🔧 Components
+                ?? Components
                 <div class="submenu" id="submenu-components">
                     <div class="submenu-grid">
-                        <button class="btn" onclick="addComponent('battery')">🔋 Battery</button>
-                        <button class="btn" onclick="addComponent('resistor')">⚡ Resistor</button>
-                        <button class="btn" onclick="addComponent('led')">💡 LED</button>
-                        <button class="btn" onclick="addComponent('switch')">🔀 Switch</button>
+                        <button class="btn" onclick="addComponent('battery')">?? Battery</button>
+                        <button class="btn" onclick="addComponent('resistor')">? Resistor</button>
+                        <button class="btn" onclick="addComponent('led')">?? LED</button>
+                        <button class="btn" onclick="addComponent('switch')">?? Switch</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('tools')">
-                🛠️ Tools
+                ??? Tools
                 <div class="submenu" id="submenu-tools">
                     <div class="submenu-row">
-                        <button class="btn wire-btn" id="wire-btn" onclick="toggleWireMode()">🔗 Wire</button>
-                        <button class="btn rotate-btn" id="rotate-btn" onclick="toggleRotateMode()">🔄 Rotate</button>
+                        <button class="btn wire-btn" id="wire-btn" onclick="toggleWireMode()">?? Wire</button>
+                        <button class="btn rotate-btn" id="rotate-btn" onclick="toggleRotateMode()">?? Rotate</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="addJunction()">⚫ Junction</button>
-                        <button class="btn" onclick="arrangeByLayoutMode()">📐 Auto-Arrange</button>
+                        <button class="btn" onclick="addJunction()">? Junction</button>
+                        <button class="btn" onclick="arrangeByLayoutMode()">?? Auto-Arrange</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="cycleRoutingMode()">🔀 Route: <span id="route-mode">Free-form</span></button>
-                        <button class="btn" onclick="centerCircuit()">🎯 Center Circuit</button>
+                        <button class="btn" onclick="cycleRoutingMode()">?? Route: <span id="route-mode">Free-form</span></button>
+                        <button class="btn" onclick="centerCircuit()">?? Center Circuit</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="clearAll()">🗑️ Clear All</button>
+                        <button class="btn" onclick="clearAll()">??? Clear All</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('edit')">
-                ✏️ Edit
+                ?? Edit
                 <div class="submenu" id="submenu-edit">
                     <div class="submenu-row">
-                        <button class="btn" onclick="undo()" id="undo-btn">↶ Undo</button>
-                        <button class="btn" onclick="redo()" id="redo-btn">↷ Redo</button>
+                        <button class="btn" onclick="undo()" id="undo-btn">? Undo</button>
+                        <button class="btn" onclick="redo()" id="redo-btn">? Redo</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="copySelected()">📋 Copy</button>
-                        <button class="btn" onclick="pasteSelected()">📄 Paste</button>
+                        <button class="btn" onclick="copySelected()">?? Copy</button>
+                        <button class="btn" onclick="pasteSelected()">?? Paste</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="selectAll()">🔲 Select All</button>
-                        <button class="btn" onclick="deleteSelected()">🗑️ Delete</button>
+                        <button class="btn" onclick="selectAll()">?? Select All</button>
+                        <button class="btn" onclick="deleteSelected()">??? Delete</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('file')">
-                💾 File
+                ?? File
                 <div class="submenu" id="submenu-file">
                     <div class="submenu-row">
-                        <button class="btn" onclick="saveCircuit()">💾 Save</button>
-                        <button class="btn" onclick="loadCircuit()">📁 Load</button>
+                        <button class="btn" onclick="saveCircuit()">?? Save</button>
+                        <button class="btn" onclick="loadCircuit()">?? Load</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="exportImage()">🖼️ Export</button>
-                        <button class="btn" onclick="newCircuit()">📄 New</button>
+                        <button class="btn" onclick="exportImage()">??? Export</button>
+                        <button class="btn" onclick="newCircuit()">?? New</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('view')">
-                👁️ View
+                ??? View
                 <div class="submenu" id="submenu-view">
                     <div class="submenu-row">
-                        <button class="btn" onclick="resetCamera()">🎯 Reset View</button>
-                        <button class="btn" onclick="fitToScreen()">📐 Fit Screen</button>
+                        <button class="btn" onclick="resetCamera()">?? Reset View</button>
+                        <button class="btn" onclick="fitToScreen()">?? Fit Screen</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleGrid()">⊞ Toggle Grid</button>
-                        <button class="btn" onclick="toggleLabels()">🏷️ Labels</button>
+                        <button class="btn" onclick="toggleGrid()">? Toggle Grid</button>
+                        <button class="btn" onclick="toggleLabels()">??? Labels</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleCurrentFlowStyle()">💫 Flow: <span id="flow-style">Electron Flow</span></button>
-                        <button class="btn" onclick="togglePolarityIndicators()">⚡ Polarity</button>
+                        <button class="btn" onclick="toggleCurrentFlowStyle()">?? Flow: <span id="flow-style">Electron Flow</span></button>
+                        <button class="btn" onclick="togglePolarityIndicators()">? Polarity</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleBranding()">🏷️ Branding</button>
-                        <button class="btn" onclick="cycleLayoutMode()">📐 Layout: <span id="layout-mode">Free</span></button>
+                        <button class="btn" onclick="toggleBranding()">??? Branding</button>
+                        <button class="btn" onclick="cycleLayoutMode()">?? Layout: <span id="layout-mode">Free</span></button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('practice')">
-                🎓 Practice
+                ?? Practice
                 <div class="submenu" id="submenu-practice">
                     <div class="submenu-row">
-                        <button class="btn" onclick="loadPresetCircuit('series_basic')">📚 Series Circuit</button>
-                        <button class="btn" onclick="loadPresetCircuit('parallel_basic')">📚 Parallel Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('series_basic')">?? Series Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('parallel_basic')">?? Parallel Circuit</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">📚 Mixed Circuit</button>
-                        <button class="btn" onclick="loadPresetCircuit('switch_control')">📚 Switch Control</button>
+                        <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">?? Mixed Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('switch_control')">?? Switch Control</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="generateRandomProblem()">🎲 Random Problem</button>
-                        <button class="btn" onclick="showPracticeModeHelp()">❓ How to Use</button>
+                        <button class="btn" onclick="generateRandomProblem()">?? Random Problem</button>
+                        <button class="btn" onclick="showPracticeModeHelp()">? How to Use</button>
                     </div>
                 </div>
             </div>
 
             <div class="menu-tab" onclick="toggleSubmenu('arena')">
-                🧪 Arena
+                ?? Arena
                 <div class="submenu" id="submenu-arena">
                     <div class="submenu-row">
                         <button class="btn" onclick="openArena()">Open Component Arena</button>
@@ -2289,15 +2289,15 @@
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('help')">
-                ❓ Help
+                ? Help
                 <div class="submenu" id="submenu-help">
                     <div class="submenu-row">
-                        <button class="btn" onclick="showTutorial()">🎓 Tutorial</button>
-                        <button class="btn" onclick="showWireGuide()">📚 W.I.R.E. Guide</button>
+                        <button class="btn" onclick="showTutorial()">?? Tutorial</button>
+                        <button class="btn" onclick="showWireGuide()">?? W.I.R.E. Guide</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="showShortcuts()">⌨️ Shortcuts</button>
-                        <button class="btn" onclick="showAbout()">ℹ️ About</button>
+                        <button class="btn" onclick="showShortcuts()">?? Shortcuts</button>
+                        <button class="btn" onclick="showAbout()">?? About</button>
                     </div>
                 </div>
             </div>
@@ -2305,12 +2305,12 @@
     </div>
     
     <div class="wire-analysis-fixed" id="wire-analysis">
-        <button class="analysis-toggle" onclick="toggleAnalysis()">📊</button>
+        <button class="analysis-toggle" onclick="toggleAnalysis()">??</button>
         
         <div class="analysis-tabs">
             <button class="analysis-tab active" onclick="switchAnalysisTab('wire')" id="tab-wire">W.I.R.E.</button>
-            <button class="analysis-tab" onclick="switchAnalysisTab('eir')" id="tab-eir">EIR △</button>
-            <button class="analysis-tab" onclick="switchAnalysisTab('power')" id="tab-power">Power △</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('eir')" id="tab-eir">EIR ?</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('power')" id="tab-power">Power ?</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('worksheet')" id="tab-worksheet">Sheet</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('problem')" id="tab-problem">Solve</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('practice')" id="tab-practice">Practice</button>
@@ -2319,7 +2319,7 @@
         <!-- W.I.R.E. Method Panel -->
         <div class="analysis-content" id="content-wire">
             <div class="wire-analysis">
-                <div class="wire-title">🎓 W.I.R.E. METHOD</div>
+                <div class="wire-title">?? W.I.R.E. METHOD</div>
                 <div class="wire-grid">
                     <div class="wire-item wire-w">
                         <div class="wire-letter">W</div>
@@ -2334,7 +2334,7 @@
                     <div class="wire-item wire-r">
                         <div class="wire-letter">R</div>
                         <div class="wire-label">Resistance (Ohms)</div>
-                        <div class="wire-value" id="resistance">∞Ω</div>
+                        <div class="wire-value" id="resistance">??</div>
                     </div>
                     <div class="wire-item wire-e">
                         <div class="wire-letter">E</div>
@@ -2343,12 +2343,12 @@
                     </div>
                 </div>
                 <div style="font-size: 12px; color: #888; margin-top: 12px; text-align: center;">
-                    <strong>📊 Circuit Status:</strong><br>
+                    <strong>?? Circuit Status:</strong><br>
                     Components: <span id="count" style="color: #00ff88;">0</span> | 
                     Wires: <span id="wire-count" style="color: #ffaa88;">0</span> | 
                     Junctions: <span id="junction-count" style="color: #aa88ff;">0</span>
                     <br>
-                    <strong>🔌 Topology:</strong> <span id="topology-type" style="color: #88ccff;">Unknown</span>
+                    <strong>?? Topology:</strong> <span id="topology-type" style="color: #88ccff;">Unknown</span>
                 </div>
             </div>
         </div>
@@ -2365,7 +2365,7 @@
                     </div>
                 </div>
                 <div class="triangle-formula" id="eir-formula">
-                    E = I × R | I = E ÷ R | R = E ÷ I
+                    E = I ? R | I = E ? R | R = E ? I
                 </div>
                 <div style="color: #ccc; font-size: 12px; margin-top: 12px; text-align: center;">
                     Click E, I, or R to see the formula<br>
@@ -2376,11 +2376,11 @@
             <div class="circuit-diagram">
                 <div class="diagram-title">Circuit Schematic</div>
                 <div class="circuit-schematic" id="circuit-schematic">
-                    <div class="schematic-line">     +─────[R₁]─────+</div>
-                    <div class="schematic-line">     │              │</div>
-                    <div class="schematic-line">   [BAT]          [R₂]</div>
-                    <div class="schematic-line">     │              │</div>
-                    <div class="schematic-line">     +──────────────+</div>
+                    <div class="schematic-line">     +?????[R?]?????+</div>
+                    <div class="schematic-line">     ?              ?</div>
+                    <div class="schematic-line">   [BAT]          [R?]</div>
+                    <div class="schematic-line">     ?              ?</div>
+                    <div class="schematic-line">     +??????????????+</div>
                 </div>
             </div>
         </div>
@@ -2397,7 +2397,7 @@
                     </div>
                 </div>
                 <div class="triangle-formula" id="power-formula" style="color: #4488ff;">
-                    W = I × E | I = W ÷ E | E = W ÷ I
+                    W = I ? E | I = W ? E | E = W ? I
                 </div>
                 <div style="color: #ccc; font-size: 12px; margin-top: 12px; text-align: center;">
                     Click W, I, or E to see the power formula<br>
@@ -2406,11 +2406,11 @@
                 
                 <div style="background: rgba(68,136,255,0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 1px solid rgba(68,136,255,0.3);">
                     <div style="color: #4488ff; font-weight: bold; text-align: center; margin-bottom: 8px;">
-                        🔋 Additional Power Formulas
+                        ?? Additional Power Formulas
                     </div>
                     <div style="color: #ccc; font-size: 11px; text-align: center; line-height: 1.4;">
-                        W = I² × R (Power = Current² × Resistance)<br>
-                        W = E² ÷ R (Power = Voltage² ÷ Resistance)
+                        W = I? ? R (Power = Current? ? Resistance)<br>
+                        W = E? ? R (Power = Voltage? ? Resistance)
                     </div>
                 </div>
             </div>
@@ -2429,15 +2429,15 @@
                     <div class="calculation-step step-resistance">
                         <div>
                             <div class="step-label">Total Resistance</div>
-                            <div class="step-formula" id="resistance-formula">R_total = R₁ + R₂ + R₃...</div>
+                            <div class="step-formula" id="resistance-formula">R_total = R? + R? + R?...</div>
                         </div>
-                        <div class="step-value" id="calc-resistance">∞Ω</div>
+                        <div class="step-value" id="calc-resistance">??</div>
                     </div>
                     
                     <div class="calculation-step step-current">
                         <div>
                             <div class="step-label">Total Current</div>
-                            <div class="step-formula" id="current-formula">I = V ÷ R_total</div>
+                            <div class="step-formula" id="current-formula">I = V ? R_total</div>
                         </div>
                         <div class="step-value" id="calc-current">0A</div>
                     </div>
@@ -2453,7 +2453,7 @@
                     <div class="calculation-step step-power">
                         <div>
                             <div class="step-label">Total Power</div>
-                            <div class="step-formula" id="power-formula">P = V × I</div>
+                            <div class="step-formula" id="power-formula">P = V ? I</div>
                         </div>
                         <div class="step-value" id="calc-power">0W</div>
                     </div>
@@ -2464,7 +2464,7 @@
         <!-- Problem Solving Panel -->
         <div class="analysis-content" id="content-problem" style="display: none;">
             <div class="problem-mode">
-                <div class="problem-title">🎯 Solve for the Unknown</div>
+                <div class="problem-title">?? Solve for the Unknown</div>
                 <div style="color: #ccc; margin-bottom: 16px; text-align: center;">
                     Enter your calculated values below:
                 </div>
@@ -2483,8 +2483,8 @@
                 
                 <div class="unknown-input">
                     <label style="color: #44ff88; width: 120px;">Total Resistance:</label>
-                    <input type="number" id="student-resistance" step="0.1" placeholder="Ω">
-                    <span style="color: #44ff88;">Ω</span>
+                    <input type="number" id="student-resistance" step="0.1" placeholder="?">
+                    <span style="color: #44ff88;">?</span>
                 </div>
                 
                 <div class="unknown-input">
@@ -2495,7 +2495,7 @@
                 
                 <div style="text-align: center; margin-top: 16px;">
                     <button class="check-answer-btn" onclick="checkStudentAnswers()">
-                        ✅ Check My Answers
+                        ? Check My Answers
                     </button>
                 </div>
                 
@@ -2507,7 +2507,7 @@
         <div class="analysis-content" id="content-practice" style="display: none;">
             <div class="practice-problem-card" id="practice-problem-card" style="display: none;">
                 <div class="problem-question" id="practice-question">
-                    📚 Problem: Find the total resistance
+                    ?? Problem: Find the total resistance
                 </div>
                 <div class="problem-description" id="practice-description">
                     Calculate the total resistance of this series circuit
@@ -2518,21 +2518,21 @@
                         Problem <span id="problem-counter">1</span> of <span id="total-problems">4</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button class="practice-btn" onclick="previousProblem()" id="prev-btn" style="padding: 6px 12px; font-size: 11px;">← Prev</button>
-                        <button class="practice-btn" onclick="nextProblem()" id="next-btn" style="padding: 6px 12px; font-size: 11px;">Next →</button>
+                        <button class="practice-btn" onclick="previousProblem()" id="prev-btn" style="padding: 6px 12px; font-size: 11px;">? Prev</button>
+                        <button class="practice-btn" onclick="nextProblem()" id="next-btn" style="padding: 6px 12px; font-size: 11px;">Next ?</button>
                     </div>
                 </div>
                 
                 <div class="circuit-status" id="circuit-status">
-                    <div id="circuit-status-text">⚠️ Circuit incomplete - Add wires to connect components</div>
+                    <div id="circuit-status-text">?? Circuit incomplete - Add wires to connect components</div>
                 </div>
                 
                 <div class="wire-instructions" id="wire-instructions">
-                    🔗 <strong>How to wire:</strong> 1) Click 🛠️ Tools → 🔗 Wire Mode  2) Touch red/white terminals to connect  3) Switch to Solve tab when complete
+                    ?? <strong>How to wire:</strong> 1) Click ??? Tools ? ?? Wire Mode  2) Touch red/white terminals to connect  3) Switch to Solve tab when complete
                 </div>
                 
                 <div id="practice-objectives" style="margin-top: 12px;">
-                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">📋 Learning Objectives:</div>
+                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">?? Learning Objectives:</div>
                     <ul id="objectives-list" style="color: #ccc; margin-left: 20px; line-height: 1.5; font-size: 12px;">
                         <!-- Objectives will be populated here -->
                     </ul>
@@ -2540,27 +2540,27 @@
             </div>
             
             <div class="worksheet-panel">
-                <div class="worksheet-title">🎓 Practice Circuit Problems</div>
+                <div class="worksheet-title">?? Practice Circuit Problems</div>
                 
                 <div style="text-align: center; margin-bottom: 16px;">
                     <button class="practice-btn" onclick="startPracticeSequence()" style="background: linear-gradient(135deg, #00ff88, #00cc66); color: #000; padding: 12px 24px; font-size: 14px; font-weight: bold;">
-                        🎯 Start Practice Sequence
+                        ?? Start Practice Sequence
                     </button>
                 </div>
                 
                 <div class="practice-buttons">
-                    <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">📚 Basic Series</button>
-                    <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">📚 Basic Parallel</button>
-                    <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">📚 Mixed Circuit</button>
-                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">🎓 Advanced Combo</button>
-                    <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">🎲 Random</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">?? Basic Series</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">?? Basic Parallel</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">?? Mixed Circuit</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">?? Advanced Combo</button>
+                    <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">?? Random</button>
                 </div>
                 
                 <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
-                    <strong>🎓 Choose your practice method:</strong><br>
-                    • <strong>Practice Sequence</strong> - Work through problems in order<br>
-                    • <strong>Individual Problems</strong> - Jump to any specific circuit<br>
-                    • <strong>Random</strong> - Get randomized component values<br><br>
+                    <strong>?? Choose your practice method:</strong><br>
+                    ? <strong>Practice Sequence</strong> - Work through problems in order<br>
+                    ? <strong>Individual Problems</strong> - Jump to any specific circuit<br>
+                    ? <strong>Random</strong> - Get randomized component values<br><br>
                     <small>All problems require manual wiring and calculations!</small>
                 </div>
             </div>
@@ -2575,8 +2575,8 @@
             <!-- Dynamic content will be inserted here -->
         </div>
         <div class="edit-buttons">
-            <button class="edit-btn save" onclick="saveEdit()">💾 Save</button>
-            <button class="edit-btn cancel" onclick="cancelEdit()">❌ Cancel</button>
+            <button class="edit-btn save" onclick="saveEdit()">?? Save</button>
+            <button class="edit-btn cancel" onclick="cancelEdit()">? Cancel</button>
         </div>
     </div>
     
@@ -2632,6 +2632,88 @@
         let isDragging = false, selectedComponent = null;
         let currentFlowParticles = [];
         let menuVisible = true, analysisVisible = true;
+
+        function notifyParentReady() {
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:ready' }, '*');
+                } catch (error) {
+                    console.warn('Legacy builder: unable to notify parent window', error);
+                }
+            }
+        }
+
+        function notifyParentAnalysisState() {
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:analysis-state', payload: { open: analysisVisible } }, '*');
+                } catch (error) {
+                    console.warn('Legacy builder: unable to share analysis state', error);
+                }
+            }
+        }
+
+        function handleBuilderBridgeMessage(event) {
+            const expectedSource = window.parent && window.parent !== window ? window.parent : null;
+            if (expectedSource && event.source !== expectedSource) {
+                return;
+            }
+
+            const data = event.data;
+            if (!data || typeof data !== 'object') {
+                return;
+            }
+
+            const { type, payload } = data;
+
+            switch (type) {
+                case 'builder:add-component': {
+                    const componentType = payload?.componentType;
+                    if (typeof componentType === 'string' && typeof addComponent === 'function') {
+                        addComponent(componentType);
+                    }
+                    break;
+                }
+                case 'builder:add-junction': {
+                    if (typeof addJunction === 'function') {
+                        addJunction();
+                    }
+                    break;
+                }
+                case 'builder:set-analysis-open': {
+                    if (!payload || typeof payload !== 'object' || !('open' in payload)) {
+                        break;
+                    }
+
+                    const desired = Boolean(payload.open);
+                    const panel = document.getElementById('wire-analysis');
+                    const isCollapsed = panel?.classList.contains('collapsed');
+
+                    if (panel) {
+                        if (desired && isCollapsed) {
+                            panel.classList.remove('collapsed');
+                            analysisVisible = true;
+                        } else if (!desired && !isCollapsed) {
+                            panel.classList.add('collapsed');
+                            analysisVisible = false;
+                        } else {
+                            analysisVisible = !panel.classList.contains('collapsed');
+                        }
+                    } else {
+                        analysisVisible = desired;
+                    }
+
+                    notifyParentAnalysisState();
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        if (window.parent && window.parent !== window) {
+            window.addEventListener('message', handleBuilderBridgeMessage);
+        }
         let undoStack = [], redoStack = [];
         let clipboard = null;
         let selectedComponents = new Set();
@@ -2651,12 +2733,12 @@
             series_basic: {
                 question: "Find the total resistance and current",
                 expectedAnswer: "resistance", // What we're testing for
-                description: "Calculate R_total = R₁ + R₂, then find I = E ÷ R_total"
+                description: "Calculate R_total = R? + R?, then find I = E ? R_total"
             },
             parallel_basic: {
                 question: "Find the total resistance (parallel)",
                 expectedAnswer: "resistance",
-                description: "Use 1/R_total = 1/R₁ + 1/R₂, then find the equivalent resistance"
+                description: "Use 1/R_total = 1/R? + 1/R?, then find the equivalent resistance"
             },
             mixed_circuit: {
                 question: "Analyze the complex circuit",
@@ -2900,12 +2982,12 @@
                         };
                     case 'resistor':
                         return {
-                            text: `${this.properties.resistance}Ω`,
+                            text: `${this.properties.resistance}?`,
                             color: WIRE_COLORS.R // Resistance - Green
                         };
                     case 'led':
                         return {
-                            text: `${this.properties.resistance}Ω`,
+                            text: `${this.properties.resistance}?`,
                             color: WIRE_COLORS.R // Resistance - Green
                         };
                     case 'switch':
@@ -3219,7 +3301,7 @@
                     // Create - indicator for negative terminal
                     const negativeDiv = document.createElement('div');
                     negativeDiv.className = 'polarity-indicator polarity-negative';
-                    negativeDiv.textContent = '−';
+                    negativeDiv.textContent = '?';
                     negativeDiv.style.display = showPolarityIndicators ? 'block' : 'none';
                     document.body.appendChild(negativeDiv);
                     this.polarityDivs.push({ div: negativeDiv, side: 'negative' });
@@ -3546,7 +3628,7 @@
         // Center circuit for optimal viewing
         function centerCircuit() {
             if (components.length === 0 && junctions.length === 0) {
-                setStatus('📍 No components to center');
+                setStatus('?? No components to center');
                 return;
             }
             
@@ -3591,7 +3673,7 @@
             cameraTarget.set(0, 0, 0);
             updateCameraPosition();
             
-            setStatus('🎯 Circuit centered and aligned to grid for professional schematic appearance');
+            setStatus('?? Circuit centered and aligned to grid for professional schematic appearance');
         }
 
         // Initialize the scene
@@ -3660,6 +3742,9 @@
                     }
                     lastTouchEnd = now;
                 }, false);
+
+                notifyParentReady();
+                notifyParentAnalysisState();
 
             } catch (error) {
                 console.error('Initialization error:', error);
@@ -4264,7 +4349,7 @@
                 }
             });
             
-            setStatus(`🔀 Routing mode: ${nextMode.toUpperCase()} - Wires updated with new routing style`);
+            setStatus(`?? Routing mode: ${nextMode.toUpperCase()} - Wires updated with new routing style`);
         }
 
         function compressPath(points) {
@@ -4688,7 +4773,7 @@
             const otherComponents = components.filter(c => c.type !== 'battery');
             
             if (batteries.length === 0) {
-                setStatus('⚠️ Add a battery first for schematic arrangement');
+                setStatus('?? Add a battery first for schematic arrangement');
                 return;
             }
             
@@ -4794,7 +4879,7 @@
             // Center the view on the circuit
             fitToScreen();
             analyzeCircuit();
-            setStatus('📐 Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
+            setStatus('?? Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
         }
         
         // Linear/Tree layout with battery at top
@@ -4808,7 +4893,7 @@
             const otherComponents = components.filter(c => c.type !== 'battery');
             
             if (batteries.length === 0) {
-                setStatus('⚠️ Add a battery first for linear arrangement');
+                setStatus('?? Add a battery first for linear arrangement');
                 return;
             }
             
@@ -4830,7 +4915,7 @@
             battery.mesh.position.copy(battery.position);
             
             if (otherComponents.length === 0) {
-                setStatus('⚠️ Add components to arrange');
+                setStatus('?? Add components to arrange');
                 return;
             }
             
@@ -4877,7 +4962,7 @@
             // Center the view on the circuit
             fitToScreen();
             analyzeCircuit();
-            setStatus('🌲 Circuit arranged in linear tree layout with battery at top!');
+            setStatus('?? Circuit arranged in linear tree layout with battery at top!');
         }
         
         // Arrange circuit based on current layout mode
@@ -4906,7 +4991,7 @@
                 });
                 
                 fitToScreen();
-                setStatus('📐 Components arranged in free-form grid - wire as you like!');
+                setStatus('?? Components arranged in free-form grid - wire as you like!');
             }
         }
 
@@ -4934,7 +5019,7 @@
                     document.getElementById('canvas').style.display = 'block';
                     
                     // Set initial status for CircuiTry
-                    setStatus('🚀 CircuiTry Professional Circuit Design Environment Ready!');
+                    setStatus('?? CircuiTry Professional Circuit Design Environment Ready!');
                 }, 0);
             }, 0);
         }
@@ -5006,7 +5091,7 @@
                 const hitSphere = junctionHits[0].object;
                 if (hitSphere.userData?.junction) {
                     // Junctions don't have editable properties currently
-                    setStatus('⚫ Junctions have no editable properties');
+                    setStatus('? Junctions have no editable properties');
                     return;
                 }
             }
@@ -5052,7 +5137,7 @@
             currentEditWire = wire;
             popup.style.display = 'block';
             
-            setStatus('🔗 Wire selected - Choose action');
+            setStatus('?? Wire selected - Choose action');
         }
         
         function createWireEditPopup() {
@@ -5064,11 +5149,11 @@
                 <div class="edit-popup-content">
                     <div class="edit-popup-header">
                         <h3>Edit Wire</h3>
-                        <button onclick="closeWireEditPopup()" class="edit-close">✕</button>
+                        <button onclick="closeWireEditPopup()" class="edit-close">?</button>
                     </div>
                     <div class="edit-actions">
-                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">🗑️ Delete Wire</button>
-                        <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">🔀 Change Routing</button>
+                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">??? Delete Wire</button>
+                        <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">?? Change Routing</button>
                     </div>
                 </div>
             `;
@@ -5092,7 +5177,7 @@
                     wires.splice(index, 1);
                 }
                 analyzeCircuit();
-                setStatus('🗑️ Wire deleted');
+                setStatus('??? Wire deleted');
             }
             closeWireEditPopup();
         }
@@ -5103,7 +5188,7 @@
                 // Cycle to next routing mode and update wire
                 cycleRoutingMode();
                 currentEditWire.updatePath();
-                setStatus('🔀 Wire routing updated');
+                setStatus('?? Wire routing updated');
             }
             closeWireEditPopup();
         }
@@ -5135,7 +5220,7 @@
                 setTimeout(() => firstInput.focus(), 100);
             }
             
-            setStatus(`✏️ Editing ${component.type} - Long press to edit components!`);
+            setStatus(`?? Editing ${component.type} - Long press to edit components!`);
         }
 
         function createEditForm(component) {
@@ -5145,7 +5230,7 @@
                 case 'battery':
                     formHTML = `
                         <div class="edit-row">
-                            <label>⚡ Voltage (V)</label>
+                            <label>? Voltage (V)</label>
                             <input type="number" id="edit-voltage" value="${component.properties.voltage}" min="0" max="24" step="0.1">
                         </div>
                     `;
@@ -5154,7 +5239,7 @@
                 case 'resistor':
                     formHTML = `
                         <div class="edit-row">
-                            <label>⚡ Resistance (Ω)</label>
+                            <label>? Resistance (?)</label>
                             <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="1" max="10000" step="1">
                         </div>
                     `;
@@ -5163,7 +5248,7 @@
                 case 'led':
                     formHTML = `
                         <div class="edit-row">
-                            <label>⚡ Forward Resistance (Ω)</label>
+                            <label>? Forward Resistance (?)</label>
                             <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="1" max="1000" step="1">
                         </div>
                     `;
@@ -5172,14 +5257,14 @@
                 case 'switch':
                     formHTML = `
                         <div class="edit-row">
-                            <label>🔀 Switch State</label>
+                            <label>?? Switch State</label>
                             <select id="edit-switch-state">
                                 <option value="true" ${component.properties.isOn ? 'selected' : ''}>ON (Closed)</option>
                                 <option value="false" ${!component.properties.isOn ? 'selected' : ''}>OFF (Open)</option>
                             </select>
                         </div>
                         <div class="edit-row">
-                            <label>⚡ Contact Resistance (Ω)</label>
+                            <label>? Contact Resistance (?)</label>
                             <input type="number" id="edit-resistance" value="${component.properties.resistance}" min="0.01" max="10" step="0.01">
                         </div>
                     `;
@@ -5240,12 +5325,12 @@
             analyzeCircuit();
             
             const componentType = currentEditComponent.type;
-            setStatus(`✅ ${componentType.charAt(0).toUpperCase() + componentType.slice(1)} updated successfully!`);
+            setStatus(`? ${componentType.charAt(0).toUpperCase() + componentType.slice(1)} updated successfully!`);
         }
 
         function cancelEdit() {
             hideEditPopup();
-            setStatus('❌ Edit cancelled');
+            setStatus('? Edit cancelled');
         }
 
         function hideEditPopup() {
@@ -5326,7 +5411,7 @@
             if (!isWireMode) {
                 const terminalInfo = getTerminalInfo(pointData);
                 const objectType = pointData.component ? pointData.component.type : 'junction';
-                setStatus(`ℹ️ ${objectType} ${terminalInfo} - Enable 🔗 Wire mode to connect!`);
+                setStatus(`?? ${objectType} ${terminalInfo} - Enable ?? Wire mode to connect!`);
                 return;
             }
             
@@ -5336,14 +5421,14 @@
                 
                 const terminalInfo = getTerminalInfo(pointData);
                 const objectType = pointData.component ? pointData.component.type : 'junction';
-                setStatus(`🔗 FIRST: ${objectType} ${terminalInfo} - Click another terminal!`);
+                setStatus(`?? FIRST: ${objectType} ${terminalInfo} - Click another terminal!`);
                 
             } else {
                 const sameObject = (wireStart.component && pointData.component && wireStart.component === pointData.component) ||
                                   (wireStart.junction && pointData.junction && wireStart.junction === pointData.junction);
                 
                 if (sameObject) {
-                    setStatus('❌ Cannot connect terminal to itself!');
+                    setStatus('? Cannot connect terminal to itself!');
                     return;
                 }
                 
@@ -5369,7 +5454,7 @@
             );
             
             if (existingWire) {
-                setStatus('❌ Wire already exists between these terminals');
+                setStatus('? Wire already exists between these terminals');
                 return;
             }
             
@@ -5380,13 +5465,13 @@
                 
                 const startType = startObj.type || 'junction';
                 const endType = endObj.type || 'junction';
-                setStatus(`✅ Wire connected ${startType} → ${endType}!`);
+                setStatus(`? Wire connected ${startType} ? ${endType}!`);
                 
                 analyzeCircuit();
                 
             } catch (error) {
                 console.error('Wire creation error:', error);
-                setStatus('❌ Wire creation failed');
+                setStatus('? Wire creation failed');
             }
         }
 
@@ -5464,7 +5549,7 @@
                 }, 500);
                 
                 const rotationDegrees = Math.round((component.rotation * 180 / Math.PI) % 360);
-                setStatus(`🔄 ${component.type.toUpperCase()} ROTATED 90°! Now at ${rotationDegrees}°`);
+                setStatus(`?? ${component.type.toUpperCase()} ROTATED 90?! Now at ${rotationDegrees}?`);
                 
                 if (component.connections) {
                     component.connections.forEach(conn => {
@@ -5481,7 +5566,7 @@
                 component.properties.isOn = !component.properties.isOn;
                 component.updateProperties({ isOn: component.properties.isOn });
                 const state = component.properties.isOn ? 'ON' : 'OFF';
-                setStatus(`🔀 Switch ${state} - circuit updated`);
+                setStatus(`?? Switch ${state} - circuit updated`);
                 analyzeCircuit();
             } else if (!isWireMode && !isDragging) {
                 selectComponent(component);
@@ -5497,13 +5582,13 @@
         function selectComponent(component) {
             selectedComponent = component;
             isDragging = true;
-            setStatus(`🎯 Dragging ${component.type} - tap to place`);
+            setStatus(`?? Dragging ${component.type} - tap to place`);
         }
 
         function selectJunction(junction) {
             selectedComponent = junction;
             isDragging = true;
-            setStatus(`🎯 Dragging junction - tap to place`);
+            setStatus(`?? Dragging junction - tap to place`);
         }
 
         function handleGroundClick(clientX, clientY) {
@@ -5521,7 +5606,7 @@
                     handleRelease();
                     
                     const objType = placedComponent.type || 'junction';
-                    setStatus(`📍 ${objType} placed at grid position!`);
+                    setStatus(`?? ${objType} placed at grid position!`);
                     
                     if (placedComponent.connections) {
                         placedComponent.connections.forEach(conn => {
@@ -5599,11 +5684,11 @@
             menuVisible = !menuVisible;
             
             if (menuVisible) {
-                toggle.textContent = '☰';
-                setStatus('📋 Menu shown - all tools available');
+                toggle.textContent = '?';
+                setStatus('?? Menu shown - all tools available');
             } else {
-                toggle.textContent = '▲';
-                setStatus('📋 Menu hidden - click ☰ to show');
+                toggle.textContent = '?';
+                setStatus('?? Menu hidden - click ? to show');
                 closeAllSubmenus();
             }
         }
@@ -5643,9 +5728,9 @@
         function openArena() {
             try {
                 window.open('/arena', '_blank');
-                setStatus('🧪 Component Arena opened');
+                setStatus('?? Component Arena opened');
             } catch (e) {
-                setStatus('⚠️ Unable to open Arena');
+                setStatus('?? Unable to open Arena');
             }
         }
 
@@ -5660,16 +5745,21 @@
 
         function toggleAnalysis() {
             const panel = document.getElementById('wire-analysis');
-            if (!panel) return;
+            if (!panel) {
+                notifyParentAnalysisState();
+                return;
+            }
             
             panel.classList.toggle('collapsed');
             analysisVisible = !panel.classList.contains('collapsed');
             
             if (analysisVisible) {
-                setStatus('📊 W.I.R.E. Analysis panel expanded');
+                setStatus('?? W.I.R.E. Analysis panel expanded');
             } else {
-                setStatus('📊 W.I.R.E. Analysis panel collapsed');
+                setStatus('?? W.I.R.E. Analysis panel collapsed');
             }
+
+            notifyParentAnalysisState();
         }
 
         // State management functions
@@ -5707,7 +5797,7 @@
 
         function undo() {
             if (undoStack.length === 0) {
-                setStatus('❌ Nothing to undo');
+                setStatus('? Nothing to undo');
                 return;
             }
             
@@ -5719,12 +5809,12 @@
             restoreState(JSON.parse(previousState));
             
             updateUndoRedoButtons();
-            setStatus('↶ Undo completed');
+            setStatus('? Undo completed');
         }
 
         function redo() {
             if (redoStack.length === 0) {
-                setStatus('❌ Nothing to redo');
+                setStatus('? Nothing to redo');
                 return;
             }
             
@@ -5736,7 +5826,7 @@
             restoreState(JSON.parse(redoState));
             
             updateUndoRedoButtons();
-            setStatus('↷ Redo completed');
+            setStatus('? Redo completed');
         }
 
         function getCurrentStateString() {
@@ -5869,7 +5959,7 @@
             link.download = `circuit_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
             link.click();
             
-            setStatus('💾 Circuit saved with W.I.R.E. labels and component numbering!');
+            setStatus('?? Circuit saved with W.I.R.E. labels and component numbering!');
         }
 
         function loadCircuit() {
@@ -5886,10 +5976,10 @@
                     try {
                         const state = JSON.parse(e.target.result);
                         restoreState(state);
-                        setStatus('📁 Circuit loaded successfully with W.I.R.E. labels!');
+                        setStatus('?? Circuit loaded successfully with W.I.R.E. labels!');
                     } catch (error) {
                         console.error('Load error:', error);
-                        setStatus('❌ Failed to load circuit file');
+                        setStatus('? Failed to load circuit file');
                     }
                 };
                 reader.readAsText(file);
@@ -5902,10 +5992,10 @@
             if (components.length > 0 || wires.length > 0 || junctions.length > 0) {
                 if (confirm('Create new circuit? This will clear your current work.')) {
                     clearAll();
-                    setStatus('📄 New circuit created');
+                    setStatus('?? New circuit created');
                 }
             } else {
-                setStatus('📄 Circuit is already empty');
+                setStatus('?? Circuit is already empty');
             }
         }
 
@@ -5934,7 +6024,7 @@
             wireAnalysis.style.display = 'block';
             menuToggle.style.display = 'flex';
             
-            setStatus('🖼️ Circuit image exported!');
+            setStatus('??? Circuit image exported!');
         }
 
         // Selection and clipboard functions
@@ -5943,12 +6033,12 @@
             components.forEach(comp => selectedComponents.add(comp));
             junctions.forEach(junction => selectedComponents.add(junction));
             
-            setStatus(`🔲 Selected ${selectedComponents.size} objects`);
+            setStatus(`?? Selected ${selectedComponents.size} objects`);
         }
 
         function copySelected() {
             if (selectedComponents.size === 0) {
-                setStatus('❌ No objects selected to copy');
+                setStatus('? No objects selected to copy');
                 return;
             }
             
@@ -5975,12 +6065,12 @@
                 }
             });
             
-            setStatus(`📋 Copied ${selectedComponents.size} objects`);
+            setStatus(`?? Copied ${selectedComponents.size} objects`);
         }
 
         function pasteSelected() {
             if (!clipboard || (clipboard.components.length === 0 && clipboard.junctions.length === 0)) {
-                setStatus('❌ Nothing to paste');
+                setStatus('? Nothing to paste');
                 return;
             }
             
@@ -6008,12 +6098,12 @@
             });
             
             updateCircuitInfo();
-            setStatus(`📄 Pasted ${selectedComponents.size} objects`);
+            setStatus(`?? Pasted ${selectedComponents.size} objects`);
         }
 
         function deleteSelected() {
             if (selectedComponents.size === 0) {
-                setStatus('❌ No objects selected to delete');
+                setStatus('? No objects selected to delete');
                 return;
             }
             
@@ -6027,7 +6117,7 @@
             
             selectedComponents.clear();
             updateCircuitInfo();
-            setStatus('🗑️ Selected objects deleted');
+            setStatus('??? Selected objects deleted');
         }
 
         // View functions
@@ -6037,7 +6127,7 @@
             cameraAngleY = 0.5;
             cameraTarget.set(0, 0, 0);
             updateCameraPosition();
-            setStatus('🎯 Camera view reset');
+            setStatus('?? Camera view reset');
         }
 
         function fitToScreen() {
@@ -6063,7 +6153,7 @@
             cameraDistance = Math.max(10, maxDim * 2);
             updateCameraPosition();
             
-            setStatus('📐 View fitted to circuit');
+            setStatus('?? View fitted to circuit');
         }
 
         function toggleGrid() {
@@ -6079,7 +6169,7 @@
                     fineGrid.visible = gridHelper.visible;
                 }
                 
-                setStatus(`⊞ Grid ${showGrid ? 'shown' : 'hidden'} - Components snap to grid points`);
+                setStatus(`? Grid ${showGrid ? 'shown' : 'hidden'} - Components snap to grid points`);
             }
         }
 
@@ -6090,7 +6180,7 @@
                     component.labelDiv.style.display = showLabels ? 'block' : 'none';
                 }
             });
-            setStatus(`🏷️ Component labels ${showLabels ? 'enabled' : 'disabled'}`);
+            setStatus(`??? Component labels ${showLabels ? 'enabled' : 'disabled'}`);
         }
         
         // Toggle current flow visualization style
@@ -6107,7 +6197,7 @@
                 animateCurrentFlow(true, result.current);
             }
             
-            setStatus(`💫 Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Probabilistic quantum cloud showing electron movement (- to +)' : 'CURRENT FLOW - Conventional current direction (+ to -)'}`);
+            setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Probabilistic quantum cloud showing electron movement (- to +)' : 'CURRENT FLOW - Conventional current direction (+ to -)'}`);
         }
         
         // Toggle polarity indicators
@@ -6121,7 +6211,7 @@
                 }
             });
             
-            setStatus(`⚡ Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
+            setStatus(`? Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
         }
         
         // Toggle branding overlay
@@ -6130,10 +6220,10 @@
             if (brandingEl) {
                 if (brandingEl.style.display === 'none') {
                     brandingEl.style.display = 'block';
-                    setStatus('🏷️ CircuiTry3D branding shown');
+                    setStatus('??? CircuiTry3D branding shown');
                 } else {
                     brandingEl.style.display = 'none';
-                    setStatus('🏷️ CircuiTry3D branding hidden');
+                    setStatus('??? CircuiTry3D branding hidden');
                 }
             }
         }
@@ -6155,7 +6245,7 @@
                 layoutLabel.textContent = modeNames[layoutMode];
             }
             
-            setStatus(`📐 Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
+            setStatus(`?? Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
         }
         
         function getLayoutModeDescription(mode) {
@@ -6170,186 +6260,186 @@
         // Help functions
         function showTutorial() {
             const tutorial = `
-🎓 CIRCUITRY3D QUICK START GUIDE
+?? CIRCUITRY3D QUICK START GUIDE
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📚 GETTING STARTED:
+?? GETTING STARTED:
 
-1️⃣ ADD COMPONENTS (🔧 Components menu):
-   • Battery (B key) - Power source
-   • Resistor (R key) - Limit current
-   • LED (L key) - Light indicator
-   • Switch (S key) - Control flow
-   • All components show real-time values
+1?? ADD COMPONENTS (?? Components menu):
+   ? Battery (B key) - Power source
+   ? Resistor (R key) - Limit current
+   ? LED (L key) - Light indicator
+   ? Switch (S key) - Control flow
+   ? All components show real-time values
 
-2️⃣ CONNECT WITH WIRES (🛠️ Tools menu):
-   • Click "🔗 Wire" button (or W key)
-   • Touch component terminals to connect
-   • Complete the circuit loop for current flow
+2?? CONNECT WITH WIRES (??? Tools menu):
+   ? Click "?? Wire" button (or W key)
+   ? Touch component terminals to connect
+   ? Complete the circuit loop for current flow
 
-3️⃣ VIEW CALCULATIONS (panels on right):
-   • 📐 W.I.R.E. - Main electrical values
-   • 🔺 EIR △ - Ohm's Law triangle
-   • ⚡ Power △ - Power calculations
-   • 📝 Worksheet - Step-by-step formulas
-   • ✅ Solve - Check your answers
+3?? VIEW CALCULATIONS (panels on right):
+   ? ?? W.I.R.E. - Main electrical values
+   ? ?? EIR ? - Ohm's Law triangle
+   ? ? Power ? - Power calculations
+   ? ?? Worksheet - Step-by-step formulas
+   ? ? Solve - Check your answers
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-🎨 VISUAL LEARNING:
+?? VISUAL LEARNING:
 
-🏷️ COLOR-CODED VALUES:
-   📘 Blue = Power (Watts)
-   🟠 Orange = Current (Amps)
-   🟢 Green = Resistance (Ohms)
-   🔴 Red = Voltage (Volts)
+??? COLOR-CODED VALUES:
+   ?? Blue = Power (Watts)
+   ?? Orange = Current (Amps)
+   ?? Green = Resistance (Ohms)
+   ?? Red = Voltage (Volts)
 
-💫 FLOW VISUALIZATION (View menu):
-   • Electron Flow: Shows actual electron movement
-     (negative → positive, semi-transparent particles)
-   • Current Flow: Shows conventional direction
-     (positive → negative, solid particles)
-   • Toggle: View → 💫 Flow
+?? FLOW VISUALIZATION (View menu):
+   ? Electron Flow: Shows actual electron movement
+     (negative ? positive, semi-transparent particles)
+   ? Current Flow: Shows conventional direction
+     (positive ? negative, solid particles)
+   ? Toggle: View ? ?? Flow
 
-⚡ POLARITY INDICATORS:
-   • Red (+) and Blue (-) terminals
-   • Prevents incorrect connections
-   • Toggle: View → ⚡ Polarity
+? POLARITY INDICATORS:
+   ? Red (+) and Blue (-) terminals
+   ? Prevents incorrect connections
+   ? Toggle: View ? ? Polarity
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-⚙️ ADVANCED FEATURES:
+?? ADVANCED FEATURES:
 
-🔀 ROUTING MODES (🛠️ Tools menu):
-   • Free-form: Natural connections
-   • Manhattan: Textbook right-angles
-   • Toggle: Tools → 🔀 Route
+?? ROUTING MODES (??? Tools menu):
+   ? Free-form: Natural connections
+   ? Manhattan: Textbook right-angles
+   ? Toggle: Tools ? ?? Route
 
-⚫ JUNCTIONS (for parallel circuits):
-   • Add via Tools → ⚫ Junction (or J key)
-   • Click to place on workspace
-   • Connect multiple wires at one point
+? JUNCTIONS (for parallel circuits):
+   ? Add via Tools ? ? Junction (or J key)
+   ? Click to place on workspace
+   ? Connect multiple wires at one point
 
-📐 AUTO-ARRANGE:
-   • Tools → 📐 Auto-Arrange
-   • Automatically creates textbook layouts
-   • Perfect for practice problems
+?? AUTO-ARRANGE:
+   ? Tools ? ?? Auto-Arrange
+   ? Automatically creates textbook layouts
+   ? Perfect for practice problems
 
-📐 LAYOUT MODES (View menu):
-   • Free: Place anywhere
-   • Square: Textbook style
-   • Linear: Vertical tree
-   • Toggle: View → 📐 Layout
+?? LAYOUT MODES (View menu):
+   ? Free: Place anywhere
+   ? Square: Textbook style
+   ? Linear: Vertical tree
+   ? Toggle: View ? ?? Layout
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📱 CONTROLS:
+?? CONTROLS:
 
 MOUSE/TOUCH:
-   • Drag: Move components
-   • Long-press: Edit values/properties
-   • Two-finger pinch: Zoom
-   • Two-finger drag: Pan workspace
+   ? Drag: Move components
+   ? Long-press: Edit values/properties
+   ? Two-finger pinch: Zoom
+   ? Two-finger drag: Pan workspace
 
 KEYBOARD SHORTCUTS:
-   • B = Battery, R = Resistor
-   • L = LED, S = Switch, J = Junction
-   • W = Wire Mode, T = Rotate Mode
-   • Space = Toggle Menu
+   ? B = Battery, R = Resistor
+   ? L = LED, S = Switch, J = Junction
+   ? W = Wire Mode, T = Rotate Mode
+   ? Space = Toggle Menu
 
-VIEW CONTROLS (👁️ View menu):
-   • Reset View: Center camera
-   • Fit Screen: Auto-zoom to circuit
-   • Toggle Grid: Show/hide snap grid
-   • Labels: Show/hide component names
+VIEW CONTROLS (??? View menu):
+   ? Reset View: Center camera
+   ? Fit Screen: Auto-zoom to circuit
+   ? Toggle Grid: Show/hide snap grid
+   ? Labels: Show/hide component names
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-💡 TIPS:
-• Complete the circuit loop for current to flow
-• Open switches stop current flow
-• Use junctions for parallel circuits
-• Long-press wires to delete or reroute
-• Try different routing modes for cleaner layouts
+?? TIPS:
+? Complete the circuit loop for current to flow
+? Open switches stop current flow
+? Use junctions for parallel circuits
+? Long-press wires to delete or reroute
+? Try different routing modes for cleaner layouts
 
 Need more help? Check:
-• 📚 W.I.R.E. Guide - Electrical concepts
-• ⌨️ Shortcuts - Full keyboard reference
-• ℹ️ About - Version info & features
+? ?? W.I.R.E. Guide - Electrical concepts
+? ?? Shortcuts - Full keyboard reference
+? ?? About - Version info & features
             `;
             alert(tutorial);
         }
 
         function showWireGuide() {
             const guide = `
-📚 W.I.R.E. METHOD EXPLAINED
+?? W.I.R.E. METHOD EXPLAINED
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
 The W.I.R.E. method helps you remember the four key electrical values:
 
-W = WATTS (Power) 📘 BLUE
-━━━━━━━━━━━━━━━━━━━━━━━━
-• Formula: P = V × I
-• What it means: Energy used per second
-• In circuits: How much work electricity does
-• Example: 60W light bulb uses 60 joules/second
-• Higher power = brighter light, more heat
+W = WATTS (Power) ?? BLUE
+????????????????????????
+? Formula: P = V ? I
+? What it means: Energy used per second
+? In circuits: How much work electricity does
+? Example: 60W light bulb uses 60 joules/second
+? Higher power = brighter light, more heat
 
-I = CURRENT (Amperes) 🟠 ORANGE
-━━━━━━━━━━━━━━━━━━━━━━━━
-• Formula: I = V / R (Ohm's Law)
-• What it means: Flow rate of electrons
-• In circuits: Like water flow in a pipe
-• Visualized: Animated particles in wires
-• Measured in Amperes (Amps)
+I = CURRENT (Amperes) ?? ORANGE
+????????????????????????
+? Formula: I = V / R (Ohm's Law)
+? What it means: Flow rate of electrons
+? In circuits: Like water flow in a pipe
+? Visualized: Animated particles in wires
+? Measured in Amperes (Amps)
 
-R = RESISTANCE (Ohms) 🟢 GREEN
-━━━━━━━━━━━━━━━━━━━━━━━━
-• Formula: R = V / I
-• What it means: Opposition to current flow
-• In circuits: Like pipe narrowness
-• Components: Resistors, LEDs (have resistance)
-• Higher resistance = less current
+R = RESISTANCE (Ohms) ?? GREEN
+????????????????????????
+? Formula: R = V / I
+? What it means: Opposition to current flow
+? In circuits: Like pipe narrowness
+? Components: Resistors, LEDs (have resistance)
+? Higher resistance = less current
 
-E = EMF/VOLTAGE (Volts) 🔴 RED
-━━━━━━━━━━━━━━━━━━━━━━━━
-• Formula: V = I × R
-• What it means: Electrical pressure
-• In circuits: Like water pressure in pipes
-• Source: Battery provides voltage
-• Higher voltage = more current (if R same)
+E = EMF/VOLTAGE (Volts) ?? RED
+????????????????????????
+? Formula: V = I ? R
+? What it means: Electrical pressure
+? In circuits: Like water pressure in pipes
+? Source: Battery provides voltage
+? Higher voltage = more current (if R same)
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📐 KEY FORMULAS:
+?? KEY FORMULAS:
 
-OHM'S LAW TRIANGLE (EIR △):
+OHM'S LAW TRIANGLE (EIR ?):
    E (Voltage)
       /\
      /  \
     /____\
    I    R
    
-• V = I × R  (Voltage = Current × Resistance)
-• I = V / R  (Current = Voltage / Resistance)
-• R = V / I  (Resistance = Voltage / Current)
+? V = I ? R  (Voltage = Current ? Resistance)
+? I = V / R  (Current = Voltage / Resistance)
+? R = V / I  (Resistance = Voltage / Current)
 
-POWER TRIANGLE (Power △):
+POWER TRIANGLE (Power ?):
    P (Watts)
       /\
      /  \
     /____\
    V    I
    
-• P = V × I  (Power = Voltage × Current)
-• P = I²R    (Power = Current² × Resistance)
-• P = V²/R   (Power = Voltage² / Resistance)
+? P = V ? I  (Power = Voltage ? Current)
+? P = I?R    (Power = Current? ? Resistance)
+? P = V?/R   (Power = Voltage? / Resistance)
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-💡 PRACTICE TIPS:
+?? PRACTICE TIPS:
 
 1. Build simple circuits to see W.I.R.E. in action
 2. Watch how values change when you:
@@ -6359,7 +6449,7 @@ POWER TRIANGLE (Power △):
 3. Use the panels on right to see calculations
 4. Try Practice Mode for guided problems
 
-🎯 REMEMBER: All values are connected!
+?? REMEMBER: All values are connected!
    Change one, and others adjust automatically.
             `;
             alert(guide);
@@ -6367,24 +6457,24 @@ POWER TRIANGLE (Power △):
 
         function showShortcuts() {
             const shortcuts = `
-⌨️ KEYBOARD & MOUSE CONTROLS
+?? KEYBOARD & MOUSE CONTROLS
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-🔧 COMPONENT SHORTCUTS:
+?? COMPONENT SHORTCUTS:
    B = Add Battery
    R = Add Resistor
    L = Add LED
    S = Add Switch
    J = Add Junction
 
-🛠️ TOOL SHORTCUTS:
+??? TOOL SHORTCUTS:
    W = Toggle Wire Mode
    T = Toggle Rotate Mode
    Space = Toggle Menu
    Esc = Close menu/Cancel mode
 
-✏️ EDIT SHORTCUTS:
+?? EDIT SHORTCUTS:
    Ctrl+Z = Undo
    Ctrl+Y = Redo
    Ctrl+C = Copy selected
@@ -6392,19 +6482,19 @@ POWER TRIANGLE (Power △):
    Delete = Delete selected
    Backspace = Delete selected
 
-💾 FILE SHORTCUTS:
+?? FILE SHORTCUTS:
    Ctrl+S = Save Circuit
    Ctrl+O = Load Circuit
    Ctrl+N = New Circuit
 
-👁️ VIEW SHORTCUTS:
+??? VIEW SHORTCUTS:
    H = Reset Camera
    F = Fit to Screen
    G = Toggle Grid
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-🖱️ MOUSE CONTROLS:
+??? MOUSE CONTROLS:
 
 BASIC ACTIONS:
    Click = Select component
@@ -6413,12 +6503,12 @@ BASIC ACTIONS:
    Right-click = Context menu
 
 WIRE MODE:
-   Click terminal → Click terminal = Create wire
-   Click junction → Click junction = Wire between junctions
+   Click terminal ? Click terminal = Create wire
+   Click junction ? Click junction = Wire between junctions
    Esc = Exit wire mode
 
 ROTATE MODE:
-   Click component = Rotate 90°
+   Click component = Rotate 90?
    Esc = Exit rotate mode
 
 EDITING:
@@ -6426,9 +6516,9 @@ EDITING:
    Long-press wire = Delete or reroute
    Double-click = Quick edit
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📱 TOUCH CONTROLS (Mobile/Tablet):
+?? TOUCH CONTROLS (Mobile/Tablet):
 
 ONE FINGER:
    Tap = Select component
@@ -6444,19 +6534,19 @@ WIRE CONNECTIONS:
    Tap terminal in wire mode = Connect
    Long-press wire = Edit/delete menu
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-💡 PRO TIPS:
+?? PRO TIPS:
 
-• Hold Shift while dragging = Disable grid snap
-• Use arrow keys = Fine-tune component position
-• Middle-click drag = Pan workspace (desktop)
-• Ctrl+Scroll = Zoom faster
-• Double-tap = Quick component edit (mobile)
+? Hold Shift while dragging = Disable grid snap
+? Use arrow keys = Fine-tune component position
+? Middle-click drag = Pan workspace (desktop)
+? Ctrl+Scroll = Zoom faster
+? Double-tap = Quick component edit (mobile)
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-🎯 QUICK WORKFLOW:
+?? QUICK WORKFLOW:
 
 1. Press B = Add battery
 2. Press R = Add resistor
@@ -6471,68 +6561,68 @@ Fast circuit building with keyboard shortcuts!
 
         function showAbout() {
             const about = `
-ℹ️ CIRCUITRY3D - W.I.R.E. CIRCUIT BUILDER
+?? CIRCUITRY3D - W.I.R.E. CIRCUIT BUILDER
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📱 VERSION 2.5 - ENHANCED EDITION
+?? VERSION 2.5 - ENHANCED EDITION
 
-🎓 Educational 3D Circuit Simulator
+?? Educational 3D Circuit Simulator
    Built with Three.js & W.I.R.E. methodology
    Perfect for visual learners!
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-✨ CORE FEATURES:
+? CORE FEATURES:
 
-🔧 CIRCUIT BUILDING:
-   • Interactive 3D environment
-   • Real-time electrical calculations
-   • Color-coded values (W.I.R.E.)
-   • Auto-labeling (B1, R1, LED1, SW1)
-   • Grid snapping (toggle on/off)
+?? CIRCUIT BUILDING:
+   ? Interactive 3D environment
+   ? Real-time electrical calculations
+   ? Color-coded values (W.I.R.E.)
+   ? Auto-labeling (B1, R1, LED1, SW1)
+   ? Grid snapping (toggle on/off)
 
-💫 VISUALIZATION:
-   • Electron Flow mode (semi-transparent)
-   • Current Flow mode (solid particles)
-   • Animated current through wires
-   • Polarity indicators (+/−)
-   • Transparent branding overlay
+?? VISUALIZATION:
+   ? Electron Flow mode (semi-transparent)
+   ? Current Flow mode (solid particles)
+   ? Animated current through wires
+   ? Polarity indicators (+/?)
+   ? Transparent branding overlay
 
-🔀 FLEXIBLE WIRING:
-   • Free-form: Natural connections
-   • Manhattan: Textbook right-angles
-   • Simple, Perimeter, A*: Advanced routing
-   • Smart junction placement
-   • Long-press wire editing
+?? FLEXIBLE WIRING:
+   ? Free-form: Natural connections
+   ? Manhattan: Textbook right-angles
+   ? Simple, Perimeter, A*: Advanced routing
+   ? Smart junction placement
+   ? Long-press wire editing
 
-📐 LAYOUT OPTIONS:
-   • Free: Place components anywhere
-   • Square: Textbook-style circuits
-   • Linear: Vertical tree layout
-   • Auto-arrange for instant layouts
+?? LAYOUT OPTIONS:
+   ? Free: Place components anywhere
+   ? Square: Textbook-style circuits
+   ? Linear: Vertical tree layout
+   ? Auto-arrange for instant layouts
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📚 EDUCATIONAL TOOLS:
+?? EDUCATIONAL TOOLS:
 
 W.I.R.E. PANELS:
-   📐 W.I.R.E. - Main electrical values
-   🔺 EIR △ - Ohm's Law triangle
-   ⚡ Power △ - Power calculations
-   📝 Worksheet - Step-by-step formulas
-   ✅ Solve - Answer verification
+   ?? W.I.R.E. - Main electrical values
+   ?? EIR ? - Ohm's Law triangle
+   ? Power ? - Power calculations
+   ?? Worksheet - Step-by-step formulas
+   ? Solve - Answer verification
 
 PRACTICE MODE:
-   • Guided circuit problems
-   • Series, Parallel, Combination circuits
-   • Switch circuits
-   • Random problem generator
-   • Step-by-step solutions
+   ? Guided circuit problems
+   ? Series, Parallel, Combination circuits
+   ? Switch circuits
+   ? Random problem generator
+   ? Step-by-step solutions
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-🎯 PURPOSE & PEDAGOGY:
+?? PURPOSE & PEDAGOGY:
 
 CircuiTry3D teaches electrical engineering
 fundamentals through hands-on experimentation
@@ -6540,75 +6630,75 @@ with virtual circuits.
 
 The W.I.R.E. method provides a memorable
 framework for understanding:
-   📘 Watts (Power) - Blue
-   🟠 Current (Amperes) - Orange
-   🟢 Resistance (Ohms) - Green
-   🔴 EMF/Voltage (Volts) - Red
+   ?? Watts (Power) - Blue
+   ?? Current (Amperes) - Orange
+   ?? Resistance (Ohms) - Green
+   ?? EMF/Voltage (Volts) - Red
 
 Visual, interactive learning makes abstract
 concepts concrete and accessible!
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📱 PLATFORM SUPPORT:
+?? PLATFORM SUPPORT:
 
 DESKTOP:
-   • Full keyboard & mouse support
-   • High-performance 3D rendering
-   • All features available
+   ? Full keyboard & mouse support
+   ? High-performance 3D rendering
+   ? All features available
 
 MOBILE/TABLET:
-   • Touch-optimized controls
-   • Two-finger zoom & pan
-   • Long-press editing
-   • Responsive interface
+   ? Touch-optimized controls
+   ? Two-finger zoom & pan
+   ? Long-press editing
+   ? Responsive interface
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-🔬 TECHNICAL DETAILS:
+?? TECHNICAL DETAILS:
 
 Built with:
-   • Three.js - 3D graphics
-   • JavaScript - Core logic
-   • HTML5 Canvas - Rendering
-   • CSS3 - Interface styling
+   ? Three.js - 3D graphics
+   ? JavaScript - Core logic
+   ? HTML5 Canvas - Rendering
+   ? CSS3 - Interface styling
 
 Features:
-   • Real-time circuit simulation
-   • Graph-based topology detection
-   • Multiple routing algorithms
-   • Persistent local storage
-   • Import/export circuits
+   ? Real-time circuit simulation
+   ? Graph-based topology detection
+   ? Multiple routing algorithms
+   ? Persistent local storage
+   ? Import/export circuits
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-👥 FOR STUDENTS & EDUCATORS:
+?? FOR STUDENTS & EDUCATORS:
 
 STUDENTS:
-   ✓ Learn by doing
-   ✓ Instant visual feedback
-   ✓ Practice problems included
-   ✓ Export circuits for homework
-   ✓ Mobile-friendly for anywhere learning
+   ? Learn by doing
+   ? Instant visual feedback
+   ? Practice problems included
+   ? Export circuits for homework
+   ? Mobile-friendly for anywhere learning
 
 EDUCATORS:
-   ✓ Create example circuits easily
-   ✓ Professional layouts automatically
-   ✓ W.I.R.E. methodology built-in
-   ✓ Free to use in classroom
-   ✓ No installation required
+   ? Create example circuits easily
+   ? Professional layouts automatically
+   ? W.I.R.E. methodology built-in
+   ? Free to use in classroom
+   ? No installation required
 
-═══════════════════════════════════════
+???????????????????????????????????????
 
-📧 SUPPORT & FEEDBACK:
+?? SUPPORT & FEEDBACK:
 
 Found a bug? Have a suggestion?
 Visit: github.com/Mitchelllorin/CircuiTry3D
 
-© 2025 CircuiTry3D
+? 2025 CircuiTry3D
 W.I.R.E. Circuit Builder v2.5
 
-Made with ⚡ for visual learners everywhere!
+Made with ? for visual learners everywhere!
             `;
             alert(about);
         }
@@ -6633,7 +6723,7 @@ Made with ⚡ for visual learners everywhere!
             components.push(component);
             selectComponent(component);
             
-            setStatus(`➕ ${type} added - drag to grid position, tap to place, long press to edit values`);
+            setStatus(`? ${type} added - drag to grid position, tap to place, long press to edit values`);
             updateCircuitInfo();
             closeAllSubmenus();
         }
@@ -6658,7 +6748,7 @@ Made with ⚡ for visual learners everywhere!
             
             selectJunction(junction);
             
-            setStatus(`⚫ Junction node added - drag to grid position and tap to place!`);
+            setStatus(`? Junction node added - drag to grid position and tap to place!`);
             updateCircuitInfo();
             closeAllSubmenus();
         }
@@ -6695,7 +6785,7 @@ Made with ⚡ for visual learners everywhere!
             analyzeCircuit();
             updateCircuitInfo();
             
-            setStatus('✂️ Wire split with junction - now you can branch from this point!');
+            setStatus('?? Wire split with junction - now you can branch from this point!');
             return junction;
         }
 
@@ -6711,7 +6801,7 @@ Made with ⚡ for visual learners everywhere!
             analyzeCircuit();
             updateCircuitInfo();
             
-            setStatus(`✨ Created textbook-style parallel circuit with ${targetObjs.length} branches`);
+            setStatus(`? Created textbook-style parallel circuit with ${targetObjs.length} branches`);
         }
 
         function toggleWireMode() {
@@ -6727,9 +6817,9 @@ Made with ⚡ for visual learners everywhere!
             closeAllSubmenus();
             
             if (isWireMode) {
-                setStatus('🔗 WIRE MODE! Touch terminals to connect components');
+                setStatus('?? WIRE MODE! Touch terminals to connect components');
             } else {
-                setStatus('🚀 Wire mode disabled');
+                setStatus('?? Wire mode disabled');
             }
         }
 
@@ -6746,9 +6836,9 @@ Made with ⚡ for visual learners everywhere!
             closeAllSubmenus();
             
             if (isRotateMode) {
-                setStatus('🔄 ROTATE MODE! Touch any component to rotate it 90°');
+                setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
             } else {
-                setStatus('🚀 Rotate mode disabled');
+                setStatus('?? Rotate mode disabled');
             }
         }
 
@@ -6775,7 +6865,7 @@ Made with ⚡ for visual learners everywhere!
             if (batteries.length === 0) {
                 updateCircuitDisplay(0, 0, Infinity, 0);
                 animateCurrentFlow(false, 0);
-                setStatus('🔋 ADD A BATTERY to start W.I.R.E. analysis!');
+                setStatus('?? ADD A BATTERY to start W.I.R.E. analysis!');
                 return;
             }
             
@@ -6783,7 +6873,7 @@ Made with ⚡ for visual learners everywhere!
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
                 animateCurrentFlow(false, 0);
-                setStatus('🔗 ADD WIRES to complete the circuit for W.I.R.E. calculations!');
+                setStatus('?? ADD WIRES to complete the circuit for W.I.R.E. calculations!');
                 return;
             }
             
@@ -7090,31 +7180,31 @@ Made with ⚡ for visual learners everywhere!
                 
                 switch(type) {
                     case 'series':
-                        displayText = '⚡ Series';
+                        displayText = '? Series';
                         color = '#ffaa44';
                         break;
                     case 'parallel':
-                        displayText = '⚡⚡ Parallel';
+                        displayText = '?? Parallel';
                         color = '#44ff88';
                         break;
                     case 'combination':
-                        displayText = '⚡⚡⚡ Combination';
+                        displayText = '??? Combination';
                         color = '#ff88ff';
                         break;
                     case 'simple':
-                        displayText = '→ Simple';
+                        displayText = '? Simple';
                         color = '#88ccff';
                         break;
                     case 'Open Circuit':
-                        displayText = '✋ Open';
+                        displayText = '? Open';
                         color = '#ff4444';
                         break;
                     case 'Incomplete':
-                        displayText = '⚠️ Incomplete';
+                        displayText = '?? Incomplete';
                         color = '#ffaa44';
                         break;
                     case 'No Circuit':
-                        displayText = '○ None';
+                        displayText = '? None';
                         color = '#888888';
                         break;
                     default:
@@ -7140,7 +7230,7 @@ Made with ⚡ for visual learners everywhere!
             if (voltageEl) voltageEl.textContent = voltage.toFixed(1) + 'V';
             if (currentEl) currentEl.textContent = current.toFixed(3) + 'A';
             if (resistanceEl) resistanceEl.textContent = 
-                resistance === Infinity ? '∞Ω' : resistance.toFixed(1) + 'Ω';
+                resistance === Infinity ? '??' : resistance.toFixed(1) + '?';
             if (powerEl) powerEl.textContent = power.toFixed(2) + 'W';
             
             const countEl = document.getElementById('count');
@@ -7162,18 +7252,18 @@ Made with ⚡ for visual learners everywhere!
             }
             
             if (current > 0 && resistance !== Infinity) {
-                setStatus(`🎓 W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}Ω, E=${voltage.toFixed(1)}V`);
+                setStatus(`?? W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}?, E=${voltage.toFixed(1)}V`);
             } else if (resistance === Infinity) {
                 const switches = components.filter(c => c.type === 'switch');
                 const openSwitch = switches.find(sw => !sw.properties.isOn);
                 
                 if (openSwitch) {
-                    setStatus(`🔓 OPEN CIRCUIT: Switch is OFF - touch it to complete W.I.R.E. analysis!`);
+                    setStatus(`?? OPEN CIRCUIT: Switch is OFF - touch it to complete W.I.R.E. analysis!`);
                 } else {
-                    setStatus(`🔧 INCOMPLETE CIRCUIT: Connect components to enable W.I.R.E. calculations`);
+                    setStatus(`?? INCOMPLETE CIRCUIT: Connect components to enable W.I.R.E. calculations`);
                 }
             } else {
-                setStatus('🎓 W.I.R.E. Circuit Builder - Learn with visual methodology!');
+                setStatus('?? W.I.R.E. Circuit Builder - Learn with visual methodology!');
             }
         }
 
@@ -7319,7 +7409,7 @@ Made with ⚡ for visual learners everywhere!
                     break;
             }
             
-            setStatus(`📚 Switched to ${tabName.toUpperCase()} analysis mode`);
+            setStatus(`?? Switched to ${tabName.toUpperCase()} analysis mode`);
         }
 
         function explainOhmsLaw(variable) {
@@ -7327,19 +7417,19 @@ Made with ⚡ for visual learners everywhere!
             
             switch(variable) {
                 case 'E':
-                    formulaEl.textContent = 'E = I × R (EMF/Voltage = Current × Resistance)';
+                    formulaEl.textContent = 'E = I ? R (EMF/Voltage = Current ? Resistance)';
                     formulaEl.style.color = '#ff4444';
-                    setStatus('🔴 EMF/VOLTAGE: E = I × R | Measured in Volts (V)');
+                    setStatus('?? EMF/VOLTAGE: E = I ? R | Measured in Volts (V)');
                     break;
                 case 'I':
-                    formulaEl.textContent = 'I = E ÷ R (Current = EMF/Voltage ÷ Resistance)';
+                    formulaEl.textContent = 'I = E ? R (Current = EMF/Voltage ? Resistance)';
                     formulaEl.style.color = '#ff8844';
-                    setStatus('🟠 CURRENT: I = E ÷ R | Measured in Amperes (A)');
+                    setStatus('?? CURRENT: I = E ? R | Measured in Amperes (A)');
                     break;
                 case 'R':
-                    formulaEl.textContent = 'R = E ÷ I (Resistance = EMF/Voltage ÷ Current)';
+                    formulaEl.textContent = 'R = E ? I (Resistance = EMF/Voltage ? Current)';
                     formulaEl.style.color = '#44ff88';
-                    setStatus('🟢 RESISTANCE: R = E ÷ I | Measured in Ohms (Ω)');
+                    setStatus('?? RESISTANCE: R = E ? I | Measured in Ohms (?)');
                     break;
             }
             
@@ -7358,19 +7448,19 @@ Made with ⚡ for visual learners everywhere!
             
             switch(variable) {
                 case 'W':
-                    formulaEl.textContent = 'W = I × E (Power = Current × EMF/Voltage)';
+                    formulaEl.textContent = 'W = I ? E (Power = Current ? EMF/Voltage)';
                     formulaEl.style.color = '#4488ff';
-                    setStatus('🔵 POWER: W = I × E | Also W = I²R or W = E²÷R | Measured in Watts (W)');
+                    setStatus('?? POWER: W = I ? E | Also W = I?R or W = E??R | Measured in Watts (W)');
                     break;
                 case 'I':
-                    formulaEl.textContent = 'I = W ÷ E (Current = Power ÷ EMF/Voltage)';
+                    formulaEl.textContent = 'I = W ? E (Current = Power ? EMF/Voltage)';
                     formulaEl.style.color = '#ff8844';
-                    setStatus('🟠 CURRENT: I = W ÷ E | From power triangle | Measured in Amperes (A)');
+                    setStatus('?? CURRENT: I = W ? E | From power triangle | Measured in Amperes (A)');
                     break;
                 case 'E':
-                    formulaEl.textContent = 'E = W ÷ I (EMF/Voltage = Power ÷ Current)';
+                    formulaEl.textContent = 'E = W ? I (EMF/Voltage = Power ? Current)';
                     formulaEl.style.color = '#ff4444';
-                    setStatus('🔴 EMF/VOLTAGE: E = W ÷ I | From power triangle | Measured in Volts (V)');
+                    setStatus('?? EMF/VOLTAGE: E = W ? I | From power triangle | Measured in Volts (V)');
                     break;
             }
             
@@ -7415,7 +7505,7 @@ Made with ⚡ for visual learners everywhere!
                 item.style.borderColor = '#44ff88';
                 item.innerHTML = `
                     <div class="component-label">R${resistor.componentNumber}</div>
-                    <div class="component-value" style="color: #44ff88;">${resistor.properties.resistance}Ω</div>
+                    <div class="component-value" style="color: #44ff88;">${resistor.properties.resistance}?</div>
                 `;
                 componentList.appendChild(item);
             });
@@ -7427,7 +7517,7 @@ Made with ⚡ for visual learners everywhere!
                 item.style.borderColor = '#44ff88';
                 item.innerHTML = `
                     <div class="component-label">LED${led.componentNumber}</div>
-                    <div class="component-value" style="color: #44ff88;">${led.properties.resistance}Ω</div>
+                    <div class="component-value" style="color: #44ff88;">${led.properties.resistance}?</div>
                 `;
                 componentList.appendChild(item);
             });
@@ -7440,7 +7530,7 @@ Made with ⚡ for visual learners everywhere!
                 item.innerHTML = `
                     <div class="component-label">SW${sw.componentNumber}</div>
                     <div class="component-value" style="color: ${sw.properties.isOn ? '#44ff88' : '#ff4444'};">
-                        ${sw.properties.isOn ? sw.properties.resistance + 'Ω' : 'OPEN'}
+                        ${sw.properties.isOn ? sw.properties.resistance + '?' : 'OPEN'}
                     </div>
                 `;
                 componentList.appendChild(item);
@@ -7468,7 +7558,7 @@ Made with ⚡ for visual learners everywhere!
                         return 'X';
                     }).join(' + ');
                 } else {
-                    formula += '∞ (no resistors)';
+                    formula += '? (no resistors)';
                 }
                 resistanceFormula.textContent = formula;
             }
@@ -7487,7 +7577,7 @@ Made with ⚡ for visual learners everywhere!
 
             // Update calculated values in worksheet
             const calcElements = {
-                'calc-resistance': lastKnownValues.resistance === Infinity ? '∞Ω' : lastKnownValues.resistance.toFixed(1) + 'Ω',
+                'calc-resistance': lastKnownValues.resistance === Infinity ? '??' : lastKnownValues.resistance.toFixed(1) + '?',
                 'calc-current': lastKnownValues.current.toFixed(3) + 'A',
                 'calc-voltage': lastKnownValues.voltage.toFixed(1) + 'V',
                 'calc-power': lastKnownValues.power.toFixed(2) + 'W'
@@ -7519,19 +7609,19 @@ Made with ⚡ for visual learners everywhere!
             let schematic = '';
             if (batteries.length > 0 && resistors.length > 0) {
                 schematic = `
-                    <div class="schematic-line">     +─────[R₁]─────+</div>
-                    <div class="schematic-line">     │              │</div>
-                    <div class="schematic-line">   [BAT]          [R₂]</div>
-                    <div class="schematic-line">     │              │</div>
-                    <div class="schematic-line">     +──────────────+</div>
+                    <div class="schematic-line">     +?????[R?]?????+</div>
+                    <div class="schematic-line">     ?              ?</div>
+                    <div class="schematic-line">   [BAT]          [R?]</div>
+                    <div class="schematic-line">     ?              ?</div>
+                    <div class="schematic-line">     +??????????????+</div>
                 `;
             } else if (batteries.length > 0) {
                 schematic = `
-                    <div class="schematic-line">     +──────────────+</div>
-                    <div class="schematic-line">     │              │</div>
+                    <div class="schematic-line">     +??????????????+</div>
+                    <div class="schematic-line">     ?              ?</div>
                     <div class="schematic-line">   [BAT]         (no load)</div>
-                    <div class="schematic-line">     │              │</div>
-                    <div class="schematic-line">     +──────────────+</div>
+                    <div class="schematic-line">     ?              ?</div>
+                    <div class="schematic-line">     +??????????????+</div>
                 `;
             }
             
@@ -7596,8 +7686,8 @@ Made with ⚡ for visual learners everywhere!
                     Math.abs(studentResistance - lastKnownValues.resistance) / lastKnownValues.resistance < tolerance;
                 results.push({
                     label: 'Resistance',
-                    student: studentResistance.toFixed(1) + 'Ω',
-                    correct: lastKnownValues.resistance === Infinity ? '∞Ω' : lastKnownValues.resistance.toFixed(1) + 'Ω',
+                    student: studentResistance.toFixed(1) + '?',
+                    correct: lastKnownValues.resistance === Infinity ? '??' : lastKnownValues.resistance.toFixed(1) + '?',
                     isCorrect: resistanceCorrect,
                     color: '#44ff88'
                 });
@@ -7621,13 +7711,13 @@ Made with ⚡ for visual learners everywhere!
             let feedback = `<div class="result-feedback ${allCorrect ? 'feedback-correct' : 'feedback-incorrect'}">`;
             
             if (allCorrect && results.length > 0) {
-                feedback += '🎉 Excellent! All answers are correct!';
+                feedback += '?? Excellent! All answers are correct!';
             } else if (results.length === 0) {
-                feedback += '❓ Please enter at least one answer to check.';
+                feedback += '? Please enter at least one answer to check.';
             } else {
-                feedback += '📊 Results:<br>';
+                feedback += '?? Results:<br>';
                 results.forEach(result => {
-                    const icon = result.isCorrect ? '✅' : '❌';
+                    const icon = result.isCorrect ? '?' : '?';
                     feedback += `${icon} ${result.label}: ${result.student} ${result.isCorrect ? '(Correct!)' : '(Expected: ' + result.correct + ')'}<br>`;
                 });
             }
@@ -7642,9 +7732,9 @@ Made with ⚡ for visual learners everywhere!
                 name: "Basic Series Circuit",
                 description: "Simple series circuit with battery and two resistors",
                 objectives: [
-                    "Calculate total resistance in series (R_total = R₁ + R₂)",
-                    "Apply Ohm's law to find current (I = V ÷ R_total)",
-                    "Calculate power consumption (P = V × I)"
+                    "Calculate total resistance in series (R_total = R? + R?)",
+                    "Apply Ohm's law to find current (I = V ? R_total)",
+                    "Calculate power consumption (P = V ? I)"
                 ],
                 components: [
                     { type: 'battery', position: [-4, 0, 0], properties: { voltage: 12 } },
@@ -7661,7 +7751,7 @@ Made with ⚡ for visual learners everywhere!
                 name: "Basic Parallel Circuit",
                 description: "Two resistors in parallel with a battery",
                 objectives: [
-                    "Calculate total resistance in parallel (1/R_total = 1/R₁ + 1/R₂)",
+                    "Calculate total resistance in parallel (1/R_total = 1/R? + 1/R?)",
                     "Understand current division in parallel circuits",
                     "Compare parallel vs series power consumption"
                 ],
@@ -7737,15 +7827,15 @@ Made with ⚡ for visual learners everywhere!
             if (circuitStatusEl && circuitStatusTextEl) {
                 if (hasFlow) {
                     circuitStatusEl.className = 'circuit-status status-complete';
-                    circuitStatusTextEl.textContent = '✅ Circuit complete - Current flowing! Switch to Solve tab.';
+                    circuitStatusTextEl.textContent = '? Circuit complete - Current flowing! Switch to Solve tab.';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'none';
                 } else if (isComplete) {
                     circuitStatusEl.className = 'circuit-status status-incomplete';
-                    circuitStatusTextEl.textContent = '⚠️ Circuit wired but not complete - Check connections';
+                    circuitStatusTextEl.textContent = '?? Circuit wired but not complete - Check connections';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'block';
                 } else {
                     circuitStatusEl.className = 'circuit-status status-incomplete';
-                    circuitStatusTextEl.textContent = '⚠️ Circuit incomplete - Add wires to connect components';
+                    circuitStatusTextEl.textContent = '?? Circuit incomplete - Add wires to connect components';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'block';
                 }
             }
@@ -7754,7 +7844,7 @@ Made with ⚡ for visual learners everywhere!
         function loadPresetCircuit(presetName) {
             const preset = PRESET_CIRCUITS[presetName];
             if (!preset) {
-                setStatus('❌ Preset circuit not found!');
+                setStatus('? Preset circuit not found!');
                 return;
             }
             
@@ -7789,7 +7879,7 @@ Made with ⚡ for visual learners everywhere!
             const practiceInfo = practiceQuestions[presetName];
             
             if (questionEl && practiceInfo) {
-                questionEl.textContent = `📚 Problem: ${practiceInfo.question}`;
+                questionEl.textContent = `?? Problem: ${practiceInfo.question}`;
             }
             
             if (descriptionEl && practiceInfo) {
@@ -7833,7 +7923,7 @@ Made with ⚡ for visual learners everywhere!
             
             updateCircuitInfo();
             updatePracticeStatus();
-            setStatus(`📚 Loaded practice problem: ${preset.name} - Wire the components!`);
+            setStatus(`?? Loaded practice problem: ${preset.name} - Wire the components!`);
         }
 
         function autoConnectSeries() {
@@ -7873,7 +7963,7 @@ Made with ⚡ for visual learners everywhere!
                 }
                 
                 analyzeCircuit();
-                setStatus('🔗 Circuit auto-wired for demonstration');
+                setStatus('?? Circuit auto-wired for demonstration');
             } catch (error) {
                 console.log('Auto-connect failed, students can wire manually');
             }
@@ -7891,9 +7981,9 @@ Made with ⚡ for visual learners everywhere!
                 if (comp.type === 'battery') {
                     comp.updateProperties({ voltage: Math.floor(Math.random() * 15) + 3 }); // 3-18V
                 } else if (comp.type === 'resistor') {
-                    comp.updateProperties({ resistance: Math.floor(Math.random() * 500) + 50 }); // 50-550Ω
+                    comp.updateProperties({ resistance: Math.floor(Math.random() * 500) + 50 }); // 50-550?
                 } else if (comp.type === 'led') {
-                    comp.updateProperties({ resistance: Math.floor(Math.random() * 30) + 10 }); // 10-40Ω
+                    comp.updateProperties({ resistance: Math.floor(Math.random() * 30) + 10 }); // 10-40?
                 }
             });
             
@@ -7908,24 +7998,24 @@ Made with ⚡ for visual learners everywhere!
             
             updateCircuitInfo();
             updatePracticeStatus();
-            setStatus('🎲 Generated random practice problem with randomized values!');
+            setStatus('?? Generated random practice problem with randomized values!');
         }
 
         // Practice sequence navigation functions
         function startPracticeSequence() {
             currentProblemIndex = 0;
             loadPracticeSequenceProblem();
-            setStatus('🎯 Started practice sequence - Problem 1 of 4');
+            setStatus('?? Started practice sequence - Problem 1 of 4');
         }
 
         function nextProblem() {
             if (currentProblemIndex < practiceProblems.length - 1) {
                 currentProblemIndex++;
                 loadPracticeSequenceProblem();
-                setStatus(`📚 Advanced to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
+                setStatus(`?? Advanced to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
             } else {
-                setStatus('🎉 Congratulations! You completed all practice problems!');
-                alert('🎉 Great job! You\'ve completed all practice problems.\n\nYou can:\n• Start over with "Start Practice Sequence"\n• Try "Random" for extra practice\n• Use individual problem buttons for review');
+                setStatus('?? Congratulations! You completed all practice problems!');
+                alert('?? Great job! You\'ve completed all practice problems.\n\nYou can:\n? Start over with "Start Practice Sequence"\n? Try "Random" for extra practice\n? Use individual problem buttons for review');
             }
         }
 
@@ -7933,9 +8023,9 @@ Made with ⚡ for visual learners everywhere!
             if (currentProblemIndex > 0) {
                 currentProblemIndex--;
                 loadPracticeSequenceProblem();
-                setStatus(`📚 Returned to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
+                setStatus(`?? Returned to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
             } else {
-                setStatus('📍 Already at the first problem');
+                setStatus('?? Already at the first problem');
             }
         }
 
@@ -7953,7 +8043,7 @@ Made with ⚡ for visual learners everywhere!
             if (counterEl && totalEl) {
                 if (currentPracticeCircuit === 'random') {
                     counterEl.textContent = '?';
-                    totalEl.textContent = '∞';
+                    totalEl.textContent = '?';
                 } else {
                     counterEl.textContent = currentProblemIndex + 1;
                     totalEl.textContent = practiceProblems.length;
@@ -7971,10 +8061,10 @@ Made with ⚡ for visual learners everywhere!
                 prevBtn.disabled = currentProblemIndex === 0;
                 
                 if (currentProblemIndex >= practiceProblems.length - 1) {
-                    nextBtn.textContent = 'Finish 🎉';
+                    nextBtn.textContent = 'Finish ??';
                     nextBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
                 } else {
-                    nextBtn.textContent = 'Next →';
+                    nextBtn.textContent = 'Next ?';
                     nextBtn.style.background = 'linear-gradient(135deg, #333, #444)';
                 }
             }
@@ -8057,47 +8147,47 @@ Made with ⚡ for visual learners everywhere!
             updateButtonStates();
             updateCircuitInfo();
             closeAllSubmenus();
-            setStatus('🗑️ ALL CLEARED! Circuit builder reset with fresh component numbering');
+            setStatus('??? ALL CLEARED! Circuit builder reset with fresh component numbering');
         }
 
         function showPracticeModeHelp() {
             const help = `
-🎓 PRACTICE MODE HELP
+?? PRACTICE MODE HELP
 
-📚 HOW TO GET NEXT PROBLEMS:
+?? HOW TO GET NEXT PROBLEMS:
 
-🎯 PRACTICE SEQUENCE (Recommended):
-   • Click "Start Practice Sequence" for guided progression
-   • Work through 4 problems in order: Series → Parallel → Mixed → Switch
-   • Use "← Prev" and "Next →" buttons to navigate
-   • See "Problem 1 of 4" counter to track progress
-   • Click "Finish 🎉" on the last problem
+?? PRACTICE SEQUENCE (Recommended):
+   ? Click "Start Practice Sequence" for guided progression
+   ? Work through 4 problems in order: Series ? Parallel ? Mixed ? Switch
+   ? Use "? Prev" and "Next ?" buttons to navigate
+   ? See "Problem 1 of 4" counter to track progress
+   ? Click "Finish ??" on the last problem
 
-📋 INDIVIDUAL PROBLEMS:
-   • Click specific buttons: "Basic Series", "Basic Parallel", etc.
-   • Jump to any problem for review or extra practice
-   • Still shows problem counter and navigation
+?? INDIVIDUAL PROBLEMS:
+   ? Click specific buttons: "Basic Series", "Basic Parallel", etc.
+   ? Jump to any problem for review or extra practice
+   ? Still shows problem counter and navigation
 
-🎲 RANDOM PROBLEMS:
-   • Click "Random" for randomized component values
-   • Same circuit types, but different numbers each time
-   • Perfect for extra practice and testing
+?? RANDOM PROBLEMS:
+   ? Click "Random" for randomized component values
+   ? Same circuit types, but different numbers each time
+   ? Perfect for extra practice and testing
 
-🔗 WIRING PROCESS:
+?? WIRING PROCESS:
    1. Problem loads with components placed automatically
    2. Read the question: "Find total resistance", etc.
-   3. Click 🛠️ Tools → 🔗 Wire Mode
+   3. Click ??? Tools ? ?? Wire Mode
    4. Touch colored terminals to connect:
       - Red = Battery positive (+)
       - Gray = Battery negative (-)
       - White = Component terminals
-   5. Status changes: ⚠️ Incomplete → ✅ Complete
+   5. Status changes: ?? Incomplete ? ? Complete
 
-📊 SOLVING PROBLEMS:
-   • Switch to EIR △ for Ohm's law (E=I×R)
-   • Use Power △ for power calculations (W=I×E)
-   • Try Worksheet for step-by-step formulas
-   • Go to Solve tab to check your answers
+?? SOLVING PROBLEMS:
+   ? Switch to EIR ? for Ohm's law (E=I?R)
+   ? Use Power ? for power calculations (W=I?E)
+   ? Try Worksheet for step-by-step formulas
+   ? Go to Solve tab to check your answers
 
 Perfect sequence for learning circuit analysis!
             `;

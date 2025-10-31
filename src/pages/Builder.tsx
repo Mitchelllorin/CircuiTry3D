@@ -1,13 +1,25 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import "../styles/builder-ui.css";
 
-const COMPONENTS = [
-  { id: "power", icon: "PS", label: "Power Supply" },
-  { id: "resistor", icon: "R", label: "Resistor" },
-  { id: "capacitor", icon: "C", label: "Capacitor" },
-  { id: "ground", icon: "G", label: "Ground" },
-  { id: "inductor", icon: "L", label: "Inductor" },
-  { id: "sensor", icon: "S", label: "Sensor" },
+type LegacyMessage =
+  | { type: "builder:add-component"; payload: { componentType: string } }
+  | { type: "builder:add-junction" }
+  | { type: "builder:set-analysis-open"; payload: { open: boolean } };
+
+type ComponentAction = {
+  id: string;
+  icon: string;
+  label: string;
+  action: "component" | "junction";
+  legacyType?: "battery" | "resistor" | "led" | "switch";
+};
+
+const COMPONENT_ACTIONS: ComponentAction[] = [
+  { id: "battery", icon: "B", label: "Battery", action: "component", legacyType: "battery" },
+  { id: "resistor", icon: "R", label: "Resistor", action: "component", legacyType: "resistor" },
+  { id: "led", icon: "LED", label: "LED", action: "component", legacyType: "led" },
+  { id: "switch", icon: "SW", label: "Switch", action: "component", legacyType: "switch" },
+  { id: "junction", icon: "J", label: "Junction", action: "junction" },
 ];
 
 const TOOL_BUTTONS = [
@@ -247,11 +259,66 @@ const HELP_TOPICS: HelpTopic[] = [
 ];
 
 export default function Builder() {
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const bottomPanelRef = useRef<HTMLElement | null>(null);
+  const pendingMessages = useRef<LegacyMessage[]>([]);
+  const [isFrameReady, setFrameReady] = useState(false);
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
   const [isLeftOpen, setLeftOpen] = useState(true);
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [activeHelpTopic, setActiveHelpTopic] = useState(HELP_TOPICS[0].id);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const iframeWindow = iframeRef.current?.contentWindow;
+      if (!iframeWindow || event.source !== iframeWindow) {
+        return;
+      }
+
+      const { data } = event;
+      if (!data || typeof data !== "object") {
+        return;
+      }
+
+      const { type, payload } = data as { type?: string; payload?: unknown };
+
+      if (type === "legacy:ready") {
+        setFrameReady(true);
+        return;
+      }
+
+      if (type === "legacy:analysis-state" && payload && typeof payload === "object" && "open" in payload) {
+        const desired = (payload as { open?: unknown }).open;
+        if (typeof desired === "boolean") {
+          setBottomOpen(desired);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const handleResize = () => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     document.body.classList.add("builder-body");
@@ -277,10 +344,146 @@ export default function Builder() {
     };
   }, [isHelpOpen]);
 
+  const sendMessageToLegacy = useCallback(
+    (message: LegacyMessage, options: { allowQueue?: boolean } = {}) => {
+      const { allowQueue = true } = options;
+      const frameWindow = iframeRef.current?.contentWindow;
+
+      if (!frameWindow || !isFrameReady) {
+        if (allowQueue) {
+          pendingMessages.current.push(message);
+        }
+        return false;
+      }
+
+      try {
+        frameWindow.postMessage(message, "*");
+        return true;
+      } catch (error) {
+        if (allowQueue) {
+          pendingMessages.current.push(message);
+        }
+        return false;
+      }
+    },
+    [isFrameReady]
+  );
+
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+
+    const frameWindow = iframeRef.current?.contentWindow;
+    if (!frameWindow) {
+      return;
+    }
+
+    if (!pendingMessages.current.length) {
+      return;
+    }
+
+    const queue = [...pendingMessages.current];
+    pendingMessages.current = [];
+
+    const failed: LegacyMessage[] = [];
+    queue.forEach((message) => {
+      try {
+        frameWindow.postMessage(message, "*");
+      } catch (error) {
+        failed.push(message);
+      }
+    });
+
+    if (failed.length > 0) {
+      pendingMessages.current = failed;
+    }
+  }, [isFrameReady]);
+
+  useEffect(() => {
+    if (!isBottomOpen) {
+      setBottomPanelHeight(0);
+      return;
+    }
+
+    const panel = bottomPanelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    const measure = () => {
+      const rect = panel.getBoundingClientRect();
+      setBottomPanelHeight(rect.height);
+    };
+
+    measure();
+
+    let resizeObserver: ResizeObserver | undefined;
+
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => measure());
+      resizeObserver.observe(panel);
+    } else {
+      window.addEventListener("resize", measure);
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", measure);
+      }
+    };
+  }, [isBottomOpen]);
+
+  useEffect(() => {
+    sendMessageToLegacy({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
+  }, [isBottomOpen, sendMessageToLegacy]);
+
+  const handleComponentAction = useCallback(
+    (component: ComponentAction) => {
+      if (!component) {
+        return;
+      }
+
+      if (component.action === "junction") {
+        sendMessageToLegacy({ type: "builder:add-junction" });
+        return;
+      }
+
+      if (!component.legacyType) {
+        console.warn(`Missing legacy mapping for component '${component.id}'`);
+        return;
+      }
+
+      sendMessageToLegacy({
+        type: "builder:add-component",
+        payload: { componentType: component.legacyType },
+      });
+    },
+    [sendMessageToLegacy]
+  );
+
+  const minOffset = 260;
+  const maxOffset = viewportHeight ? Math.max(minOffset, Math.round(viewportHeight * 0.7)) : 520;
+  const rawOffset = Math.round(bottomPanelHeight) + 48;
+  const bottomPanelOffset = isBottomOpen ? Math.min(Math.max(rawOffset, minOffset), maxOffset) : 0;
+
+  const shellStyle: CSSProperties | undefined = bottomPanelOffset
+    ? ({ "--bottom-panel-offset": `${bottomPanelOffset}px` } as CSSProperties)
+    : undefined;
+
+  const workspaceStyle: CSSProperties | undefined = bottomPanelOffset
+    ? { height: `calc(100vh - ${bottomPanelOffset}px)` }
+    : undefined;
+
+  const controlsDisabled = !isFrameReady;
+  const controlDisabledTitle = controlsDisabled ? "Circuit workspace is still loading?" : undefined;
+
   const activeTopic = HELP_TOPICS.find((topic) => topic.id === activeHelpTopic) ?? HELP_TOPICS[0];
 
   return (
-    <div className="builder-shell">
+    <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
       <div className="builder-logo-header">
         <div className="builder-logo-text">CircuiTry3D</div>
       </div>
@@ -292,8 +495,17 @@ export default function Builder() {
         </div>
         <div className="panel-section">
           <div className="component-grid">
-            {COMPONENTS.map((component) => (
-              <button key={component.id} type="button" className="component-btn">
+            {COMPONENT_ACTIONS.map((component) => (
+              <button
+                key={component.id}
+                type="button"
+                className="component-btn"
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={controlsDisabled ? controlDisabledTitle : component.label}
+                data-component-action={component.action}
+              >
                 <span className="component-icon" aria-hidden="true">
                   {component.icon}
                 </span>
@@ -330,7 +542,12 @@ export default function Builder() {
         </div>
       </aside>
 
-      <section className={`builder-panel panel-bottom ${isBottomOpen ? "open" : ""}`} aria-hidden={!isBottomOpen}>
+      <section
+        ref={bottomPanelRef}
+        className={`builder-panel panel-bottom ${isBottomOpen ? "open" : ""}`}
+        aria-hidden={!isBottomOpen}
+        aria-expanded={isBottomOpen}
+      >
         <div className="panel-header">
           <span className="panel-title">W.I.R.E. Analysis</span>
           <p className="panel-subtitle">Watch core metrics adjust as your circuit evolves.</p>
@@ -396,12 +613,17 @@ export default function Builder() {
         <span className="status-indicator" aria-hidden="true" /> Build Mode Active - W.I.R.E. ready for insights
       </div>
 
-      <div className="builder-workspace">
+      <div className="builder-workspace" style={workspaceStyle} aria-busy={!isFrameReady}>
         <iframe
+          ref={iframeRef}
           className="builder-iframe"
           title="CircuiTry3D Builder"
           src="/legacy.html?embed=builder"
           sandbox="allow-scripts allow-same-origin allow-popups"
+          onLoad={() => {
+            setFrameReady(true);
+            sendMessageToLegacy({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
+          }}
         />
       </div>
 

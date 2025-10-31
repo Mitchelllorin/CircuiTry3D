@@ -10,6 +10,7 @@ body.builder-body {
   position: relative;
   min-height: 100vh;
   width: 100vw;
+  --bottom-panel-offset: 0px;
 }
 
 .builder-workspace {
@@ -17,6 +18,7 @@ body.builder-body {
   height: 100vh;
   position: relative;
   z-index: 100;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .builder-iframe {
@@ -123,6 +125,14 @@ body.builder-body {
   transform: translate(-50%, 0);
 }
 
+.builder-shell.bottom-open .builder-panel-toggle.toggle-bottom {
+  bottom: calc(var(--bottom-panel-offset) + 32px);
+}
+
+.builder-shell.bottom-open .builder-status-bar {
+  bottom: calc(var(--bottom-panel-offset) + 24px);
+}
+
 .builder-panel .panel-header {
   padding: 24px 26px 18px;
   border-bottom: 1px solid rgba(0, 255, 136, 0.22);
@@ -176,6 +186,21 @@ body.builder-body {
   border-color: #00ff88;
   transform: translateY(-3px);
   box-shadow: 0 16px 32px rgba(0, 255, 136, 0.25);
+}
+
+.component-btn:disabled,
+.component-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(0, 255, 136, 0.22);
+  background: linear-gradient(135deg, rgba(26, 37, 64, 0.7), rgba(40, 52, 90, 0.7));
+}
+
+.component-btn:disabled:hover,
+.component-btn[aria-disabled="true"]:hover {
+  transform: none;
 }
 
 .component-icon {
