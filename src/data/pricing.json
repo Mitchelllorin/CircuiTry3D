@@ -1,0 +1,113 @@
+{
+  "currency": "USD",
+  "billingCycles": [
+    {
+      "id": "monthly",
+      "label": "Monthly",
+      "note": "Pay-as-you-go"
+    },
+    {
+      "id": "annual",
+      "label": "Annual",
+      "note": "Save 15%"
+    }
+  ],
+  "plans": [
+    {
+      "id": "free",
+      "name": "Free Sandbox",
+      "tagline": "Explore core circuit tools",
+      "price": {
+        "monthly": 0,
+        "annual": 0
+      },
+      "unit": "per educator",
+      "features": [
+        "3 active circuits",
+        "Core component library",
+        "W.I.R.E. analysis preview",
+        "Community resource hub"
+      ],
+      "cta": {
+        "label": "Start Free",
+        "type": "link",
+        "href": "/app"
+      }
+    },
+    {
+      "id": "educator",
+      "name": "Educator License",
+      "tagline": "Full toolkit for classroom instruction",
+      "price": {
+        "monthly": 2900,
+        "annual": 29900
+      },
+      "unit": "per educator",
+      "features": [
+        "Unlimited saved circuits",
+        "Advanced W.I.R.E. coaching",
+        "Lesson templates & assessments",
+        "Priority email support"
+      ],
+      "renewal": "Auto-renews, cancel anytime",
+      "cta": {
+        "label": "Subscribe",
+        "type": "stripeCheckout",
+        "sku": "educator-license"
+      }
+    },
+    {
+      "id": "institutional",
+      "name": "Institutional License",
+      "tagline": "Campus-wide access with admin controls",
+      "price": {
+        "monthly": null,
+        "annual": null
+      },
+      "unit": "per site",
+      "features": [
+        "Bulk educator seats",
+        "Dedicated onboarding",
+        "SIS integrations & SSO",
+        "Curriculum alignment toolkit"
+      ],
+      "renewal": "Custom agreements with annual review",
+      "cta": {
+        "label": "Contact Us",
+        "type": "link",
+        "href": "mailto:hello@circuitry3d.com?subject=Institutional%20Pricing"
+      },
+      "bulk": {
+        "minimumSeats": 10,
+        "notes": "Volume discounts start at 25 seats"
+      }
+    }
+  ],
+  "addons": [
+    {
+      "id": "certification-bundle",
+      "name": "Certification Bundle",
+      "tagline": "Upcoming: Educator certification & PD hours",
+      "price": {
+        "monthly": null,
+        "annual": 9900
+      },
+      "unit": "per educator",
+      "availability": "Launching soon",
+      "features": [
+        "Guided certification pathway",
+        "Accredited PD modules",
+        "Printable achievement badges"
+      ],
+      "cta": {
+        "label": "Learn More",
+        "type": "link",
+        "href": "mailto:hello@circuitry3d.com?subject=Certification%20Bundle%20Interest"
+      }
+    }
+  ],
+  "stripe": {
+    "status": "pending",
+    "note": "Stripe checkout links will populate sku-based buttons"
+  }
+}
