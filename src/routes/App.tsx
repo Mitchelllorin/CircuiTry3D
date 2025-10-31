@@ -3,6 +3,7 @@ import { Routes, Route, Link, Navigate } from "react-router-dom";
 import Builder from "../pages/Builder";
 import Arena from "../pages/Arena";
 import WireDemo from "../pages/WireDemo";
+import Pricing from "../pages/Pricing";
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
       <Route path="/app" element={<Builder />} />
       <Route path="/arena" element={<Arena />} />
       <Route path="/wire-demo" element={<WireDemo />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

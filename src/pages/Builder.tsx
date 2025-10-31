@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Link } from "react-router-dom";
 import "../styles/builder-ui.css";
 
 type LegacyMessage =
@@ -485,7 +486,14 @@ export default function Builder() {
   return (
     <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
       <div className="builder-logo-header">
-        <div className="builder-logo-text">CircuiTry3D</div>
+        <div className="builder-logo-content">
+          <div className="builder-logo-text">CircuiTry3D</div>
+          <nav className="builder-nav" aria-label="Main">
+            <Link to="/pricing" className="builder-nav-link">
+              Plans &amp; Pricing
+            </Link>
+          </nav>
+        </div>
       </div>
 
       <aside className={`builder-panel panel-left ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>

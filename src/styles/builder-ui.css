@@ -44,6 +44,57 @@ body.builder-body {
   pointer-events: none;
 }
 
+.builder-logo-content {
+  pointer-events: auto;
+  width: min(92%, 1100px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.builder-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.builder-nav-link {
+  pointer-events: auto;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94f2ff;
+  background: rgba(4, 15, 35, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 999px;
+  padding: 0.65rem 1.5rem;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.45);
+}
+
+.builder-nav-link:hover,
+.builder-nav-link:focus-visible {
+  border-color: #38bdf8;
+  color: #f8fafc;
+  box-shadow: 0 18px 36px rgba(56, 189, 248, 0.3);
+  outline: none;
+}
+
+@media (max-width: 720px) {
+  .builder-logo-content {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .builder-nav {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .builder-logo-text {
   font-size: 40px;
   font-weight: 800;
