@@ -30,6 +30,27 @@
             height: 100%;
             -webkit-overflow-scrolling: touch;
         }
+
+        body.embedded {
+            overflow: hidden;
+        }
+
+        body.embedded #menu-bar,
+        body.embedded #menu-toggle,
+        body.embedded #wire-analysis,
+        body.embedded #status,
+        body.embedded #branding-overlay,
+        body.embedded #landing-page,
+        body.embedded #launch-btn,
+        body.embedded #loading,
+        body.embedded #loading-progress,
+        body.embedded #loading-text {
+            display: none !important;
+        }
+
+        body.embedded #canvas {
+            display: block !important;
+        }
         
         .menu-bar {
             position: fixed;
@@ -2568,6 +2589,42 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let isEmbedded = false;
+        try {
+            isEmbedded = urlParams.has("embed") || window.self !== window.top;
+        } catch (error) {
+            isEmbedded = urlParams.has("embed");
+        }
+
+        if (isEmbedded) {
+            document.documentElement.classList.add("embedded");
+            window.addEventListener("DOMContentLoaded", () => {
+                const body = document.body;
+                if (body) {
+                    body.classList.add("embedded");
+                }
+                const hiddenIds = [
+                    "menu-bar",
+                    "menu-toggle",
+                    "wire-analysis",
+                    "status",
+                    "branding-overlay",
+                    "landing-page",
+                    "launch-btn",
+                    "loading",
+                    "loading-progress",
+                    "loading-text"
+                ];
+                hiddenIds.forEach((id) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.style.display = "none";
+                    }
+                });
+            });
+        }
+
         // Global variables
         let scene, camera, renderer, raycaster, mouse;
         let components = [], wires = [], junctions = [];
