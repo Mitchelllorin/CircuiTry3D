@@ -2170,117 +2170,117 @@
 
     <div id="loading" class="loading" style="display: none;">Loading CircuiTry...</div>
     
-    <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">?</button>
+    <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">Menu</button>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
         <div class="menu-tabs">
             <div class="menu-tab" onclick="toggleSubmenu('components')">
-                ?? Components
+                Components
                 <div class="submenu" id="submenu-components">
                     <div class="submenu-grid">
-                        <button class="btn" onclick="addComponent('battery')">?? Battery</button>
-                        <button class="btn" onclick="addComponent('resistor')">? Resistor</button>
-                        <button class="btn" onclick="addComponent('led')">?? LED</button>
-                        <button class="btn" onclick="addComponent('switch')">?? Switch</button>
+                        <button class="btn" onclick="addComponent('battery')">Battery</button>
+                        <button class="btn" onclick="addComponent('resistor')">Resistor</button>
+                        <button class="btn" onclick="addComponent('led')">LED</button>
+                        <button class="btn" onclick="addComponent('switch')">Switch</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('tools')">
-                ??? Tools
+                Tools
                 <div class="submenu" id="submenu-tools">
                     <div class="submenu-row">
-                        <button class="btn wire-btn" id="wire-btn" onclick="toggleWireMode()">?? Wire</button>
-                        <button class="btn rotate-btn" id="rotate-btn" onclick="toggleRotateMode()">?? Rotate</button>
+                        <button class="btn wire-btn" id="wire-btn" onclick="toggleWireMode()">Wire</button>
+                        <button class="btn rotate-btn" id="rotate-btn" onclick="toggleRotateMode()">Rotate</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="addJunction()">? Junction</button>
-                        <button class="btn" onclick="arrangeByLayoutMode()">?? Auto-Arrange</button>
+                        <button class="btn" onclick="addJunction()">Junction</button>
+                        <button class="btn" onclick="arrangeByLayoutMode()">Auto-Arrange</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="cycleRoutingMode()">?? Route: <span id="route-mode">Free-form</span></button>
-                        <button class="btn" onclick="centerCircuit()">?? Center Circuit</button>
+                        <button class="btn" onclick="cycleRoutingMode()">Route: <span id="route-mode">Free-form</span></button>
+                        <button class="btn" onclick="centerCircuit()">Center Circuit</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="clearAll()">??? Clear All</button>
+                        <button class="btn" onclick="clearAll()">Clear All</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('edit')">
-                ?? Edit
+                Edit
                 <div class="submenu" id="submenu-edit">
                     <div class="submenu-row">
-                        <button class="btn" onclick="undo()" id="undo-btn">? Undo</button>
-                        <button class="btn" onclick="redo()" id="redo-btn">? Redo</button>
+                        <button class="btn" onclick="undo()" id="undo-btn">Undo</button>
+                        <button class="btn" onclick="redo()" id="redo-btn">Redo</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="copySelected()">?? Copy</button>
-                        <button class="btn" onclick="pasteSelected()">?? Paste</button>
+                        <button class="btn" onclick="copySelected()">Copy</button>
+                        <button class="btn" onclick="pasteSelected()">Paste</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="selectAll()">?? Select All</button>
-                        <button class="btn" onclick="deleteSelected()">??? Delete</button>
+                        <button class="btn" onclick="selectAll()">Select All</button>
+                        <button class="btn" onclick="deleteSelected()">Delete</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('file')">
-                ?? File
+                File
                 <div class="submenu" id="submenu-file">
                     <div class="submenu-row">
-                        <button class="btn" onclick="saveCircuit()">?? Save</button>
-                        <button class="btn" onclick="loadCircuit()">?? Load</button>
+                        <button class="btn" onclick="saveCircuit()">Save</button>
+                        <button class="btn" onclick="loadCircuit()">Load</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="exportImage()">??? Export</button>
-                        <button class="btn" onclick="newCircuit()">?? New</button>
+                        <button class="btn" onclick="exportImage()">Export</button>
+                        <button class="btn" onclick="newCircuit()">New</button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('view')">
-                ??? View
+                View
                 <div class="submenu" id="submenu-view">
                     <div class="submenu-row">
-                        <button class="btn" onclick="resetCamera()">?? Reset View</button>
-                        <button class="btn" onclick="fitToScreen()">?? Fit Screen</button>
+                        <button class="btn" onclick="resetCamera()">Reset View</button>
+                        <button class="btn" onclick="fitToScreen()">Fit Screen</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleGrid()">? Toggle Grid</button>
-                        <button class="btn" onclick="toggleLabels()">??? Labels</button>
+                        <button class="btn" onclick="toggleGrid()">Toggle Grid</button>
+                        <button class="btn" onclick="toggleLabels()">Labels</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleCurrentFlowStyle()">?? Flow: <span id="flow-style">Electron Flow</span></button>
-                        <button class="btn" onclick="togglePolarityIndicators()">? Polarity</button>
+                        <button class="btn" onclick="toggleCurrentFlowStyle()">Flow: <span id="flow-style">Electron Flow</span></button>
+                        <button class="btn" onclick="togglePolarityIndicators()">Polarity</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="toggleBranding()">??? Branding</button>
-                        <button class="btn" onclick="cycleLayoutMode()">?? Layout: <span id="layout-mode">Free</span></button>
+                        <button class="btn" onclick="toggleBranding()">Branding</button>
+                        <button class="btn" onclick="cycleLayoutMode()">Layout: <span id="layout-mode">Free</span></button>
                     </div>
                 </div>
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('practice')">
-                ?? Practice
+                Practice
                 <div class="submenu" id="submenu-practice">
                     <div class="submenu-row">
-                        <button class="btn" onclick="loadPresetCircuit('series_basic')">?? Series Circuit</button>
-                        <button class="btn" onclick="loadPresetCircuit('parallel_basic')">?? Parallel Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('series_basic')">Series Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('parallel_basic')">Parallel Circuit</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">?? Mixed Circuit</button>
-                        <button class="btn" onclick="loadPresetCircuit('switch_control')">?? Switch Control</button>
+                        <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed Circuit</button>
+                        <button class="btn" onclick="loadPresetCircuit('switch_control')">Switch Control</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="generateRandomProblem()">?? Random Problem</button>
-                        <button class="btn" onclick="showPracticeModeHelp()">? How to Use</button>
+                        <button class="btn" onclick="generateRandomProblem()">Random Problem</button>
+                        <button class="btn" onclick="showPracticeModeHelp()">How to Use</button>
                     </div>
                 </div>
             </div>
 
             <div class="menu-tab" onclick="toggleSubmenu('arena')">
-                ?? Arena
+                Arena
                 <div class="submenu" id="submenu-arena">
                     <div class="submenu-row">
                         <button class="btn" onclick="openArena()">Open Component Arena</button>
@@ -2289,15 +2289,15 @@
             </div>
             
             <div class="menu-tab" onclick="toggleSubmenu('help')">
-                ? Help
+                Help
                 <div class="submenu" id="submenu-help">
                     <div class="submenu-row">
-                        <button class="btn" onclick="showTutorial()">?? Tutorial</button>
-                        <button class="btn" onclick="showWireGuide()">?? W.I.R.E. Guide</button>
+                        <button class="btn" onclick="showTutorial()">Tutorial</button>
+                        <button class="btn" onclick="showWireGuide()">W.I.R.E. Guide</button>
                     </div>
                     <div class="submenu-row">
-                        <button class="btn" onclick="showShortcuts()">?? Shortcuts</button>
-                        <button class="btn" onclick="showAbout()">?? About</button>
+                        <button class="btn" onclick="showShortcuts()">Shortcuts</button>
+                        <button class="btn" onclick="showAbout()">About</button>
                     </div>
                 </div>
             </div>
@@ -2305,12 +2305,12 @@
     </div>
     
     <div class="wire-analysis-fixed" id="wire-analysis">
-        <button class="analysis-toggle" onclick="toggleAnalysis()">??</button>
+        <button class="analysis-toggle" onclick="toggleAnalysis()">Toggle</button>
         
         <div class="analysis-tabs">
             <button class="analysis-tab active" onclick="switchAnalysisTab('wire')" id="tab-wire">W.I.R.E.</button>
-            <button class="analysis-tab" onclick="switchAnalysisTab('eir')" id="tab-eir">EIR ?</button>
-            <button class="analysis-tab" onclick="switchAnalysisTab('power')" id="tab-power">Power ?</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('eir')" id="tab-eir">EIR</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('power')" id="tab-power">Power</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('worksheet')" id="tab-worksheet">Sheet</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('problem')" id="tab-problem">Solve</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('practice')" id="tab-practice">Practice</button>
@@ -2518,8 +2518,8 @@
                         Problem <span id="problem-counter">1</span> of <span id="total-problems">4</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button class="practice-btn" onclick="previousProblem()" id="prev-btn" style="padding: 6px 12px; font-size: 11px;">? Prev</button>
-                        <button class="practice-btn" onclick="nextProblem()" id="next-btn" style="padding: 6px 12px; font-size: 11px;">Next ?</button>
+                        <button class="practice-btn" onclick="previousProblem()" id="prev-btn" style="padding: 6px 12px; font-size: 11px;">Prev</button>
+                        <button class="practice-btn" onclick="nextProblem()" id="next-btn" style="padding: 6px 12px; font-size: 11px;">Next</button>
                     </div>
                 </div>
                 
@@ -2544,16 +2544,16 @@
                 
                 <div style="text-align: center; margin-bottom: 16px;">
                     <button class="practice-btn" onclick="startPracticeSequence()" style="background: linear-gradient(135deg, #00ff88, #00cc66); color: #000; padding: 12px 24px; font-size: 14px; font-weight: bold;">
-                        ?? Start Practice Sequence
+                        Start Practice Sequence
                     </button>
                 </div>
                 
                 <div class="practice-buttons">
-                    <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">?? Basic Series</button>
-                    <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">?? Basic Parallel</button>
-                    <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">?? Mixed Circuit</button>
-                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">?? Advanced Combo</button>
-                    <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">?? Random</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('series_basic')" id="btn-series">Basic Series</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('parallel_basic')" id="btn-parallel">Basic Parallel</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')" id="btn-mixed">Mixed Circuit</button>
+                    <button class="practice-btn" onclick="loadPresetCircuit('combination_advanced')" id="btn-combination">Advanced Combo</button>
+                    <button class="practice-btn" onclick="generateRandomProblem()" id="btn-random">Random</button>
                 </div>
                 
                 <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
@@ -2575,8 +2575,8 @@
             <!-- Dynamic content will be inserted here -->
         </div>
         <div class="edit-buttons">
-            <button class="edit-btn save" onclick="saveEdit()">?? Save</button>
-            <button class="edit-btn cancel" onclick="cancelEdit()">? Cancel</button>
+            <button class="edit-btn save" onclick="saveEdit()">Save</button>
+            <button class="edit-btn cancel" onclick="cancelEdit()">Cancel</button>
         </div>
     </div>
     
@@ -5149,11 +5149,11 @@
                 <div class="edit-popup-content">
                     <div class="edit-popup-header">
                         <h3>Edit Wire</h3>
-                        <button onclick="closeWireEditPopup()" class="edit-close">?</button>
+                        <button onclick="closeWireEditPopup()" class="edit-close">X</button>
                     </div>
                     <div class="edit-actions">
-                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">??? Delete Wire</button>
-                        <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">?? Change Routing</button>
+                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">Delete Wire</button>
+                        <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">Change Routing</button>
                     </div>
                 </div>
             `;
