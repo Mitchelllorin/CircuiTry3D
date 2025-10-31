@@ -12,6 +12,7 @@
     .landing-logo { font-size: clamp(48px, 10vw, 92px); font-weight: 900; text-align: center; line-height: 1; }
     .logo-circui { color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.6), 0 0 24px rgba(0,136,255,0.2); }
     .logo-try { color: #ff8800; text-shadow: 0 0 12px rgba(255,136,0,0.6), 0 0 24px rgba(255,255,255,0.15); }
+    .logo-3d { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.45), 0 0 22px rgba(0,221,255,0.25); }
     .logo-pulse { animation: logoPulse 2.2s ease-in-out infinite; }
     @keyframes logoPulse {
       0% { filter: drop-shadow(0 0 8px rgba(100,160,255,0.4)) drop-shadow(0 0 18px rgba(255,255,255,0.25)); }
@@ -23,15 +24,20 @@
     .wire { stroke: #88ccff; stroke-width: 3; fill: none; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(136,204,255,0.5)); }
     .element { stroke: #00ff88; stroke-width: 2; fill: none; }
     .photon { fill: #cfe9ff; filter: drop-shadow(0 0 6px rgba(180,220,255,0.9)); }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-    .btn { padding: 14px 20px; border-radius: 9999px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-    .btn-launch { background: #00ff88; color: #111827; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
-    .btn-github { background: #111827; color: #fff; border: 1px solid #374151; }
+    .launch-controls { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 12px; width: min(360px, 90vw); }
+    .launch-button { width: 100%; max-width: 280px; padding: 16px 32px; border-radius: 9999px; font-weight: 800; border: none; background: linear-gradient(135deg, #00ff88, #00e1ff); color: #0b142b; box-shadow: 0 10px 28px rgba(0, 255, 136, 0.35); cursor: pointer; transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease; letter-spacing: 0.08em; text-transform: uppercase; }
+    .launch-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(0,255,200,0.45); filter: brightness(1.05); }
+    .launch-button:disabled { opacity: 0.7; cursor: progress; transform: none; box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+    .loading-progress { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,255,136,0.2), 0 0 0 1px rgba(15,23,42,0.6); display: none; }
+    .loading-progress.visible { display: block; }
+    .loading-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00ff88 0%, #00d1ff 55%, #2a8bff 100%); box-shadow: 0 0 16px rgba(0,255,136,0.55); transition: width 0.18s ease-in; }
+    .loading-status { display: none; text-align: center; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: #8ccfff; opacity: 0.85; }
+    .loading-status.visible { display: block; }
   </style>
 </head>
 <body>
   <div class="landing-page">
-    <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span style="color:#00ff88">3D</span></div>
+    <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span></div>
     <div class="landing-subtitle">Professional Circuit Design</div>
     <svg class="logo-circuit" viewBox="0 0 380 120" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -55,9 +61,12 @@
       <!-- Photons -->
       <g id="photons"></g>
     </svg>
-    <div class="actions">
-      <a class="btn btn-launch" href="/app" target="_top" rel="noopener">Launch App</a>
-      <a class="btn btn-github" href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer">View on GitHub</a>
+    <div class="launch-controls">
+      <button class="launch-button" id="launch-btn" type="button">Launch CircuiTry3D</button>
+      <div class="loading-progress" id="loading-progress" aria-hidden="true">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <div class="loading-status" id="loading-status" aria-live="polite"></div>
     </div>
   </div>
 </body>
@@ -88,6 +97,63 @@
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+  })();
+
+  (function(){
+    const launchBtn = document.getElementById('launch-btn');
+    const loadingProgress = document.getElementById('loading-progress');
+    const loadingBar = document.getElementById('loading-bar');
+    const loadingStatus = document.getElementById('loading-status');
+
+    if (!launchBtn || !loadingProgress || !loadingBar || !loadingStatus) return;
+
+    function updateStatus(progress) {
+      if (progress >= 100) {
+        loadingStatus.textContent = 'Launching workspace...';
+      } else {
+        loadingStatus.textContent = `Preparing workspace... ${Math.round(progress)}%`;
+      }
+    }
+
+    function redirectToApp() {
+      setTimeout(() => {
+        window.location.href = '/app';
+      }, 260);
+    }
+
+    launchBtn.addEventListener('click', () => {
+      if (launchBtn.disabled) return;
+
+      launchBtn.disabled = true;
+      launchBtn.textContent = 'Launching...';
+      loadingProgress.classList.add('visible');
+      loadingStatus.classList.add('visible');
+      updateStatus(0);
+
+      let progress = 0;
+
+      const tick = () => {
+        progress = Math.min(progress + 6 + Math.random() * 18, 100);
+        loadingBar.style.width = `${progress}%`;
+        updateStatus(progress);
+
+        if (progress >= 100) {
+          redirectToApp();
+        } else {
+          setTimeout(tick, 150 + Math.random() * 120);
+        }
+      };
+
+      setTimeout(tick, 160);
+    });
+
+    if (typeof launchBtn.focus === 'function') {
+      try {
+        launchBtn.focus({ preventScroll: true });
+      } catch (err) {
+        launchBtn.focus();
+      }
+    }
   })();
 </script>
 </html>
