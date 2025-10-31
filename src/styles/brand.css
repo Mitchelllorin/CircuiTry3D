@@ -1,0 +1,45 @@
+:root {
+  --brand-green: #00ff88;
+  --brand-orange: #ff8800;
+  --brand-blue-900: #0a1028;
+  --brand-blue-800: #0f1b3d;
+  --brand-blue-700: #16213e;
+  --brand-blue-600: #1a2543;
+  --brand-blue-500: #1f2f4f;
+  --brand-surface: rgba(11, 16, 30, 0.94);
+  --brand-surface-soft: rgba(15, 21, 36, 0.88);
+  --brand-border: rgba(255, 255, 255, 0.12);
+  --brand-border-strong: rgba(0, 255, 136, 0.35);
+  --brand-text-strong: #f8fafc;
+  --brand-text-primary: #e6edff;
+  --brand-text-muted: rgba(230, 237, 255, 0.7);
+  --brand-glow-green: rgba(0, 255, 136, 0.6);
+  --brand-glow-orange: rgba(255, 136, 0, 0.55);
+  --brand-glow-cyan: rgba(136, 204, 255, 0.55);
+  --brand-font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --brand-radius-lg: 22px;
+  --brand-radius-md: 16px;
+  --brand-radius-sm: 12px;
+}
+
+html {
+  color-scheme: dark;
+  background-color: var(--brand-blue-900);
+}
+
+body {
+  margin: 0;
+  font-family: var(--brand-font-sans);
+  color: var(--brand-text-primary);
+  background-color: var(--brand-blue-900);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--brand-green);
+}
+
+::selection {
+  background: rgba(0, 255, 136, 0.35);
+  color: var(--brand-text-strong);
+}

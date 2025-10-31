@@ -2,16 +2,41 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Background - dark blue gradient -->
     <item android:drawable="@color/splashBackground"/>
-    
-    <!-- Optional: Add a gradient overlay -->
+
+    <!-- Gradient overlay using brand palette -->
     <item>
         <shape android:shape="rectangle">
             <gradient
                 android:angle="135"
-                android:startColor="#0f1b3d"
-                android:centerColor="#16213e"
-                android:endColor="#0a1028"
+                android:startColor="@color/brandDarkBlue"
+                android:centerColor="@color/brandMidBlue"
+                android:endColor="@color/brandDeepBlue"
                 android:type="linear" />
+        </shape>
+    </item>
+
+    <!-- Neon glow overlays -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="420dp"
+                android:centerX="0.18"
+                android:centerY="0.22"
+                android:startColor="@color/brandGreenGlow"
+                android:endColor="@android:color/transparent" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="360dp"
+                android:centerX="0.82"
+                android:centerY="0.2"
+                android:startColor="@color/brandOrangeGlow"
+                android:endColor="@android:color/transparent" />
         </shape>
     </item>
 

@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary brand colors matching CircuiTry3D theme -->
-    <color name="colorPrimary">#00ff88</color>
-    <color name="colorPrimaryDark">#0f1b3d</color>
-    <color name="colorAccent">#ff8800</color>
-    
+    <color name="brandGreen">#00FF88</color>
+    <color name="brandOrange">#FF8800</color>
+    <color name="brandDarkBlue">#0F1B3D</color>
+    <color name="brandMidBlue">#16213E</color>
+    <color name="brandDeepBlue">#0A1028</color>
+    <color name="brandGlowCyan">#88CCFF</color>
+    <color name="brandSurface">#111A2D</color>
+    <color name="brandGreenGlow">#5500FF88</color>
+    <color name="brandOrangeGlow">#55FF8800</color>
+
+    <color name="colorPrimary">@color/brandGreen</color>
+    <color name="colorPrimaryDark">@color/brandDeepBlue</color>
+    <color name="colorAccent">@color/brandOrange</color>
+
     <!-- Splash screen background - dark blue gradient -->
-    <color name="splashBackground">#0f1b3d</color>
-    
-    <!-- Additional brand colors -->
-    <color name="brandGreen">#00ff88</color>
-    <color name="brandOrange">#ff8800</color>
-    <color name="brandDarkBlue">#0f1b3d</color>
-    <color name="brandMidBlue">#16213e</color>
+    <color name="splashBackground">@color/brandDeepBlue</color>
 </resources>
