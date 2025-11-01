@@ -144,6 +144,7 @@ body.builder-body {
   bottom: 24px;
   left: 50%;
   width: min(620px, calc(100vw - 48px));
+  max-height: min(520px, 65vh);
   transform: translate(-50%, 120%);
   padding-bottom: 18px;
 }
