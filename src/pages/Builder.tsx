@@ -1,10 +1,32 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import "../styles/builder-ui.css";
 
+type LegacyInvokeAction =
+  | "toggle-wire-mode"
+  | "toggle-rotate-mode"
+  | "add-junction"
+  | "auto-arrange"
+  | "reset-camera"
+  | "fit-screen"
+  | "toggle-current-flow"
+  | "toggle-polarity"
+  | "cycle-layout"
+  | "toggle-grid"
+  | "toggle-labels"
+  | "load-preset"
+  | "generate-practice"
+  | "practice-help"
+  | "show-tutorial"
+  | "show-wire-guide"
+  | "show-shortcuts"
+  | "show-about"
+  | "open-arena";
+
 type LegacyMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
-  | { type: "builder:set-analysis-open"; payload: { open: boolean } };
+  | { type: "builder:set-analysis-open"; payload: { open: boolean } }
+  | { type: "builder:invoke-action"; payload: { action: LegacyInvokeAction; data?: Record<string, unknown> } };
 
 type ComponentAction = {
   id: string;
@@ -46,6 +68,149 @@ const PROPERTY_ITEMS = [
   { id: "position", name: "Position", value: "-" },
   { id: "rotation", name: "Rotation", value: "-" },
   { id: "metadata", name: "Metadata", value: "Tap any element to inspect" },
+];
+
+type PanelAction = {
+  id: string;
+  label: string;
+  description: string;
+  action: LegacyInvokeAction;
+  data?: Record<string, unknown>;
+};
+
+const WIRE_TOOL_ACTIONS: PanelAction[] = [
+  {
+    id: "wire-mode",
+    label: "Wire Mode",
+    description: "Switch into wiring mode to connect components node to node.",
+    action: "toggle-wire-mode",
+  },
+  {
+    id: "rotate-mode",
+    label: "Rotate Mode",
+    description: "Rotate the active component to align with your build.",
+    action: "toggle-rotate-mode",
+  },
+  {
+    id: "junction",
+    label: "Add Junction",
+    description: "Drop a junction node for branching or merging wires.",
+    action: "add-junction",
+  },
+  {
+    id: "auto-arrange",
+    label: "Auto Arrange",
+    description: "Let CircuiTry tidy the layout while preserving connections.",
+    action: "auto-arrange",
+  },
+];
+
+const CURRENT_MODE_ACTIONS: PanelAction[] = [
+  {
+    id: "flow-style",
+    label: "Toggle Current Flow",
+    description: "Swap between electron cloud and conventional current views.",
+    action: "toggle-current-flow",
+  },
+  {
+    id: "polarity",
+    label: "Polarity Indicators",
+    description: "Show or hide polarity markers on applicable components.",
+    action: "toggle-polarity",
+  },
+  {
+    id: "layout-mode",
+    label: "Cycle Layout Mode",
+    description: "Step through free, square, and linear auto-layout modes.",
+    action: "cycle-layout",
+  },
+];
+
+const VIEW_CONTROL_ACTIONS: PanelAction[] = [
+  {
+    id: "reset-camera",
+    label: "Reset Camera",
+    description: "Return the camera to the default framing and distance.",
+    action: "reset-camera",
+  },
+  {
+    id: "fit-screen",
+    label: "Fit to Screen",
+    description: "Frame the full circuit within the active viewport.",
+    action: "fit-screen",
+  },
+  {
+    id: "toggle-grid",
+    label: "Toggle Grid",
+    description: "Show or hide the design grid for precise placement.",
+    action: "toggle-grid",
+  },
+  {
+    id: "toggle-labels",
+    label: "Toggle Labels",
+    description: "Display or conceal component reference labels.",
+    action: "toggle-labels",
+  },
+];
+
+type PracticeScenario = {
+  id: string;
+  label: string;
+  question: string;
+  description: string;
+  preset: string;
+};
+
+const PRACTICE_SCENARIOS: PracticeScenario[] = [
+  {
+    id: "series-basic",
+    label: "Series Circuit",
+    question: "Find total resistance and current.",
+    description: "Combine series resistances and solve for current with W.I.R.E.",
+    preset: "series_basic",
+  },
+  {
+    id: "parallel-basic",
+    label: "Parallel Circuit",
+    question: "Find equivalent resistance in parallel.",
+    description: "Apply reciprocal sums to determine the total resistance.",
+    preset: "parallel_basic",
+  },
+  {
+    id: "mixed-circuit",
+    label: "Mixed Circuit",
+    question: "Analyze a mixed topology.",
+    description: "Break the network into series and parallel segments to solve.",
+    preset: "mixed_circuit",
+  },
+  {
+    id: "switch-control",
+    label: "Switch Control",
+    question: "Compare behaviour with the switch on or off.",
+    description: "Focus on how switching impacts overall power draw.",
+    preset: "switch_control",
+  },
+];
+
+const PRACTICE_ACTIONS: PanelAction[] = [
+  {
+    id: "random-problem",
+    label: "Random Practice Problem",
+    description: "Generate a fresh practice challenge from the legacy set.",
+    action: "generate-practice",
+  },
+  {
+    id: "practice-help",
+    label: "Practice Mode Guide",
+    description: "Review tips on how to approach the guided problems.",
+    action: "practice-help",
+  },
+  {
+    id: "open-arena",
+    label: "Component Arena",
+    description: "Open the arena view for rapid-fire component drills.",
+    action: "open-arena",
+  },
 ];
 
 const WIRE_METRICS = [
@@ -102,6 +267,45 @@ const HELP_SECTIONS: HelpSection[] = [
   },
 ];
 
+type HelpShortcut = {
+  id: string;
+  title: string;
+  summary: string;
+};
+
+const HELP_SHORTCUTS: HelpShortcut[] = HELP_SECTIONS.map((section) => ({
+  id: section.title,
+  title: section.title,
+  summary: section.paragraphs[0] ?? "",
+}));
+
+const LEGACY_HELP_ACTIONS: PanelAction[] = [
+  {
+    id: "tutorial",
+    label: "Legacy Tutorial",
+    description: "Launch the original guided walkthrough inside the workspace.",
+    action: "show-tutorial",
+  },
+  {
+    id: "wire-guide",
+    label: "W.I.R.E. Guide",
+    description: "Review the classic breakdown of Watts, Current, Resistance, and Voltage.",
+    action: "show-wire-guide",
+  },
+  {
+    id: "shortcuts",
+    label: "Keyboard Shortcuts",
+    description: "See every keyboard accelerator available in the legacy build.",
+    action: "show-shortcuts",
+  },
+  {
+    id: "about",
+    label: "About CircuiTry3D",
+    description: "View the legacy release notes and version information.",
+    action: "show-about",
+  },
+];
+
 const WIRE_LEGEND: HelpLegendItem[] = [
   { id: "watts", letter: "W", label: "Wattage" },
   { id: "current", letter: "I", label: "Current" },
@@ -113,6 +317,7 @@ export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const bottomPanelRef = useRef<HTMLElement | null>(null);
   const pendingMessages = useRef<LegacyMessage[]>([]);
+  const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isFrameReady, setFrameReady] = useState(false);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
@@ -120,6 +325,7 @@ export default function Builder() {
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
+  const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -194,6 +400,18 @@ export default function Builder() {
     };
   }, [isHelpOpen]);
 
+  useEffect(() => {
+    if (!isHelpOpen || !requestedHelpSection) {
+      return;
+    }
+
+    const target = helpSectionRefs.current[requestedHelpSection];
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    setRequestedHelpSection(null);
+  }, [isHelpOpen, requestedHelpSection]);
+
   const sendMessageToLegacy = useCallback(
     (message: LegacyMessage, options: { allowQueue?: boolean } = {}) => {
       const { allowQueue = true } = options;
@@ -217,6 +435,21 @@ export default function Builder() {
       }
     },
     [isFrameReady]
+  );
+
+  const triggerLegacyAction = useCallback(
+    (action: LegacyInvokeAction, data?: Record<string, unknown>) => {
+      sendMessageToLegacy({ type: "builder:invoke-action", payload: { action, data } });
+    },
+    [sendMessageToLegacy]
+  );
+
+  const openHelpSection = useCallback(
+    (sectionTitle?: string) => {
+      setHelpOpen(true);
+      setRequestedHelpSection(sectionTitle ?? null);
+    },
+    []
   );
 
   useEffect(() => {
@@ -341,56 +574,117 @@ export default function Builder() {
       </div>
 
       <aside className={`builder-panel panel-left ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>
-        <div className="panel-header">
-          <span className="panel-title">Component Library</span>
-          <p className="panel-subtitle">Tap to add parts directly into the workspace.</p>
-        </div>
-        <div className="panel-section">
-          <div className="component-grid">
-            {COMPONENT_ACTIONS.map((component) => (
-              <button
-                key={component.id}
-                type="button"
-                className="component-btn"
-                onClick={() => handleComponentAction(component)}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                title={controlsDisabled ? controlDisabledTitle : component.label}
-                data-component-action={component.action}
-              >
-                <span className="component-icon" aria-hidden="true">
-                  {component.icon}
-                </span>
-                <span className="component-label">{component.label}</span>
-              </button>
-            ))}
+        <div className="panel-content">
+          <div className="panel-header">
+            <span className="panel-title">Component Library</span>
+            <p className="panel-subtitle">Tap to add parts directly into the workspace.</p>
           </div>
-        </div>
-        <div className="panel-section">
-          <p className="section-title">Quick Actions</p>
-          <div className="tool-buttons">
-            {TOOL_BUTTONS.map((button) => (
-              <button key={button.id} type="button" className="tool-btn">
-                <span className="tool-label">{button.label}</span>
-                <span className="tool-description">{button.description}</span>
-              </button>
-            ))}
+          <div className="panel-section">
+            <div className="component-grid">
+              {COMPONENT_ACTIONS.map((component) => (
+                <button
+                  key={component.id}
+                  type="button"
+                  className="component-btn"
+                  onClick={() => handleComponentAction(component)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : component.label}
+                  data-component-action={component.action}
+                >
+                  <span className="component-icon" aria-hidden="true">
+                    {component.icon}
+                  </span>
+                  <span className="component-label">{component.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="panel-section">
+            <p className="section-title">Quick Actions</p>
+            <div className="tool-buttons">
+              {TOOL_BUTTONS.map((button) => (
+                <button key={button.id} type="button" className="tool-btn">
+                  <span className="tool-label">{button.label}</span>
+                  <span className="tool-description">{button.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="panel-section">
+            <p className="section-title">Wire Modes</p>
+            <div className="tool-buttons">
+              {WIRE_TOOL_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="tool-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="tool-label">{action.label}</span>
+                  <span className="tool-description">{action.description}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </aside>
 
       <aside className={`builder-panel panel-right ${isRightOpen ? "open" : ""}`} aria-hidden={!isRightOpen}>
-        <div className="panel-header">
-          <span className="panel-title">Properties</span>
-          <p className="panel-subtitle">Select anything in the scene to inspect it here.</p>
-        </div>
-        <div className="panel-section">
-          {PROPERTY_ITEMS.map((item) => (
-            <div key={item.id} className="property-item">
-              <div className="property-name">{item.name}</div>
-              <div className="property-value">{item.value}</div>
+        <div className="panel-content">
+          <div className="panel-header">
+            <span className="panel-title">Properties</span>
+            <p className="panel-subtitle">Select anything in the scene to inspect it here.</p>
+          </div>
+          <div className="panel-section">
+            {PROPERTY_ITEMS.map((item) => (
+              <div key={item.id} className="property-item">
+                <div className="property-name">{item.name}</div>
+                <div className="property-value">{item.value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="panel-section">
+            <p className="section-title">Current Modes</p>
+            <div className="tool-buttons">
+              {CURRENT_MODE_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="tool-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="tool-label">{action.label}</span>
+                  <span className="tool-description">{action.description}</span>
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
+          <div className="panel-section">
+            <p className="section-title">Workspace View</p>
+            <div className="tool-buttons">
+              {VIEW_CONTROL_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="tool-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="tool-label">{action.label}</span>
+                  <span className="tool-description">{action.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -400,26 +694,102 @@ export default function Builder() {
         aria-hidden={!isBottomOpen}
         aria-expanded={isBottomOpen}
       >
-        <div className="panel-header">
-          <span className="panel-title">W.I.R.E. Analysis</span>
-          <p className="panel-subtitle">Watch core metrics adjust as your circuit evolves.</p>
-        </div>
-        <div className="panel-section">
-          <div className="builder-wire-display">
-            <div className="wire-title">Circuit Snapshot</div>
-            <div className="wire-grid">
-              {WIRE_METRICS.map((metric) => (
-                <div key={metric.id} className={`wire-metric ${metric.id}`}>
-                  <div className="metric-letter">{metric.letter}</div>
-                  <div className="metric-label">{metric.label}</div>
-                  <div className="metric-value">{metric.value}</div>
-                </div>
+        <div className="panel-content">
+          <div className="panel-header">
+            <span className="panel-title">W.I.R.E. Analysis</span>
+            <p className="panel-subtitle">Watch core metrics adjust as your circuit evolves.</p>
+          </div>
+          <div className="panel-section">
+            <div className="builder-wire-display">
+              <div className="wire-title">Circuit Snapshot</div>
+              <div className="wire-grid">
+                {WIRE_METRICS.map((metric) => (
+                  <div key={metric.id} className={`wire-metric ${metric.id}`}>
+                    <div className="metric-letter">{metric.letter}</div>
+                    <div className="metric-label">{metric.label}</div>
+                    <div className="metric-value">{metric.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="circuit-stats">Tap any metric to learn how W.I.R.E. keeps your build balanced.</div>
+              <button
+                type="button"
+                className="builder-help-launch"
+                onClick={() => openHelpSection(HELP_SECTIONS[0]?.title)}
+              >
+                Open Guided Tutorial
+              </button>
+            </div>
+          </div>
+          <div className="panel-section">
+            <p className="section-title">Practice Questions</p>
+            <div className="practice-grid">
+              {PRACTICE_SCENARIOS.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  className="practice-card"
+                  onClick={() => triggerLegacyAction("load-preset", { preset: scenario.preset })}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : scenario.question}
+                >
+                  <span className="practice-label">{scenario.label}</span>
+                  <span className="practice-question">{scenario.question}</span>
+                  <span className="practice-description">{scenario.description}</span>
+                </button>
               ))}
             </div>
-            <div className="circuit-stats">Tap any metric to learn how W.I.R.E. keeps your build balanced.</div>
-            <button type="button" className="builder-help-launch" onClick={() => setHelpOpen(true)}>
-              Open Guided Tutorial
-            </button>
+            <div className="panel-subsection">
+              <div className="tool-buttons">
+                {PRACTICE_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="tool-btn"
+                    onClick={() => triggerLegacyAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="tool-label">{action.label}</span>
+                    <span className="tool-description">{action.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="panel-section">
+            <p className="section-title">Help &amp; Guides</p>
+            <div className="tool-buttons">
+              {LEGACY_HELP_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="tool-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="tool-label">{action.label}</span>
+                  <span className="tool-description">{action.description}</span>
+                </button>
+              ))}
+            </div>
+            <div className="help-shortcut-grid">
+              {HELP_SHORTCUTS.map((shortcut) => (
+                <button
+                  key={shortcut.id}
+                  type="button"
+                  className="help-shortcut"
+                  onClick={() => openHelpSection(shortcut.title)}
+                >
+                  <span className="help-shortcut-title">{shortcut.title}</span>
+                  <span className="help-shortcut-summary">{shortcut.summary}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -488,7 +858,17 @@ export default function Builder() {
           </button>
           <h2 className="help-title">CircuiTry3D Help Center</h2>
           {HELP_SECTIONS.map((section) => (
-            <div key={section.title} className="help-section">
+            <div
+              key={section.title}
+              className="help-section"
+              ref={(element) => {
+                if (element) {
+                  helpSectionRefs.current[section.title] = element;
+                } else {
+                  delete helpSectionRefs.current[section.title];
+                }
+              }}
+            >
               <h3>{section.title}</h3>
               {section.paragraphs.map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>
