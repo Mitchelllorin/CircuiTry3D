@@ -155,10 +155,10 @@ body.builder-body {
 
 .builder-quick-slider {
   position: fixed;
-  background: var(--legacy-overlay-soft);
-  border: 1px solid var(--legacy-border);
+  background: var(--builder-overlay-soft);
+  border: 1px solid var(--builder-border);
   border-radius: 18px;
-  box-shadow: 0 18px 36px var(--legacy-shadow);
+  box-shadow: 0 18px 36px var(--builder-shadow);
   backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
@@ -267,7 +267,7 @@ body.builder-body {
   border-radius: 999px;
   border: 1px solid rgba(0, 255, 136, 0.38);
   background: rgba(0, 255, 136, 0.1);
-  color: var(--legacy-green);
+  color: var(--builder-green);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.18em;

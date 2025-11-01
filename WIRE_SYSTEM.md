@@ -156,7 +156,7 @@ Features demonstrated:
 
 ## Integration with Existing Circuit Builder
 
-The wire system is designed to be integrated into `public/legacy.html`:
+The wire system is designed to be integrated into `public/workspace.html`:
 
 1. **Data Migration**: Existing wire data can be converted:
    ```typescript

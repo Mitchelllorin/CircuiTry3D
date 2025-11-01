@@ -2636,7 +2636,7 @@
         function notifyParentReady() {
             if (window.parent && window.parent !== window) {
                 try {
-                    window.parent.postMessage({ type: 'legacy:ready' }, '*');
+                    window.parent.postMessage({ type: 'workspace:ready' }, '*');
                 } catch (error) {
                     console.warn('Builder bridge: unable to notify parent window', error);
                 }
@@ -2646,7 +2646,7 @@
         function notifyParentAnalysisState() {
             if (window.parent && window.parent !== window) {
                 try {
-                    window.parent.postMessage({ type: 'legacy:analysis-state', payload: { open: analysisVisible } }, '*');
+                    window.parent.postMessage({ type: 'workspace:analysis-state', payload: { open: analysisVisible } }, '*');
                 } catch (error) {
                     console.warn('Builder bridge: unable to share analysis state', error);
                 }
