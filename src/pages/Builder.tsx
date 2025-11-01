@@ -321,9 +321,9 @@ export default function Builder() {
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
-  const [isLeftMenuOpen, setLeftMenuOpen] = useState(true);
-  const [isRightMenuOpen, setRightMenuOpen] = useState(true);
-  const [isBottomMenuOpen, setBottomMenuOpen] = useState(true);
+  const [isLeftMenuOpen, setLeftMenuOpen] = useState(false);
+  const [isRightMenuOpen, setRightMenuOpen] = useState(false);
+  const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -514,7 +514,7 @@ export default function Builder() {
         role="navigation"
         aria-label="Component and wiring controls"
       >
-        <div className="builder-menu-scroll">
+        <div className="builder-menu-scroll" aria-hidden={!isLeftMenuOpen}>
           <div className="slider-section">
             <span className="slider-heading">Parts</span>
             <div className="slider-stack">
@@ -528,6 +528,7 @@ export default function Builder() {
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : component.label}
                   data-component-action={component.action}
+                  tabIndex={isLeftMenuOpen ? 0 : -1}
                 >
                   <span className="slider-icon" aria-hidden="true">
                     {component.icon}
@@ -541,7 +542,13 @@ export default function Builder() {
             <span className="slider-heading">Quick Actions</span>
             <div className="slider-stack">
               {TOOL_BUTTONS.map((button) => (
-                <button key={button.id} type="button" className="slider-btn slider-btn-stacked" title={button.description}>
+                <button
+                  key={button.id}
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  title={button.description}
+                  tabIndex={isLeftMenuOpen ? 0 : -1}
+                >
                   <span className="slider-label">{button.label}</span>
                   <span className="slider-description">{button.description}</span>
                 </button>
@@ -560,6 +567,7 @@ export default function Builder() {
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isLeftMenuOpen ? 0 : -1}
                 >
                   <span className="slider-label">{action.label}</span>
                   <span className="slider-description">{action.description}</span>
@@ -576,7 +584,7 @@ export default function Builder() {
           aria-expanded={isLeftMenuOpen}
           aria-label={isLeftMenuOpen ? "Collapse component menu" : "Expand component menu"}
         >
-          <span aria-hidden="true">{isLeftMenuOpen ? "?" : "?"}</span>
+          <span aria-hidden="true">{isLeftMenuOpen ? "<" : ">"}</span>
         </button>
       </nav>
 
@@ -586,7 +594,7 @@ export default function Builder() {
         role="complementary"
         aria-label="Mode and view controls"
       >
-        <div className="builder-menu-scroll">
+        <div className="builder-menu-scroll" aria-hidden={!isRightMenuOpen}>
           <div className="slider-section">
             <span className="slider-heading">Properties</span>
             <div className="property-stack">
@@ -610,6 +618,7 @@ export default function Builder() {
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isRightMenuOpen ? 0 : -1}
                 >
                   <span className="slider-label">{action.label}</span>
                   <span className="slider-description">{action.description}</span>
@@ -629,6 +638,7 @@ export default function Builder() {
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isRightMenuOpen ? 0 : -1}
                 >
                   <span className="slider-label">{action.label}</span>
                   <span className="slider-description">{action.description}</span>
@@ -645,7 +655,7 @@ export default function Builder() {
           aria-expanded={isRightMenuOpen}
           aria-label={isRightMenuOpen ? "Collapse mode menu" : "Expand mode menu"}
         >
-          <span aria-hidden="true">{isRightMenuOpen ? "?" : "?"}</span>
+          <span aria-hidden="true">{isRightMenuOpen ? ">" : "<"}</span>
         </button>
       </nav>
 
@@ -655,7 +665,7 @@ export default function Builder() {
         role="navigation"
         aria-label="Analysis, practice, and guides"
       >
-        <div className="builder-menu-scroll builder-menu-scroll-bottom">
+        <div className="builder-menu-scroll builder-menu-scroll-bottom" aria-hidden={!isBottomMenuOpen}>
           <div className="slider-section">
             <span className="slider-heading">Analysis</span>
             <div className="menu-track menu-track-metrics">
@@ -680,6 +690,7 @@ export default function Builder() {
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
                 >
                   <span className="slider-chip-label">{action.label}</span>
                 </button>
@@ -693,6 +704,7 @@ export default function Builder() {
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : scenario.question}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
                 >
                   <span className="slider-chip-label">{scenario.label}</span>
                 </button>
@@ -711,6 +723,7 @@ export default function Builder() {
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
                 >
                   <span className="slider-chip-label">{action.label}</span>
                 </button>
@@ -722,11 +735,17 @@ export default function Builder() {
                   className="slider-chip"
                   onClick={() => openHelpSection(shortcut.title)}
                   title={shortcut.summary}
+                  tabIndex={isBottomMenuOpen ? 0 : -1}
                 >
                   <span className="slider-chip-label">{shortcut.title}</span>
                 </button>
               ))}
-              <button type="button" className="slider-chip" onClick={() => openHelpSection()}>
+              <button
+                type="button"
+                className="slider-chip"
+                onClick={() => openHelpSection()}
+                tabIndex={isBottomMenuOpen ? 0 : -1}
+              >
                 <span className="slider-chip-label">Help Center</span>
               </button>
             </div>
@@ -740,7 +759,7 @@ export default function Builder() {
           aria-expanded={isBottomMenuOpen}
           aria-label={isBottomMenuOpen ? "Collapse analysis menu" : "Expand analysis menu"}
         >
-          <span aria-hidden="true">{isBottomMenuOpen ? "?" : "?"}</span>
+          <span aria-hidden="true">{isBottomMenuOpen ? "v" : "^"}</span>
         </button>
       </nav>
 
