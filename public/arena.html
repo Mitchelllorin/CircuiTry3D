@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CircuiTry3D • Component Arena</title>
+  <title>CircuiTry3D - Component Arena</title>
   <style>
     html, body { margin: 0; height: 100%; background: #0a0a1a; color: #fff; font-family: system-ui, sans-serif; }
     .hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2; }
@@ -66,6 +66,85 @@
 
     let scene, camera, renderer, meshA, meshB;
     const canvas = document.getElementById('arena');
+    let manufacturerRoster = [];
+    const activeComponentIds = { a: null, b: null };
+    const manufacturerNames = { a: null, b: null };
+
+    const ALLOWED_TYPES = ['resistor', 'capacitor', 'inductor', 'led'];
+
+    function ingestManufacturerRoster(components) {
+      if (!Array.isArray(components) || !components.length) {
+        manufacturerRoster = [];
+        return;
+      }
+
+      manufacturerRoster = components
+        .map((component) => {
+          if (!component || typeof component !== 'object') {
+            return null;
+          }
+
+          const id = typeof component.id === 'string' ? component.id : String(component.id ?? '');
+          const type = typeof component.type === 'string' && ALLOWED_TYPES.includes(component.type) ? component.type : undefined;
+
+          if (!id || !type) {
+            return null;
+          }
+
+          const manufacturer = typeof component.manufacturer === 'string' ? component.manufacturer : 'Manufacturer';
+          const name = typeof component.name === 'string' ? component.name : 'Component';
+          const family = typeof component.family === 'string' ? component.family : '';
+          const highlight = typeof component.highlight === 'string' ? component.highlight : '';
+          const rating = typeof component.rating === 'number' ? component.rating : null;
+
+          const metrics = Array.isArray(component.metrics)
+            ? component.metrics.slice(0, 3).map((metric) => {
+                if (!metric || typeof metric !== 'object') {
+                  return null;
+                }
+                const label = typeof metric.label === 'string' ? metric.label : 'Metric';
+                const value = typeof metric.value === 'string' ? metric.value : String(metric.value ?? '');
+                const unit = typeof metric.unit === 'string' ? metric.unit : undefined;
+                return { label, value, unit };
+              }).filter(Boolean)
+            : [];
+
+          return { id, type, manufacturer, name, family, highlight, rating, metrics };
+        })
+        .filter(Boolean);
+    }
+
+    function lookupComponent(componentId, fallbackType) {
+      if (!manufacturerRoster.length) {
+        return undefined;
+      }
+
+      if (componentId) {
+        const matchById = manufacturerRoster.find((component) => component.id === componentId);
+        if (matchById) {
+          return matchById;
+        }
+      }
+
+      if (fallbackType) {
+        return manufacturerRoster.find((component) => component.type === fallbackType);
+      }
+
+      return undefined;
+    }
+
+    function formatDescriptor(component, fallbackType, fallbackManufacturer) {
+      if (component) {
+        return `${component.manufacturer} - ${component.name}`;
+      }
+      if (fallbackManufacturer && fallbackType) {
+        return `${fallbackManufacturer} - ${fallbackType}`;
+      }
+      if (fallbackType) {
+        return fallbackType;
+      }
+      return 'Component';
+    }
 
     function reportStatus(message) {
       if (typeof window !== 'undefined' && window.parent && typeof window.parent.postMessage === 'function') {
@@ -98,6 +177,11 @@
       const valueBInput = document.getElementById(VALUE_B_ID);
       const voltageInput = document.getElementById(VOLTAGE_ID);
       const frequencyInput = document.getElementById(FREQUENCY_ID);
+
+      activeComponentIds.a = typeof config.componentIdA === 'string' ? config.componentIdA : null;
+      activeComponentIds.b = typeof config.componentIdB === 'string' ? config.componentIdB : null;
+      manufacturerNames.a = typeof config.manufacturerNameA === 'string' ? config.manufacturerNameA : null;
+      manufacturerNames.b = typeof config.manufacturerNameB === 'string' ? config.manufacturerNameB : null;
 
       if (modeSelect && config.mode) {
         modeSelect.value = config.mode;
@@ -132,11 +216,27 @@
       syncMeshVisibility(currentMode);
 
       const stat = document.getElementById(STAT_ID);
-      if (stat) {
-        stat.textContent = 'Preset loaded. Tap Run Test to evaluate.';
-      }
+      const descriptorA = lookupComponent(activeComponentIds.a, compASelect ? compASelect.value : config.compA);
+      const descriptorB = currentMode === 'compare'
+        ? lookupComponent(activeComponentIds.b, compBSelect ? compBSelect.value : config.compB)
+        : undefined;
+      const descriptorLabelA = formatDescriptor(descriptorA, config.compA, manufacturerNames.a);
+      const descriptorLabelB = currentMode === 'compare'
+        ? formatDescriptor(descriptorB, config.compB, manufacturerNames.b)
+        : null;
 
-      reportStatus('Preset staged inside the arena.');
+      if (stat) {
+        if (currentMode === 'compare' && descriptorLabelB) {
+          stat.textContent = `Preset staged: ${descriptorLabelA} vs ${descriptorLabelB}`;
+        } else {
+          stat.textContent = `Preset staged: ${descriptorLabelA}`;
+        }
+      }
+      if (currentMode === 'compare' && descriptorLabelB) {
+        reportStatus(`Preset staged inside the arena: ${descriptorLabelA} vs ${descriptorLabelB}.`);
+      } else {
+        reportStatus(`Preset staged inside the arena: ${descriptorLabelA}.`);
+      }
     }
 
     function init() {
@@ -194,7 +294,8 @@
       if (meshB) {
         meshB.rotation.set(0, 0, 0);
       }
-      reportStatus('Arena reset to defaults.');
+      const benchCount = manufacturerRoster.length;
+      reportStatus(`Arena reset to defaults. Bench holds ${benchCount} manufacturer component${benchCount === 1 ? '' : 's'}.`);
     }
 
     function runTest() {
@@ -214,6 +315,11 @@
       const valueB = parseFloat(rawValueB);
       const V = parseFloat((voltageEl && voltageEl.value) || '0');
       const f = parseFloat((frequencyEl && frequencyEl.value) || '0');
+
+      const descriptorA = lookupComponent(activeComponentIds.a, typeA);
+      const descriptorB = lookupComponent(activeComponentIds.b, typeB);
+      const descriptorLabelA = formatDescriptor(descriptorA, typeA, manufacturerNames.a);
+      const descriptorLabelB = formatDescriptor(descriptorB, typeB, manufacturerNames.b);
 
       function calc(type, value) {
         if (type === 'resistor') {
@@ -245,15 +351,15 @@
         const A = calc(typeA, valueA);
         const B = calc(typeB, Number.isFinite(valueB) ? valueB : valueA);
         if (stat) {
-          stat.textContent = 'A: ' + JSON.stringify(A) + ' | B: ' + JSON.stringify(B);
+          stat.textContent = `A (${descriptorLabelA}): ${JSON.stringify(A)} | B (${descriptorLabelB}): ${JSON.stringify(B)}`;
         }
-        reportStatus('Compare test complete. Check the HUD for delta insights.');
+        reportStatus(`Compare test complete: ${descriptorLabelA} vs ${descriptorLabelB}.`);
       } else {
         const A = calc(typeA, valueA);
         if (stat) {
-          stat.textContent = 'A: ' + JSON.stringify(A);
+          stat.textContent = `A (${descriptorLabelA}): ${JSON.stringify(A)}`;
         }
-        reportStatus('Single test complete. Metrics refreshed.');
+        reportStatus(`Single test complete: ${descriptorLabelA} metrics refreshed.`);
       }
     }
 
@@ -297,6 +403,21 @@
         case 'arena:export':
           exportResults();
           break;
+        case 'arena:register-components': {
+          const payloadObject = payload && typeof payload === 'object' ? payload : {};
+          const components = Array.isArray(payloadObject.components) ? payloadObject.components : [];
+          ingestManufacturerRoster(components);
+          const count = manufacturerRoster.length;
+          reportStatus(`Registered ${count} manufacturer component${count === 1 ? '' : 's'} for arena matchups.`);
+          const stat = document.getElementById(STAT_ID);
+          if (stat) {
+            stat.textContent = `Arena bench updated (${count} components).`;
+          }
+          if (typeof window !== 'undefined' && window.parent && typeof window.parent.postMessage === 'function') {
+            window.parent.postMessage({ type: 'arena:components-registered', payload: { count } }, '*');
+          }
+          break;
+        }
         default:
           break;
       }

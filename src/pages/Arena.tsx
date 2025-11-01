@@ -5,6 +5,35 @@ import "../styles/arena.css";
 
 type ArenaComponentType = "resistor" | "capacitor" | "inductor" | "led";
 
+type ManufacturerComponentMetric = {
+  label: string;
+  value: string;
+  unit?: string;
+};
+
+type ManufacturerComponent = {
+  id: string;
+  manufacturer: string;
+  name: string;
+  family: string;
+  type: ArenaComponentType;
+  footprint: string;
+  datasheet: string;
+  highlight: string;
+  rating: number;
+  metrics: ManufacturerComponentMetric[];
+};
+
+type ArenaMatchup = {
+  id: string;
+  title: string;
+  summary: string;
+  componentA: ManufacturerComponent;
+  componentB: ManufacturerComponent;
+  status: "queued" | "live" | "complete";
+  focusMetric: string;
+};
+
 type ArenaConfigPayload = {
   mode?: "single" | "compare";
   compA?: ArenaComponentType;
@@ -13,13 +42,18 @@ type ArenaConfigPayload = {
   valueB?: number;
   voltage?: number;
   frequency?: number;
+  componentIdA?: string;
+  componentIdB?: string;
+  manufacturerNameA?: string;
+  manufacturerNameB?: string;
 };
 
 type ArenaOutboundMessage =
   | { type: "arena:configure"; payload: ArenaConfigPayload }
   | { type: "arena:reset" }
   | { type: "arena:run-test" }
-  | { type: "arena:export" };
+  | { type: "arena:export" }
+  | { type: "arena:register-components"; payload: { components: ManufacturerComponent[] } };
 
 type ArenaScenario = {
   id: string;
@@ -30,6 +64,8 @@ type ArenaScenario = {
   autoRun?: boolean;
   metrics: { label: string; value: string }[];
   tags: string[];
+  manufacturerComponentIdA?: string;
+  manufacturerComponentIdB?: string;
 };
 
 type QuickAction = {
@@ -105,7 +141,8 @@ const ARENA_SCENARIOS: ArenaScenario[] = [
       { label: "Pulse Width", value: "60 Hz" },
       { label: "Duty Cycle", value: "45%" }
     ],
-    tags: ["Lighting", "Visual", "Thermal Safe"]
+    tags: ["Lighting", "Visual", "Thermal Safe"],
+    manufacturerComponentIdA: "lumatek-lumeon-180"
   },
   {
     id: "sensor-calibration",
@@ -126,7 +163,9 @@ const ARENA_SCENARIOS: ArenaScenario[] = [
       { label: "Ripple", value: "12%" },
       { label: "Sweet Spot", value: "1.2 kHz" }
     ],
-    tags: ["Compare", "Filtering", "Low Power"]
+    tags: ["Compare", "Filtering", "Low Power"],
+    manufacturerComponentIdA: "kinetic-precision-08",
+    manufacturerComponentIdB: "quantacap-12"
   },
   {
     id: "power-balancer",
@@ -145,7 +184,8 @@ const ARENA_SCENARIOS: ArenaScenario[] = [
       { label: "Current Draw", value: "110 mA" },
       { label: "Thermal Margin", value: "Safe" }
     ],
-    tags: ["Stress", "Power", "Diagnostics"]
+    tags: ["Stress", "Power", "Diagnostics"],
+    manufacturerComponentIdA: "ohmega-trace-82"
   },
   {
     id: "signal-runway",
@@ -167,7 +207,9 @@ const ARENA_SCENARIOS: ArenaScenario[] = [
       { label: "Headroom", value: "3 V" },
       { label: "Efficiency", value: "82%" }
     ],
-    tags: ["Visual", "Compare", "Showcase"]
+    tags: ["Visual", "Compare", "Showcase"],
+    manufacturerComponentIdA: "aurion-photonedge-95",
+    manufacturerComponentIdB: "ohmega-trace-82"
   }
 ];
 
@@ -289,7 +331,7 @@ const ARENA_BROADCAST_FEED: BroadcastPulse[] = [
   },
   {
     id: "broadcast-2",
-    message: "Compare mode trending up?inductor vs capacitor tests complete in under 4.1 seconds average."
+    message: "Compare mode trending up - inductor vs capacitor tests complete in under 4.1 seconds average."
   },
   {
     id: "broadcast-3",
@@ -300,6 +342,10 @@ const ARENA_BROADCAST_FEED: BroadcastPulse[] = [
     message: "New arena record: 312 concurrent scenario exports without leaving the playground."
   }
 ];
+
+const BROADCAST_INTERVAL_MS = 9000;
+const MATCH_ROTATION_MS = 12000;
+const BENCHMARK_REFRESH_MS = 11000;
 
 function shuffleArray<T>(items: T[]): T[] {
   const array = [...items];
@@ -316,17 +362,176 @@ function timestampLabel(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function buildMetricSnapshot(metric: BenchmarkMetric): LiveMetric {
-  const jitter = (Math.random() * 2 - 1) * metric.swing;
-  const value = metric.baseline + jitter;
-  const precision = typeof metric.precision === "number" ? metric.precision : 2;
-  const formatted = `${value.toFixed(precision)} ${metric.unit}`.trim();
-  return {
-    id: metric.id,
-    label: metric.label,
-    value: formatted
-  };
+function formatWithUnit(value: number, precision: number, unit: string): string {
+  const trimmedUnit = unit?.trim();
+  if (trimmedUnit) {
+    return `${value.toFixed(precision)} ${trimmedUnit}`;
+  }
+  return value.toFixed(precision);
 }
+
+function createBenchmarkSnapshot(): LiveMetric[] {
+  return ARENA_BENCHMARK_METRICS.map((metric) => {
+    const jitter = (Math.random() - 0.5) * metric.swing;
+    const reading = metric.baseline + jitter;
+    const precision = metric.precision ?? 2;
+    const direction = jitter >= 0 ? "?" : "?";
+    return {
+      id: metric.id,
+      label: metric.label,
+      value: `${formatWithUnit(reading, precision, metric.unit)} ${direction}`.trim()
+    };
+  });
+}
+
+function createMatchups(roster: ManufacturerComponent[]): ArenaMatchup[] {
+  if (!Array.isArray(roster) || roster.length < 2) {
+    return [];
+  }
+
+  const generated: ArenaMatchup[] = [];
+  for (let index = 0; index < roster.length; index += 2) {
+    const componentA = roster[index];
+    const componentB = roster[(index + 1) % roster.length];
+
+    if (!componentA || !componentB || componentA.id === componentB.id) {
+      continue;
+    }
+
+    const focusMetric = componentA.metrics[0]?.label ?? componentB.metrics[0]?.label ?? "Signal";
+    generated.push({
+      id: `${componentA.id}-vs-${componentB.id}`,
+      title: `${componentA.name} vs ${componentB.name}`,
+      summary: `${componentA.manufacturer} ${componentA.family} faces ${componentB.manufacturer} ${componentB.family} on ${focusMetric.toLowerCase()}.`,
+      componentA,
+      componentB,
+      status: index === 0 ? "live" : "queued",
+      focusMetric
+    });
+  }
+
+  return generated;
+}
+
+const SHOWCASE_MANUFACTURERS: ManufacturerComponent[] = [
+  {
+    id: "lumatek-lumeon-180",
+    manufacturer: "Lumatek Labs",
+    name: "Lumeon 180",
+    family: "L-Drive Series",
+    type: "led",
+    footprint: "1206",
+    datasheet: "https://lumatek.example.com/lumeon-180",
+    highlight: "Poster-grade luminous flux with adaptive thermal throttling.",
+    rating: 4.9,
+    metrics: [
+      { label: "Forward Vf", value: "2.1", unit: "V" },
+      { label: "Max Current", value: "22", unit: "mA" },
+      { label: "Flux", value: "24", unit: "lm" }
+    ]
+  },
+  {
+    id: "aurion-photonedge-95",
+    manufacturer: "Aurion Optics",
+    name: "PhotonEdge 95",
+    family: "SpectraMax",
+    type: "led",
+    footprint: "3535",
+    datasheet: "https://aurion.example.com/photonedge-95",
+    highlight: "Spectrally balanced signage emitter optimised for long throws.",
+    rating: 4.8,
+    metrics: [
+      { label: "CRI", value: "95" },
+      { label: "Luminous Eff.", value: "182", unit: "lm/W" },
+      { label: "Thermal Rise", value: "+9", unit: "degC" }
+    ]
+  },
+  {
+    id: "quantacap-12",
+    manufacturer: "QuantaCap",
+    name: "Q12 NanoCap",
+    family: "Stability Core",
+    type: "capacitor",
+    footprint: "0603",
+    datasheet: "https://quantacap.example.com/q12",
+    highlight: "Ultra-low ESR ceramic capacitor tuned for precision filters.",
+    rating: 4.7,
+    metrics: [
+      { label: "Capacitance", value: "1.2", unit: "uF" },
+      { label: "ESR", value: "24", unit: "mOhm" },
+      { label: "Temp Drift", value: "+/-2", unit: "%" }
+    ]
+  },
+  {
+    id: "kinetic-precision-08",
+    manufacturer: "Kinetic Coilworks",
+    name: "Precision 0.8",
+    family: "VectorPulse",
+    type: "inductor",
+    footprint: "1210",
+    datasheet: "https://kinetic.example.com/precision-08",
+    highlight: "Low-profile inductor delivering razor-flat ripple control.",
+    rating: 4.6,
+    metrics: [
+      { label: "Inductance", value: "8", unit: "mH" },
+      { label: "Q Factor", value: "92" },
+      { label: "Saturation", value: "2.4", unit: "A" }
+    ]
+  },
+  {
+    id: "ohmega-trace-82",
+    manufacturer: "Ohmega Systems",
+    name: "Trace 82",
+    family: "Precision Ladder",
+    type: "resistor",
+    footprint: "0805",
+    datasheet: "https://ohmega.example.com/trace-82",
+    highlight: "Tight tolerance resistor engineered for thermal stability under load.",
+    rating: 4.8,
+    metrics: [
+      { label: "Resistance", value: "82", unit: "Ohm" },
+      { label: "Tolerance", value: "+/-0.1", unit: "%" },
+      { label: "Temp Coeff.", value: "25", unit: "ppm" }
+    ]
+  }
+];
+
+const PARTNER_PREVIEW_PACK: ManufacturerComponent[] = [
+  {
+    id: "nova-link-210",
+    manufacturer: "NovaLink",
+    name: "Flux 210",
+    family: "HelioWave",
+    type: "led",
+    footprint: "2835",
+    datasheet: "https://novalink.example.com/flux-210",
+    highlight: "Partner preview: hyper-uniform signage LED with auto bin-matching.",
+    rating: 4.95,
+    metrics: [
+      { label: "Vf", value: "1.9", unit: "V" },
+      { label: "Max Load", value: "28", unit: "mA" },
+      { label: "Efficiency", value: "198", unit: "lm/W" }
+    ]
+  },
+  {
+    id: "resolute-guardian-33",
+    manufacturer: "Resolute Circuits",
+    name: "Guardian 33",
+    family: "LoadShield",
+    type: "resistor",
+    footprint: "1206",
+    datasheet: "https://resolute.example.com/guardian-33",
+    highlight: "Partner preview: heat-distributing resistor for live competition harnesses.",
+    rating: 4.85,
+    metrics: [
+      { label: "Resistance", value: "33", unit: "Ohm" },
+      { label: "Pulse Tol.", value: "350", unit: "V" },
+      { label: "Power", value: "0.75", unit: "W" }
+    ]
+  }
+];
+
+const DEFAULT_MATCHUPS = createMatchups(SHOWCASE_MANUFACTURERS);
 
 export default function Arena() {
   const navigate = useNavigate();
@@ -341,6 +546,12 @@ export default function Arena() {
     () => ARENA_SCENARIOS[0]?.id ?? null
   );
   const [isTipsOpen, setTipsOpen] = useState(false);
+  const [manufacturerRoster, setManufacturerRoster] = useState<ManufacturerComponent[]>(() => SHOWCASE_MANUFACTURERS);
+  const [matchups, setMatchups] = useState<ArenaMatchup[]>(() => DEFAULT_MATCHUPS);
+  const [matchIndex, setMatchIndex] = useState(0);
+  const [benchmarkMetrics, setBenchmarkMetrics] = useState<LiveMetric[]>(() => createBenchmarkSnapshot());
+  const [broadcastIndex, setBroadcastIndex] = useState(0);
+  const [isRosterSynced, setRosterSynced] = useState(false);
 
   const selectedScenario = useMemo(() => {
     if (selectedScenarioId) {
@@ -351,6 +562,37 @@ export default function Arena() {
     }
     return scenarioDeck[0] ?? null;
   }, [scenarioDeck, selectedScenarioId]);
+
+  const broadcastMessage = useMemo(() => {
+    if (!ARENA_BROADCAST_FEED.length) {
+      return "Arena feed warming up.";
+    }
+    const index = broadcastIndex % ARENA_BROADCAST_FEED.length;
+    return ARENA_BROADCAST_FEED[index]?.message ?? "Arena feed warming up.";
+  }, [broadcastIndex]);
+
+  const liveMatch = useMemo(() => {
+    if (!matchups.length) {
+      return null;
+    }
+    const index = matchIndex % matchups.length;
+    return matchups[index] ?? null;
+  }, [matchIndex, matchups]);
+
+  const upcomingMatches = useMemo(() => {
+    if (!matchups.length) {
+      return [];
+    }
+    const index = matchIndex % matchups.length;
+    return matchups.filter((_, idx) => idx !== index);
+  }, [matchIndex, matchups]);
+
+  const rosterCount = manufacturerRoster.length;
+  const syncActionLabel = isRosterSynced ? "Resync manufacturer bench" : "Sync manufacturer bench";
+  const syncActionDescription = isRosterSynced
+    ? "Push the latest roster updates into the arena HUD."
+    : "Send staged manufacturer components into the arena for live duels.";
+  const rosterStatusLabel = isRosterSynced ? "Synced with arena" : "Staged locally";
 
   const addActivity = useCallback((label: string) => {
     setActivity((previous) => {
@@ -363,6 +605,58 @@ export default function Arena() {
       return next.slice(0, 5);
     });
   }, []);
+
+  const scenarioToPayload = useCallback(
+    (scenario: ArenaScenario): ArenaConfigPayload => {
+      const payload: ArenaConfigPayload = { ...scenario.config };
+
+      if (scenario.manufacturerComponentIdA) {
+        payload.componentIdA = scenario.manufacturerComponentIdA;
+        const recordA = manufacturerRoster.find((component) => component.id === scenario.manufacturerComponentIdA);
+        if (recordA) {
+          payload.manufacturerNameA = recordA.manufacturer;
+        }
+      }
+
+      if (scenario.manufacturerComponentIdB) {
+        payload.componentIdB = scenario.manufacturerComponentIdB;
+        const recordB = manufacturerRoster.find((component) => component.id === scenario.manufacturerComponentIdB);
+        if (recordB) {
+          payload.manufacturerNameB = recordB.manufacturer;
+        }
+      }
+
+      return payload;
+    },
+    [manufacturerRoster]
+  );
+
+  const integrateManufacturerFeed = useCallback(
+    (components: ManufacturerComponent[], sourceLabel: string) => {
+      if (!Array.isArray(components) || components.length === 0) {
+        return;
+      }
+
+      setManufacturerRoster((previous) => {
+        const map = new Map(previous.map((component) => [component.id, component]));
+        components.forEach((component) => {
+          if (component && component.id) {
+            map.set(component.id, component);
+          }
+        });
+        return Array.from(map.values());
+      });
+
+      addActivity(`Integrated ${components.length} components via ${sourceLabel}`);
+      setRosterSynced(false);
+    },
+    [addActivity]
+  );
+
+  const handlePartnerPreview = useCallback(() => {
+    integrateManufacturerFeed(PARTNER_PREVIEW_PACK, "partner preview pack");
+    setStatus("Partner preview components staged. Resync to push them into the arena.");
+  }, [integrateManufacturerFeed]);
 
   const sendArenaMessage = useCallback(
     (message: ArenaOutboundMessage, options: { allowQueue?: boolean } = {}) => {
@@ -388,6 +682,22 @@ export default function Arena() {
     },
     [isFrameReady]
   );
+
+  const handleSyncManufacturers = useCallback(() => {
+    const delivered = sendArenaMessage(
+      { type: "arena:register-components", payload: { components: manufacturerRoster } },
+      { allowQueue: false }
+    );
+
+    if (delivered) {
+      setRosterSynced(true);
+      setStatus(`Synced ${manufacturerRoster.length} manufacturer components to the arena.`);
+      addActivity(`Synced ${manufacturerRoster.length} manufacturer components with arena`);
+    } else {
+      setStatus("Arena is finishing setup. We'll sync manufacturer data as soon as it is ready.");
+      addActivity("Queued manufacturer sync");
+    }
+  }, [addActivity, manufacturerRoster, sendArenaMessage]);
 
   useEffect(() => {
     if (!isFrameReady) {
@@ -421,6 +731,11 @@ export default function Arena() {
   }, [isFrameReady]);
 
   useEffect(() => {
+    setMatchups(createMatchups(manufacturerRoster));
+    setMatchIndex(0);
+  }, [manufacturerRoster]);
+
+  useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const frameWindow = iframeRef.current?.contentWindow;
       if (!frameWindow || event.source !== frameWindow) {
@@ -441,6 +756,22 @@ export default function Arena() {
         return;
       }
 
+      if (type === "arena:components-registered") {
+        setRosterSynced(true);
+
+        const detail = payload && typeof payload === "object" ? (payload as { count?: unknown }) : undefined;
+        const countValue = detail && typeof detail.count === "number" ? detail.count : undefined;
+
+        if (typeof countValue === "number") {
+          setStatus(`Arena acknowledged manufacturer roster (${countValue} components).`);
+          addActivity(`Arena registered ${countValue} manufacturer components`);
+        } else {
+          setStatus("Arena acknowledged manufacturer roster sync.");
+        }
+
+        return;
+      }
+
       if (type === "arena:status" && payload && typeof payload === "object" && "message" in payload) {
         const message = (payload as { message?: unknown }).message;
         if (typeof message === "string") {
@@ -456,10 +787,84 @@ export default function Arena() {
   }, [addActivity]);
 
   useEffect(() => {
+    if (!ARENA_BROADCAST_FEED.length) {
+      return undefined;
+    }
+
+    const ticker = window.setInterval(() => {
+      setBroadcastIndex((index) => (index + 1) % ARENA_BROADCAST_FEED.length);
+    }, BROADCAST_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(ticker);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!matchups.length) {
+      return undefined;
+    }
+
+    const rotation = window.setInterval(() => {
+      setMatchIndex((index) => (index + 1) % matchups.length);
+    }, MATCH_ROTATION_MS);
+
+    return () => {
+      window.clearInterval(rotation);
+    };
+  }, [matchups]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setBenchmarkMetrics(createBenchmarkSnapshot());
+    }, BENCHMARK_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!selectedScenarioId && scenarioDeck.length) {
       setSelectedScenarioId(scenarioDeck[0].id);
     }
   }, [scenarioDeck, selectedScenarioId]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent<{ components?: ManufacturerComponent[]; source?: string }>;
+      if (!customEvent.detail) {
+        return;
+      }
+
+      const { components, source } = customEvent.detail;
+      if (Array.isArray(components) && components.length) {
+        integrateManufacturerFeed(components, source ?? "external feed");
+      }
+    };
+
+    window.addEventListener("arena:ingest-manufacturers", handler as EventListener);
+    return () => {
+      window.removeEventListener("arena:ingest-manufacturers", handler as EventListener);
+    };
+  }, [integrateManufacturerFeed]);
+
+  useEffect(() => {
+    if (!isFrameReady || isRosterSynced) {
+      return;
+    }
+
+    const delivered = sendArenaMessage({
+      type: "arena:register-components",
+      payload: { components: manufacturerRoster }
+    });
+
+    if (delivered) {
+      setRosterSynced(true);
+      setStatus(`Manufacturer roster synced (${manufacturerRoster.length} components).`);
+      addActivity(`Synced ${manufacturerRoster.length} manufacturer components with arena`);
+    }
+  }, [addActivity, isFrameReady, isRosterSynced, manufacturerRoster, sendArenaMessage]);
 
   const handleBack = useCallback(() => {
     navigate("/");
@@ -472,11 +877,18 @@ export default function Arena() {
   const handleScenarioSelect = useCallback(
     (scenario: ArenaScenario) => {
       setSelectedScenarioId(scenario.id);
-      const staged = sendArenaMessage({ type: "arena:configure", payload: scenario.config });
+      const payload = scenarioToPayload(scenario);
+      const staged = sendArenaMessage({ type: "arena:configure", payload });
       if (!staged) {
         setStatus("Warming up arena. We will sync the preset as soon as it is ready.");
       } else {
-        setStatus(`Preset "${scenario.name}" staged. Hit Run Test to evaluate.`);
+        const manufacturerLabel = [payload.manufacturerNameA, payload.manufacturerNameB]
+          .filter(Boolean)
+          .join(" vs ");
+        const statusMessage = manufacturerLabel
+          ? `Preset "${scenario.name}" staged (${manufacturerLabel}). Hit Run Test to evaluate.`
+          : `Preset "${scenario.name}" staged. Hit Run Test to evaluate.`;
+        setStatus(statusMessage);
       }
 
       if (scenario.autoRun) {
@@ -485,7 +897,7 @@ export default function Arena() {
 
       addActivity(`Preset loaded: ${scenario.name}`);
     },
-    [addActivity, sendArenaMessage]
+    [addActivity, scenarioToPayload, sendArenaMessage]
   );
 
   const handleScenarioShuffle = useCallback(() => {
@@ -493,14 +905,22 @@ export default function Arena() {
     setScenarioDeck(nextDeck);
     if (nextDeck.length) {
       setSelectedScenarioId(nextDeck[0].id);
-      setStatus(`New presets queued. Highlighting ${nextDeck[0].name}.`);
+      const payload = scenarioToPayload(nextDeck[0]);
+      const manufacturerLabel = [payload.manufacturerNameA, payload.manufacturerNameB]
+        .filter(Boolean)
+        .join(" vs ");
+      setStatus(
+        manufacturerLabel
+          ? `New presets queued. Highlighting ${nextDeck[0].name} (${manufacturerLabel}).`
+          : `New presets queued. Highlighting ${nextDeck[0].name}.`
+      );
       addActivity("Scenario deck reshuffled");
-      sendArenaMessage({ type: "arena:configure", payload: nextDeck[0].config });
+      sendArenaMessage({ type: "arena:configure", payload });
       if (nextDeck[0].autoRun) {
         sendArenaMessage({ type: "arena:run-test" });
       }
     }
-  }, [addActivity, sendArenaMessage]);
+  }, [addActivity, scenarioToPayload, sendArenaMessage]);
 
   const handleQuickAction = useCallback(
     (action: QuickAction) => {
@@ -536,13 +956,14 @@ export default function Arena() {
     if (selectedScenario) {
       // Ensure the currently highlighted scenario stays in sync after the iframe reports ready.
       if (isFrameReady) {
-        sendArenaMessage({ type: "arena:configure", payload: selectedScenario.config });
+        const payload = scenarioToPayload(selectedScenario);
+        sendArenaMessage({ type: "arena:configure", payload });
         if (selectedScenario.autoRun) {
           sendArenaMessage({ type: "arena:run-test" });
         }
       }
     }
-  }, [isFrameReady, selectedScenario, sendArenaMessage]);
+  }, [isFrameReady, scenarioToPayload, selectedScenario, sendArenaMessage]);
 
   return (
     <div className="arena-shell">
@@ -614,6 +1035,56 @@ export default function Arena() {
                   <span className="arena-action-label">{action.label}</span>
                   <span className="arena-action-description">{action.description}</span>
                 </button>
+              ))}
+              <button
+                type="button"
+                className="arena-action accent"
+                onClick={handleSyncManufacturers}
+                aria-label={syncActionDescription}
+              >
+                <span className="arena-action-label">{syncActionLabel}</span>
+                <span className="arena-action-description">{syncActionDescription}</span>
+              </button>
+            </div>
+            <div className="arena-roster-cta">
+              <button type="button" className="arena-chip" onClick={handlePartnerPreview}>
+                Load partner preview pack
+              </button>
+              <span className="arena-footnote">Want your catalogue here? Dispatch a custom event to `arena:ingest-manufacturers`.</span>
+            </div>
+          </section>
+
+          <section className="arena-card roster">
+            <div className="arena-card-header">
+              <h2>Manufacturer roster</h2>
+              <button type="button" className="arena-mini" onClick={handleSyncManufacturers}>
+                {isRosterSynced ? "Push update" : "Sync now"}
+              </button>
+            </div>
+            <p className="arena-footnote">{rosterStatusLabel} - {rosterCount} components staged</p>
+            <div className="arena-roster-list">
+              {manufacturerRoster.map((component) => (
+                <article key={component.id} className="arena-roster-card">
+                  <div className="arena-roster-top">
+                    <span className="arena-roster-manufacturer">{component.manufacturer}</span>
+                    <span className="arena-roster-rating">
+                      {typeof component.rating === "number" ? `${component.rating.toFixed(2)}*` : "n/a"}
+                    </span>
+                  </div>
+                  <div className="arena-roster-name">{component.name}</div>
+                  <p className="arena-roster-highlight">{component.highlight}</p>
+                  <dl className="arena-roster-metric-grid">
+                    {component.metrics.map((metric) => (
+                      <div key={`${component.id}-${metric.label}`} className="arena-roster-metric">
+                        <dt>{metric.label}</dt>
+                        <dd>
+                          {metric.value}
+                          {metric.unit ? <span className="arena-roster-unit">{metric.unit}</span> : null}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
               ))}
             </div>
           </section>
@@ -705,6 +1176,30 @@ export default function Arena() {
             </div>
           </div>
 
+          <div className="arena-broadcast">
+            <span className="arena-broadcast-label">Global feed</span>
+            <p className="arena-broadcast-text">{broadcastMessage}</p>
+          </div>
+
+          <section className="arena-stage-summaries">
+            <div className="arena-benchmark-matrix">
+              {benchmarkMetrics.map((metric) => (
+                <article key={metric.id} className="arena-benchmark-card">
+                  <span className="arena-benchmark-label">{metric.label}</span>
+                  <span className="arena-benchmark-value">{metric.value}</span>
+                </article>
+              ))}
+            </div>
+            <div className="arena-badge-stack">
+              {ARENA_BADGES.map((badge) => (
+                <article key={badge.id} className={`arena-badge ${badge.tone}`}>
+                  <h3>{badge.title}</h3>
+                  <p>{badge.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <div className={`arena-embed${isFrameReady ? " ready" : ""}`}>
             <iframe
               ref={iframeRef}
@@ -734,6 +1229,78 @@ export default function Arena() {
               </div>
             </footer>
           ) : null}
+
+          <section className="arena-matchups">
+            <div className="arena-matchups-head">
+              <div>
+                <span className="arena-footnote">Manufacturer championship</span>
+                <h2>Live component duel</h2>
+              </div>
+              <button type="button" className="arena-mini" onClick={handleSyncManufacturers}>
+                Push roster to arena
+              </button>
+            </div>
+            {liveMatch ? (
+              <div className="arena-live-match">
+                <div className="arena-live-card">
+                  <div className="arena-live-side">
+                    <span className="arena-live-manufacturer">{liveMatch.componentA.manufacturer}</span>
+                    <span className="arena-live-name">{liveMatch.componentA.name}</span>
+                    <ul className="arena-live-metrics">
+                      {liveMatch.componentA.metrics.slice(0, 2).map((metric) => (
+                        <li key={`${liveMatch.componentA.id}-${metric.label}`}>
+                          <span className="arena-live-metric-label">{metric.label}</span>
+                          <span className="arena-live-metric-value">
+                            {metric.value}
+                            {metric.unit ? ` ${metric.unit}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="arena-live-versus">vs</div>
+                  <div className="arena-live-side">
+                    <span className="arena-live-manufacturer">{liveMatch.componentB.manufacturer}</span>
+                    <span className="arena-live-name">{liveMatch.componentB.name}</span>
+                    <ul className="arena-live-metrics">
+                      {liveMatch.componentB.metrics.slice(0, 2).map((metric) => (
+                        <li key={`${liveMatch.componentB.id}-${metric.label}`}>
+                          <span className="arena-live-metric-label">{metric.label}</span>
+                          <span className="arena-live-metric-value">
+                            {metric.value}
+                            {metric.unit ? ` ${metric.unit}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <p className="arena-live-summary">{liveMatch.summary}</p>
+                <span className="arena-footnote">Focus metric: {liveMatch.focusMetric}</span>
+              </div>
+            ) : (
+              <p className="arena-empty">Add at least two manufacturer components to generate matchups.</p>
+            )}
+            {upcomingMatches.length ? (
+              <ul className="arena-match-list">
+                {upcomingMatches.map((match) => (
+                  <li key={match.id} className="arena-match-card">
+                    <div className="arena-match-teams">
+                      <span className="arena-match-manufacturer">{match.componentA.manufacturer}</span>
+                      <strong>{match.componentA.name}</strong>
+                      <span className="arena-match-divider">vs</span>
+                      <span className="arena-match-manufacturer">{match.componentB.manufacturer}</span>
+                      <strong>{match.componentB.name}</strong>
+                    </div>
+                    <div className="arena-match-details">
+                      <span className="arena-match-metric">Focus: {match.focusMetric}</span>
+                      <span className="arena-match-summary">{match.summary}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
         </section>
       </main>
 
@@ -742,7 +1309,7 @@ export default function Arena() {
           <header className="arena-tour-header">
             <h2>Arena quick tour</h2>
             <button type="button" className="arena-tour-close" onClick={() => setTipsOpen(false)} aria-label="Close tips">
-              ?
+              x
             </button>
           </header>
           <div className="arena-tour-body">
