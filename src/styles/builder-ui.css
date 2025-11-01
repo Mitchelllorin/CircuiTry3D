@@ -35,33 +35,6 @@ body.builder-body {
   --bottom-panel-offset: var(--bottom-panel-offset);
 }
 
-.builder-logo-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: linear-gradient(180deg, rgba(15, 27, 61, 0.92), rgba(15, 27, 61, 0.25), transparent);
-  backdrop-filter: blur(14px);
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.builder-logo-text {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.2rem;
-  text-shadow: 0 0 10px rgba(0, 255, 136, 0.28), 0 0 26px rgba(17, 80, 150, 0.45);
-  animation: builderLogoPulse 3.2s ease-in-out infinite;
-}
-
 .builder-logo-circui {
   color: var(--legacy-green);
 }
@@ -73,16 +46,6 @@ body.builder-body {
 .builder-logo-3d {
   color: var(--legacy-green);
   letter-spacing: 0.18em;
-}
-
-@keyframes builderLogoPulse {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.45)) drop-shadow(0 0 16px rgba(136, 204, 255, 0.35));
-  }
-  50% {
-    filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.65)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.35));
-  }
 }
 
 .builder-panel {

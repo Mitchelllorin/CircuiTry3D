@@ -332,13 +332,6 @@ export default function Builder() {
 
   return (
     <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
-      <div className="builder-logo-header">
-        <div className="builder-logo-text" aria-label="CircuiTry3D">
-          <span className="builder-logo-circui">Circui</span>
-          <span className="builder-logo-try">Try</span>
-          <span className="builder-logo-3d">3D</span>
-        </div>
-      </div>
 
       <aside className={`builder-panel panel-left ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>
         <div className="panel-header">
