@@ -1,5 +1,5 @@
-import { Routes, Route, Link, Navigate } from "react-router-dom";
-// Home landing page intentionally bypassed to avoid second splash
+import { Routes, Route, Link } from "react-router-dom";
+import Home from "../pages/Home";
 import Builder from "../pages/Builder";
 import Arena from "../pages/Arena";
 import WireDemo from "../pages/WireDemo";
@@ -8,7 +8,7 @@ import Pricing from "../pages/Pricing";
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/app" replace />} />
+      <Route path="/" element={<Home />} />
       <Route path="/app" element={<Builder />} />
       <Route path="/arena" element={<Arena />} />
       <Route path="/wire-demo" element={<WireDemo />} />

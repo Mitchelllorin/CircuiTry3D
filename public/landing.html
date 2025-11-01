@@ -1,93 +1,362 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CircuiTry3D</title>
-  <style>
-    * { box-sizing: border-box; }
-    html { background: #0f1b3d; }
-    body { margin: 0; background: linear-gradient(135deg, #0f1b3d, #16213e 40%, #0a1028); color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif; min-height: 100vh; }
-    .landing-page { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; background: linear-gradient(135deg, #0f1b3d, #16213e 40%, #0a1028); }
-    .landing-logo { font-size: clamp(48px, 10vw, 92px); font-weight: 900; text-align: center; line-height: 1; }
-    .logo-circui { color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.6), 0 0 24px rgba(0,136,255,0.2); }
-    .logo-try { color: #ff8800; text-shadow: 0 0 12px rgba(255,136,0,0.6), 0 0 24px rgba(255,255,255,0.15); }
-    .logo-pulse { animation: logoPulse 2.2s ease-in-out infinite; }
-    @keyframes logoPulse {
-      0% { filter: drop-shadow(0 0 8px rgba(100,160,255,0.4)) drop-shadow(0 0 18px rgba(255,255,255,0.25)); }
-      50% { filter: drop-shadow(0 0 14px rgba(140,200,255,0.8)) drop-shadow(0 0 28px rgba(255,255,255,0.35)); }
-      100% { filter: drop-shadow(0 0 10px rgba(100,160,255,0.6)) drop-shadow(0 0 24px rgba(255,255,255,0.3)); }
-    }
-    .landing-subtitle { color: #88ccff; margin: 4px 0 8px; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: 700; opacity: 0.9; }
-    .logo-circuit { width: min(640px, 90vw); height: auto; }
-    .wire { stroke: #88ccff; stroke-width: 3; fill: none; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(136,204,255,0.5)); }
-    .element { stroke: #00ff88; stroke-width: 2; fill: none; }
-    .photon { fill: #cfe9ff; filter: drop-shadow(0 0 6px rgba(180,220,255,0.9)); }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-    .btn { padding: 14px 20px; border-radius: 9999px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-    .btn-launch { background: #00ff88; color: #111827; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
-    .btn-github { background: #111827; color: #fff; border: 1px solid #374151; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CircuiTry3D</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            background: radial-gradient(circle at 20% 20%, rgba(0, 255, 136, 0.12), transparent 45%),
+                        radial-gradient(circle at 80% 10%, rgba(0, 136, 255, 0.18), transparent 52%),
+                        radial-gradient(circle at 50% 80%, rgba(255, 136, 0, 0.12), transparent 55%),
+                        linear-gradient(135deg, #0f172a 0%, #0b1224 45%, #050914 100%);
+            color: #fff;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .landing-page {
+            width: min(960px, 100%);
+            border-radius: 32px;
+            padding: clamp(24px, 5vw, 64px);
+            background: rgba(8, 16, 32, 0.78);
+            box-shadow: 0 30px 120px rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(22px);
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            display: grid;
+            gap: clamp(20px, 4vw, 40px);
+            justify-items: center;
+        }
+
+        .landing-logo {
+            font-size: clamp(48px, 10vw, 98px);
+            font-weight: 900;
+            text-transform: uppercase;
+            margin: 0;
+            letter-spacing: -3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .logo-circui {
+            color: #00ff88;
+            text-shadow: 0 0 14px rgba(0, 255, 136, 0.7), 0 0 32px rgba(16, 180, 255, 0.35);
+        }
+
+        .logo-try {
+            color: #ff8800;
+            text-shadow: 0 0 18px rgba(255, 136, 0, 0.6), 0 0 36px rgba(255, 255, 255, 0.2);
+        }
+
+        .logo-3d {
+            color: #7dd3fc;
+            text-shadow: 0 0 14px rgba(125, 211, 252, 0.8);
+        }
+
+        .logo-pulse {
+            animation: logoPulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+            0% {
+                filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.45)) drop-shadow(0 0 18px rgba(0, 119, 255, 0.25));
+            }
+            50% {
+                filter: drop-shadow(0 0 22px rgba(0, 255, 190, 0.9)) drop-shadow(0 0 30px rgba(38, 155, 255, 0.4));
+            }
+            100% {
+                filter: drop-shadow(0 0 12px rgba(0, 255, 160, 0.6)) drop-shadow(0 0 26px rgba(0, 119, 255, 0.25));
+            }
+        }
+
+        .landing-subtitle {
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5rem;
+            color: rgba(168, 217, 255, 0.9);
+            font-weight: 600;
+            font-size: clamp(12px, 3vw, 16px);
+        }
+
+        .circuit-preview {
+            width: min(640px, 100%);
+            border-radius: 28px;
+            padding: clamp(18px, 4vw, 32px);
+            background: linear-gradient(135deg, rgba(3, 10, 24, 0.8), rgba(4, 22, 32, 0.65));
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .circuit-preview::after {
+            content: "";
+            position: absolute;
+            inset: -40% 30% auto -40%;
+            height: 300%;
+            background: linear-gradient(120deg, transparent, rgba(0, 255, 136, 0.35), transparent);
+            animation: sweep 6s linear infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes sweep {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(220%);
+            }
+        }
+
+        .circuit-svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .circuit-wire {
+            stroke: #7dd3fc;
+            stroke-width: 3;
+            fill: none;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+
+        .circuit-element {
+            stroke: #00ff88;
+            stroke-width: 2.6;
+            fill: rgba(0, 255, 136, 0.08);
+        }
+
+        .status {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.18), rgba(0, 119, 255, 0.18));
+            color: rgba(240, 253, 250, 0.92);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+        }
+
+        .status::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.7);
+            animation: statusPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+        }
+
+        .loading-progress {
+            display: none;
+            width: min(420px, 100%);
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loading-bar {
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #00ff88 0%, #00a3ff 50%, #00ff88 100%);
+            background-size: 200% 100%;
+            box-shadow: 0 6px 18px rgba(0, 255, 136, 0.4);
+            transition: width 0.6s cubic-bezier(0.33, 1, 0.68, 1);
+            animation: shimmer 2.6s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 200% 50%;
+            }
+        }
+
+        .loading-text {
+            display: none;
+            font-size: clamp(13px, 3.2vw, 16px);
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            color: rgba(200, 240, 255, 0.82);
+        }
+
+        .launch-button {
+            display: none;
+            background: linear-gradient(135deg, #00ff88, #00e6a0);
+            color: #05121f;
+            border: none;
+            padding: 18px clamp(32px, 8vw, 64px);
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: clamp(16px, 4vw, 20px);
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            box-shadow: 0 16px 40px rgba(0, 255, 136, 0.3);
+            cursor: pointer;
+            transition: transform 0.24s ease, box-shadow 0.24s ease;
+        }
+
+        .launch-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 56px rgba(0, 255, 180, 0.45);
+        }
+
+        .launch-button:active {
+            transform: translateY(-1px);
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .meta {
+            margin: 0;
+            font-size: 12px;
+            letter-spacing: 0.34em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.55);
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .landing-page {
+                border-radius: 22px;
+                padding: clamp(20px, 7vw, 32px);
+            }
+
+            .landing-logo {
+                letter-spacing: -1px;
+            }
+
+            .landing-subtitle {
+                letter-spacing: 0.32rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="landing-page">
-    <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span style="color:#00ff88">3D</span></div>
-    <div class="landing-subtitle">Professional Circuit Design</div>
-    <svg class="logo-circuit" viewBox="0 0 380 120" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <!-- Series schematic path -->
-      <path id="logo-path" class="wire" filter="url(#glow)" d="M20,60 H90 M90,60 h25 m10,-15 h30 v30 h-30 m40,-15 h65 m10,-15 h30 v30 h-30 m40,-15 H360"/>
-      <!-- Battery symbol at start -->
-      <line x1="20" y1="50" x2="20" y2="70" class="element"/>
-      <line x1="26" y1="45" x2="26" y2="75" class="element"/>
-      <!-- Resistor block 1 -->
-      <rect x="125" y="45" width="30" height="30" class="element" rx="4"/>
-      <!-- LED block -->
-      <rect x="270" y="45" width="30" height="30" class="element" rx="4"/>
-      <!-- Photons -->
-      <g id="photons"></g>
-    </svg>
-    <div class="actions">
-      <a class="btn btn-launch" href="/app" target="_top" rel="noopener">Launch App</a>
-      <a class="btn btn-github" href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer">View on GitHub</a>
+    <div class="landing-page">
+        <h1 class="landing-logo logo-pulse">
+            <span class="logo-circui">Circui</span>
+            <span class="logo-try">Try</span>
+            <span class="logo-3d">3D</span>
+        </h1>
+        <p class="landing-subtitle">Professional Circuit Design Studio</p>
+
+        <div class="circuit-preview" aria-hidden="true">
+            <svg class="circuit-svg" viewBox="0 0 460 180">
+                <defs>
+                    <linearGradient id="wireGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#00ff88" stop-opacity="0.8" />
+                        <stop offset="50%" stop-color="#00a3ff" stop-opacity="0.9" />
+                        <stop offset="100%" stop-color="#00ff88" stop-opacity="0.8" />
+                    </linearGradient>
+                </defs>
+                <path class="circuit-wire" stroke="url(#wireGlow)" d="M 40 90 L 110 90 L 110 48 L 200 48 L 200 90 L 268 90 L 268 132 L 200 132 L 200 90" />
+                <path class="circuit-wire" stroke="url(#wireGlow)" d="M 200 90 L 312 90 L 312 48 L 380 48 L 380 132 L 312 132 L 312 90" />
+                <rect class="circuit-element" x="28" y="78" width="24" height="24" rx="4" />
+                <rect class="circuit-element" x="188" y="36" width="24" height="24" rx="6" />
+                <rect class="circuit-element" x="256" y="120" width="24" height="24" rx="6" />
+                <rect class="circuit-element" x="368" y="36" width="24" height="24" rx="6" />
+                <circle cx="110" cy="90" r="5" fill="#00ff88" />
+                <circle cx="200" cy="90" r="5" fill="#00ff88" />
+                <circle cx="312" cy="90" r="5" fill="#00ff88" />
+            </svg>
+        </div>
+
+        <div class="actions">
+            <div class="loading-progress" id="loading-progress">
+                <div class="loading-bar" id="loading-bar"></div>
+            </div>
+            <p class="loading-text" id="loading-text">Initializing launch sequence</p>
+            <div class="status" id="status">W.I.R.E. Circuit Builder Ready!</div>
+            <button id="launch-btn" class="launch-button" type="button" onclick="window.top.location.href='/app'">
+                Launch CircuiTry
+            </button>
+        </div>
+
+        <p class="meta">Professional Edition v2.0</p>
     </div>
-  </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loadingProgress = document.getElementById("loading-progress");
+            const loadingBar = document.getElementById("loading-bar");
+            const loadingText = document.getElementById("loading-text");
+            const status = document.getElementById("status");
+            const launchBtn = document.getElementById("launch-btn");
+
+            if (!loadingProgress || !loadingBar || !loadingText || !status || !launchBtn) {
+                return;
+            }
+
+            const phases = [
+                { delay: 300, width: 24, text: "Booting core systems" },
+                { delay: 900, width: 52, text: "Calibrating W.I.R.E. telemetry" },
+                { delay: 1500, width: 76, text: "Loading component library" },
+                { delay: 2100, width: 92, text: "Optimizing render pipeline" },
+                { delay: 2700, width: 100, text: "W.I.R.E. Circuit Builder Ready!" }
+            ];
+
+            loadingProgress.style.display = "block";
+            loadingText.style.display = "block";
+
+            phases.forEach(({ delay, width, text }, index) => {
+                setTimeout(() => {
+                    loadingBar.style.width = width + "%";
+                    loadingText.textContent = text;
+
+                    if (index === phases.length - 1) {
+                        status.style.display = "flex";
+                        launchBtn.style.display = "inline-flex";
+                        loadingText.style.opacity = 0.85;
+                    }
+                }, delay);
+            });
+        });
+    </script>
 </body>
-<script>
-  // Animate small blue-white photons along the logo path
-  (function(){
-    const svg = document.querySelector('.logo-circuit');
-    const path = document.getElementById('logo-path');
-    const holder = document.getElementById('photons');
-    if (!svg || !path || !holder) return;
-    const total = Math.max(8, Math.floor(path.getTotalLength()/80));
-    const dots = [];
-    for (let i=0;i<total;i++){
-      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('r','2.6');
-      c.setAttribute('class','photon');
-      holder.appendChild(c);
-      dots.push({ el:c, t:(i/total) });
-    }
-    function tick(){
-      const len = path.getTotalLength();
-      dots.forEach((d,idx)=>{
-        d.t += 0.004 + (idx%3)*0.0008; if (d.t>1) d.t -= 1;
-        const p = path.getPointAtLength(d.t*len);
-        d.el.setAttribute('cx', p.x);
-        d.el.setAttribute('cy', p.y);
-      });
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  })();
-</script>
 </html>
