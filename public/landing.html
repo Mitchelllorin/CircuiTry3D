@@ -9,19 +9,16 @@
             box-sizing: border-box;
         }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
-            background: radial-gradient(circle at 20% 20%, rgba(0, 255, 136, 0.12), transparent 45%),
-                        radial-gradient(circle at 80% 10%, rgba(0, 136, 255, 0.18), transparent 52%),
-                        radial-gradient(circle at 50% 80%, rgba(255, 136, 0, 0.12), transparent 55%),
-                        linear-gradient(135deg, #0f172a 0%, #0b1224 45%, #050914 100%);
-            color: #fff;
+        html {
+            background: #0f1b3d;
         }
 
         body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0f1b3d 0%, #16213e 45%, #0a1028 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -29,144 +26,160 @@
         }
 
         .landing-page {
-            width: min(960px, 100%);
-            border-radius: 32px;
-            padding: clamp(24px, 5vw, 64px);
-            background: rgba(8, 16, 32, 0.78);
-            box-shadow: 0 30px 120px rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(22px);
-            border: 1px solid rgba(0, 255, 136, 0.25);
-            display: grid;
-            gap: clamp(20px, 4vw, 40px);
-            justify-items: center;
+            position: relative;
+            width: min(620px, 100%);
+            padding: clamp(24px, 6vw, 48px);
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
+            background: rgba(8, 16, 32, 0.82);
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            box-shadow: 0 26px 120px rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(16px);
         }
 
         .landing-logo {
-            font-size: clamp(48px, 10vw, 98px);
+            font-size: clamp(48px, 12vw, 92px);
             font-weight: 900;
-            text-transform: uppercase;
+            letter-spacing: -2px;
             margin: 0;
-            letter-spacing: -3px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
         }
 
         .logo-circui {
             color: #00ff88;
-            text-shadow: 0 0 14px rgba(0, 255, 136, 0.7), 0 0 32px rgba(16, 180, 255, 0.35);
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.6), 0 0 24px rgba(0, 136, 255, 0.22);
         }
 
         .logo-try {
             color: #ff8800;
-            text-shadow: 0 0 18px rgba(255, 136, 0, 0.6), 0 0 36px rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 12px rgba(255, 136, 0, 0.6), 0 0 24px rgba(255, 255, 255, 0.2);
         }
 
         .logo-3d {
-            color: #7dd3fc;
-            text-shadow: 0 0 14px rgba(125, 211, 252, 0.8);
+            color: #00ff88;
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.6), 0 0 20px rgba(0, 255, 200, 0.3);
         }
 
         .logo-pulse {
-            animation: logoPulse 2.4s ease-in-out infinite;
+            animation: logoPulse 2.2s ease-in-out infinite;
         }
 
         @keyframes logoPulse {
             0% {
-                filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.45)) drop-shadow(0 0 18px rgba(0, 119, 255, 0.25));
+                filter: drop-shadow(0 0 8px rgba(100, 160, 255, 0.4)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.25));
             }
             50% {
-                filter: drop-shadow(0 0 22px rgba(0, 255, 190, 0.9)) drop-shadow(0 0 30px rgba(38, 155, 255, 0.4));
+                filter: drop-shadow(0 0 16px rgba(140, 200, 255, 0.85)) drop-shadow(0 0 28px rgba(255, 255, 255, 0.35));
             }
             100% {
-                filter: drop-shadow(0 0 12px rgba(0, 255, 160, 0.6)) drop-shadow(0 0 26px rgba(0, 119, 255, 0.25));
+                filter: drop-shadow(0 0 10px rgba(100, 160, 255, 0.5)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.3));
             }
         }
 
         .landing-subtitle {
             margin: 0;
+            font-size: clamp(14px, 3vw, 18px);
             text-transform: uppercase;
-            letter-spacing: 0.5rem;
-            color: rgba(168, 217, 255, 0.9);
-            font-weight: 600;
-            font-size: clamp(12px, 3vw, 16px);
+            letter-spacing: 0.32em;
+            color: rgba(160, 199, 240, 0.85);
         }
 
         .circuit-preview {
-            width: min(640px, 100%);
-            border-radius: 28px;
-            padding: clamp(18px, 4vw, 32px);
-            background: linear-gradient(135deg, rgba(3, 10, 24, 0.8), rgba(4, 22, 32, 0.65));
-            border: 1px solid rgba(0, 255, 136, 0.25);
+            width: min(90vw, 420px);
+            height: 190px;
+            border: 3px solid rgba(0, 255, 136, 0.85);
+            border-radius: 24px;
+            background: rgba(5, 14, 28, 0.7);
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 30px rgba(0, 255, 136, 0.08);
         }
 
-        .circuit-preview::after {
+        .circuit-preview::before {
             content: "";
             position: absolute;
-            inset: -40% 30% auto -40%;
-            height: 300%;
-            background: linear-gradient(120deg, transparent, rgba(0, 255, 136, 0.35), transparent);
-            animation: sweep 6s linear infinite;
-            opacity: 0.4;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 3.2s linear infinite;
         }
 
-        @keyframes sweep {
-            0% {
-                transform: translateX(0);
-            }
+        @keyframes shimmer {
             100% {
-                transform: translateX(220%);
+                transform: translateX(100%);
             }
         }
 
         .circuit-svg {
-            width: 100%;
-            height: auto;
-        }
-
-        .circuit-wire {
-            stroke: #7dd3fc;
-            stroke-width: 3;
-            fill: none;
-            stroke-linejoin: round;
-            stroke-linecap: round;
+            width: 320px;
+            height: 140px;
         }
 
         .circuit-element {
             stroke: #00ff88;
-            stroke-width: 2.6;
-            fill: rgba(0, 255, 136, 0.08);
+            stroke-width: 2.4;
+            fill: none;
         }
 
-        .status {
+        .circuit-wire {
+            stroke: #66bbff;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .circuit-text {
+            fill: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .circuit-voltage {
+            fill: #ff6666;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .landing-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .status-badge {
             display: none;
             align-items: center;
             gap: 12px;
-            padding: 12px 18px;
+            padding: 12px 20px;
             border-radius: 999px;
-            border: 1px solid rgba(0, 255, 136, 0.4);
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.18), rgba(0, 119, 255, 0.18));
-            color: rgba(240, 253, 250, 0.92);
-            font-weight: 600;
+            border: 1px solid rgba(0, 255, 136, 0.45);
+            background: rgba(0, 30, 60, 0.6);
+            color: rgba(220, 255, 245, 0.9);
             text-transform: uppercase;
             letter-spacing: 0.18em;
+            font-weight: 600;
         }
 
-        .status::before {
+        .status-badge::before {
             content: "";
             width: 12px;
             height: 12px;
             border-radius: 50%;
             background: #00ff88;
-            box-shadow: 0 0 12px rgba(0, 255, 136, 0.7);
-            animation: statusPulse 1.2s ease-in-out infinite;
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.8);
+            animation: statusPulse 1.4s ease-in-out infinite;
         }
 
         @keyframes statusPulse {
             0% {
-                transform: scale(0.9);
+                transform: scale(0.85);
                 opacity: 0.6;
             }
             50% {
@@ -174,33 +187,32 @@
                 opacity: 1;
             }
             100% {
-                transform: scale(0.9);
+                transform: scale(0.85);
                 opacity: 0.6;
             }
         }
 
         .loading-progress {
             display: none;
-            width: min(420px, 100%);
+            width: min(80vw, 360px);
             height: 5px;
+            background: rgba(255, 255, 255, 0.16);
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.12);
             overflow: hidden;
-            position: relative;
         }
 
         .loading-bar {
             width: 0;
             height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, #00ff88 0%, #00a3ff 50%, #00ff88 100%);
+            background: linear-gradient(90deg, #00ff88 0%, #00ccff 50%, #00ff88 100%);
             background-size: 200% 100%;
-            box-shadow: 0 6px 18px rgba(0, 255, 136, 0.4);
+            border-radius: inherit;
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.35);
             transition: width 0.6s cubic-bezier(0.33, 1, 0.68, 1);
-            animation: shimmer 2.6s linear infinite;
+            animation: barShimmer 2.8s linear infinite;
         }
 
-        @keyframes shimmer {
+        @keyframes barShimmer {
             0% {
                 background-position: 0% 50%;
             }
@@ -211,68 +223,78 @@
 
         .loading-text {
             display: none;
-            font-size: clamp(13px, 3.2vw, 16px);
+            font-size: clamp(13px, 3.4vw, 16px);
             text-transform: uppercase;
             letter-spacing: 0.22em;
-            color: rgba(200, 240, 255, 0.82);
+            color: rgba(200, 235, 255, 0.82);
         }
 
         .launch-button {
             display: none;
-            background: linear-gradient(135deg, #00ff88, #00e6a0);
-            color: #05121f;
-            border: none;
-            padding: 18px clamp(32px, 8vw, 64px);
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 18px 40px;
             border-radius: 999px;
+            border: none;
             font-weight: 800;
             font-size: clamp(16px, 4vw, 20px);
             letter-spacing: 0.24em;
             text-transform: uppercase;
-            box-shadow: 0 16px 40px rgba(0, 255, 136, 0.3);
             cursor: pointer;
+            background: linear-gradient(135deg, #00ff88 0%, #00d977 100%);
+            color: #04121f;
+            box-shadow: 0 16px 40px rgba(0, 255, 136, 0.32);
             transition: transform 0.24s ease, box-shadow 0.24s ease;
         }
 
         .launch-button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 20px 56px rgba(0, 255, 180, 0.45);
+            box-shadow: 0 22px 56px rgba(0, 255, 180, 0.45);
         }
 
         .launch-button:active {
             transform: translateY(-1px);
         }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 18px;
-        }
-
-        .meta {
-            margin: 0;
+        .version-text {
+            margin: 12px 0 0;
             font-size: 12px;
-            letter-spacing: 0.34em;
+            letter-spacing: 0.32em;
             text-transform: uppercase;
             color: rgba(148, 163, 184, 0.55);
         }
 
         @media (max-width: 640px) {
             body {
-                padding: 12px;
+                padding: 16px;
             }
 
             .landing-page {
                 border-radius: 22px;
-                padding: clamp(20px, 7vw, 32px);
-            }
-
-            .landing-logo {
-                letter-spacing: -1px;
+                padding: clamp(20px, 8vw, 32px);
             }
 
             .landing-subtitle {
-                letter-spacing: 0.32rem;
+                letter-spacing: 0.24em;
+            }
+
+            .landing-actions {
+                gap: 14px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .logo-pulse,
+            .circuit-preview::before,
+            .status-badge::before,
+            .loading-bar {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+            }
+
+            .loading-bar {
+                transition: none;
             }
         }
     </style>
@@ -280,56 +302,53 @@
 <body>
     <div class="landing-page">
         <h1 class="landing-logo logo-pulse">
-            <span class="logo-circui">Circui</span>
-            <span class="logo-try">Try</span>
-            <span class="logo-3d">3D</span>
+            <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
         </h1>
-        <p class="landing-subtitle">Professional Circuit Design Studio</p>
+        <p class="landing-subtitle">Professional Circuit Design</p>
 
         <div class="circuit-preview" aria-hidden="true">
-            <svg class="circuit-svg" viewBox="0 0 460 180">
-                <defs>
-                    <linearGradient id="wireGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#00ff88" stop-opacity="0.8" />
-                        <stop offset="50%" stop-color="#00a3ff" stop-opacity="0.9" />
-                        <stop offset="100%" stop-color="#00ff88" stop-opacity="0.8" />
-                    </linearGradient>
-                </defs>
-                <path class="circuit-wire" stroke="url(#wireGlow)" d="M 40 90 L 110 90 L 110 48 L 200 48 L 200 90 L 268 90 L 268 132 L 200 132 L 200 90" />
-                <path class="circuit-wire" stroke="url(#wireGlow)" d="M 200 90 L 312 90 L 312 48 L 380 48 L 380 132 L 312 132 L 312 90" />
-                <rect class="circuit-element" x="28" y="78" width="24" height="24" rx="4" />
-                <rect class="circuit-element" x="188" y="36" width="24" height="24" rx="6" />
-                <rect class="circuit-element" x="256" y="120" width="24" height="24" rx="6" />
-                <rect class="circuit-element" x="368" y="36" width="24" height="24" rx="6" />
-                <circle cx="110" cy="90" r="5" fill="#00ff88" />
-                <circle cx="200" cy="90" r="5" fill="#00ff88" />
-                <circle cx="312" cy="90" r="5" fill="#00ff88" />
+            <svg class="circuit-svg" viewBox="0 0 320 140" role="presentation">
+                <path class="circuit-wire" d="M 60 70 L 100 70 L 100 40 L 160 40 L 160 70 L 200 70 L 200 100 L 160 100 L 160 70" />
+                <path class="circuit-wire" d="M 160 70 L 160 100 L 100 100 L 100 70" />
+                <rect class="circuit-element" x="50" y="60" width="20" height="20" rx="4" />
+                <text class="circuit-voltage" x="45" y="55">12V</text>
+                <rect class="circuit-element" x="150" y="30" width="20" height="20" rx="4" />
+                <path class="circuit-element" d="M 155 35 L 165 45 L 155 45 L 165 35" />
+                <text class="circuit-text" x="158" y="28">R1</text>
+                <rect class="circuit-element" x="190" y="60" width="20" height="20" rx="4" />
+                <path class="circuit-element" d="M 195 65 L 205 75 L 195 75 L 205 65" />
+                <text class="circuit-text" x="198" y="58">R2</text>
+                <rect class="circuit-element" x="150" y="90" width="20" height="20" rx="4" />
+                <path class="circuit-element" d="M 155 95 L 165 105 L 155 105 L 165 95" />
+                <text class="circuit-text" x="158" y="118">R3</text>
+                <circle class="circuit-element" cx="160" cy="70" r="2" />
+                <circle class="circuit-element" cx="100" cy="70" r="2" />
+                <circle class="circuit-element" cx="160" cy="100" r="2" />
+                <circle class="circuit-element" cx="200" cy="70" r="2" />
             </svg>
         </div>
 
-        <div class="actions">
-            <div class="loading-progress" id="loading-progress">
+        <div class="landing-actions">
+            <div class="status-badge" id="status-badge">Initializing W.I.R.E. systems</div>
+            <div class="loading-progress" id="loading-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <div class="loading-bar" id="loading-bar"></div>
             </div>
-            <p class="loading-text" id="loading-text">Initializing launch sequence</p>
-            <div class="status" id="status">W.I.R.E. Circuit Builder Ready!</div>
-            <button id="launch-btn" class="launch-button" type="button">
-                Launch CircuiTry
-            </button>
+            <p class="loading-text" id="loading-text">Preparing launch sequence</p>
+            <button id="launch-btn" class="launch-button" type="button">Launch CircuiTry</button>
         </div>
 
-        <p class="meta">Professional Edition v2.0</p>
+        <p class="version-text">Professional Edition v2.0</p>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const loadingProgress = document.getElementById("loading-progress");
-            const loadingBar = document.getElementById("loading-bar");
-            const loadingText = document.getElementById("loading-text");
-            const status = document.getElementById("status");
+            const progress = document.getElementById("loading-progress");
+            const bar = document.getElementById("loading-bar");
+            const text = document.getElementById("loading-text");
+            const status = document.getElementById("status-badge");
             const launchBtn = document.getElementById("launch-btn");
 
-            if (!loadingProgress || !loadingBar || !loadingText || !status || !launchBtn) {
+            if (!progress || !bar || !text || !status || !launchBtn) {
                 return;
             }
 
@@ -351,25 +370,30 @@
             launchBtn.addEventListener("click", navigateToBuilder);
 
             const phases = [
-                { delay: 300, width: 24, text: "Booting core systems" },
-                { delay: 900, width: 52, text: "Calibrating W.I.R.E. telemetry" },
-                { delay: 1500, width: 76, text: "Loading component library" },
-                { delay: 2100, width: 92, text: "Optimizing render pipeline" },
-                { delay: 2700, width: 100, text: "W.I.R.E. Circuit Builder Ready!" }
+                { delay: 400, width: 24, text: "Booting W.I.R.E. core" },
+                { delay: 1100, width: 52, text: "Calibrating instrumentation" },
+                { delay: 1800, width: 76, text: "Loading component library" },
+                { delay: 2500, width: 92, text: "Optimizing render pipeline" },
+                { delay: 3200, width: 100, text: "Systems nominal", statusText: "W.I.R.E. Circuit Builder Ready!" }
             ];
 
-            loadingProgress.style.display = "block";
-            loadingText.style.display = "block";
+            status.style.display = "inline-flex";
+            progress.style.display = "block";
+            text.style.display = "block";
 
-            phases.forEach(({ delay, width, text }, index) => {
+            phases.forEach(({ delay, width, text: phaseText, statusText }, index) => {
                 setTimeout(() => {
-                    loadingBar.style.width = width + "%";
-                    loadingText.textContent = text;
+                    bar.style.width = width + "%";
+                    progress.setAttribute("aria-valuenow", String(width));
+                    text.textContent = phaseText;
+
+                    if (statusText) {
+                        status.textContent = statusText;
+                    }
 
                     if (index === phases.length - 1) {
-                        status.style.display = "flex";
                         launchBtn.style.display = "inline-flex";
-                        loadingText.style.opacity = 0.85;
+                        launchBtn.focus({ preventScroll: true });
                     }
                 }, delay);
             });
