@@ -313,7 +313,7 @@
             </div>
             <p class="loading-text" id="loading-text">Initializing launch sequence</p>
             <div class="status" id="status">W.I.R.E. Circuit Builder Ready!</div>
-            <button id="launch-btn" class="launch-button" type="button" onclick="window.top.location.href='/app'">
+            <button id="launch-btn" class="launch-button" type="button">
                 Launch CircuiTry
             </button>
         </div>
@@ -332,6 +332,23 @@
             if (!loadingProgress || !loadingBar || !loadingText || !status || !launchBtn) {
                 return;
             }
+
+            const navigateToBuilder = () => {
+                const topWindow = window.top ?? window;
+
+                try {
+                    if (typeof topWindow.location?.hash === "string") {
+                        topWindow.location.hash = "/app";
+                    } else {
+                        topWindow.location.href = "/app";
+                    }
+                } catch (error) {
+                    console.warn("Landing page: unable to update hash, falling back to href", error);
+                    topWindow.location.href = "/#/app";
+                }
+            };
+
+            launchBtn.addEventListener("click", navigateToBuilder);
 
             const phases = [
                 { delay: 300, width: 24, text: "Booting core systems" },
