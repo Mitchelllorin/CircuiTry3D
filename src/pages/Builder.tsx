@@ -82,7 +82,7 @@ const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "wire-mode",
     label: "Wire Mode",
-    description: "Switch into wiring mode to connect components node to node.",
+    description: "Switch into wiring mode to pick freeform, schematic, star, or auto-routing paths.",
     action: "toggle-wire-mode",
   },
   {
@@ -225,10 +225,11 @@ const HELP_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
-      "Use the Wire Tool to drag intelligent routes between pins?the pathfinder keeps everything tidy.",
+      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Schematic, Star, or Routing modes from the left panel, and hold Shift in schematic mode to flip the elbow direction.",
     ],
     bullets: [
       "One-touch buttons add, rotate, duplicate, or delete components.",
+      "Click anywhere along an existing wire to drop a junction and branch a new run - junctions can fan out in any direction.",
       "Use the bottom analysis panel to monitor live circuit health via W.I.R.E.",
     ],
   },

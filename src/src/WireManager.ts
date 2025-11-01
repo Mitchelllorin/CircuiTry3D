@@ -5,7 +5,7 @@ type Point = { x: number; y: number };
 type Cell = { occupied: boolean };
 
 const SNAP_RADIUS = 1; // grid units
-const MAX_WIRE_LENGTH = 12; // grid units, tune for your board
+const MAX_WIRE_LENGTH = 48; // grid units, tune for your board
 
 function dist(a: Point, b: Point) {
   const dx = a.x - b.x;
@@ -27,12 +27,6 @@ function clampWireLength(start: Point, end: Point, maxLen = MAX_WIRE_LENGTH): Po
   if (length <= maxLen) return end;
   const scale = maxLen / length;
   return { x: Math.round(start.x + dx * scale), y: Math.round(start.y + dy * scale) };
-}
-
-// debug-friendly renderer hook: replace with your real renderer
-function renderWire(path: Point[]) {
-  // temporary: console log; your renderer should draw grid-aligned polyline
-  console.log('renderWire path:', path);
 }
 
 /**
@@ -60,7 +54,6 @@ export function handleWireDraw(
   // 3) run pathfinder
   const path = aStar(start, end, schematicGrid);
   if (path && path.length) {
-    renderWire(path);
     return path;
   }
 
@@ -68,7 +61,6 @@ export function handleWireDraw(
   // try snapping end back to rawEnd (in case clamp forced impossible routing)
   const path2 = aStar(start, rawEnd, schematicGrid);
   if (path2 && path2.length) {
-    renderWire(path2);
     return path2;
   }
 

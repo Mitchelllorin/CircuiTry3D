@@ -34,48 +34,54 @@ export function rebuildAdjacencyForWires(wires: Wire[], nodes: Node[]): Adjacenc
     graph.nodes.set(node.id, new Set());
   }
   
-  // Build a position-to-node lookup for fast endpoint matching
-  const nodesByPos = new Map<string, Node>();
-  for (const node of nodes) {
-    const key = posKey(node.pos);
-    nodesByPos.set(key, node);
-  }
-  
   // Process each wire
   for (const wire of wires) {
     if (wire.points.length < 2) continue;
-    
-    // Find nodes at wire endpoints
-    const startPos = wire.points[0];
-    const endPos = wire.points[wire.points.length - 1];
-    
-    const startNode = findNodeAtPosition(startPos, nodes, 0.1); // small tolerance
-    const endNode = findNodeAtPosition(endPos, nodes, 0.1);
-    
-    if (startNode && endNode) {
-      // Create edge between the two endpoint nodes
+
+    wire.attachedNodeIds.clear();
+
+    const nodesOnWire: Node[] = [];
+
+    for (const point of wire.points) {
+      const node = findNodeAtPosition(point, nodes, 0.75);
+      if (node) {
+        // Avoid duplicates when multiple consecutive points map to same node
+        if (!nodesOnWire.some((existing) => existing.id === node.id)) {
+          nodesOnWire.push(node);
+          wire.attachedNodeIds.add(node.id);
+        }
+      }
+    }
+
+    if (nodesOnWire.length < 2) {
+      continue;
+    }
+
+    for (let i = 0; i < nodesOnWire.length - 1; i++) {
+      const nodeA = nodesOnWire[i];
+      const nodeB = nodesOnWire[i + 1];
+
+      if (nodeA.id === nodeB.id) {
+        continue;
+      }
+
       const edge: Edge = {
         wireId: wire.id,
-        nodeA: startNode.id,
-        nodeB: endNode.id
+        nodeA: nodeA.id,
+        nodeB: nodeB.id
       };
+
       graph.edges.push(edge);
-      
-      // Add bidirectional connection
-      if (!graph.nodes.has(startNode.id)) {
-        graph.nodes.set(startNode.id, new Set());
+
+      if (!graph.nodes.has(nodeA.id)) {
+        graph.nodes.set(nodeA.id, new Set());
       }
-      if (!graph.nodes.has(endNode.id)) {
-        graph.nodes.set(endNode.id, new Set());
+      if (!graph.nodes.has(nodeB.id)) {
+        graph.nodes.set(nodeB.id, new Set());
       }
-      
-      graph.nodes.get(startNode.id)!.add(endNode.id);
-      graph.nodes.get(endNode.id)!.add(startNode.id);
-      
-      // Update wire's attached nodes
-      wire.attachedNodeIds.clear();
-      wire.attachedNodeIds.add(startNode.id);
-      wire.attachedNodeIds.add(endNode.id);
+
+      graph.nodes.get(nodeA.id)!.add(nodeB.id);
+      graph.nodes.get(nodeB.id)!.add(nodeA.id);
     }
   }
   
@@ -92,13 +98,6 @@ function findNodeAtPosition(pos: { x: number; y: number }, nodes: Node[], tolera
     }
   }
   return null;
-}
-
-/**
- * Create a string key from a position for lookup
- */
-function posKey(pos: { x: number; y: number }): string {
-  return `${Math.round(pos.x * 10)},${Math.round(pos.y * 10)}`;
 }
 
 /**

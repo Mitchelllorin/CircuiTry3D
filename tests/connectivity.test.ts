@@ -23,6 +23,25 @@ describe('Connectivity', () => {
       expect(graph.nodes.get('node2')).toContain('node1');
     });
 
+    it('should connect nodes along a single polyline', () => {
+      const node1 = createNode('wireAnchor', { x: 0, y: 0 }, 'node1');
+      const junction = createNode('junction', { x: 10, y: 0 }, 'nodeJ');
+      const node2 = createNode('wireAnchor', { x: 20, y: 0 }, 'node2');
+
+      const wire = createWire([
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 20, y: 0 }
+      ], 'wire1');
+
+      const graph = rebuildAdjacencyForWires([wire], [node1, junction, node2]);
+
+      expect(graph.edges).toHaveLength(2);
+      expect(graph.nodes.get('node1')).toContain('nodeJ');
+      expect(graph.nodes.get('nodeJ')).toContain('node2');
+      expect(wire.attachedNodeIds.size).toBe(3);
+    });
+
     it('should handle multiple wires', () => {
       const node1 = createNode('wireAnchor', { x: 0, y: 0 }, 'node1');
       const node2 = createNode('junction', { x: 10, y: 0 }, 'node2');
