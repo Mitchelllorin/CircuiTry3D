@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "../styles/builder-ui.css";
 
 type BuilderInvokeAction =
@@ -46,21 +46,6 @@ type HelpLegendItem = {
   id: string;
   letter: string;
   label: string;
-};
-
-const createBadgeLabel = (label: string) => {
-  const sanitized = label.replace(/[^\w\s]/g, " ");
-  const words = sanitized.split(/\s+/).filter(Boolean);
-  if (!words.length) {
-    return label.slice(0, 3).toUpperCase();
-  }
-
-  const initials = words.map((word) => word[0]?.toUpperCase() ?? "").join("");
-  if (initials.length >= 2) {
-    return initials.slice(0, 3);
-  }
-
-  return (words[0] ?? label).slice(0, 3).toUpperCase();
 };
 
 const COMPONENT_ACTIONS: ComponentAction[] = [
@@ -331,15 +316,9 @@ const WIRE_LEGEND: HelpLegendItem[] = [
 
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const bottomPanelRef = useRef<HTMLElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isFrameReady, setFrameReady] = useState(false);
-  const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
-  const [isLeftOpen, setLeftOpen] = useState(false);
-  const [isRightOpen, setRightOpen] = useState(false);
-  const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
 
@@ -362,33 +341,11 @@ export default function Builder() {
         return;
       }
 
-      if (type === "legacy:analysis-state" && payload && typeof payload === "object" && "open" in payload) {
-        const desired = (payload as { open?: unknown }).open;
-        if (typeof desired === "boolean") {
-          setBottomOpen(desired);
-        }
-      }
     };
 
     window.addEventListener("message", handleMessage);
     return () => {
       window.removeEventListener("message", handleMessage);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const handleResize = () => {
-      setViewportHeight(window.innerHeight);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -499,46 +456,6 @@ export default function Builder() {
     }
   }, [isFrameReady]);
 
-  useEffect(() => {
-    if (!isBottomOpen) {
-      setBottomPanelHeight(0);
-      return;
-    }
-
-    const panel = bottomPanelRef.current;
-    if (!panel) {
-      return;
-    }
-
-    const measure = () => {
-      const rect = panel.getBoundingClientRect();
-      setBottomPanelHeight(rect.height);
-    };
-
-    measure();
-
-    let resizeObserver: ResizeObserver | undefined;
-
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => measure());
-      resizeObserver.observe(panel);
-    } else {
-      window.addEventListener("resize", measure);
-    }
-
-    return () => {
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      } else {
-        window.removeEventListener("resize", measure);
-      }
-    };
-  }, [isBottomOpen]);
-
-  useEffect(() => {
-    postToBuilder({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
-  }, [isBottomOpen, postToBuilder]);
-
   const handleComponentAction = useCallback(
     (component: ComponentAction) => {
       if (!component) {
@@ -563,24 +480,11 @@ export default function Builder() {
     [postToBuilder]
   );
 
-  const minOffset = 220;
-  const maxOffset = viewportHeight ? Math.max(minOffset, Math.round(viewportHeight * 0.65)) : 440;
-  const rawOffset = Math.round(bottomPanelHeight) + 40;
-  const bottomPanelOffset = isBottomOpen ? Math.min(Math.max(rawOffset, minOffset), maxOffset) : 0;
-
-  const shellStyle: CSSProperties | undefined = bottomPanelOffset
-    ? ({ "--bottom-panel-offset": `${bottomPanelOffset}px` } as CSSProperties)
-    : undefined;
-
-  const workspaceStyle: CSSProperties | undefined = bottomPanelOffset
-    ? { height: `calc(100vh - ${bottomPanelOffset}px)` }
-    : undefined;
-
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
 
   return (
-    <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
+    <div className="builder-shell">
       <div className="builder-logo-header">
         <div className="builder-logo-text" aria-label="CircuiTry3D">
           <span className="builder-logo-circui">Circui</span>
@@ -589,432 +493,201 @@ export default function Builder() {
         </div>
       </div>
 
-      <aside className={`builder-panel panel-left ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>
-        <div className="panel-content">
-          <div className="panel-header">
-            <span className="panel-title">Component Library</span>
-            <p className="panel-subtitle">Tap to add parts directly into the workspace.</p>
-          </div>
-          <div className="panel-section">
-            <div className="component-grid">
+      <nav className="builder-menu builder-menu-left" role="navigation" aria-label="Component and wiring controls">
+        <div className="builder-menu-scroll">
+          <div className="slider-section">
+            <span className="slider-heading">Parts</span>
+            <div className="slider-stack">
               {COMPONENT_ACTIONS.map((component) => (
                 <button
                   key={component.id}
                   type="button"
-                  className="component-btn"
+                  className="slider-btn slider-btn-compact"
                   onClick={() => handleComponentAction(component)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : component.label}
                   data-component-action={component.action}
                 >
-                  <span className="component-icon" aria-hidden="true">
+                  <span className="slider-icon" aria-hidden="true">
                     {component.icon}
                   </span>
-                  <span className="component-label">{component.label}</span>
+                  <span className="slider-label">{component.label}</span>
                 </button>
               ))}
             </div>
           </div>
-          <div className="panel-section">
-            <p className="section-title">Quick Actions</p>
-            <div className="tool-buttons">
+          <div className="slider-section">
+            <span className="slider-heading">Quick Actions</span>
+            <div className="slider-stack">
               {TOOL_BUTTONS.map((button) => (
-                <button key={button.id} type="button" className="tool-btn">
-                  <span className="tool-label">{button.label}</span>
-                  <span className="tool-description">{button.description}</span>
+                <button key={button.id} type="button" className="slider-btn slider-btn-stacked" title={button.description}>
+                  <span className="slider-label">{button.label}</span>
+                  <span className="slider-description">{button.description}</span>
                 </button>
               ))}
             </div>
           </div>
-          <div className="panel-section">
-            <p className="section-title">Wire Modes</p>
-            <div className="tool-buttons">
+          <div className="slider-section">
+            <span className="slider-heading">Wire Modes</span>
+            <div className="slider-stack">
               {WIRE_TOOL_ACTIONS.map((action) => (
                 <button
                   key={action.id}
                   type="button"
-                  className="tool-btn"
+                  className="slider-btn slider-btn-stacked"
                   onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
                 >
-                  <span className="tool-label">{action.label}</span>
-                  <span className="tool-description">{action.description}</span>
+                  <span className="slider-label">{action.label}</span>
+                  <span className="slider-description">{action.description}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
-      </aside>
+      </nav>
 
-      <div
-        className={`builder-quick-slider builder-quick-slider-left${isLeftOpen ? " panel-open" : ""}`}
-        role="group"
-        aria-label="Quick component and wiring controls"
-      >
-        <div className="slider-section">
-          <span className="slider-heading">Parts</span>
-          <div className="slider-stack">
-            {COMPONENT_ACTIONS.map((component) => (
-              <button
-                key={component.id}
-                type="button"
-                className="slider-btn"
-                onClick={() => handleComponentAction(component)}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                title={controlsDisabled ? controlDisabledTitle : component.label}
-                data-component-action={component.action}
-              >
-                <span className="slider-icon" aria-hidden="true">
-                  {component.icon}
-                </span>
-                <span className="slider-label">{component.label}</span>
-              </button>
-            ))}
+      <nav className="builder-menu builder-menu-right" role="complementary" aria-label="Mode and view controls">
+        <div className="builder-menu-scroll">
+          <div className="slider-section">
+            <span className="slider-heading">Properties</span>
+            <div className="property-stack">
+              {PROPERTY_ITEMS.map((item) => (
+                <div key={item.id} className="property-item">
+                  <div className="property-name">{item.name}</div>
+                  <div className="property-value">{item.value}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="slider-section">
-          <span className="slider-heading">Wire</span>
-          <div className="slider-stack">
-            {WIRE_TOOL_ACTIONS.map((action) => {
-              const badge = createBadgeLabel(action.label);
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="slider-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : action.description}
-                >
-                  <span className="slider-icon" aria-hidden="true">
-                    {badge}
-                  </span>
-                  <span className="slider-label">{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <button
-          type="button"
-          className="slider-expand"
-          onClick={() => setLeftOpen((prev) => !prev)}
-          aria-pressed={isLeftOpen}
-        >
-          {isLeftOpen ? "Hide Menu" : "Open Menu"}
-        </button>
-      </div>
-
-      <aside className={`builder-panel panel-right ${isRightOpen ? "open" : ""}`} aria-hidden={!isRightOpen}>
-        <div className="panel-content">
-          <div className="panel-header">
-            <span className="panel-title">Properties</span>
-            <p className="panel-subtitle">Select anything in the scene to inspect it here.</p>
-          </div>
-          <div className="panel-section">
-            {PROPERTY_ITEMS.map((item) => (
-              <div key={item.id} className="property-item">
-                <div className="property-name">{item.name}</div>
-                <div className="property-value">{item.value}</div>
-              </div>
-            ))}
-          </div>
-          <div className="panel-section">
-            <p className="section-title">Current Modes</p>
-            <div className="tool-buttons">
+          <div className="slider-section">
+            <span className="slider-heading">Modes</span>
+            <div className="slider-stack">
               {CURRENT_MODE_ACTIONS.map((action) => (
                 <button
                   key={action.id}
                   type="button"
-                  className="tool-btn"
+                  className="slider-btn slider-btn-stacked"
                   onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
                 >
-                  <span className="tool-label">{action.label}</span>
-                  <span className="tool-description">{action.description}</span>
+                  <span className="slider-label">{action.label}</span>
+                  <span className="slider-description">{action.description}</span>
                 </button>
               ))}
             </div>
           </div>
-          <div className="panel-section">
-            <p className="section-title">Workspace View</p>
-            <div className="tool-buttons">
+          <div className="slider-section">
+            <span className="slider-heading">View</span>
+            <div className="slider-stack">
               {VIEW_CONTROL_ACTIONS.map((action) => (
                 <button
                   key={action.id}
                   type="button"
-                  className="tool-btn"
+                  className="slider-btn slider-btn-stacked"
                   onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
                 >
-                  <span className="tool-label">{action.label}</span>
-                  <span className="tool-description">{action.description}</span>
+                  <span className="slider-label">{action.label}</span>
+                  <span className="slider-description">{action.description}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
-      </aside>
+      </nav>
 
-      <div
-        className={`builder-quick-slider builder-quick-slider-right${isRightOpen ? " panel-open" : ""}`}
-        role="group"
-        aria-label="Quick mode and view controls"
-      >
+      <nav className="builder-menu builder-menu-bottom" role="navigation" aria-label="Analysis, practice, and guides">
         <div className="slider-section">
-          <span className="slider-heading">Modes</span>
-          <div className="slider-stack">
-            {CURRENT_MODE_ACTIONS.map((action) => {
-              const badge = createBadgeLabel(action.label);
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="slider-btn"
-                  onClick={() => triggerBuilderAction(action.action, action.data)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : action.description}
-                >
-                  <span className="slider-icon" aria-hidden="true">
-                    {badge}
-                  </span>
-                  <span className="slider-label">{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="slider-section">
-          <span className="slider-heading">View</span>
-          <div className="slider-stack">
-            {VIEW_CONTROL_ACTIONS.map((action) => {
-              const badge = createBadgeLabel(action.label);
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="slider-btn"
-                  onClick={() => triggerBuilderAction(action.action, action.data)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : action.description}
-                >
-                  <span className="slider-icon" aria-hidden="true">
-                    {badge}
-                  </span>
-                  <span className="slider-label">{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="slider-section">
-          <span className="slider-heading">Help</span>
-          <div className="slider-stack">
-            {HELP_ACTIONS.map((action) => {
-              const badge = createBadgeLabel(action.label);
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="slider-btn"
-                  onClick={() => triggerBuilderAction(action.action, action.data)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : action.description}
-                >
-                  <span className="slider-icon" aria-hidden="true">
-                    {badge}
-                  </span>
-                  <span className="slider-label">{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <button
-          type="button"
-          className="slider-expand"
-          onClick={() => setRightOpen((prev) => !prev)}
-          aria-pressed={isRightOpen}
-        >
-          {isRightOpen ? "Hide Details" : "Open Details"}
-        </button>
-      </div>
-
-      <section
-        ref={bottomPanelRef}
-        className={`builder-panel panel-bottom ${isBottomOpen ? "open" : ""}`}
-        aria-hidden={!isBottomOpen}
-        aria-expanded={isBottomOpen}
-      >
-        <div className="panel-content">
-          <div className="panel-header">
-            <span className="panel-title">W.I.R.E. Analysis</span>
-            <p className="panel-subtitle">Watch core metrics adjust as your circuit evolves.</p>
-          </div>
-          <div className="panel-section">
-            <div className="builder-wire-display">
-              <div className="wire-title">Circuit Snapshot</div>
-              <div className="wire-grid">
-                {WIRE_METRICS.map((metric) => (
-                  <div key={metric.id} className={`wire-metric ${metric.id}`}>
-                    <div className="metric-letter">{metric.letter}</div>
-                    <div className="metric-label">{metric.label}</div>
-                    <div className="metric-value">{metric.value}</div>
-                  </div>
-                ))}
+          <span className="slider-heading">Analysis</span>
+          <div className="menu-track menu-track-metrics">
+            {WIRE_METRICS.map((metric) => (
+              <div key={metric.id} className="slider-metric">
+                <span className="metric-letter">{metric.letter}</span>
+                <span className="metric-value">{metric.value}</span>
+                <span className="metric-label">{metric.label}</span>
               </div>
-              <div className="circuit-stats">Tap any metric to learn how W.I.R.E. keeps your build balanced.</div>
+            ))}
+          </div>
+        </div>
+        <div className="slider-section">
+          <span className="slider-heading">Practice</span>
+          <div className="menu-track menu-track-chips">
+            {PRACTICE_ACTIONS.map((action) => (
               <button
+                key={action.id}
                 type="button"
-                className="builder-help-launch"
-                onClick={() => openHelpSection(HELP_SECTIONS[0]?.title)}
+                className="slider-chip"
+                onClick={() => triggerBuilderAction(action.action, action.data)}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={controlsDisabled ? controlDisabledTitle : action.description}
               >
-                Open Guided Tutorial
+                <span className="slider-chip-label">{action.label}</span>
               </button>
-            </div>
-          </div>
-          <div className="panel-section">
-            <p className="section-title">Practice Questions</p>
-            <div className="practice-grid">
-              {PRACTICE_SCENARIOS.map((scenario) => (
-                <button
-                  key={scenario.id}
-                  type="button"
-                  className="practice-card"
-                  onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : scenario.question}
-                >
-                  <span className="practice-label">{scenario.label}</span>
-                  <span className="practice-question">{scenario.question}</span>
-                  <span className="practice-description">{scenario.description}</span>
-                </button>
-              ))}
-            </div>
-            <div className="panel-subsection">
-              <div className="tool-buttons">
-                {PRACTICE_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="tool-btn"
-                    onClick={() => triggerBuilderAction(action.action, action.data)}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : action.description}
-                  >
-                    <span className="tool-label">{action.label}</span>
-                    <span className="tool-description">{action.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="panel-section">
-            <p className="section-title">Help &amp; Guides</p>
-            <div className="tool-buttons">
-              {HELP_ACTIONS.map((action) => (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="tool-btn"
-                  onClick={() => triggerBuilderAction(action.action, action.data)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : action.description}
-                >
-                  <span className="tool-label">{action.label}</span>
-                  <span className="tool-description">{action.description}</span>
-                </button>
-              ))}
-            </div>
-            <div className="help-shortcut-grid">
-              {HELP_SHORTCUTS.map((shortcut) => (
-                <button
-                  key={shortcut.id}
-                  type="button"
-                  className="help-shortcut"
-                  onClick={() => openHelpSection(shortcut.title)}
-                >
-                  <span className="help-shortcut-title">{shortcut.title}</span>
-                  <span className="help-shortcut-summary">{shortcut.summary}</span>
-                </button>
-              ))}
-            </div>
+            ))}
+            {PRACTICE_SCENARIOS.map((scenario) => (
+              <button
+                key={scenario.id}
+                type="button"
+                className="slider-chip"
+                onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={controlsDisabled ? controlDisabledTitle : scenario.question}
+              >
+                <span className="slider-chip-label">{scenario.label}</span>
+              </button>
+            ))}
           </div>
         </div>
-      </section>
-
-      <div className="builder-quick-slider builder-quick-slider-bottom" role="group" aria-label="Quick analysis and practice controls">
-        <div className="slider-metrics" aria-hidden="true">
-          {WIRE_METRICS.map((metric) => (
-            <div key={metric.id} className="slider-metric">
-              <span className="metric-letter">{metric.letter}</span>
-              <span className="metric-value">{metric.value}</span>
-              <span className="metric-label">{metric.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="slider-chip-row">
-          {PRACTICE_ACTIONS.map((action) => (
-            <button
-              key={action.id}
-              type="button"
-              className="slider-chip"
-              onClick={() => triggerBuilderAction(action.action, action.data)}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              title={controlsDisabled ? controlDisabledTitle : action.description}
-            >
-              <span className="slider-chip-label">{action.label}</span>
+        <div className="slider-section">
+          <span className="slider-heading">Guides</span>
+          <div className="menu-track menu-track-chips">
+            {HELP_ACTIONS.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                className="slider-chip"
+                onClick={() => triggerBuilderAction(action.action, action.data)}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={controlsDisabled ? controlDisabledTitle : action.description}
+              >
+                <span className="slider-chip-label">{action.label}</span>
+              </button>
+            ))}
+            {HELP_SHORTCUTS.map((shortcut) => (
+              <button
+                key={shortcut.id}
+                type="button"
+                className="slider-chip"
+                onClick={() => openHelpSection(shortcut.title)}
+                title={shortcut.summary}
+              >
+                <span className="slider-chip-label">{shortcut.title}</span>
+              </button>
+            ))}
+            <button type="button" className="slider-chip" onClick={() => openHelpSection()}>
+              <span className="slider-chip-label">Help Center</span>
             </button>
-          ))}
-          {PRACTICE_SCENARIOS.map((scenario) => (
-            <button
-              key={scenario.id}
-              type="button"
-              className="slider-chip"
-              onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              title={controlsDisabled ? controlDisabledTitle : scenario.question}
-            >
-              <span className="slider-chip-label">{scenario.label}</span>
-            </button>
-          ))}
-          <button type="button" className="slider-chip" onClick={() => openHelpSection()}>
-            <span className="slider-chip-label">Help Center</span>
-          </button>
+          </div>
         </div>
-        <button
-          type="button"
-          className="slider-expand"
-          onClick={() => setBottomOpen((prev) => !prev)}
-          aria-pressed={isBottomOpen}
-        >
-          {isBottomOpen ? "Hide Analysis" : "Open Analysis"}
-        </button>
-      </div>
+      </nav>
 
       <div className="builder-status-bar">
         <span className="status-indicator" aria-hidden="true" />
         {isFrameReady ? "Workspace ready?tap and drag to build." : "Loading workspace?"}
       </div>
 
-      <div className="builder-workspace" style={workspaceStyle} aria-busy={!isFrameReady}>
+      <div className="builder-workspace" aria-busy={!isFrameReady}>
         <iframe
           ref={iframeRef}
           className="builder-iframe"
