@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import "../styles/builder-ui.css";
 
-type LegacyInvokeAction =
+type BuilderInvokeAction =
   | "toggle-wire-mode"
   | "toggle-rotate-mode"
   | "add-junction"
@@ -22,18 +22,18 @@ type LegacyInvokeAction =
   | "show-about"
   | "open-arena";
 
-type LegacyMessage =
+type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
-  | { type: "builder:invoke-action"; payload: { action: LegacyInvokeAction; data?: Record<string, unknown> } };
+  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } };
 
 type ComponentAction = {
   id: string;
   icon: string;
   label: string;
   action: "component" | "junction";
-  legacyType?: "battery" | "resistor" | "led" | "switch";
+  builderType?: "battery" | "resistor" | "led" | "switch";
 };
 
 type HelpSection = {
@@ -49,10 +49,10 @@ type HelpLegendItem = {
 };
 
 const COMPONENT_ACTIONS: ComponentAction[] = [
-  { id: "battery", icon: "B", label: "Battery", action: "component", legacyType: "battery" },
-  { id: "resistor", icon: "R", label: "Resistor", action: "component", legacyType: "resistor" },
-  { id: "led", icon: "LED", label: "LED", action: "component", legacyType: "led" },
-  { id: "switch", icon: "SW", label: "Switch", action: "component", legacyType: "switch" },
+  { id: "battery", icon: "B", label: "Battery", action: "component", builderType: "battery" },
+  { id: "resistor", icon: "R", label: "Resistor", action: "component", builderType: "resistor" },
+  { id: "led", icon: "LED", label: "LED", action: "component", builderType: "led" },
+  { id: "switch", icon: "SW", label: "Switch", action: "component", builderType: "switch" },
   { id: "junction", icon: "J", label: "Junction", action: "junction" },
 ];
 
@@ -74,7 +74,7 @@ type PanelAction = {
   id: string;
   label: string;
   description: string;
-  action: LegacyInvokeAction;
+  action: BuilderInvokeAction;
   data?: Record<string, unknown>;
 };
 
@@ -196,7 +196,7 @@ const PRACTICE_ACTIONS: PanelAction[] = [
   {
     id: "random-problem",
     label: "Random Practice Problem",
-    description: "Generate a fresh practice challenge from the legacy set.",
+    description: "Generate a fresh practice challenge from the curated set.",
     action: "generate-practice",
   },
   {
@@ -279,10 +279,10 @@ const HELP_SHORTCUTS: HelpShortcut[] = HELP_SECTIONS.map((section) => ({
   summary: section.paragraphs[0] ?? "",
 }));
 
-const LEGACY_HELP_ACTIONS: PanelAction[] = [
+const HELP_ACTIONS: PanelAction[] = [
   {
     id: "tutorial",
-    label: "Legacy Tutorial",
+    label: "Guided Tutorial",
     description: "Launch the original guided walkthrough inside the workspace.",
     action: "show-tutorial",
   },
@@ -295,13 +295,13 @@ const LEGACY_HELP_ACTIONS: PanelAction[] = [
   {
     id: "shortcuts",
     label: "Keyboard Shortcuts",
-    description: "See every keyboard accelerator available in the legacy build.",
+    description: "See every keyboard accelerator available in the builder.",
     action: "show-shortcuts",
   },
   {
     id: "about",
     label: "About CircuiTry3D",
-    description: "View the legacy release notes and version information.",
+    description: "View the release notes and version information.",
     action: "show-about",
   },
 ];
@@ -316,7 +316,7 @@ const WIRE_LEGEND: HelpLegendItem[] = [
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const bottomPanelRef = useRef<HTMLElement | null>(null);
-  const pendingMessages = useRef<LegacyMessage[]>([]);
+  const pendingMessages = useRef<BuilderMessage[]>([]);
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isFrameReady, setFrameReady] = useState(false);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
@@ -412,8 +412,8 @@ export default function Builder() {
     setRequestedHelpSection(null);
   }, [isHelpOpen, requestedHelpSection]);
 
-  const sendMessageToLegacy = useCallback(
-    (message: LegacyMessage, options: { allowQueue?: boolean } = {}) => {
+  const postToBuilder = useCallback(
+    (message: BuilderMessage, options: { allowQueue?: boolean } = {}) => {
       const { allowQueue = true } = options;
       const frameWindow = iframeRef.current?.contentWindow;
 
@@ -437,11 +437,11 @@ export default function Builder() {
     [isFrameReady]
   );
 
-  const triggerLegacyAction = useCallback(
-    (action: LegacyInvokeAction, data?: Record<string, unknown>) => {
-      sendMessageToLegacy({ type: "builder:invoke-action", payload: { action, data } });
+  const triggerBuilderAction = useCallback(
+    (action: BuilderInvokeAction, data?: Record<string, unknown>) => {
+      postToBuilder({ type: "builder:invoke-action", payload: { action, data } });
     },
-    [sendMessageToLegacy]
+    [postToBuilder]
   );
 
   const openHelpSection = useCallback(
@@ -469,7 +469,7 @@ export default function Builder() {
     const queue = [...pendingMessages.current];
     pendingMessages.current = [];
 
-    const failed: LegacyMessage[] = [];
+    const failed: BuilderMessage[] = [];
     queue.forEach((message) => {
       try {
         frameWindow.postMessage(message, "*");
@@ -520,8 +520,8 @@ export default function Builder() {
   }, [isBottomOpen]);
 
   useEffect(() => {
-    sendMessageToLegacy({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
-  }, [isBottomOpen, sendMessageToLegacy]);
+    postToBuilder({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
+  }, [isBottomOpen, postToBuilder]);
 
   const handleComponentAction = useCallback(
     (component: ComponentAction) => {
@@ -530,21 +530,21 @@ export default function Builder() {
       }
 
       if (component.action === "junction") {
-        sendMessageToLegacy({ type: "builder:add-junction" });
+        postToBuilder({ type: "builder:add-junction" });
         return;
       }
 
-      if (!component.legacyType) {
-        console.warn(`Missing legacy mapping for component '${component.id}'`);
+      if (!component.builderType) {
+        console.warn(`Missing builder mapping for component '${component.id}'`);
         return;
       }
 
-      sendMessageToLegacy({
+      postToBuilder({
         type: "builder:add-component",
-        payload: { componentType: component.legacyType },
+        payload: { componentType: component.builderType },
       });
     },
-    [sendMessageToLegacy]
+    [postToBuilder]
   );
 
   const minOffset = 220;
@@ -619,7 +619,7 @@ export default function Builder() {
                   key={action.id}
                   type="button"
                   className="tool-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -655,7 +655,7 @@ export default function Builder() {
                   key={action.id}
                   type="button"
                   className="tool-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -674,7 +674,7 @@ export default function Builder() {
                   key={action.id}
                   type="button"
                   className="tool-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -729,7 +729,7 @@ export default function Builder() {
                   key={scenario.id}
                   type="button"
                   className="practice-card"
-                  onClick={() => triggerLegacyAction("load-preset", { preset: scenario.preset })}
+                  onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : scenario.question}
@@ -747,7 +747,7 @@ export default function Builder() {
                     key={action.id}
                     type="button"
                     className="tool-btn"
-                    onClick={() => triggerLegacyAction(action.action, action.data)}
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
                     title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -762,12 +762,12 @@ export default function Builder() {
           <div className="panel-section">
             <p className="section-title">Help &amp; Guides</p>
             <div className="tool-buttons">
-              {LEGACY_HELP_ACTIONS.map((action) => (
+              {HELP_ACTIONS.map((action) => (
                 <button
                   key={action.id}
                   type="button"
                   className="tool-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
