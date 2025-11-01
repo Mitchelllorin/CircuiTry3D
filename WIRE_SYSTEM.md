@@ -4,7 +4,7 @@ This document describes the robust wire topology system implemented for CircuiTr
 
 ## Overview
 
-The wire system provides deterministic node-and-wire topology with automatic junction creation, snap-to-pin functionality, and connectivity tracking for circuit simulation.
+The wire system provides deterministic node-and-wire topology with automatic junction creation, selectable wiring modes (Freeform, Schematic, Star, and Routing), snap-to-pin functionality, and connectivity tracking for circuit simulation.
 
 ## Core Concepts
 
@@ -12,14 +12,14 @@ The wire system provides deterministic node-and-wire topology with automatic jun
 Nodes are connection points in the circuit. There are three types:
 
 1. **Component Pins** (`componentPin`): Fixed connection points on circuit components
-2. **Junctions** (`junction`): Auto-created when wires cross within tolerance
+2. **Junctions** (`junction`): Auto-created when wires cross within tolerance or when the builder clicks any point along an existing wire
 3. **Wire Anchors** (`wireAnchor`): Free endpoints of wires not connected to anything
 
 ### Wires
 Wires are polylines connecting nodes. Each wire:
 - Has an ordered list of points (`Vec2[]`)
-- Tracks attached node IDs at endpoints
-- Can be split by inserting junction points mid-segment
+- Tracks attached node IDs for every node it touches (endpoints and mid-line junctions)
+- Can be split by inserting junction points mid-segment—both automatically (intersections) and manually (click-to-branch)
 
 ### Connectivity Graph
 The system maintains an adjacency graph where:
@@ -45,12 +45,22 @@ src/
     └── junction.css      # Visual styles for nodes and wires
 ```
 
+### Wiring Modes
+
+| Mode | Behaviour |
+| --- | --- |
+| **Freeform** | Draws a straight segment between the chosen endpoints—ideal for quick sketches. |
+| **Schematic** | Generates 90° elbow paths. Hold `Shift` while dragging to flip the elbow orientation on the fly. |
+| **Star** | Inserts a graceful radial bend, useful for hub-and-spoke layouts. |
+| **Routing** | Uses grid-based A* routing (with node-aware obstacles) to auto-thread a tidy path between endpoints. |
+
+Each mode is available from the left-side Wire Mode panel in the Builder UI and is also exposed via the `WireDrawer` component.
+
 ## Configuration Constants
 
 ```typescript
 const SNAP_RADIUS = 12;           // px - snap to pins/junctions
 const INTERSECT_TOLERANCE = 4;    // px - junction creation threshold
-const RELEASE_DISTANCE = 18;      // px - detach from moved components
 const MERGE_RADIUS = 6;           // px - merge duplicate nodes
 ```
 
@@ -74,14 +84,13 @@ Clamps parameter t to [0, 1] to stay within segment bounds.
 When drawing a wire:
 1. Check each segment against existing wires
 2. If intersection detected within `INTERSECT_TOLERANCE`
-3. Create junction node at intersection point
+3. Create (or reuse) a junction node at the intersection point
 4. Split both wires by inserting the junction
 
 ### Node Merging
 After any topology change:
 1. Find node pairs within `MERGE_RADIUS`
-2. Merge their wire attachments
-3. Keep higher-priority node type (pin > junction > anchor)
+2. Merge their wire attachments and positions (respecting priority pin > junction > anchor)
 
 ### Connectivity Rebuild
 After topology changes:
@@ -114,6 +123,7 @@ function MyCircuitEditor() {
       nodes={nodes}
       onWiresChange={setWires}
       onNodesChange={setNodes}
+      mode={mode}
     />
   );
 }
@@ -155,7 +165,6 @@ The wire system is designed to be integrated into `public/legacy.html`:
    
    function migrateOldWire(oldWire) {
      const wire = createWire(oldWire.points);
-     // Create anchor nodes at endpoints
      const startNode = createNode('wireAnchor', wire.points[0]);
      const endNode = createNode('wireAnchor', wire.points[wire.points.length - 1]);
      wire.attachedNodeIds.add(startNode.id);
@@ -171,24 +180,7 @@ The wire system is designed to be integrated into `public/legacy.html`:
    // Each component is an isolated circuit
    ```
 
-3. **Component Movement**: Update wire endpoints when components move:
-   ```typescript
-   function onComponentMove(component, newPos) {
-     for (const pinNode of component.pins) {
-       pinNode.pos = newPos + pinOffset;
-       // Check if any wires should detach
-       for (const wireId of pinNode.attachedWireIds) {
-         const wire = findWire(wireId);
-         const endpoint = getWireEndpoint(wire, pinNode);
-         if (distance(pinNode.pos, endpoint) > RELEASE_DISTANCE) {
-           detachWireFromNode(wire, pinNode);
-           // Create new anchor at old position
-           createNode('wireAnchor', endpoint);
-         }
-       }
-     }
-   }
-   ```
+3. **Component Movement**: Update wire endpoints when components move.
 
 ## Performance Considerations
 
@@ -200,13 +192,10 @@ The wire system is designed to be integrated into `public/legacy.html`:
 ## Future Enhancements
 
 Potential improvements:
-- Wire routing with obstacles (A* pathfinding integration)
 - Wire labels and annotations
-- Multi-segment wire editing (insert/delete points)
-- Orthogonal routing mode (Manhattan/rectilinear wires)
 - Wire bundling for parallel connections
-- Undo/redo support
-- Serialization for save/load
+- Undo/redo support for junction edits
+- Serialization for save/load (persisting mode selections and junction metadata)
 
 ## References
 

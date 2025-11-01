@@ -33,6 +33,35 @@ export function insertPointIntoWire(wire: Wire, P: Vec2, segIndex: number): void
 }
 
 /**
+ * Ensure that a point exists on a wire's polyline, inserting it if necessary.
+ * Returns the index of the point and whether an insertion occurred.
+ */
+export function ensurePointOnWire(
+  wire: Wire,
+  point: Vec2,
+  tolerance: number = 0.5
+): { index: number; inserted: boolean } {
+  // Check if the point already exists (within tolerance)
+  for (let i = 0; i < wire.points.length; i++) {
+    if (distance(wire.points[i], point) <= tolerance) {
+      return { index: i, inserted: false };
+    }
+  }
+
+  const closest = findClosestPointOnWire(point, wire);
+  if (!closest) {
+    return { index: -1, inserted: false };
+  }
+
+  if (closest.distance > tolerance) {
+    return { index: -1, inserted: false };
+  }
+
+  insertPointIntoWire(wire, closest.point, closest.segIndex);
+  return { index: closest.segIndex + 1, inserted: true };
+}
+
+/**
  * Find the closest point on a wire to a given position
  * Returns the segment index and the projected point
  */

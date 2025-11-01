@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { WireDrawer } from "../ui/wire-drawer";
+import { WireDrawer, type WireMode } from "../ui/wire-drawer";
 import type { Wire } from "../model/wire";
 import type { Node } from "../model/node";
 import { createNode } from "../model/node";
@@ -29,6 +29,7 @@ const WireSystemDemo: React.FC = () => {
       createNode("componentPin", { x: 300, y: 300 }, "pin4"),
     ];
   });
+  const [mode, setMode] = useState<WireMode>("free");
 
   const handleClear = () => {
     setWires([]);
@@ -120,6 +121,61 @@ const WireSystemDemo: React.FC = () => {
       <div
         style={{
           background: palette.panel,
+          border: `1px solid ${palette.panelBorder}`,
+          padding: "12px 16px",
+          borderRadius: "14px",
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          color: palette.text,
+        }}
+      >
+        <span style={{ textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "12px", opacity: 0.75 }}>
+          Wiring Modes
+        </span>
+        {(
+          [
+            { id: "free", label: "Freeform", blurb: "Sketch direct lines" },
+            { id: "schematic", label: "Schematic", blurb: "90-degree corners" },
+            { id: "star", label: "Star", blurb: "Radial bends" },
+            { id: "routing", label: "Routing", blurb: "Auto path" },
+          ] satisfies { id: WireMode; label: string; blurb: string }[]
+        ).map((option) => {
+          const isActive = mode === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setMode(option.id)}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "999px",
+                border: `1px solid ${isActive ? palette.green : "rgba(136, 204, 255, 0.35)"}`,
+                background: isActive ? "rgba(0, 255, 136, 0.12)" : "rgba(8, 22, 47, 0.6)",
+                color: isActive ? palette.green : palette.muted,
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                minWidth: "120px",
+                fontSize: "13px",
+                transition: "all 0.18s ease",
+              }}
+            >
+              <span style={{ fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>{option.label}</span>
+              <span style={{ fontSize: "11px", opacity: 0.7 }}>{option.blurb}</span>
+            </button>
+          );
+        })}
+        <span style={{ fontSize: "12px", opacity: 0.65 }}>
+          Tip: Hold <code style={{ fontSize: "11px" }}>Shift</code> while dragging in schematic mode to flip the corner direction.
+        </span>
+      </div>
+
+      <div
+        style={{
+          background: palette.panel,
           borderRadius: "16px",
           padding: "16px",
           boxShadow: "0 18px 40px rgba(3, 12, 32, 0.45)",
@@ -133,6 +189,7 @@ const WireSystemDemo: React.FC = () => {
           nodes={nodes}
           onWiresChange={setWires}
           onNodesChange={setNodes}
+          mode={mode}
         />
       </div>
 
@@ -156,6 +213,7 @@ const WireSystemDemo: React.FC = () => {
           <li>Component Pins: {nodes.filter((n) => n.type === "componentPin").length}</li>
           <li>Junctions: {nodes.filter((n) => n.type === "junction").length}</li>
           <li>Wire Anchors: {nodes.filter((n) => n.type === "wireAnchor").length}</li>
+          <li>Mode: {mode}</li>
         </ul>
       </div>
     </div>
