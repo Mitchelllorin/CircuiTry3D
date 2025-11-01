@@ -333,7 +333,11 @@ export default function Builder() {
   return (
     <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
       <div className="builder-logo-header">
-        <div className="builder-logo-text">CircuiTry3D</div>
+        <div className="builder-logo-text" aria-label="CircuiTry3D">
+          <span className="builder-logo-circui">Circui</span>
+          <span className="builder-logo-try">Try</span>
+          <span className="builder-logo-3d">3D</span>
+        </div>
       </div>
 
       <aside className={`builder-panel panel-left ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>
@@ -463,6 +467,12 @@ export default function Builder() {
             setFrameReady(true);
           }}
         />
+      </div>
+
+      <div className="builder-floating-logo" aria-hidden="true">
+        <span className="builder-logo-circui">Circui</span>
+        <span className="builder-logo-try">Try</span>
+        <span className="builder-logo-3d">3D</span>
       </div>
 
       <div
