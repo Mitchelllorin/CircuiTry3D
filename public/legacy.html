@@ -2706,6 +2706,83 @@
                     notifyParentAnalysisState();
                     break;
                 }
+                case 'builder:invoke-action': {
+                    if (!payload || typeof payload !== 'object' || typeof payload.action !== 'string') {
+                        break;
+                    }
+
+                    const action = payload.action;
+                    const data = payload.data && typeof payload.data === 'object' ? payload.data : {};
+
+                    try {
+                        switch (action) {
+                            case 'toggle-wire-mode':
+                                if (typeof toggleWireMode === 'function') toggleWireMode();
+                                break;
+                            case 'toggle-rotate-mode':
+                                if (typeof toggleRotateMode === 'function') toggleRotateMode();
+                                break;
+                            case 'add-junction':
+                                if (typeof addJunction === 'function') addJunction();
+                                break;
+                            case 'auto-arrange':
+                                if (typeof arrangeByLayoutMode === 'function') arrangeByLayoutMode();
+                                break;
+                            case 'reset-camera':
+                                if (typeof resetCamera === 'function') resetCamera();
+                                break;
+                            case 'fit-screen':
+                                if (typeof fitToScreen === 'function') fitToScreen();
+                                break;
+                            case 'toggle-current-flow':
+                                if (typeof toggleCurrentFlowStyle === 'function') toggleCurrentFlowStyle();
+                                break;
+                            case 'toggle-polarity':
+                                if (typeof togglePolarityIndicators === 'function') togglePolarityIndicators();
+                                break;
+                            case 'cycle-layout':
+                                if (typeof cycleLayoutMode === 'function') cycleLayoutMode();
+                                break;
+                            case 'toggle-grid':
+                                if (typeof toggleGrid === 'function') toggleGrid();
+                                break;
+                            case 'toggle-labels':
+                                if (typeof toggleLabels === 'function') toggleLabels();
+                                break;
+                            case 'load-preset':
+                                if (typeof data.preset === 'string' && typeof loadPresetCircuit === 'function') {
+                                    loadPresetCircuit(data.preset);
+                                }
+                                break;
+                            case 'generate-practice':
+                                if (typeof generateRandomProblem === 'function') generateRandomProblem();
+                                break;
+                            case 'practice-help':
+                                if (typeof showPracticeModeHelp === 'function') showPracticeModeHelp();
+                                break;
+                            case 'show-tutorial':
+                                if (typeof showTutorial === 'function') showTutorial();
+                                break;
+                            case 'show-wire-guide':
+                                if (typeof showWireGuide === 'function') showWireGuide();
+                                break;
+                            case 'show-shortcuts':
+                                if (typeof showShortcuts === 'function') showShortcuts();
+                                break;
+                            case 'show-about':
+                                if (typeof showAbout === 'function') showAbout();
+                                break;
+                            case 'open-arena':
+                                if (typeof openArena === 'function') openArena();
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (error) {
+                        console.warn('Legacy builder: invoke action failed', action, error);
+                    }
+                    break;
+                }
                 default:
                     break;
             }
