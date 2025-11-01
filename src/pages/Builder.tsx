@@ -780,7 +780,7 @@ export default function Builder() {
                   key={action.id}
                   type="button"
                   className="slider-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -804,7 +804,7 @@ export default function Builder() {
                   key={action.id}
                   type="button"
                   className="slider-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -821,14 +821,14 @@ export default function Builder() {
         <div className="slider-section">
           <span className="slider-heading">Help</span>
           <div className="slider-stack">
-            {LEGACY_HELP_ACTIONS.map((action) => {
+            {HELP_ACTIONS.map((action) => {
               const badge = createBadgeLabel(action.label);
               return (
                 <button
                   key={action.id}
                   type="button"
                   className="slider-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -974,7 +974,7 @@ export default function Builder() {
               key={action.id}
               type="button"
               className="slider-chip"
-              onClick={() => triggerLegacyAction(action.action, action.data)}
+              onClick={() => triggerBuilderAction(action.action, action.data)}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
               title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -987,7 +987,7 @@ export default function Builder() {
               key={scenario.id}
               type="button"
               className="slider-chip"
-              onClick={() => triggerLegacyAction("load-preset", { preset: scenario.preset })}
+              onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
               disabled={controlsDisabled}
               aria-disabled={controlsDisabled}
               title={controlsDisabled ? controlDisabledTitle : scenario.question}
