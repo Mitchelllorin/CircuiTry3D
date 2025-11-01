@@ -146,7 +146,7 @@ body.builder-body {
 }
 
 .builder-menu-stage-left {
-  left: clamp(12px, 3vw, 32px);
+  left: calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px));
   flex-direction: row;
   width: var(--builder-menu-toggle-width);
   align-items: flex-start;
@@ -157,7 +157,7 @@ body.builder-body {
 }
 
 .builder-menu-stage-right {
-  right: 12px;
+  right: calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px));
   flex-direction: row;
   width: var(--builder-menu-toggle-width);
 }
@@ -167,7 +167,7 @@ body.builder-body {
 }
 
 .builder-menu-stage-bottom {
-  right: clamp(12px, 3vw, 24px);
+  right: calc(clamp(12px, 3vw, 24px) + env(safe-area-inset-right, 0px));
   bottom: calc(24px + var(--builder-safe-area-bottom));
   flex-direction: column;
   width: var(--builder-menu-bottom-width);
@@ -255,10 +255,10 @@ body.builder-body {
 }
 
 .builder-menu-toggle-left {
-  align-self: flex-start;
-  height: auto;
-  min-height: 96px;
-  justify-content: flex-start;
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  justify-content: center;
   padding: 18px 6px 14px;
 }
 
@@ -1216,16 +1216,16 @@ body.builder-body {
   }
 
   .builder-menu-stage-left {
-    left: 8px;
+    left: calc(env(safe-area-inset-left, 0px) + 8px);
   }
 
   .builder-menu-stage-right {
-    right: 8px;
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
   }
 
   .builder-menu-stage-bottom {
-    left: 8px;
-    right: 8px;
+    left: calc(env(safe-area-inset-left, 0px) + 8px);
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
     width: auto;
     bottom: calc(16px + var(--builder-safe-area-bottom));
   }
@@ -1250,7 +1250,6 @@ body.builder-body {
 @media (max-width: 900px), (pointer: coarse) {
   .builder-menu-stage-left {
     top: calc(72px + var(--builder-safe-area-top));
-    bottom: auto;
   }
 
   .builder-menu-stage-left .builder-menu {
@@ -1260,23 +1259,7 @@ body.builder-body {
   }
 
   .builder-menu-toggle-left {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    height: auto;
-    min-height: 56px;
-    padding: 10px 14px;
-    border-radius: 14px;
-    gap: 8px;
-  }
-
-  .builder-menu-toggle-left .toggle-icon {
-    font-size: 18px;
-  }
-
-  .builder-menu-toggle-left .toggle-text {
-    font-size: 11px;
-    letter-spacing: 0.14em;
+    padding: 18px 10px 14px;
   }
 
   .slider-btn,
