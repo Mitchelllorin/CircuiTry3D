@@ -48,6 +48,21 @@ type HelpLegendItem = {
   label: string;
 };
 
+const createBadgeLabel = (label: string) => {
+  const sanitized = label.replace(/[^\w\s]/g, " ");
+  const words = sanitized.split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return label.slice(0, 3).toUpperCase();
+  }
+
+  const initials = words.map((word) => word[0]?.toUpperCase() ?? "").join("");
+  if (initials.length >= 2) {
+    return initials.slice(0, 3);
+  }
+
+  return (words[0] ?? label).slice(0, 3).toUpperCase();
+};
+
 const COMPONENT_ACTIONS: ComponentAction[] = [
   { id: "battery", icon: "B", label: "Battery", action: "component", builderType: "battery" },
   { id: "resistor", icon: "R", label: "Resistor", action: "component", builderType: "resistor" },
@@ -321,7 +336,7 @@ export default function Builder() {
   const [isFrameReady, setFrameReady] = useState(false);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
-  const [isLeftOpen, setLeftOpen] = useState(true);
+  const [isLeftOpen, setLeftOpen] = useState(false);
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
@@ -633,6 +648,67 @@ export default function Builder() {
         </div>
       </aside>
 
+      <div
+        className={`builder-quick-slider builder-quick-slider-left${isLeftOpen ? " panel-open" : ""}`}
+        role="group"
+        aria-label="Quick component and wiring controls"
+      >
+        <div className="slider-section">
+          <span className="slider-heading">Parts</span>
+          <div className="slider-stack">
+            {COMPONENT_ACTIONS.map((component) => (
+              <button
+                key={component.id}
+                type="button"
+                className="slider-btn"
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={controlsDisabled ? controlDisabledTitle : component.label}
+                data-component-action={component.action}
+              >
+                <span className="slider-icon" aria-hidden="true">
+                  {component.icon}
+                </span>
+                <span className="slider-label">{component.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="slider-section">
+          <span className="slider-heading">Wire</span>
+          <div className="slider-stack">
+            {WIRE_TOOL_ACTIONS.map((action) => {
+              const badge = createBadgeLabel(action.label);
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="slider-icon" aria-hidden="true">
+                    {badge}
+                  </span>
+                  <span className="slider-label">{action.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="slider-expand"
+          onClick={() => setLeftOpen((prev) => !prev)}
+          aria-pressed={isLeftOpen}
+        >
+          {isLeftOpen ? "Hide Menu" : "Open Menu"}
+        </button>
+      </div>
+
       <aside className={`builder-panel panel-right ${isRightOpen ? "open" : ""}`} aria-hidden={!isRightOpen}>
         <div className="panel-content">
           <div className="panel-header">
@@ -687,6 +763,93 @@ export default function Builder() {
           </div>
         </div>
       </aside>
+
+      <div
+        className={`builder-quick-slider builder-quick-slider-right${isRightOpen ? " panel-open" : ""}`}
+        role="group"
+        aria-label="Quick mode and view controls"
+      >
+        <div className="slider-section">
+          <span className="slider-heading">Modes</span>
+          <div className="slider-stack">
+            {CURRENT_MODE_ACTIONS.map((action) => {
+              const badge = createBadgeLabel(action.label);
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="slider-icon" aria-hidden="true">
+                    {badge}
+                  </span>
+                  <span className="slider-label">{action.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="slider-section">
+          <span className="slider-heading">View</span>
+          <div className="slider-stack">
+            {VIEW_CONTROL_ACTIONS.map((action) => {
+              const badge = createBadgeLabel(action.label);
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="slider-icon" aria-hidden="true">
+                    {badge}
+                  </span>
+                  <span className="slider-label">{action.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="slider-section">
+          <span className="slider-heading">Help</span>
+          <div className="slider-stack">
+            {LEGACY_HELP_ACTIONS.map((action) => {
+              const badge = createBadgeLabel(action.label);
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="slider-btn"
+                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={controlsDisabled ? controlDisabledTitle : action.description}
+                >
+                  <span className="slider-icon" aria-hidden="true">
+                    {badge}
+                  </span>
+                  <span className="slider-label">{action.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="slider-expand"
+          onClick={() => setRightOpen((prev) => !prev)}
+          aria-pressed={isRightOpen}
+        >
+          {isRightOpen ? "Hide Details" : "Open Details"}
+        </button>
+      </div>
 
       <section
         ref={bottomPanelRef}
@@ -794,32 +957,56 @@ export default function Builder() {
         </div>
       </section>
 
-      <button
-        type="button"
-        className="builder-panel-toggle toggle-left"
-        aria-label="Toggle component library"
-        onClick={() => setLeftOpen((prev) => !prev)}
-      >
-        {isLeftOpen ? "<" : ">"}
-      </button>
-
-      <button
-        type="button"
-        className="builder-panel-toggle toggle-right"
-        aria-label="Toggle properties panel"
-        onClick={() => setRightOpen((prev) => !prev)}
-      >
-        {isRightOpen ? ">" : "<"}
-      </button>
-
-      <button
-        type="button"
-        className="builder-panel-toggle toggle-bottom"
-        aria-label="Toggle analysis panel"
-        onClick={() => setBottomOpen((prev) => !prev)}
-      >
-        {isBottomOpen ? "v" : "^"}
-      </button>
+      <div className="builder-quick-slider builder-quick-slider-bottom" role="group" aria-label="Quick analysis and practice controls">
+        <div className="slider-metrics" aria-hidden="true">
+          {WIRE_METRICS.map((metric) => (
+            <div key={metric.id} className="slider-metric">
+              <span className="metric-letter">{metric.letter}</span>
+              <span className="metric-value">{metric.value}</span>
+              <span className="metric-label">{metric.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="slider-chip-row">
+          {PRACTICE_ACTIONS.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              className="slider-chip"
+              onClick={() => triggerLegacyAction(action.action, action.data)}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              title={controlsDisabled ? controlDisabledTitle : action.description}
+            >
+              <span className="slider-chip-label">{action.label}</span>
+            </button>
+          ))}
+          {PRACTICE_SCENARIOS.map((scenario) => (
+            <button
+              key={scenario.id}
+              type="button"
+              className="slider-chip"
+              onClick={() => triggerLegacyAction("load-preset", { preset: scenario.preset })}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              title={controlsDisabled ? controlDisabledTitle : scenario.question}
+            >
+              <span className="slider-chip-label">{scenario.label}</span>
+            </button>
+          ))}
+          <button type="button" className="slider-chip" onClick={() => openHelpSection()}>
+            <span className="slider-chip-label">Help Center</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          className="slider-expand"
+          onClick={() => setBottomOpen((prev) => !prev)}
+          aria-pressed={isBottomOpen}
+        >
+          {isBottomOpen ? "Hide Analysis" : "Open Analysis"}
+        </button>
+      </div>
 
       <div className="builder-status-bar">
         <span className="status-indicator" aria-hidden="true" />
