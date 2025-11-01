@@ -18,6 +18,8 @@
   --builder-menu-right-width: 216px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
   --builder-menu-bottom-height: 248px;
+  --builder-safe-area-top: env(safe-area-inset-top, 0px);
+  --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 body.builder-body {
@@ -139,12 +141,12 @@ body.builder-body {
 
 .builder-menu-stage-left,
 .builder-menu-stage-right {
-  top: 84px;
-  bottom: 28px;
+  top: calc(84px + var(--builder-safe-area-top));
+  bottom: calc(28px + var(--builder-safe-area-bottom));
 }
 
 .builder-menu-stage-left {
-  left: 0;
+  left: clamp(12px, 3vw, 32px);
   flex-direction: row;
   width: var(--builder-menu-toggle-width);
   align-items: flex-start;
@@ -165,8 +167,8 @@ body.builder-body {
 }
 
 .builder-menu-stage-bottom {
-  right: 16px;
-  bottom: 24px;
+  right: clamp(12px, 3vw, 24px);
+  bottom: calc(24px + var(--builder-safe-area-bottom));
   flex-direction: column;
   width: var(--builder-menu-bottom-width);
   height: var(--builder-menu-toggle-width);
@@ -227,6 +229,7 @@ body.builder-body {
   justify-content: center;
   gap: 4px;
   cursor: pointer;
+  touch-action: manipulation;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   box-shadow: 0 12px 28px var(--builder-shadow);
   backdrop-filter: blur(14px);
@@ -386,6 +389,7 @@ body.builder-body {
   gap: 6px;
   padding: 10px 12px;
   cursor: pointer;
+  touch-action: manipulation;
   color: inherit;
   font: inherit;
   text-align: left;
@@ -522,6 +526,7 @@ body.builder-body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
@@ -940,7 +945,7 @@ body.builder-body {
 
 .builder-status-bar {
   position: fixed;
-  top: 72px;
+  top: calc(72px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 18px;
@@ -986,7 +991,7 @@ body.builder-body {
 
 .builder-floating-logo {
   position: fixed;
-  top: 92px;
+  top: calc(92px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   font-size: clamp(2rem, 4vw, 3rem);
@@ -1173,13 +1178,13 @@ body.builder-body {
 
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    top: 80px;
-    bottom: 24px;
+    top: calc(80px + var(--builder-safe-area-top));
+    bottom: calc(24px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-stage-bottom {
     right: 12px;
-    bottom: 20px;
+    bottom: calc(20px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
@@ -1191,7 +1196,7 @@ body.builder-body {
   }
 
   .builder-status-bar {
-    top: 68px;
+    top: calc(68px + var(--builder-safe-area-top));
   }
 }
 
@@ -1206,8 +1211,8 @@ body.builder-body {
 
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    top: 76px;
-    bottom: 184px;
+    top: calc(76px + var(--builder-safe-area-top));
+    bottom: calc(184px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-stage-left {
@@ -1222,7 +1227,7 @@ body.builder-body {
     left: 8px;
     right: 8px;
     width: auto;
-    bottom: 16px;
+    bottom: calc(16px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
@@ -1238,6 +1243,44 @@ body.builder-body {
   }
 
   .builder-status-bar {
-    top: 64px;
+    top: calc(64px + var(--builder-safe-area-top));
+  }
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .builder-menu-stage-left {
+    top: calc(72px + var(--builder-safe-area-top));
+    bottom: auto;
+  }
+
+  .builder-menu-stage-left .builder-menu {
+    height: auto;
+    max-height: min(70vh, calc(100vh - 160px));
+    overflow-y: auto;
+  }
+
+  .builder-menu-toggle-left {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    min-height: 56px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    gap: 8px;
+  }
+
+  .builder-menu-toggle-left .toggle-icon {
+    font-size: 18px;
+  }
+
+  .builder-menu-toggle-left .toggle-text {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+  }
+
+  .slider-btn,
+  .slider-chip {
+    min-height: 48px;
   }
 }
