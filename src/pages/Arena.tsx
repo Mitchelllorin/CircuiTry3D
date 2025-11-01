@@ -59,6 +59,33 @@ type ActivityEntry = {
   timestamp: string;
 };
 
+type BenchmarkMetric = {
+  id: string;
+  label: string;
+  unit: string;
+  baseline: number;
+  swing: number;
+  precision?: number;
+};
+
+type LiveMetric = {
+  id: string;
+  label: string;
+  value: string;
+};
+
+type ArenaBadge = {
+  id: string;
+  title: string;
+  body: string;
+  tone: "glow" | "ice" | "ember";
+};
+
+type BroadcastPulse = {
+  id: string;
+  message: string;
+};
+
 const ARENA_SCENARIOS: ArenaScenario[] = [
   {
     id: "led-showcase",
@@ -207,6 +234,73 @@ const ARENA_PULSE_INSIGHTS: PulseInsight[] = [
   }
 ];
 
+const ARENA_BENCHMARK_METRICS: BenchmarkMetric[] = [
+  {
+    id: "fidelity",
+    label: "Signal Fidelity",
+    unit: "%",
+    baseline: 99.2,
+    swing: 0.6,
+    precision: 1
+  },
+  {
+    id: "latency",
+    label: "Response Latency",
+    unit: "ms",
+    baseline: 37.5,
+    swing: 6.5,
+    precision: 1
+  },
+  {
+    id: "throughput",
+    label: "Component Throughput",
+    unit: "ops/s",
+    baseline: 128,
+    swing: 22,
+    precision: 0
+  }
+];
+
+const ARENA_BADGES: ArenaBadge[] = [
+  {
+    id: "patent",
+    title: "Patent Pending",
+    body: "Adaptive multi-mode component duelling with live HUD guidance.",
+    tone: "glow"
+  },
+  {
+    id: "benchmark",
+    title: "Benchmark Grade",
+    body: "Lab-calibrated presets tuned to industrial verification standards.",
+    tone: "ice"
+  },
+  {
+    id: "collective",
+    title: "Builder Collective",
+    body: "Constantly refined by thousands of sessions feeding the W.I.R.E. brain.",
+    tone: "ember"
+  }
+];
+
+const ARENA_BROADCAST_FEED: BroadcastPulse[] = [
+  {
+    id: "broadcast-1",
+    message: "Live benchmark: LED Pulse Showcase sustaining 99% signal fidelity across the full sweep."
+  },
+  {
+    id: "broadcast-2",
+    message: "Compare mode trending up?inductor vs capacitor tests complete in under 4.1 seconds average."
+  },
+  {
+    id: "broadcast-3",
+    message: "Thermal envelope stable. Power Balancer run stayed 14% cooler than lab reference."
+  },
+  {
+    id: "broadcast-4",
+    message: "New arena record: 312 concurrent scenario exports without leaving the playground."
+  }
+];
+
 function shuffleArray<T>(items: T[]): T[] {
   const array = [...items];
   for (let index = array.length - 1; index > 0; index -= 1) {
@@ -220,6 +314,18 @@ function shuffleArray<T>(items: T[]): T[] {
 
 function timestampLabel(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function buildMetricSnapshot(metric: BenchmarkMetric): LiveMetric {
+  const jitter = (Math.random() * 2 - 1) * metric.swing;
+  const value = metric.baseline + jitter;
+  const precision = typeof metric.precision === "number" ? metric.precision : 2;
+  const formatted = `${value.toFixed(precision)} ${metric.unit}`.trim();
+  return {
+    id: metric.id,
+    label: metric.label,
+    value: formatted
+  };
 }
 
 export default function Arena() {
@@ -444,7 +550,7 @@ export default function Arena() {
 
       <header className="arena-header">
         <button type="button" className="arena-back" onClick={handleBack}>
-          ← Back
+          ? Back
         </button>
 
         <div className="arena-header-copy">
@@ -636,7 +742,7 @@ export default function Arena() {
           <header className="arena-tour-header">
             <h2>Arena quick tour</h2>
             <button type="button" className="arena-tour-close" onClick={() => setTipsOpen(false)} aria-label="Close tips">
-              ×
+              ?
             </button>
           </header>
           <div className="arena-tour-body">
