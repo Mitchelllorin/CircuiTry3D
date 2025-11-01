@@ -21,7 +21,7 @@
         
         :root {
             --legacy-menu-gap: 20px;
-            --legacy-menu-width: clamp(260px, 20vw, 360px);
+            --legacy-menu-width: clamp(260px, 22vw, 360px);
         }
         
         body { 
@@ -59,31 +59,41 @@
         
         .menu-bar {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: var(--legacy-menu-gap);
+            bottom: var(--legacy-menu-gap);
+            left: var(--legacy-menu-gap);
+            right: auto;
+            width: var(--legacy-menu-width);
+            height: calc(100vh - (var(--legacy-menu-gap) * 2));
             z-index: 100;
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
-            border-bottom: 2px solid rgba(0,255,136,0.3);
-            padding: 12px 16px;
-            transition: transform 0.3s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            border-right: 2px solid rgba(0,255,136,0.3);
+            border-radius: 16px;
+            padding: 16px 18px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
         }
         
         .menu-bar.hidden {
-            transform: translateY(-100%);
+            transform: translateX(calc(-100% - var(--legacy-menu-gap)));
+            box-shadow: none;
         }
         
         .menu-tabs {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            justify-content: center;
+            gap: 12px;
+            justify-content: flex-start;
             max-width: 100%;
-            margin: 0 auto;
+            margin: 0;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 6px;
         }
         
         .menu-tab {
@@ -637,8 +647,8 @@
         
         .menu-toggle {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: var(--legacy-menu-gap);
+            left: var(--legacy-menu-gap);
             background: #00ff88;
             border: 3px solid #ffffff;
             color: #000000;
@@ -653,6 +663,11 @@
             font-weight: bold;
             font-size: 20px;
             box-shadow: 0 4px 12px rgba(0,255,136,0.3);
+            transition: left 0.3s ease;
+        }
+
+        .menu-toggle.open {
+            left: calc(var(--legacy-menu-gap) + var(--legacy-menu-width) + 16px);
         }
         
         .status {
@@ -787,34 +802,49 @@
             height: 100%;
             -webkit-overflow-scrolling: touch;
         }
+
+        :root {
+            --legacy-menu-gap: 20px;
+            --legacy-menu-width: clamp(260px, 22vw, 360px);
+        }
         
         .menu-bar {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: var(--legacy-menu-gap);
+            bottom: var(--legacy-menu-gap);
+            left: var(--legacy-menu-gap);
+            right: auto;
+            width: var(--legacy-menu-width);
+            height: calc(100vh - (var(--legacy-menu-gap) * 2));
             z-index: 100;
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
-            border-bottom: 2px solid rgba(0,255,136,0.3);
-            padding: 12px 16px;
-            transition: transform 0.3s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            border-right: 2px solid rgba(0,255,136,0.3);
+            border-radius: 16px;
+            padding: 16px 18px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
         }
         
         .menu-bar.hidden {
-            transform: translateY(-100%);
+            transform: translateX(calc(-100% - var(--legacy-menu-gap)));
+            box-shadow: none;
         }
         
         .menu-tabs {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            justify-content: center;
+            gap: 12px;
+            justify-content: flex-start;
             max-width: 100%;
-            margin: 0 auto;
+            margin: 0;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 6px;
         }
         
         .menu-tab {
@@ -1368,8 +1398,8 @@
         
         .menu-toggle {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: var(--legacy-menu-gap);
+            left: var(--legacy-menu-gap);
             background: #00ff88;
             border: 3px solid #ffffff;
             color: #000000;
@@ -1384,6 +1414,11 @@
             font-weight: bold;
             font-size: 20px;
             box-shadow: 0 4px 12px rgba(0,255,136,0.3);
+            transition: left 0.3s ease;
+        }
+
+        .menu-toggle.open {
+            left: calc(var(--legacy-menu-gap) + var(--legacy-menu-width) + 16px);
         }
         
         .status {
@@ -1758,43 +1793,6 @@
 
         /* Desktop styles for larger screens */
         @media (min-width: 769px) {
-            .menu-tabs {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            
-            .menu-tab {
-                width: auto;
-                padding: 12px 16px;
-                font-size: 14px;
-                min-height: auto;
-            }
-            
-            .submenu {
-                position: absolute;
-                top: 100%;
-                left: 50%;
-                transform: translateX(-50%);
-                margin-top: 8px;
-                width: 250px;
-            }
-            
-            .submenu-grid {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            }
-            
-            .submenu-row {
-                flex-direction: row;
-                margin-bottom: 8px;
-            }
-            
-            .btn {
-                padding: 10px 14px;
-                font-size: 14px;
-                min-height: auto;
-            }
-            
             .wire-analysis-fixed {
                 top: 80px;
                 right: 20px;
@@ -1836,6 +1834,41 @@
                 position: fixed;
                 width: 320px;
                 max-width: none;
+            }
+        }
+
+        /* Stack menu across the top on narrow screens */
+        @media (max-width: 720px) {
+            .menu-bar {
+                top: 0;
+                bottom: auto;
+                left: 0;
+                right: 0;
+                width: 100%;
+                height: auto;
+                max-height: 90vh;
+                border-right: none;
+                border-bottom: 2px solid rgba(0,255,136,0.3);
+                border-radius: 0 0 16px 16px;
+                padding: 12px 16px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+            }
+
+            .menu-bar.hidden {
+                transform: translateY(-100%);
+            }
+
+            .menu-tabs {
+                padding-right: 0;
+            }
+
+            .menu-toggle {
+                top: 15px;
+                left: 15px;
+            }
+
+            .menu-toggle.open {
+                left: 15px;
             }
         }
 
@@ -2119,63 +2152,6 @@
             font-size: 12px;
             font-weight: bold;
         }
-        @media (min-width: 900px) {
-            .menu-bar {
-                top: var(--legacy-menu-gap);
-                bottom: var(--legacy-menu-gap);
-                left: var(--legacy-menu-gap);
-                right: auto;
-                width: var(--legacy-menu-width);
-                height: calc(100vh - (var(--legacy-menu-gap) * 2));
-                max-height: none;
-                border-bottom: none;
-                border-right: 2px solid rgba(0,255,136,0.3);
-                border-radius: 16px;
-                display: flex;
-                flex-direction: column;
-                padding: 16px 18px;
-                overflow: hidden;
-            }
-
-            .menu-bar.hidden {
-                transform: translateX(calc(-100% - var(--legacy-menu-gap)));
-            }
-
-            .menu-tabs {
-                margin: 0;
-                height: 100%;
-                overflow-y: auto;
-                align-items: stretch;
-                justify-content: flex-start;
-                flex: 1 1 auto;
-                min-height: 0;
-                padding-right: 6px;
-            }
-
-            .menu-tabs::-webkit-scrollbar {
-                width: 6px;
-            }
-
-            .menu-tabs::-webkit-scrollbar-thumb {
-                background: rgba(0,255,136,0.3);
-                border-radius: 999px;
-            }
-
-            .submenu {
-                max-height: none;
-            }
-
-            .menu-toggle {
-                top: var(--legacy-menu-gap);
-                left: var(--legacy-menu-gap);
-                transform: none;
-            }
-
-            .menu-toggle.open {
-                left: calc(var(--legacy-menu-gap) + var(--legacy-menu-width) + 16px);
-            }
-        }
-
     </style>
 </head>
 <body>
