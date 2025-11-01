@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import "../styles/builder-ui.css";
 
 type LegacyMessage =
@@ -15,18 +14,19 @@ type ComponentAction = {
   legacyType?: "battery" | "resistor" | "led" | "switch";
 };
 
-type LibraryItem = ComponentAction & {
-  disabled?: boolean;
-  hint?: string;
-};
-
-type LibrarySection = {
-  id: string;
+type HelpSection = {
   title: string;
-  items: LibraryItem[];
+  paragraphs: string[];
+  bullets?: string[];
 };
 
-const QUICK_COMPONENTS: ComponentAction[] = [
+type HelpLegendItem = {
+  id: string;
+  letter: string;
+  label: string;
+};
+
+const COMPONENT_ACTIONS: ComponentAction[] = [
   { id: "battery", icon: "B", label: "Battery", action: "component", legacyType: "battery" },
   { id: "resistor", icon: "R", label: "Resistor", action: "component", legacyType: "resistor" },
   { id: "led", icon: "LED", label: "LED", action: "component", legacyType: "led" },
@@ -34,39 +34,11 @@ const QUICK_COMPONENTS: ComponentAction[] = [
   { id: "junction", icon: "J", label: "Junction", action: "junction" },
 ];
 
-const COMPONENT_LIBRARY: LibrarySection[] = [
-  {
-    id: "sources",
-    title: "Sources",
-    items: [
-      { id: "source-dc", icon: "DC", label: "DC Source", action: "component", legacyType: "battery" },
-      { id: "source-rail", icon: "VCC", label: "Rail", action: "component", disabled: true, hint: "Soon" },
-      { id: "source-ac", icon: "AC", label: "A/C", action: "component", disabled: true, hint: "Soon" },
-      { id: "source-pulse", icon: "PW", label: "Pulse", action: "component", disabled: true, hint: "Soon" },
-      { id: "source-noise", icon: "NS", label: "Noise", action: "component", disabled: true, hint: "Soon" },
-    ],
-  },
-  {
-    id: "linear",
-    title: "Linear",
-    items: [
-      { id: "library-resistor", icon: "R", label: "Resistor", action: "component", legacyType: "resistor" },
-      { id: "library-led", icon: "LED", label: "LED", action: "component", legacyType: "led" },
-      { id: "library-pot", icon: "POT", label: "Potentiometer", action: "component", disabled: true, hint: "Soon" },
-      { id: "library-cap", icon: "C", label: "Capacitor", action: "component", disabled: true, hint: "Soon" },
-      { id: "library-ind", icon: "L", label: "Inductor", action: "component", disabled: true, hint: "Soon" },
-    ],
-  },
-  {
-    id: "control",
-    title: "Control",
-    items: [
-      { id: "library-switch", icon: "SW", label: "Switch", action: "component", legacyType: "switch" },
-      { id: "library-junction", icon: "J", label: "Junction", action: "junction" },
-      { id: "library-relay", icon: "RY", label: "Relay", action: "component", disabled: true, hint: "Soon" },
-      { id: "library-sensor", icon: "SN", label: "Sensor", action: "component", disabled: true, hint: "Soon" },
-    ],
-  },
+const TOOL_BUTTONS = [
+  { id: "select", label: "Select Tool", description: "Tap components to edit" },
+  { id: "draw", label: "Wire Tool", description: "Drag to sketch new connections" },
+  { id: "measure", label: "Measure", description: "Check distances and alignment" },
+  { id: "simulate", label: "Run Simulation", description: "Preview circuit behaviour" },
 ];
 
 const PROPERTY_ITEMS = [
@@ -83,230 +55,71 @@ const WIRE_METRICS = [
   { id: "voltage", letter: "E", label: "Voltage", value: "0.0 V" },
 ];
 
-type HelpSection = {
-  title: string;
-  paragraphs?: string[];
-  bullets?: string[];
-  ordered?: boolean;
-};
-
-type HelpLegendItem = {
-  id: string;
-  letter: string;
-  label: string;
-  description?: string;
-};
-
-type HelpTopic = {
-  id: string;
-  label: string;
-  tagline: string;
-  sections: HelpSection[];
-  legend?: HelpLegendItem[];
-  footer?: string;
-};
-
-const WIRE_LEGEND: HelpLegendItem[] = [
+const HELP_SECTIONS: HelpSection[] = [
   {
-    id: "watts",
-    letter: "W",
-    label: "Watts (Power)",
-    description: "Energy per second. P = V * I or I^2 * R.",
+    title: "Getting Started",
+    paragraphs: [
+      "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
+      "Use the Wire Tool to drag intelligent routes between pins?the pathfinder keeps everything tidy.",
+    ],
+    bullets: [
+      "One-touch buttons add, rotate, duplicate, or delete components.",
+      "Use the bottom analysis panel to monitor live circuit health via W.I.R.E.",
+    ],
   },
   {
-    id: "current",
-    letter: "I",
-    label: "Current (Amps)",
-    description: "Flow rate of electrons. I = V / R.",
+    title: "Workspace Navigation",
+    paragraphs: [
+      "Orbit with left-click drag, pan with right-click or two fingers, and scroll or pinch to zoom.",
+      "Toggle panels closed when you need the full canvas?only the slim toggles remain visible.",
+    ],
+    bullets: [
+      "Double-tap a component to focus the camera.",
+      "Hold Shift while wiring to enable precision snapping.",
+    ],
   },
   {
-    id: "resistance",
-    letter: "R",
-    label: "Resistance (Ohms)",
-    description: "Opposition to current. R = V / I.",
+    title: "Build Smarter with W.I.R.E.",
+    paragraphs: [
+      "Watch wattage, current, resistance, and voltage update in real time as you design.",
+      "Hover any metric in the analysis panel to view optimization tips for that value.",
+    ],
+    bullets: [
+      "Green metrics indicate optimal performance.",
+      "Orange or red highlights call out potential bottlenecks.",
+    ],
   },
   {
-    id: "voltage",
-    letter: "E",
-    label: "Voltage (EMF)",
-    description: "Electrical pressure driving the circuit. E = I * R.",
+    title: "Tips & Shortcuts",
+    paragraphs: [
+      "Tap the quick actions on the left panel to rotate, mirror, or lock components instantly.",
+      "Save favorite setups as templates for fast reuse across projects.",
+    ],
+    bullets: [
+      "Ctrl + S saves to the cloud instantly.",
+      "Ctrl + Z reverts the last action; Ctrl + Shift + Z replays it.",
+    ],
   },
 ];
 
-const HELP_TOPICS: HelpTopic[] = [
-  {
-    id: "quick-start",
-    label: "Quick Start",
-    tagline: "Launch a working circuit and read the results in minutes.",
-    sections: [
-      {
-        title: "Getting started",
-        paragraphs: [
-          "Drop components from the library or use shortcuts; every action updates W.I.R.E. in real time.",
-        ],
-        bullets: [
-          "Add core parts fast: B (Battery), R (Resistor), L (LED), S (Switch), J (Junction).",
-          "Press W or choose the Wire Tool to connect terminals and complete the loop to light up the analysis.",
-          "Use quick actions to rotate, duplicate, and align parts without breaking focus.",
-        ],
-      },
-      {
-        title: "Visual learning cues",
-        paragraphs: [
-          "CircuiTry3D keeps the W.I.R.E. palette consistent so you always know what you are reading.",
-        ],
-        bullets: [
-          "Blue = Watts (Power)",
-          "Orange = Current (Amps)",
-          "Green = Resistance (Ohms)",
-          "Red = EMF / Voltage",
-          "Switch between Electron Flow and Current Flow or toggle polarity markers from the View controls.",
-        ],
-      },
-      {
-        title: "Advanced workspace tools",
-        bullets: [
-          "Routing styles: Free-form, Manhattan, Perimeter, Simple, and A* for clean connections.",
-          "Drop junctions (J) to branch into parallel paths with smart snapping.",
-          "Auto-Arrange generates textbook layouts instantly; Layout modes adapt for Free, Square, or Linear circuits.",
-          "Reset view, fit to screen, and grid toggles keep navigation under control on any device.",
-        ],
-      },
-      {
-        title: "Build smarter",
-        bullets: [
-          "Double-click a component to focus and edit values; long-press wires to reroute or delete.",
-          "Shift + Drag temporarily disables grid snap for micro adjustments.",
-          "Hover metrics in the analysis panel for coaching tips as you iterate.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "wire-method",
-    label: "W.I.R.E. Method",
-    tagline: "Understand the metrics that drive every circuit decision.",
-    sections: [
-      {
-        title: "Read the panel at a glance",
-        paragraphs: [
-          "The W.I.R.E. mnemonic pairs every value with a color and letter so trends stand out instantly.",
-          "Watch the bottom analysis panel while you build; the values update live as connections change.",
-        ],
-      },
-      {
-        title: "Learning layers included",
-        bullets: [
-          "EIR triangle reinforces Ohm's law relationships with interactive triangles.",
-          "Power triangle highlights alternative formulas such as W = I^2 * R and W = E^2 / R.",
-          "Worksheet mode walks learners through step-by-step calculations with auto-filled values.",
-          "Solve mode checks student answers with instant feedback and tolerances.",
-          "Practice mode serves guided problems for series, parallel, combination, and switch circuits.",
-        ],
-      },
-    ],
-    legend: WIRE_LEGEND,
-    footer: "The W.I.R.E. palette keeps beginners oriented while giving pros fast diagnostics.",
-  },
-  {
-    id: "shortcuts",
-    label: "Shortcuts & Controls",
-    tagline: "Stay in flow with a command set tuned for builders and educators.",
-    sections: [
-      {
-        title: "Component & tool keys",
-        bullets: [
-          "B = Battery, R = Resistor, L = LED, S = Switch, J = Junction.",
-          "W toggles Wire Mode, T toggles Rotate Mode, Space toggles menus, Esc cancels or exits the current mode.",
-        ],
-      },
-      {
-        title: "Editing & file management",
-        bullets: [
-          "Ctrl + Z / Ctrl + Y handle Undo and Redo.",
-          "Ctrl + C / Ctrl + V copy and paste selected components.",
-          "Delete or Backspace removes selected items.",
-          "Ctrl + S / Ctrl + O / Ctrl + N save, load, or start a new circuit.",
-        ],
-      },
-      {
-        title: "View and navigation",
-        bullets: [
-          "H resets the camera, F fits to screen, G toggles the grid.",
-          "Left-click drag orbits, right-click drag pans, scroll or pinch zooms.",
-          "Double-click provides quick focus and edit; middle-click drag delivers pro-level panning.",
-        ],
-      },
-      {
-        title: "Touch gestures",
-        bullets: [
-          "Tap selects, drag moves components, long-press opens property editing.",
-          "Two-finger drag pans the workspace, pinch zooms, rotate gestures orbit the camera.",
-          "Long-press wires to edit or delete routing.",
-        ],
-      },
-      {
-        title: "Pro tips",
-        bullets: [
-          "Hold Shift while dragging to disable grid snap temporarily.",
-          "Use arrow keys for ultra-fine positioning.",
-          "Ctrl + Scroll boosts zoom speed for large layouts.",
-          "Follow the quick workflow: B -> R -> W -> connect terminals -> review W.I.R.E.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "about",
-    label: "About CircuiTry3D",
-    tagline: "A professional 3D circuit lab built for classrooms, makers, and pros.",
-    sections: [
-      {
-        title: "What you get",
-        bullets: [
-          "Interactive 3D workspace with real-time electrical calculations.",
-          "Color-coded W.I.R.E. metrics and smart auto-labeling (B1, R1, LED1, SW1).",
-          "Flexible wiring with multiple routing algorithms and intelligent snapping.",
-          "Branding overlays and polished layouts for presentation-ready results.",
-        ],
-      },
-      {
-        title: "Education-ready tooling",
-        bullets: [
-          "W.I.R.E., EIR triangle, and Power triangle panels translate math into visuals.",
-          "Worksheets, Solve mode, and guided Practice circuits support self-paced learning.",
-          "Random problem generator keeps classes engaged with fresh challenges.",
-        ],
-      },
-      {
-        title: "Who it empowers",
-        bullets: [
-          "Students: learn by doing with instant visual feedback and exportable circuits.",
-          "Educators: spin up textbook-perfect examples with auto-arranged layouts.",
-          "Makers & pros: prototype ideas quickly and share interactive demos.",
-        ],
-      },
-      {
-        title: "Technology & platforms",
-        bullets: [
-          "Built with Three.js, modern JavaScript, HTML5 Canvas, and CSS3.",
-          "Graph-based topology detection, multiple routing engines, and persistent local storage.",
-          "Optimized for desktop with full keyboard support and touch-friendly controls for tablets and phones.",
-        ],
-      },
-    ],
-  },
+const WIRE_LEGEND: HelpLegendItem[] = [
+  { id: "watts", letter: "W", label: "Wattage" },
+  { id: "current", letter: "I", label: "Current" },
+  { id: "resistance", letter: "R", label: "Resistance" },
+  { id: "voltage", letter: "E", label: "Voltage" },
 ];
 
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const bottomPanelRef = useRef<HTMLElement | null>(null);
   const pendingMessages = useRef<LegacyMessage[]>([]);
   const [isFrameReady, setFrameReady] = useState(false);
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 0));
   const [isLeftOpen, setLeftOpen] = useState(true);
   const [isRightOpen, setRightOpen] = useState(false);
   const [isBottomOpen, setBottomOpen] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
-  const [activeHelpTopic, setActiveHelpTopic] = useState(HELP_TOPICS[0].id);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -338,6 +151,22 @@ export default function Builder() {
     window.addEventListener("message", handleMessage);
     return () => {
       window.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const handleResize = () => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -422,12 +251,48 @@ export default function Builder() {
   }, [isFrameReady]);
 
   useEffect(() => {
+    if (!isBottomOpen) {
+      setBottomPanelHeight(0);
+      return;
+    }
+
+    const panel = bottomPanelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    const measure = () => {
+      const rect = panel.getBoundingClientRect();
+      setBottomPanelHeight(rect.height);
+    };
+
+    measure();
+
+    let resizeObserver: ResizeObserver | undefined;
+
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => measure());
+      resizeObserver.observe(panel);
+    } else {
+      window.addEventListener("resize", measure);
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", measure);
+      }
+    };
+  }, [isBottomOpen]);
+
+  useEffect(() => {
     sendMessageToLegacy({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
   }, [isBottomOpen, sendMessageToLegacy]);
 
   const handleComponentAction = useCallback(
-    (component: LibraryItem) => {
-      if (!component || component.disabled) {
+    (component: ComponentAction) => {
+      if (!component) {
         return;
       }
 
@@ -449,135 +314,145 @@ export default function Builder() {
     [sendMessageToLegacy]
   );
 
+  const minOffset = 220;
+  const maxOffset = viewportHeight ? Math.max(minOffset, Math.round(viewportHeight * 0.65)) : 440;
+  const rawOffset = Math.round(bottomPanelHeight) + 40;
+  const bottomPanelOffset = isBottomOpen ? Math.min(Math.max(rawOffset, minOffset), maxOffset) : 0;
+
+  const shellStyle: CSSProperties | undefined = bottomPanelOffset
+    ? ({ "--bottom-panel-offset": `${bottomPanelOffset}px` } as CSSProperties)
+    : undefined;
+
+  const workspaceStyle: CSSProperties | undefined = bottomPanelOffset
+    ? { height: `calc(100vh - ${bottomPanelOffset}px)` }
+    : undefined;
+
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
 
-  const activeTopic = HELP_TOPICS.find((topic) => topic.id === activeHelpTopic) ?? HELP_TOPICS[0];
-
   return (
-    <div className="builder-shell">
-      <header className="builder-app-bar">
-        <button
-          type="button"
-          className="app-icon-button"
-          aria-label={`${isLeftOpen ? "Collapse" : "Expand"} component library`}
-          onClick={() => setLeftOpen((prev) => !prev)}
-          aria-pressed={isLeftOpen}
-        >
-          <span aria-hidden="true">:::</span>
-        </button>
-        <div className="builder-brand">
-          <span className="brand-title">CircuiTry3D</span>
-          <span className="brand-subtitle">Spatial Circuit Builder</span>
-        </div>
-        <nav className="builder-app-nav" aria-label="Primary">
-          <Link to="/pricing" className="builder-app-link">
-            Plans &amp; Pricing
-          </Link>
-        </nav>
-        <div className="builder-app-actions">
-          <span className={`workspace-status ${isFrameReady ? "ready" : "loading"}`}>
-            <span className="status-dot" aria-hidden="true" />
-            {isFrameReady ? "Workspace ready" : "Warming up workspace"}
-          </span>
-          <button type="button" className="app-action-button" onClick={() => setHelpOpen(true)}>
-            Help
-          </button>
-          <button
-            type="button"
-            className="app-action-button"
-            onClick={() => setRightOpen((prev) => !prev)}
-            aria-pressed={isRightOpen}
-          >
-            Inspector
-          </button>
-        </div>
-      </header>
+    <div className={`builder-shell${isBottomOpen ? " bottom-open" : ""}`} style={shellStyle}>
+      <div className="builder-logo-header">
+        <div className="builder-logo-text">CircuiTry3D</div>
+      </div>
 
-      <aside className={`library-drawer ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>
-        <div className="drawer-head">
-          <div>
-            <p className="drawer-eyebrow">Library</p>
-            <h2 className="drawer-title">Drop &amp; go components</h2>
-          </div>
-          <button type="button" className="drawer-close" aria-label="Collapse component library" onClick={() => setLeftOpen(false)}>
-            <span aria-hidden="true">x</span>
-          </button>
+      <aside className={`builder-panel panel-left ${isLeftOpen ? "open" : ""}`} aria-hidden={!isLeftOpen}>
+        <div className="panel-header">
+          <span className="panel-title">Component Library</span>
+          <p className="panel-subtitle">Tap to add parts directly into the workspace.</p>
         </div>
-        <div className="drawer-scroll">
-          {COMPONENT_LIBRARY.map((section) => (
-            <section key={section.id} className="library-section">
-              <header className="library-section-header">
-                <span>{section.title}</span>
-                <span className="library-section-divider" aria-hidden="true" />
-              </header>
-              <div className="library-grid">
-                {section.items.map((item) => {
-                  const disabled = controlsDisabled || item.disabled;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="library-item"
-                      onClick={() => handleComponentAction(item)}
-                      disabled={disabled}
-                      aria-disabled={disabled}
-                      title={
-                        disabled && !controlsDisabled
-                          ? item.hint ?? "Coming soon"
-                          : controlsDisabled
-                          ? controlDisabledTitle
-                          : item.label
-                      }
-                      data-status={item.disabled ? "soon" : item.action}
-                    >
-                      <span className="library-icon" aria-hidden="true">
-                        {item.icon}
-                      </span>
-                      <span className="library-label">{item.label}</span>
-                      {item.disabled && <span className="library-hint">Soon</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+        <div className="panel-section">
+          <div className="component-grid">
+            {COMPONENT_ACTIONS.map((component) => (
+              <button
+                key={component.id}
+                type="button"
+                className="component-btn"
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={controlsDisabled ? controlDisabledTitle : component.label}
+                data-component-action={component.action}
+              >
+                <span className="component-icon" aria-hidden="true">
+                  {component.icon}
+                </span>
+                <span className="component-label">{component.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="panel-section">
+          <p className="section-title">Quick Actions</p>
+          <div className="tool-buttons">
+            {TOOL_BUTTONS.map((button) => (
+              <button key={button.id} type="button" className="tool-btn">
+                <span className="tool-label">{button.label}</span>
+                <span className="tool-description">{button.description}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </aside>
 
-      {!isLeftOpen && (
-        <button type="button" className="library-handle" aria-label="Open component library" onClick={() => setLeftOpen(true)}>
-          Library
-        </button>
-      )}
-
-      <aside className={`inspector-drawer ${isRightOpen ? "open" : ""}`} aria-hidden={!isRightOpen}>
-        <div className="drawer-head">
-          <div>
-            <p className="drawer-eyebrow">Inspector</p>
-            <h2 className="drawer-title">Selection details</h2>
-          </div>
-          <button type="button" className="drawer-close" aria-label="Collapse inspector" onClick={() => setRightOpen(false)}>
-            <span aria-hidden="true">x</span>
-          </button>
+      <aside className={`builder-panel panel-right ${isRightOpen ? "open" : ""}`} aria-hidden={!isRightOpen}>
+        <div className="panel-header">
+          <span className="panel-title">Properties</span>
+          <p className="panel-subtitle">Select anything in the scene to inspect it here.</p>
         </div>
-        <div className="inspector-scroll">
+        <div className="panel-section">
           {PROPERTY_ITEMS.map((item) => (
-            <div key={item.id} className="inspector-item">
-              <span className="inspector-name">{item.name}</span>
-              <span className="inspector-value">{item.value}</span>
+            <div key={item.id} className="property-item">
+              <div className="property-name">{item.name}</div>
+              <div className="property-value">{item.value}</div>
             </div>
           ))}
         </div>
       </aside>
 
-      {!isRightOpen && (
-        <button type="button" className="inspector-handle" aria-label="Open inspector" onClick={() => setRightOpen(true)}>
-          Inspector
-        </button>
-      )}
+      <section
+        ref={bottomPanelRef}
+        className={`builder-panel panel-bottom ${isBottomOpen ? "open" : ""}`}
+        aria-hidden={!isBottomOpen}
+        aria-expanded={isBottomOpen}
+      >
+        <div className="panel-header">
+          <span className="panel-title">W.I.R.E. Analysis</span>
+          <p className="panel-subtitle">Watch core metrics adjust as your circuit evolves.</p>
+        </div>
+        <div className="panel-section">
+          <div className="builder-wire-display">
+            <div className="wire-title">Circuit Snapshot</div>
+            <div className="wire-grid">
+              {WIRE_METRICS.map((metric) => (
+                <div key={metric.id} className={`wire-metric ${metric.id}`}>
+                  <div className="metric-letter">{metric.letter}</div>
+                  <div className="metric-label">{metric.label}</div>
+                  <div className="metric-value">{metric.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="circuit-stats">Tap any metric to learn how W.I.R.E. keeps your build balanced.</div>
+            <button type="button" className="builder-help-launch" onClick={() => setHelpOpen(true)}>
+              Open Guided Tutorial
+            </button>
+          </div>
+        </div>
+      </section>
 
-      <main className="builder-workspace" aria-busy={!isFrameReady}>
+      <button
+        type="button"
+        className="builder-panel-toggle toggle-left"
+        aria-label="Toggle component library"
+        onClick={() => setLeftOpen((prev) => !prev)}
+      >
+        {isLeftOpen ? "<" : ">"}
+      </button>
+
+      <button
+        type="button"
+        className="builder-panel-toggle toggle-right"
+        aria-label="Toggle properties panel"
+        onClick={() => setRightOpen((prev) => !prev)}
+      >
+        {isRightOpen ? ">" : "<"}
+      </button>
+
+      <button
+        type="button"
+        className="builder-panel-toggle toggle-bottom"
+        aria-label="Toggle analysis panel"
+        onClick={() => setBottomOpen((prev) => !prev)}
+      >
+        {isBottomOpen ? "v" : "^"}
+      </button>
+
+      <div className="builder-status-bar">
+        <span className="status-indicator" aria-hidden="true" />
+        {isFrameReady ? "Workspace ready?tap and drag to build." : "Loading workspace?"}
+      </div>
+
+      <div className="builder-workspace" style={workspaceStyle} aria-busy={!isFrameReady}>
         <iframe
           ref={iframeRef}
           className="builder-iframe"
@@ -586,161 +461,44 @@ export default function Builder() {
           sandbox="allow-scripts allow-same-origin allow-popups"
           onLoad={() => {
             setFrameReady(true);
-            sendMessageToLegacy({ type: "builder:set-analysis-open", payload: { open: isBottomOpen } });
           }}
         />
-      </main>
-
-      <div className="floating-stack" aria-hidden={false}>
-        <button
-          type="button"
-          className="floating-button"
-          onClick={() => setBottomOpen((prev) => !prev)}
-          aria-pressed={isBottomOpen}
-          title={isBottomOpen ? "Hide analysis" : "Show analysis"}
-        >
-          <span aria-hidden="true">{isBottomOpen ? "v" : "^"}</span>
-        </button>
-        <button
-          type="button"
-          className="floating-button"
-          onClick={() =>
-            handleComponentAction({ id: "quick-junction", icon: "J", label: "Junction", action: "junction" })
-          }
-          disabled={controlsDisabled}
-          aria-disabled={controlsDisabled}
-          title={controlsDisabled ? controlDisabledTitle : "Drop junction"}
-        >
-          <span aria-hidden="true">J</span>
-        </button>
-        <button type="button" className="floating-button" onClick={() => setHelpOpen(true)} title="Help & tutorials">
-          <span aria-hidden="true">?</span>
-        </button>
       </div>
-
-      <section className={`analysis-sheet ${isBottomOpen ? "open" : ""}`} aria-hidden={!isBottomOpen} aria-expanded={isBottomOpen}>
-        <header className="analysis-header">
-          <div>
-            <p className="drawer-eyebrow">Analysis</p>
-            <h2 className="drawer-title">W.I.R.E. snapshot</h2>
-          </div>
-          <button type="button" className="analysis-close" aria-label="Collapse analysis panel" onClick={() => setBottomOpen(false)}>
-            Close
-          </button>
-        </header>
-        <p className="analysis-subtitle">Track watts, current, resistance, and voltage without leaving the workspace.</p>
-        <div className="analysis-grid">
-          {WIRE_METRICS.map((metric) => (
-            <div key={metric.id} className={`analysis-metric ${metric.id}`}>
-              <span className="metric-letter">{metric.letter}</span>
-              <span className="metric-label">{metric.label}</span>
-              <span className="metric-value">{metric.value}</span>
-            </div>
-          ))}
-        </div>
-        <button type="button" className="analysis-help-link" onClick={() => setHelpOpen(true)}>
-          Learn the W.I.R.E. method
-        </button>
-      </section>
-
-      <button
-        type="button"
-        className="analysis-handle"
-        aria-label={isBottomOpen ? "Hide analysis" : "Show analysis"}
-        aria-expanded={isBottomOpen}
-        onClick={() => setBottomOpen((prev) => !prev)}
-      >
-        {isBottomOpen ? "Hide analysis" : "W.I.R.E. analysis"}
-      </button>
-
-      <nav className="component-tray" aria-label="Quick components">
-        {QUICK_COMPONENTS.map((component) => (
-          <button
-            key={component.id}
-            type="button"
-            className="tray-item"
-            onClick={() => handleComponentAction(component)}
-            disabled={controlsDisabled}
-            aria-disabled={controlsDisabled}
-            title={controlsDisabled ? controlDisabledTitle : component.label}
-          >
-            <span className="tray-icon" aria-hidden="true">
-              {component.icon}
-            </span>
-            <span className="tray-label">{component.label}</span>
-          </button>
-        ))}
-      </nav>
 
       <div
         className={`builder-help-modal ${isHelpOpen ? "open" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-hidden={!isHelpOpen}
-        aria-labelledby="help-modal-title"
         onClick={() => setHelpOpen(false)}
       >
         <div className="builder-help-content" onClick={(event) => event.stopPropagation()}>
           <button type="button" className="help-close" onClick={() => setHelpOpen(false)} aria-label="Close help">
-            x
+            X
           </button>
-          <h2 className="help-title" id="help-modal-title">
-            CircuiTry3D Help Center
-          </h2>
-          <div className="help-tabs" role="tablist" aria-label="Help topics">
-            {HELP_TOPICS.map((topic) => {
-              const isActive = topic.id === activeHelpTopic;
-              return (
-                <button
-                  key={topic.id}
-                  type="button"
-                  className={`help-tab ${isActive ? "active" : ""}`}
-                  onClick={() => setActiveHelpTopic(topic.id)}
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-controls={`help-panel-${topic.id}`}
-                  id={`help-tab-${topic.id}`}
-                  tabIndex={isActive ? 0 : -1}
-                >
-                  {topic.label}
-                </button>
-              );
-            })}
-          </div>
-          <div
-            className="help-topic"
-            role="tabpanel"
-            id={`help-panel-${activeTopic.id}`}
-            aria-labelledby={`help-tab-${activeTopic.id}`}
-          >
-            <p className="help-tagline">{activeTopic.tagline}</p>
-            {activeTopic.sections.map((section) => (
-              <div key={section.title} className="help-section">
-                <h3>{section.title}</h3>
-                {section.paragraphs?.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-                {section.bullets && (
-                  <ul className={`help-list ${section.ordered ? "ordered" : ""}`}>
-                    {section.bullets.map((bullet) => (
-                      <li key={bullet}>{bullet}</li>
-                    ))}
-                  </ul>
-                )}
+          <h2 className="help-title">CircuiTry3D Help Center</h2>
+          {HELP_SECTIONS.map((section) => (
+            <div key={section.title} className="help-section">
+              <h3>{section.title}</h3>
+              {section.paragraphs.map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+              {section.bullets && (
+                <ul>
+                  {section.bullets.map((bullet) => (
+                    <li key={bullet}>{bullet}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+          <div className="wire-legend">
+            {WIRE_LEGEND.map((legend) => (
+              <div key={legend.id} className={`legend-item ${legend.letter.toLowerCase()}`}>
+                <div className="legend-letter">{legend.letter}</div>
+                <div className="legend-label">{legend.label}</div>
               </div>
             ))}
-            {activeTopic.legend && (
-              <div className="wire-legend">
-                {activeTopic.legend.map((legend) => (
-                  <div key={legend.id} className={`legend-item ${legend.letter.toLowerCase()}`}>
-                    <div className="legend-letter">{legend.letter}</div>
-                    <div className="legend-label">{legend.label}</div>
-                    {legend.description && <p className="legend-description">{legend.description}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {activeTopic.footer && <p className="help-footer">{activeTopic.footer}</p>}
           </div>
         </div>
       </div>
