@@ -314,6 +314,19 @@ const WIRE_LEGEND: HelpLegendItem[] = [
   { id: "voltage", letter: "E", label: "Voltage" },
 ];
 
+function subscribeToMediaQuery(query: MediaQueryList, listener: (event: MediaQueryListEvent) => void) {
+  if (typeof query.addEventListener === "function") {
+    query.addEventListener("change", listener);
+    return () => query.removeEventListener("change", listener);
+  }
+
+  // Fallback for older WebKit / Safari versions
+  // eslint-disable-next-line deprecation/deprecation
+  query.addListener(listener);
+  // eslint-disable-next-line deprecation/deprecation
+  return () => query.removeListener(listener);
+}
+
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
@@ -321,7 +334,12 @@ export default function Builder() {
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
-  const [isLeftMenuOpen, setLeftMenuOpen] = useState(false);
+  const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.innerWidth >= 1024;
+  });
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
 
@@ -356,6 +374,41 @@ export default function Builder() {
     document.body.classList.add("builder-body");
     return () => {
       document.body.classList.remove("builder-body");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const largeScreenQuery = window.matchMedia("(min-width: 1024px)");
+    const compactScreenQuery = window.matchMedia("(max-width: 900px)");
+
+    const handleLargeScreen = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setLeftMenuOpen(true);
+      }
+    };
+
+    const handleCompactScreen = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setLeftMenuOpen(false);
+      }
+    };
+
+    if (compactScreenQuery.matches) {
+      setLeftMenuOpen(false);
+    } else if (largeScreenQuery.matches) {
+      setLeftMenuOpen(true);
+    }
+
+    const detachLargeScreen = subscribeToMediaQuery(largeScreenQuery, handleLargeScreen);
+    const detachCompactScreen = subscribeToMediaQuery(compactScreenQuery, handleCompactScreen);
+
+    return () => {
+      detachLargeScreen();
+      detachCompactScreen();
     };
   }, []);
 
