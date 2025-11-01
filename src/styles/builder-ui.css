@@ -110,15 +110,17 @@ body.builder-body {
 }
 
 .builder-menu-bottom {
-  bottom: 18px;
-  right: 20px;
+  bottom: 24px;
+  right: 16px;
   left: auto;
   transform: none;
-  width: min(460px, calc(100vw - 72px));
-  max-height: 188px;
-  overflow-y: auto;
+  width: 232px;
+  max-height: calc(100vh - 176px);
+  overflow: hidden;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
 }
 
 .builder-menu-bottom::-webkit-scrollbar {
@@ -128,6 +130,45 @@ body.builder-body {
 .builder-menu-bottom::-webkit-scrollbar-thumb {
   background: rgba(0, 255, 136, 0.4);
   border-radius: 999px;
+}
+
+.builder-menu-bottom .menu-track {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  padding-bottom: 0;
+  scroll-snap-type: none;
+}
+
+.builder-menu-bottom .menu-track-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.builder-menu-bottom .menu-track-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  max-height: 160px;
+  padding-right: 2px;
+}
+
+.builder-menu-bottom .menu-track-chips::-webkit-scrollbar {
+  width: 6px;
+}
+
+.builder-menu-bottom .menu-track-chips::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.35);
+  border-radius: 999px;
+}
+
+.builder-menu-bottom .slider-chip {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 .builder-menu-scroll {
@@ -248,8 +289,16 @@ body.builder-body {
   min-width: 148px;
 }
 
+.builder-menu-bottom .menu-track-metrics .slider-metric {
+  min-width: 0;
+}
+
 .menu-track-chips {
   align-items: center;
+}
+
+.builder-menu-bottom .menu-track-chips {
+  align-items: stretch;
 }
 
 .slider-metric {
@@ -961,9 +1010,13 @@ body.builder-body {
   }
 
   .builder-menu-bottom {
-    right: 16px;
-    width: min(400px, calc(100vw - 56px));
-    max-height: 176px;
+    right: 12px;
+    width: min(220px, calc(100vw - 48px));
+    max-height: calc(100vh - 152px);
+  }
+
+  .builder-menu-bottom .menu-track-metrics {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .builder-status-bar {
@@ -988,11 +1041,20 @@ body.builder-body {
   }
 
   .builder-menu-bottom {
-    left: 12px;
-    right: 12px;
+    left: 10px;
+    right: 10px;
     width: auto;
     max-height: 220px;
     padding: 14px;
+    flex-direction: column;
+  }
+
+  .builder-menu-bottom .menu-track-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .builder-menu-bottom .menu-track-chips {
+    max-height: 160px;
   }
 
   .builder-status-bar {
