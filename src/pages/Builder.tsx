@@ -561,7 +561,7 @@ export default function Builder() {
           aria-label={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
           title={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
         >
-          <span className="toggle-icon">{isLeftMenuOpen ? "?" : "?"}</span>
+          <span className="toggle-icon">{isLeftMenuOpen ? "<" : ">"}</span>
           <span className="toggle-text">Library</span>
         </button>
       </div>
@@ -575,7 +575,7 @@ export default function Builder() {
           aria-label={isRightMenuOpen ? "Collapse mode and view controls" : "Expand mode and view controls"}
           title={isRightMenuOpen ? "Collapse mode and view controls" : "Expand mode and view controls"}
         >
-          <span className="toggle-icon">{isRightMenuOpen ? "?" : "?"}</span>
+          <span className="toggle-icon">{isRightMenuOpen ? ">" : "<"}</span>
           <span className="toggle-text">Controls</span>
         </button>
         <nav className="builder-menu builder-menu-right" role="complementary" aria-label="Mode and view controls">
@@ -642,7 +642,7 @@ export default function Builder() {
           aria-label={isBottomMenuOpen ? "Collapse analysis and guidance" : "Expand analysis and guidance"}
           title={isBottomMenuOpen ? "Collapse analysis and guidance" : "Expand analysis and guidance"}
         >
-          <span className="toggle-icon">{isBottomMenuOpen ? "?" : "?"}</span>
+          <span className="toggle-icon">{isBottomMenuOpen ? "v" : "^"}</span>
           <span className="toggle-text">Insights</span>
         </button>
         <nav className="builder-menu builder-menu-bottom" role="navigation" aria-label="Analysis, practice, and guides">
