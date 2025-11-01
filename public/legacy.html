@@ -2695,6 +2695,108 @@
         let currentFlowParticles = [];
         let menuVisible = true, analysisVisible = true;
 
+        const isAndroidDevice =
+            (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "")) ||
+            (typeof window !== "undefined" &&
+                typeof window.Capacitor === "object" &&
+                typeof window.Capacitor.getPlatform === "function" &&
+                window.Capacitor.getPlatform() === "android");
+
+        if (isAndroidDevice) {
+            const applyAndroidClasses = () => {
+                if (document.documentElement) {
+                    document.documentElement.classList.add("android-optimized");
+                }
+                if (document.body) {
+                    document.body.classList.add("android-optimized");
+                    if (menuVisible) {
+                        document.body.classList.add("menu-visible");
+                    }
+                }
+            };
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", applyAndroidClasses, { once: true });
+            } else {
+                applyAndroidClasses();
+            }
+
+            if (!document.getElementById("android-layout-overrides")) {
+                const androidStyle = document.createElement("style");
+                androidStyle.id = "android-layout-overrides";
+                androidStyle.textContent = `
+body.android-optimized {
+  --legacy-menu-width: min(320px, calc(100vw - 48px));
+}
+
+body.android-optimized .menu-bar {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  width: var(--legacy-menu-width);
+  border-bottom: none;
+  border-right: 2px solid rgba(0, 255, 136, 0.3);
+  max-height: none;
+  padding: 24px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+body.android-optimized .menu-bar.hidden {
+  transform: translateX(-100%);
+  box-shadow: none;
+}
+
+body.android-optimized .menu-tabs {
+  height: 100%;
+  margin: 0;
+  justify-content: flex-start;
+}
+
+body.android-optimized .menu-tab {
+  justify-content: space-between;
+  text-align: left;
+}
+
+body.android-optimized .submenu {
+  position: static;
+  margin-top: 12px;
+}
+
+body.android-optimized .menu-toggle {
+  top: 16px;
+  left: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  transition: transform 0.3s ease;
+}
+
+body.android-optimized .menu-toggle.open {
+  transform: translateX(calc(var(--legacy-menu-width) + 12px));
+}
+
+body.android-optimized.menu-visible #canvas {
+  left: var(--legacy-menu-width);
+  width: calc(100vw - var(--legacy-menu-width));
+}
+
+body.android-optimized.menu-visible .wire-analysis-fixed,
+body.android-optimized.menu-visible .status {
+  left: calc(var(--legacy-menu-width) + 24px);
+  right: 24px;
+}
+                `;
+                const headElement = document.head || document.getElementsByTagName("head")[0];
+                if (headElement) {
+                    headElement.appendChild(androidStyle);
+                }
+            }
+        }
+
         function notifyParentReady() {
             if (window.parent && window.parent !== window) {
                 try {
@@ -5160,10 +5262,14 @@
                     const toggleButton = document.getElementById('menu-toggle');
                     if (toggleButton) {
                         toggleButton.classList.toggle('open', menuVisible);
+                        toggleButton.textContent = menuVisible ? 'Close' : 'Menu';
+                    }
+                    if (document.body && document.body.classList.contains('android-optimized')) {
+                        document.body.classList.toggle('menu-visible', menuVisible);
                     }
                     
                     // Set initial status for CircuiTry
-                    setStatus('?? CircuiTry Professional Circuit Design Environment Ready!');
+                    setStatus('CircuiTry Professional Circuit Design Environment Ready!');
                 }, 0);
             }, 0);
         }
@@ -5827,13 +5933,16 @@
             menuBar.classList.toggle('hidden');
             menuVisible = !menuVisible;
             toggle.classList.toggle('open', menuVisible);
+            if (document.body && document.body.classList.contains('android-optimized')) {
+                document.body.classList.toggle('menu-visible', menuVisible);
+            }
             
             if (menuVisible) {
-                toggle.textContent = '?';
-                setStatus('?? Menu shown - all tools available');
+                toggle.textContent = 'Close';
+                setStatus('Menu shown - all tools available');
             } else {
-                toggle.textContent = '?';
-                setStatus('?? Menu hidden - click ? to show');
+                toggle.textContent = 'Menu';
+                setStatus('Menu hidden - tap Menu to open');
                 closeAllSubmenus();
             }
         }
