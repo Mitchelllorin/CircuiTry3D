@@ -357,12 +357,12 @@ export default function Builder() {
 
       const { type, payload } = data as { type?: string; payload?: unknown };
 
-      if (type === "legacy:ready") {
+      if (type === "workspace:ready") {
         setFrameReady(true);
         return;
       }
 
-      if (type === "legacy:analysis-state" && payload && typeof payload === "object" && "open" in payload) {
+      if (type === "workspace:analysis-state" && payload && typeof payload === "object" && "open" in payload) {
         const desired = (payload as { open?: unknown }).open;
         if (typeof desired === "boolean") {
           setBottomOpen(desired);
@@ -686,7 +686,7 @@ export default function Builder() {
                   key={action.id}
                   type="button"
                   className="slider-btn"
-                  onClick={() => triggerLegacyAction(action.action, action.data)}
+                  onClick={() => triggerBuilderAction(action.action, action.data)}
                   disabled={controlsDisabled}
                   aria-disabled={controlsDisabled}
                   title={controlsDisabled ? controlDisabledTitle : action.description}
@@ -1019,7 +1019,7 @@ export default function Builder() {
           ref={iframeRef}
           className="builder-iframe"
           title="CircuiTry3D Builder"
-          src="/legacy.html?embed=builder"
+          src="/workspace.html?embed=builder"
           sandbox="allow-scripts allow-same-origin allow-popups"
           onLoad={() => {
             setFrameReady(true);

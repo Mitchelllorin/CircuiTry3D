@@ -21,6 +21,6 @@
   status = 200
 
 [[headers]]
-  for = "/legacy.html"
+  for = "/workspace.html"
   [headers.values]
     X-Frame-Options = "SAMEORIGIN"

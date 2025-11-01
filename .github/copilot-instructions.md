@@ -23,7 +23,7 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 │       └── ...
 ├── public/
 │   ├── landing.html       # Landing page HTML
-│   ├── legacy.html        # Main circuit builder application
+│   ├── workspace.html     # Main circuit builder application
 │   └── arena.html         # Component testing arena
 ├── index.html             # Root HTML template
 ├── vite.config.ts         # Vite configuration
@@ -61,7 +61,7 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 - New pages should be added to `src/pages/`
 
 ### Key Considerations
-1. **iframe Integration**: The current implementation uses iframes to embed legacy HTML pages (landing.html, legacy.html, arena.html). Be mindful of this architecture when making changes.
+1. **iframe Integration**: The current implementation uses iframes to embed static HTML pages (landing.html, workspace.html, arena.html). Be mindful of this architecture when making changes.
 2. **Sandbox Attributes**: iframes use specific sandbox attributes (`allow-scripts allow-same-origin allow-popups`) for security. Maintain these when working with iframe components.
 3. **Routing**: The app uses React Router with the following routes:
    - `/` - Home/Landing page
@@ -90,9 +90,9 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 3. If needed, create corresponding HTML in `public/`
 
 ### Modifying the Circuit Builder
-- The main circuit builder logic is in `public/legacy.html`
+- The main circuit builder logic is in `public/workspace.html`
 - React wrapper is in `src/pages/Builder.tsx`
-- Consider iframe communication patterns for React-to-legacy integration
+- Consider iframe communication patterns for React-to-workspace integration
 
 ### Styling
 - Current styling is inline or within HTML files
