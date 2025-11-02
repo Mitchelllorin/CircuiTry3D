@@ -20,7 +20,9 @@ type BuilderInvokeAction =
   | "show-wire-guide"
   | "show-shortcuts"
   | "show-about"
-  | "open-arena";
+  | "open-arena"
+  | "set-tool"
+  | "run-simulation";
 
 type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
@@ -43,6 +45,18 @@ type ComponentAction = {
   label: string;
   action: "component" | "junction";
   builderType?: "battery" | "resistor" | "led" | "switch";
+};
+
+type BuilderToolId = "select" | "wire" | "measure";
+
+type QuickAction = {
+  id: string;
+  label: string;
+  description: string;
+  kind: "tool" | "action";
+  action: BuilderInvokeAction;
+  data?: Record<string, unknown>;
+  tool?: BuilderToolId;
 };
 
 type HelpSection = {
@@ -74,11 +88,41 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
   { id: "junction", icon: "J", label: "Junction", action: "junction" },
 ];
 
-const TOOL_BUTTONS = [
-  { id: "select", label: "Select Tool", description: "Tap components to edit" },
-  { id: "draw", label: "Wire Tool", description: "Drag to sketch new connections" },
-  { id: "measure", label: "Measure", description: "Check distances and alignment" },
-  { id: "simulate", label: "Run Simulation", description: "Preview circuit behaviour" },
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: "select",
+    label: "Select Tool",
+    description: "Tap components to edit",
+    kind: "tool",
+    action: "set-tool",
+    data: { tool: "select" },
+    tool: "select",
+  },
+  {
+    id: "wire",
+    label: "Wire Tool",
+    description: "Drag to sketch new connections",
+    kind: "tool",
+    action: "set-tool",
+    data: { tool: "wire" },
+    tool: "wire",
+  },
+  {
+    id: "measure",
+    label: "Measure",
+    description: "Check distances and alignment",
+    kind: "tool",
+    action: "set-tool",
+    data: { tool: "measure" },
+    tool: "measure",
+  },
+  {
+    id: "simulate",
+    label: "Run Simulation",
+    description: "Preview circuit behaviour",
+    kind: "action",
+    action: "run-simulation",
+  },
 ];
 
 const PROPERTY_ITEMS = [
@@ -704,6 +748,7 @@ export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
   const pendingArenaRequests = useRef<Map<string, { openWindow: boolean }>>(new Map());
+  const simulationPulseTimer = useRef<number | null>(null);
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
@@ -717,6 +762,8 @@ export default function Builder() {
   });
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
+  const [activeQuickTool, setActiveQuickTool] = useState<BuilderToolId>("select");
+  const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
   const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
@@ -741,6 +788,28 @@ export default function Builder() {
 
       if (type === "legacy:ready") {
         setFrameReady(true);
+        return;
+      }
+
+      if (type === "legacy:tool-state") {
+        const tool = typeof (payload as { tool?: string })?.tool === "string" ? (payload as { tool?: string }).tool : undefined;
+        if (tool === "wire" || tool === "measure" || tool === "select") {
+          setActiveQuickTool(tool);
+        } else {
+          setActiveQuickTool("select");
+        }
+        return;
+      }
+
+      if (type === "legacy:simulation") {
+        if (simulationPulseTimer.current !== null) {
+          window.clearTimeout(simulationPulseTimer.current);
+        }
+        setSimulatePulsing(true);
+        simulationPulseTimer.current = window.setTimeout(() => {
+          setSimulatePulsing(false);
+          simulationPulseTimer.current = null;
+        }, 1400);
         return;
       }
 
@@ -792,6 +861,15 @@ export default function Builder() {
       window.removeEventListener("message", handleMessage);
     };
   }, [appBasePath]);
+
+  useEffect(() => {
+    return () => {
+      if (simulationPulseTimer.current !== null) {
+        window.clearTimeout(simulationPulseTimer.current);
+        simulationPulseTimer.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     document.body.classList.add("builder-body");
@@ -1012,6 +1090,28 @@ export default function Builder() {
     [postToBuilder]
   );
 
+  const handleQuickAction = useCallback(
+    (quickAction: QuickAction) => {
+      triggerBuilderAction(quickAction.action, quickAction.data);
+
+      if (quickAction.kind === "tool" && quickAction.tool) {
+        setActiveQuickTool(quickAction.tool);
+      }
+
+      if (quickAction.id === "simulate") {
+        if (simulationPulseTimer.current !== null) {
+          window.clearTimeout(simulationPulseTimer.current);
+        }
+        setSimulatePulsing(true);
+        simulationPulseTimer.current = window.setTimeout(() => {
+          setSimulatePulsing(false);
+          simulationPulseTimer.current = null;
+        }, 1200);
+      }
+    },
+    [triggerBuilderAction]
+  );
+
   const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
@@ -1103,12 +1203,27 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Quick Actions</span>
               <div className="slider-stack">
-                {TOOL_BUTTONS.map((button) => (
-                  <button key={button.id} type="button" className="slider-btn slider-btn-stacked" title={button.description}>
-                    <span className="slider-label">{button.label}</span>
-                    <span className="slider-description">{button.description}</span>
-                  </button>
-                ))}
+                {QUICK_ACTIONS.map((action) => {
+                  const isActive = action.kind === "tool" && action.tool === activeQuickTool;
+                  const isSimulation = action.id === "simulate";
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => handleQuickAction(action)}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      aria-pressed={action.kind === "tool" ? isActive : undefined}
+                      data-active={action.kind === "tool" && isActive ? "true" : undefined}
+                      data-pulse={isSimulation && isSimulatePulsing ? "true" : undefined}
+                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{action.description}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="slider-section">

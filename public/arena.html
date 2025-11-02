@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
-  <title>CircuiTry3D - Component Arena</title>
+  <title>CircuiTry3D ? Component Arena</title>
   <style>
     :root {
       --safe-top: env(safe-area-inset-top, 0px);
@@ -334,11 +334,11 @@
         </div>
       </section>
       <section class="panel-section">
-        <div class="section-heading">Metrics — Component A</div>
+        <div class="section-heading">Metrics ? Component A</div>
         <div id="metrics-a" class="metric-grid"></div>
       </section>
       <section class="panel-section compare-only">
-        <div class="section-heading">Metrics — Component B</div>
+        <div class="section-heading">Metrics ? Component B</div>
         <div id="metrics-b" class="metric-grid"></div>
       </section>
       <section class="panel-section compare-only">
@@ -1232,7 +1232,7 @@
 
       function formatWithUnit(value, unit) {
         if (!Number.isFinite(value)) {
-          return "—";
+          return "?";
         }
         const abs = Math.abs(value);
         let scaled = value;
@@ -1257,7 +1257,7 @@
 
       function formatPercent(value) {
         if (!Number.isFinite(value)) {
-          return "—";
+          return "?";
         }
         const rounded = value.toFixed(1);
         const sign = value > 0 ? "+" : "";
@@ -1266,7 +1266,7 @@
 
       function formatAngle(value) {
         if (!Number.isFinite(value)) {
-          return "—";
+          return "?";
         }
         return `${value.toFixed(1)} deg`;
       }
