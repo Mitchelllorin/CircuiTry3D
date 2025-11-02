@@ -498,7 +498,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Drag to move components, long-press to edit values, and use two-finger gestures to zoom or pan.",
-      "Keyboard: W toggles wire mode, T toggles rotate mode, Space toggles the legacy menu.",
+      "Keyboard: W toggles wire mode, T toggles rotate mode, Space toggles the builder menu.",
       "Quick keys add components instantly: B, R, L, S, and J.",
     ],
   },
@@ -671,7 +671,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
     bullets: [
       "W - toggle wire mode",
       "T - toggle rotate mode",
-      "Space - toggle the legacy menu",
+      "Space - toggle the builder menu",
       "Esc - close menus or cancel the active mode",
     ],
   },
@@ -751,7 +751,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
     bullets: [
       "Electron flow and conventional current particle systems show movement through wires.",
       "Polarity indicators mark positive and negative terminals at a glance.",
-      "Branding overlay can be toggled inside the legacy interface.",
+      "Branding overlay can be toggled inside the interface.",
     ],
   },
   {
@@ -816,7 +816,7 @@ const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: st
   },
   "tutorial": {
     title: "Guided Tutorial",
-    description: "Follow the original legacy walkthrough rebuilt for the modern interface.",
+    description: "Follow the guided walkthrough tailored for the modern interface.",
     sections: TUTORIAL_SECTIONS,
   },
   "wire-guide": {
@@ -836,7 +836,7 @@ const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: st
   },
   "about": {
     title: "About CircuiTry3D",
-    description: "Review feature highlights, learning goals, and support resources from the legacy release.",
+    description: "Review feature highlights, learning goals, and support resources.",
     sections: ABOUT_SECTIONS,
   },
 };
@@ -851,7 +851,7 @@ const HELP_ENTRIES: HelpEntry[] = [
   {
     id: "tutorial",
     label: "Guided Tutorial",
-    description: "Step-by-step quick start copied from the legacy onboarding flow.",
+    description: "Step-by-step quick start for the onboarding flow.",
     view: "tutorial",
   },
   {
