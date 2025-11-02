@@ -53,11 +53,12 @@
         }
 
         .landing-logo-image {
-            width: clamp(140px, 40vw, 200px);
-            aspect-ratio: 1 / 1;
-            border-radius: 36px;
+            width: clamp(220px, 68vw, 360px);
+            aspect-ratio: 16 / 6;
+            border-radius: 28px;
             display: block;
             box-shadow: 0 0 16px rgba(0, 255, 136, 0.45), 0 0 32px rgba(0, 136, 255, 0.28);
+            overflow: hidden;
         }
 
         .logo-pulse {
@@ -96,8 +97,8 @@
         }
 
         .circuit-preview {
-            width: min(82vw, 340px);
-            aspect-ratio: 1 / 1;
+            width: min(82vw, 360px);
+            aspect-ratio: 16 / 9;
             border: 3px solid rgba(0, 255, 136, 0.85);
             border-radius: 28px;
             background: rgba(5, 14, 28, 0.7);
@@ -308,12 +309,16 @@
     <div class="landing-page">
         <h1 class="landing-logo logo-pulse">
             <span class="sr-only">CircuiTry3D</span>
-            <img src="circuit-logo.svg" alt="" aria-hidden="true" class="landing-logo-image" />
+            <svg class="landing-logo-image" role="img" aria-hidden="true" viewBox="0 60 512 160" preserveAspectRatio="xMidYMid meet">
+                <use href="circuit-logo.svg#logo-wordmark" />
+            </svg>
         </h1>
         <p class="landing-subtitle">Professional Circuit Design</p>
 
         <div class="circuit-preview" aria-hidden="true">
-            <img src="circuit-logo.svg" alt="CircuiTry3D circuit logo" class="square-logo" />
+            <svg class="square-logo" role="presentation" viewBox="0 180 512 248" preserveAspectRatio="xMidYMid meet">
+                <use href="circuit-logo.svg#circuit-panel" />
+            </svg>
             <svg class="photon-overlay" viewBox="0 0 512 512" role="presentation" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <defs>
                     <path id="photon-path" d="M 126 209 H 384 V 297 H 126 Z" />
