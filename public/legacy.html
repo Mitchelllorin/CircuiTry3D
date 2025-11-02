@@ -2670,6 +2670,8 @@
         let scene, camera, renderer, raycaster, mouse;
         let components = [], wires = [], junctions = [];
         let isWireMode = false, isRotateMode = false, wireStart = null;
+        let isMeasureMode = false;
+        let measureStartPoint = null;
         let isDragging = false, selectedComponent = null;
         let currentFlowParticles = [];
         let menuVisible = isEmbedded ? false : true;
@@ -2797,6 +2799,39 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function notifyParentToolState(tool) {
+            if (!tool) {
+                return;
+            }
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:tool-state', payload: { tool } }, '*');
+                } catch (error) {
+                    console.warn('Builder bridge: unable to share tool state', error);
+                }
+            }
+        }
+
+        function notifyParentSimulation(payload) {
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:simulation', payload }, '*');
+                } catch (error) {
+                    console.warn('Builder bridge: unable to share simulation state', error);
+                }
+            }
+        }
+
+        function notifyParentMeasurement(payload) {
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:measurement', payload }, '*');
+                } catch (error) {
+                    console.warn('Builder bridge: unable to share measurement result', error);
+                }
+            }
+        }
+
         function handleBuilderBridgeMessage(event) {
             const expectedSource = window.parent && window.parent !== window ? window.parent : null;
             if (expectedSource && event.source !== expectedSource) {
@@ -2893,6 +2928,11 @@ body.android-optimized.menu-visible .status {
                             case 'toggle-labels':
                                 if (typeof toggleLabels === 'function') toggleLabels();
                                 break;
+                            case 'set-tool':
+                                if (typeof data.tool === 'string' && typeof setBuilderTool === 'function') {
+                                    setBuilderTool(data.tool);
+                                }
+                                break;
                             case 'load-preset':
                                 if (typeof data.preset === 'string' && typeof loadPresetCircuit === 'function') {
                                     loadPresetCircuit(data.preset);
@@ -2918,6 +2958,9 @@ body.android-optimized.menu-visible .status {
                                 break;
                             case 'open-arena':
                                 if (typeof openArena === 'function') openArena();
+                                break;
+                            case 'run-simulation':
+                                if (typeof runSimulation === 'function') runSimulation();
                                 break;
                             default:
                                 break;
@@ -3966,6 +4009,7 @@ body.android-optimized.menu-visible .status {
 
                 notifyParentReady();
                 notifyParentAnalysisState();
+                notifyParentToolState('select');
 
             } catch (error) {
                 console.error('Initialization error:', error);
@@ -5600,7 +5644,20 @@ body.android-optimized.menu-visible .status {
             if (connectionHits.length > 0) {
                 const hitPoint = connectionHits[0].object;
                 if (hitPoint.userData?.isConnectionPoint) {
-                    handleConnectionPointClick(hitPoint.userData);
+                    if (isMeasureMode) {
+                        if (typeof hitPoint.getWorldPosition === 'function') {
+                            const worldPosition = new THREE.Vector3();
+                            hitPoint.getWorldPosition(worldPosition);
+                            handleMeasurementPoint(worldPosition);
+                        } else {
+                            const worldPos = screenToWorld(clientX, clientY);
+                            if (worldPos) {
+                                handleMeasurementPoint(worldPos);
+                            }
+                        }
+                    } else {
+                        handleConnectionPointClick(hitPoint.userData);
+                    }
                     return true;
                 }
             }
@@ -5623,16 +5680,39 @@ body.android-optimized.menu-visible .status {
                 if (componentHits.length > 0) {
                     const hitBox = componentHits[0].object;
                     if (hitBox.userData?.component) {
-                        handleComponentClick(hitBox.userData.component);
+                        if (isMeasureMode) {
+                            const worldPos = screenToWorld(clientX, clientY);
+                            if (worldPos) {
+                                handleMeasurementPoint(worldPos);
+                            }
+                        } else {
+                            handleComponentClick(hitBox.userData.component);
+                        }
                         return true;
                     }
                     if (hitBox.userData?.junction) {
-                        handleJunctionClick(hitBox.userData.junction);
+                        if (isMeasureMode) {
+                            const worldPos = screenToWorld(clientX, clientY);
+                            if (worldPos) {
+                                handleMeasurementPoint(worldPos);
+                            }
+                        } else {
+                            handleJunctionClick(hitBox.userData.junction);
+                        }
                         return true;
                     }
                 }
             }
             
+            if (isMeasureMode) {
+                const worldPos = screenToWorld(clientX, clientY);
+                if (worldPos) {
+                    handleMeasurementPoint(worldPos);
+                    return true;
+                }
+                return false;
+            }
+
             handleGroundClick(clientX, clientY);
             return false;
         }
@@ -7038,41 +7118,232 @@ Made with ? for visual learners everywhere!
             setStatus(`? Created textbook-style parallel circuit with ${targetObjs.length} branches`);
         }
 
-        function toggleWireMode() {
-            isWireMode = !isWireMode;
+        function enableWireMode(options = {}) {
+            const { silent = false } = options;
+            if (isWireMode) {
+                if (!silent) {
+                    setStatus('?? WIRE MODE! Touch terminals to connect components');
+                }
+                notifyParentToolState('wire');
+                return;
+            }
+
+            exitMeasureMode({ silent: true, skipNotify: true });
+            isWireMode = true;
             isRotateMode = false;
-            
+
             if (wireStart) {
                 highlightConnectionPoint(wireStart, false);
                 wireStart = null;
             }
-            
+
             updateButtonStates();
             closeAllSubmenus();
-            
-            if (isWireMode) {
+
+            if (!silent) {
                 setStatus('?? WIRE MODE! Touch terminals to connect components');
-            } else {
+            }
+
+            notifyParentToolState('wire');
+        }
+
+        function disableWireMode(options = {}) {
+            const { silent = false, skipNotify = false } = options;
+            if (!isWireMode) {
+                if (!skipNotify) {
+                    const nextTool = isMeasureMode ? 'measure' : (isRotateMode ? 'rotate' : 'select');
+                    notifyParentToolState(nextTool);
+                }
+                return;
+            }
+
+            if (wireStart) {
+                highlightConnectionPoint(wireStart, false);
+                wireStart = null;
+            }
+
+            isWireMode = false;
+            updateButtonStates();
+            closeAllSubmenus();
+
+            if (!silent) {
                 setStatus('?? Wire mode disabled');
+            }
+
+            if (!skipNotify) {
+                const nextTool = isMeasureMode ? 'measure' : (isRotateMode ? 'rotate' : 'select');
+                notifyParentToolState(nextTool);
+            }
+        }
+
+        function enableRotateMode(options = {}) {
+            const { silent = false } = options;
+            if (isRotateMode) {
+                if (!silent) {
+                    setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
+                }
+                notifyParentToolState('rotate');
+                return;
+            }
+
+            disableWireMode({ silent: true, skipNotify: true });
+            exitMeasureMode({ silent: true, skipNotify: true });
+
+            isRotateMode = true;
+            updateButtonStates();
+            closeAllSubmenus();
+
+            if (!silent) {
+                setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
+            }
+
+            notifyParentToolState('rotate');
+        }
+
+        function disableRotateMode(options = {}) {
+            const { silent = false, skipNotify = false } = options;
+            if (!isRotateMode) {
+                if (!skipNotify) {
+                    const nextTool = isWireMode ? 'wire' : (isMeasureMode ? 'measure' : 'select');
+                    notifyParentToolState(nextTool);
+                }
+                return;
+            }
+
+            isRotateMode = false;
+            updateButtonStates();
+            closeAllSubmenus();
+
+            if (!silent) {
+                setStatus('?? Rotate mode disabled');
+            }
+
+            if (!skipNotify) {
+                const nextTool = isWireMode ? 'wire' : (isMeasureMode ? 'measure' : 'select');
+                notifyParentToolState(nextTool);
+            }
+        }
+
+        function enterMeasureMode(options = {}) {
+            const { silent = false } = options;
+            if (isMeasureMode) {
+                if (!silent) {
+                    setStatus('?? Measure mode active - select the next point to measure');
+                }
+                notifyParentToolState('measure');
+                return;
+            }
+
+            disableWireMode({ silent: true, skipNotify: true });
+            disableRotateMode({ silent: true, skipNotify: true });
+
+            isMeasureMode = true;
+            measureStartPoint = null;
+
+            if (!silent) {
+                setStatus('?? Measure mode active - pick two points to calculate distance');
+            }
+
+            notifyParentToolState('measure');
+        }
+
+        function exitMeasureMode(options = {}) {
+            const { silent = false, skipNotify = false } = options;
+            if (!isMeasureMode) {
+                return;
+            }
+
+            isMeasureMode = false;
+            measureStartPoint = null;
+
+            if (!silent) {
+                setStatus('?? Measure mode disabled');
+            }
+
+            if (!skipNotify) {
+                const nextTool = isWireMode ? 'wire' : (isRotateMode ? 'rotate' : 'select');
+                notifyParentToolState(nextTool);
+            }
+        }
+
+        function setBuilderTool(tool) {
+            switch ((tool || '').toLowerCase()) {
+                case 'wire':
+                    enableWireMode();
+                    break;
+                case 'measure':
+                    enterMeasureMode();
+                    break;
+                case 'rotate':
+                    enableRotateMode();
+                    break;
+                case 'select':
+                case 'default':
+                case 'none':
+                default:
+                    disableWireMode({ silent: true, skipNotify: true });
+                    disableRotateMode({ silent: true, skipNotify: true });
+                    exitMeasureMode({ silent: true, skipNotify: true });
+                    setStatus('?? Select mode active - tap components to edit');
+                    notifyParentToolState('select');
+                    break;
+            }
+        }
+
+        function handleMeasurementPoint(worldPosition) {
+            if (!isMeasureMode || !worldPosition) {
+                return;
+            }
+
+            const point = (typeof worldPosition.clone === 'function')
+                ? worldPosition.clone()
+                : new THREE.Vector3(worldPosition.x || 0, worldPosition.y || 0, worldPosition.z || 0);
+
+            if (!measureStartPoint) {
+                measureStartPoint = point.clone();
+                setStatus('?? Measurement started - choose a second point');
+                notifyParentMeasurement({ step: 'start', point: measureStartPoint.toArray() });
+                return;
+            }
+
+            const distance = point.distanceTo(measureStartPoint);
+            const rounded = Number.isFinite(distance) ? distance.toFixed(2) : '0.00';
+            setStatus(`?? Distance measured: ${rounded} units`);
+
+            notifyParentMeasurement({
+                step: 'complete',
+                distance,
+                start: measureStartPoint.toArray(),
+                end: point.toArray()
+            });
+
+            measureStartPoint = null;
+        }
+
+        function runSimulation() {
+            try {
+                const result = analyzeCircuit();
+                notifyParentSimulation({ success: true, result: result || null });
+            } catch (error) {
+                console.error('Simulation error:', error);
+                setStatus('? Simulation failed - see console for details');
+                notifyParentSimulation({ success: false, error: error ? String(error) : 'unknown' });
+            }
+        }
+
+        function toggleWireMode() {
+            if (isWireMode) {
+                disableWireMode();
+            } else {
+                enableWireMode();
             }
         }
 
         function toggleRotateMode() {
-            isRotateMode = !isRotateMode;
-            isWireMode = false;
-            
-            if (wireStart) {
-                highlightConnectionPoint(wireStart, false);
-                wireStart = null;
-            }
-            
-            updateButtonStates();
-            closeAllSubmenus();
-            
             if (isRotateMode) {
-                setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
+                disableRotateMode();
             } else {
-                setStatus('?? Rotate mode disabled');
+                enableRotateMode();
             }
         }
 
@@ -7095,32 +7366,50 @@ Made with ? for visual learners everywhere!
         // Circuit analysis
         function analyzeCircuit() {
             const batteries = components.filter(c => c.type === 'battery');
-            
+
             if (batteries.length === 0) {
+                const fallback = {
+                    voltage: 0,
+                    current: 0,
+                    resistance: Infinity,
+                    power: 0,
+                    isComplete: false,
+                    reason: 'no-battery'
+                };
                 updateCircuitDisplay(0, 0, Infinity, 0);
                 animateCurrentFlow(false, 0);
                 setStatus('?? ADD A BATTERY to start W.I.R.E. analysis!');
-                return;
+                return fallback;
             }
-            
+
             if (wires.length === 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
+                const fallback = {
+                    voltage: totalVoltage,
+                    current: 0,
+                    resistance: Infinity,
+                    power: 0,
+                    isComplete: false,
+                    reason: 'no-wires'
+                };
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
                 animateCurrentFlow(false, 0);
                 setStatus('?? ADD WIRES to complete the circuit for W.I.R.E. calculations!');
-                return;
+                return fallback;
             }
-            
+
             const result = performCircuitAnalysis();
             updateCircuitDisplay(result.voltage, result.current, result.resistance, result.power);
-            
+
             const shouldAnimate = result.isComplete && result.current > 0;
-            
+
             if (shouldAnimate) {
                 animateCurrentFlow(true, result.current);
             } else {
                 animateCurrentFlow(false, result.current);
             }
+
+            return result;
         }
 
         function performCircuitAnalysis() {
@@ -7137,7 +7426,8 @@ Made with ? for visual learners everywhere!
                     current: 0,
                     resistance: Infinity,
                     power: 0,
-                    isComplete: false
+                    isComplete: false,
+                    reason: 'open-switch'
                 };
             }
             
@@ -7165,7 +7455,8 @@ Made with ? for visual learners everywhere!
                         current: 0,
                         resistance: Infinity,
                         power: 0,
-                        isComplete: false
+                        isComplete: false,
+                        reason: 'incomplete'
                     };
                 }
                 
@@ -7218,7 +7509,8 @@ Made with ? for visual learners everywhere!
                     current: current,
                     resistance: totalResistance,
                     power: power,
-                    isComplete: true
+                    isComplete: true,
+                    reason: 'ok'
                 };
             } else {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
@@ -7228,7 +7520,8 @@ Made with ? for visual learners everywhere!
                     current: 0,
                     resistance: Infinity,
                     power: 0,
-                    isComplete: false
+                    isComplete: false,
+                    reason: connectedComponents.size === 0 ? 'no-components' : 'no-path'
                 };
             }
         }
@@ -8309,13 +8602,16 @@ Made with ? for visual learners everywhere!
                 saveState(); // Save for undo
             }
             
-            isWireMode = false;
-            isRotateMode = false;
+            disableWireMode({ silent: true, skipNotify: true });
+            disableRotateMode({ silent: true, skipNotify: true });
+            exitMeasureMode({ silent: true, skipNotify: true });
+            notifyParentToolState('select');
             wireStart = null;
             isDragging = false;
             selectedComponent = null;
             selectedComponents.clear();
             hideSnapIndicator();
+            measureStartPoint = null;
             currentPracticeCircuit = null; // Reset practice circuit
             // Note: Don't reset currentProblemIndex to allow "Clear" during practice sequence
             
