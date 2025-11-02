@@ -21,6 +21,8 @@ describe('Connectivity', () => {
       expect(graph.edges[0].wireId).toBe('wire1');
       expect(graph.nodes.get('node1')).toContain('node2');
       expect(graph.nodes.get('node2')).toContain('node1');
+      expect(node1.attachedWireIds.has('wire1')).toBe(true);
+      expect(node2.attachedWireIds.has('wire1')).toBe(true);
     });
 
     it('should connect nodes along a single polyline', () => {
@@ -61,6 +63,8 @@ describe('Connectivity', () => {
       
       expect(graph.edges).toHaveLength(2);
       expect(graph.nodes.get('node2')!.size).toBe(2); // junction connects to both nodes
+      expect(node2.attachedWireIds.has('wire1')).toBe(true);
+      expect(node2.attachedWireIds.has('wire2')).toBe(true);
     });
 
     it('should update wire attachedNodeIds', () => {

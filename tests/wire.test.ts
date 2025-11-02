@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createWire, insertPointIntoWire, getWireEndpoints } from '../src/model/wire';
+import { createWire, insertPointIntoWire, getWireEndpoints, ensurePointOnWire } from '../src/model/wire';
 import type { Vec2 } from '../src/model/types';
 
 describe('Wire Model', () => {
@@ -84,6 +84,36 @@ describe('Wire Model', () => {
       expect(wire.points[0]).toEqual({ x: 0, y: 0 });
       expect(wire.points[1]).toEqual({ x: 50, y: 0 });
       expect(wire.points[2]).toEqual({ x: 100, y: 0 });
+    });
+  });
+
+  describe('ensurePointOnWire', () => {
+    it('should return existing point when within tolerance', () => {
+      const wire = createWire([
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 20, y: 0 }
+      ]);
+
+      const result = ensurePointOnWire(wire, { x: 10, y: 0.2 }, 0.5);
+
+      expect(result.inserted).toBe(false);
+      expect(result.index).toBe(1);
+      expect(result.point).toEqual({ x: 10, y: 0 });
+    });
+
+    it('should insert new point and return the reference', () => {
+      const wire = createWire([
+        { x: 0, y: 0 },
+        { x: 20, y: 0 }
+      ]);
+
+      const result = ensurePointOnWire(wire, { x: 7, y: 0 }, 1);
+
+      expect(result.inserted).toBe(true);
+      expect(result.index).toBe(1);
+      expect(result.point).toEqual({ x: 7, y: 0 });
+      expect(wire.points[result.index]).toBe(result.point);
     });
   });
 

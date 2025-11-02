@@ -14,6 +14,7 @@ const INTERSECT_TOLERANCE = 4; // px - detect crossing intersections
 const MERGE_RADIUS = 6; // px - merge nodes when within this distance
 const WIRE_HIT_RADIUS = 10; // px - detect clicks on existing wire segments
 const ROUTING_GRID_SIZE = 24; // px - grid cell size for routing mode
+const MIN_WIRE_LENGTH = 1; // px - ignore jitter-sized wires
 
 export type WireMode = 'free' | 'schematic' | 'star' | 'routing';
 
@@ -172,6 +173,18 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     return best;
   }, [wires]);
 
+  const computePathLength = useCallback((path: Vec2[]) => {
+    if (path.length < 2) {
+      return 0;
+    }
+
+    let length = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      length += distance(path[i], path[i + 1]);
+    }
+    return length;
+  }, []);
+
   /**
    * Get mouse position relative to canvas
    */
@@ -203,22 +216,27 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     if (!snapNode) {
       const wireHit = findWireHit(pos);
       if (wireHit) {
-        const junctionNode = createNode('junction', wireHit.point);
-
         const updatedWire = cloneWire(wireHit.wire);
-        ensurePointOnWire(updatedWire, wireHit.point, 1);
+        const ensured = ensurePointOnWire(updatedWire, wireHit.point, 1);
+        if (ensured.index !== -1 && ensured.point) {
+          const existingNode = findClosestNode(ensured.point, nodes, MERGE_RADIUS / 2);
+          const junctionNode = existingNode ?? createNode('junction', ensured.point);
+          junctionNode.pos = { ...ensured.point };
 
-        const updatedWires = [
-          ...wires.slice(0, wireHit.wireIndex),
-          updatedWire,
-          ...wires.slice(wireHit.wireIndex + 1)
-        ];
-        const updatedNodes = [...nodes, junctionNode];
+          const updatedWires = [
+            ...wires.slice(0, wireHit.wireIndex),
+            updatedWire,
+            ...wires.slice(wireHit.wireIndex + 1)
+          ];
+          const updatedNodes = existingNode ? nodes : [...nodes, junctionNode];
 
-        onWiresChange(updatedWires);
-        onNodesChange(updatedNodes);
+          rebuildAdjacencyForWires(updatedWires, updatedNodes);
 
-        snapNode = junctionNode;
+          onWiresChange(updatedWires);
+          onNodesChange(updatedNodes);
+
+          snapNode = junctionNode;
+        }
       }
     }
 
@@ -283,6 +301,18 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     const options = mode === 'schematic' ? { preferHorizontal: e.shiftKey } : undefined;
 
     const finalPath = buildWirePath(startPos, endPos, options);
+    const pathLength = computePathLength(finalPath);
+
+    if (finalPath.length < 2 || pathLength < MIN_WIRE_LENGTH) {
+      setIsDrawing(false);
+      setCurrentWire([]);
+      setSnapTarget(null);
+      setHoveredNode(null);
+      setHoveredWireInfo(null);
+      startNodeRef.current = null;
+      return;
+    }
+
     const newWire = createWire(finalPath);
 
     const workingWires = wires.map((wire) => cloneWire(wire));
@@ -332,13 +362,13 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
           }
 
           const ensuredExisting = ensurePointOnWire(wire, intersection, 1);
-          if (ensuredExisting.index === -1) {
+          if (ensuredExisting.index === -1 || !ensuredExisting.point) {
             continue;
           }
 
-          const actualPoint = wire.points[ensuredExisting.index];
+          const actualPoint = ensuredExisting.point;
           const ensureNew = ensurePointOnWire(newWire, actualPoint, 1);
-          if (ensureNew.index === -1) {
+          if (ensureNew.index === -1 || !ensureNew.point) {
             continue;
           }
 
