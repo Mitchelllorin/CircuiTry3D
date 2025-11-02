@@ -7,160 +7,1306 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
-  <title>CircuiTry3D • Component Arena</title>
+  <title>CircuiTry3D - Component Arena</title>
   <style>
-    :root { --safe-top: env(safe-area-inset-top, 0px); --safe-left: env(safe-area-inset-left, 0px); --safe-right: env(safe-area-inset-right, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); }
-    html, body { margin: 0; height: 100%; background: #0a0a1a; color: #fff; font-family: system-ui, sans-serif; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); box-sizing: border-box; }
-    .hud { position: fixed; top: calc(12px + var(--safe-top)); left: calc(12px + var(--safe-left)); right: calc(12px + var(--safe-right)); display: flex; gap: 8px; flex-wrap: wrap; z-index: 2; }
-    .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid #334155; background: #111827; color: #e5e7eb; font-weight: 700; cursor: pointer; touch-action: manipulation; }
-    .panel { position: fixed; top: calc(60px + var(--safe-top)); left: calc(12px + var(--safe-left)); width: 320px; max-width: calc(100% - 24px - var(--safe-left) - var(--safe-right)); background: rgba(0,0,0,0.65); backdrop-filter: blur(10px); border: 1px solid #334155; border-radius: 12px; padding: 12px; z-index: 2; }
-    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .row label { width: 120px; font-size: 12px; color: #94a3b8; }
-    .row input, .row select { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #334155; background: #0b1220; color: #e5e7eb; }
-    .stat { font-size: 12px; color: #a5b4fc; margin-top: 8px; }
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --panel-bg: rgba(0, 0, 0, 0.68);
+      --panel-border: rgba(136, 204, 255, 0.28);
+      --panel-border-strong: rgba(0, 255, 136, 0.45);
+      --metric-bg: rgba(12, 22, 42, 0.8);
+      --metric-border: rgba(136, 204, 255, 0.22);
+      --metric-accent-a: rgba(0, 255, 136, 0.45);
+      --metric-accent-b: rgba(136, 204, 255, 0.45);
+      --metric-accent-delta: rgba(255, 160, 0, 0.5);
+      --text-muted: #94a3b8;
+      --text-strong: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: #0a0a1a;
+      color: var(--text-strong);
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+      overflow: hidden;
+    }
+
+    .hud {
+      position: fixed;
+      top: calc(12px + var(--safe-top));
+      left: calc(12px + var(--safe-left));
+      right: calc(12px + var(--safe-right));
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      z-index: 10;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      background: rgba(17, 24, 39, 0.88);
+      color: var(--text-strong);
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      font-size: 14px;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--panel-border-strong);
+      background: rgba(24, 32, 48, 0.92);
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .file-btn {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .file-btn input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .panel {
+      position: fixed;
+      top: calc(72px + var(--safe-top));
+      left: calc(12px + var(--safe-left));
+      width: 340px;
+      max-width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
+      max-height: calc(100vh - 96px - var(--safe-top) - var(--safe-bottom));
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: hidden;
+      z-index: 8;
+    }
+
+    .panel-scroll {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-right: 4px;
+    }
+
+    .panel-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .panel-scroll::-webkit-scrollbar-thumb {
+      background: rgba(136, 204, 255, 0.3);
+      border-radius: 999px;
+    }
+
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .section-heading {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.82);
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .row label {
+      width: 130px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .row input,
+    .row select {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      background: rgba(8, 15, 28, 0.92);
+      color: var(--text-strong);
+      font-size: 13px;
+    }
+
+    .import-status {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.85);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      background: rgba(12, 22, 42, 0.65);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .metric-card {
+      background: var(--metric-bg);
+      border: 1px solid var(--metric-border);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .metric-card.metric-accent-a {
+      border-color: var(--metric-accent-a);
+    }
+
+    .metric-card.metric-accent-b {
+      border-color: var(--metric-accent-b);
+    }
+
+    .metric-card.metric-accent-delta {
+      border-color: var(--metric-accent-delta);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.85);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .metric-value {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-strong);
+    }
+
+    .metric-detail {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.85);
+    }
+
+    .metric-empty {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.7);
+      padding: 8px 6px;
+    }
+
+    .stat {
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.9);
+      background: rgba(12, 22, 42, 0.55);
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      min-height: 40px;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .compare-only {
+      display: none;
+    }
+
     @media (pointer: coarse) {
-      .btn { min-height: 48px; padding: 12px 18px; font-size: 15px; }
-      .row label { font-size: 13px; }
-      .row input, .row select { min-height: 44px; }
+      .btn {
+        min-height: 48px;
+        font-size: 15px;
+        padding: 12px 18px;
+      }
+
+      .row label {
+        font-size: 13px;
+      }
+
+      .row input,
+      .row select {
+        min-height: 44px;
+      }
+
+      .panel {
+        width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
+        max-width: none;
+      }
     }
   </style>
 </head>
 <body>
   <div class="hud">
-    <button class="btn" onclick="resetArena()">Reset</button>
-    <button class="btn" onclick="runTest()">Run Test</button>
-    <button class="btn" onclick="exportResults()">Export</button>
+    <button class="btn" id="btn-reset">Reset</button>
+    <button class="btn" id="btn-run">Run Test</button>
+    <button class="btn" id="btn-export">Export Results</button>
+    <button class="btn" id="btn-import-builder">Load Builder Export</button>
+    <label class="btn file-btn">
+      Import JSON
+      <input type="file" id="input-import-json" accept="application/json" />
+    </label>
   </div>
   <div class="panel">
-    <div class="row"><label>Mode</label>
-      <select id="mode">
-        <option value="single">Single</option>
-        <option value="compare">Compare (A vs B)</option>
-      </select>
+    <div class="panel-scroll">
+      <section class="panel-section">
+        <div class="section-heading">Import Sources</div>
+        <div id="import-status" class="import-status">Using reference component library. Load a builder export to sync live components.</div>
+        <div class="row">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="single">Single Component</option>
+            <option value="compare">Compare (A vs B)</option>
+          </select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Component Selection</div>
+        <div class="row">
+          <label for="component-a">Component A</label>
+          <select id="component-a"></select>
+        </div>
+        <div class="row compare-only">
+          <label for="component-b">Component B</label>
+          <select id="component-b"></select>
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Test Variables</div>
+        <div class="row">
+          <label for="input-voltage">Voltage (V)</label>
+          <input id="input-voltage" type="number" value="5" step="0.1" />
+        </div>
+        <div class="row">
+          <label for="input-frequency">Frequency (Hz)</label>
+          <input id="input-frequency" type="number" value="1000" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-temperature">Ambient Temp (C)</label>
+          <input id="input-temperature" type="number" value="25" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-humidity">Humidity (%)</label>
+          <input id="input-humidity" type="number" value="45" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duty">Duty Cycle (%)</label>
+          <input id="input-duty" type="number" value="100" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-duration">Duration (s)</label>
+          <input id="input-duration" type="number" value="60" step="1" />
+        </div>
+        <div class="row">
+          <label for="input-load">Load Impedance (Ohm)</label>
+          <input id="input-load" type="number" value="100" step="1" />
+        </div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Metrics — Component A</div>
+        <div id="metrics-a" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Metrics — Component B</div>
+        <div id="metrics-b" class="metric-grid"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Relative Delta</div>
+        <div id="metrics-delta" class="metric-grid"></div>
+      </section>
+      <section class="panel-section">
+        <div class="section-heading">Status</div>
+        <div class="stat" id="stat-out">Ready.</div>
+      </section>
     </div>
-    <hr style="border:none;border-top:1px solid #334155;margin:8px 0" />
-    <div class="row"><label>Comp A</label>
-      <select id="comp-type-a">
-        <option value="resistor">Resistor</option>
-        <option value="capacitor">Capacitor</option>
-        <option value="inductor">Inductor</option>
-        <option value="led">LED</option>
-      </select>
-    </div>
-    <div class="row"><label>Value A</label><input id="comp-value-a" type="number" value="100" /></div>
-    <div class="row compare-only" style="display:none"><label>Comp B</label>
-      <select id="comp-type-b">
-        <option value="resistor">Resistor</option>
-        <option value="capacitor">Capacitor</option>
-        <option value="inductor">Inductor</option>
-        <option value="led">LED</option>
-      </select>
-    </div>
-    <div class="row compare-only" style="display:none"><label>Value B</label><input id="comp-value-b" type="number" value="200" /></div>
-    <hr style="border:none;border-top:1px solid #334155;margin:8px 0" />
-    <div class="row"><label>Voltage (V)</label><input id="test-voltage" type="number" value="5" /></div>
-    <div class="row"><label>Frequency (Hz)</label><input id="test-frequency" type="number" value="1000" /></div>
-    <div class="stat" id="stat-out">Ready.</div>
   </div>
   <canvas id="arena"></canvas>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    let scene, camera, renderer, meshA, meshB;
-    const canvas = document.getElementById('arena');
+    (() => {
+      "use strict";
 
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0a0a1a);
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 2, 6);
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      const state = {
+        mode: "single",
+        components: [],
+        selectedA: null,
+        selectedB: null,
+        testVariables: {
+          voltage: 5,
+          frequencyHz: 1000,
+          temperatureC: 25,
+          ambientHumidityPercent: 45,
+          dutyCyclePercent: 100,
+          durationSeconds: 60,
+          loadImpedanceOhms: 100,
+        },
+        importManifest: null,
+        lastRun: null,
+      };
 
-      const light = new THREE.DirectionalLight(0xffffff, 1.2);
-      light.position.set(2, 4, 2);
-      scene.add(light);
-      scene.add(new THREE.AmbientLight(0x404040, 0.6));
+      const STORAGE_KEYS = {
+        prefix: "circuitry:arena-session:",
+        last: "circuitry:arena-session:last",
+      };
 
-      const geo = new THREE.BoxGeometry(1,1,1);
-      meshA = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x88ccff }));
-      meshB = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xffa500 }));
-      meshA.position.set(-1.2, 0, 0);
-      meshB.position.set( 1.2, 0, 0);
-      scene.add(meshA);
-      scene.add(meshB);
+      const COMPONENT_PROFILES = {
+        battery: {
+          defaultProperties: {
+            voltage: 9,
+            internalResistance: 0.2,
+            capacityMah: 1500,
+            tempCoeff: 0.0004,
+            thermalResistance: 35,
+            maxDischargeCurrent: 2,
+          },
+        },
+        resistor: {
+          defaultProperties: {
+            resistance: 100,
+            tempCoeff: 0.0005,
+            tolerance: 0.05,
+            thermalResistance: 75,
+          },
+        },
+        led: {
+          defaultProperties: {
+            forwardVoltage: 2,
+            seriesResistance: 120,
+            efficiency: 0.35,
+            thermalResistance: 120,
+          },
+        },
+        switch: {
+          defaultProperties: {
+            onResistance: 0.05,
+            offResistance: 1000000,
+            transitionTimeMs: 2,
+          },
+        },
+        capacitor: {
+          defaultProperties: {
+            capacitance: 1e-6,
+            esr: 0.1,
+            tempCoeff: 0.0002,
+            thermalResistance: 40,
+          },
+        },
+        inductor: {
+          defaultProperties: {
+            inductance: 1e-3,
+            resistance: 5,
+            thermalResistance: 55,
+          },
+        },
+      };
 
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+      const COMPONENT_COLORS = {
+        battery: 0xffd166,
+        resistor: 0x88ccff,
+        capacitor: 0x5eead4,
+        inductor: 0xa855f7,
+        led: 0xff4d6d,
+        switch: 0x2dd4bf,
+        default: 0xb4c6ef,
+        secondary: 0xffa500,
+      };
+
+      const DEFAULT_COMPONENT_CATALOG = [
+        {
+          id: "resistor-100",
+          name: "Resistor 100 Ohm",
+          type: "resistor",
+          properties: { resistance: 100, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 70 },
+          metadata: { displayName: "R100", source: "Reference Library" },
+        },
+        {
+          id: "resistor-330",
+          name: "Resistor 330 Ohm",
+          type: "resistor",
+          properties: { resistance: 330, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 80 },
+          metadata: { displayName: "R330", source: "Reference Library" },
+        },
+        {
+          id: "led-red",
+          name: "LED Red 2V",
+          type: "led",
+          properties: { forwardVoltage: 2, seriesResistance: 120, efficiency: 0.32, thermalResistance: 110 },
+          metadata: { displayName: "LED-R", source: "Reference Library" },
+        },
+        {
+          id: "battery-9v",
+          name: "Battery 9V",
+          type: "battery",
+          properties: { voltage: 9, internalResistance: 0.18, capacityMah: 1200, thermalResistance: 35 },
+          metadata: { displayName: "B9", source: "Reference Library" },
+        },
+        {
+          id: "capacitor-1u",
+          name: "Capacitor 1 uF",
+          type: "capacitor",
+          properties: { capacitance: 1e-6, esr: 0.12, tempCoeff: 0.0002, thermalResistance: 45 },
+          metadata: { displayName: "C1u", source: "Reference Library" },
+        },
+        {
+          id: "switch-basic",
+          name: "Toggle Switch",
+          type: "switch",
+          properties: { onResistance: 0.05, offResistance: 1000000, transitionTimeMs: 1.5 },
+          metadata: { displayName: "SW1", source: "Reference Library" },
+        },
+      ];
+
+      let scene;
+      let camera;
+      let renderer;
+      let meshA;
+      let meshB;
+
+      function initThree() {
+        const canvas = document.getElementById("arena");
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a1a);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 6);
+
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-      });
 
-      animate();
-    }
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(2, 4, 2);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040, 0.6));
 
-    function animate() {
-      requestAnimationFrame(animate);
-      if (meshA) meshA.rotation.y += 0.01;
-      if (meshB && document.getElementById('mode').value === 'compare') meshB.rotation.y -= 0.01;
-      renderer.render(scene, camera);
-    }
+        meshA = createComponentMesh(COMPONENT_COLORS.resistor);
+        meshA.position.set(-1.2, 0, 0);
+        scene.add(meshA);
 
-    function resetArena(){
-      document.getElementById('stat-out').textContent = 'Reset arena';
-      if (meshA) meshA.rotation.set(0,0,0);
-      if (meshB) meshB.rotation.set(0,0,0);
-    }
+        meshB = createComponentMesh(COMPONENT_COLORS.secondary);
+        meshB.position.set(1.2, 0, 0);
+        meshB.visible = false;
+        scene.add(meshB);
 
-    function runTest(){
-      const mode = document.getElementById('mode').value;
-      const typeA = document.getElementById('comp-type-a').value;
-      const valueA = parseFloat(document.getElementById('comp-value-a').value||0);
-      const typeB = document.getElementById('comp-type-b')?.value || typeA;
-      const valueB = parseFloat(document.getElementById('comp-value-b')?.value||0) || valueA;
-      const V = parseFloat(document.getElementById('test-voltage').value||0);
-      const f = parseFloat(document.getElementById('test-frequency').value||0);
+        window.addEventListener("resize", () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
-      function calc(type, value){
-        if (type === 'resistor') {
-          const I = V / (value || 1);
-          const P = V * I; return { I, P };
-        } else if (type === 'capacitor') {
-          const X = 1 / (2*Math.PI*f*(value||1e-6));
-          const I = V / X; return { X, I };
-        } else if (type === 'inductor') {
-          const X = 2*Math.PI*f*(value||1e-3);
-          const I = V / X; return { X, I };
-        } else if (type === 'led') {
-          const Vf = 2.0; const I = Math.max(0, (V - Vf)) / (value || 100); return { Vf, I };
+        animate();
+      }
+
+      function createComponentMesh(colorHex) {
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshStandardMaterial({ color: colorHex });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.userData.baseColor = colorHex;
+        return mesh;
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (meshA) {
+          meshA.rotation.y += 0.01;
         }
-        return {};
+        if (meshB && meshB.visible) {
+          meshB.rotation.y -= 0.01;
+        }
+        renderer.render(scene, camera);
       }
 
-      if (mode === 'compare') {
-        const A = calc(typeA, valueA);
-        const B = calc(typeB, valueB);
-        document.getElementById('stat-out').textContent = 'A: ' + JSON.stringify(A) + ' | B: ' + JSON.stringify(B);
-      } else {
-        const A = calc(typeA, valueA);
-        document.getElementById('stat-out').textContent = 'A: ' + JSON.stringify(A);
+      function normalizeComponent(raw, sourceLabel) {
+        if (!raw || typeof raw !== "object") {
+          return null;
+        }
+        const type = typeof raw.type === "string" ? raw.type.toLowerCase() : "generic";
+        const properties = Object.assign({}, COMPONENT_PROFILES[type]?.defaultProperties || {}, raw.properties || {});
+        const metadata = Object.assign({}, raw.metadata || {});
+        const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : `${type}-${Math.random().toString(36).slice(2, 9)}`;
+        const name = raw.name || metadata.displayName || raw.identifier || id;
+        return {
+          id,
+          name,
+          type,
+          properties,
+          metadata,
+          source: sourceLabel || metadata.source || "library",
+        };
       }
-    }
 
-    function exportResults(){
-      const text = document.getElementById('stat-out').textContent;
-      const blob = new Blob([text], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'arena-results.txt';
-      a.click();
-    }
+      function initializeCatalog() {
+        state.components = DEFAULT_COMPONENT_CATALOG.map((entry) => normalizeComponent(entry, "reference"))
+          .filter(Boolean);
+        state.selectedA = state.components[0] || null;
+        state.selectedB = state.components.length > 1 ? state.components[1] : state.components[0] || null;
+      }
 
-    document.getElementById('mode').addEventListener('change', (e) => {
-      const compare = e.target.value === 'compare';
-      document.querySelectorAll('.compare-only').forEach(el => el.style.display = compare ? '' : 'none');
-    });
-    
-    init();
+      function registerEvents() {
+        const resetBtn = document.getElementById("btn-reset");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", resetArena);
+        }
+
+        const runBtn = document.getElementById("btn-run");
+        if (runBtn) {
+          runBtn.addEventListener("click", runTest);
+        }
+
+        const exportBtn = document.getElementById("btn-export");
+        if (exportBtn) {
+          exportBtn.addEventListener("click", exportResults);
+        }
+
+        const importBuilderBtn = document.getElementById("btn-import-builder");
+        if (importBuilderBtn) {
+          importBuilderBtn.addEventListener("click", () => {
+            const loaded = loadLatestBuilderExport();
+            if (!loaded) {
+              setStatus("No builder export found. Sync from the builder to populate real components.");
+            }
+          });
+        }
+
+        const jsonInput = document.getElementById("input-import-json");
+        if (jsonInput) {
+          jsonInput.addEventListener("change", handleFileImport, false);
+        }
+
+        const modeSelect = document.getElementById("mode");
+        if (modeSelect) {
+          modeSelect.addEventListener("change", (event) => {
+            state.mode = event.target.value === "compare" ? "compare" : "single";
+            updateCompareVisibility();
+          });
+        }
+
+        const selectA = document.getElementById("component-a");
+        if (selectA) {
+          selectA.addEventListener("change", (event) => {
+            state.selectedA = state.components.find((component) => component.id === event.target.value) || null;
+            updateMeshesForSelection();
+          });
+        }
+
+        const selectB = document.getElementById("component-b");
+        if (selectB) {
+          selectB.addEventListener("change", (event) => {
+            state.selectedB = state.components.find((component) => component.id === event.target.value) || null;
+            updateMeshesForSelection();
+          });
+        }
+
+        [
+          "input-voltage",
+          "input-frequency",
+          "input-temperature",
+          "input-humidity",
+          "input-duty",
+          "input-duration",
+          "input-load",
+        ].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) {
+            input.addEventListener("change", readTestVariables);
+            input.addEventListener("blur", readTestVariables);
+          }
+        });
+      }
+
+      function populateComponentSelectors() {
+        const selectA = document.getElementById("component-a");
+        const selectB = document.getElementById("component-b");
+        if (!selectA || !selectB) {
+          return;
+        }
+
+        const options = state.components.map((component) => ({
+          value: component.id,
+          label: `${component.name} (${component.type})`,
+        }));
+
+        const populateSelect = (select, selectedId, placeholder) => {
+          select.innerHTML = "";
+          const placeholderOption = document.createElement("option");
+          placeholderOption.value = "";
+          placeholderOption.textContent = placeholder;
+          select.appendChild(placeholderOption);
+          options.forEach((option) => {
+            const opt = document.createElement("option");
+            opt.value = option.value;
+            opt.textContent = option.label;
+            select.appendChild(opt);
+          });
+
+          if (selectedId && options.some((option) => option.value === selectedId)) {
+            select.value = selectedId;
+          } else if (options.length > 0) {
+            select.value = options[0].value;
+          } else {
+            select.value = "";
+          }
+        };
+
+        populateSelect(selectA, state.selectedA?.id || "", "Select component A");
+        populateSelect(selectB, state.selectedB?.id || "", "Select component B");
+
+        state.selectedA = state.components.find((component) => component.id === selectA.value) || null;
+        state.selectedB = state.components.find((component) => component.id === selectB.value) || null;
+        updateMeshesForSelection();
+      }
+
+      function updateCompareVisibility() {
+        const compare = state.mode === "compare";
+        document.querySelectorAll(".compare-only").forEach((element) => {
+          element.style.display = compare ? "" : "none";
+        });
+        if (!compare) {
+          meshB.visible = false;
+        } else {
+          meshB.visible = Boolean(state.selectedB);
+        }
+      }
+
+      function updateMeshesForSelection() {
+        if (meshA) {
+          const colorA = COMPONENT_COLORS[state.selectedA?.type] || COMPONENT_COLORS.default;
+          meshA.material.color.setHex(colorA);
+          meshA.visible = Boolean(state.selectedA);
+          meshA.material.emissive.setHex(0x000000);
+          meshA.scale.set(1, 1, 1);
+        }
+        if (meshB) {
+          const colorB = COMPONENT_COLORS[state.selectedB?.type] || COMPONENT_COLORS.secondary;
+          meshB.material.color.setHex(colorB);
+          meshB.visible = state.mode === "compare" && Boolean(state.selectedB);
+          meshB.material.emissive.setHex(0x000000);
+          meshB.scale.set(1, 1, 1);
+        }
+      }
+
+      function readTestVariables() {
+        const readNumber = (id, fallback) => {
+          const input = document.getElementById(id);
+          if (!input) {
+            return fallback;
+          }
+          const value = Number.parseFloat(input.value);
+          if (Number.isFinite(value)) {
+            return value;
+          }
+          return fallback;
+        };
+
+        state.testVariables = {
+          voltage: readNumber("input-voltage", state.testVariables.voltage),
+          frequencyHz: readNumber("input-frequency", state.testVariables.frequencyHz),
+          temperatureC: readNumber("input-temperature", state.testVariables.temperatureC),
+          ambientHumidityPercent: readNumber("input-humidity", state.testVariables.ambientHumidityPercent),
+          dutyCyclePercent: readNumber("input-duty", state.testVariables.dutyCyclePercent),
+          durationSeconds: readNumber("input-duration", state.testVariables.durationSeconds),
+          loadImpedanceOhms: readNumber("input-load", state.testVariables.loadImpedanceOhms),
+        };
+
+        return state.testVariables;
+      }
+
+      function setImportStatus(message) {
+        const element = document.getElementById("import-status");
+        if (!element) {
+          return;
+        }
+        element.textContent = message;
+      }
+
+      function updateImportStatus() {
+        if (state.importManifest) {
+          const manifest = state.importManifest;
+          const exportedTime = manifest.exportedAt ? new Date(manifest.exportedAt) : null;
+          const exportedLabel = exportedTime && !Number.isNaN(exportedTime.getTime())
+            ? exportedTime.toLocaleString()
+            : "unknown time";
+          setImportStatus(
+            `${manifest.label} - ${manifest.componentCount} component${manifest.componentCount === 1 ? "" : "s"} - ${manifest.sourceName || "unknown source"} - ${exportedLabel}`
+          );
+        } else {
+          setImportStatus("Using reference component library. Load a builder export to sync live components.");
+        }
+      }
+
+      function readPersistedSession(sessionId) {
+        if (!sessionId) {
+          return null;
+        }
+        const key = `${STORAGE_KEYS.prefix}${sessionId}`;
+        const stores = [window.localStorage, window.sessionStorage];
+        for (const store of stores) {
+          try {
+            if (!store) {
+              continue;
+            }
+            const raw = store.getItem(key);
+            if (raw) {
+              return JSON.parse(raw);
+            }
+          } catch (error) {
+            console.warn("Arena storage read failed", error);
+          }
+        }
+        return null;
+      }
+
+      function loadLatestBuilderExport() {
+        let sessionId = null;
+        try {
+          sessionId = window.localStorage?.getItem(STORAGE_KEYS.last) || window.sessionStorage?.getItem(STORAGE_KEYS.last) || null;
+        } catch (error) {
+          console.warn("Unable to access storage for builder export", error);
+        }
+
+        if (!sessionId) {
+          return false;
+        }
+
+        const envelope = readPersistedSession(sessionId);
+        if (!envelope) {
+          return false;
+        }
+
+        return applyImportEnvelope(envelope, {
+          sessionId,
+          label: envelope.payload?.sessionName || "Builder Export",
+          source: "builder",
+        });
+      }
+
+      function loadSessionFromUrl() {
+        const url = new URL(window.location.href);
+        const sessionId = url.searchParams.get("session");
+        if (!sessionId) {
+          return false;
+        }
+        const envelope = readPersistedSession(sessionId);
+        if (!envelope) {
+          setStatus("Unable to load requested session. Using current library instead.");
+          return false;
+        }
+        return applyImportEnvelope(envelope, { sessionId, label: envelope.payload?.sessionName || "Builder Export", source: "builder" });
+      }
+
+      function applyImportEnvelope(envelope, options) {
+        if (!envelope) {
+          return false;
+        }
+        const payload = envelope.payload || envelope;
+        const componentsRaw = Array.isArray(payload.components) ? payload.components : [];
+        const normalized = componentsRaw
+          .map((item) => normalizeComponent(item, payload.source?.name || options?.source || "import"))
+          .filter(Boolean);
+
+        if (!normalized.length) {
+          setStatus("Import did not include any components. Retaining current library.");
+          return false;
+        }
+
+        state.components = normalized;
+        state.selectedA = normalized[0] || null;
+        state.selectedB = normalized.length > 1 ? normalized[1] : normalized[0] || null;
+
+        state.importManifest = {
+          sessionId: envelope.sessionId || options?.sessionId || null,
+          label: payload.sessionName || options?.label || "Imported Components",
+          exportedAt: envelope.exportedAt || payload.exportedAt || new Date().toISOString(),
+          sourceName: (payload.source && (payload.source.name || payload.source.type)) || options?.source || "import",
+          componentCount: normalized.length,
+          wireCount: Array.isArray(payload.wires) ? payload.wires.length : 0,
+          metrics: payload.analysis || null,
+        };
+
+        populateComponentSelectors();
+        updateCompareVisibility();
+        updateImportStatus();
+        setStatus("Loaded component set from import.");
+        return true;
+      }
+
+      function handleFileImport(event) {
+        const input = event.target;
+        const file = input.files?.[0];
+        if (!file) {
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const data = JSON.parse(reader.result);
+            const applied = applyImportEnvelope(data, {
+              sessionId: data.sessionId || null,
+              label: data.sessionName || "Uploaded Dataset",
+              source: "upload",
+            });
+            if (applied) {
+              setStatus("Imported components from JSON file.");
+            } else {
+              setStatus("Unable to import data from JSON file. Check format.");
+            }
+          } catch (error) {
+            console.error("JSON import error", error);
+            setStatus("Invalid JSON file. Unable to import components.");
+          }
+        };
+
+        reader.readAsText(file);
+        input.value = "";
+      }
+
+      function runTest() {
+        if (!state.components.length) {
+          setStatus("No components available. Import a component library first.");
+          return;
+        }
+
+        readTestVariables();
+
+        if (!state.selectedA) {
+          state.selectedA = state.components[0];
+        }
+
+        const componentA = state.selectedA;
+        const metricsA = computeComponentMetrics(componentA, state.testVariables);
+        let componentB = null;
+        let metricsB = null;
+
+        if (state.mode === "compare") {
+          componentB = state.selectedB || state.components[1] || componentA;
+          state.selectedB = componentB;
+          metricsB = componentB ? computeComponentMetrics(componentB, state.testVariables) : null;
+        }
+
+        renderMetricGrid("metrics-a", metricsA, { accent: "A" });
+        renderMetricGrid("metrics-b", metricsB, { accent: "B" });
+
+        const deltaMetrics = metricsB ? computeDeltaMetrics(metricsA, metricsB) : null;
+        renderMetricGrid("metrics-delta", deltaMetrics, { accent: "delta", isDelta: true });
+
+        updateMeshesForMetrics(metricsA, metricsB);
+
+        state.lastRun = {
+          timestamp: new Date().toISOString(),
+          mode: state.mode,
+          components: {
+            A: summarizeComponent(componentA),
+            B: metricsB ? summarizeComponent(componentB) : null,
+          },
+          testVariables: Object.assign({}, state.testVariables),
+          metrics: {
+            A: metricsA,
+            B: metricsB,
+            delta: deltaMetrics,
+          },
+          importManifest: state.importManifest,
+        };
+
+        const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
+        if (metricsB) {
+          summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
+        }
+        setStatus(`Test complete. ${summaryParts.join(" | ")}`);
+      }
+
+      function summarizeComponent(component) {
+        if (!component) {
+          return null;
+        }
+        return {
+          id: component.id,
+          name: component.name,
+          type: component.type,
+          properties: component.properties,
+          metadata: component.metadata,
+          source: component.source,
+        };
+      }
+
+      function computeComponentMetrics(component, variables) {
+        const profile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const props = Object.assign({}, profile.defaultProperties || {}, component.properties || {});
+
+        const voltage = Number.isFinite(variables.voltage) ? variables.voltage : 0;
+        const frequency = Math.max(Number.isFinite(variables.frequencyHz) ? variables.frequencyHz : 0, 0);
+        const omega = 2 * Math.PI * frequency;
+        const temperatureOffset = (variables.temperatureC ?? 25) - 25;
+
+        let resistance = props.resistance;
+        if (typeof props.tempCoeff === "number" && Number.isFinite(resistance)) {
+          resistance = resistance * (1 + props.tempCoeff * temperatureOffset);
+        }
+
+        if (typeof props.seriesResistance === "number" && Number.isFinite(props.seriesResistance)) {
+          resistance = Number.isFinite(resistance)
+            ? resistance + props.seriesResistance
+            : props.seriesResistance;
+        }
+
+        if (component.type === "switch") {
+          const onResistance = props.onResistance ?? resistance ?? 0.05;
+          const offResistance = props.offResistance ?? 1000000;
+          resistance = props.isOn === false ? offResistance : onResistance;
+        }
+
+        if (component.type === "battery") {
+          resistance = Math.max(variables.loadImpedanceOhms || resistance || props.internalResistance || 1, 0.0001);
+        }
+
+        let reactanceC = 0;
+        if (typeof props.capacitance === "number" && props.capacitance > 0 && omega > 0) {
+          reactanceC = -1 / (omega * props.capacitance);
+        }
+
+        let reactanceL = 0;
+        if (typeof props.inductance === "number" && props.inductance > 0 && omega > 0) {
+          reactanceL = omega * props.inductance;
+        }
+
+        const netReactance = reactanceL + reactanceC;
+
+        let effectiveResistance = Number.isFinite(resistance) ? resistance : 0;
+        if (!Number.isFinite(effectiveResistance) || effectiveResistance < 0.0001) {
+          effectiveResistance = 0.0001;
+        }
+
+        let impedance = Math.sqrt(Math.pow(effectiveResistance, 2) + Math.pow(netReactance, 2));
+        if (!Number.isFinite(impedance) || impedance < 0.0001) {
+          impedance = effectiveResistance;
+        }
+
+        let current = impedance > 0 ? voltage / impedance : 0;
+        let voltageAcross = voltage;
+
+        if (component.type === "led") {
+          const forward = props.forwardVoltage ?? 2;
+          const seriesR = Math.max(props.seriesResistance ?? effectiveResistance ?? 100, 0.1);
+          voltageAcross = Math.max(voltage - forward, 0);
+          current = voltageAcross / seriesR;
+          impedance = seriesR;
+          effectiveResistance = seriesR;
+        }
+
+        if (component.type === "battery") {
+          const internalR = Math.max(props.internalResistance ?? 0.2, 0.0001);
+          const loadR = Math.max(variables.loadImpedanceOhms || 0, 0.0001);
+          const totalR = internalR + loadR;
+          current = voltage / totalR;
+          impedance = totalR;
+          effectiveResistance = loadR;
+        }
+
+        const dutyCycle = Math.max(Math.min(variables.dutyCyclePercent ?? 100, 100), 0) / 100;
+        const rmsCurrent = current * Math.sqrt(dutyCycle || 1);
+        const power = voltageAcross * current * dutyCycle;
+        const energyDelivered = power * (variables.durationSeconds ?? 0);
+        const storedEnergyCap = typeof props.capacitance === "number" ? 0.5 * props.capacitance * voltage * voltage : 0;
+        const storedEnergyInd = typeof props.inductance === "number" ? 0.5 * props.inductance * current * current : 0;
+        const storedEnergy = storedEnergyCap + storedEnergyInd;
+        const phaseAngle = Math.atan2(netReactance, effectiveResistance);
+        const thermalResistance = props.thermalResistance ?? profile.defaultProperties?.thermalResistance ?? 60;
+        const thermalRise = thermalResistance ? (power * thermalResistance) / 1000 : 0;
+
+        let efficiency = props.efficiency;
+        if (!Number.isFinite(efficiency)) {
+          if (component.type === "battery" && impedance > 0) {
+            efficiency = effectiveResistance / impedance;
+          } else if (component.type === "led") {
+            efficiency = props.efficiency ?? 0.35;
+          } else if (component.type === "resistor") {
+            efficiency = 0;
+          } else {
+            efficiency = null;
+          }
+        }
+
+        return {
+          componentId: component.id,
+          name: component.name,
+          type: component.type,
+          operatingVoltage: voltage,
+          currentRms: rmsCurrent,
+          currentPeak: current * Math.sqrt(2),
+          powerDissipation: power,
+          impedance,
+          reactance: netReactance,
+          resistance: effectiveResistance,
+          phaseAngleDegrees: phaseAngle * (180 / Math.PI),
+          storedEnergy,
+          energyDelivered,
+          thermalRise,
+          efficiency,
+          ambientTemperature: variables.temperatureC,
+          humidity: variables.ambientHumidityPercent,
+          dutyCyclePercent: variables.dutyCyclePercent,
+        };
+      }
+
+      function computeDeltaMetrics(metricsA, metricsB) {
+        if (!metricsA || !metricsB) {
+          return null;
+        }
+        const percentDifference = (a, b) => {
+          if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) {
+            return null;
+          }
+          return ((a - b) / b) * 100;
+        };
+
+        return {
+          powerDeltaPercent: percentDifference(metricsA.powerDissipation, metricsB.powerDissipation),
+          currentDeltaPercent: percentDifference(metricsA.currentRms, metricsB.currentRms),
+          impedanceDeltaPercent: percentDifference(metricsA.impedance, metricsB.impedance),
+          thermalDelta: Number.isFinite(metricsA.thermalRise) && Number.isFinite(metricsB.thermalRise)
+            ? metricsA.thermalRise - metricsB.thermalRise
+            : null,
+          efficiencyDelta: Number.isFinite(metricsA.efficiency) && Number.isFinite(metricsB.efficiency)
+            ? metricsA.efficiency - metricsB.efficiency
+            : null,
+          energyDelta: Number.isFinite(metricsA.energyDelivered) && Number.isFinite(metricsB.energyDelivered)
+            ? metricsA.energyDelivered - metricsB.energyDelivered
+            : null,
+        };
+      }
+
+      function renderMetricGrid(elementId, metrics, options) {
+        const container = document.getElementById(elementId);
+        if (!container) {
+          return;
+        }
+        container.innerHTML = "";
+
+        if (!metrics) {
+          const empty = document.createElement("div");
+          empty.className = "metric-empty";
+          empty.textContent = "Run a test to populate metrics.";
+          container.appendChild(empty);
+          return;
+        }
+
+        const entries = [];
+        if (options?.isDelta) {
+          entries.push({ label: "Power Delta", value: formatPercent(metrics.powerDeltaPercent) });
+          entries.push({ label: "Current Delta", value: formatPercent(metrics.currentDeltaPercent) });
+          entries.push({ label: "Impedance Delta", value: formatPercent(metrics.impedanceDeltaPercent) });
+          entries.push({ label: "Thermal Delta", value: formatWithUnit(metrics.thermalDelta, "C") });
+          entries.push({ label: "Efficiency Delta", value: formatPercent(metrics.efficiencyDelta) });
+          entries.push({ label: "Energy Delta", value: formatWithUnit(metrics.energyDelta, "J") });
+        } else {
+          entries.push({ label: "Voltage", value: formatWithUnit(metrics.operatingVoltage, "V") });
+          entries.push({ label: "Current", value: formatWithUnit(metrics.currentRms, "A"), detail: `Peak ${formatWithUnit(metrics.currentPeak, "A")}` });
+          entries.push({ label: "Power", value: formatWithUnit(metrics.powerDissipation, "W") });
+          entries.push({ label: "Impedance", value: formatWithUnit(metrics.impedance, "Ohm"), detail: `Reactance ${formatWithUnit(metrics.reactance, "Ohm")}` });
+          entries.push({ label: "Phase", value: formatAngle(metrics.phaseAngleDegrees) });
+          entries.push({ label: "Stored Energy", value: formatWithUnit(metrics.storedEnergy, "J") });
+          entries.push({ label: "Delivered Energy", value: formatWithUnit(metrics.energyDelivered, "J") });
+          entries.push({ label: "Thermal Rise", value: formatWithUnit(metrics.thermalRise, "C") });
+          entries.push({ label: "Efficiency", value: formatPercent(metrics.efficiency) });
+        }
+
+        entries
+          .filter((entry) => entry.value !== null && entry.value !== undefined)
+          .forEach((entry) => {
+            const card = document.createElement("div");
+            card.className = "metric-card";
+            if (options?.accent === "A") {
+              card.classList.add("metric-accent-a");
+            } else if (options?.accent === "B") {
+              card.classList.add("metric-accent-b");
+            } else if (options?.accent === "delta") {
+              card.classList.add("metric-accent-delta");
+            }
+
+            const label = document.createElement("div");
+            label.className = "metric-label";
+            label.textContent = entry.label;
+
+            const value = document.createElement("div");
+            value.className = "metric-value";
+            value.textContent = entry.value;
+
+            card.appendChild(label);
+            card.appendChild(value);
+
+            if (entry.detail) {
+              const detail = document.createElement("div");
+              detail.className = "metric-detail";
+              detail.textContent = entry.detail;
+              card.appendChild(detail);
+            }
+
+            container.appendChild(card);
+          });
+      }
+
+      function updateMeshesForMetrics(metricsA, metricsB) {
+        const applyMetrics = (mesh, metrics) => {
+          if (!mesh) {
+            return;
+          }
+          mesh.material.emissive.setHex(0x000000);
+          mesh.scale.set(1, 1, 1);
+          if (!metrics) {
+            return;
+          }
+          const scaleBoost = Math.min(Math.max(metrics.powerDissipation || 0, 0) / 10, 0.6);
+          const scale = 1 + scaleBoost;
+          mesh.scale.set(scale, scale, scale);
+          const thermal = Math.min(Math.max(metrics.thermalRise || 0, 0), 120) / 120;
+          mesh.material.emissive.setRGB(thermal * 0.9, thermal * 0.3, 0.1);
+        };
+
+        applyMetrics(meshA, metricsA);
+        applyMetrics(meshB, metricsB);
+      }
+
+      function resetArena() {
+        if (meshA) {
+          meshA.rotation.set(0, 0, 0);
+          meshA.scale.set(1, 1, 1);
+          meshA.material.emissive.setHex(0x000000);
+        }
+        if (meshB) {
+          meshB.rotation.set(0, 0, 0);
+          meshB.scale.set(1, 1, 1);
+          meshB.material.emissive.setHex(0x000000);
+        }
+        state.lastRun = null;
+        renderMetricGrid("metrics-a", null);
+        renderMetricGrid("metrics-b", null);
+        renderMetricGrid("metrics-delta", null);
+        setStatus("Arena reset. Metrics cleared.");
+      }
+
+      function exportResults() {
+        if (!state.lastRun) {
+          setStatus("Run a test before exporting results.");
+          return;
+        }
+
+        const blob = new Blob([JSON.stringify(state.lastRun, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "component-arena-results.json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setStatus("Exported latest results as JSON.");
+      }
+
+      function formatWithUnit(value, unit) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        const abs = Math.abs(value);
+        let scaled = value;
+        let prefix = "";
+        if (abs >= 1e6) {
+          scaled = value / 1e6;
+          prefix = "M";
+        } else if (abs >= 1e3) {
+          scaled = value / 1e3;
+          prefix = "k";
+        } else if (abs > 0 && abs < 1e-3) {
+          scaled = value * 1e6;
+          prefix = "u";
+        } else if (abs > 0 && abs < 1) {
+          scaled = value * 1e3;
+          prefix = "m";
+        }
+
+        const decimals = Math.abs(scaled) < 10 ? 2 : 1;
+        return `${scaled.toFixed(decimals)} ${prefix}${unit}`;
+      }
+
+      function formatPercent(value) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        const rounded = value.toFixed(1);
+        const sign = value > 0 ? "+" : "";
+        return `${sign}${rounded} %`;
+      }
+
+      function formatAngle(value) {
+        if (!Number.isFinite(value)) {
+          return "—";
+        }
+        return `${value.toFixed(1)} deg`;
+      }
+
+      function setStatus(message) {
+        const element = document.getElementById("stat-out");
+        if (element) {
+          element.textContent = message;
+        }
+      }
+
+      function renderInitialMetrics() {
+        renderMetricGrid("metrics-a", null);
+        renderMetricGrid("metrics-b", null);
+        renderMetricGrid("metrics-delta", null);
+      }
+
+      function bootstrap() {
+        initThree();
+        registerEvents();
+        initializeCatalog();
+        populateComponentSelectors();
+        readTestVariables();
+        updateCompareVisibility();
+        updateImportStatus();
+        renderInitialMetrics();
+
+        const loadedFromUrl = loadSessionFromUrl();
+        if (!loadedFromUrl) {
+          const loadedBuilder = loadLatestBuilderExport();
+          if (!loadedBuilder) {
+            updateImportStatus();
+          }
+        }
+
+        updateMeshesForSelection();
+      }
+
+      bootstrap();
+    })();
   </script>
 </body>
 </html>
