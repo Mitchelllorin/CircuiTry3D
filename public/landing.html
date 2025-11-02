@@ -125,28 +125,68 @@
             height: 140px;
         }
 
-        .circuit-element {
-            stroke: #00ff88;
-            stroke-width: 2.4;
-            fill: none;
-        }
-
         .circuit-wire {
             stroke: #66bbff;
-            stroke-width: 2;
+            stroke-width: 2.2;
             fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .circuit-component {
+            stroke: #00ff88;
+            stroke-width: 2.6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .circuit-battery-line {
+            stroke-width: 3.1;
+        }
+
+        .circuit-node {
+            fill: #00ff88;
+            filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.6));
         }
 
         .circuit-text {
-            fill: #ffffff;
+            fill: rgba(210, 234, 255, 0.95);
             font-size: 12px;
             font-weight: 600;
+            letter-spacing: 0.06em;
         }
 
-        .circuit-voltage {
-            fill: #ff6666;
-            font-size: 11px;
-            font-weight: 600;
+        .circuit-label {
+            fill: rgba(200, 235, 255, 0.9);
+        }
+
+        .circuit-value {
+            fill: rgba(255, 214, 102, 0.92);
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+
+        .circuit-photon {
+            fill: #ffe066;
+            filter: drop-shadow(0 0 10px rgba(255, 224, 102, 0.75));
+        }
+
+        .photon-orbit {
+            transform-box: fill-box;
+            transform-origin: 180px 90px;
+            animation: photonOrbit 5.8s linear infinite;
+        }
+
+        .photon-orbit.photon-delay {
+            animation-delay: -2.9s;
+        }
+
+        @keyframes photonOrbit {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .landing-actions {
@@ -311,24 +351,56 @@
         <p class="landing-subtitle">Professional Circuit Design</p>
 
         <div class="circuit-preview" aria-hidden="true">
-            <svg class="circuit-svg" viewBox="0 0 320 140" role="presentation">
-                <path class="circuit-wire" d="M 60 70 L 100 70 L 100 40 L 160 40 L 160 70 L 200 70 L 200 100 L 160 100 L 160 70" />
-                <path class="circuit-wire" d="M 160 70 L 160 100 L 100 100 L 100 70" />
-                <rect class="circuit-element" x="50" y="60" width="20" height="20" rx="4" />
-                <text class="circuit-voltage" x="45" y="55">12V</text>
-                <rect class="circuit-element" x="150" y="30" width="20" height="20" rx="4" />
-                <path class="circuit-element" d="M 155 35 L 165 45 L 155 45 L 165 35" />
-                <text class="circuit-text" x="158" y="28">R1</text>
-                <rect class="circuit-element" x="190" y="60" width="20" height="20" rx="4" />
-                <path class="circuit-element" d="M 195 65 L 205 75 L 195 75 L 205 65" />
-                <text class="circuit-text" x="198" y="58">R2</text>
-                <rect class="circuit-element" x="150" y="90" width="20" height="20" rx="4" />
-                <path class="circuit-element" d="M 155 95 L 165 105 L 155 105 L 165 95" />
-                <text class="circuit-text" x="158" y="118">R3</text>
-                <circle class="circuit-element" cx="160" cy="70" r="2" />
-                <circle class="circuit-element" cx="100" cy="70" r="2" />
-                <circle class="circuit-element" cx="160" cy="100" r="2" />
-                <circle class="circuit-element" cx="200" cy="70" r="2" />
+            <svg class="circuit-svg" viewBox="0 0 360 180" role="presentation">
+                <g>
+                    <path class="circuit-wire" d="M 100 60 H 150" />
+                    <path class="circuit-wire" d="M 230 60 H 300" />
+                    <path class="circuit-wire" d="M 300 60 V 80" />
+                    <path class="circuit-wire" d="M 150 120 H 252" />
+                    <path class="circuit-wire" d="M 100 120 H 150" />
+                    <path class="circuit-wire" d="M 100 60 V 76" />
+                    <path class="circuit-wire" d="M 100 104 V 120" />
+                </g>
+
+                <path class="circuit-component" d="M 150 60 l 10 -12 l 10 12 l 10 -12 l 10 12 l 10 -12 l 10 12 l 10 -12 l 10 12" />
+
+                <g>
+                    <line class="circuit-component circuit-battery-line" x1="84" y1="76" x2="116" y2="76" />
+                    <line class="circuit-component" x1="90" y1="104" x2="110" y2="104" />
+                </g>
+
+                <g>
+                    <circle class="circuit-node" cx="252" cy="120" r="4" />
+                    <circle class="circuit-node" cx="300" cy="80" r="4" />
+                    <path class="circuit-component" d="M 252 120 L 300 80" />
+                    <path class="circuit-wire" d="M 300 80 V 60" />
+                </g>
+
+                <g>
+                    <circle class="circuit-node" cx="100" cy="60" r="3.2" />
+                    <circle class="circuit-node" cx="100" cy="120" r="3.2" />
+                    <circle class="circuit-node" cx="150" cy="60" r="3.2" />
+                    <circle class="circuit-node" cx="230" cy="60" r="3.2" />
+                    <circle class="circuit-node" cx="300" cy="60" r="3.2" />
+                </g>
+
+                <text class="circuit-text circuit-label" x="190" y="36" text-anchor="middle">R1</text>
+                <text class="circuit-text circuit-value" x="190" y="52" text-anchor="middle">220 ohm</text>
+
+                <text class="circuit-text circuit-label" x="122" y="92">B1</text>
+                <text class="circuit-text circuit-value" x="122" y="108">12V</text>
+                <text class="circuit-text circuit-value" x="86" y="74">+</text>
+                <text class="circuit-text circuit-value" x="86" y="114">-</text>
+
+                <text class="circuit-text circuit-label" x="308" y="72">SW1</text>
+                <text class="circuit-text circuit-value" x="308" y="88">OPEN</text>
+
+                <g class="photon-orbit">
+                    <circle class="circuit-photon" cx="180" cy="18" r="4.4" />
+                </g>
+                <g class="photon-orbit photon-delay">
+                    <circle class="circuit-photon" cx="180" cy="162" r="4.4" />
+                </g>
             </svg>
         </div>
 
