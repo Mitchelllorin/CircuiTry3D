@@ -1,16 +1,16 @@
-# CircuiTry3D App Metadata
+# Circuitry 3D App Metadata
 
 ## App Name
-CircuiTry3D
+Circuitry 3D
 
 ## Short Description (80 characters max)
 3D interactive circuit builder with real-time Ohm's law visualization
 
 ## Full Description (4000 characters max, optimized for keywords)
 
-**Illuminate Electricity with CircuiTry3D**
+**Illuminate Electricity with Circuitry 3D**
 
-CircuiTry3D is a revolutionary 3D, interactive electric circuit builder that brings electrical concepts to life. Using advanced visualization and Ohm's law calculations, CircuiTry3D helps students, educators, and electronics enthusiasts understand current flow and circuit behavior down to the atomic level.
+Circuitry 3D is a revolutionary 3D, interactive electric circuit builder that brings electrical concepts to life. Using advanced visualization and Ohm's law calculations, Circuitry 3D helps students, educators, and electronics enthusiasts understand current flow and circuit behavior down to the atomic level.
 
 **Key Features:**
 
@@ -45,14 +45,14 @@ CircuiTry3D is a revolutionary 3D, interactive electric circuit builder that bri
 - Electronics hobbyists and makers
 - Anyone curious about how electricity works
 
-**Why CircuiTry3D?**
+**Why Circuitry 3D?**
 
-Traditional circuit learning can be abstract and difficult to visualize. CircuiTry3D makes electrical concepts tangible by providing a safe, interactive environment where you can experiment, learn, and understand electricity like never before. No need for physical components or expensive equipment – everything you need is right in your pocket!
+Traditional circuit learning can be abstract and difficult to visualize. Circuitry 3D makes electrical concepts tangible by providing a safe, interactive environment where you can experiment, learn, and understand electricity like never before. No need for physical components or expensive equipment – everything you need is right in your pocket!
 
 **Keywords:** circuit builder, electrical engineering, electronics learning, Ohm's law, 3D simulation, interactive learning, circuit design, electrical circuits, physics education, STEM education, electronics simulator, circuit simulator, voltage, current, resistance, educational app
 
 **Privacy First:**
-We respect your privacy. CircuiTry3D only collects minimal data necessary for account management and app functionality. See our privacy policy for details.
+We respect your privacy. Circuitry 3D only collects minimal data necessary for account management and app functionality. See our privacy policy for details.
 
 Start building circuits today and illuminate your understanding of electricity!
 

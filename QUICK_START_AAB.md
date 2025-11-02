@@ -189,7 +189,7 @@ cd android/app/keystore
 keytool -genkey -v -keystore circuitry3d-release.keystore \
   -alias circuitry3d -keyalg RSA -keysize 2048 -validity 10000 \
   -storepass circuitry3d123 -keypass circuitry3d123 \
-  -dname "CN=CircuiTry3D, OU=Development, O=CircuiTry3D, L=Unknown, ST=Unknown, C=US"
+  -dname "CN=Circuitry 3D, OU=Development, O=Circuitry 3D, L=Unknown, ST=Unknown, C=US"
 ```
 
 ## Next Steps
@@ -231,7 +231,7 @@ Once you have your signed AAB:
 - **Check the package summary:** [PLAY_STORE_PACKAGE_SUMMARY.md](PLAY_STORE_PACKAGE_SUMMARY.md)
 - **Android Developers:** https://developer.android.com/guide
 - **Capacitor Docs:** https://capacitorjs.com/docs
-- **GitHub Issues:** https://github.com/Mitchelllorin/CircuiTry3D/issues
+- **GitHub Issues:** https://github.com/Mitchelllorin/Circuitry3D/issues
 
 ---
 

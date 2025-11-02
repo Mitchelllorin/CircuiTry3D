@@ -1,6 +1,6 @@
 # Wire System Architecture
 
-This document describes the robust wire topology system implemented for CircuiTry3D.
+This document describes the robust wire topology system implemented for Circuitry 3D.
 
 ## Overview
 

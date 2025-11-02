@@ -78,6 +78,11 @@ body.builder-body {
   letter-spacing: 0.18em;
 }
 
+.builder-logo-space {
+  width: 0.36em;
+  display: inline-block;
+}
+
 @keyframes builderLogoPulse {
   0%,
   100% {

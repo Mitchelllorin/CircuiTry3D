@@ -254,7 +254,7 @@ const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "auto-arrange",
     label: "Auto Arrange",
-    description: "Let CircuiTry tidy the layout while preserving connections.",
+    description: "Let Circuitry 3D tidy the layout while preserving connections.",
     action: "auto-arrange",
   },
 ];
@@ -469,7 +469,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
   {
     title: "Visual Learning",
     paragraphs: [
-      "CircuiTry3D leans on the W.I.R.E. colour system so you always know which value you are adjusting.",
+      "Circuitry 3D leans on the W.I.R.E. colour system so you always know which value you are adjusting.",
       "Switch between flow visualizations to compare electron movement with conventional current.",
     ],
     bullets: [
@@ -731,7 +731,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   {
     title: "Version & Focus",
     paragraphs: [
-      "CircuiTry3D W.I.R.E. Circuit Builder v2.5 is a Three.js powered learning environment for visual thinkers.",
+      "Circuitry 3D W.I.R.E. Circuit Builder v2.5 is a Three.js powered learning environment for visual thinkers.",
     ],
     bullets: [
       "Educational 3D circuit simulator with real-time calculations.",
@@ -801,15 +801,15 @@ const ABOUT_SECTIONS: HelpSection[] = [
   {
     title: "Support & Feedback",
     paragraphs: [
-      "Report ideas or issues at github.com/Mitchelllorin/CircuiTry3D.",
-      "2025 CircuiTry3D - crafted for visual learners everywhere.",
+      "Report ideas or issues at github.com/Mitchelllorin/Circuitry3D.",
+      "2025 Circuitry 3D - crafted for visual learners everywhere.",
     ],
   },
 ];
 
 const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: string; sections: HelpSection[]; showLegend?: boolean }> = {
   overview: {
-    title: "CircuiTry3D Help Center",
+    title: "Circuitry 3D Help Center",
     description: "Browse quick-start advice, navigation tips, and the W.I.R.E. legend.",
     sections: HELP_SECTIONS,
     showLegend: true,
@@ -835,7 +835,7 @@ const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: st
     sections: SHORTCUT_SECTIONS,
   },
   "about": {
-    title: "About CircuiTry3D",
+    title: "About Circuitry 3D",
     description: "Review feature highlights, learning goals, and support resources.",
     sections: ABOUT_SECTIONS,
   },
@@ -868,7 +868,7 @@ const HELP_ENTRIES: HelpEntry[] = [
   },
   {
     id: "about",
-    label: "About CircuiTry3D",
+    label: "About Circuitry 3D",
     description: "Learn what is new in v2.5 and how the simulator supports teaching.",
     view: "about",
   },
@@ -1672,9 +1672,10 @@ export default function Builder() {
   return (
     <div className="builder-shell">
       <div className="builder-logo-header">
-        <div className="builder-logo-text" aria-label="CircuiTry3D">
-          <span className="builder-logo-circui">Circui</span>
-          <span className="builder-logo-try">Try</span>
+        <div className="builder-logo-text" aria-label="Circuitry 3D">
+          <span className="builder-logo-circui">Circuit</span>
+          <span className="builder-logo-try">ry</span>
+          <span className="builder-logo-space" aria-hidden="true">&nbsp;</span>
           <span className="builder-logo-3d">3D</span>
         </div>
       </div>
@@ -2068,7 +2069,7 @@ export default function Builder() {
         <iframe
           ref={iframeRef}
           className="builder-iframe"
-          title="CircuiTry3D Builder"
+          title="Circuitry 3D Builder"
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
           onLoad={() => {
@@ -2273,7 +2274,7 @@ export default function Builder() {
               type="button"
               className="help-back"
               onClick={() => openHelpCenter("overview")}
-              aria-label="Back to CircuiTry3D help overview"
+              aria-label="Back to Circuitry 3D help overview"
             >
               {"< Back"}
             </button>
