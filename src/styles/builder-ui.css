@@ -986,11 +986,14 @@ body.builder-body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(200, 220, 255, 0.85);
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
   z-index: 810;
   backdrop-filter: blur(10px);
+  text-align: center;
 }
 
 .status-indicator {
@@ -999,6 +1002,36 @@ body.builder-body {
   border-radius: 50%;
   background: var(--builder-green);
   box-shadow: 0 0 12px rgba(0, 255, 136, 0.75);
+}
+
+.status-message {
+  font-weight: 600;
+}
+
+.status-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.32);
+  background: rgba(14, 30, 58, 0.78);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(200, 220, 255, 0.82);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-pill[data-active="true"] {
+  border-color: rgba(0, 255, 136, 0.6);
+  background: rgba(0, 255, 136, 0.24);
+  color: rgba(14, 28, 52, 0.92);
+  box-shadow: 0 0 14px rgba(0, 255, 136, 0.3);
 }
 
 .builder-workspace {

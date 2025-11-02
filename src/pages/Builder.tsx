@@ -57,6 +57,7 @@ type LegacyModeState = {
   currentFlowStyle: string;
   showPolarityIndicators: boolean;
   layoutMode: string;
+  wireRoutingMode: string;
   showGrid: boolean;
   showLabels: boolean;
 };
@@ -913,6 +914,7 @@ export default function Builder() {
     currentFlowStyle: "misty",
     showPolarityIndicators: true,
     layoutMode: "free",
+    wireRoutingMode: "freeform",
     showGrid: true,
     showLabels: true,
   });
@@ -1014,6 +1016,10 @@ export default function Builder() {
             typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
               ? next.layoutMode
               : previous.layoutMode,
+          wireRoutingMode:
+            typeof next.wireRoutingMode === "string" && next.wireRoutingMode.trim() !== ""
+              ? next.wireRoutingMode
+              : previous.wireRoutingMode,
           showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
           showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
         }));
@@ -1548,9 +1554,26 @@ export default function Builder() {
     square: "Square",
     linear: "Linear",
   };
+  const wireRoutingNames: Record<string, string> = {
+    freeform: "Freeform",
+    manhattan: "Schematic",
+    simple: "Simple",
+    perimeter: "Perimeter",
+    astar: "A* Auto",
+  };
   const normalizedLayoutKey = typeof modeState.layoutMode === "string" ? modeState.layoutMode.toLowerCase() : "";
+  const normalizedRoutingKey = typeof modeState.wireRoutingMode === "string" ? modeState.wireRoutingMode.toLowerCase() : "";
   const layoutModeLabel = layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
+  const wireRoutingLabel = wireRoutingNames[normalizedRoutingKey] ?? modeState.wireRoutingMode ?? "Unknown";
   const currentFlowLabel = modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
+  const isWireToolActive = modeState.isWireMode;
+  const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
+  const wireRoutingTitle = isWireToolActive
+    ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
+    : `Wire tool inactive - routing preset is ${wireRoutingLabel}.`;
+  const currentFlowTitle = isCurrentFlowSolid
+    ? "Current flow visualisation active."
+    : "Electron flow visualisation active.";
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -1935,9 +1958,27 @@ export default function Builder() {
         </nav>
       </div>
 
-      <div className="builder-status-bar">
+      <div className="builder-status-bar" role="status" aria-live="polite">
         <span className="status-indicator" aria-hidden="true" />
-        {isFrameReady ? "Workspace ready: tap and drag to build." : "Loading workspace..."}
+        <span className="status-message">
+          {isFrameReady ? "Workspace ready: tap and drag to build." : "Loading workspace..."}
+        </span>
+        <div className="status-pill-group" aria-label="Active modes">
+          <span
+            className="status-pill"
+            data-active={isWireToolActive ? "true" : undefined}
+            title={wireRoutingTitle}
+          >
+            Wire: {wireRoutingLabel}
+          </span>
+          <span
+            className="status-pill"
+            data-active={isCurrentFlowSolid ? "true" : undefined}
+            title={currentFlowTitle}
+          >
+            Flow: {currentFlowLabel}
+          </span>
+        </div>
       </div>
 
       <div className="builder-workspace" aria-busy={!isFrameReady}>
