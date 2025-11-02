@@ -404,6 +404,36 @@ body.builder-body {
   background: rgba(20, 38, 70, 0.92);
 }
 
+.slider-btn[data-active="true"] {
+  border-color: rgba(0, 255, 136, 0.65);
+  background: rgba(20, 48, 82, 0.94);
+  box-shadow: 0 0 14px rgba(0, 255, 136, 0.32);
+}
+
+.slider-btn[data-active="true"] .slider-label {
+  color: var(--builder-green);
+}
+
+.slider-btn[data-active="true"] .slider-description {
+  color: rgba(200, 255, 236, 0.86);
+}
+
+@keyframes builderQuickPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(136, 204, 255, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(136, 204, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(136, 204, 255, 0);
+  }
+}
+
+.slider-btn[data-pulse="true"] {
+  animation: builderQuickPulse 1.1s ease-out;
+}
+
 .slider-btn[disabled],
 .slider-btn[aria-disabled="true"] {
   cursor: not-allowed;
