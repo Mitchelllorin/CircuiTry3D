@@ -29,6 +29,7 @@ type BuilderMessage =
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
   | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } }
+  | { type: "builder:request-mode-state" }
   | {
       type: "builder:export-arena";
       payload?: {
@@ -48,6 +49,17 @@ type ComponentAction = {
 };
 
 type BuilderToolId = "select" | "wire" | "measure";
+
+type LegacyModeState = {
+  isWireMode: boolean;
+  isRotateMode: boolean;
+  isMeasureMode: boolean;
+  currentFlowStyle: string;
+  showPolarityIndicators: boolean;
+  layoutMode: string;
+  showGrid: boolean;
+  showLabels: boolean;
+};
 
 type QuickAction = {
   id: string;
@@ -763,6 +775,16 @@ export default function Builder() {
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
   const [activeQuickTool, setActiveQuickTool] = useState<BuilderToolId>("select");
+  const [modeState, setModeState] = useState<LegacyModeState>({
+    isWireMode: false,
+    isRotateMode: false,
+    isMeasureMode: false,
+    currentFlowStyle: "misty",
+    showPolarityIndicators: true,
+    layoutMode: "free",
+    showGrid: true,
+    showLabels: true,
+  });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
@@ -793,11 +815,47 @@ export default function Builder() {
 
       if (type === "legacy:tool-state") {
         const tool = typeof (payload as { tool?: string })?.tool === "string" ? (payload as { tool?: string }).tool : undefined;
-        if (tool === "wire" || tool === "measure" || tool === "select") {
+        if (tool === "wire" || tool === "measure") {
           setActiveQuickTool(tool);
         } else {
           setActiveQuickTool("select");
         }
+
+        setModeState((previous) => ({
+          ...previous,
+          isWireMode: tool === "wire",
+          isMeasureMode: tool === "measure",
+          isRotateMode: tool === "rotate",
+        }));
+        return;
+      }
+
+      if (type === "legacy:mode-state") {
+        if (!payload || typeof payload !== "object") {
+          return;
+        }
+
+        const next = payload as Partial<LegacyModeState>;
+        setModeState((previous) => ({
+          ...previous,
+          isWireMode: typeof next.isWireMode === "boolean" ? next.isWireMode : previous.isWireMode,
+          isRotateMode: typeof next.isRotateMode === "boolean" ? next.isRotateMode : previous.isRotateMode,
+          isMeasureMode: typeof next.isMeasureMode === "boolean" ? next.isMeasureMode : previous.isMeasureMode,
+          currentFlowStyle:
+            typeof next.currentFlowStyle === "string" && next.currentFlowStyle.trim() !== ""
+              ? next.currentFlowStyle
+              : previous.currentFlowStyle,
+          showPolarityIndicators:
+            typeof next.showPolarityIndicators === "boolean"
+              ? next.showPolarityIndicators
+              : previous.showPolarityIndicators,
+          layoutMode:
+            typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
+              ? next.layoutMode
+              : previous.layoutMode,
+          showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
+          showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
+        }));
         return;
       }
 
@@ -970,6 +1028,14 @@ export default function Builder() {
     },
     [isFrameReady]
   );
+
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+
+    postToBuilder({ type: "builder:request-mode-state" }, { allowQueue: false });
+  }, [isFrameReady, postToBuilder]);
 
   const triggerBuilderAction = useCallback(
     (action: BuilderInvokeAction, data?: Record<string, unknown>) => {
@@ -1153,6 +1219,14 @@ export default function Builder() {
     return `${normalizedBase}legacy.html?embed=builder`;
   }, []);
   const activeHelpContent = HELP_VIEW_CONTENT[helpView];
+  const layoutModeNames: Record<string, string> = {
+    free: "Free",
+    square: "Square",
+    linear: "Linear",
+  };
+  const normalizedLayoutKey = typeof modeState.layoutMode === "string" ? modeState.layoutMode.toLowerCase() : "";
+  const layoutModeLabel = layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
+  const currentFlowLabel = modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
 
   return (
     <div className="builder-shell">
@@ -1229,20 +1303,37 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Wire Modes</span>
               <div className="slider-stack">
-                {WIRE_TOOL_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="slider-btn slider-btn-stacked"
-                    onClick={() => triggerBuilderAction(action.action, action.data)}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : action.description}
-                  >
-                    <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">{action.description}</span>
-                  </button>
-                ))}
+                {WIRE_TOOL_ACTIONS.map((action) => {
+                  const isWireToggle = action.action === "toggle-wire-mode";
+                  const isRotateToggle = action.action === "toggle-rotate-mode";
+                  const isActionActive = (isWireToggle && modeState.isWireMode) || (isRotateToggle && modeState.isRotateMode);
+                  const description = (() => {
+                    if (isWireToggle) {
+                      return modeState.isWireMode ? "Wire tool active" : "Activate wire mode to sketch connections";
+                    }
+                    if (isRotateToggle) {
+                      return modeState.isRotateMode ? "Rotate mode active" : "Rotate the active component";
+                    }
+                    return action.description;
+                  })();
+
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => triggerBuilderAction(action.action, action.data)}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      data-active={isActionActive ? "true" : undefined}
+                      aria-pressed={isWireToggle || isRotateToggle ? isActionActive : undefined}
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1277,39 +1368,82 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
               <div className="slider-stack">
-                {CURRENT_MODE_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="slider-btn slider-btn-stacked"
-                    onClick={() => triggerBuilderAction(action.action, action.data)}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : action.description}
-                  >
-                    <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">{action.description}</span>
-                  </button>
-                ))}
+                {CURRENT_MODE_ACTIONS.map((action) => {
+                  const isFlowToggle = action.action === "toggle-current-flow";
+                  const isPolarityToggle = action.action === "toggle-polarity";
+                  const isLayoutCycle = action.action === "cycle-layout";
+                  const isActionActive = isFlowToggle
+                    ? modeState.currentFlowStyle === "solid"
+                    : isPolarityToggle
+                    ? modeState.showPolarityIndicators
+                    : false;
+
+                  const description = (() => {
+                    if (isFlowToggle) {
+                      return `${currentFlowLabel} visualisation active`;
+                    }
+                    if (isPolarityToggle) {
+                      return modeState.showPolarityIndicators ? "Polarity markers visible" : "Polarity markers hidden";
+                    }
+                    if (isLayoutCycle) {
+                      return `Current layout: ${layoutModeLabel}`;
+                    }
+                    return action.description;
+                  })();
+
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => triggerBuilderAction(action.action, action.data)}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      data-active={isActionActive ? "true" : undefined}
+                      aria-pressed={isFlowToggle || isPolarityToggle ? isActionActive : undefined}
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="slider-section">
               <span className="slider-heading">View</span>
               <div className="slider-stack">
-                {VIEW_CONTROL_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="slider-btn slider-btn-stacked"
-                    onClick={() => triggerBuilderAction(action.action, action.data)}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : action.description}
-                  >
-                    <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">{action.description}</span>
-                  </button>
-                ))}
+                {VIEW_CONTROL_ACTIONS.map((action) => {
+                  const isGridToggle = action.action === "toggle-grid";
+                  const isLabelToggle = action.action === "toggle-labels";
+                  const isActionActive = (isGridToggle && modeState.showGrid) || (isLabelToggle && modeState.showLabels);
+                  const description = (() => {
+                    if (isGridToggle) {
+                      return modeState.showGrid ? "Grid visible" : "Grid hidden";
+                    }
+                    if (isLabelToggle) {
+                      return modeState.showLabels ? "Labels shown" : "Labels hidden";
+                    }
+                    return action.description;
+                  })();
+
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => triggerBuilderAction(action.action, action.data)}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      data-active={isActionActive ? "true" : undefined}
+                      aria-pressed={isGridToggle || isLabelToggle ? isActionActive : undefined}
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

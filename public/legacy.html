@@ -2783,6 +2783,7 @@ body.android-optimized.menu-visible .status {
             if (window.parent && window.parent !== window) {
                 try {
                     window.parent.postMessage({ type: 'legacy:ready' }, '*');
+                    notifyParentModeState();
                 } catch (error) {
                     console.warn('Builder bridge: unable to notify parent window', error);
                 }
@@ -2828,6 +2829,27 @@ body.android-optimized.menu-visible .status {
                     window.parent.postMessage({ type: 'legacy:measurement', payload }, '*');
                 } catch (error) {
                     console.warn('Builder bridge: unable to share measurement result', error);
+                }
+            }
+        }
+
+        function notifyParentModeState(extraState) {
+            if (window.parent && window.parent !== window) {
+                try {
+                    const payload = Object.assign({
+                        isWireMode,
+                        isRotateMode,
+                        isMeasureMode,
+                        currentFlowStyle,
+                        showPolarityIndicators,
+                        layoutMode,
+                        showGrid,
+                        showLabels
+                    }, (extraState && typeof extraState === 'object') ? extraState : {});
+
+                    window.parent.postMessage({ type: 'legacy:mode-state', payload }, '*');
+                } catch (error) {
+                    console.warn('Builder bridge: unable to share mode state', error);
                 }
             }
         }
@@ -2896,6 +2918,10 @@ body.android-optimized.menu-visible .status {
                     } else {
                         exportArenaSession({ openWindow: false });
                     }
+                    break;
+                }
+                case 'builder:request-mode-state': {
+                    notifyParentModeState();
                     break;
                 }
                 case 'builder:invoke-action': {
@@ -6542,6 +6568,8 @@ body.android-optimized.menu-visible .status {
                     fineGrid.visible = gridHelper.visible;
                 }
                 
+                notifyParentModeState();
+
                 setStatus(`? Grid ${showGrid ? 'shown' : 'hidden'} - Components snap to grid points`);
             }
         }
@@ -6553,6 +6581,7 @@ body.android-optimized.menu-visible .status {
                     component.labelDiv.style.display = showLabels ? 'block' : 'none';
                 }
             });
+            notifyParentModeState();
             setStatus(`??? Component labels ${showLabels ? 'enabled' : 'disabled'}`);
         }
         
@@ -6571,6 +6600,8 @@ body.android-optimized.menu-visible .status {
                 animateCurrentFlow(runtimeFlow);
             }
             
+            notifyParentModeState();
+
             setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Holes drift positive -> negative (opposite current)' : 'CURRENT FLOW - Charge travels negative -> positive through the loop'}`);
         }
         
@@ -6585,6 +6616,8 @@ body.android-optimized.menu-visible .status {
                 }
             });
             
+            notifyParentModeState();
+
             setStatus(`? Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
         }
         
@@ -6619,6 +6652,8 @@ body.android-optimized.menu-visible .status {
                 layoutLabel.textContent = modeNames[layoutMode];
             }
             
+            notifyParentModeState();
+
             setStatus(`?? Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
         }
         
@@ -7185,6 +7220,7 @@ Made with ? for visual learners everywhere!
                     setStatus('?? WIRE MODE! Touch terminals to connect components');
                 }
                 notifyParentToolState('wire');
+                notifyParentModeState();
                 return;
             }
 
@@ -7198,6 +7234,7 @@ Made with ? for visual learners everywhere!
             }
 
             updateButtonStates();
+            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -7224,6 +7261,7 @@ Made with ? for visual learners everywhere!
 
             isWireMode = false;
             updateButtonStates();
+            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -7243,6 +7281,7 @@ Made with ? for visual learners everywhere!
                     setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
                 }
                 notifyParentToolState('rotate');
+                notifyParentModeState();
                 return;
             }
 
@@ -7251,6 +7290,7 @@ Made with ? for visual learners everywhere!
 
             isRotateMode = true;
             updateButtonStates();
+            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -7272,6 +7312,7 @@ Made with ? for visual learners everywhere!
 
             isRotateMode = false;
             updateButtonStates();
+            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -7291,6 +7332,7 @@ Made with ? for visual learners everywhere!
                     setStatus('?? Measure mode active - select the next point to measure');
                 }
                 notifyParentToolState('measure');
+                notifyParentModeState();
                 return;
             }
 
@@ -7299,6 +7341,7 @@ Made with ? for visual learners everywhere!
 
             isMeasureMode = true;
             measureStartPoint = null;
+            notifyParentModeState();
 
             if (!silent) {
                 setStatus('?? Measure mode active - pick two points to calculate distance');
@@ -7315,6 +7358,7 @@ Made with ? for visual learners everywhere!
 
             isMeasureMode = false;
             measureStartPoint = null;
+            notifyParentModeState();
 
             if (!silent) {
                 setStatus('?? Measure mode disabled');
