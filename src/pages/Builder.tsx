@@ -1912,6 +1912,19 @@ export default function Builder() {
                     <span className="slider-chip-label">{action.label}</span>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      const targetUrl = `${appBasePath}practice`;
+                      window.open(targetUrl, "_blank", "noopener");
+                    }
+                  }}
+                  title="Open the guided practice worksheets and Ohm's law wheel"
+                >
+                  <span className="slider-chip-label">Practice Worksheets</span>
+                </button>
                 {PRACTICE_SCENARIOS.map((scenario) => (
                   <button
                     key={scenario.id}
