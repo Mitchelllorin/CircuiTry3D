@@ -394,6 +394,13 @@ export default function Practice() {
             </span>
           </div>
 
+          <div className="worksheet-sync" role="status" aria-live="polite">
+            <strong>Synced to schematic</strong>
+            <span>
+              {`Givens from ${selectedProblem.title} are locked in. Update only the unknowns and compare against the circuit diagram as you go.`}
+            </span>
+          </div>
+
           <WireTable
             rows={tableRows}
             revealAll={tableRevealed}
