@@ -2850,6 +2850,19 @@ body.android-optimized.menu-visible .status {
                     notifyParentAnalysisState();
                     break;
                 }
+                case 'builder:export-arena': {
+                    if (payload && typeof payload === 'object') {
+                        exportArenaSession({
+                            requestId: payload.requestId,
+                            openWindow: Boolean(payload.openWindow),
+                            sessionName: payload.sessionName,
+                            testVariables: payload.testVariables
+                        });
+                    } else {
+                        exportArenaSession({ openWindow: false });
+                    }
+                    break;
+                }
                 case 'builder:invoke-action': {
                     if (!payload || typeof payload !== 'object' || typeof payload.action !== 'string') {
                         break;
@@ -5961,9 +5974,16 @@ body.android-optimized.menu-visible .status {
 
         function openArena() {
             try {
-                window.open('/arena', '_blank');
-                setStatus('?? Component Arena opened');
-            } catch (e) {
+                const summary = exportArenaSession({ openWindow: true });
+                if (summary) {
+                    const count = summary.componentCount || 0;
+                    const message = `?? Component Arena export ready (${count} component${count === 1 ? '' : 's'})`;
+                    setStatus(message);
+                } else {
+                    setStatus('?? Unable to prepare arena export');
+                }
+            } catch (error) {
+                console.error('Arena export error:', error);
                 setStatus('?? Unable to open Arena');
             }
         }
@@ -7137,7 +7157,8 @@ Made with ? for visual learners everywhere!
                     current: 0,
                     resistance: Infinity,
                     power: 0,
-                    isComplete: false
+                    isComplete: false,
+                    topology: 'open'
                 };
             }
             
@@ -7165,7 +7186,8 @@ Made with ? for visual learners everywhere!
                         current: 0,
                         resistance: Infinity,
                         power: 0,
-                        isComplete: false
+                        isComplete: false,
+                        topology: 'incomplete'
                     };
                 }
                 
@@ -7218,7 +7240,8 @@ Made with ? for visual learners everywhere!
                     current: current,
                     resistance: totalResistance,
                     power: power,
-                    isComplete: true
+                    isComplete: true,
+                    topology: topology?.type || 'unknown'
                 };
             } else {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
@@ -7228,8 +7251,362 @@ Made with ? for visual learners everywhere!
                     current: 0,
                     resistance: Infinity,
                     power: 0,
-                    isComplete: false
+                    isComplete: false,
+                    topology: connectedComponents.size === 0 ? 'none' : 'incomplete'
                 };
+            }
+        }
+        
+        const ARENA_COMPONENT_PROFILES = {
+            battery: {
+                defaultProperties: {
+                    voltage: 9,
+                    internalResistance: 0.2,
+                    capacityMah: 1500,
+                    tempCoeff: 0.0004,
+                    thermalResistance: 35,
+                    maxDischargeCurrent: 2.0
+                },
+                classification: 'energy-source'
+            },
+            resistor: {
+                defaultProperties: {
+                    resistance: 100,
+                    tempCoeff: 0.0005,
+                    tolerance: 0.05,
+                    thermalResistance: 75,
+                    maxPower: 0.25
+                },
+                classification: 'passive'
+            },
+            led: {
+                defaultProperties: {
+                    forwardVoltage: 2.0,
+                    seriesResistance: 120,
+                    efficiency: 0.35,
+                    thermalResistance: 120,
+                    luminousFlux: 8
+                },
+                classification: 'optoelectronic'
+            },
+            switch: {
+                defaultProperties: {
+                    onResistance: 0.05,
+                    offResistance: 1000000,
+                    transitionTimeMs: 2,
+                    insulationResistance: 5000000
+                },
+                classification: 'control'
+            }
+        };
+
+        function cloneJsonSafe(input) {
+            try {
+                return JSON.parse(JSON.stringify(input));
+            } catch (error) {
+                console.warn('Arena export: unable to clone data', error);
+                return null;
+            }
+        }
+
+        function serializeComponentForArena(component) {
+            if (!component) {
+                return null;
+            }
+
+            const profile = ARENA_COMPONENT_PROFILES[component.type] || { defaultProperties: {}, classification: 'unspecified' };
+            const baseProperties = cloneJsonSafe(component.properties) || {};
+            const enrichedProperties = Object.assign({}, profile.defaultProperties || {}, baseProperties);
+
+            const connections = (component.connections || []).map(connection => ({
+                wireId: connection?.wire?.id || null,
+                targetId: connection?.connectedTo?.id || null,
+                side: connection?.side || null
+            })).filter(Boolean);
+
+            return {
+                id: component.id,
+                type: component.type,
+                identifier: typeof component.getComponentIdentifier === 'function'
+                    ? component.getComponentIdentifier()
+                    : (component.type + '_' + component.componentNumber),
+                componentNumber: component.componentNumber || null,
+                rotation: component.rotation || 0,
+                position: {
+                    x: component.position?.x || 0,
+                    y: component.position?.y || 0,
+                    z: component.position?.z || 0
+                },
+                properties: enrichedProperties,
+                metadata: {
+                    classification: profile.classification,
+                    displayName: typeof component.getComponentIdentifier === 'function'
+                        ? component.getComponentIdentifier()
+                        : component.type,
+                    createdAt: new Date().toISOString(),
+                    vendor: enrichedProperties.manufacturer || 'CircuiTry Virtual Builder',
+                    partNumber: enrichedProperties.partNumber || (component.type.toUpperCase() + '-' + (component.componentNumber || 'X')),
+                    tolerance: enrichedProperties.tolerance || null
+                },
+                connections
+            };
+        }
+
+        function serializeWireForArena(wire) {
+            if (!wire) {
+                return null;
+            }
+
+            return {
+                id: wire.id,
+                startComponentId: wire.startObj?.id || null,
+                startSide: wire.startSide || null,
+                endComponentId: wire.endObj?.id || null,
+                endSide: wire.endSide || null,
+                segments: (wire.segments || []).map(segment => ({
+                    start: {
+                        x: segment?.start?.x || 0,
+                        y: segment?.start?.y || 0,
+                        z: segment?.start?.z || 0
+                    },
+                    end: {
+                        x: segment?.end?.x || 0,
+                        y: segment?.end?.y || 0,
+                        z: segment?.end?.z || 0
+                    }
+                }))
+            };
+        }
+
+        function serializeJunctionForArena(junction) {
+            if (!junction) {
+                return null;
+            }
+
+            return {
+                id: junction.id,
+                position: {
+                    x: junction.position?.x || 0,
+                    y: junction.position?.y || 0,
+                    z: junction.position?.z || 0
+                }
+            };
+        }
+
+        function computeAdvancedCircuitMetrics(basicResult, componentList, options) {
+            const defaults = options || {};
+            const frequencyHz = typeof defaults.frequencyHz === 'number' ? defaults.frequencyHz : 0;
+            const temperatureC = typeof defaults.temperatureC === 'number' ? defaults.temperatureC : 25;
+            const durationSeconds = typeof defaults.durationSeconds === 'number' ? defaults.durationSeconds : 60;
+
+            let totalResistance = 0;
+            let totalCapacitance = 0;
+            let totalInductance = 0;
+            let thermalMass = 0;
+
+            componentList.forEach(component => {
+                if (!component) return;
+
+                const profile = ARENA_COMPONENT_PROFILES[component.type] || {};
+                const props = component.properties || {};
+
+                if (typeof props.resistance === 'number') {
+                    totalResistance += Math.max(props.resistance, 0);
+                }
+
+                if (typeof props.seriesResistance === 'number') {
+                    totalResistance += Math.max(props.seriesResistance, 0);
+                }
+
+                if (typeof props.onResistance === 'number' && props.isOn !== false) {
+                    totalResistance += Math.max(props.onResistance, 0);
+                }
+
+                if (typeof props.capacitance === 'number') {
+                    totalCapacitance += Math.max(props.capacitance, 0);
+                }
+
+                if (typeof props.inductance === 'number') {
+                    totalInductance += Math.max(props.inductance, 0);
+                }
+
+                if (typeof props.thermalResistance === 'number') {
+                    thermalMass += Math.max(props.thermalResistance, 0);
+                } else if (profile.defaultProperties?.thermalResistance) {
+                    thermalMass += profile.defaultProperties.thermalResistance;
+                }
+            });
+
+            const omega = 2 * Math.PI * Math.max(frequencyHz, 0);
+            const reactanceC = totalCapacitance > 0 && omega > 0 ? -1 / (omega * totalCapacitance) : 0;
+            const reactanceL = totalInductance > 0 && omega > 0 ? omega * totalInductance : 0;
+            const netReactance = reactanceL + reactanceC; // capacitor already negative
+            const resistivePart = Number.isFinite(basicResult?.resistance) ? basicResult.resistance : totalResistance;
+            const impedance = Math.sqrt(Math.pow(Math.max(resistivePart, 0), 2) + Math.pow(netReactance, 2));
+            const phaseAngle = Math.atan2(netReactance, Math.max(resistivePart, 0));
+
+            const voltage = Math.max(basicResult?.voltage || 0, 0);
+            const current = Math.max(basicResult?.current || 0, 0);
+            const power = Math.max(basicResult?.power || voltage * current, 0);
+
+            const storedEnergyCap = totalCapacitance > 0 ? 0.5 * totalCapacitance * Math.pow(voltage, 2) : 0;
+            const storedEnergyInd = totalInductance > 0 ? 0.5 * totalInductance * Math.pow(current, 2) : 0;
+            const totalEnergy = storedEnergyCap + storedEnergyInd;
+
+            const thermalRise = thermalMass > 0 ? power * (thermalMass / 1000) : 0;
+            const energyDelivered = power * durationSeconds;
+
+            return {
+                totalResistance,
+                totalCapacitance,
+                totalInductance,
+                impedance,
+                netReactance,
+                phaseAngleRadians: phaseAngle,
+                phaseAngleDegrees: phaseAngle * (180 / Math.PI),
+                storedEnergy: totalEnergy,
+                energyDelivered,
+                estimatedThermalRise: thermalRise,
+                temperatureC,
+                frequencyHz,
+                durationSeconds,
+                topology: basicResult?.topology || 'unknown'
+            };
+        }
+
+        function buildArenaExportPayload(options) {
+            const now = new Date();
+            const basicAnalysis = performCircuitAnalysis();
+            const componentPayload = components.map(serializeComponentForArena).filter(Boolean);
+            const advancedMetrics = computeAdvancedCircuitMetrics(basicAnalysis, componentPayload, options?.testVariables);
+            const wirePayload = wires.map(serializeWireForArena).filter(Boolean);
+            const junctionPayload = junctions.map(serializeJunctionForArena).filter(Boolean);
+
+            const testVariables = Object.assign({
+                voltage: basicAnalysis?.voltage || 5,
+                frequencyHz: options?.testVariables?.frequencyHz ?? 0,
+                temperatureC: options?.testVariables?.temperatureC ?? 25,
+                ambientHumidityPercent: options?.testVariables?.ambientHumidityPercent ?? 50,
+                dutyCyclePercent: options?.testVariables?.dutyCyclePercent ?? 100,
+                loadImpedanceOhms: advancedMetrics.impedance || basicAnalysis?.resistance || null,
+                durationSeconds: options?.testVariables?.durationSeconds ?? 60
+            }, options?.testVariables || {});
+
+            return {
+                version: '2025.11.02',
+                sessionName: options?.sessionName || 'Legacy Builder Export',
+                exportedAt: now.toISOString(),
+                source: {
+                    name: 'CircuiTry3D Builder',
+                    type: 'virtual-workspace',
+                    environment: 'legacy',
+                    bridgeVersion: 'arena-export-v1'
+                },
+                components: componentPayload,
+                wires: wirePayload,
+                junctions: junctionPayload,
+                analysis: {
+                    basic: basicAnalysis,
+                    advanced: advancedMetrics
+                },
+                testVariables,
+                metadata: {
+                    units: 'SI',
+                    componentCount: componentPayload.length,
+                    wireCount: wirePayload.length,
+                    junctionCount: junctionPayload.length
+                }
+            };
+        }
+
+        function persistArenaSession(sessionId, envelope) {
+            try {
+                const serialized = JSON.stringify(envelope);
+                if (typeof window !== 'undefined' && window.localStorage) {
+                    window.localStorage.setItem('circuitry:arena-session:' + sessionId, serialized);
+                    window.localStorage.setItem('circuitry:arena-session:last', sessionId);
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Arena export: localStorage unavailable', error);
+            }
+
+            try {
+                const serialized = JSON.stringify(envelope);
+                if (typeof window !== 'undefined' && window.sessionStorage) {
+                    window.sessionStorage.setItem('circuitry:arena-session:' + sessionId, serialized);
+                    window.sessionStorage.setItem('circuitry:arena-session:last', sessionId);
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Arena export: sessionStorage fallback unavailable', error);
+            }
+
+            return false;
+        }
+
+        function exportArenaSession(options) {
+            const config = options || {};
+            const requestId = config.requestId || null;
+            const openWindow = Boolean(config.openWindow);
+
+            try {
+                const sessionId = config.sessionId || ('arena-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6));
+                const payload = buildArenaExportPayload(config);
+                const envelope = {
+                    sessionId,
+                    exportedAt: payload.exportedAt,
+                    version: payload.version,
+                    payload
+                };
+
+                const persisted = persistArenaSession(sessionId, envelope);
+
+                const summary = {
+                    sessionId,
+                    exportedAt: payload.exportedAt,
+                    componentCount: payload.components.length,
+                    wireCount: payload.wires.length,
+                    junctionCount: payload.junctions.length,
+                    analysis: payload.analysis,
+                    testVariables: payload.testVariables,
+                    storage: persisted ? 'localStorage' : 'volatile',
+                    requestId
+                };
+
+                if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+                    try {
+                        window.parent.postMessage({ type: 'legacy:arena-export', payload: summary }, '*');
+                    } catch (postError) {
+                        console.warn('Arena export: unable to notify parent', postError);
+                    }
+                }
+
+                if (openWindow && (!window.parent || window.parent === window)) {
+                    try {
+                        window.open('/arena?session=' + encodeURIComponent(sessionId), '_blank');
+                    } catch (openError) {
+                        console.warn('Arena export: unable to open arena window', openError);
+                    }
+                }
+
+                return summary;
+            } catch (error) {
+                console.error('Arena export failed:', error);
+                if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+                    try {
+                        window.parent.postMessage({
+                            type: 'legacy:arena-export:error',
+                            payload: {
+                                message: error?.message || String(error),
+                                requestId
+                            }
+                        }, '*');
+                    } catch (postError) {
+                        console.warn('Arena export: unable to notify parent about failure', postError);
+                    }
+                }
+                return null;
             }
         }
         

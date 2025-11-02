@@ -26,7 +26,16 @@ type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
-  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } };
+  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } }
+  | {
+      type: "builder:export-arena";
+      payload?: {
+        requestId?: string;
+        openWindow?: boolean;
+        sessionName?: string;
+        testVariables?: Record<string, unknown>;
+      };
+    };
 
 type ComponentAction = {
   id: string;
@@ -86,6 +95,40 @@ type PanelAction = {
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
 };
+
+type ArenaExportSummary = {
+  sessionId: string;
+  exportedAt: string;
+  componentCount: number;
+  wireCount: number;
+  junctionCount: number;
+  analysis?: {
+    basic?: {
+      voltage?: number;
+      current?: number;
+      resistance?: number;
+      power?: number;
+      topology?: string;
+    };
+    advanced?: {
+      impedance?: number;
+      netReactance?: number;
+      phaseAngleDegrees?: number;
+      totalResistance?: number;
+      totalCapacitance?: number;
+      totalInductance?: number;
+      energyDelivered?: number;
+      estimatedThermalRise?: number;
+      frequencyHz?: number;
+      temperatureC?: number;
+    };
+  };
+  testVariables?: Record<string, unknown>;
+  storage?: string;
+  requestId?: string | null;
+};
+
+type ArenaExportStatus = "idle" | "exporting" | "ready" | "error";
 
 const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
@@ -216,8 +259,8 @@ const PRACTICE_ACTIONS: PanelAction[] = [
   },
   {
     id: "open-arena",
-    label: "Component Arena",
-    description: "Open the arena view for rapid-fire component drills.",
+    label: "Component Arena Sync",
+    description: "Export the active build and open the Component Arena for testing.",
     action: "open-arena",
   },
 ];
@@ -660,6 +703,7 @@ function subscribeToMediaQuery(query: MediaQueryList, listener: (event: MediaQue
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
+  const pendingArenaRequests = useRef<Map<string, { openWindow: boolean }>>(new Map());
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
@@ -673,6 +717,13 @@ export default function Builder() {
   });
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
+  const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
+  const [arenaExportError, setArenaExportError] = useState<string | null>(null);
+  const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
+  const appBasePath = useMemo(() => {
+    const baseUrl = import.meta.env.BASE_URL ?? "/";
+    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  }, []);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -693,13 +744,54 @@ export default function Builder() {
         return;
       }
 
+      if (type === "legacy:arena-export") {
+        const summary = (payload || {}) as ArenaExportSummary | undefined;
+        if (summary && typeof summary.sessionId === "string") {
+          setArenaExportStatus("ready");
+          setArenaExportError(null);
+          setLastArenaExport(summary);
+
+          const requestId = typeof summary.requestId === "string" ? summary.requestId : undefined;
+          let shouldOpenWindow = false;
+
+          if (requestId) {
+            const meta = pendingArenaRequests.current.get(requestId);
+            if (meta) {
+              shouldOpenWindow = Boolean(meta.openWindow);
+              pendingArenaRequests.current.delete(requestId);
+            }
+          } else {
+            shouldOpenWindow = true;
+          }
+
+          if (shouldOpenWindow && typeof window !== "undefined") {
+            const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(summary.sessionId)}`;
+            window.open(targetUrl, "_blank", "noopener");
+          }
+        } else {
+          setArenaExportStatus("error");
+          setArenaExportError("Arena export returned an unexpected response");
+        }
+        return;
+      }
+
+      if (type === "legacy:arena-export:error") {
+        const errorPayload = (payload || {}) as { message?: string; requestId?: string };
+        setArenaExportStatus("error");
+        setArenaExportError(errorPayload?.message || "Arena export failed");
+        if (errorPayload?.requestId) {
+          pendingArenaRequests.current.delete(errorPayload.requestId);
+        }
+        return;
+      }
+
     };
 
     window.addEventListener("message", handleMessage);
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, []);
+  }, [appBasePath]);
 
   useEffect(() => {
     document.body.classList.add("builder-body");
@@ -808,6 +900,54 @@ export default function Builder() {
     [postToBuilder]
   );
 
+  const handleArenaSync = useCallback(
+    (
+      options: {
+        openWindow?: boolean;
+        sessionName?: string;
+        testVariables?: Record<string, unknown>;
+      } = {}
+    ) => {
+      const openWindow = options.openWindow ?? true;
+      const requestId = `arena-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      pendingArenaRequests.current.set(requestId, { openWindow });
+      setArenaExportStatus("exporting");
+      setArenaExportError(null);
+
+      const message: BuilderMessage = {
+        type: "builder:export-arena",
+        payload: {
+          requestId,
+          openWindow,
+          sessionName: options.sessionName,
+          testVariables: options.testVariables,
+        },
+      };
+
+      postToBuilder(message);
+    },
+    [postToBuilder]
+  );
+
+  const handlePracticeAction = useCallback(
+    (action: PanelAction) => {
+      if (action.action === "open-arena") {
+        handleArenaSync({ openWindow: true, sessionName: "Builder Hand-off" });
+        return;
+      }
+      triggerBuilderAction(action.action, action.data);
+    },
+    [handleArenaSync, triggerBuilderAction]
+  );
+
+  const openLastArenaSession = useCallback(() => {
+    if (!lastArenaExport?.sessionId) {
+      return;
+    }
+    const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(lastArenaExport.sessionId)}`;
+    window.open(targetUrl, "_blank", "noopener");
+  }, [appBasePath, lastArenaExport]);
+
   const openHelpCenter = useCallback(
     (view: HelpModalView = "overview", sectionTitle?: string) => {
       setHelpView(view);
@@ -871,6 +1011,39 @@ export default function Builder() {
     },
     [postToBuilder]
   );
+
+  const arenaStatusMessage = useMemo(() => {
+    switch (arenaExportStatus) {
+      case "exporting":
+        return "Exporting current build to Component Arena...";
+      case "ready": {
+        if (!lastArenaExport) {
+          return "Component Arena export is ready.";
+        }
+        const exportedTime = lastArenaExport.exportedAt ? new Date(lastArenaExport.exportedAt) : null;
+        const formattedTime = exportedTime && !Number.isNaN(exportedTime.getTime())
+          ? exportedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : null;
+        const componentLabel = typeof lastArenaExport.componentCount === "number"
+          ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
+          : null;
+        if (componentLabel && formattedTime) {
+          return `Last arena export: ${componentLabel} - ${formattedTime}`;
+        }
+        if (componentLabel) {
+          return `Last arena export: ${componentLabel}`;
+        }
+        return "Component Arena export is ready.";
+      }
+      case "error":
+        return arenaExportError ?? "Component Arena export failed.";
+      default:
+        return "Send this build to the Component Arena for advanced testing.";
+    }
+  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
+
+  const isArenaSyncing = arenaExportStatus === "exporting";
+  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
@@ -1057,15 +1230,35 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Practice</span>
               <div className="menu-track menu-track-chips">
+                <div
+                  role="status"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(136, 204, 255, 0.78)",
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(136, 204, 255, 0.22)",
+                    background: "rgba(14, 30, 58, 0.48)",
+                  }}
+                >
+                  {arenaStatusMessage}
+                </div>
                 {PRACTICE_ACTIONS.map((action) => (
                   <button
                     key={action.id}
                     type="button"
                     className="slider-chip"
-                    onClick={() => triggerBuilderAction(action.action, action.data)}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                    onClick={() => handlePracticeAction(action)}
+                    disabled={controlsDisabled || (action.action === "open-arena" && isArenaSyncing)}
+                    aria-disabled={controlsDisabled || (action.action === "open-arena" && isArenaSyncing)}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : action.action === "open-arena" && isArenaSyncing
+                        ? "Preparing Component Arena export?"
+                        : action.description
+                    }
                   >
                     <span className="slider-chip-label">{action.label}</span>
                   </button>
@@ -1083,6 +1276,20 @@ export default function Builder() {
                     <span className="slider-chip-label">{scenario.label}</span>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={openLastArenaSession}
+                  disabled={!canOpenLastArena}
+                  aria-disabled={!canOpenLastArena}
+                  title={
+                    canOpenLastArena
+                      ? "Open the most recent Component Arena export"
+                      : "Run a Component Arena export first"
+                  }
+                >
+                  <span className="slider-chip-label">Open Last Arena Run</span>
+                </button>
               </div>
             </div>
             <div className="slider-section">
