@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/arena.css";
 
@@ -21,6 +22,7 @@ type ArenaSummary = {
 
 type ArenaComponent = {
   id?: string;
+  name?: string;
   type?: string;
   componentNumber?: string;
   properties?: Record<string, unknown>;
@@ -35,6 +37,7 @@ type ArenaState = {
 type ArenaPayload = {
   version?: string;
   source?: string;
+  label?: string;
   generatedAt?: number;
   metrics?: Partial<ArenaMetrics>;
   summary?: Partial<ArenaSummary>;
@@ -81,6 +84,22 @@ function formatMetric(value: number | null | undefined, unit: string): string {
   }
 
   return `${value.toFixed(digits)} ${unit}`;
+}
+
+function buildSummaryFromComponents(components?: ArenaComponent[]): ArenaSummary {
+  const safeComponents = Array.isArray(components) ? components : [];
+  const byType = safeComponents.reduce<Record<string, number>>((acc, component) => {
+    const type = (component?.type || "unknown").toString();
+    acc[type] = (acc[type] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    totalComponents: safeComponents.length,
+    totalWires: 0,
+    totalJunctions: 0,
+    byType
+  };
 }
 
 function summariseProperties(properties?: Record<string, unknown>): string | null {
@@ -251,8 +270,211 @@ function formatPropertyValue(key: string, value: unknown): {
   return { displayValue: "—", numericValue: null, unit: null };
 }
 
+function sanitiseComponent(raw: unknown, index: number): ArenaComponent | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const candidate = raw as Record<string, unknown>;
+
+  const typeCandidates = [candidate.type, candidate.category, candidate.kind, candidate.family];
+  const resolvedType = typeCandidates.find((entry) => typeof entry === "string" && entry.trim().length > 0);
+
+  const componentNumberCandidates = [candidate.componentNumber, candidate.partNumber, candidate.partNum, candidate.part, candidate.sku];
+  const resolvedComponentNumber = componentNumberCandidates.find((entry) => typeof entry === "string" && entry.trim().length > 0);
+
+  const nameCandidates = [candidate.name, candidate.label, candidate.title, candidate.displayName, resolvedComponentNumber];
+  const resolvedName = nameCandidates.find((entry) => typeof entry === "string" && entry.trim().length > 0);
+
+  const idCandidates = [candidate.id, candidate.uid, candidate.identifier, candidate.slug, resolvedComponentNumber, resolvedName];
+  const resolvedId = idCandidates.find((entry) => typeof entry === "string" && entry.trim().length > 0);
+
+  const propertiesCandidates = [candidate.properties, candidate.props, candidate.spec, candidate.values, candidate.attributes, candidate.data];
+  const resolvedPropertiesSource = propertiesCandidates.find((entry) => entry && typeof entry === "object") as Record<string, unknown> | undefined;
+
+  const properties = resolvedPropertiesSource ? { ...resolvedPropertiesSource } : undefined;
+
+  if (properties && typeof candidate.value !== "undefined" && typeof properties.value === "undefined") {
+    properties.value = candidate.value;
+  }
+
+  if (!resolvedType && !resolvedName && !resolvedId && !properties) {
+    return null;
+  }
+
+  return {
+    id: typeof resolvedId === "string" ? resolvedId : undefined,
+    name: typeof resolvedName === "string" ? resolvedName : undefined,
+    type: typeof resolvedType === "string" ? resolvedType : undefined,
+    componentNumber: typeof resolvedComponentNumber === "string" ? resolvedComponentNumber : undefined,
+    properties
+  };
+}
+
+function coerceSummary(summary: Partial<ArenaSummary> | undefined, components: ArenaComponent[]): ArenaSummary {
+  const fallback = buildSummaryFromComponents(components);
+  if (!summary || typeof summary !== "object") {
+    return fallback;
+  }
+
+  const byType = summary.byType && typeof summary.byType === "object" ? summary.byType : fallback.byType;
+
+  return {
+    totalComponents: typeof summary.totalComponents === "number" && Number.isFinite(summary.totalComponents) ? summary.totalComponents : fallback.totalComponents,
+    totalWires: typeof summary.totalWires === "number" && Number.isFinite(summary.totalWires) ? summary.totalWires : fallback.totalWires,
+    totalJunctions: typeof summary.totalJunctions === "number" && Number.isFinite(summary.totalJunctions) ? summary.totalJunctions : fallback.totalJunctions,
+    byType: byType as Record<string, number>
+  };
+}
+
+function scrubMetrics(metrics?: Partial<ArenaMetrics> | null): Partial<ArenaMetrics> | undefined {
+  if (!metrics || typeof metrics !== "object") {
+    return undefined;
+  }
+
+  const result: Partial<ArenaMetrics> = {};
+  (Object.keys(metrics) as (keyof ArenaMetrics)[]).forEach((key) => {
+    const value = metrics[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      result[key] = value;
+    }
+  });
+
+  return Object.keys(result).length ? result : undefined;
+}
+
+function normaliseImportPayload(raw: unknown, defaults: { source: string; label?: string }): ArenaPayload | null {
+  if (raw === null || typeof raw === "undefined") {
+    return null;
+  }
+
+  let candidate: unknown = raw;
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (candidate && typeof candidate === "object" && "payload" in (candidate as Record<string, unknown>)) {
+      const next = (candidate as Record<string, unknown>).payload;
+      if (next && typeof next === "object") {
+        candidate = next;
+        continue;
+      }
+    }
+    break;
+  }
+
+  const envelope = candidate && typeof candidate === "object" ? (candidate as Record<string, unknown>) : null;
+
+  const componentSources: unknown[] = [];
+  const collectComponents = (value: unknown) => {
+    if (!value || typeof value !== "object") {
+      return;
+    }
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.components)) {
+      componentSources.push(record.components);
+    }
+    if (record.state && typeof record.state === "object" && Array.isArray((record.state as Record<string, unknown>).components)) {
+      componentSources.push((record.state as Record<string, unknown>).components as unknown[]);
+    }
+    if (Array.isArray((record as Record<string, unknown>).library)) {
+      componentSources.push((record as Record<string, unknown>).library as unknown[]);
+    }
+    if (Array.isArray((record as Record<string, unknown>).items)) {
+      componentSources.push((record as Record<string, unknown>).items as unknown[]);
+    }
+  };
+
+  if (Array.isArray(raw)) {
+    componentSources.push(raw);
+  }
+  if (envelope) {
+    collectComponents(envelope);
+  }
+  if (raw && typeof raw === "object" && raw !== envelope) {
+    collectComponents(raw);
+  }
+
+  const componentsRaw = componentSources.find((entry) => Array.isArray(entry) && entry.length > 0) as unknown[] | undefined;
+  if (!componentsRaw || componentsRaw.length === 0) {
+    return null;
+  }
+
+  const components = componentsRaw
+    .map((entry, index) => sanitiseComponent(entry, index))
+    .filter((entry): entry is ArenaComponent => Boolean(entry));
+
+  if (!components.length) {
+    return null;
+  }
+
+  const wiresCandidate = envelope && Array.isArray(envelope.wires)
+    ? (envelope.wires as unknown[])
+    : envelope && envelope.state && typeof envelope.state === "object" && Array.isArray((envelope.state as Record<string, unknown>).wires)
+    ? ((envelope.state as Record<string, unknown>).wires as unknown[])
+    : undefined;
+
+  const junctionsCandidate = envelope && Array.isArray(envelope.junctions)
+    ? (envelope.junctions as unknown[])
+    : envelope && envelope.state && typeof envelope.state === "object" && Array.isArray((envelope.state as Record<string, unknown>).junctions)
+    ? ((envelope.state as Record<string, unknown>).junctions as unknown[])
+    : undefined;
+
+  const summaryCandidate = envelope && typeof envelope.summary === "object" && envelope.summary !== null ? (envelope.summary as Partial<ArenaSummary>) : undefined;
+  const metricsCandidate = envelope && typeof envelope.metrics === "object" && envelope.metrics !== null ? (envelope.metrics as Partial<ArenaMetrics>) : undefined;
+
+  const labelCandidateRaw = envelope && (envelope.label || envelope.sessionName || envelope.name);
+  const labelCandidate = typeof labelCandidateRaw === "string" && labelCandidateRaw.trim().length > 0 ? labelCandidateRaw : undefined;
+
+  const sourceCandidate = envelope?.source;
+  let source = defaults.source;
+  if (typeof sourceCandidate === "string" && sourceCandidate.trim().length > 0) {
+    source = sourceCandidate;
+  } else if (sourceCandidate && typeof sourceCandidate === "object") {
+    const sourceName = (sourceCandidate as Record<string, unknown>).name;
+    if (typeof sourceName === "string" && sourceName.trim().length > 0) {
+      source = sourceName;
+    }
+  }
+
+  const generatedAtCandidateRaw = envelope && (envelope.generatedAt ?? envelope.timestamp ?? envelope.updatedAt);
+  let generatedAt: number | undefined;
+  if (typeof generatedAtCandidateRaw === "number" && Number.isFinite(generatedAtCandidateRaw)) {
+    generatedAt = generatedAtCandidateRaw;
+  } else if (typeof generatedAtCandidateRaw === "string") {
+    const parsed = Date.parse(generatedAtCandidateRaw);
+    if (!Number.isNaN(parsed)) {
+      generatedAt = parsed;
+    }
+  }
+
+  if (!generatedAt && envelope && typeof envelope.exportedAt === "string") {
+    const parsed = Date.parse(envelope.exportedAt);
+    if (!Number.isNaN(parsed)) {
+      generatedAt = parsed;
+    }
+  }
+
+  if (!generatedAt) {
+    generatedAt = Date.now();
+  }
+
+  const versionCandidate = envelope && typeof envelope.version === "string" ? envelope.version : undefined;
+
+  return {
+    version: versionCandidate,
+    source,
+    label: labelCandidate ?? defaults.label,
+    generatedAt,
+    metrics: scrubMetrics(metricsCandidate),
+    summary: coerceSummary(summaryCandidate, components),
+    state: {
+      components,
+      wires: wiresCandidate,
+      junctions: junctionsCandidate
+    }
+  };
+}
+
 function buildComponentProfile(component: ArenaComponent, index: number, uid: string): ComponentShowdownProfile {
-  const name = component.componentNumber || component.type || `Component ${index + 1}`;
+  const name = component.name || component.componentNumber || component.type || `Component ${index + 1}`;
   const type = component.type ?? "Unknown";
   const summary = summariseProperties(component.properties) ?? null;
   const properties = component.properties && typeof component.properties === "object" ? component.properties : {};
@@ -332,6 +554,46 @@ type ComparisonRow = {
   deltaLabel: string | null;
 };
 
+type ShowdownRound = {
+  key: string;
+  label: string;
+  leftValue: string;
+  rightValue: string;
+  deltaLabel: string | null;
+  winner: "left" | "right" | "tie";
+  preference: "higher" | "lower";
+  advantageScore: number;
+  shortSummary: string | null;
+};
+
+type ShowdownScore = {
+  totalRounds: number;
+  leftWins: number;
+  rightWins: number;
+  ties: number;
+  rounds: ShowdownRound[];
+  winner: "left" | "right" | "tie" | null;
+  dominantMetric: string | null;
+};
+
+const HIGHER_IS_BETTER_TOKENS = ["power", "current", "voltage", "efficiency", "energy", "capacity", "inductance", "capacitance", "gain", "frequency", "duty", "conductance", "throughput"];
+const LOWER_IS_BETTER_TOKENS = ["resistance", "impedance", "thermal", "temperature", "dissipation", "loss", "drop", "delay", "reactance", "onresistance", "offresistance", "rise", "transition"];
+
+function getMetricPreference(key: string): "higher" | "lower" {
+  const normalised = key.toLowerCase();
+  if (LOWER_IS_BETTER_TOKENS.some((token) => normalised.includes(token))) {
+    return "lower";
+  }
+  if (HIGHER_IS_BETTER_TOKENS.some((token) => normalised.includes(token))) {
+    return "higher";
+  }
+  return "higher";
+}
+
+function formatShowdownRecord(wins: number, losses: number, ties: number): string {
+  return ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
+}
+
 function formatDeltaLabel(metricKey: string, unitHint: string | null, numericA: number | null, numericB: number | null): string | null {
   if (numericA === null || numericB === null) {
     return null;
@@ -357,6 +619,169 @@ function formatDeltaLabel(metricKey: string, unitHint: string | null, numericA: 
   return `Δ ${difference > 0 ? "+" : ""}${formatted.trim()} (${percentLabel})`;
 }
 
+function computeShowdownScore(componentA: ComponentShowdownProfile | null, componentB: ComponentShowdownProfile | null): ShowdownScore {
+  if (!componentA || !componentB) {
+    return { totalRounds: 0, leftWins: 0, rightWins: 0, ties: 0, rounds: [], winner: null, dominantMetric: null };
+  }
+
+  const mapA = new Map(componentA.metrics.map((metric) => [metric.key, metric]));
+  const rounds: ShowdownRound[] = [];
+  let leftWins = 0;
+  let rightWins = 0;
+  let ties = 0;
+
+  componentB.metrics.forEach((metricB) => {
+    const metricA = mapA.get(metricB.key);
+    if (!metricA || metricA.numericValue === null || metricB.numericValue === null) {
+      return;
+    }
+
+    const preference = getMetricPreference(metricA.key);
+    const diff = (metricA.numericValue as number) - (metricB.numericValue as number);
+    const base = Math.max(Math.abs(metricA.numericValue as number), Math.abs(metricB.numericValue as number), 1e-9);
+    const advantage = preference === "higher" ? diff : -diff;
+    const relative = Math.abs(diff) / base;
+    const threshold = 0.02;
+
+    let winner: "left" | "right" | "tie";
+    if (relative < threshold) {
+      winner = "tie";
+      ties += 1;
+    } else if (advantage > 0) {
+      winner = "left";
+      leftWins += 1;
+    } else {
+      winner = "right";
+      rightWins += 1;
+    }
+
+    const percentDelta = base > 1e-9 ? ((metricA.numericValue as number - metricB.numericValue as number) / base) * 100 : null;
+    const percentLabel = percentDelta !== null && Number.isFinite(percentDelta)
+      ? `${percentDelta > 0 ? "+" : ""}${percentDelta.toFixed(Math.abs(percentDelta) < 10 ? 1 : 0)}%`
+      : null;
+    const shortSummary = winner === "tie" ? "Neck and neck" : `${winner === "left" ? "A" : "B"} advantage${percentLabel ? ` ${percentLabel}` : ""}`;
+
+    rounds.push({
+      key: metricA.key,
+      label: metricA.label,
+      leftValue: metricA.displayValue,
+      rightValue: metricB.displayValue,
+      deltaLabel: formatDeltaLabel(metricA.label, metricA.unit ?? metricB.unit ?? null, metricA.numericValue, metricB.numericValue),
+      winner,
+      preference,
+      advantageScore: relative,
+      shortSummary
+    });
+  });
+
+  rounds.sort((a, b) => b.advantageScore - a.advantageScore);
+
+  const totalRounds = rounds.length;
+  const winner = totalRounds === 0 ? null : leftWins > rightWins ? "left" : rightWins > leftWins ? "right" : "tie";
+
+  return {
+    totalRounds,
+    leftWins,
+    rightWins,
+    ties,
+    rounds,
+    winner,
+    dominantMetric: rounds[0]?.label ?? null
+  };
+}
+
+const SAMPLE_IMPORTS: { id: string; label: string; description: string; payload: ArenaPayload }[] = (() => {
+  const ledShowdown: ArenaComponent[] = [
+    {
+      id: "sample-led-photon",
+      name: "Photon Burst LED",
+      type: "led",
+      properties: {
+        forwardVoltage: 2.1,
+        seriesResistance: 68,
+        efficiency: 0.48,
+        thermalResistance: 88,
+        current: 0.24
+      }
+    },
+    {
+      id: "sample-resistor-precision",
+      name: "Precision Resistor 100Ω",
+      type: "resistor",
+      properties: {
+        resistance: 100,
+        tolerance: 0.01,
+        thermalResistance: 55,
+        tempCoeff: 0.0002
+      }
+    },
+    {
+      id: "sample-switch-mosfet",
+      name: "MOSFET Driver Switch",
+      type: "switch",
+      properties: {
+        onResistance: 0.012,
+        offResistance: 500000,
+        transitionTimeMs: 0.8,
+        efficiency: 0.91
+      }
+    }
+  ];
+
+  const energyClash: ArenaComponent[] = [
+    {
+      id: "sample-battery-max",
+      name: "MaxCharge Li-Ion Pack",
+      type: "battery",
+      properties: {
+        voltage: 11.1,
+        internalResistance: 0.09,
+        capacityMah: 5200,
+        maxDischargeCurrent: 4.2,
+        thermalResistance: 32
+      }
+    },
+    {
+      id: "sample-capacitor-ultra",
+      name: "UltraCap 20F",
+      type: "capacitor",
+      properties: {
+        capacitance: 20,
+        esr: 0.035,
+        tempCoeff: 0.00015,
+        thermalResistance: 28
+      }
+    }
+  ];
+
+  return [
+    {
+      id: "led-showdown",
+      label: "Photon Arena Starter",
+      description: "LED drive train versus precision resistor and MOSFET support crew.",
+      payload: {
+        source: "sample",
+        label: "Photon Arena Starter",
+        generatedAt: Date.now(),
+        summary: buildSummaryFromComponents(ledShowdown),
+        state: { components: ledShowdown }
+      }
+    },
+    {
+      id: "energy-clash",
+      label: "Energy Storage Clash",
+      description: "Li-ion pack against an ultracapacitor for burst delivery duels.",
+      payload: {
+        source: "sample",
+        label: "Energy Storage Clash",
+        generatedAt: Date.now(),
+        summary: buildSummaryFromComponents(energyClash),
+        state: { components: energyClash }
+      }
+    }
+  ];
+})();
+
 function formatTimestamp(timestamp?: number): string {
   if (!timestamp) {
     return "No sync yet";
@@ -379,10 +804,16 @@ function formatTimestamp(timestamp?: number): string {
 export default function Arena() {
   const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [importPayload, setImportPayload] = useState<ArenaPayload | null>(null);
   const [frameReady, setFrameReady] = useState(false);
   const [bridgeStatus, setBridgeStatus] = useState(DEFAULT_STATUS);
+  const [manualImportText, setManualImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [recentImportSource, setRecentImportSource] = useState<string | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [importPending, setImportPending] = useState(false);
   const [showdownSelection, setShowdownSelection] = useState<{ left: string | null; right: string | null }>({
     left: null,
     right: null
@@ -403,6 +834,36 @@ export default function Arena() {
     }
   }, []);
 
+  const applyResolvedPayload = useCallback(
+    (payload: ArenaPayload, meta: { statusMessage?: string; sourceOverride?: string; persist?: boolean } = {}) => {
+      const enriched: ArenaPayload = {
+        ...payload,
+        source: meta.sourceOverride ?? payload.source ?? "external",
+        generatedAt: payload.generatedAt ?? Date.now(),
+        summary: payload.summary ?? buildSummaryFromComponents(payload.state?.components)
+      };
+
+      setImportPayload(enriched);
+      setBridgeStatus(meta.statusMessage ?? `Loaded ${enriched.label ?? "component import"}.`);
+      setImportError(null);
+      const sourceBadgeParts = [enriched.source, enriched.label].filter(Boolean);
+      setRecentImportSource(sourceBadgeParts.length ? sourceBadgeParts.join(" · ") : enriched.source ?? null);
+
+      if (typeof window !== "undefined" && meta.persist !== false) {
+        try {
+          window.localStorage?.setItem(ARENA_STORAGE_KEY, JSON.stringify(enriched));
+        } catch (error) {
+          console.warn("Arena: unable to persist import payload", error);
+        }
+      }
+
+      if (frameReady) {
+        sendArenaMessage({ type: "arena:import", payload: enriched });
+      }
+    },
+    [frameReady, sendArenaMessage]
+  );
+
   const readLatestPayload = useCallback(() => {
     if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
       return null;
@@ -411,13 +872,169 @@ export default function Arena() {
     return parseArenaPayload(window.localStorage.getItem(ARENA_STORAGE_KEY));
   }, []);
 
+  const handleExternalImport = useCallback(
+    (raw: unknown, meta: { label?: string; source: string; statusMessage?: string; persist?: boolean }) => {
+      const normalised = normaliseImportPayload(raw, { label: meta.label, source: meta.source });
+      if (!normalised) {
+        setImportError("We couldn't find any components in that dataset.");
+        setBridgeStatus("Import failed. Please verify the dataset format.");
+        return false;
+      }
+
+      const enriched: ArenaPayload = {
+        ...normalised,
+        source: meta.source,
+        label: normalised.label ?? meta.label,
+        generatedAt: normalised.generatedAt ?? Date.now(),
+        summary: normalised.summary ?? buildSummaryFromComponents(normalised.state?.components)
+      };
+
+      applyResolvedPayload(enriched, {
+        sourceOverride: meta.source,
+        statusMessage: meta.statusMessage,
+        persist: meta.persist
+      });
+      return true;
+    },
+    [applyResolvedPayload]
+  );
+
+  const processImportFile = useCallback(
+    (file: File) => {
+      setImportPending(true);
+      setImportError(null);
+      setBridgeStatus(`Processing ${file.name}...`);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImportPending(false);
+        try {
+          const text = typeof reader.result === "string" ? reader.result : new TextDecoder().decode(reader.result as ArrayBuffer);
+          const parsed = JSON.parse(text);
+          const success = handleExternalImport(parsed, {
+            source: "upload",
+            label: file.name.replace(/\.[^.]+$/u, ""),
+            statusMessage: `Imported components from ${file.name}.`
+          });
+          if (!success) {
+            setImportError("Uploaded file did not contain any components.");
+          }
+        } catch (error) {
+          console.warn("Arena: file import parse failed", error);
+          setImportError("Invalid JSON file. Please export from the builder or use the Arena JSON schema.");
+          setBridgeStatus("Import failed. Invalid JSON dataset.");
+        }
+      };
+      reader.onerror = () => {
+        setImportPending(false);
+        setImportError("Couldn't read the selected file. Please try again.");
+        setBridgeStatus("Import failed while reading file.");
+      };
+      reader.onloadend = () => {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      };
+
+      reader.readAsText(file);
+    },
+    [handleExternalImport]
+  );
+
+  const handleFileInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+      processImportFile(file);
+    },
+    [processImportFile]
+  );
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDragActive(false);
+      event.dataTransfer?.clearData();
+      const file = event.dataTransfer.files?.[0];
+      if (file) {
+        processImportFile(file);
+      }
+    },
+    [processImportFile]
+  );
+
+  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const nextTarget = event.relatedTarget as Node | null;
+    if (nextTarget && event.currentTarget.contains(nextTarget)) {
+      return;
+    }
+    setIsDragActive(false);
+  }, []);
+
+  const handleManualImportSubmit = useCallback(() => {
+    if (!manualImportText.trim()) {
+      setImportError("Paste a JSON payload to import components.");
+      return;
+    }
+
+    try {
+      setImportError(null);
+      setBridgeStatus("Processing pasted JSON...");
+      const parsed = JSON.parse(manualImportText);
+      const success = handleExternalImport(parsed, {
+        source: "manual",
+        label: "Manual Import",
+        statusMessage: "Imported components from pasted JSON.",
+        persist: true
+      });
+      if (success) {
+        setImportError(null);
+        setManualImportText("");
+      }
+    } catch (error) {
+      console.warn("Arena: manual import parse failed", error);
+      setImportError("Invalid JSON. Please fix formatting and try again.");
+      setBridgeStatus("Import failed. Invalid JSON dataset.");
+    }
+  }, [handleExternalImport, manualImportText]);
+
+  const handleSampleImport = useCallback(
+    (payload: ArenaPayload) => {
+      applyResolvedPayload(
+        {
+          ...payload,
+          generatedAt: Date.now()
+        },
+        {
+          sourceOverride: payload.source ?? "sample",
+          statusMessage: `Loaded ${payload.label ?? "sample"}.`
+        }
+      );
+    },
+    [applyResolvedPayload]
+  );
+
   useEffect(() => {
     const existingPayload = readLatestPayload();
     if (existingPayload) {
-      setImportPayload(existingPayload);
-      setBridgeStatus("Loaded builder circuit snapshot.");
+      applyResolvedPayload(existingPayload, {
+        statusMessage: "Loaded builder circuit snapshot.",
+        sourceOverride: existingPayload.source ?? "builder",
+        persist: false
+      });
     }
-  }, [readLatestPayload]);
+  }, [applyResolvedPayload, readLatestPayload]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -431,17 +1048,17 @@ export default function Arena() {
 
       const next = parseArenaPayload(event.newValue);
       if (next) {
-        setImportPayload(next);
-        setBridgeStatus("Synced new build from Builder.");
-        if (frameReady) {
-          sendArenaMessage({ type: "arena:import", payload: next });
-        }
+        applyResolvedPayload(next, {
+          statusMessage: "Synced new build from Builder.",
+          sourceOverride: next.source ?? "builder",
+          persist: false
+        });
       }
     };
 
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [frameReady, sendArenaMessage]);
+  }, [applyResolvedPayload]);
 
   useEffect(() => {
     if (!frameReady || !importPayload) {
@@ -450,6 +1067,8 @@ export default function Arena() {
 
     sendArenaMessage({ type: "arena:import", payload: importPayload });
   }, [frameReady, importPayload, sendArenaMessage]);
+
+  const sampleImports = useMemo(() => SAMPLE_IMPORTS, []);
 
   const resolvedComponents = useMemo(() => {
     const components = importPayload?.state?.components ?? [];
@@ -577,6 +1196,16 @@ export default function Arena() {
       .filter((row): row is ComparisonRow => row !== null);
   }, [componentAProfile, componentBProfile]);
 
+  const showdownScore = useMemo(() => computeShowdownScore(componentAProfile, componentBProfile), [componentAProfile, componentBProfile]);
+  const showdownWinner = showdownScore.winner;
+  const teamAChampion = showdownWinner === "left";
+  const teamBChampion = showdownWinner === "right";
+  const showdownTie = showdownWinner === "tie";
+  const leftRecord = useMemo(() => formatShowdownRecord(showdownScore.leftWins, showdownScore.rightWins, showdownScore.ties), [showdownScore.leftWins, showdownScore.rightWins, showdownScore.ties]);
+  const rightRecord = useMemo(() => formatShowdownRecord(showdownScore.rightWins, showdownScore.leftWins, showdownScore.ties), [showdownScore.leftWins, showdownScore.rightWins, showdownScore.ties]);
+  const topRounds = useMemo(() => showdownScore.rounds.slice(0, 5), [showdownScore]);
+  const hasShowdown = showdownScore.totalRounds > 0;
+
   const metrics = useMemo(() => {
     const base = importPayload?.metrics ?? {};
     return [
@@ -620,15 +1249,15 @@ export default function Arena() {
   const handleSyncFromStorage = useCallback(() => {
     const latest = readLatestPayload();
     if (latest) {
-      setImportPayload(latest);
-      setBridgeStatus("Loaded builder circuit snapshot.");
-      if (frameReady) {
-        sendArenaMessage({ type: "arena:import", payload: latest });
-      }
+      applyResolvedPayload(latest, {
+        statusMessage: "Loaded builder circuit snapshot.",
+        sourceOverride: latest.source ?? "builder"
+      });
     } else {
       setBridgeStatus("No saved builder snapshot yet. Open Builder and choose Component Arena to sync.");
+      setImportError("No builder snapshot detected. Open the builder and export to arena first.");
     }
-  }, [frameReady, readLatestPayload, sendArenaMessage]);
+  }, [applyResolvedPayload, readLatestPayload]);
 
   const handleCommand = useCallback(
     (command: "reset" | "run-test" | "export") => {
@@ -660,7 +1289,8 @@ export default function Arena() {
         </div>
         <div className="arena-header-right">
           <div className="arena-sync-meta">
-            <span className="arena-sync-status">{importPayload ? "Builder linked" : "Waiting for builder import"}</span>
+            <span className="arena-sync-status">{importPending ? "Importing dataset..." : importPayload ? "Arena linked" : "Waiting for builder import"}</span>
+            {recentImportSource && <span className="arena-sync-source">{recentImportSource}</span>}
             <span className="arena-sync-timestamp">{formatTimestamp(importPayload?.generatedAt)}</span>
           </div>
           <button className="arena-btn outline" type="button" onClick={() => navigate("/app")}>Open Builder</button>
@@ -687,18 +1317,119 @@ export default function Arena() {
             </div>
           </section>
 
-          <section className="arena-card">
+          <section
+            className={`arena-card arena-import-card${isDragActive ? " drag-active" : ""}`}
+            onDragEnter={handleDragOver}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <div className="arena-card-header">
-              <h2>Import Link</h2>
+              <div>
+                <h2>Import Hub</h2>
+                <p className="arena-import-intro">Drop JSON files, paste data, or pull from the builder to prep for battle testing.</p>
+              </div>
+              <div className="arena-import-chips">
+                {recentImportSource && <span className="arena-import-chip">{recentImportSource}</span>}
+                {typeof importPayload?.summary?.totalComponents === "number" && (
+                  <span className="arena-import-chip">{importPayload.summary.totalComponents} components</span>
+                )}
+              </div>
             </div>
             <p className="arena-status-text">{bridgeStatus}</p>
-            <div className="arena-action-row">
-              <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage}>
-                Pull Latest Builder State
-              </button>
-              <button className="arena-btn outline" type="button" onClick={() => handleCommand("export")}>
-                Export Arena Stats
-              </button>
+            {importError && <p className="arena-status-text arena-status-error">{importError}</p>}
+            <div className="arena-import-grid">
+              <div className="arena-import-column">
+                <div className="arena-import-actions">
+                  <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
+                    Pull Latest Builder State
+                  </button>
+                  <button className="arena-btn ghost" type="button" onClick={() => navigate("/app")}>
+                    Open Builder
+                  </button>
+                  <button className="arena-btn outline" type="button" onClick={() => handleCommand("export")}>Export Results</button>
+                </div>
+                <div className="arena-import-samples">
+                  <span className="arena-import-subheading">Quick Samples</span>
+                  <div className="arena-import-sample-buttons">
+                    {sampleImports.map((sample) => (
+                      <button
+                        key={sample.id}
+                        className="arena-sample-btn"
+                        type="button"
+                        onClick={() => handleSampleImport(sample.payload)}
+                        disabled={importPending}
+                      >
+                        <span className="sample-title">{sample.label}</span>
+                        <span className="sample-desc">{sample.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  className="arena-btn link"
+                  type="button"
+                  onClick={() => sampleImports[0] && handleSampleImport(sampleImports[0].payload)}
+                  disabled={!sampleImports.length || importPending}
+                >
+                  Reload default sample library
+                </button>
+              </div>
+              <div className="arena-import-column">
+                <div
+                  className={`arena-import-dropzone${isDragActive ? " is-active" : ""}`}
+                  onDragEnter={handleDragOver}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    className="arena-import-file-input"
+                    type="file"
+                    accept="application/json"
+                    onChange={handleFileInputChange}
+                    disabled={importPending}
+                  />
+                  <div className="arena-import-dropcopy">
+                    <strong>Drag & Drop JSON</strong>
+                    <span>
+                      or
+                      <button className="arena-import-browse" type="button" onClick={() => fileInputRef.current?.click()} disabled={importPending}>
+                        Browse
+                      </button>
+                    </span>
+                    <span className="arena-import-hint">Supports builder exports, Arena exports, and custom component sets.</span>
+                  </div>
+                </div>
+                <label className="arena-import-textlabel">
+                  <span className="arena-import-textlabel-heading">Paste JSON</span>
+                  <textarea
+                    value={manualImportText}
+                    onChange={(event) => setManualImportText(event.target.value)}
+                    placeholder="Paste components JSON from the builder, lab equipment, or another arena."
+                    rows={6}
+                  />
+                </label>
+                <div className="arena-import-submit">
+                  <button
+                    className="arena-btn solid"
+                    type="button"
+                    onClick={handleManualImportSubmit}
+                    disabled={importPending || manualImportText.trim().length === 0}
+                  >
+                    Import Pasted JSON
+                  </button>
+                  <button
+                    className="arena-btn ghost"
+                    type="button"
+                    onClick={() => setManualImportText("")}
+                    disabled={manualImportText.trim().length === 0}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -776,20 +1507,66 @@ export default function Arena() {
                 </div>
 
                 <div className="arena-showdown-competitors">
-                  <div className="arena-showdown-team">
+                  <div className={`arena-showdown-team${teamAChampion ? " winner" : showdownTie ? " tie" : ""}`}>
                     <span className="arena-showdown-tag">Component A</span>
+                    {teamAChampion && <span className="arena-showdown-badge">Champion</span>}
+                    {showdownTie && <span className="arena-showdown-badge neutral">Dead Heat</span>}
                     <h3>{componentAProfile?.name ?? "Select a component"}</h3>
                     <span className="arena-showdown-type">{componentAProfile?.type ?? "—"}</span>
                     {componentAProfile?.summary && <p>{componentAProfile.summary}</p>}
+                    {hasShowdown && <span className="arena-showdown-record">Record {leftRecord}</span>}
                   </div>
                   <div className="arena-showdown-versus">VS</div>
-                  <div className="arena-showdown-team">
+                  <div className={`arena-showdown-team${teamBChampion ? " winner" : showdownTie ? " tie" : ""}`}>
                     <span className="arena-showdown-tag">Component B</span>
+                    {teamBChampion && <span className="arena-showdown-badge">Champion</span>}
+                    {showdownTie && <span className="arena-showdown-badge neutral">Dead Heat</span>}
                     <h3>{componentBProfile?.name ?? "Select a component"}</h3>
                     <span className="arena-showdown-type">{componentBProfile?.type ?? "—"}</span>
                     {componentBProfile?.summary && <p>{componentBProfile.summary}</p>}
+                    {hasShowdown && <span className="arena-showdown-record">Record {rightRecord}</span>}
                   </div>
                 </div>
+
+                {hasShowdown && (
+                  <div className="arena-showdown-scoreboard">
+                    <div className="arena-scoreboard-totals">
+                      <div className={`score-chip team-a${teamAChampion ? " leading" : ""}`}>
+                        <span className="score-name">{componentAProfile?.name ?? "Component A"}</span>
+                        <span className="score-value">{showdownScore.leftWins}</span>
+                        <span className="score-record">{leftRecord}</span>
+                      </div>
+                      <div className="score-divider">
+                        <span className="score-vs">VS</span>
+                        <span className="score-rounds">{showdownScore.totalRounds} rounds</span>
+                        {showdownScore.ties > 0 && <span className="score-ties">{showdownScore.ties} ties</span>}
+                        {showdownScore.dominantMetric && <span className="score-dominant">Highlight · {showdownScore.dominantMetric}</span>}
+                      </div>
+                      <div className={`score-chip team-b${teamBChampion ? " leading" : ""}`}>
+                        <span className="score-name">{componentBProfile?.name ?? "Component B"}</span>
+                        <span className="score-value">{showdownScore.rightWins}</span>
+                        <span className="score-record">{rightRecord}</span>
+                      </div>
+                    </div>
+                    {topRounds.length > 0 && (
+                      <ul className="arena-score-rounds">
+                        {topRounds.map((round) => (
+                          <li
+                            key={round.key}
+                            className={`score-round ${round.winner === "left" ? "win-left" : round.winner === "right" ? "win-right" : "tie"}`}
+                          >
+                            <span className="round-label">{round.label}</span>
+                            <div className="round-values">
+                              <span className="round-value round-value-a">{round.leftValue}</span>
+                              <span className="round-delta">{round.deltaLabel ?? round.shortSummary}</span>
+                              <span className="round-value round-value-b">{round.rightValue}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
 
                 {componentProfiles.length < 2 && (
                   <p className="arena-showdown-hint">Only one component available. Pull another build to compare head-to-head.</p>
