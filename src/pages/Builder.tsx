@@ -550,6 +550,17 @@ export default function Builder() {
       </div>
 
       <div className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}>
+        <button
+          type="button"
+          className="builder-menu-toggle builder-menu-toggle-left"
+          onClick={() => setLeftMenuOpen((open) => !open)}
+          aria-expanded={isLeftMenuOpen}
+          aria-label={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
+          title={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
+        >
+          <span className="toggle-icon">{isLeftMenuOpen ? "<" : ">"}</span>
+          <span className="toggle-text">Library</span>
+        </button>
         <nav className="builder-menu builder-menu-left" role="navigation" aria-label="Component and wiring controls">
           <div className="builder-menu-scroll">
             <div className="slider-section">
@@ -606,17 +617,6 @@ export default function Builder() {
             </div>
           </div>
         </nav>
-        <button
-          type="button"
-          className="builder-menu-toggle builder-menu-toggle-left"
-          onClick={() => setLeftMenuOpen((open) => !open)}
-          aria-expanded={isLeftMenuOpen}
-          aria-label={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
-          title={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
-        >
-          <span className="toggle-icon">{isLeftMenuOpen ? "<" : ">"}</span>
-          <span className="toggle-text">Library</span>
-        </button>
       </div>
 
       <div className={`builder-menu-stage builder-menu-stage-right${isRightMenuOpen ? " open" : ""}`}>
