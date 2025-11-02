@@ -2310,7 +2310,7 @@
                     </div>
                     <div class="submenu-row">
                         <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed Circuit</button>
-                        <button class="btn" onclick="loadPresetCircuit('switch_control')">Switch Control</button>
+                        <button class="btn" onclick="loadPresetCircuit('combination_advanced')">Combo Challenge</button>
                     </div>
                     <div class="submenu-row">
                         <button class="btn" onclick="generateRandomProblem()">Random Problem</button>
@@ -2564,15 +2564,15 @@
                 </div>
                 
                 <div class="circuit-status" id="circuit-status">
-                    <div id="circuit-status-text">?? Circuit incomplete - Add wires to connect components</div>
+                    <div id="circuit-status-text">Circuit incomplete - add wires to connect components.</div>
                 </div>
                 
                 <div class="wire-instructions" id="wire-instructions">
-                    ?? <strong>How to wire:</strong> 1) Click ??? Tools ? ?? Wire Mode  2) Touch red/white terminals to connect  3) Switch to Solve tab when complete
+                    <strong>Use W.I.R.E.:</strong> 1) Record the known W, I, R, and E values  2) Choose the matching Ohm's or power identity  3) Verify answers with Kirchhoff's laws. (Use Clear if you want to rebuild the wiring yourself.)
                 </div>
                 
                 <div id="practice-objectives" style="margin-top: 12px;">
-                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">?? Learning Objectives:</div>
+                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Learning Objectives:</div>
                     <ul id="objectives-list" style="color: #ccc; margin-left: 20px; line-height: 1.5; font-size: 12px;">
                         <!-- Objectives will be populated here -->
                     </ul>
@@ -2580,7 +2580,7 @@
             </div>
             
             <div class="worksheet-panel">
-                <div class="worksheet-title">?? Practice Circuit Problems</div>
+                <div class="worksheet-title">Practice Circuit Problems</div>
                 
                 <div style="text-align: center; margin-bottom: 16px;">
                     <button class="practice-btn" onclick="startPracticeSequence()" style="background: linear-gradient(135deg, #00ff88, #00cc66); color: #000; padding: 12px 24px; font-size: 14px; font-weight: bold;">
@@ -2597,11 +2597,11 @@
                 </div>
                 
                 <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
-                    <strong>?? Choose your practice method:</strong><br>
-                    ? <strong>Practice Sequence</strong> - Work through problems in order<br>
-                    ? <strong>Individual Problems</strong> - Jump to any specific circuit<br>
-                    ? <strong>Random</strong> - Get randomized component values<br><br>
-                    <small>All problems require manual wiring and calculations!</small>
+                    <strong>Choose your practice method:</strong><br>
+                    - <strong>Practice Sequence</strong> - Work through problems in order<br>
+                    - <strong>Individual Problems</strong> - Jump to any specific circuit<br>
+                    - <strong>Random</strong> - Get randomized component values<br><br>
+                    <small>Circuits load with reference wiring; press Clear if you want to rebuild it yourself.</small>
                 </div>
             </div>
         </div>
@@ -2956,7 +2956,7 @@ body.android-optimized.menu-visible .status {
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
         let currentPracticeCircuit = null;
         let currentProblemIndex = 0;
-        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced', 'switch_control'];
+        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced'];
         
         // New features variables
         let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
@@ -2965,24 +2965,47 @@ body.android-optimized.menu-visible .status {
         
         let practiceQuestions = {
             series_basic: {
-                question: "Find the total resistance and current",
-                expectedAnswer: "resistance", // What we're testing for
-                description: "Calculate R_total = R? + R?, then find I = E ? R_total"
+                question: "Series loop: solve for total current (I_T).",
+                expectedAnswer: "current",
+                description: [
+                    "<strong>W</strong>: Note the 24 V supply (power is unknown until the end).",
+                    "<strong>I</strong>: Target the single loop current I_T.",
+                    "<strong>R</strong>: Known resistors R1=120 ohm, R2=180 ohm, R3=220 ohm (pure series).",
+                    "<strong>E</strong>: Use E = 24 V to select I = E / R_T from the Ohm's Law family.",
+                    "Check Kirchhoff's Voltage Law by confirming the drops sum to 24 V."
+                ].join("<br>")
             },
             parallel_basic: {
-                question: "Find the total resistance (parallel)",
+                question: "Parallel network: compute R_T and each branch current.",
                 expectedAnswer: "resistance",
-                description: "Use 1/R_total = 1/R? + 1/R?, then find the equivalent resistance"
+                description: [
+                    "<strong>W</strong>: The 12 V source defines system power once currents are known.",
+                    "<strong>I</strong>: Solve each branch current, then add them for I_T.",
+                    "<strong>R</strong>: Branch resistors R1=100 ohm, R2=220 ohm, R3=330 ohm combine with reciprocal sums.",
+                    "<strong>E</strong>: Voltage is common across the branches; use I = E / R_branch and W = I * E.",
+                    "Validate with Kirchhoff's Current Law by summing the branch currents."
+                ].join("<br>")
             },
             mixed_circuit: {
-                question: "Analyze the complex circuit",
+                question: "Series-parallel combo: collapse the ladder and solve for I_T.",
                 expectedAnswer: "current",
-                description: "Break down into series and parallel sections, find total resistance and current"
+                description: [
+                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before finishing the loop.",
+                    "<strong>W.I.R.E.</strong>: Track resistors R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm with the 18 V supply.",
+                    "<strong>Formulas</strong>: Use the 12 Ohm's Law identities (E=I*R, I=E/R, R=E/I, W=I*E, W=I^2*R, W=E^2/R).",
+                    "<strong>Kirchhoff</strong>: Verify KVL around the outer loop and KCL at the branch node."
+                ].join("<br>")
             },
-            switch_control: {
-                question: "Determine circuit behavior with switch",
+            combination_advanced: {
+                question: "Multi-loop combo: determine drops, currents, and power everywhere.",
                 expectedAnswer: "power",
-                description: "Compare power consumption when switch is ON vs OFF"
+                description: [
+                    "<strong>Strategy</strong>: Work outward-in, simplifying parallel legs before folding the bridge back into series.",
+                    "<strong>W.I.R.E.</strong>: Log each known resistor value and the 24 V supply; mark the unknowns for W, I, R, and E.",
+                    "<strong>Formulas</strong>: Cycle through the Ohm's Law family plus power triangle (W=I*E, W=I^2*R, W=E^2/R).",
+                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent loop.",
+                    "Present the answer set as a W.I.R.E. table." 
+                ].join("<br>")
             }
         };
         
@@ -8844,86 +8867,157 @@ Made with ? for visual learners everywhere!
         // Preset Circuit Library
         const PRESET_CIRCUITS = {
             series_basic: {
-                name: "Basic Series Circuit",
-                description: "Simple series circuit with battery and two resistors",
+                name: "Series Square Loop",
+                description: "24 V source feeding three series resistors arranged as a square.",
                 objectives: [
-                    "Calculate total resistance in series (R_total = R? + R?)",
-                    "Apply Ohm's law to find current (I = V ? R_total)",
-                    "Calculate power consumption (P = V ? I)"
+                    "Map a textbook square schematic into 3D space with battery, top, side, and bottom legs.",
+                    "Log known values with W.I.R.E. (R1=120 ohm, R2=180 ohm, R3=220 ohm, E=24 V) and identify I_T.",
+                    "Select the correct Ohm's Law identity I = E / R_T, then compute voltage drops and power.",
+                    "Confirm the solution using Kirchhoff's Voltage Law and the power identity W = I * E."
                 ],
                 components: [
-                    { type: 'battery', position: [-4, 0, 0], properties: { voltage: 12 } },
-                    { type: 'resistor', position: [0, 0, 0], properties: { resistance: 100 } },
-                    { type: 'resistor', position: [4, 0, 0], properties: { resistance: 200 } }
+                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
+                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 120 } },
+                    { id: 'R2', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 220 } }
                 ],
-                connections: [
-                    { from: 'battery_1_positive', to: 'resistor_1_left' },
-                    { from: 'resistor_1_right', to: 'resistor_2_left' },
-                    { from: 'resistor_2_right', to: 'battery_1_negative' }
+                junctions: [
+                    { id: 'J_TL', position: [-10, 0, 6] },
+                    { id: 'J_TR', position: [10, 0, 6] },
+                    { id: 'J_BR', position: [10, 0, -6] },
+                    { id: 'J_BL', position: [-10, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
+                    { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'R1', side: 'left' } },
+                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
+                    { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             parallel_basic: {
-                name: "Basic Parallel Circuit",
-                description: "Two resistors in parallel with a battery",
+                name: "Parallel Bus",
+                description: "12 V supply feeding three resistors on a classic parallel bus.",
                 objectives: [
-                    "Calculate total resistance in parallel (1/R_total = 1/R? + 1/R?)",
-                    "Understand current division in parallel circuits",
-                    "Compare parallel vs series power consumption"
+                    "Visualize how parallel branches hang between common positive and negative rails.",
+                    "Capture W.I.R.E. data (branch resistors and shared voltage) before solving reciprocals.",
+                    "Compute R_T with 1 / (1/R1 + 1/R2 + 1/R3) and find each branch current with I = E / R_branch.",
+                    "Check Kirchhoff's Current Law by summing branch currents and compare branch power with W = I * E."
                 ],
                 components: [
-                    { type: 'battery', position: [-4, 0, 0], properties: { voltage: 9 } },
-                    { type: 'resistor', position: [2, 0, 2], properties: { resistance: 150 } },
-                    { type: 'resistor', position: [2, 0, -2], properties: { resistance: 300 } }
+                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 12 } },
+                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 100 } },
+                    { id: 'R2', type: 'resistor', position: [0, 0, 0], properties: { resistance: 220 } },
+                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
+                ],
+                junctions: [
+                    { id: 'J_POS_TOP', position: [-10, 0, 6] },
+                    { id: 'J_POS_MID', position: [-10, 0, 0] },
+                    { id: 'J_POS_BOTTOM', position: [-10, 0, -6] },
+                    { id: 'J_NEG_TOP', position: [10, 0, 6] },
+                    { id: 'J_NEG_MID', position: [10, 0, 0] },
+                    { id: 'J_NEG_BOTTOM', position: [10, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_POS_MID', side: 'center' } },
+                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'J_POS_TOP', side: 'center' } },
+                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'J_POS_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_POS_TOP', side: 'center' }, to: { ref: 'R1', side: 'left' } },
+                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'R2', side: 'left' } },
+                    { from: { ref: 'J_POS_BOTTOM', side: 'center' }, to: { ref: 'R3', side: 'left' } },
+                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_NEG_TOP', side: 'center' } },
+                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_NEG_MID', side: 'center' } },
+                    { from: { ref: 'R3', side: 'right' }, to: { ref: 'J_NEG_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_NEG_TOP', side: 'center' }, to: { ref: 'J_NEG_MID', side: 'center' } },
+                    { from: { ref: 'J_NEG_MID', side: 'center' }, to: { ref: 'J_NEG_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_NEG_MID', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             mixed_circuit: {
-                name: "Mixed Series-Parallel Circuit",
-                description: "Combination of series and parallel resistors",
+                name: "Series-Parallel Ladder",
+                description: "Series input resistor feeding two vertical branches with a return leg.",
                 objectives: [
-                    "Analyze complex circuits with mixed connections",
-                    "Break down circuit into series and parallel sections",
-                    "Apply equivalent resistance concepts"
+                    "Practice collapsing a series element followed by a parallel pair in a spatial layout.",
+                    "Track W.I.R.E. values (R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm, E=18 V).",
+                    "Reduce the network step by step, using I = E / R_T and W = I^2 * R for branch power.",
+                    "Verify both Kirchhoff's Voltage Law and Current Law at key nodes."
                 ],
                 components: [
-                    { type: 'battery', position: [-6, 0, 0], properties: { voltage: 15 } },
-                    { type: 'resistor', position: [-2, 0, 0], properties: { resistance: 50 } },
-                    { type: 'resistor', position: [2, 0, 2], properties: { resistance: 100 } },
-                    { type: 'resistor', position: [2, 0, -2], properties: { resistance: 200 } },
-                    { type: 'led', position: [6, 0, 0], properties: { resistance: 25 } }
-                ]
-            },
-            switch_control: {
-                name: "Switch-Controlled Circuit",
-                description: "Circuit with switch to control current flow",
-                objectives: [
-                    "Understand open vs closed circuit behavior",
-                    "Analyze the effect of switches on circuit operation",
-                    "Calculate power consumption when switch is ON vs OFF",
-                    "Practice with switch resistance calculations"
+                    { id: 'B1', type: 'battery', position: [-12, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 18 } },
+                    { id: 'R1', type: 'resistor', position: [-4, 0, 6], properties: { resistance: 150 } },
+                    { id: 'R2', type: 'resistor', position: [4, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
+                    { id: 'R3', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 330 } },
+                    { id: 'R4', type: 'resistor', position: [0, 0, -6], properties: { resistance: 180 } }
                 ],
-                components: [
-                    { type: 'battery', position: [-4, 0, 0], properties: { voltage: 6 } },
-                    { type: 'switch', position: [0, 0, 0], properties: { resistance: 0.1, isOn: false } },
-                    { type: 'led', position: [4, 0, 0], properties: { resistance: 20 } }
+                junctions: [
+                    { id: 'J_SOURCE_TOP', position: [-12, 0, 6] },
+                    { id: 'J_BRANCH_FEED', position: [0, 0, 6] },
+                    { id: 'J_BRANCH_TOP_RIGHT', position: [12, 0, 6] },
+                    { id: 'J_BRANCH_RETURN_RIGHT', position: [12, 0, -6] },
+                    { id: 'J_BRANCH_RETURN', position: [4, 0, -6] },
+                    { id: 'J_SOURCE_BOTTOM', position: [-12, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_SOURCE_TOP', side: 'center' } },
+                    { from: { ref: 'J_SOURCE_TOP', side: 'center' }, to: { ref: 'R1', side: 'left' } },
+                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_BRANCH_FEED', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'J_BRANCH_TOP_RIGHT', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_RIGHT', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_RETURN', side: 'center' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_RETURN_RIGHT', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_RETURN_RIGHT', side: 'center' }, to: { ref: 'J_BRANCH_RETURN', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_RETURN', side: 'center' }, to: { ref: 'R4', side: 'right' } },
+                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_SOURCE_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_SOURCE_BOTTOM', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             combination_advanced: {
-                name: "Advanced Combination Circuit",
-                description: "Complex circuit combining series, parallel, and mixed configurations",
+                name: "Combo Challenge Network",
+                description: "Nested series-parallel network with dual branches and a lighting load.",
                 objectives: [
-                    "Master combination circuit analysis techniques",
-                    "Use junction nodes to create complex topologies",
-                    "Calculate equivalent resistance step by step",
-                    "Apply W.I.R.E. method to advanced circuits",
-                    "Understand current division in complex paths"
+                    "Interpret a multi-loop textbook problem inside the 3D workspace.",
+                    "Track W.I.R.E. entries for R1=120 ohm, R2=150 ohm, R3=180 ohm, R4=270 ohm, R5=220 ohm, LED=60 ohm, E=24 V.",
+                    "Jump between Ohm's Law and power identities (I = E / R, W = I * E, W = I^2 * R, W = E^2 / R).",
+                    "Validate results with Kirchhoff's Voltage Law on each loop and Current Law at every junction."
                 ],
                 components: [
-                    { type: 'battery', position: [-6, 0, 0], properties: { voltage: 18 } },
-                    { type: 'resistor', position: [-2, 0, 0], properties: { resistance: 80 } },
-                    { type: 'resistor', position: [2, 0, 3], properties: { resistance: 120 } },
-                    { type: 'resistor', position: [2, 0, 0], properties: { resistance: 180 } },
-                    { type: 'resistor', position: [2, 0, -3], properties: { resistance: 240 } },
-                    { type: 'led', position: [6, 0, 0], properties: { resistance: 30 } }
+                    { id: 'B1', type: 'battery', position: [-14, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
+                    { id: 'R1', type: 'resistor', position: [-6, 0, 6], properties: { resistance: 120 } },
+                    { id: 'R2', type: 'resistor', position: [2, 0, 6], properties: { resistance: 150 } },
+                    { id: 'R3', type: 'resistor', position: [6, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R4', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 270 } },
+                    { id: 'R5', type: 'resistor', position: [4, 0, -6], properties: { resistance: 220 } },
+                    { id: 'LED1', type: 'led', position: [-2, 0, -6], properties: { resistance: 60 } }
+                ],
+                junctions: [
+                    { id: 'J_TOP_LEFT', position: [-14, 0, 6] },
+                    { id: 'J_AFTER_R1', position: [-2, 0, 6] },
+                    { id: 'J_BRANCH_TOP', position: [6, 0, 6] },
+                    { id: 'J_TOP_RIGHT', position: [14, 0, 6] },
+                    { id: 'J_BRANCH_BOTTOM', position: [6, 0, -6] },
+                    { id: 'J_BOTTOM_RIGHT', position: [14, 0, -6] },
+                    { id: 'J_BOTTOM_LEFT', position: [-14, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TOP_LEFT', side: 'center' } },
+                    { from: { ref: 'J_TOP_LEFT', side: 'center' }, to: { ref: 'R1', side: 'left' } },
+                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_AFTER_R1', side: 'center' } },
+                    { from: { ref: 'J_AFTER_R1', side: 'center' }, to: { ref: 'R2', side: 'left' } },
+                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_BRANCH_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'J_BRANCH_TOP', side: 'center' }, to: { ref: 'J_TOP_RIGHT', side: 'center' } },
+                    { from: { ref: 'J_TOP_RIGHT', side: 'center' }, to: { ref: 'R4', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM', side: 'center' } },
+                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_BOTTOM_RIGHT', side: 'center' } },
+                    { from: { ref: 'J_BOTTOM_RIGHT', side: 'center' }, to: { ref: 'J_BRANCH_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM', side: 'center' }, to: { ref: 'R5', side: 'right' } },
+                    { from: { ref: 'R5', side: 'left' }, to: { ref: 'LED1', side: 'right' } },
+                    { from: { ref: 'LED1', side: 'left' }, to: { ref: 'J_BOTTOM_LEFT', side: 'center' } },
+                    { from: { ref: 'J_BOTTOM_LEFT', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             }
         };
@@ -8942,15 +9036,15 @@ Made with ? for visual learners everywhere!
             if (circuitStatusEl && circuitStatusTextEl) {
                 if (hasFlow) {
                     circuitStatusEl.className = 'circuit-status status-complete';
-                    circuitStatusTextEl.textContent = '? Circuit complete - Current flowing! Switch to Solve tab.';
+                    circuitStatusTextEl.textContent = 'Circuit complete - current flowing! Switch to Solve tab.';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'none';
                 } else if (isComplete) {
                     circuitStatusEl.className = 'circuit-status status-incomplete';
-                    circuitStatusTextEl.textContent = '?? Circuit wired but not complete - Check connections';
+                    circuitStatusTextEl.textContent = 'Circuit wired but not complete - check connections.';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'block';
                 } else {
                     circuitStatusEl.className = 'circuit-status status-incomplete';
-                    circuitStatusTextEl.textContent = '?? Circuit incomplete - Add wires to connect components';
+                    circuitStatusTextEl.textContent = 'Circuit incomplete - add wires to connect components.';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'block';
                 }
             }
@@ -8959,61 +9053,130 @@ Made with ? for visual learners everywhere!
         function loadPresetCircuit(presetName) {
             const preset = PRESET_CIRCUITS[presetName];
             if (!preset) {
-                setStatus('? Preset circuit not found!');
+                setStatus('Preset circuit not found!');
                 return;
             }
-            
-            // Clear current circuit
+
             clearAll(false);
-            
-            // Set current practice circuit
             currentPracticeCircuit = presetName;
-            
-            // If loading individual circuit (not from sequence), update index
-            if (!practiceProblems.includes(presetName)) {
-                // This is for individual button clicks
-                currentProblemIndex = practiceProblems.indexOf(presetName);
-                if (currentProblemIndex === -1) currentProblemIndex = 0;
+
+            const index = practiceProblems.indexOf(presetName);
+            if (index !== -1) {
+                currentProblemIndex = index;
             }
-            
-            // Load preset components
-            preset.components.forEach((compData, index) => {
-                const position = new THREE.Vector3(compData.position[0], compData.position[1], compData.position[2]);
-                const component = new Component(compData.type, position);
-                component.updateProperties(compData.properties);
-                components.push(component);
-            });
-            
-            // Update practice mode displays
+
+            const componentLookup = new Map();
+            const junctionLookup = new Map();
+
+            if (Array.isArray(preset.components)) {
+                preset.components.forEach((compData) => {
+                    const position = new THREE.Vector3(compData.position[0], compData.position[1], compData.position[2]);
+                    const component = new Component(compData.type, position);
+                    if (compData.properties) {
+                        component.updateProperties(compData.properties);
+                    }
+                    if (typeof compData.rotation === 'number' && component.mesh) {
+                        component.rotation = compData.rotation;
+                        component.mesh.rotation.y = compData.rotation;
+                    }
+                    if (compData.metadata) {
+                        component.metadata = { ...compData.metadata };
+                    }
+                    components.push(component);
+
+                    const identifier = component.getComponentIdentifier ? component.getComponentIdentifier() : null;
+                    if (identifier) {
+                        componentLookup.set(identifier, component);
+                    }
+                    if (compData.id) {
+                        componentLookup.set(compData.id, component);
+                    }
+                    if (Array.isArray(compData.aliases)) {
+                        compData.aliases.forEach((alias) => componentLookup.set(alias, component));
+                    }
+                    componentLookup.set(component.id, component);
+                });
+            }
+
+            if (Array.isArray(preset.junctions)) {
+                preset.junctions.forEach((junctionData) => {
+                    const position = new THREE.Vector3(junctionData.position[0], junctionData.position[1], junctionData.position[2]);
+                    const junction = new Junction(position);
+                    junctions.push(junction);
+                    if (junctionData.id) {
+                        junctionLookup.set(junctionData.id, junction);
+                    }
+                    junctionLookup.set(junction.id, junction);
+                });
+            }
+
+            const resolvePresetEndpoint = (endpoint) => {
+                if (!endpoint || !endpoint.ref) {
+                    return null;
+                }
+                let target = componentLookup.get(endpoint.ref) || junctionLookup.get(endpoint.ref);
+                if (!target) {
+                    const fallback = components.find((comp) => comp.getComponentIdentifier && comp.getComponentIdentifier() === endpoint.ref);
+                    if (fallback) {
+                        target = fallback;
+                    }
+                }
+                if (!target) {
+                    console.warn('Preset wiring missing endpoint', endpoint);
+                    return null;
+                }
+                const defaultSide = target instanceof Junction ? 'center' : (target.type === 'battery' ? 'positive' : 'left');
+                return {
+                    object: target,
+                    side: endpoint.side || defaultSide
+                };
+            };
+
+            if (Array.isArray(preset.wires)) {
+                preset.wires.forEach((wireSpec) => {
+                    const start = resolvePresetEndpoint(wireSpec.from);
+                    const end = resolvePresetEndpoint(wireSpec.to);
+                    if (!start || !end) {
+                        return;
+                    }
+                    try {
+                        const wire = new Wire(start.object, start.side, end.object, end.side);
+                        wires.push(wire);
+                    } catch (error) {
+                        console.warn('Failed to create preset wire', wireSpec, error);
+                    }
+                });
+            }
+
             const questionEl = document.getElementById('practice-question');
             const descriptionEl = document.getElementById('practice-description');
             const practiceCardEl = document.getElementById('practice-problem-card');
             const helpTextEl = document.getElementById('practice-help-text');
             const objList = document.getElementById('objectives-list');
-            
+
             const practiceInfo = practiceQuestions[presetName];
-            
+
             if (questionEl && practiceInfo) {
-                questionEl.textContent = `?? Problem: ${practiceInfo.question}`;
+                questionEl.textContent = `Problem: ${practiceInfo.question}`;
             }
-            
-            if (descriptionEl && practiceInfo) {
-                descriptionEl.textContent = practiceInfo.description;
+
+            if (descriptionEl) {
+                const descriptionHtml = practiceInfo?.description || preset.description || '';
+                descriptionEl.innerHTML = descriptionHtml;
             }
-            
+
             if (practiceCardEl) {
                 practiceCardEl.style.display = 'block';
             }
-            
+
             if (helpTextEl) {
                 helpTextEl.style.display = 'none';
             }
-            
+
             if (objList && preset.objectives) {
                 objList.innerHTML = preset.objectives.map(obj => `<li>${obj}</li>`).join('');
             }
-            
-            // Highlight the selected button (only for individual clicks)
+
             document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
             const buttonIds = {
                 'series_basic': 'btn-series',
@@ -9026,19 +9189,18 @@ Made with ? for visual learners everywhere!
                 const button = document.getElementById(buttonId);
                 if (button) button.classList.add('active');
             }
-            
-            // Update counter and navigation
+
             updatePracticeCounter();
             updateNavigationButtons();
-            
-            // Switch to practice tab if not already there
+
             if (currentAnalysisTab !== 'practice') {
                 switchAnalysisTab('practice');
             }
-            
+
+            fitToScreen();
             updateCircuitInfo();
             updatePracticeStatus();
-            setStatus(`?? Loaded practice problem: ${preset.name} - Wire the components!`);
+            setStatus(`Loaded practice problem: ${preset.name} - Apply W.I.R.E. to solve the unknowns.`);
         }
 
         function autoConnectSeries() {
@@ -9086,7 +9248,7 @@ Made with ? for visual learners everywhere!
 
         function generateRandomProblem() {
             // Generate a random circuit problem
-            const problemTypes = ['series_basic', 'parallel_basic', 'mixed_circuit'];
+            const problemTypes = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced'];
             const randomType = problemTypes[Math.floor(Math.random() * problemTypes.length)];
             
             loadPresetCircuit(randomType);
