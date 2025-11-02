@@ -1,10 +1,10 @@
-# CircuiTry3D Privacy Policy
+# Circuitry 3D Privacy Policy
 
 **Effective Date:** October 25, 2025
 
 ## Introduction
 
-CircuiTry3D ("we," "our," or "the app") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
+Circuitry 3D ("we," "our," or "the app") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
 
 ## Information We Collect
 
@@ -72,7 +72,7 @@ To exercise these rights, contact us at: [privacy@circuitry3d.app]
 
 ## Children's Privacy
 
-CircuiTry3D is designed for educational purposes and is appropriate for users of all ages. We do not knowingly collect personal information from children under 13 without parental consent. If you believe we have collected such information, please contact us immediately.
+Circuitry 3D is designed for educational purposes and is appropriate for users of all ages. We do not knowingly collect personal information from children under 13 without parental consent. If you believe we have collected such information, please contact us immediately.
 
 ## Data Retention
 

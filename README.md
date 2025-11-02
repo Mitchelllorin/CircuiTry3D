@@ -1,4 +1,4 @@
-# CircuiTry3D
+# Circuitry 3D
 
 3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level - creating a new way to understand the abstract concepts - Illuminating Electricity
 
@@ -75,7 +75,7 @@ npm run preview
 ## 📦 Project Structure
 
 ```
-CircuiTry3D/
+Circuitry3D/
 ├── android/              # Android app (Capacitor)
 ├── play-store-assets/    # Google Play Store assets
 ├── src/                  # React source code
@@ -102,6 +102,6 @@ ISC
 
 ## 📞 Support
 
-- GitHub Issues: https://github.com/Mitchelllorin/CircuiTry3D/issues
+- GitHub Issues: https://github.com/Mitchelllorin/Circuitry3D/issues
 - Email: support@circuitry3d.app (placeholder)
 

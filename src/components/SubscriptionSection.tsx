@@ -49,7 +49,7 @@ const SUPPORT_CARDS: SupportCard[] = [
     id: "teacher-success",
     badge: "Teacher Enablement",
     title: "Teacher Success Accelerator",
-    summary: "Ensure every educator is confident launching CircuiTry3D on day one.",
+    summary: "Ensure every educator is confident launching Circuitry 3D on day one.",
     bullets: [
       "Live or recorded onboarding workshops",
       "Lesson launch kits with pacing guides",
@@ -115,7 +115,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "privacy",
     question: "How is student data handled?",
     answer:
-      "CircuiTry3D stores minimal student data, encrypts it in transit and at rest, and supports district SSO. Review our privacy policy or request a data-sharing agreement.",
+      "Circuitry 3D stores minimal student data, encrypts it in transit and at rest, and supports district SSO. Review our privacy policy or request a data-sharing agreement.",
   },
 ];
 
@@ -126,7 +126,7 @@ export default function SubscriptionSection() {
     <section className="subscription-section" aria-labelledby="subscription-title">
       <div className="subscription-hero">
         <span className="subscription-kicker">Subscription Success</span>
-        <h2 id="subscription-title">Launch CircuiTry3D across your program</h2>
+        <h2 id="subscription-title">Launch Circuitry 3D across your program</h2>
         <p>
           Planning a classroom, campus, or district rollout? This playbook highlights the support included in every
           subscription tier so your team can move from pilot to full adoption with confidence.
@@ -196,7 +196,7 @@ export default function SubscriptionSection() {
           </Link>
           <a
             className="subscription-cta-button"
-            href="mailto:hello@circuitry3d.com?subject=CircuiTry3D%20Subscription%20Planning"
+            href="mailto:hello@circuitry3d.com?subject=Circuitry%203D%20Subscription%20Planning"
             data-cta-type="external"
           >
             Book a planning call

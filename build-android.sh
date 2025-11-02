@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# CircuiTry3D Android Build Script
+# Circuitry 3D Android Build Script
 # This script builds the web app and creates a signed Android App Bundle (AAB)
 
 set -e  # Exit on error
 
 echo "=================================="
-echo "CircuiTry3D Android Build Script"
+echo "Circuitry 3D Android Build Script"
 echo "=================================="
 echo ""
 
