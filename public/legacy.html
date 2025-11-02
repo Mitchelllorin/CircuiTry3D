@@ -2667,6 +2667,7 @@
         }
 
         // Global variables
+        const ARENA_STORAGE_KEY = 'circuiTry3d.arena.import';
         let scene, camera, renderer, raycaster, mouse;
         let components = [], wires = [], junctions = [];
         let isWireMode = false, isRotateMode = false, wireStart = null;
@@ -5959,10 +5960,61 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function exportArenaPayload() {
+            try {
+                const currentStateString = getCurrentStateString();
+                if (!currentStateString) {
+                    return null;
+                }
+
+                const state = JSON.parse(currentStateString);
+                const summary = state.components.reduce((acc, component) => {
+                    const key = component.type || 'unknown';
+                    acc.byType[key] = (acc.byType[key] || 0) + 1;
+                    return acc;
+                }, {
+                    totalComponents: state.components.length,
+                    totalWires: state.wires.length,
+                    totalJunctions: state.junctions.length,
+                    byType: {}
+                });
+
+                const safeMetric = (value) => (Number.isFinite(value) ? Number(value) : null);
+
+                return {
+                    version: '1.0',
+                    source: 'builder',
+                    generatedAt: Date.now(),
+                    metrics: {
+                        voltage: safeMetric(lastKnownValues?.voltage),
+                        current: safeMetric(lastKnownValues?.current),
+                        resistance: safeMetric(lastKnownValues?.resistance),
+                        power: safeMetric(lastKnownValues?.power)
+                    },
+                    summary,
+                    state
+                };
+            } catch (error) {
+                console.warn('Arena payload export failed', error);
+                return null;
+            }
+        }
+
         function openArena() {
             try {
-                window.open('/arena', '_blank');
-                setStatus('?? Component Arena opened');
+                const payload = exportArenaPayload();
+
+                if (payload && typeof localStorage !== 'undefined') {
+                    try {
+                        localStorage.setItem(ARENA_STORAGE_KEY, JSON.stringify(payload));
+                    } catch (storageError) {
+                        console.warn('Arena payload storage failed', storageError);
+                    }
+                }
+
+                const arenaUrl = '/arena?source=builder';
+                window.open(arenaUrl, '_blank', 'noopener');
+                setStatus(payload ? '?? Component Arena opened with current build' : '?? Component Arena opened');
             } catch (e) {
                 setStatus('?? Unable to open Arena');
             }
