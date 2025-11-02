@@ -596,6 +596,143 @@
             text-align: center;
         }
 
+        .wire-table-wrapper {
+            background: rgba(14, 30, 58, 0.55);
+            border: 1px solid rgba(136, 204, 255, 0.25);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+
+        .wire-table-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            font-weight: 700;
+            color: #8bc7ff;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .wire-table-header span {
+            color: rgba(199, 222, 255, 0.8);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .wire-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .wire-table th,
+        .wire-table td {
+            border: 1px solid rgba(136, 204, 255, 0.2);
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .wire-table th {
+            background: rgba(26, 60, 110, 0.6);
+            color: rgba(199, 222, 255, 0.95);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .wire-table th:first-child,
+        .wire-table td:first-child {
+            text-align: left;
+        }
+
+        .wire-table tbody tr:nth-child(even) {
+            background: rgba(12, 24, 48, 0.35);
+        }
+
+        .wire-table tbody tr:nth-child(odd) {
+            background: rgba(12, 24, 48, 0.18);
+        }
+
+        .wire-table-total {
+            background: rgba(40, 90, 150, 0.4) !important;
+            font-weight: 700;
+        }
+
+        .wire-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(136, 204, 255, 0.35);
+            border-radius: 6px;
+            padding: 4px 6px;
+            color: #cbe0ff;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .wire-input::placeholder {
+            color: rgba(203, 224, 255, 0.45);
+        }
+
+        .wire-input:focus {
+            outline: none;
+            border-color: rgba(0, 200, 255, 0.75);
+            background: rgba(0, 40, 80, 0.5);
+        }
+
+        .wire-cell-given {
+            display: inline-block;
+            font-weight: 600;
+            color: #8bc7ff;
+        }
+
+        .wire-solution {
+            display: none;
+            font-size: 10px;
+            color: rgba(180, 236, 255, 0.75);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .wire-table-guide {
+            font-size: 11px;
+            color: rgba(199, 222, 255, 0.85);
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .wire-table-note {
+            font-size: 10px;
+            color: rgba(136, 204, 255, 0.6);
+            margin-top: 8px;
+            text-align: left;
+        }
+
+        .wire-table-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .practice-btn.secondary {
+            background: transparent;
+            border-color: rgba(136, 204, 255, 0.4);
+            color: #9fcfff;
+        }
+
+        .practice-btn.secondary:hover {
+            background: rgba(20, 60, 110, 0.5);
+            border-color: rgba(136, 204, 255, 0.7);
+        }
+
+        .practice-btn.secondary[data-active="true"] {
+            background: rgba(20, 80, 150, 0.6);
+            border-color: rgba(136, 204, 255, 0.9);
+            color: #d8f0ff;
+        }
+
         .practice-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -2568,7 +2705,40 @@
                 </div>
                 
                 <div class="wire-instructions" id="wire-instructions">
-                    <strong>Use W.I.R.E.:</strong> 1) Record the known W, I, R, and E values  2) Choose the matching Ohm's or power identity  3) Verify answers with Kirchhoff's laws. (Use Clear if you want to rebuild the wiring yourself.)
+                    <strong>Use W.I.R.E.:</strong> 1) Log the givens in the worksheet  2) Choose the matching Ohm's or power identity  3) Tap <em>Reveal totals</em> to verify with Kirchhoff's laws. (Use Clear if you want to rebuild the wiring yourself.)
+                </div>
+
+                <div class="wire-table-wrapper" id="wire-table-wrapper" style="display: none;">
+                    <div class="wire-table-header">
+                        W.I.R.E. Worksheet
+                        <span id="wire-table-scenario"></span>
+                    </div>
+                    <div class="wire-table-guide" id="wire-table-guide">
+                        Record the givens, then apply Ohm's Law and power identities to fill the blanks.
+                    </div>
+                    <table class="wire-table" aria-describedby="wire-table-guide wire-table-note">
+                        <thead>
+                            <tr>
+                                <th scope="col">Component</th>
+                                <th scope="col">W (Power)</th>
+                                <th scope="col">I (Current)</th>
+                                <th scope="col">R (Resistance)</th>
+                                <th scope="col">E (Voltage)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wire-table-body"></tbody>
+                    </table>
+                    <div class="wire-table-note" id="wire-table-note">
+                        Totals appear after you tap Reveal totals and the circuit has a valid solution. Use them to check your work.
+                    </div>
+                    <div class="wire-table-actions">
+                        <button class="practice-btn secondary" type="button" onclick="resetWireWorksheetInputs()">
+                            Clear entries
+                        </button>
+                        <button class="practice-btn secondary" type="button" id="wire-table-toggle-solutions" onclick="toggleWireWorksheetSolutions()">
+                            Reveal totals
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="practice-objectives" style="margin-top: 12px;">
@@ -3052,6 +3222,536 @@ body.android-optimized.menu-visible .status {
                 ].join("<br>")
             }
         };
+        const WIRE_TABLE_HEADERS = ["W", "I", "R", "E"];
+
+        const WIRE_FIELD_LABELS = {
+            W: "power",
+            I: "current",
+            R: "resistance",
+            E: "voltage"
+        };
+
+        const WIRE_TYPE_ORDER = {
+            battery: 0,
+            resistor: 1,
+            led: 1,
+            switch: 2
+        };
+
+        const PRACTICE_WORKSHEET_HINTS = {
+            series_basic: {
+                guide: "Series loop: the same current flows through every component. Sum R_T, solve I_T = E / R_T, then log W = I * E before checking totals.",
+                note: "Use Reveal totals once your W.I.R.E. entries are complete to confirm the drops add back to 24 V."
+            },
+            parallel_basic: {
+                guide: "Parallel network: voltage is common for each branch. Compute branch currents with I = E / R, then add them for I_T before checking totals.",
+                note: "Reveal totals when you are ready to compare the branch sums with the source current and equivalent resistance."
+            },
+            mixed_circuit: {
+                guide: "Collapse the ladder by simplifying the parallel section first, add the series portions, and document each step in the table.",
+                note: "Tap Reveal totals only after updating the worksheet for every reduction you perform."
+            },
+            combination_advanced: {
+                guide: "Work branch-by-branch: simplify parallel legs, fold them into series paths, and repeat while logging each equivalent in W.I.R.E.",
+                note: "Reveal totals when you want to verify each loop against Kirchhoff's laws."
+            },
+            random: {
+                guide: "Identify which elements share current or voltage before selecting the right Ohm's Law identity, then fill the blanks methodically.",
+                note: "Record the givens first, then use Reveal totals to compare with the live W.I.R.E. analysis."
+            },
+            default: {
+                guide: "Record the givens, apply Ohm's Law to uncover the unknowns, then tap Reveal totals to check your answers.",
+                note: "Reveal totals only when you're ready to verify your work against the live W.I.R.E. metrics."
+            }
+        };
+
+        let currentWireWorksheetContext = null;
+        let wireWorksheetSolutionsVisible = false;
+
+        function formatWireNumber(value, decimalsForSmall) {
+            if (!isFinite(value)) {
+                return "0";
+            }
+
+            const absValue = Math.abs(value);
+            if (absValue >= 100) {
+                return value.toFixed(0);
+            }
+            if (absValue >= 10) {
+                return value.toFixed(1);
+            }
+
+            const decimals = typeof decimalsForSmall === "number" ? decimalsForSmall : 2;
+            return value.toFixed(decimals);
+        }
+
+        function formatVoltage(value, options) {
+            const opts = options || {};
+            if (!isFinite(value)) {
+                return opts.allowZero ? "0 V" : "--";
+            }
+
+            const formatted = formatWireNumber(value, 2);
+            return opts.includeUnit === false ? formatted : `${formatted} V`;
+        }
+
+        function formatCurrent(value, options) {
+            const opts = options || {};
+            if (!isFinite(value)) {
+                return opts.allowZero ? "0 A" : "--";
+            }
+
+            const absValue = Math.abs(value);
+            let decimals = 3;
+            if (absValue >= 10) {
+                decimals = 1;
+            } else if (absValue >= 1) {
+                decimals = 2;
+            }
+
+            const formatted = value.toFixed(decimals);
+            return opts.includeUnit === false ? formatted : `${formatted} A`;
+        }
+
+        function formatResistance(value, options) {
+            const opts = options || {};
+            if (!isFinite(value)) {
+                return opts.allowOpen ? "open" : "--";
+            }
+
+            const formatted = formatWireNumber(value, 2);
+            return opts.includeUnit === false ? formatted : `${formatted} ohm`;
+        }
+
+        function formatPower(value, options) {
+            const opts = options || {};
+            if (!isFinite(value)) {
+                return opts.allowZero ? "0 W" : "--";
+            }
+
+            const absValue = Math.abs(value);
+            let decimals = 2;
+            if (absValue >= 100) {
+                decimals = 0;
+            } else if (absValue >= 10) {
+                decimals = 1;
+            }
+
+            const formatted = value.toFixed(decimals);
+            return opts.includeUnit === false ? formatted : `${formatted} W`;
+        }
+
+        function describeComponentForWorksheet(spec) {
+            const props = spec?.properties || {};
+            let baseId = spec?.id;
+
+            if (!baseId) {
+                if (typeof spec?.componentNumber === "number" && spec?.type) {
+                    switch (spec.type) {
+                        case "battery":
+                            baseId = `B${spec.componentNumber}`;
+                            break;
+                        case "resistor":
+                            baseId = `R${spec.componentNumber}`;
+                            break;
+                        case "led":
+                            baseId = `LED${spec.componentNumber}`;
+                            break;
+                        case "switch":
+                            baseId = `SW${spec.componentNumber}`;
+                            break;
+                        default:
+                            baseId = `${spec.type.charAt(0).toUpperCase()}${spec.componentNumber}`;
+                            break;
+                    }
+                } else if (spec?.type) {
+                    baseId = spec.type.toUpperCase();
+                } else {
+                    baseId = "Component";
+                }
+            }
+
+            const descriptor = {
+                display: baseId,
+                aria: baseId,
+                key: String(baseId).toLowerCase().replace(/[^a-z0-9]+/g, "-") || "component"
+            };
+
+            switch (spec?.type) {
+                case "battery": {
+                    const voltage = Number(props.voltage);
+                    const voltageText = isFinite(voltage) ? formatVoltage(voltage) : null;
+                    descriptor.display = voltageText ? `${baseId} - source (${voltageText})` : `${baseId} - source`;
+                    descriptor.aria = `${baseId} source`;
+                    break;
+                }
+                case "resistor": {
+                    const resistance = Number(props.resistance);
+                    if (isFinite(resistance)) {
+                        descriptor.display = `${baseId} (${formatResistance(resistance)})`;
+                    }
+                    descriptor.aria = `${baseId} resistor`;
+                    break;
+                }
+                case "led": {
+                    const resistance = Number(props.resistance ?? props.seriesResistance);
+                    if (isFinite(resistance)) {
+                        descriptor.display = `${baseId} (${formatResistance(resistance)})`;
+                    }
+                    descriptor.aria = `${baseId} led`;
+                    break;
+                }
+                case "switch": {
+                    const state = props.isOn === false ? "open" : "closed";
+                    descriptor.display = `${baseId} - switch (${state})`;
+                    descriptor.aria = `${baseId} switch ${state}`;
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            return descriptor;
+        }
+
+        function getWorksheetPlaceholder(spec, field) {
+            switch (field) {
+                case "W":
+                    return spec?.type === "battery" ? "W_T" : "W";
+                case "I":
+                    return spec?.type === "battery" ? "I_T" : "I";
+                case "R":
+                    return "R";
+                case "E":
+                    return spec?.type === "battery" ? "source" : "E";
+                default:
+                    return "?";
+            }
+        }
+
+        function buildWorksheetCellDescriptor(spec, field) {
+            const props = spec?.properties || {};
+
+            if (field === "R") {
+                if (spec?.type === "battery") {
+                    return { type: "readonly", value: "n/a" };
+                }
+
+                if (spec?.type === "resistor" || spec?.type === "led") {
+                    const resistance = Number(props.resistance ?? props.seriesResistance);
+                    if (isFinite(resistance)) {
+                        return { type: "given", value: formatResistance(resistance) };
+                    }
+                }
+
+                if (spec?.type === "switch") {
+                    if (props.isOn === false) {
+                        return { type: "given", value: "open" };
+                    }
+                    const resistance = Number(props.resistance ?? props.onResistance);
+                    if (isFinite(resistance)) {
+                        return { type: "given", value: formatResistance(resistance) };
+                    }
+                }
+            }
+
+            if (field === "E" && spec?.type === "battery") {
+                const voltage = Number(props.voltage);
+                if (isFinite(voltage)) {
+                    return { type: "given", value: formatVoltage(voltage) };
+                }
+            }
+
+            return {
+                type: "input",
+                placeholder: getWorksheetPlaceholder(spec, field)
+            };
+        }
+
+        function extractWorksheetSpecsFromPreset(preset) {
+            if (!preset || !Array.isArray(preset.components)) {
+                return [];
+            }
+
+            return preset.components.map((component) => ({
+                id: component.id || null,
+                type: component.type,
+                componentNumber: component.componentNumber || null,
+                properties: Object.assign({}, component.properties || {})
+            }));
+        }
+
+        function extractWorksheetSpecsFromActiveScene() {
+            return components.map((component) => ({
+                id: typeof component.getComponentIdentifier === "function" ? component.getComponentIdentifier() : component.id,
+                type: component.type,
+                componentNumber: component.componentNumber,
+                properties: Object.assign({}, component.properties || {})
+            }));
+        }
+
+        function renderWireWorksheetFromSpecs(specs, options) {
+            const wrapper = document.getElementById("wire-table-wrapper");
+            const body = document.getElementById("wire-table-body");
+            const scenarioEl = document.getElementById("wire-table-scenario");
+            const guideEl = document.getElementById("wire-table-guide");
+            const noteEl = document.getElementById("wire-table-note");
+
+            if (!wrapper || !body) {
+                return;
+            }
+
+            if (!Array.isArray(specs) || specs.length === 0) {
+                body.innerHTML = "";
+                wrapper.style.display = "none";
+                if (scenarioEl) {
+                    scenarioEl.textContent = "";
+                }
+                if (guideEl) {
+                    guideEl.textContent = PRACTICE_WORKSHEET_HINTS.default.guide;
+                }
+                if (noteEl) {
+                    noteEl.textContent = PRACTICE_WORKSHEET_HINTS.default.note;
+                }
+                currentWireWorksheetContext = null;
+                return;
+            }
+
+            const sortedSpecs = specs
+                .slice()
+                .sort((a, b) => (WIRE_TYPE_ORDER[a?.type] ?? 99) - (WIRE_TYPE_ORDER[b?.type] ?? 99));
+
+            body.innerHTML = "";
+
+            let totalVoltage = 0;
+
+            sortedSpecs.forEach((spec) => {
+                const descriptor = describeComponentForWorksheet(spec);
+                const row = document.createElement("tr");
+                row.dataset.wireRow = descriptor.key;
+
+                const labelCell = document.createElement("td");
+                labelCell.textContent = descriptor.display;
+                row.appendChild(labelCell);
+
+                WIRE_TABLE_HEADERS.forEach((field) => {
+                    const cell = document.createElement("td");
+                    cell.dataset.wireField = field;
+
+                    const cellDescriptor = buildWorksheetCellDescriptor(spec, field);
+                    if (cellDescriptor.type === "given" || cellDescriptor.type === "readonly") {
+                        const span = document.createElement("span");
+                        span.className = "wire-cell-given";
+                        span.textContent = cellDescriptor.value || (cellDescriptor.type === "readonly" ? "n/a" : "");
+                        cell.appendChild(span);
+                    } else {
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.className = "wire-input";
+                        input.placeholder = cellDescriptor.placeholder || "?";
+                        input.setAttribute("data-wire-input", `${descriptor.key}-${field}`);
+                        input.setAttribute("aria-label", `${WIRE_FIELD_LABELS[field]} entry for ${descriptor.aria}`);
+                        cell.appendChild(input);
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                body.appendChild(row);
+
+                if (spec?.type === "battery") {
+                    const voltage = Number(spec?.properties?.voltage);
+                    if (isFinite(voltage)) {
+                        totalVoltage += voltage;
+                    }
+                }
+            });
+
+            const totalsRow = document.createElement("tr");
+            totalsRow.className = "wire-table-total";
+            totalsRow.dataset.wireRow = "totals";
+
+            const totalsLabel = document.createElement("td");
+            totalsLabel.textContent = "Totals";
+            totalsRow.appendChild(totalsLabel);
+
+            const totalsConfig = {
+                W: { placeholder: "W_T", solution: true },
+                I: { placeholder: "I_T", solution: true },
+                R: { placeholder: "R_T", solution: true },
+                E: { value: formatVoltage(totalVoltage) }
+            };
+
+            WIRE_TABLE_HEADERS.forEach((field) => {
+                const cell = document.createElement("td");
+                cell.dataset.wireField = field;
+
+                const config = totalsConfig[field] || {};
+                if (config.value !== undefined) {
+                    const span = document.createElement("span");
+                    span.className = "wire-cell-given";
+                    span.textContent = config.value;
+                    cell.appendChild(span);
+                } else {
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.className = "wire-input";
+                    input.placeholder = config.placeholder || "?";
+                    input.setAttribute("data-wire-input", `total-${field}`);
+                    input.setAttribute("aria-label", `${WIRE_FIELD_LABELS[field]} total entry`);
+                    cell.appendChild(input);
+
+                    if (config.solution) {
+                        const solutionSpan = document.createElement("span");
+                        solutionSpan.className = "wire-solution";
+                        solutionSpan.dataset.wireField = field;
+                        cell.appendChild(solutionSpan);
+                    }
+                }
+
+                totalsRow.appendChild(cell);
+            });
+
+            body.appendChild(totalsRow);
+
+            wrapper.style.display = "block";
+
+            if (scenarioEl) {
+                scenarioEl.textContent = options?.scenarioName ? `? ${options.scenarioName}` : "";
+            }
+
+            const hintKey = options?.scenarioKey && PRACTICE_WORKSHEET_HINTS[options.scenarioKey] ? options.scenarioKey : "default";
+            const hint = PRACTICE_WORKSHEET_HINTS[hintKey] || PRACTICE_WORKSHEET_HINTS.default;
+
+            if (guideEl) {
+                guideEl.textContent = options?.guide || hint.guide;
+            }
+
+            if (noteEl) {
+                noteEl.textContent = options?.note || hint.note;
+            }
+
+            currentWireWorksheetContext = {
+                scenario: options?.scenarioName || "",
+                totalVoltage
+            };
+
+            wireWorksheetSolutionsVisible = false;
+            updateWireWorksheetToggleLabel();
+            refreshWireWorksheetSolutions();
+        }
+
+        function renderWireWorksheetFromPreset(presetName, preset) {
+            const specs = extractWorksheetSpecsFromPreset(preset);
+            renderWireWorksheetFromSpecs(specs, {
+                scenarioName: preset?.name || presetName,
+                scenarioKey: presetName
+            });
+        }
+
+        function renderWireWorksheetFromActiveCircuit(label) {
+            const specs = extractWorksheetSpecsFromActiveScene();
+            renderWireWorksheetFromSpecs(specs, {
+                scenarioName: label || "Active Circuit",
+                scenarioKey: "random"
+            });
+        }
+
+        function resetWireWorksheetInputs() {
+            const wrapper = document.getElementById("wire-table-wrapper");
+            if (!wrapper) {
+                return;
+            }
+
+            wrapper.querySelectorAll(".wire-input").forEach((input) => {
+                input.value = "";
+            });
+
+            refreshWireWorksheetSolutions();
+        }
+
+        function clearWireWorksheetDisplay() {
+            const wrapper = document.getElementById("wire-table-wrapper");
+            const body = document.getElementById("wire-table-body");
+            const scenarioEl = document.getElementById("wire-table-scenario");
+            const guideEl = document.getElementById("wire-table-guide");
+            const noteEl = document.getElementById("wire-table-note");
+
+            if (body) {
+                body.innerHTML = "";
+            }
+            if (wrapper) {
+                wrapper.style.display = "none";
+            }
+            if (scenarioEl) {
+                scenarioEl.textContent = "";
+            }
+            if (guideEl) {
+                guideEl.textContent = PRACTICE_WORKSHEET_HINTS.default.guide;
+            }
+            if (noteEl) {
+                noteEl.textContent = PRACTICE_WORKSHEET_HINTS.default.note;
+            }
+
+            currentWireWorksheetContext = null;
+            wireWorksheetSolutionsVisible = false;
+            updateWireWorksheetToggleLabel();
+        }
+
+        function refreshWireWorksheetSolutions() {
+            const wrapper = document.getElementById("wire-table-wrapper");
+            if (!wrapper || wrapper.style.display === "none") {
+                return;
+            }
+
+            if (!lastKnownValues) {
+                return;
+            }
+
+            const hasSolution =
+                isFinite(lastKnownValues.resistance) &&
+                lastKnownValues.resistance !== Infinity &&
+                isFinite(lastKnownValues.current) &&
+                lastKnownValues.voltage > 0 &&
+                lastKnownValues.current >= 0;
+
+            const solutions = [
+                { field: "W", value: lastKnownValues.power, formatter: (value) => formatPower(value, { includeUnit: true }) },
+                { field: "I", value: lastKnownValues.current, formatter: (value) => formatCurrent(value, { includeUnit: true }) },
+                { field: "R", value: lastKnownValues.resistance, formatter: (value) => formatResistance(value, { includeUnit: true, allowOpen: true }) }
+            ];
+
+            solutions.forEach(({ field, value, formatter }) => {
+                const element = wrapper.querySelector(`.wire-solution[data-wire-field="${field}"]`);
+                if (!element) {
+                    return;
+                }
+
+                if (hasSolution && wireWorksheetSolutionsVisible) {
+                    element.textContent = `calc: ${formatter(value)}`;
+                    element.style.display = "block";
+                } else {
+                    element.textContent = "";
+                    element.style.display = "none";
+                }
+            });
+        }
+
+        function updateWireWorksheetToggleLabel() {
+            const toggleButton = document.getElementById("wire-table-toggle-solutions");
+            if (!toggleButton) {
+                return;
+            }
+
+            toggleButton.textContent = wireWorksheetSolutionsVisible ? "Hide totals" : "Reveal totals";
+            toggleButton.dataset.active = wireWorksheetSolutionsVisible ? "true" : "false";
+        }
+
+        function toggleWireWorksheetSolutions() {
+            wireWorksheetSolutionsVisible = !wireWorksheetSolutionsVisible;
+            updateWireWorksheetToggleLabel();
+            refreshWireWorksheetSolutions();
+        }
         
         // Long press and edit variables
         let longPressTimer = null;
@@ -8713,6 +9413,8 @@ Made with ? for visual learners everywhere!
             if (currentAnalysisTab === 'practice' && currentPracticeCircuit) {
                 updatePracticeStatus();
             }
+
+            refreshWireWorksheetSolutions();
             
             if (current > 0 && resistance !== Infinity) {
                 setStatus(`?? W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}?, E=${voltage.toFixed(1)}V`);
@@ -9530,6 +10232,8 @@ Made with ? for visual learners everywhere!
                 objList.innerHTML = preset.objectives.map(obj => `<li>${obj}</li>`).join('');
             }
 
+            renderWireWorksheetFromPreset(presetName, preset);
+
             document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
             const buttonIds = {
                 'series_basic': 'btn-series',
@@ -9617,6 +10321,8 @@ Made with ? for visual learners everywhere!
                 }
             });
             
+            renderWireWorksheetFromActiveCircuit('Randomised Circuit');
+
             // Highlight random button
             document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
             const randomBtn = document.getElementById('btn-random');
@@ -9777,6 +10483,8 @@ Made with ? for visual learners everywhere!
                 // Reset practice sequence
                 currentProblemIndex = 0;
             }
+
+            clearWireWorksheetDisplay();
             
             updateButtonStates();
             updateCircuitInfo();
