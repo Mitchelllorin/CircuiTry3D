@@ -40,25 +40,25 @@ export function ensurePointOnWire(
   wire: Wire,
   point: Vec2,
   tolerance: number = 0.5
-): { index: number; inserted: boolean } {
+): { index: number; inserted: boolean; point: Vec2 | null } {
   // Check if the point already exists (within tolerance)
   for (let i = 0; i < wire.points.length; i++) {
     if (distance(wire.points[i], point) <= tolerance) {
-      return { index: i, inserted: false };
+      return { index: i, inserted: false, point: wire.points[i] };
     }
   }
 
   const closest = findClosestPointOnWire(point, wire);
   if (!closest) {
-    return { index: -1, inserted: false };
+    return { index: -1, inserted: false, point: null };
   }
 
   if (closest.distance > tolerance) {
-    return { index: -1, inserted: false };
+    return { index: -1, inserted: false, point: null };
   }
 
   insertPointIntoWire(wire, closest.point, closest.segIndex);
-  return { index: closest.segIndex + 1, inserted: true };
+  return { index: closest.segIndex + 1, inserted: true, point: wire.points[closest.segIndex + 1] };
 }
 
 /**

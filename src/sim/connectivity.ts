@@ -32,6 +32,7 @@ export function rebuildAdjacencyForWires(wires: Wire[], nodes: Node[]): Adjacenc
   // Initialize all nodes in the graph
   for (const node of nodes) {
     graph.nodes.set(node.id, new Set());
+    node.attachedWireIds.clear();
   }
   
   // Process each wire
@@ -49,6 +50,7 @@ export function rebuildAdjacencyForWires(wires: Wire[], nodes: Node[]): Adjacenc
         if (!nodesOnWire.some((existing) => existing.id === node.id)) {
           nodesOnWire.push(node);
           wire.attachedNodeIds.add(node.id);
+          node.attachedWireIds.add(wire.id);
         }
       }
     }
