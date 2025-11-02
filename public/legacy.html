@@ -3005,6 +3005,16 @@ body.android-optimized.menu-visible .status {
             R: '#44ff88', // Resistance (Ohms) - Green
             E: '#ff4444'  // Voltage (Volts) - Red
         };
+
+        const FLOW_CONSTANTS = {
+            wireResistance: 0.01,
+            shortThreshold: 0.5,
+            resistanceReference: 120,
+            minSpeedFactor: 0.25,
+            maxSpeedFactor: 1.0
+        };
+
+        let currentFlowState = null;
         
         // Component counters for labeling
         let componentCounters = {
@@ -4026,10 +4036,13 @@ body.android-optimized.menu-visible .status {
                         return;
                     }
                     
-                    wireData.progress += wireData.baseSpeed;
-                    
+                    const step = (wireData.speed || 0.01) * (wireData.direction || 1);
+                    wireData.progress += step;
+
                     if (wireData.progress > 1) {
-                        wireData.progress = 0;
+                        wireData.progress -= 1;
+                    } else if (wireData.progress < 0) {
+                        wireData.progress += 1;
                     }
                     
                     const position = wire.curve.getPoint(wireData.progress);
@@ -6447,11 +6460,12 @@ body.android-optimized.menu-visible .status {
             
             // Re-animate current flow with new style
             const result = performCircuitAnalysis();
-            if (result.isComplete && result.current > 0) {
-                animateCurrentFlow(true, result.current);
+            const runtimeFlow = currentFlowState || result.flow;
+            if (runtimeFlow) {
+                animateCurrentFlow(runtimeFlow);
             }
             
-            setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Probabilistic quantum cloud showing electron movement (- to +)' : 'CURRENT FLOW - Conventional current direction (+ to -)'}`);
+            setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Holes drift positive -> negative (opposite current)' : 'CURRENT FLOW - Charge travels negative -> positive through the loop'}`);
         }
         
         // Toggle polarity indicators
@@ -7118,7 +7132,7 @@ Made with ? for visual learners everywhere!
             
             if (batteries.length === 0) {
                 updateCircuitDisplay(0, 0, Infinity, 0);
-                animateCurrentFlow(false, 0);
+                animateCurrentFlow({ hasFlow: false, currentValue: 0 });
                 setStatus('?? ADD A BATTERY to start W.I.R.E. analysis!');
                 return;
             }
@@ -7126,21 +7140,400 @@ Made with ? for visual learners everywhere!
             if (wires.length === 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
-                animateCurrentFlow(false, 0);
+                animateCurrentFlow({ hasFlow: false, currentValue: 0 });
                 setStatus('?? ADD WIRES to complete the circuit for W.I.R.E. calculations!');
                 return;
             }
             
             const result = performCircuitAnalysis();
             updateCircuitDisplay(result.voltage, result.current, result.resistance, result.power);
-            
-            const shouldAnimate = result.isComplete && result.current > 0;
-            
-            if (shouldAnimate) {
-                animateCurrentFlow(true, result.current);
-            } else {
-                animateCurrentFlow(false, result.current);
+
+            const runtimeFlow = currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 };
+            animateCurrentFlow(runtimeFlow);
+
+            const flowMeta = result.flow || sanitizeFlowState(runtimeFlow);
+
+            if (!flowMeta.hasFlow) {
+                if (flowMeta.reason === 'polarity') {
+                    setStatus('POLARITY MISMATCH: Reverse components so current can travel negative -> positive.');
+                } else if (flowMeta.reason === 'short') {
+                    setStatus('?? SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
+                } else if (flowMeta.reason === 'no-source') {
+                    setStatus('?? Add a battery to power the circuit and start current flow.');
+                }
+            } else if (flowMeta.warning === 'short') {
+                setStatus('?? SHORT CIRCUIT PATH: Current is racing from negative -> positive. Add resistance now!');
             }
+        }
+
+        function getTerminalKey(entity, side) {
+            if (!entity) return null;
+            if (entity.type) {
+                return `${entity.id}:${side}`;
+            }
+            if (entity.id) {
+                return `${entity.id}:${side || 'center'}`;
+            }
+            return null;
+        }
+
+        function getComponentTerminals(component) {
+            switch(component?.type) {
+                case 'battery':
+                    return ['negative', 'positive'];
+                case 'resistor':
+                case 'led':
+                case 'switch':
+                    return ['left', 'right'];
+                default:
+                    return [];
+            }
+        }
+
+        function getDirectionalComponentConfig(component) {
+            if (!component) return null;
+            if (component.type === 'led') {
+                return { directional: true, forwardFrom: 'left', forwardTo: 'right' };
+            }
+            return null;
+        }
+
+        function getComponentResistance(component) {
+            if (!component) {
+                return Infinity;
+            }
+
+            if (component.type === 'resistor') {
+                return Number(component.properties?.resistance) || 0;
+            }
+
+            if (component.type === 'led') {
+                return Number(component.properties?.resistance) || 0;
+            }
+
+            if (component.type === 'switch') {
+                if (!component.properties?.isOn) {
+                    return Infinity;
+                }
+                return Number(component.properties?.resistance) || Number(component.properties?.onResistance) || 0.05;
+            }
+
+            if (component.type === 'battery') {
+                return Number(component.properties?.internalResistance) || FLOW_CONSTANTS.wireResistance;
+            }
+
+            return FLOW_CONSTANTS.wireResistance;
+        }
+
+        function computeSpeedFactor(resistance) {
+            if (!isFinite(resistance) || resistance <= 0) {
+                return FLOW_CONSTANTS.maxSpeedFactor;
+            }
+
+            const normalized = resistance / FLOW_CONSTANTS.resistanceReference;
+            const speed = FLOW_CONSTANTS.maxSpeedFactor / (1 + normalized);
+            return Math.max(FLOW_CONSTANTS.minSpeedFactor, Math.min(FLOW_CONSTANTS.maxSpeedFactor, speed));
+        }
+
+        function buildFlowGraph(components, wires, junctions) {
+            const adjacency = new Map();
+
+            function ensureNode(key) {
+                if (!key) return;
+                if (!adjacency.has(key)) {
+                    adjacency.set(key, []);
+                }
+            }
+
+            function addEdge(fromKey, edge) {
+                if (!fromKey || !edge?.to) return;
+                ensureNode(fromKey);
+                adjacency.get(fromKey).push(edge);
+            }
+
+            components.forEach(component => {
+                const sides = getComponentTerminals(component);
+                sides.forEach(side => ensureNode(getTerminalKey(component, side)));
+            });
+
+            junctions.forEach(junction => {
+                ensureNode(getTerminalKey(junction, 'center'));
+            });
+
+            wires.forEach(wire => {
+                const startKey = getTerminalKey(wire.startObj, wire.startSide || 'center');
+                const endKey = getTerminalKey(wire.endObj, wire.endSide || 'center');
+                if (!startKey || !endKey) return;
+
+                addEdge(startKey, {
+                    to: endKey,
+                    type: 'wire',
+                    wire,
+                    resistance: FLOW_CONSTANTS.wireResistance,
+                    direction: 1,
+                    fromSide: wire.startSide || 'center',
+                    toSide: wire.endSide || 'center'
+                });
+
+                addEdge(endKey, {
+                    to: startKey,
+                    type: 'wire',
+                    wire,
+                    resistance: FLOW_CONSTANTS.wireResistance,
+                    direction: -1,
+                    fromSide: wire.endSide || 'center',
+                    toSide: wire.startSide || 'center'
+                });
+            });
+
+            components.forEach(component => {
+                const sides = getComponentTerminals(component);
+                if (component.type === 'battery' || sides.length !== 2) {
+                    return;
+                }
+
+                const [sideA, sideB] = sides;
+                const keyA = getTerminalKey(component, sideA);
+                const keyB = getTerminalKey(component, sideB);
+                if (!keyA || !keyB) return;
+
+                const resistance = getComponentResistance(component);
+                if (!isFinite(resistance)) {
+                    return;
+                }
+
+                const directionalConfig = getDirectionalComponentConfig(component);
+                if (directionalConfig?.directional) {
+                    const fromKey = getTerminalKey(component, directionalConfig.forwardFrom);
+                    const toKey = getTerminalKey(component, directionalConfig.forwardTo);
+                    if (fromKey && toKey) {
+                        addEdge(fromKey, {
+                            to: toKey,
+                            type: 'component',
+                            component,
+                            resistance,
+                            directional: true,
+                            direction: 1,
+                            fromSide: directionalConfig.forwardFrom,
+                            toSide: directionalConfig.forwardTo
+                        });
+                    }
+                } else {
+                    addEdge(keyA, {
+                        to: keyB,
+                        type: 'component',
+                        component,
+                        resistance,
+                        directional: false,
+                        direction: 1,
+                        fromSide: sideA,
+                        toSide: sideB
+                    });
+
+                    addEdge(keyB, {
+                        to: keyA,
+                        type: 'component',
+                        component,
+                        resistance,
+                        directional: false,
+                        direction: -1,
+                        fromSide: sideB,
+                        toSide: sideA
+                    });
+                }
+            });
+
+            return adjacency;
+        }
+
+        function findLowestResistancePath(adjacency, startKey, endKey) {
+            if (!startKey || !endKey || !adjacency.has(startKey) || !adjacency.has(endKey)) {
+                return null;
+            }
+
+            const distances = new Map();
+            const previous = new Map();
+            const queue = [];
+
+            distances.set(startKey, 0);
+            queue.push({ key: startKey, distance: 0 });
+
+            while (queue.length > 0) {
+                queue.sort((a, b) => a.distance - b.distance);
+                const current = queue.shift();
+                if (!current) break;
+
+                if (current.key === endKey) {
+                    break;
+                }
+
+                if (current.distance > (distances.get(current.key) ?? Infinity)) {
+                    continue;
+                }
+
+                const edges = adjacency.get(current.key) || [];
+                edges.forEach(edge => {
+                    if (!edge || !edge.to || !isFinite(edge.resistance)) {
+                        return;
+                    }
+
+                    const nextDistance = current.distance + (edge.resistance ?? FLOW_CONSTANTS.wireResistance);
+                    if (nextDistance < (distances.get(edge.to) ?? Infinity)) {
+                        distances.set(edge.to, nextDistance);
+                        previous.set(edge.to, { from: current.key, via: edge });
+                        queue.push({ key: edge.to, distance: nextDistance });
+                    }
+                });
+            }
+
+            if (!distances.has(endKey)) {
+                return null;
+            }
+
+            const segments = [];
+            let cursor = endKey;
+            while (cursor !== startKey) {
+                const step = previous.get(cursor);
+                if (!step) {
+                    return null;
+                }
+                segments.unshift({ from: step.from, to: cursor, edge: step.via });
+                cursor = step.from;
+            }
+
+            return {
+                segments,
+                totalResistance: distances.get(endKey) ?? Infinity
+            };
+        }
+
+        function computeFlowState(batteries, components, wires, junctions) {
+            if (!batteries || batteries.length === 0) {
+                return { hasPath: false, reason: 'no-source' };
+            }
+
+            const sourceBattery = batteries[0];
+            const startKey = getTerminalKey(sourceBattery, 'negative');
+            const endKey = getTerminalKey(sourceBattery, 'positive');
+
+            const adjacency = buildFlowGraph(components, wires, junctions);
+            const path = findLowestResistancePath(adjacency, startKey, endKey);
+
+            if (!path) {
+                const polarityBlocked = hasClosedCircuitPath(sourceBattery, wires, components);
+                return { hasPath: false, reason: polarityBlocked ? 'polarity' : 'open' };
+            }
+
+            const flowSegments = path.segments;
+            const wireSegments = [];
+            const componentSegments = [];
+
+            flowSegments.forEach((segment, index) => {
+                const edge = segment.edge;
+                if (!edge) return;
+
+                if (edge.type === 'wire' && edge.wire) {
+                    wireSegments.push({
+                        wire: edge.wire,
+                        direction: edge.direction >= 0 ? 1 : -1,
+                        resistance: edge.resistance ?? FLOW_CONSTANTS.wireResistance,
+                        fromSide: edge.fromSide,
+                        toSide: edge.toSide,
+                        pathIndex: index
+                    });
+                } else if (edge.type === 'component' && edge.component) {
+                    componentSegments.push({
+                        component: edge.component,
+                        direction: edge.direction >= 0 ? 1 : -1,
+                        resistance: edge.resistance,
+                        fromSide: edge.fromSide,
+                        toSide: edge.toSide,
+                        pathIndex: index
+                    });
+                }
+            });
+
+            const resistanceLookup = new Map();
+            componentSegments.forEach(segment => {
+                if (isFinite(segment.resistance)) {
+                    resistanceLookup.set(segment.pathIndex, segment.resistance);
+                }
+            });
+
+            const descriptiveWireSegments = wireSegments.map(segment => {
+                const prevSeg = flowSegments[segment.pathIndex - 1];
+                const nextSeg = flowSegments[segment.pathIndex + 1];
+
+                const prevResistance = resistanceLookup.get(segment.pathIndex - 1);
+                const nextResistance = resistanceLookup.get(segment.pathIndex + 1);
+
+                const candidates = [];
+                if (isFinite(prevResistance)) candidates.push(prevResistance);
+                if (isFinite(nextResistance)) candidates.push(nextResistance);
+
+                let adjacentResistance = segment.resistance;
+                if (candidates.length === 1) {
+                    adjacentResistance = candidates[0];
+                } else if (candidates.length === 2) {
+                    adjacentResistance = (candidates[0] + candidates[1]) / 2;
+                }
+
+                return {
+                    wire: segment.wire,
+                    direction: segment.direction,
+                    speedFactor: computeSpeedFactor(adjacentResistance),
+                    fromSide: segment.fromSide,
+                    toSide: segment.toSide
+                };
+            });
+
+            const totalPathResistance = flowSegments.reduce((sum, segment) => {
+                const res = segment.edge?.resistance;
+                if (!isFinite(res)) {
+                    return sum;
+                }
+                return sum + (res ?? 0);
+            }, 0);
+
+            const hasResistiveElement = componentSegments.some(segment => {
+                return isFinite(segment.resistance) && segment.resistance > FLOW_CONSTANTS.wireResistance * 2;
+            });
+
+            const isShortCircuit = totalPathResistance <= FLOW_CONSTANTS.shortThreshold && !hasResistiveElement;
+
+            return {
+                hasPath: true,
+                wireSegments: descriptiveWireSegments,
+                componentSegments,
+                pathResistance: totalPathResistance,
+                shortCircuit: isShortCircuit,
+                hasResistiveElement
+            };
+        }
+
+        function sanitizeFlowState(flowState) {
+            if (!flowState) {
+                return null;
+            }
+
+            return {
+                hasPath: Boolean(flowState.hasPath),
+                hasFlow: Boolean(flowState.hasFlow),
+                reason: flowState.reason || null,
+                warning: flowState.warning || null,
+                shortCircuit: Boolean(flowState.shortCircuit),
+                pathResistance: typeof flowState.pathResistance === 'number' ? flowState.pathResistance : null,
+                hasResistiveElement: Boolean(flowState.hasResistiveElement),
+                currentValue: typeof flowState.currentValue === 'number' ? flowState.currentValue : 0,
+                totalVoltage: typeof flowState.totalVoltage === 'number' ? flowState.totalVoltage : null,
+                wireSegments: Array.isArray(flowState.wireSegments)
+                    ? flowState.wireSegments.map(segment => ({
+                        wireId: segment.wire?.id || null,
+                        direction: segment.direction,
+                        speedFactor: segment.speedFactor
+                    }))
+                    : []
+            };
         }
 
         function performCircuitAnalysis() {
@@ -7152,13 +7545,26 @@ Made with ? for visual learners everywhere!
             if (openSwitches.length > 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateTopologyDisplay('Open Circuit');
+                const flowResult = {
+                    hasPath: false,
+                    hasFlow: false,
+                    reason: 'open',
+                    warning: null,
+                    shortCircuit: false,
+                    pathResistance: Infinity,
+                    hasResistiveElement: false,
+                    currentValue: 0,
+                    totalVoltage
+                };
+                currentFlowState = flowResult;
                 return {
                     voltage: totalVoltage,
                     current: 0,
                     resistance: Infinity,
                     power: 0,
                     isComplete: false,
-                    topology: 'open'
+                    topology: 'open',
+                    flow: sanitizeFlowState(flowResult)
                 };
             }
             
@@ -7181,13 +7587,26 @@ Made with ? for visual learners everywhere!
                     // Circuit has components but no closed loop
                     const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                     updateTopologyDisplay('Incomplete');
+                    const flowResult = {
+                        hasPath: false,
+                        hasFlow: false,
+                        reason: 'open',
+                        warning: null,
+                        shortCircuit: false,
+                        pathResistance: Infinity,
+                        hasResistiveElement: false,
+                        currentValue: 0,
+                        totalVoltage
+                    };
+                    currentFlowState = flowResult;
                     return {
                         voltage: totalVoltage,
                         current: 0,
                         resistance: Infinity,
                         power: 0,
                         isComplete: false,
-                        topology: 'incomplete'
+                        topology: 'incomplete',
+                        flow: sanitizeFlowState(flowResult)
                     };
                 }
                 
@@ -7196,6 +7615,27 @@ Made with ? for visual learners everywhere!
                 
                 // Detect circuit topology
                 const topology = detectCircuitTopology(resistors, wires, junctions);
+                const flowState = computeFlowState(batteries, components, wires, junctions);
+
+                if (!flowState.hasPath) {
+                    updateTopologyDisplay('Polarity');
+                    const flowResult = {
+                        ...flowState,
+                        hasFlow: false,
+                        currentValue: 0,
+                        shortCircuit: flowState.shortCircuit || false
+                    };
+                    currentFlowState = flowResult;
+                    return {
+                        voltage: totalVoltage,
+                        current: 0,
+                        resistance: Infinity,
+                        power: 0,
+                        isComplete: false,
+                        topology: topology?.type || 'blocked',
+                        flow: sanitizeFlowState(flowResult)
+                    };
+                }
                 
                 // Calculate resistance based on topology
                 let totalResistance = 0.01; // Wire resistance
@@ -7229,11 +7669,25 @@ Made with ? for visual learners everywhere!
                         totalResistance += sw.properties.resistance || 0.1;
                     }
                 });
+
+                if (flowState.shortCircuit) {
+                    totalResistance = Math.max(totalResistance, flowState.pathResistance || FLOW_CONSTANTS.shortThreshold, FLOW_CONSTANTS.shortThreshold);
+                } else if (isFinite(flowState.pathResistance)) {
+                    totalResistance = Math.max(totalResistance, flowState.pathResistance);
+                }
                 
                 const current = totalVoltage / totalResistance;
                 const power = totalVoltage * current;
                 
                 updateTopologyDisplay(topology.type);
+                const flowResult = {
+                    ...flowState,
+                    hasFlow: true,
+                    currentValue: current,
+                    totalVoltage,
+                    warning: flowState.shortCircuit ? 'short' : null
+                };
+                currentFlowState = flowResult;
                 
                 return {
                     voltage: totalVoltage,
@@ -7241,18 +7695,32 @@ Made with ? for visual learners everywhere!
                     resistance: totalResistance,
                     power: power,
                     isComplete: true,
-                    topology: topology?.type || 'unknown'
+                    topology: topology?.type || 'unknown',
+                    flow: sanitizeFlowState(flowResult)
                 };
             } else {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateTopologyDisplay(connectedComponents.size === 0 ? 'No Circuit' : 'Incomplete');
+                const flowResult = {
+                    hasPath: false,
+                    hasFlow: false,
+                    reason: connectedComponents.size === 0 ? 'no-source' : 'open',
+                    warning: null,
+                    shortCircuit: false,
+                    pathResistance: Infinity,
+                    hasResistiveElement: false,
+                    currentValue: 0,
+                    totalVoltage
+                };
+                currentFlowState = flowResult;
                 return {
                     voltage: totalVoltage,
                     current: 0,
                     resistance: Infinity,
                     power: 0,
                     isComplete: false,
-                    topology: connectedComponents.size === 0 ? 'none' : 'incomplete'
+                    topology: connectedComponents.size === 0 ? 'none' : 'incomplete',
+                    flow: sanitizeFlowState(flowResult)
                 };
             }
         }
@@ -7806,6 +8274,14 @@ Made with ? for visual learners everywhere!
                         displayText = '? Simple';
                         color = '#88ccff';
                         break;
+                    case 'Polarity':
+                        displayText = '? Polarity';
+                        color = WIRE_COLORS.I;
+                        break;
+                    case 'blocked':
+                        displayText = '? Blocked';
+                        color = '#ff8844';
+                        break;
                     case 'Open Circuit':
                         displayText = '? Open';
                         color = '#ff4444';
@@ -7878,81 +8354,99 @@ Made with ? for visual learners everywhere!
             }
         }
 
-        function animateCurrentFlow(hasFlow, currentValue = 0) {
+        function animateCurrentFlow(flowState) {
             currentFlowParticles.forEach(particle => {
                 if (particle && scene) {
                     scene.remove(particle);
                 }
             });
             currentFlowParticles = [];
-            
-            if (!hasFlow || currentValue <= 0) return;
-            
-            const wiresForAnimation = wires;
-            if (wiresForAnimation.length === 0) return;
-            
-            const currentIntensity = Math.min(currentValue / 0.5, 1.0);
-            const flowColor = calculateCurrentColor(currentValue);
-            const flowSpeed = calculateFlowSpeed(currentValue);
-            
-            // Reduce particle count for mobile performance
+
+            currentFlowState = flowState || null;
+
+            const hasFlow = Boolean(flowState?.hasFlow);
+            const currentValue = flowState?.currentValue ?? 0;
+
+            if (!hasFlow || currentValue <= 0) {
+                return;
+            }
+
+            const segments = (flowState.wireSegments && flowState.wireSegments.length > 0)
+                ? flowState.wireSegments
+                : wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
+
+            if (!segments.length) {
+                return;
+            }
+
+            const flowColor = calculateCurrentColor(flowState);
+            const baseSpeed = calculateFlowSpeed(currentValue);
             const baseParticleCount = isMobile ? 3 : 4;
             const maxParticles = isMobile ? 8 : 12;
-            const particleCount = Math.max(baseParticleCount, Math.min(maxParticles, Math.floor(currentValue * (isMobile ? 15 : 20))));
-            
-            wiresForAnimation.forEach((wire, wireIndex) => {
-                if (!wire || !wire.wireGroup) return;
-                
+
+            segments.forEach((segment, segmentIndex) => {
+                const wire = segment.wire;
+                if (!wire || !wire.wireGroup) {
+                    return;
+                }
+
                 if (!wire.curve) {
                     wire.createCurve();
                 }
-                if (!wire.curve) return;
-                
+                if (!wire.curve) {
+                    return;
+                }
+
+                const segmentSpeed = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
+                const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
+
+                let dynamicCount = Math.floor((currentValue * (isMobile ? 14 : 18)) * (segment.speedFactor || 1));
+                dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
+
+                const particleCount = dynamicCount;
+                const intensity = Math.min(1, currentValue / 0.5);
+
                 for (let i = 0; i < particleCount; i++) {
                     try {
-                        const particleSize = 0.08 + (currentIntensity * 0.06);
+                        const particleSize = 0.08 + (intensity * 0.06);
                         const particleGeometry = new THREE.SphereGeometry(particleSize, isMobile ? 8 : 10, isMobile ? 6 : 8);
-                        
-                        // Apply misty or solid style
+
                         const baseMaterialProps = {
                             color: flowColor.hex,
                             emissive: flowColor.emissive,
-                            shininess: 150,
+                            shininess: 160,
                             transparent: true
                         };
-                        
+
                         if (currentFlowStyle === 'misty') {
-                            // Misty style: lower opacity, more ethereal
-                            baseMaterialProps.opacity = 0.4 + (currentIntensity * 0.3);
-                            baseMaterialProps.emissiveIntensity = 0.8;
+                            baseMaterialProps.opacity = 0.35 + (intensity * 0.25);
+                            baseMaterialProps.emissiveIntensity = 0.7;
                         } else {
-                            // Solid style: higher opacity, more defined
-                            baseMaterialProps.opacity = 0.85 + (currentIntensity * 0.15);
-                            baseMaterialProps.emissiveIntensity = 1.0;
+                            baseMaterialProps.opacity = 0.85 + (intensity * 0.1);
+                            baseMaterialProps.emissiveIntensity = 1.05;
                         }
-                        
+
                         const particleMaterial = new THREE.MeshPhongMaterial(baseMaterialProps);
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-                        
-                        const initialProgress = (i / particleCount) + (wireIndex * 0.1);
-                        const clampedProgress = Math.max(0, Math.min(1, initialProgress % 1));
-                        
+
+                        const initialProgress = (i / particleCount) + (segmentIndex * 0.17);
+                        const clampedProgress = ((initialProgress % 1) + 1) % 1;
+
                         const initialPosition = wire.curve.getPoint(clampedProgress);
                         particle.position.copy(initialPosition);
-                        
-                        particle.userData = { 
-                            wire: wire,
+
+                        particle.userData = {
+                            wire,
                             progress: clampedProgress,
-                            baseSpeed: flowSpeed,
-                            currentValue: currentValue,
-                            flowColor: flowColor,
+                            speed: segmentSpeed,
+                            direction: directionMultiplier,
+                            flowColor,
                             isFlowing: true,
                             flowStyle: currentFlowStyle
                         };
-                        
+
                         scene.add(particle);
                         currentFlowParticles.push(particle);
-                        
                     } catch (error) {
                         console.error(`Error creating particle ${i}:`, error);
                     }
@@ -7960,18 +8454,28 @@ Made with ? for visual learners everywhere!
             });
         }
 
-        function calculateCurrentColor(current) {
-            if (current <= 0.02) {
-                return { hex: 0xff3333, emissive: 0x330000 };
-            } else if (current <= 0.05) {
-                return { hex: 0xff8800, emissive: 0x331100 };
-            } else if (current <= 0.1) {
-                return { hex: 0xffff00, emissive: 0x333300 };
-            } else if (current <= 0.2) {
-                return { hex: 0xffffff, emissive: 0x444444 };
-            } else {
-                return { hex: 0xaaffff, emissive: 0x0044aa };
+        function calculateCurrentColor(flowState) {
+            if (flowState?.warning === 'short') {
+                return { hex: 0xff4444, emissive: 0x330000 };
             }
+
+            const currentValue = flowState?.currentValue ?? 0;
+            const blend = Math.min(1, Math.max(0, currentValue / 0.6));
+
+            const baseColor = new THREE.Color(WIRE_COLORS.I);
+            const highlightColor = new THREE.Color('#ffd8b1');
+            const displayColor = highlightColor.clone().lerp(baseColor, blend);
+
+            if (currentFlowStyle === 'misty') {
+                displayColor.lerp(new THREE.Color('#ffffff'), 0.2);
+            }
+
+            const emissiveColor = baseColor.clone().multiplyScalar(0.25 + (0.5 * blend));
+
+            return {
+                hex: displayColor.getHex(),
+                emissive: emissiveColor.getHex()
+            };
         }
 
         function calculateFlowSpeed(current) {
