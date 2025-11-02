@@ -196,57 +196,158 @@
   color: #c7ecff;
 }
 
+.diagram-card {
+  background: rgba(12, 30, 58, 0.74);
+  border: 1px solid rgba(124, 188, 255, 0.32);
+  border-radius: 18px;
+  padding: 20px 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.diagram-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagram-card-header strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8fcaff;
+}
+
+.diagram-card-header span {
+  font-size: 0.78rem;
+  opacity: 0.72;
+}
+
+.diagram-svg {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: block;
+}
+
+.diagram-svg text {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.worksheet-status-banner {
+  background: rgba(10, 26, 48, 0.72);
+  border: 1px solid rgba(102, 168, 255, 0.24);
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: grid;
+  gap: 6px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.worksheet-status-banner[data-complete="true"] {
+  background: rgba(28, 94, 122, 0.68);
+  border-color: rgba(108, 228, 204, 0.56);
+  box-shadow: 0 0 24px rgba(80, 220, 200, 0.24);
+}
+
+.worksheet-status-banner strong {
+  font-size: 0.88rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fdcff;
+}
+
+.worksheet-status-banner span {
+  font-size: 0.9rem;
+  color: #d2ecff;
+  opacity: 0.82;
+}
+
 .practice-table {
+  --worksheet-metric-width: 160px;
   border-radius: 18px;
   border: 1px solid rgba(90, 148, 230, 0.3);
   overflow: hidden;
   backdrop-filter: blur(10px);
+  background: rgba(8, 18, 36, 0.82);
 }
 
 .practice-table-header,
 .practice-table-row {
   display: grid;
-  grid-template-columns: 200px repeat(4, minmax(0, 1fr));
 }
 
 .practice-table-header {
   background: rgba(32, 70, 124, 0.42);
 }
 
+.practice-table-body {
+  display: grid;
+  gap: 0;
+}
+
 .practice-table-cell {
-  padding: 14px 18px;
+  padding: 16px;
   border-bottom: 1px solid rgba(66, 110, 180, 0.28);
+  border-right: 1px solid rgba(66, 110, 180, 0.28);
   font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 72px;
+}
+
+.practice-table-header .practice-table-cell {
+  border-bottom: 1px solid rgba(86, 140, 210, 0.32);
+}
+
+.practice-table-row > .practice-table-cell:last-child,
+.practice-table-header > .practice-table-cell:last-child {
+  border-right: none;
 }
 
 .practice-table-cell.heading {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #a3d0ff;
 }
 
-.practice-table-cell.label {
-  font-weight: 500;
+.metric-heading {
+  align-items: flex-start;
 }
 
-.practice-table-row.role-total {
-  background: rgba(18, 48, 102, 0.34);
+.metric-heading-title {
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 
-.practice-table-row.role-source {
-  background: rgba(14, 36, 86, 0.32);
+.component-heading {
+  gap: 6px;
 }
 
-.practice-table-cell.metric.highlight {
-  background: linear-gradient(120deg, rgba(68, 160, 255, 0.42), rgba(80, 220, 180, 0.42));
-  color: #0b1020;
+.component-label {
   font-weight: 600;
+  font-size: 0.95rem;
+  color: #e2f4ff;
 }
 
-.practice-table-cell.metric[data-empty="true"] {
-  color: rgba(210, 230, 255, 0.28);
+.component-caption {
+  font-size: 0.72rem;
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+}
+
+.metric-label {
+  gap: 6px;
+  background: rgba(24, 52, 102, 0.36);
+  border-right: 1px solid rgba(60, 110, 184, 0.3);
+}
+
+.metric-row:nth-child(even) .metric-label {
+  background: rgba(18, 40, 82, 0.42);
 }
 
 .metric-pill {
@@ -254,7 +355,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 0.72rem;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .metric-pill.metric-watts {
@@ -281,6 +382,118 @@
   display: block;
   font-size: 0.7rem;
   opacity: 0.72;
+}
+
+.worksheet-cell {
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 30, 58, 0.48);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.worksheet-cell.status-given {
+  background: rgba(26, 52, 102, 0.52);
+}
+
+.worksheet-cell.status-correct {
+  background: rgba(44, 128, 112, 0.52);
+  border-color: rgba(98, 220, 198, 0.64);
+  box-shadow: 0 0 18px rgba(80, 220, 200, 0.32);
+}
+
+.worksheet-cell.status-incorrect {
+  background: rgba(110, 38, 38, 0.48);
+  border-color: rgba(255, 110, 110, 0.38);
+}
+
+.worksheet-cell.status-invalid {
+  background: rgba(144, 54, 96, 0.48);
+  border-color: rgba(240, 130, 200, 0.36);
+}
+
+.worksheet-cell.status-revealed {
+  background: rgba(40, 84, 140, 0.48);
+  border-color: rgba(118, 188, 255, 0.34);
+}
+
+.worksheet-cell.highlight {
+  box-shadow: inset 0 0 0 2px rgba(130, 210, 255, 0.72);
+}
+
+.worksheet-input-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.worksheet-input {
+  width: 100%;
+  max-width: 120px;
+  background: rgba(6, 16, 36, 0.82);
+  border: 1px solid rgba(118, 188, 255, 0.42);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #e8f6ff;
+  font-size: 0.95rem;
+  text-align: center;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.worksheet-input::placeholder {
+  color: rgba(208, 228, 255, 0.28);
+}
+
+.worksheet-input:focus {
+  outline: none;
+  border-color: rgba(160, 220, 255, 0.66);
+  box-shadow: 0 0 14px rgba(120, 200, 255, 0.36);
+  transform: translateY(-1px);
+}
+
+.worksheet-cell.status-incorrect .worksheet-input,
+.worksheet-cell.status-invalid .worksheet-input {
+  border-color: rgba(255, 138, 138, 0.6);
+}
+
+.worksheet-cell.status-correct .worksheet-input {
+  border-color: rgba(90, 220, 190, 0.7);
+}
+
+.worksheet-unit {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(200, 230, 255, 0.7);
+}
+
+.worksheet-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #e4f4ff;
+}
+
+.worksheet-cell[data-given="true"] .worksheet-value {
+  color: #cfe8ff;
+}
+
+.worksheet-cell[data-reveal="true"] .worksheet-value {
+  color: #d8f1ff;
+}
+
+.worksheet-controls .next-problem {
+  background: rgba(12, 140, 168, 0.72);
+  border: 1px solid rgba(108, 220, 228, 0.5);
+}
+
+.worksheet-controls .next-problem[disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  border-color: rgba(108, 180, 255, 0.24);
+  background: rgba(12, 34, 62, 0.48);
 }
 
 .practice-steps {
@@ -457,9 +670,8 @@
     padding: 28px 20px 40px;
   }
 
-  .practice-table-header,
-  .practice-table-row {
-    grid-template-columns: 160px repeat(4, minmax(0, 1fr));
+  .practice-table {
+    --worksheet-metric-width: 140px;
   }
 }
 
@@ -469,9 +681,13 @@
     align-items: flex-start;
   }
 
-  .practice-table-header,
-  .practice-table-row {
-    grid-template-columns: 140px repeat(4, minmax(0, 1fr));
+  .practice-table {
+    --worksheet-metric-width: 120px;
+  }
+
+  .worksheet-input {
+    max-width: 96px;
+    padding: 8px 10px;
   }
 
   .prompt-card,

@@ -6,6 +6,8 @@ export type PracticeTopology = "series" | "parallel" | "combination";
 
 export type ComponentRole = "source" | "load";
 
+export type PracticeDiagramId = "seriesSquare" | "parallelSquare" | "comboSquare";
+
 export type PracticeComponent = {
   id: string;
   label: string;
@@ -54,5 +56,6 @@ export type PracticeProblem = {
   totalsGivens?: PartialWireMetrics;
   steps: PracticeStepDefinition[];
   presetHint?: string;
+  diagram?: PracticeDiagramId;
 };
 
