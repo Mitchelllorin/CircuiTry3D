@@ -490,13 +490,15 @@ export default function Practice() {
             </span>
           </div>
 
-          <WireTable
-            rows={tableRows}
-            revealAll={tableRevealed}
-            highlight={{ rowId: highlightRowId, key: highlightKey }}
-            entries={worksheetEntries}
-            onChange={handleWorksheetChange}
-          />
+          <div className="practice-table-wrapper">
+            <WireTable
+              rows={tableRows}
+              revealAll={tableRevealed}
+              highlight={{ rowId: highlightRowId, key: highlightKey }}
+              entries={worksheetEntries}
+              onChange={handleWorksheetChange}
+            />
+          </div>
 
           <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
         </section>

@@ -56,7 +56,7 @@ export type WireTableProps = {
 const formatWorksheetNumber = (value: number, key: WireMetricKey) => formatNumber(value, METRIC_PRECISION[key]);
 
 const buildGridTemplate = (columnCount: number) =>
-  `var(--worksheet-metric-width, 140px) repeat(${columnCount}, minmax(0, 1fr))`;
+  `var(--worksheet-metric-width, 140px) repeat(${columnCount}, minmax(var(--worksheet-column-min, 180px), 1fr))`;
 
 type CellStatus = WorksheetEntryStatus | "revealed";
 
