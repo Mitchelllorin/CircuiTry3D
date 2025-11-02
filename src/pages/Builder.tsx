@@ -186,6 +186,28 @@ type ArenaExportSummary = {
 
 type ArenaExportStatus = "idle" | "exporting" | "ready" | "error";
 
+type BuilderLogoSettings = {
+  speed: number;
+  travelX: number;
+  travelY: number;
+  bounce: number;
+};
+
+const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
+const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
+  speed: 28,
+  travelX: 70,
+  travelY: 55,
+  bounce: 28,
+};
+
+const clamp = (value: number, min: number, max: number) => {
+  if (Number.isNaN(value)) {
+    return min;
+  }
+  return Math.min(Math.max(value, min), max);
+};
+
 const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "wire-mode",
@@ -762,6 +784,8 @@ export default function Builder() {
   const pendingArenaRequests = useRef<Map<string, { openWindow: boolean }>>(new Map());
   const simulationPulseTimer = useRef<number | null>(null);
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const floatingLogoRef = useRef<HTMLDivElement | null>(null);
+  const floatingLogoAnimationRef = useRef<number | null>(null);
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
@@ -789,6 +813,36 @@ export default function Builder() {
   const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
   const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
+  const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_LOGO_SETTINGS;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(LOGO_SETTINGS_STORAGE_KEY);
+      if (!stored) {
+        return DEFAULT_LOGO_SETTINGS;
+      }
+
+      const parsed = JSON.parse(stored) as Partial<BuilderLogoSettings>;
+      return {
+        speed: clamp(typeof parsed.speed === "number" ? parsed.speed : DEFAULT_LOGO_SETTINGS.speed, 6, 60),
+        travelX: clamp(typeof parsed.travelX === "number" ? parsed.travelX : DEFAULT_LOGO_SETTINGS.travelX, 10, 100),
+        travelY: clamp(typeof parsed.travelY === "number" ? parsed.travelY : DEFAULT_LOGO_SETTINGS.travelY, 10, 100),
+        bounce: clamp(typeof parsed.bounce === "number" ? parsed.bounce : DEFAULT_LOGO_SETTINGS.bounce, 0, 120),
+      };
+    } catch {
+      return DEFAULT_LOGO_SETTINGS;
+    }
+  });
+  const [isLogoSettingsOpen, setLogoSettingsOpen] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return false;
+    }
+
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
   const appBasePath = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -941,6 +995,38 @@ export default function Builder() {
       return;
     }
 
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleMotionChange = (event: MediaQueryListEvent) => {
+      setPrefersReducedMotion(event.matches);
+    };
+
+    setPrefersReducedMotion(motionQuery.matches);
+    return subscribeToMediaQuery(motionQuery, handleMotionChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(LOGO_SETTINGS_STORAGE_KEY, JSON.stringify(logoSettings));
+    } catch {
+      // Ignore storage write failures (private browsing, quota, etc.)
+    }
+  }, [logoSettings]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setLogoSettingsOpen(false);
+    }
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
     const largeScreenQuery = window.matchMedia("(min-width: 1024px)");
     const compactScreenQuery = window.matchMedia("(max-width: 900px)");
 
@@ -1003,6 +1089,90 @@ export default function Builder() {
   useEffect(() => {
     helpSectionRefs.current = {};
   }, [helpView]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const element = floatingLogoRef.current;
+    if (!element) {
+      return;
+    }
+
+    if (floatingLogoAnimationRef.current !== null) {
+      cancelAnimationFrame(floatingLogoAnimationRef.current);
+      floatingLogoAnimationRef.current = null;
+    }
+
+    if (prefersReducedMotion) {
+      element.style.transform = "translateX(-50%) translateY(-50%)";
+      element.style.textShadow = "0 0 44px rgba(0, 255, 136, 0.38), 0 0 68px rgba(136, 204, 255, 0.24)";
+      return;
+    }
+
+    let frameId: number;
+    let previousTimestamp: number | null = null;
+    let angle = 0;
+
+    const animate = (timestamp: number) => {
+      if (previousTimestamp === null) {
+        previousTimestamp = timestamp;
+      }
+
+      const deltaSeconds = (timestamp - previousTimestamp) / 1000;
+      previousTimestamp = timestamp;
+
+      const orbitDuration = Math.max(logoSettings.speed, 4);
+      angle = (angle + (deltaSeconds * (Math.PI * 2)) / orbitDuration) % (Math.PI * 2);
+
+      const viewportWidth = window.innerWidth || 1440;
+      const viewportHeight = window.innerHeight || 900;
+
+      const horizontalMargin = 160;
+      const verticalMargin = 200;
+
+      const maxHorizontal = Math.max(0, (viewportWidth - horizontalMargin * 2) / 2);
+      const maxVertical = Math.max(0, (viewportHeight - verticalMargin * 2) / 2);
+
+      const amplitudeX = maxHorizontal * (clamp(logoSettings.travelX, 10, 100) / 100);
+      const amplitudeY = maxVertical * (clamp(logoSettings.travelY, 10, 100) / 100);
+
+      const orbitX = Math.cos(angle) * amplitudeX;
+      const orbitY = Math.sin(angle) * amplitudeY;
+
+      const bounceStrength = clamp(logoSettings.bounce, 0, 120);
+      const bounceWave = Math.sin(angle * 2);
+      const bounceOffset = bounceWave * bounceStrength;
+      const tilt = bounceWave * 5.8;
+      const scale = 1 + bounceWave * (bounceStrength / 360);
+
+      const translateX = orbitX;
+      const translateY = orbitY + bounceOffset;
+
+      element.style.transform = `translateX(calc(-50% + ${translateX.toFixed(1)}px)) translateY(calc(-50% + ${translateY.toFixed(
+        1
+      )}px)) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+
+      const glowPrimary = 0.34 + Math.sin(angle * 1.7) * 0.12;
+      const glowSecondary = 0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08;
+      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${glowPrimary.toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${glowSecondary.toFixed(
+        2
+      )})`;
+
+      frameId = window.requestAnimationFrame(animate);
+      floatingLogoAnimationRef.current = frameId;
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
+      floatingLogoAnimationRef.current = null;
+    };
+  }, [logoSettings, prefersReducedMotion]);
 
   const postToBuilder = useCallback(
     (message: BuilderMessage, options: { allowQueue?: boolean } = {}) => {
@@ -1100,6 +1270,49 @@ export default function Builder() {
     },
     []
   );
+
+  const updateLogoSetting = useCallback((key: keyof BuilderLogoSettings, value: number) => {
+    setLogoSettings((previous) => {
+      const nextValue = (() => {
+        switch (key) {
+          case "speed":
+            return clamp(value, 6, 60);
+          case "travelX":
+          case "travelY":
+            return clamp(value, 10, 100);
+          case "bounce":
+          default:
+            return clamp(value, 0, 120);
+        }
+      })();
+
+      if (previous[key] === nextValue) {
+        return previous;
+      }
+
+      return { ...previous, [key]: nextValue };
+    });
+  }, []);
+
+  const resetLogoSettings = useCallback(() => {
+    setLogoSettings((previous) => {
+      const defaults = { ...DEFAULT_LOGO_SETTINGS };
+      if (
+        previous.speed === defaults.speed &&
+        previous.travelX === defaults.travelX &&
+        previous.travelY === defaults.travelY &&
+        previous.bounce === defaults.bounce
+      ) {
+        return previous;
+      }
+
+      return defaults;
+    });
+  }, []);
+
+  const toggleLogoSettingsPanel = useCallback(() => {
+    setLogoSettingsOpen((open) => !open);
+  }, []);
 
   useEffect(() => {
     if (!isFrameReady) {
@@ -1579,10 +1792,115 @@ export default function Builder() {
         />
       </div>
 
-      <div className="builder-floating-logo" aria-hidden="true">
+      <div ref={floatingLogoRef} className="builder-floating-logo" aria-hidden="true">
         <span className="builder-logo-circui">Circui</span>
         <span className="builder-logo-try">Try</span>
         <span className="builder-logo-3d">3D</span>
+      </div>
+
+      <div className={`builder-logo-controls${isLogoSettingsOpen ? " open" : ""}`}>
+        <button
+          type="button"
+          className={`logo-controls-toggle${isLogoSettingsOpen ? " active" : ""}`}
+          onClick={toggleLogoSettingsPanel}
+          aria-expanded={isLogoSettingsOpen}
+          aria-controls="builder-logo-motion-panel"
+        >
+          Logo Motion
+        </button>
+        <div
+          id="builder-logo-motion-panel"
+          className="builder-logo-settings-panel"
+          aria-hidden={!isLogoSettingsOpen}
+        >
+          <h3>Logo Motion</h3>
+          <p className="builder-logo-settings-description">Fine-tune how the logo drifts across the workspace.</p>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-speed">Orbit duration</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-speed"
+                type="range"
+                min={6}
+                max={60}
+                step={1}
+                value={logoSettings.speed}
+                onChange={(event) => updateLogoSetting("speed", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.speed)} second cycle`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.speed)}s</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-travel-x">Horizontal travel</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-travel-x"
+                type="range"
+                min={10}
+                max={100}
+                step={1}
+                value={logoSettings.travelX}
+                onChange={(event) => updateLogoSetting("travelX", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.travelX)} percent width`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.travelX)}%</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-travel-y">Vertical travel</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-travel-y"
+                type="range"
+                min={10}
+                max={100}
+                step={1}
+                value={logoSettings.travelY}
+                onChange={(event) => updateLogoSetting("travelY", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.travelY)} percent height`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.travelY)}%</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-bounce">Bounce intensity</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-bounce"
+                type="range"
+                min={0}
+                max={120}
+                step={1}
+                value={logoSettings.bounce}
+                onChange={(event) => updateLogoSetting("bounce", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.bounce)} pixel bounce`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.bounce)}px</span>
+            </div>
+          </div>
+          {prefersReducedMotion ? (
+            <p className="builder-logo-settings-note">Motion is paused because your system prefers reduced motion.</p>
+          ) : null}
+          <div className="builder-logo-settings-actions">
+            <button
+              type="button"
+              className="logo-settings-reset"
+              onClick={resetLogoSettings}
+              tabIndex={isLogoSettingsOpen ? 0 : -1}
+            >
+              Reset defaults
+            </button>
+          </div>
+        </div>
       </div>
 
       <div
