@@ -2667,6 +2667,7 @@
         }
 
         // Global variables
+        const ARENA_STORAGE_KEY = 'circuiTry3d.arena.import';
         let scene, camera, renderer, raycaster, mouse;
         let components = [], wires = [], junctions = [];
         let isWireMode = false, isRotateMode = false, wireStart = null;
@@ -5985,13 +5986,67 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function exportArenaPayload() {
+            try {
+                const currentStateString = getCurrentStateString();
+                if (!currentStateString) {
+                    return null;
+                }
+
+                const state = JSON.parse(currentStateString);
+                const summary = state.components.reduce((acc, component) => {
+                    const key = component.type || 'unknown';
+                    acc.byType[key] = (acc.byType[key] || 0) + 1;
+                    return acc;
+                }, {
+                    totalComponents: state.components.length,
+                    totalWires: state.wires.length,
+                    totalJunctions: state.junctions.length,
+                    byType: {}
+                });
+
+                const safeMetric = (value) => (Number.isFinite(value) ? Number(value) : null);
+
+                return {
+                    version: '1.0',
+                    source: 'builder',
+                    generatedAt: Date.now(),
+                    metrics: {
+                        voltage: safeMetric(lastKnownValues?.voltage),
+                        current: safeMetric(lastKnownValues?.current),
+                        resistance: safeMetric(lastKnownValues?.resistance),
+                        power: safeMetric(lastKnownValues?.power)
+                    },
+                    summary,
+                    state
+                };
+            } catch (error) {
+                console.warn('Arena payload export failed', error);
+                return null;
+            }
+        }
+
         function openArena() {
             try {
                 const summary = exportArenaSession({ openWindow: true });
+                const payload = exportArenaPayload();
+                let payloadStored = false;
+
+                if (payload && typeof localStorage !== 'undefined') {
+                    try {
+                        localStorage.setItem(ARENA_STORAGE_KEY, JSON.stringify(payload));
+                        payloadStored = true;
+                    } catch (storageError) {
+                        console.warn('Arena payload storage failed', storageError);
+                    }
+                }
+
                 if (summary) {
                     const count = summary.componentCount || 0;
                     const message = `?? Component Arena export ready (${count} component${count === 1 ? '' : 's'})`;
-                    setStatus(message);
+                    setStatus(payloadStored ? message : `${message} (quick sync unavailable)`);
+                } else if (payloadStored) {
+                    setStatus('?? Component Arena opened with current build');
                 } else {
                     setStatus('?? Unable to prepare arena export');
                 }
