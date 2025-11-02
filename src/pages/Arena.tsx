@@ -105,6 +105,258 @@ function summariseProperties(properties?: Record<string, unknown>): string | nul
   return null;
 }
 
+type ComponentMetricEntry = {
+  key: string;
+  label: string;
+  displayValue: string;
+  numericValue: number | null;
+  unit: string | null;
+};
+
+type ComponentShowdownProfile = {
+  uid: string;
+  name: string;
+  type: string;
+  summary: string | null;
+  metrics: ComponentMetricEntry[];
+};
+
+const METRIC_UNIT_MAP: Record<string, string> = {
+  ambienthumiditypercent: "%",
+  ambienttemperature: "C",
+  capacitance: "F",
+  capacitymah: "mAh",
+  current: "A",
+  currentpeak: "A",
+  currentrms: "A",
+  dutycyclepercent: "%",
+  efficiency: "%",
+  energydelivered: "J",
+  energy: "J",
+  forwardvoltage: "V",
+  frequencyhz: "Hz",
+  impedance: "Ω",
+  inductance: "H",
+  internalresistance: "Ω",
+  loadimpedanceohms: "Ω",
+  maxdischargecurrent: "A",
+  operatingvoltage: "V",
+  onresistance: "Ω",
+  offresistance: "Ω",
+  power: "W",
+  powerdissipation: "W",
+  reactance: "Ω",
+  resistance: "Ω",
+  seriesresistance: "Ω",
+  storedenergy: "J",
+  temperature: "C",
+  thermalresistance: "C/W",
+  thermalrise: "C",
+  transitiontimems: "ms",
+  voltage: "V",
+  operatingtemperature: "C"
+};
+
+function normalisePropertyKey(key: string): string {
+  return key.replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function scaleNumber(value: number): { scaled: number; prefix: string } {
+  const abs = Math.abs(value);
+  if (abs >= 1e6) {
+    return { scaled: value / 1e6, prefix: "M" };
+  }
+  if (abs >= 1e3) {
+    return { scaled: value / 1e3, prefix: "k" };
+  }
+  if (abs > 0 && abs < 1e-3) {
+    return { scaled: value * 1e6, prefix: "u" };
+  }
+  if (abs > 0 && abs < 1) {
+    return { scaled: value * 1e3, prefix: "m" };
+  }
+  return { scaled: value, prefix: "" };
+}
+
+function formatPropertyLabel(key: string): string {
+  const spaced = key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim();
+  if (!spaced) {
+    return "Metric";
+  }
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function formatNumericForProperty(key: string, value: number): { display: string; unit: string | null } {
+  const normalisedKey = normalisePropertyKey(key);
+  const unit = METRIC_UNIT_MAP[normalisedKey] ?? null;
+
+  if (unit === "%") {
+    const decimals = Math.abs(value) < 10 ? 1 : 0;
+    return { display: `${value.toFixed(decimals)} %`, unit };
+  }
+
+  if (unit === "ms" || unit === "mAh" || unit === "s") {
+    const decimals = Math.abs(value) < 10 ? 2 : Math.abs(value) < 100 ? 1 : 0;
+    return { display: `${value.toFixed(decimals)} ${unit}`, unit };
+  }
+
+  const { scaled, prefix } = scaleNumber(value);
+  const decimals = Math.abs(scaled) < 10 ? 2 : Math.abs(scaled) < 100 ? 1 : 0;
+  const combinedUnit = unit ? `${prefix}${unit}` : prefix;
+  const suffix = combinedUnit ? ` ${combinedUnit}` : "";
+
+  return { display: `${scaled.toFixed(decimals)}${suffix}`, unit };
+}
+
+function truncate(value: string, maxLength = 60): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, maxLength - 3)}...`;
+}
+
+function formatPropertyValue(key: string, value: unknown): {
+  displayValue: string;
+  numericValue: number | null;
+  unit: string | null;
+} {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const formatted = formatNumericForProperty(key, value);
+    return { displayValue: formatted.display, numericValue: value, unit: formatted.unit };
+  }
+
+  if (typeof value === "boolean") {
+    return { displayValue: value ? "Yes" : "No", numericValue: null, unit: null };
+  }
+
+  if (typeof value === "string") {
+    return { displayValue: value, numericValue: null, unit: null };
+  }
+
+  if (Array.isArray(value)) {
+    return {
+      displayValue: `${value.length} item${value.length === 1 ? "" : "s"}`,
+      numericValue: null,
+      unit: null
+    };
+  }
+
+  if (value && typeof value === "object") {
+    return { displayValue: truncate(JSON.stringify(value)), numericValue: null, unit: null };
+  }
+
+  return { displayValue: "—", numericValue: null, unit: null };
+}
+
+function buildComponentProfile(component: ArenaComponent, index: number, uid: string): ComponentShowdownProfile {
+  const name = component.componentNumber || component.type || `Component ${index + 1}`;
+  const type = component.type ?? "Unknown";
+  const summary = summariseProperties(component.properties) ?? null;
+  const properties = component.properties && typeof component.properties === "object" ? component.properties : {};
+
+  const seen = new Set<string>();
+  const metrics: ComponentMetricEntry[] = [];
+
+  Object.entries(properties).forEach(([key, rawValue]) => {
+    const normalisedKey = normalisePropertyKey(key);
+    if (!normalisedKey || seen.has(normalisedKey)) {
+      return;
+    }
+
+    const { displayValue, numericValue, unit } = formatPropertyValue(key, rawValue);
+    if (displayValue === "—") {
+      return;
+    }
+
+    metrics.push({
+      key: normalisedKey,
+      label: formatPropertyLabel(key),
+      displayValue,
+      numericValue,
+      unit
+    });
+    seen.add(normalisedKey);
+  });
+
+  const numericMetrics = metrics
+    .filter((entry) => entry.numericValue !== null)
+    .sort((a, b) => {
+      const priority = getMetricPriority(a.key) - getMetricPriority(b.key);
+      if (priority !== 0) {
+        return priority;
+      }
+      return Math.abs((b.numericValue as number)) - Math.abs((a.numericValue as number));
+    });
+
+  const descriptiveMetrics = metrics.filter((entry) => entry.numericValue === null);
+
+  const orderedMetrics = [...numericMetrics, ...descriptiveMetrics].slice(0, 8);
+
+  return {
+    uid,
+    name,
+    type,
+    summary,
+    metrics: orderedMetrics
+  };
+}
+
+function getMetricPriority(key: string): number {
+  const priorities = [
+    "power",
+    "current",
+    "voltage",
+    "impedance",
+    "resistance",
+    "capacitance",
+    "inductance",
+    "efficiency",
+    "thermal",
+    "temperature",
+    "duty",
+    "frequency"
+  ];
+
+  const index = priorities.findIndex((token) => key.includes(token));
+  return index === -1 ? priorities.length : index;
+}
+
+type ComparisonRow = {
+  key: string;
+  label: string;
+  aValue: string;
+  bValue: string;
+  deltaLabel: string | null;
+};
+
+function formatDeltaLabel(metricKey: string, unitHint: string | null, numericA: number | null, numericB: number | null): string | null {
+  if (numericA === null || numericB === null) {
+    return null;
+  }
+
+  const difference = numericA - numericB;
+  if (!Number.isFinite(difference) || Math.abs(difference) < 1e-9) {
+    return null;
+  }
+
+  const normalisedKey = normalisePropertyKey(metricKey);
+  const unit = unitHint ?? METRIC_UNIT_MAP[normalisedKey] ?? null;
+
+  if (unit === "%") {
+    const decimals = Math.abs(difference) < 10 ? 1 : 0;
+    return `Δ ${difference > 0 ? "+" : ""}${difference.toFixed(decimals)} %`;
+  }
+
+  const baseline = Math.max(Math.abs(numericB), 1e-9);
+  const percentDelta = ((numericA - numericB) / baseline) * 100;
+  const percentLabel = `${percentDelta > 0 ? "+" : ""}${percentDelta.toFixed(Math.abs(percentDelta) < 10 ? 1 : 0)}%`;
+  const formatted = formatNumericForProperty(metricKey, difference).display;
+  return `Δ ${difference > 0 ? "+" : ""}${formatted.trim()} (${percentLabel})`;
+}
+
 function formatTimestamp(timestamp?: number): string {
   if (!timestamp) {
     return "No sync yet";
@@ -131,6 +383,10 @@ export default function Arena() {
   const [importPayload, setImportPayload] = useState<ArenaPayload | null>(null);
   const [frameReady, setFrameReady] = useState(false);
   const [bridgeStatus, setBridgeStatus] = useState(DEFAULT_STATUS);
+  const [showdownSelection, setShowdownSelection] = useState<{ left: string | null; right: string | null }>({
+    left: null,
+    right: null
+  });
 
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
@@ -195,6 +451,132 @@ export default function Arena() {
     sendArenaMessage({ type: "arena:import", payload: importPayload });
   }, [frameReady, importPayload, sendArenaMessage]);
 
+  const resolvedComponents = useMemo(() => {
+    const components = importPayload?.state?.components ?? [];
+    return components.map((component, index) => {
+      const uid = component.id && component.id.length > 0 ? component.id : `${component.type ?? "component"}-${index}`;
+      return { component, uid, index };
+    });
+  }, [importPayload]);
+
+  const componentProfiles = useMemo<ComponentShowdownProfile[]>(() => {
+    return resolvedComponents.map(({ component, uid, index }) => buildComponentProfile(component, index, uid));
+  }, [resolvedComponents]);
+
+  useEffect(() => {
+    if (componentProfiles.length === 0) {
+      setShowdownSelection((prev) => {
+        if (prev.left === null && prev.right === null) {
+          return prev;
+        }
+        return { left: null, right: null };
+      });
+      return;
+    }
+
+    setShowdownSelection((prev) => {
+      const fallbackLeft = componentProfiles[0]?.uid ?? null;
+      const fallbackRight = componentProfiles.length > 1 ? componentProfiles[1]?.uid ?? null : null;
+
+      const left = prev.left && componentProfiles.some((profile) => profile.uid === prev.left) ? prev.left : fallbackLeft;
+
+      let nextRight: string | null;
+      if (prev.right && componentProfiles.some((profile) => profile.uid === prev.right)) {
+        nextRight = prev.right;
+      } else {
+        nextRight = fallbackRight && fallbackRight !== left ? fallbackRight : null;
+      }
+
+      const updated = {
+        left,
+        right: nextRight
+      };
+
+      if (prev.left === updated.left && prev.right === updated.right) {
+        return prev;
+      }
+
+      return updated;
+    });
+  }, [componentProfiles]);
+
+  const componentOptions = useMemo(
+    () =>
+      componentProfiles.map((profile) => ({
+        uid: profile.uid,
+        label: `${profile.name} (${profile.type})`
+      })),
+    [componentProfiles]
+  );
+
+  const componentAProfile = useMemo(() => {
+    if (!componentProfiles.length) {
+      return null;
+    }
+    if (showdownSelection.left) {
+      const match = componentProfiles.find((profile) => profile.uid === showdownSelection.left);
+      if (match) {
+        return match;
+      }
+    }
+    return componentProfiles[0] ?? null;
+  }, [componentProfiles, showdownSelection.left]);
+
+  const componentBProfile = useMemo(() => {
+    if (!componentProfiles.length) {
+      return null;
+    }
+    if (showdownSelection.right) {
+      const match = componentProfiles.find((profile) => profile.uid === showdownSelection.right);
+      if (match) {
+        return match;
+      }
+    }
+    return componentProfiles.length > 1 ? componentProfiles[1] : null;
+  }, [componentProfiles, showdownSelection.right]);
+
+  const comparisonRows = useMemo<ComparisonRow[]>(() => {
+    if (!componentAProfile && !componentBProfile) {
+      return [];
+    }
+
+    const orderedKeys: string[] = [];
+
+    const registerKeys = (profile: ComponentShowdownProfile | null) => {
+      profile?.metrics.forEach((metric) => {
+        if (!orderedKeys.includes(metric.key)) {
+          orderedKeys.push(metric.key);
+        }
+      });
+    };
+
+    registerKeys(componentAProfile);
+    registerKeys(componentBProfile);
+
+    return orderedKeys
+      .map((key) => {
+        const metricA = componentAProfile?.metrics.find((metric) => metric.key === key);
+        const metricB = componentBProfile?.metrics.find((metric) => metric.key === key);
+        if (!metricA && !metricB) {
+          return null;
+        }
+
+        const label = metricA?.label ?? metricB?.label ?? formatPropertyLabel(key);
+        const aValue = metricA?.displayValue ?? "—";
+        const bValue = metricB?.displayValue ?? "—";
+        const deltaLabel = metricA && metricB ? formatDeltaLabel(label, metricA.unit ?? metricB.unit ?? null, metricA.numericValue, metricB.numericValue) : null;
+
+        return {
+          key,
+          label,
+          aValue,
+          bValue,
+          deltaLabel
+        };
+      })
+      .filter((row): row is ComparisonRow => row !== null);
+  }, [componentAProfile, componentBProfile]);
+
   const metrics = useMemo(() => {
     const base = importPayload?.metrics ?? {};
     return [
@@ -211,18 +593,16 @@ export default function Arena() {
   }, [importPayload]);
 
   const roster = useMemo(() => {
-    const components = importPayload?.state?.components ?? [];
-    return components.slice(0, 6).map((component, index) => {
-      const name = component.componentNumber || component.type || `Component ${index + 1}`;
-      const details = summariseProperties(component.properties);
+    return componentProfiles.slice(0, 6).map((profile) => {
+      const fallbackMetric = profile.metrics[0] ? `${profile.metrics[0].label}: ${profile.metrics[0].displayValue}` : null;
       return {
-        id: component.id ?? `${component.type ?? "component"}-${index}`,
-        name,
-        type: component.type ?? "Unknown",
-        details
+        id: profile.uid,
+        name: profile.name,
+        type: profile.type,
+        details: profile.summary ?? fallbackMetric
       };
     });
-  }, [importPayload]);
+  }, [componentProfiles]);
 
   const circuitTotals = useMemo(() => {
     const summary = importPayload?.summary;
@@ -340,6 +720,103 @@ export default function Arena() {
         </aside>
 
         <main className="arena-stage" aria-busy={!frameReady}>
+          <section className="arena-card arena-showdown-card">
+            <div className="arena-card-header">
+              <div>
+                <h2>Component Showdown</h2>
+                <p className="arena-showdown-intro">Pick two components from your import to compare their key metrics side by side.</p>
+              </div>
+            </div>
+
+            {componentProfiles.length > 0 ? (
+              <>
+                <div className="arena-showdown-selects">
+                  <label className="arena-showdown-select">
+                    <span className="arena-showdown-select-label">Component A</span>
+                    <select
+                      aria-label="Component A selection"
+                      value={componentAProfile?.uid ?? showdownSelection.left ?? ""}
+                      onChange={(event) =>
+                        setShowdownSelection((prev) => ({
+                          left: event.target.value || null,
+                          right: prev.right
+                        }))
+                      }
+                    >
+                      <option value="" disabled>
+                        {componentProfiles.length ? "Select component" : "No components"}
+                      </option>
+                      {componentOptions.map((option) => (
+                        <option key={option.uid} value={option.uid}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="arena-showdown-select">
+                    <span className="arena-showdown-select-label">Component B</span>
+                    <select
+                      aria-label="Component B selection"
+                      value={showdownSelection.right ?? ""}
+                      onChange={(event) =>
+                        setShowdownSelection((prev) => ({
+                          left: prev.left,
+                          right: event.target.value || null
+                        }))
+                      }
+                    >
+                      <option value="">Select component</option>
+                      {componentOptions.map((option) => (
+                        <option key={option.uid} value={option.uid}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="arena-showdown-competitors">
+                  <div className="arena-showdown-team">
+                    <span className="arena-showdown-tag">Component A</span>
+                    <h3>{componentAProfile?.name ?? "Select a component"}</h3>
+                    <span className="arena-showdown-type">{componentAProfile?.type ?? "—"}</span>
+                    {componentAProfile?.summary && <p>{componentAProfile.summary}</p>}
+                  </div>
+                  <div className="arena-showdown-versus">VS</div>
+                  <div className="arena-showdown-team">
+                    <span className="arena-showdown-tag">Component B</span>
+                    <h3>{componentBProfile?.name ?? "Select a component"}</h3>
+                    <span className="arena-showdown-type">{componentBProfile?.type ?? "—"}</span>
+                    {componentBProfile?.summary && <p>{componentBProfile.summary}</p>}
+                  </div>
+                </div>
+
+                {componentProfiles.length < 2 && (
+                  <p className="arena-showdown-hint">Only one component available. Pull another build to compare head-to-head.</p>
+                )}
+
+                {comparisonRows.length > 0 ? (
+                  <ul className="arena-showdown-table">
+                    {comparisonRows.map((row) => (
+                      <li key={row.key}>
+                        <div className="arena-showdown-value value-a">{row.aValue}</div>
+                        <div className="arena-showdown-metric">
+                          <span className="metric-name">{row.label}</span>
+                          {row.deltaLabel && <span className="arena-showdown-delta">{row.deltaLabel}</span>}
+                        </div>
+                        <div className="arena-showdown-value value-b">{row.bValue}</div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="arena-empty">No comparable metrics found for the selected components.</p>
+                )}
+              </>
+            ) : (
+              <p className="arena-empty">Sync a builder snapshot to start comparing components.</p>
+            )}
+          </section>
+
           <div className="arena-toolbar">
             <button className="arena-btn ghost" type="button" onClick={() => handleCommand("reset")}>
               Reset Stage
