@@ -4,6 +4,7 @@ import Builder from "../pages/Builder";
 import Arena from "../pages/Arena";
 import WireDemo from "../pages/WireDemo";
 import Pricing from "../pages/Pricing";
+import Practice from "../pages/Practice";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/arena" element={<Arena />} />
       <Route path="/wire-demo" element={<WireDemo />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/practice" element={<Practice />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

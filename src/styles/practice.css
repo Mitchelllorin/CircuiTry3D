@@ -1,0 +1,484 @@
+.practice-page {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(12, 20, 34, 0.92), #04070c 58%);
+  color: #f3f8ff;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.practice-sidebar {
+  background: linear-gradient(180deg, rgba(14, 30, 58, 0.78), rgba(4, 9, 18, 0.92));
+  border-right: 1px solid rgba(80, 140, 220, 0.24);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.practice-sidebar h2 {
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #82c6ff;
+}
+
+.problem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.problem-button {
+  background: rgba(12, 26, 48, 0.76);
+  border: 1px solid rgba(94, 158, 255, 0.22);
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.problem-button:hover,
+.problem-button:focus {
+  border-color: rgba(130, 198, 255, 0.56);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.problem-button[data-active="true"] {
+  background: rgba(40, 86, 148, 0.72);
+  border-color: rgba(136, 204, 255, 0.72);
+  box-shadow: 0 0 18px rgba(120, 200, 255, 0.32);
+}
+
+.problem-button small {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.72;
+}
+
+.practice-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.practice-controls button {
+  background: rgba(6, 16, 32, 0.8);
+  border: 1px solid rgba(110, 180, 255, 0.26);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.practice-controls button:hover,
+.practice-controls button:focus {
+  border-color: rgba(136, 204, 255, 0.58);
+  background: rgba(26, 60, 112, 0.78);
+  outline: none;
+}
+
+.practice-main {
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.worksheet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.worksheet-controls button {
+  background: rgba(12, 34, 62, 0.78);
+  border: 1px solid rgba(108, 180, 255, 0.38);
+  border-radius: 12px;
+  padding: 10px 16px;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.worksheet-controls button:hover,
+.worksheet-controls button:focus {
+  border-color: rgba(148, 210, 255, 0.6);
+  background: rgba(30, 64, 108, 0.88);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.practice-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: baseline;
+}
+
+.practice-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.01em;
+}
+
+.tag-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(63, 126, 220, 0.22);
+  border: 1px solid rgba(118, 188, 255, 0.28);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.difficulty-pill {
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(28, 92, 144, 0.48);
+  border: 1px solid rgba(150, 210, 255, 0.42);
+}
+
+.prompt-card {
+  background: rgba(9, 20, 38, 0.78);
+  border: 1px solid rgba(96, 164, 255, 0.24);
+  border-radius: 16px;
+  padding: 24px 28px;
+  line-height: 1.6;
+}
+
+.prompt-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #a8dcff;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.target-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(18, 42, 78, 0.68);
+  border: 1px solid rgba(136, 204, 255, 0.32);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.target-card .target-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(136, 204, 255, 0.18);
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  color: #8ecaff;
+}
+
+.target-answer {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c7ecff;
+}
+
+.practice-table {
+  border-radius: 18px;
+  border: 1px solid rgba(90, 148, 230, 0.3);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.practice-table-header,
+.practice-table-row {
+  display: grid;
+  grid-template-columns: 200px repeat(4, minmax(0, 1fr));
+}
+
+.practice-table-header {
+  background: rgba(32, 70, 124, 0.42);
+}
+
+.practice-table-cell {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(66, 110, 180, 0.28);
+  font-size: 0.95rem;
+}
+
+.practice-table-cell.heading {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a3d0ff;
+}
+
+.practice-table-cell.label {
+  font-weight: 500;
+}
+
+.practice-table-row.role-total {
+  background: rgba(18, 48, 102, 0.34);
+}
+
+.practice-table-row.role-source {
+  background: rgba(14, 36, 86, 0.32);
+}
+
+.practice-table-cell.metric.highlight {
+  background: linear-gradient(120deg, rgba(68, 160, 255, 0.42), rgba(80, 220, 180, 0.42));
+  color: #0b1020;
+  font-weight: 600;
+}
+
+.practice-table-cell.metric[data-empty="true"] {
+  color: rgba(210, 230, 255, 0.28);
+}
+
+.metric-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  margin-bottom: 4px;
+}
+
+.metric-pill.metric-watts {
+  background: rgba(30, 180, 220, 0.24);
+  color: #12c8ff;
+}
+
+.metric-pill.metric-current {
+  background: rgba(245, 180, 90, 0.28);
+  color: #ffcf6e;
+}
+
+.metric-pill.metric-resistance {
+  background: rgba(140, 220, 120, 0.3);
+  color: #a0ff98;
+}
+
+.metric-pill.metric-voltage {
+  background: rgba(255, 110, 110, 0.28);
+  color: #ff867d;
+}
+
+.metric-caption {
+  display: block;
+  font-size: 0.7rem;
+  opacity: 0.72;
+}
+
+.practice-steps {
+  background: rgba(10, 28, 54, 0.78);
+  border: 1px solid rgba(108, 180, 250, 0.26);
+  border-radius: 16px;
+  padding: 24px 28px;
+}
+
+.practice-steps h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.practice-steps ol {
+  margin: 0;
+  padding-left: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.practice-steps li {
+  line-height: 1.5;
+}
+
+.step-title {
+  font-weight: 600;
+  color: #a6d6ff;
+}
+
+.step-detail {
+  margin: 4px 0 8px;
+  white-space: pre-line;
+}
+
+.step-formula {
+  display: inline-block;
+  background: rgba(22, 44, 78, 0.8);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.86rem;
+}
+
+.triangle-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.triangle-card {
+  background: rgba(12, 34, 60, 0.72);
+  border: 1px solid rgba(108, 180, 255, 0.28);
+  border-radius: 16px;
+  padding: 20px 18px 24px;
+  text-align: center;
+}
+
+.triangle-card svg {
+  width: 100%;
+  height: 160px;
+  margin: 12px 0;
+}
+
+.triangle-outline {
+  fill: rgba(22, 52, 96, 0.6);
+  stroke: rgba(140, 200, 255, 0.6);
+  stroke-width: 2;
+}
+
+.triangle-edge {
+  stroke: rgba(120, 188, 255, 0.45);
+  stroke-width: 1.4;
+}
+
+.triangle-label {
+  font-size: 1.6rem;
+  fill: #d6ecff;
+  font-weight: 600;
+}
+
+.triangle-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #d4ebff;
+}
+
+.triangle-caption {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.72;
+}
+
+.ohms-wheel {
+  background: rgba(12, 32, 58, 0.74);
+  border: 1px solid rgba(116, 186, 255, 0.32);
+  border-radius: 18px;
+  padding: 20px 24px 28px;
+}
+
+.ohms-wheel svg {
+  width: 100%;
+  height: auto;
+}
+
+.wheel-ring {
+  fill: none;
+  stroke: rgba(120, 200, 255, 0.38);
+  stroke-width: 6;
+}
+
+.wheel-hub {
+  fill: rgba(80, 180, 255, 0.18);
+  stroke: rgba(120, 200, 255, 0.32);
+  stroke-width: 2;
+}
+
+.wheel-hub-title {
+  font-size: 1.2rem;
+  fill: #bce9ff;
+  font-weight: 600;
+}
+
+.wheel-hub-sub {
+  font-size: 0.72rem;
+  fill: rgba(210, 236, 255, 0.76);
+}
+
+.wheel-text {
+  font-size: 0.78rem;
+  fill: #d8efff;
+  font-weight: 500;
+}
+
+.practice-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.practice-supplement {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (max-width: 1180px) {
+  .practice-page {
+    grid-template-columns: 100%;
+  }
+
+  .practice-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex-direction: row;
+    gap: 16px;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid rgba(80, 120, 180, 0.24);
+  }
+
+  .practice-sidebar h2 {
+    display: none;
+  }
+
+  .problem-list {
+    flex-direction: row;
+  }
+
+  .practice-main {
+    padding: 28px 20px 40px;
+  }
+
+  .practice-table-header,
+  .practice-table-row {
+    grid-template-columns: 160px repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .practice-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .practice-table-header,
+  .practice-table-row {
+    grid-template-columns: 140px repeat(4, minmax(0, 1fr));
+  }
+
+  .prompt-card,
+  .practice-steps,
+  .ohms-wheel,
+  .triangle-card {
+    padding: 18px;
+  }
+}
+
