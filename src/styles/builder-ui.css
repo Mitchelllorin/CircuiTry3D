@@ -1078,6 +1078,30 @@ body.builder-body {
   cursor: pointer;
 }
 
+.help-back {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  background: rgba(18, 36, 68, 0.55);
+  color: rgba(200, 220, 255, 0.85);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.help-back:hover,
+.help-back:focus-visible {
+  background: rgba(136, 204, 255, 0.18);
+  color: rgba(220, 235, 255, 0.92);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .help-title {
   margin: 0 0 20px;
   text-align: center;
@@ -1085,6 +1109,43 @@ body.builder-body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(200, 220, 255, 0.92);
+}
+
+.help-description {
+  margin: 0 0 22px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(200, 220, 255, 0.74);
+}
+
+.help-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.help-nav-btn {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.32);
+  background: rgba(0, 255, 136, 0.08);
+  color: rgba(200, 220, 255, 0.85);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.help-nav-btn:hover,
+.help-nav-btn:focus-visible {
+  background: rgba(0, 255, 136, 0.18);
+  border-color: rgba(0, 255, 180, 0.5);
+  transform: translateY(-1px);
+  outline: none;
 }
 
 .help-section {
