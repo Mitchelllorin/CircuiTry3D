@@ -596,143 +596,6 @@
             text-align: center;
         }
 
-        .wire-table-wrapper {
-            background: rgba(14, 30, 58, 0.55);
-            border: 1px solid rgba(136, 204, 255, 0.25);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 12px;
-        }
-
-        .wire-table-header {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            font-weight: 700;
-            color: #8bc7ff;
-            font-size: 14px;
-            margin-bottom: 6px;
-        }
-
-        .wire-table-header span {
-            color: rgba(199, 222, 255, 0.8);
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        .wire-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        .wire-table th,
-        .wire-table td {
-            border: 1px solid rgba(136, 204, 255, 0.2);
-            padding: 6px 8px;
-            text-align: center;
-        }
-
-        .wire-table th {
-            background: rgba(26, 60, 110, 0.6);
-            color: rgba(199, 222, 255, 0.95);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .wire-table th:first-child,
-        .wire-table td:first-child {
-            text-align: left;
-        }
-
-        .wire-table tbody tr:nth-child(even) {
-            background: rgba(12, 24, 48, 0.35);
-        }
-
-        .wire-table tbody tr:nth-child(odd) {
-            background: rgba(12, 24, 48, 0.18);
-        }
-
-        .wire-table-total {
-            background: rgba(40, 90, 150, 0.4) !important;
-            font-weight: 700;
-        }
-
-        .wire-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(136, 204, 255, 0.35);
-            border-radius: 6px;
-            padding: 4px 6px;
-            color: #cbe0ff;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .wire-input::placeholder {
-            color: rgba(203, 224, 255, 0.45);
-        }
-
-        .wire-input:focus {
-            outline: none;
-            border-color: rgba(0, 200, 255, 0.75);
-            background: rgba(0, 40, 80, 0.5);
-        }
-
-        .wire-cell-given {
-            display: inline-block;
-            font-weight: 600;
-            color: #8bc7ff;
-        }
-
-        .wire-solution {
-            display: none;
-            font-size: 10px;
-            color: rgba(180, 236, 255, 0.75);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .wire-table-guide {
-            font-size: 11px;
-            color: rgba(199, 222, 255, 0.85);
-            line-height: 1.4;
-            margin-bottom: 8px;
-        }
-
-        .wire-table-note {
-            font-size: 10px;
-            color: rgba(136, 204, 255, 0.6);
-            margin-top: 8px;
-            text-align: left;
-        }
-
-        .wire-table-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .practice-btn.secondary {
-            background: transparent;
-            border-color: rgba(136, 204, 255, 0.4);
-            color: #9fcfff;
-        }
-
-        .practice-btn.secondary:hover {
-            background: rgba(20, 60, 110, 0.5);
-            border-color: rgba(136, 204, 255, 0.7);
-        }
-
-        .practice-btn.secondary[data-active="true"] {
-            background: rgba(20, 80, 150, 0.6);
-            border-color: rgba(136, 204, 255, 0.9);
-            color: #d8f0ff;
-        }
-
         .practice-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -2447,7 +2310,7 @@
                     </div>
                     <div class="submenu-row">
                         <button class="btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed Circuit</button>
-                        <button class="btn" onclick="loadPresetCircuit('combination_advanced')">Combo Challenge</button>
+                        <button class="btn" onclick="loadPresetCircuit('switch_control')">Switch Control</button>
                     </div>
                     <div class="submenu-row">
                         <button class="btn" onclick="generateRandomProblem()">Random Problem</button>
@@ -2701,48 +2564,15 @@
                 </div>
                 
                 <div class="circuit-status" id="circuit-status">
-                    <div id="circuit-status-text">Circuit incomplete - add wires to connect components.</div>
+                    <div id="circuit-status-text">?? Circuit incomplete - Add wires to connect components</div>
                 </div>
                 
                 <div class="wire-instructions" id="wire-instructions">
-                    <strong>Use W.I.R.E.:</strong> 1) Log the givens in the worksheet  2) Choose the matching Ohm's or power identity  3) Tap <em>Reveal totals</em> to verify with Kirchhoff's laws. (Use Clear if you want to rebuild the wiring yourself.)
-                </div>
-
-                <div class="wire-table-wrapper" id="wire-table-wrapper" style="display: none;">
-                    <div class="wire-table-header">
-                        W.I.R.E. Worksheet
-                        <span id="wire-table-scenario"></span>
-                    </div>
-                    <div class="wire-table-guide" id="wire-table-guide">
-                        Record the givens, then apply Ohm's Law and power identities to fill the blanks.
-                    </div>
-                    <table class="wire-table" aria-describedby="wire-table-guide wire-table-note">
-                        <thead>
-                            <tr>
-                                <th scope="col">Component</th>
-                                <th scope="col">W (Power)</th>
-                                <th scope="col">I (Current)</th>
-                                <th scope="col">R (Resistance)</th>
-                                <th scope="col">E (Voltage)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="wire-table-body"></tbody>
-                    </table>
-                    <div class="wire-table-note" id="wire-table-note">
-                        Totals appear after you tap Reveal totals and the circuit has a valid solution. Use them to check your work.
-                    </div>
-                    <div class="wire-table-actions">
-                        <button class="practice-btn secondary" type="button" onclick="resetWireWorksheetInputs()">
-                            Clear entries
-                        </button>
-                        <button class="practice-btn secondary" type="button" id="wire-table-toggle-solutions" onclick="toggleWireWorksheetSolutions()">
-                            Reveal totals
-                        </button>
-                    </div>
+                    ?? <strong>How to wire:</strong> 1) Click ??? Tools ? ?? Wire Mode  2) Touch red/white terminals to connect  3) Switch to Solve tab when complete
                 </div>
                 
                 <div id="practice-objectives" style="margin-top: 12px;">
-                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">Learning Objectives:</div>
+                    <div style="color: #4da6ff; font-weight: bold; margin-bottom: 8px; font-size: 14px;">?? Learning Objectives:</div>
                     <ul id="objectives-list" style="color: #ccc; margin-left: 20px; line-height: 1.5; font-size: 12px;">
                         <!-- Objectives will be populated here -->
                     </ul>
@@ -2750,7 +2580,7 @@
             </div>
             
             <div class="worksheet-panel">
-                <div class="worksheet-title">Practice Circuit Problems</div>
+                <div class="worksheet-title">?? Practice Circuit Problems</div>
                 
                 <div style="text-align: center; margin-bottom: 16px;">
                     <button class="practice-btn" onclick="startPracticeSequence()" style="background: linear-gradient(135deg, #00ff88, #00cc66); color: #000; padding: 12px 24px; font-size: 14px; font-weight: bold;">
@@ -2767,11 +2597,11 @@
                 </div>
                 
                 <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
-                    <strong>Choose your practice method:</strong><br>
-                    - <strong>Practice Sequence</strong> - Work through problems in order<br>
-                    - <strong>Individual Problems</strong> - Jump to any specific circuit<br>
-                    - <strong>Random</strong> - Get randomized component values<br><br>
-                    <small>Circuits load with reference wiring; press Clear if you want to rebuild it yourself.</small>
+                    <strong>?? Choose your practice method:</strong><br>
+                    ? <strong>Practice Sequence</strong> - Work through problems in order<br>
+                    ? <strong>Individual Problems</strong> - Jump to any specific circuit<br>
+                    ? <strong>Random</strong> - Get randomized component values<br><br>
+                    <small>All problems require manual wiring and calculations!</small>
                 </div>
             </div>
         </div>
@@ -2837,7 +2667,6 @@
         }
 
         // Global variables
-        const ARENA_STORAGE_KEY = 'circuiTry3d.arena.import';
         let scene, camera, renderer, raycaster, mouse;
         let components = [], wires = [], junctions = [];
         let isWireMode = false, isRotateMode = false, wireStart = null;
@@ -2954,7 +2783,6 @@ body.android-optimized.menu-visible .status {
             if (window.parent && window.parent !== window) {
                 try {
                     window.parent.postMessage({ type: 'legacy:ready' }, '*');
-                    notifyParentModeState();
                 } catch (error) {
                     console.warn('Builder bridge: unable to notify parent window', error);
                 }
@@ -3000,27 +2828,6 @@ body.android-optimized.menu-visible .status {
                     window.parent.postMessage({ type: 'legacy:measurement', payload }, '*');
                 } catch (error) {
                     console.warn('Builder bridge: unable to share measurement result', error);
-                }
-            }
-        }
-
-        function notifyParentModeState(extraState) {
-            if (window.parent && window.parent !== window) {
-                try {
-                    const payload = Object.assign({
-                        isWireMode,
-                        isRotateMode,
-                        isMeasureMode,
-                        currentFlowStyle,
-                        showPolarityIndicators,
-                        layoutMode,
-                        showGrid,
-                        showLabels
-                    }, (extraState && typeof extraState === 'object') ? extraState : {});
-
-                    window.parent.postMessage({ type: 'legacy:mode-state', payload }, '*');
-                } catch (error) {
-                    console.warn('Builder bridge: unable to share mode state', error);
                 }
             }
         }
@@ -3076,23 +2883,6 @@ body.android-optimized.menu-visible .status {
                     }
 
                     notifyParentAnalysisState();
-                    break;
-                }
-                case 'builder:export-arena': {
-                    if (payload && typeof payload === 'object') {
-                        exportArenaSession({
-                            requestId: payload.requestId,
-                            openWindow: Boolean(payload.openWindow),
-                            sessionName: payload.sessionName,
-                            testVariables: payload.testVariables
-                        });
-                    } else {
-                        exportArenaSession({ openWindow: false });
-                    }
-                    break;
-                }
-                case 'builder:request-mode-state': {
-                    notifyParentModeState();
                     break;
                 }
                 case 'builder:invoke-action': {
@@ -3196,7 +2986,7 @@ body.android-optimized.menu-visible .status {
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
         let currentPracticeCircuit = null;
         let currentProblemIndex = 0;
-        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced'];
+        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced', 'switch_control'];
         
         // New features variables
         let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
@@ -3205,579 +2995,26 @@ body.android-optimized.menu-visible .status {
         
         let practiceQuestions = {
             series_basic: {
-                question: "Series loop: solve for total current (I_T).",
-                expectedAnswer: "current",
-                description: [
-                    "<strong>W</strong>: Note the 24 V supply (power is unknown until the end).",
-                    "<strong>I</strong>: Target the single loop current I_T.",
-                    "<strong>R</strong>: Known resistors R1=120 ohm, R2=180 ohm, R3=220 ohm (pure series).",
-                    "<strong>E</strong>: Use E = 24 V to select I = E / R_T from the Ohm's Law family.",
-                    "Check Kirchhoff's Voltage Law by confirming the drops sum to 24 V."
-                ].join("<br>")
+                question: "Find the total resistance and current",
+                expectedAnswer: "resistance", // What we're testing for
+                description: "Calculate R_total = R? + R?, then find I = E ? R_total"
             },
             parallel_basic: {
-                question: "Parallel network: compute R_T and each branch current.",
+                question: "Find the total resistance (parallel)",
                 expectedAnswer: "resistance",
-                description: [
-                    "<strong>W</strong>: The 12 V source defines system power once currents are known.",
-                    "<strong>I</strong>: Solve each branch current, then add them for I_T.",
-                    "<strong>R</strong>: Branch resistors R1=100 ohm, R2=220 ohm, R3=330 ohm combine with reciprocal sums.",
-                    "<strong>E</strong>: Voltage is common across the branches; use I = E / R_branch and W = I * E.",
-                    "Validate with Kirchhoff's Current Law by summing the branch currents."
-                ].join("<br>")
+                description: "Use 1/R_total = 1/R? + 1/R?, then find the equivalent resistance"
             },
             mixed_circuit: {
-                question: "Series-parallel combo: collapse the ladder and solve for I_T.",
+                question: "Analyze the complex circuit",
                 expectedAnswer: "current",
-                description: [
-                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before finishing the loop.",
-                    "<strong>W.I.R.E.</strong>: Track resistors R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm with the 18 V supply.",
-                    "<strong>Formulas</strong>: Use the 12 Ohm's Law identities (E=I*R, I=E/R, R=E/I, W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Kirchhoff</strong>: Verify KVL around the outer loop and KCL at the branch node."
-                ].join("<br>")
+                description: "Break down into series and parallel sections, find total resistance and current"
             },
-            combination_advanced: {
-                question: "Multi-loop combo: determine drops, currents, and power everywhere.",
+            switch_control: {
+                question: "Determine circuit behavior with switch",
                 expectedAnswer: "power",
-                description: [
-                    "<strong>Strategy</strong>: Work outward-in, simplifying parallel legs before folding the bridge back into series.",
-                    "<strong>W.I.R.E.</strong>: Log each known resistor value and the 24 V supply; mark the unknowns for W, I, R, and E.",
-                    "<strong>Formulas</strong>: Cycle through the Ohm's Law family plus power triangle (W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent loop.",
-                    "Present the answer set as a W.I.R.E. table." 
-                ].join("<br>")
+                description: "Compare power consumption when switch is ON vs OFF"
             }
         };
-        const WIRE_TABLE_HEADERS = ["W", "I", "R", "E"];
-
-        const WIRE_FIELD_LABELS = {
-            W: "power",
-            I: "current",
-            R: "resistance",
-            E: "voltage"
-        };
-
-        const WIRE_TYPE_ORDER = {
-            battery: 0,
-            resistor: 1,
-            led: 1,
-            switch: 2
-        };
-
-        const PRACTICE_WORKSHEET_HINTS = {
-            series_basic: {
-                guide: "Series loop: the same current flows through every component. Sum R_T, solve I_T = E / R_T, then log W = I * E before checking totals.",
-                note: "Use Reveal totals once your W.I.R.E. entries are complete to confirm the drops add back to 24 V."
-            },
-            parallel_basic: {
-                guide: "Parallel network: voltage is common for each branch. Compute branch currents with I = E / R, then add them for I_T before checking totals.",
-                note: "Reveal totals when you are ready to compare the branch sums with the source current and equivalent resistance."
-            },
-            mixed_circuit: {
-                guide: "Collapse the ladder by simplifying the parallel section first, add the series portions, and document each step in the table.",
-                note: "Tap Reveal totals only after updating the worksheet for every reduction you perform."
-            },
-            combination_advanced: {
-                guide: "Work branch-by-branch: simplify parallel legs, fold them into series paths, and repeat while logging each equivalent in W.I.R.E.",
-                note: "Reveal totals when you want to verify each loop against Kirchhoff's laws."
-            },
-            random: {
-                guide: "Identify which elements share current or voltage before selecting the right Ohm's Law identity, then fill the blanks methodically.",
-                note: "Record the givens first, then use Reveal totals to compare with the live W.I.R.E. analysis."
-            },
-            default: {
-                guide: "Record the givens, apply Ohm's Law to uncover the unknowns, then tap Reveal totals to check your answers.",
-                note: "Reveal totals only when you're ready to verify your work against the live W.I.R.E. metrics."
-            }
-        };
-
-        let currentWireWorksheetContext = null;
-        let wireWorksheetSolutionsVisible = false;
-
-        function formatWireNumber(value, decimalsForSmall) {
-            if (!isFinite(value)) {
-                return "0";
-            }
-
-            const absValue = Math.abs(value);
-            if (absValue >= 100) {
-                return value.toFixed(0);
-            }
-            if (absValue >= 10) {
-                return value.toFixed(1);
-            }
-
-            const decimals = typeof decimalsForSmall === "number" ? decimalsForSmall : 2;
-            return value.toFixed(decimals);
-        }
-
-        function formatVoltage(value, options) {
-            const opts = options || {};
-            if (!isFinite(value)) {
-                return opts.allowZero ? "0 V" : "--";
-            }
-
-            const formatted = formatWireNumber(value, 2);
-            return opts.includeUnit === false ? formatted : `${formatted} V`;
-        }
-
-        function formatCurrent(value, options) {
-            const opts = options || {};
-            if (!isFinite(value)) {
-                return opts.allowZero ? "0 A" : "--";
-            }
-
-            const absValue = Math.abs(value);
-            let decimals = 3;
-            if (absValue >= 10) {
-                decimals = 1;
-            } else if (absValue >= 1) {
-                decimals = 2;
-            }
-
-            const formatted = value.toFixed(decimals);
-            return opts.includeUnit === false ? formatted : `${formatted} A`;
-        }
-
-        function formatResistance(value, options) {
-            const opts = options || {};
-            if (!isFinite(value)) {
-                return opts.allowOpen ? "open" : "--";
-            }
-
-            const formatted = formatWireNumber(value, 2);
-            return opts.includeUnit === false ? formatted : `${formatted} ohm`;
-        }
-
-        function formatPower(value, options) {
-            const opts = options || {};
-            if (!isFinite(value)) {
-                return opts.allowZero ? "0 W" : "--";
-            }
-
-            const absValue = Math.abs(value);
-            let decimals = 2;
-            if (absValue >= 100) {
-                decimals = 0;
-            } else if (absValue >= 10) {
-                decimals = 1;
-            }
-
-            const formatted = value.toFixed(decimals);
-            return opts.includeUnit === false ? formatted : `${formatted} W`;
-        }
-
-        function describeComponentForWorksheet(spec) {
-            const props = spec?.properties || {};
-            let baseId = spec?.id;
-
-            if (!baseId) {
-                if (typeof spec?.componentNumber === "number" && spec?.type) {
-                    switch (spec.type) {
-                        case "battery":
-                            baseId = `B${spec.componentNumber}`;
-                            break;
-                        case "resistor":
-                            baseId = `R${spec.componentNumber}`;
-                            break;
-                        case "led":
-                            baseId = `LED${spec.componentNumber}`;
-                            break;
-                        case "switch":
-                            baseId = `SW${spec.componentNumber}`;
-                            break;
-                        default:
-                            baseId = `${spec.type.charAt(0).toUpperCase()}${spec.componentNumber}`;
-                            break;
-                    }
-                } else if (spec?.type) {
-                    baseId = spec.type.toUpperCase();
-                } else {
-                    baseId = "Component";
-                }
-            }
-
-            const descriptor = {
-                display: baseId,
-                aria: baseId,
-                key: String(baseId).toLowerCase().replace(/[^a-z0-9]+/g, "-") || "component"
-            };
-
-            switch (spec?.type) {
-                case "battery": {
-                    const voltage = Number(props.voltage);
-                    const voltageText = isFinite(voltage) ? formatVoltage(voltage) : null;
-                    descriptor.display = voltageText ? `${baseId} - source (${voltageText})` : `${baseId} - source`;
-                    descriptor.aria = `${baseId} source`;
-                    break;
-                }
-                case "resistor": {
-                    const resistance = Number(props.resistance);
-                    if (isFinite(resistance)) {
-                        descriptor.display = `${baseId} (${formatResistance(resistance)})`;
-                    }
-                    descriptor.aria = `${baseId} resistor`;
-                    break;
-                }
-                case "led": {
-                    const resistance = Number(props.resistance ?? props.seriesResistance);
-                    if (isFinite(resistance)) {
-                        descriptor.display = `${baseId} (${formatResistance(resistance)})`;
-                    }
-                    descriptor.aria = `${baseId} led`;
-                    break;
-                }
-                case "switch": {
-                    const state = props.isOn === false ? "open" : "closed";
-                    descriptor.display = `${baseId} - switch (${state})`;
-                    descriptor.aria = `${baseId} switch ${state}`;
-                    break;
-                }
-                default:
-                    break;
-            }
-
-            return descriptor;
-        }
-
-        function getWorksheetPlaceholder(spec, field) {
-            switch (field) {
-                case "W":
-                    return spec?.type === "battery" ? "W_T" : "W";
-                case "I":
-                    return spec?.type === "battery" ? "I_T" : "I";
-                case "R":
-                    return "R";
-                case "E":
-                    return spec?.type === "battery" ? "source" : "E";
-                default:
-                    return "?";
-            }
-        }
-
-        function buildWorksheetCellDescriptor(spec, field) {
-            const props = spec?.properties || {};
-
-            if (field === "R") {
-                if (spec?.type === "battery") {
-                    return { type: "readonly", value: "n/a" };
-                }
-
-                if (spec?.type === "resistor" || spec?.type === "led") {
-                    const resistance = Number(props.resistance ?? props.seriesResistance);
-                    if (isFinite(resistance)) {
-                        return { type: "given", value: formatResistance(resistance) };
-                    }
-                }
-
-                if (spec?.type === "switch") {
-                    if (props.isOn === false) {
-                        return { type: "given", value: "open" };
-                    }
-                    const resistance = Number(props.resistance ?? props.onResistance);
-                    if (isFinite(resistance)) {
-                        return { type: "given", value: formatResistance(resistance) };
-                    }
-                }
-            }
-
-            if (field === "E" && spec?.type === "battery") {
-                const voltage = Number(props.voltage);
-                if (isFinite(voltage)) {
-                    return { type: "given", value: formatVoltage(voltage) };
-                }
-            }
-
-            return {
-                type: "input",
-                placeholder: getWorksheetPlaceholder(spec, field)
-            };
-        }
-
-        function extractWorksheetSpecsFromPreset(preset) {
-            if (!preset || !Array.isArray(preset.components)) {
-                return [];
-            }
-
-            return preset.components.map((component) => ({
-                id: component.id || null,
-                type: component.type,
-                componentNumber: component.componentNumber || null,
-                properties: Object.assign({}, component.properties || {})
-            }));
-        }
-
-        function extractWorksheetSpecsFromActiveScene() {
-            return components.map((component) => ({
-                id: typeof component.getComponentIdentifier === "function" ? component.getComponentIdentifier() : component.id,
-                type: component.type,
-                componentNumber: component.componentNumber,
-                properties: Object.assign({}, component.properties || {})
-            }));
-        }
-
-        function renderWireWorksheetFromSpecs(specs, options) {
-            const wrapper = document.getElementById("wire-table-wrapper");
-            const body = document.getElementById("wire-table-body");
-            const scenarioEl = document.getElementById("wire-table-scenario");
-            const guideEl = document.getElementById("wire-table-guide");
-            const noteEl = document.getElementById("wire-table-note");
-
-            if (!wrapper || !body) {
-                return;
-            }
-
-            if (!Array.isArray(specs) || specs.length === 0) {
-                body.innerHTML = "";
-                wrapper.style.display = "none";
-                if (scenarioEl) {
-                    scenarioEl.textContent = "";
-                }
-                if (guideEl) {
-                    guideEl.textContent = PRACTICE_WORKSHEET_HINTS.default.guide;
-                }
-                if (noteEl) {
-                    noteEl.textContent = PRACTICE_WORKSHEET_HINTS.default.note;
-                }
-                currentWireWorksheetContext = null;
-                return;
-            }
-
-            const sortedSpecs = specs
-                .slice()
-                .sort((a, b) => (WIRE_TYPE_ORDER[a?.type] ?? 99) - (WIRE_TYPE_ORDER[b?.type] ?? 99));
-
-            body.innerHTML = "";
-
-            let totalVoltage = 0;
-
-            sortedSpecs.forEach((spec) => {
-                const descriptor = describeComponentForWorksheet(spec);
-                const row = document.createElement("tr");
-                row.dataset.wireRow = descriptor.key;
-
-                const labelCell = document.createElement("td");
-                labelCell.textContent = descriptor.display;
-                row.appendChild(labelCell);
-
-                WIRE_TABLE_HEADERS.forEach((field) => {
-                    const cell = document.createElement("td");
-                    cell.dataset.wireField = field;
-
-                    const cellDescriptor = buildWorksheetCellDescriptor(spec, field);
-                    if (cellDescriptor.type === "given" || cellDescriptor.type === "readonly") {
-                        const span = document.createElement("span");
-                        span.className = "wire-cell-given";
-                        span.textContent = cellDescriptor.value || (cellDescriptor.type === "readonly" ? "n/a" : "");
-                        cell.appendChild(span);
-                    } else {
-                        const input = document.createElement("input");
-                        input.type = "text";
-                        input.className = "wire-input";
-                        input.placeholder = cellDescriptor.placeholder || "?";
-                        input.setAttribute("data-wire-input", `${descriptor.key}-${field}`);
-                        input.setAttribute("aria-label", `${WIRE_FIELD_LABELS[field]} entry for ${descriptor.aria}`);
-                        cell.appendChild(input);
-                    }
-
-                    row.appendChild(cell);
-                });
-
-                body.appendChild(row);
-
-                if (spec?.type === "battery") {
-                    const voltage = Number(spec?.properties?.voltage);
-                    if (isFinite(voltage)) {
-                        totalVoltage += voltage;
-                    }
-                }
-            });
-
-            const totalsRow = document.createElement("tr");
-            totalsRow.className = "wire-table-total";
-            totalsRow.dataset.wireRow = "totals";
-
-            const totalsLabel = document.createElement("td");
-            totalsLabel.textContent = "Totals";
-            totalsRow.appendChild(totalsLabel);
-
-            const totalsConfig = {
-                W: { placeholder: "W_T", solution: true },
-                I: { placeholder: "I_T", solution: true },
-                R: { placeholder: "R_T", solution: true },
-                E: { value: formatVoltage(totalVoltage) }
-            };
-
-            WIRE_TABLE_HEADERS.forEach((field) => {
-                const cell = document.createElement("td");
-                cell.dataset.wireField = field;
-
-                const config = totalsConfig[field] || {};
-                if (config.value !== undefined) {
-                    const span = document.createElement("span");
-                    span.className = "wire-cell-given";
-                    span.textContent = config.value;
-                    cell.appendChild(span);
-                } else {
-                    const input = document.createElement("input");
-                    input.type = "text";
-                    input.className = "wire-input";
-                    input.placeholder = config.placeholder || "?";
-                    input.setAttribute("data-wire-input", `total-${field}`);
-                    input.setAttribute("aria-label", `${WIRE_FIELD_LABELS[field]} total entry`);
-                    cell.appendChild(input);
-
-                    if (config.solution) {
-                        const solutionSpan = document.createElement("span");
-                        solutionSpan.className = "wire-solution";
-                        solutionSpan.dataset.wireField = field;
-                        cell.appendChild(solutionSpan);
-                    }
-                }
-
-                totalsRow.appendChild(cell);
-            });
-
-            body.appendChild(totalsRow);
-
-            wrapper.style.display = "block";
-
-            if (scenarioEl) {
-                scenarioEl.textContent = options?.scenarioName ? `? ${options.scenarioName}` : "";
-            }
-
-            const hintKey = options?.scenarioKey && PRACTICE_WORKSHEET_HINTS[options.scenarioKey] ? options.scenarioKey : "default";
-            const hint = PRACTICE_WORKSHEET_HINTS[hintKey] || PRACTICE_WORKSHEET_HINTS.default;
-
-            if (guideEl) {
-                guideEl.textContent = options?.guide || hint.guide;
-            }
-
-            if (noteEl) {
-                noteEl.textContent = options?.note || hint.note;
-            }
-
-            currentWireWorksheetContext = {
-                scenario: options?.scenarioName || "",
-                totalVoltage
-            };
-
-            wireWorksheetSolutionsVisible = false;
-            updateWireWorksheetToggleLabel();
-            refreshWireWorksheetSolutions();
-        }
-
-        function renderWireWorksheetFromPreset(presetName, preset) {
-            const specs = extractWorksheetSpecsFromPreset(preset);
-            renderWireWorksheetFromSpecs(specs, {
-                scenarioName: preset?.name || presetName,
-                scenarioKey: presetName
-            });
-        }
-
-        function renderWireWorksheetFromActiveCircuit(label) {
-            const specs = extractWorksheetSpecsFromActiveScene();
-            renderWireWorksheetFromSpecs(specs, {
-                scenarioName: label || "Active Circuit",
-                scenarioKey: "random"
-            });
-        }
-
-        function resetWireWorksheetInputs() {
-            const wrapper = document.getElementById("wire-table-wrapper");
-            if (!wrapper) {
-                return;
-            }
-
-            wrapper.querySelectorAll(".wire-input").forEach((input) => {
-                input.value = "";
-            });
-
-            refreshWireWorksheetSolutions();
-        }
-
-        function clearWireWorksheetDisplay() {
-            const wrapper = document.getElementById("wire-table-wrapper");
-            const body = document.getElementById("wire-table-body");
-            const scenarioEl = document.getElementById("wire-table-scenario");
-            const guideEl = document.getElementById("wire-table-guide");
-            const noteEl = document.getElementById("wire-table-note");
-
-            if (body) {
-                body.innerHTML = "";
-            }
-            if (wrapper) {
-                wrapper.style.display = "none";
-            }
-            if (scenarioEl) {
-                scenarioEl.textContent = "";
-            }
-            if (guideEl) {
-                guideEl.textContent = PRACTICE_WORKSHEET_HINTS.default.guide;
-            }
-            if (noteEl) {
-                noteEl.textContent = PRACTICE_WORKSHEET_HINTS.default.note;
-            }
-
-            currentWireWorksheetContext = null;
-            wireWorksheetSolutionsVisible = false;
-            updateWireWorksheetToggleLabel();
-        }
-
-        function refreshWireWorksheetSolutions() {
-            const wrapper = document.getElementById("wire-table-wrapper");
-            if (!wrapper || wrapper.style.display === "none") {
-                return;
-            }
-
-            if (!lastKnownValues) {
-                return;
-            }
-
-            const hasSolution =
-                isFinite(lastKnownValues.resistance) &&
-                lastKnownValues.resistance !== Infinity &&
-                isFinite(lastKnownValues.current) &&
-                lastKnownValues.voltage > 0 &&
-                lastKnownValues.current >= 0;
-
-            const solutions = [
-                { field: "W", value: lastKnownValues.power, formatter: (value) => formatPower(value, { includeUnit: true }) },
-                { field: "I", value: lastKnownValues.current, formatter: (value) => formatCurrent(value, { includeUnit: true }) },
-                { field: "R", value: lastKnownValues.resistance, formatter: (value) => formatResistance(value, { includeUnit: true, allowOpen: true }) }
-            ];
-
-            solutions.forEach(({ field, value, formatter }) => {
-                const element = wrapper.querySelector(`.wire-solution[data-wire-field="${field}"]`);
-                if (!element) {
-                    return;
-                }
-
-                if (hasSolution && wireWorksheetSolutionsVisible) {
-                    element.textContent = `calc: ${formatter(value)}`;
-                    element.style.display = "block";
-                } else {
-                    element.textContent = "";
-                    element.style.display = "none";
-                }
-            });
-        }
-
-        function updateWireWorksheetToggleLabel() {
-            const toggleButton = document.getElementById("wire-table-toggle-solutions");
-            if (!toggleButton) {
-                return;
-            }
-
-            toggleButton.textContent = wireWorksheetSolutionsVisible ? "Hide totals" : "Reveal totals";
-            toggleButton.dataset.active = wireWorksheetSolutionsVisible ? "true" : "false";
-        }
-
-        function toggleWireWorksheetSolutions() {
-            wireWorksheetSolutionsVisible = !wireWorksheetSolutionsVisible;
-            updateWireWorksheetToggleLabel();
-            refreshWireWorksheetSolutions();
-        }
         
         // Long press and edit variables
         let longPressTimer = null;
@@ -3798,16 +3035,6 @@ body.android-optimized.menu-visible .status {
             R: '#44ff88', // Resistance (Ohms) - Green
             E: '#ff4444'  // Voltage (Volts) - Red
         };
-
-        const FLOW_CONSTANTS = {
-            wireResistance: 0.01,
-            shortThreshold: 0.5,
-            resistanceReference: 120,
-            minSpeedFactor: 0.25,
-            maxSpeedFactor: 1.0
-        };
-
-        let currentFlowState = null;
         
         // Component counters for labeling
         let componentCounters = {
@@ -4830,13 +4057,10 @@ body.android-optimized.menu-visible .status {
                         return;
                     }
                     
-                    const step = (wireData.speed || 0.01) * (wireData.direction || 1);
-                    wireData.progress += step;
-
+                    wireData.progress += wireData.baseSpeed;
+                    
                     if (wireData.progress > 1) {
-                        wireData.progress -= 1;
-                    } else if (wireData.progress < 0) {
-                        wireData.progress += 1;
+                        wireData.progress = 0;
                     }
                     
                     const position = wire.curve.getPoint(wireData.progress);
@@ -6421,21 +5645,20 @@ body.android-optimized.menu-visible .status {
                 const hitPoint = connectionHits[0].object;
                 if (hitPoint.userData?.isConnectionPoint) {
                     if (isMeasureMode) {
-                        let worldPos = null;
                         if (typeof hitPoint.getWorldPosition === 'function') {
-                            worldPos = new THREE.Vector3();
-                            hitPoint.getWorldPosition(worldPos);
+                            const worldPosition = new THREE.Vector3();
+                            hitPoint.getWorldPosition(worldPosition);
+                            handleMeasurementPoint(worldPosition);
                         } else {
-                            worldPos = screenToWorld(clientX, clientY);
-                        }
-                        if (worldPos) {
-                            handleMeasurementPoint(worldPos);
-                            return true;
+                            const worldPos = screenToWorld(clientX, clientY);
+                            if (worldPos) {
+                                handleMeasurementPoint(worldPos);
+                            }
                         }
                     } else {
                         handleConnectionPointClick(hitPoint.userData);
-                        return true;
                     }
+                    return true;
                 }
             }
             
@@ -6461,24 +5684,22 @@ body.android-optimized.menu-visible .status {
                             const worldPos = screenToWorld(clientX, clientY);
                             if (worldPos) {
                                 handleMeasurementPoint(worldPos);
-                                return true;
                             }
                         } else {
                             handleComponentClick(hitBox.userData.component);
-                            return true;
                         }
+                        return true;
                     }
                     if (hitBox.userData?.junction) {
                         if (isMeasureMode) {
                             const worldPos = screenToWorld(clientX, clientY);
                             if (worldPos) {
                                 handleMeasurementPoint(worldPos);
-                                return true;
                             }
                         } else {
                             handleJunctionClick(hitBox.userData.junction);
-                            return true;
                         }
+                        return true;
                     }
                 }
             }
@@ -6818,72 +6039,11 @@ body.android-optimized.menu-visible .status {
             }
         }
 
-        function exportArenaPayload() {
-            try {
-                const currentStateString = getCurrentStateString();
-                if (!currentStateString) {
-                    return null;
-                }
-
-                const state = JSON.parse(currentStateString);
-                const summary = state.components.reduce((acc, component) => {
-                    const key = component.type || 'unknown';
-                    acc.byType[key] = (acc.byType[key] || 0) + 1;
-                    return acc;
-                }, {
-                    totalComponents: state.components.length,
-                    totalWires: state.wires.length,
-                    totalJunctions: state.junctions.length,
-                    byType: {}
-                });
-
-                const safeMetric = (value) => (Number.isFinite(value) ? Number(value) : null);
-
-                return {
-                    version: '1.0',
-                    source: 'builder',
-                    generatedAt: Date.now(),
-                    metrics: {
-                        voltage: safeMetric(lastKnownValues?.voltage),
-                        current: safeMetric(lastKnownValues?.current),
-                        resistance: safeMetric(lastKnownValues?.resistance),
-                        power: safeMetric(lastKnownValues?.power)
-                    },
-                    summary,
-                    state
-                };
-            } catch (error) {
-                console.warn('Arena payload export failed', error);
-                return null;
-            }
-        }
-
         function openArena() {
             try {
-                const summary = exportArenaSession({ openWindow: true });
-                const payload = exportArenaPayload();
-                let payloadStored = false;
-
-                if (payload && typeof localStorage !== 'undefined') {
-                    try {
-                        localStorage.setItem(ARENA_STORAGE_KEY, JSON.stringify(payload));
-                        payloadStored = true;
-                    } catch (storageError) {
-                        console.warn('Arena payload storage failed', storageError);
-                    }
-                }
-
-                if (summary) {
-                    const count = summary.componentCount || 0;
-                    const message = `?? Component Arena export ready (${count} component${count === 1 ? '' : 's'})`;
-                    setStatus(payloadStored ? message : `${message} (quick sync unavailable)`);
-                } else if (payloadStored) {
-                    setStatus('?? Component Arena opened with current build');
-                } else {
-                    setStatus('?? Unable to prepare arena export');
-                }
-            } catch (error) {
-                console.error('Arena export error:', error);
+                window.open('/arena', '_blank');
+                setStatus('?? Component Arena opened');
+            } catch (e) {
                 setStatus('?? Unable to open Arena');
             }
         }
@@ -7323,8 +6483,6 @@ body.android-optimized.menu-visible .status {
                     fineGrid.visible = gridHelper.visible;
                 }
                 
-                notifyParentModeState();
-
                 setStatus(`? Grid ${showGrid ? 'shown' : 'hidden'} - Components snap to grid points`);
             }
         }
@@ -7336,7 +6494,6 @@ body.android-optimized.menu-visible .status {
                     component.labelDiv.style.display = showLabels ? 'block' : 'none';
                 }
             });
-            notifyParentModeState();
             setStatus(`??? Component labels ${showLabels ? 'enabled' : 'disabled'}`);
         }
         
@@ -7350,14 +6507,11 @@ body.android-optimized.menu-visible .status {
             
             // Re-animate current flow with new style
             const result = performCircuitAnalysis();
-            const runtimeFlow = currentFlowState || result.flow;
-            if (runtimeFlow) {
-                animateCurrentFlow(runtimeFlow);
+            if (result.isComplete && result.current > 0) {
+                animateCurrentFlow(true, result.current);
             }
             
-            notifyParentModeState();
-
-            setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Holes drift positive -> negative (opposite current)' : 'CURRENT FLOW - Charge travels negative -> positive through the loop'}`);
+            setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Probabilistic quantum cloud showing electron movement (- to +)' : 'CURRENT FLOW - Conventional current direction (+ to -)'}`);
         }
         
         // Toggle polarity indicators
@@ -7371,8 +6525,6 @@ body.android-optimized.menu-visible .status {
                 }
             });
             
-            notifyParentModeState();
-
             setStatus(`? Polarity indicators ${showPolarityIndicators ? 'shown' : 'hidden'}`);
         }
         
@@ -7407,8 +6559,6 @@ body.android-optimized.menu-visible .status {
                 layoutLabel.textContent = modeNames[layoutMode];
             }
             
-            notifyParentModeState();
-
             setStatus(`?? Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
         }
         
@@ -7975,7 +7125,6 @@ Made with ? for visual learners everywhere!
                     setStatus('?? WIRE MODE! Touch terminals to connect components');
                 }
                 notifyParentToolState('wire');
-                notifyParentModeState();
                 return;
             }
 
@@ -7989,7 +7138,6 @@ Made with ? for visual learners everywhere!
             }
 
             updateButtonStates();
-            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -8016,7 +7164,6 @@ Made with ? for visual learners everywhere!
 
             isWireMode = false;
             updateButtonStates();
-            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -8036,7 +7183,6 @@ Made with ? for visual learners everywhere!
                     setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
                 }
                 notifyParentToolState('rotate');
-                notifyParentModeState();
                 return;
             }
 
@@ -8045,7 +7191,6 @@ Made with ? for visual learners everywhere!
 
             isRotateMode = true;
             updateButtonStates();
-            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -8067,7 +7212,6 @@ Made with ? for visual learners everywhere!
 
             isRotateMode = false;
             updateButtonStates();
-            notifyParentModeState();
             closeAllSubmenus();
 
             if (!silent) {
@@ -8087,7 +7231,6 @@ Made with ? for visual learners everywhere!
                     setStatus('?? Measure mode active - select the next point to measure');
                 }
                 notifyParentToolState('measure');
-                notifyParentModeState();
                 return;
             }
 
@@ -8096,7 +7239,6 @@ Made with ? for visual learners everywhere!
 
             isMeasureMode = true;
             measureStartPoint = null;
-            notifyParentModeState();
 
             if (!silent) {
                 setStatus('?? Measure mode active - pick two points to calculate distance');
@@ -8113,7 +7255,6 @@ Made with ? for visual learners everywhere!
 
             isMeasureMode = false;
             measureStartPoint = null;
-            notifyParentModeState();
 
             if (!silent) {
                 setStatus('?? Measure mode disabled');
@@ -8225,12 +7366,9 @@ Made with ? for visual learners everywhere!
         // Circuit analysis
         function analyzeCircuit() {
             const batteries = components.filter(c => c.type === 'battery');
-            
+
             if (batteries.length === 0) {
-                updateCircuitDisplay(0, 0, Infinity, 0);
-                animateCurrentFlow({ hasFlow: false, currentValue: 0 });
-                setStatus('?? ADD A BATTERY to start W.I.R.E. analysis!');
-                return {
+                const fallback = {
                     voltage: 0,
                     current: 0,
                     resistance: Infinity,
@@ -8238,14 +7376,15 @@ Made with ? for visual learners everywhere!
                     isComplete: false,
                     reason: 'no-battery'
                 };
+                updateCircuitDisplay(0, 0, Infinity, 0);
+                animateCurrentFlow(false, 0);
+                setStatus('?? ADD A BATTERY to start W.I.R.E. analysis!');
+                return fallback;
             }
-            
+
             if (wires.length === 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
-                updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
-                animateCurrentFlow({ hasFlow: false, currentValue: 0 });
-                setStatus('?? ADD WIRES to complete the circuit for W.I.R.E. calculations!');
-                return {
+                const fallback = {
                     voltage: totalVoltage,
                     current: 0,
                     resistance: Infinity,
@@ -8253,407 +7392,24 @@ Made with ? for visual learners everywhere!
                     isComplete: false,
                     reason: 'no-wires'
                 };
+                updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
+                animateCurrentFlow(false, 0);
+                setStatus('?? ADD WIRES to complete the circuit for W.I.R.E. calculations!');
+                return fallback;
             }
-            
+
             const result = performCircuitAnalysis();
             updateCircuitDisplay(result.voltage, result.current, result.resistance, result.power);
 
-            const runtimeFlow = currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 };
-            animateCurrentFlow(runtimeFlow);
+            const shouldAnimate = result.isComplete && result.current > 0;
 
-            const flowMeta = result.flow || sanitizeFlowState(runtimeFlow);
-
-            if (!flowMeta.hasFlow) {
-                if (flowMeta.reason === 'polarity') {
-                    setStatus('POLARITY MISMATCH: Reverse components so current can travel negative -> positive.');
-                } else if (flowMeta.reason === 'short') {
-                    setStatus('?? SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
-                } else if (flowMeta.reason === 'no-source') {
-                    setStatus('?? Add a battery to power the circuit and start current flow.');
-                }
-            } else if (flowMeta.warning === 'short') {
-                setStatus('?? SHORT CIRCUIT PATH: Current is racing from negative -> positive. Add resistance now!');
+            if (shouldAnimate) {
+                animateCurrentFlow(true, result.current);
+            } else {
+                animateCurrentFlow(false, result.current);
             }
 
-            return {
-                voltage: result.voltage,
-                current: result.current,
-                resistance: result.resistance,
-                power: result.power,
-                flow: flowMeta,
-                isComplete: Boolean(flowMeta?.hasFlow),
-                analysis: result
-            };
-        }
-
-        function getTerminalKey(entity, side) {
-            if (!entity) return null;
-            if (entity.type) {
-                return `${entity.id}:${side}`;
-            }
-            if (entity.id) {
-                return `${entity.id}:${side || 'center'}`;
-            }
-            return null;
-        }
-
-        function getComponentTerminals(component) {
-            switch(component?.type) {
-                case 'battery':
-                    return ['negative', 'positive'];
-                case 'resistor':
-                case 'led':
-                case 'switch':
-                    return ['left', 'right'];
-                default:
-                    return [];
-            }
-        }
-
-        function getDirectionalComponentConfig(component) {
-            if (!component) return null;
-            if (component.type === 'led') {
-                return { directional: true, forwardFrom: 'left', forwardTo: 'right' };
-            }
-            return null;
-        }
-
-        function getComponentResistance(component) {
-            if (!component) {
-                return Infinity;
-            }
-
-            if (component.type === 'resistor') {
-                return Number(component.properties?.resistance) || 0;
-            }
-
-            if (component.type === 'led') {
-                return Number(component.properties?.resistance) || 0;
-            }
-
-            if (component.type === 'switch') {
-                if (!component.properties?.isOn) {
-                    return Infinity;
-                }
-                return Number(component.properties?.resistance) || Number(component.properties?.onResistance) || 0.05;
-            }
-
-            if (component.type === 'battery') {
-                return Number(component.properties?.internalResistance) || FLOW_CONSTANTS.wireResistance;
-            }
-
-            return FLOW_CONSTANTS.wireResistance;
-        }
-
-        function computeSpeedFactor(resistance) {
-            if (!isFinite(resistance) || resistance <= 0) {
-                return FLOW_CONSTANTS.maxSpeedFactor;
-            }
-
-            const normalized = resistance / FLOW_CONSTANTS.resistanceReference;
-            const speed = FLOW_CONSTANTS.maxSpeedFactor / (1 + normalized);
-            return Math.max(FLOW_CONSTANTS.minSpeedFactor, Math.min(FLOW_CONSTANTS.maxSpeedFactor, speed));
-        }
-
-        function buildFlowGraph(components, wires, junctions) {
-            const adjacency = new Map();
-
-            function ensureNode(key) {
-                if (!key) return;
-                if (!adjacency.has(key)) {
-                    adjacency.set(key, []);
-                }
-            }
-
-            function addEdge(fromKey, edge) {
-                if (!fromKey || !edge?.to) return;
-                ensureNode(fromKey);
-                adjacency.get(fromKey).push(edge);
-            }
-
-            components.forEach(component => {
-                const sides = getComponentTerminals(component);
-                sides.forEach(side => ensureNode(getTerminalKey(component, side)));
-            });
-
-            junctions.forEach(junction => {
-                ensureNode(getTerminalKey(junction, 'center'));
-            });
-
-            wires.forEach(wire => {
-                const startKey = getTerminalKey(wire.startObj, wire.startSide || 'center');
-                const endKey = getTerminalKey(wire.endObj, wire.endSide || 'center');
-                if (!startKey || !endKey) return;
-
-                addEdge(startKey, {
-                    to: endKey,
-                    type: 'wire',
-                    wire,
-                    resistance: FLOW_CONSTANTS.wireResistance,
-                    direction: 1,
-                    fromSide: wire.startSide || 'center',
-                    toSide: wire.endSide || 'center'
-                });
-
-                addEdge(endKey, {
-                    to: startKey,
-                    type: 'wire',
-                    wire,
-                    resistance: FLOW_CONSTANTS.wireResistance,
-                    direction: -1,
-                    fromSide: wire.endSide || 'center',
-                    toSide: wire.startSide || 'center'
-                });
-            });
-
-            components.forEach(component => {
-                const sides = getComponentTerminals(component);
-                if (component.type === 'battery' || sides.length !== 2) {
-                    return;
-                }
-
-                const [sideA, sideB] = sides;
-                const keyA = getTerminalKey(component, sideA);
-                const keyB = getTerminalKey(component, sideB);
-                if (!keyA || !keyB) return;
-
-                const resistance = getComponentResistance(component);
-                if (!isFinite(resistance)) {
-                    return;
-                }
-
-                const directionalConfig = getDirectionalComponentConfig(component);
-                if (directionalConfig?.directional) {
-                    const fromKey = getTerminalKey(component, directionalConfig.forwardFrom);
-                    const toKey = getTerminalKey(component, directionalConfig.forwardTo);
-                    if (fromKey && toKey) {
-                        addEdge(fromKey, {
-                            to: toKey,
-                            type: 'component',
-                            component,
-                            resistance,
-                            directional: true,
-                            direction: 1,
-                            fromSide: directionalConfig.forwardFrom,
-                            toSide: directionalConfig.forwardTo
-                        });
-                    }
-                } else {
-                    addEdge(keyA, {
-                        to: keyB,
-                        type: 'component',
-                        component,
-                        resistance,
-                        directional: false,
-                        direction: 1,
-                        fromSide: sideA,
-                        toSide: sideB
-                    });
-
-                    addEdge(keyB, {
-                        to: keyA,
-                        type: 'component',
-                        component,
-                        resistance,
-                        directional: false,
-                        direction: -1,
-                        fromSide: sideB,
-                        toSide: sideA
-                    });
-                }
-            });
-
-            return adjacency;
-        }
-
-        function findLowestResistancePath(adjacency, startKey, endKey) {
-            if (!startKey || !endKey || !adjacency.has(startKey) || !adjacency.has(endKey)) {
-                return null;
-            }
-
-            const distances = new Map();
-            const previous = new Map();
-            const queue = [];
-
-            distances.set(startKey, 0);
-            queue.push({ key: startKey, distance: 0 });
-
-            while (queue.length > 0) {
-                queue.sort((a, b) => a.distance - b.distance);
-                const current = queue.shift();
-                if (!current) break;
-
-                if (current.key === endKey) {
-                    break;
-                }
-
-                if (current.distance > (distances.get(current.key) ?? Infinity)) {
-                    continue;
-                }
-
-                const edges = adjacency.get(current.key) || [];
-                edges.forEach(edge => {
-                    if (!edge || !edge.to || !isFinite(edge.resistance)) {
-                        return;
-                    }
-
-                    const nextDistance = current.distance + (edge.resistance ?? FLOW_CONSTANTS.wireResistance);
-                    if (nextDistance < (distances.get(edge.to) ?? Infinity)) {
-                        distances.set(edge.to, nextDistance);
-                        previous.set(edge.to, { from: current.key, via: edge });
-                        queue.push({ key: edge.to, distance: nextDistance });
-                    }
-                });
-            }
-
-            if (!distances.has(endKey)) {
-                return null;
-            }
-
-            const segments = [];
-            let cursor = endKey;
-            while (cursor !== startKey) {
-                const step = previous.get(cursor);
-                if (!step) {
-                    return null;
-                }
-                segments.unshift({ from: step.from, to: cursor, edge: step.via });
-                cursor = step.from;
-            }
-
-            return {
-                segments,
-                totalResistance: distances.get(endKey) ?? Infinity
-            };
-        }
-
-        function computeFlowState(batteries, components, wires, junctions) {
-            if (!batteries || batteries.length === 0) {
-                return { hasPath: false, reason: 'no-source' };
-            }
-
-            const sourceBattery = batteries[0];
-            const startKey = getTerminalKey(sourceBattery, 'negative');
-            const endKey = getTerminalKey(sourceBattery, 'positive');
-
-            const adjacency = buildFlowGraph(components, wires, junctions);
-            const path = findLowestResistancePath(adjacency, startKey, endKey);
-
-            if (!path) {
-                const polarityBlocked = hasClosedCircuitPath(sourceBattery, wires, components);
-                return { hasPath: false, reason: polarityBlocked ? 'polarity' : 'open' };
-            }
-
-            const flowSegments = path.segments;
-            const wireSegments = [];
-            const componentSegments = [];
-
-            flowSegments.forEach((segment, index) => {
-                const edge = segment.edge;
-                if (!edge) return;
-
-                if (edge.type === 'wire' && edge.wire) {
-                    wireSegments.push({
-                        wire: edge.wire,
-                        direction: edge.direction >= 0 ? 1 : -1,
-                        resistance: edge.resistance ?? FLOW_CONSTANTS.wireResistance,
-                        fromSide: edge.fromSide,
-                        toSide: edge.toSide,
-                        pathIndex: index
-                    });
-                } else if (edge.type === 'component' && edge.component) {
-                    componentSegments.push({
-                        component: edge.component,
-                        direction: edge.direction >= 0 ? 1 : -1,
-                        resistance: edge.resistance,
-                        fromSide: edge.fromSide,
-                        toSide: edge.toSide,
-                        pathIndex: index
-                    });
-                }
-            });
-
-            const resistanceLookup = new Map();
-            componentSegments.forEach(segment => {
-                if (isFinite(segment.resistance)) {
-                    resistanceLookup.set(segment.pathIndex, segment.resistance);
-                }
-            });
-
-            const descriptiveWireSegments = wireSegments.map(segment => {
-                const prevSeg = flowSegments[segment.pathIndex - 1];
-                const nextSeg = flowSegments[segment.pathIndex + 1];
-
-                const prevResistance = resistanceLookup.get(segment.pathIndex - 1);
-                const nextResistance = resistanceLookup.get(segment.pathIndex + 1);
-
-                const candidates = [];
-                if (isFinite(prevResistance)) candidates.push(prevResistance);
-                if (isFinite(nextResistance)) candidates.push(nextResistance);
-
-                let adjacentResistance = segment.resistance;
-                if (candidates.length === 1) {
-                    adjacentResistance = candidates[0];
-                } else if (candidates.length === 2) {
-                    adjacentResistance = (candidates[0] + candidates[1]) / 2;
-                }
-
-                return {
-                    wire: segment.wire,
-                    direction: segment.direction,
-                    speedFactor: computeSpeedFactor(adjacentResistance),
-                    fromSide: segment.fromSide,
-                    toSide: segment.toSide
-                };
-            });
-
-            const totalPathResistance = flowSegments.reduce((sum, segment) => {
-                const res = segment.edge?.resistance;
-                if (!isFinite(res)) {
-                    return sum;
-                }
-                return sum + (res ?? 0);
-            }, 0);
-
-            const hasResistiveElement = componentSegments.some(segment => {
-                return isFinite(segment.resistance) && segment.resistance > FLOW_CONSTANTS.wireResistance * 2;
-            });
-
-            const isShortCircuit = totalPathResistance <= FLOW_CONSTANTS.shortThreshold && !hasResistiveElement;
-
-            return {
-                hasPath: true,
-                wireSegments: descriptiveWireSegments,
-                componentSegments,
-                pathResistance: totalPathResistance,
-                shortCircuit: isShortCircuit,
-                hasResistiveElement
-            };
-        }
-
-        function sanitizeFlowState(flowState) {
-            if (!flowState) {
-                return null;
-            }
-
-            return {
-                hasPath: Boolean(flowState.hasPath),
-                hasFlow: Boolean(flowState.hasFlow),
-                reason: flowState.reason || null,
-                warning: flowState.warning || null,
-                shortCircuit: Boolean(flowState.shortCircuit),
-                pathResistance: typeof flowState.pathResistance === 'number' ? flowState.pathResistance : null,
-                hasResistiveElement: Boolean(flowState.hasResistiveElement),
-                currentValue: typeof flowState.currentValue === 'number' ? flowState.currentValue : 0,
-                totalVoltage: typeof flowState.totalVoltage === 'number' ? flowState.totalVoltage : null,
-                wireSegments: Array.isArray(flowState.wireSegments)
-                    ? flowState.wireSegments.map(segment => ({
-                        wireId: segment.wire?.id || null,
-                        direction: segment.direction,
-                        speedFactor: segment.speedFactor
-                    }))
-                    : []
-            };
+            return result;
         }
 
         function performCircuitAnalysis() {
@@ -8665,26 +7421,13 @@ Made with ? for visual learners everywhere!
             if (openSwitches.length > 0) {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateTopologyDisplay('Open Circuit');
-                const flowResult = {
-                    hasPath: false,
-                    hasFlow: false,
-                    reason: 'open',
-                    warning: null,
-                    shortCircuit: false,
-                    pathResistance: Infinity,
-                    hasResistiveElement: false,
-                    currentValue: 0,
-                    totalVoltage
-                };
-                currentFlowState = flowResult;
                 return {
                     voltage: totalVoltage,
                     current: 0,
                     resistance: Infinity,
                     power: 0,
                     isComplete: false,
-                    topology: 'open',
-                    flow: sanitizeFlowState(flowResult)
+                    reason: 'open-switch'
                 };
             }
             
@@ -8707,26 +7450,13 @@ Made with ? for visual learners everywhere!
                     // Circuit has components but no closed loop
                     const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                     updateTopologyDisplay('Incomplete');
-                    const flowResult = {
-                        hasPath: false,
-                        hasFlow: false,
-                        reason: 'open',
-                        warning: null,
-                        shortCircuit: false,
-                        pathResistance: Infinity,
-                        hasResistiveElement: false,
-                        currentValue: 0,
-                        totalVoltage
-                    };
-                    currentFlowState = flowResult;
                     return {
                         voltage: totalVoltage,
                         current: 0,
                         resistance: Infinity,
                         power: 0,
                         isComplete: false,
-                        topology: 'incomplete',
-                        flow: sanitizeFlowState(flowResult)
+                        reason: 'incomplete'
                     };
                 }
                 
@@ -8735,27 +7465,6 @@ Made with ? for visual learners everywhere!
                 
                 // Detect circuit topology
                 const topology = detectCircuitTopology(resistors, wires, junctions);
-                const flowState = computeFlowState(batteries, components, wires, junctions);
-
-                if (!flowState.hasPath) {
-                    updateTopologyDisplay('Polarity');
-                    const flowResult = {
-                        ...flowState,
-                        hasFlow: false,
-                        currentValue: 0,
-                        shortCircuit: flowState.shortCircuit || false
-                    };
-                    currentFlowState = flowResult;
-                    return {
-                        voltage: totalVoltage,
-                        current: 0,
-                        resistance: Infinity,
-                        power: 0,
-                        isComplete: false,
-                        topology: topology?.type || 'blocked',
-                        flow: sanitizeFlowState(flowResult)
-                    };
-                }
                 
                 // Calculate resistance based on topology
                 let totalResistance = 0.01; // Wire resistance
@@ -8789,25 +7498,11 @@ Made with ? for visual learners everywhere!
                         totalResistance += sw.properties.resistance || 0.1;
                     }
                 });
-
-                if (flowState.shortCircuit) {
-                    totalResistance = Math.max(totalResistance, flowState.pathResistance || FLOW_CONSTANTS.shortThreshold, FLOW_CONSTANTS.shortThreshold);
-                } else if (isFinite(flowState.pathResistance)) {
-                    totalResistance = Math.max(totalResistance, flowState.pathResistance);
-                }
                 
                 const current = totalVoltage / totalResistance;
                 const power = totalVoltage * current;
                 
                 updateTopologyDisplay(topology.type);
-                const flowResult = {
-                    ...flowState,
-                    hasFlow: true,
-                    currentValue: current,
-                    totalVoltage,
-                    warning: flowState.shortCircuit ? 'short' : null
-                };
-                currentFlowState = flowResult;
                 
                 return {
                     voltage: totalVoltage,
@@ -8815,386 +7510,19 @@ Made with ? for visual learners everywhere!
                     resistance: totalResistance,
                     power: power,
                     isComplete: true,
-                    topology: topology?.type || 'unknown',
-                    flow: sanitizeFlowState(flowResult)
+                    reason: 'ok'
                 };
             } else {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateTopologyDisplay(connectedComponents.size === 0 ? 'No Circuit' : 'Incomplete');
-                const flowResult = {
-                    hasPath: false,
-                    hasFlow: false,
-                    reason: connectedComponents.size === 0 ? 'no-source' : 'open',
-                    warning: null,
-                    shortCircuit: false,
-                    pathResistance: Infinity,
-                    hasResistiveElement: false,
-                    currentValue: 0,
-                    totalVoltage
-                };
-                currentFlowState = flowResult;
                 return {
                     voltage: totalVoltage,
                     current: 0,
                     resistance: Infinity,
                     power: 0,
                     isComplete: false,
-                    topology: connectedComponents.size === 0 ? 'none' : 'incomplete',
-                    flow: sanitizeFlowState(flowResult)
+                    reason: connectedComponents.size === 0 ? 'no-components' : 'no-path'
                 };
-            }
-        }
-        
-        const ARENA_COMPONENT_PROFILES = {
-            battery: {
-                defaultProperties: {
-                    voltage: 9,
-                    internalResistance: 0.2,
-                    capacityMah: 1500,
-                    tempCoeff: 0.0004,
-                    thermalResistance: 35,
-                    maxDischargeCurrent: 2.0
-                },
-                classification: 'energy-source'
-            },
-            resistor: {
-                defaultProperties: {
-                    resistance: 100,
-                    tempCoeff: 0.0005,
-                    tolerance: 0.05,
-                    thermalResistance: 75,
-                    maxPower: 0.25
-                },
-                classification: 'passive'
-            },
-            led: {
-                defaultProperties: {
-                    forwardVoltage: 2.0,
-                    seriesResistance: 120,
-                    efficiency: 0.35,
-                    thermalResistance: 120,
-                    luminousFlux: 8
-                },
-                classification: 'optoelectronic'
-            },
-            switch: {
-                defaultProperties: {
-                    onResistance: 0.05,
-                    offResistance: 1000000,
-                    transitionTimeMs: 2,
-                    insulationResistance: 5000000
-                },
-                classification: 'control'
-            }
-        };
-
-        function cloneJsonSafe(input) {
-            try {
-                return JSON.parse(JSON.stringify(input));
-            } catch (error) {
-                console.warn('Arena export: unable to clone data', error);
-                return null;
-            }
-        }
-
-        function serializeComponentForArena(component) {
-            if (!component) {
-                return null;
-            }
-
-            const profile = ARENA_COMPONENT_PROFILES[component.type] || { defaultProperties: {}, classification: 'unspecified' };
-            const baseProperties = cloneJsonSafe(component.properties) || {};
-            const enrichedProperties = Object.assign({}, profile.defaultProperties || {}, baseProperties);
-
-            const connections = (component.connections || []).map(connection => ({
-                wireId: connection?.wire?.id || null,
-                targetId: connection?.connectedTo?.id || null,
-                side: connection?.side || null
-            })).filter(Boolean);
-
-            return {
-                id: component.id,
-                type: component.type,
-                identifier: typeof component.getComponentIdentifier === 'function'
-                    ? component.getComponentIdentifier()
-                    : (component.type + '_' + component.componentNumber),
-                componentNumber: component.componentNumber || null,
-                rotation: component.rotation || 0,
-                position: {
-                    x: component.position?.x || 0,
-                    y: component.position?.y || 0,
-                    z: component.position?.z || 0
-                },
-                properties: enrichedProperties,
-                metadata: {
-                    classification: profile.classification,
-                    displayName: typeof component.getComponentIdentifier === 'function'
-                        ? component.getComponentIdentifier()
-                        : component.type,
-                    createdAt: new Date().toISOString(),
-                    vendor: enrichedProperties.manufacturer || 'CircuiTry Virtual Builder',
-                    partNumber: enrichedProperties.partNumber || (component.type.toUpperCase() + '-' + (component.componentNumber || 'X')),
-                    tolerance: enrichedProperties.tolerance || null
-                },
-                connections
-            };
-        }
-
-        function serializeWireForArena(wire) {
-            if (!wire) {
-                return null;
-            }
-
-            return {
-                id: wire.id,
-                startComponentId: wire.startObj?.id || null,
-                startSide: wire.startSide || null,
-                endComponentId: wire.endObj?.id || null,
-                endSide: wire.endSide || null,
-                segments: (wire.segments || []).map(segment => ({
-                    start: {
-                        x: segment?.start?.x || 0,
-                        y: segment?.start?.y || 0,
-                        z: segment?.start?.z || 0
-                    },
-                    end: {
-                        x: segment?.end?.x || 0,
-                        y: segment?.end?.y || 0,
-                        z: segment?.end?.z || 0
-                    }
-                }))
-            };
-        }
-
-        function serializeJunctionForArena(junction) {
-            if (!junction) {
-                return null;
-            }
-
-            return {
-                id: junction.id,
-                position: {
-                    x: junction.position?.x || 0,
-                    y: junction.position?.y || 0,
-                    z: junction.position?.z || 0
-                }
-            };
-        }
-
-        function computeAdvancedCircuitMetrics(basicResult, componentList, options) {
-            const defaults = options || {};
-            const frequencyHz = typeof defaults.frequencyHz === 'number' ? defaults.frequencyHz : 0;
-            const temperatureC = typeof defaults.temperatureC === 'number' ? defaults.temperatureC : 25;
-            const durationSeconds = typeof defaults.durationSeconds === 'number' ? defaults.durationSeconds : 60;
-
-            let totalResistance = 0;
-            let totalCapacitance = 0;
-            let totalInductance = 0;
-            let thermalMass = 0;
-
-            componentList.forEach(component => {
-                if (!component) return;
-
-                const profile = ARENA_COMPONENT_PROFILES[component.type] || {};
-                const props = component.properties || {};
-
-                if (typeof props.resistance === 'number') {
-                    totalResistance += Math.max(props.resistance, 0);
-                }
-
-                if (typeof props.seriesResistance === 'number') {
-                    totalResistance += Math.max(props.seriesResistance, 0);
-                }
-
-                if (typeof props.onResistance === 'number' && props.isOn !== false) {
-                    totalResistance += Math.max(props.onResistance, 0);
-                }
-
-                if (typeof props.capacitance === 'number') {
-                    totalCapacitance += Math.max(props.capacitance, 0);
-                }
-
-                if (typeof props.inductance === 'number') {
-                    totalInductance += Math.max(props.inductance, 0);
-                }
-
-                if (typeof props.thermalResistance === 'number') {
-                    thermalMass += Math.max(props.thermalResistance, 0);
-                } else if (profile.defaultProperties?.thermalResistance) {
-                    thermalMass += profile.defaultProperties.thermalResistance;
-                }
-            });
-
-            const omega = 2 * Math.PI * Math.max(frequencyHz, 0);
-            const reactanceC = totalCapacitance > 0 && omega > 0 ? -1 / (omega * totalCapacitance) : 0;
-            const reactanceL = totalInductance > 0 && omega > 0 ? omega * totalInductance : 0;
-            const netReactance = reactanceL + reactanceC; // capacitor already negative
-            const resistivePart = Number.isFinite(basicResult?.resistance) ? basicResult.resistance : totalResistance;
-            const impedance = Math.sqrt(Math.pow(Math.max(resistivePart, 0), 2) + Math.pow(netReactance, 2));
-            const phaseAngle = Math.atan2(netReactance, Math.max(resistivePart, 0));
-
-            const voltage = Math.max(basicResult?.voltage || 0, 0);
-            const current = Math.max(basicResult?.current || 0, 0);
-            const power = Math.max(basicResult?.power || voltage * current, 0);
-
-            const storedEnergyCap = totalCapacitance > 0 ? 0.5 * totalCapacitance * Math.pow(voltage, 2) : 0;
-            const storedEnergyInd = totalInductance > 0 ? 0.5 * totalInductance * Math.pow(current, 2) : 0;
-            const totalEnergy = storedEnergyCap + storedEnergyInd;
-
-            const thermalRise = thermalMass > 0 ? power * (thermalMass / 1000) : 0;
-            const energyDelivered = power * durationSeconds;
-
-            return {
-                totalResistance,
-                totalCapacitance,
-                totalInductance,
-                impedance,
-                netReactance,
-                phaseAngleRadians: phaseAngle,
-                phaseAngleDegrees: phaseAngle * (180 / Math.PI),
-                storedEnergy: totalEnergy,
-                energyDelivered,
-                estimatedThermalRise: thermalRise,
-                temperatureC,
-                frequencyHz,
-                durationSeconds,
-                topology: basicResult?.topology || 'unknown'
-            };
-        }
-
-        function buildArenaExportPayload(options) {
-            const now = new Date();
-            const basicAnalysis = performCircuitAnalysis();
-            const componentPayload = components.map(serializeComponentForArena).filter(Boolean);
-            const advancedMetrics = computeAdvancedCircuitMetrics(basicAnalysis, componentPayload, options?.testVariables);
-            const wirePayload = wires.map(serializeWireForArena).filter(Boolean);
-            const junctionPayload = junctions.map(serializeJunctionForArena).filter(Boolean);
-
-            const testVariables = Object.assign({
-                voltage: basicAnalysis?.voltage || 5,
-                frequencyHz: options?.testVariables?.frequencyHz ?? 0,
-                temperatureC: options?.testVariables?.temperatureC ?? 25,
-                ambientHumidityPercent: options?.testVariables?.ambientHumidityPercent ?? 50,
-                dutyCyclePercent: options?.testVariables?.dutyCyclePercent ?? 100,
-                loadImpedanceOhms: advancedMetrics.impedance || basicAnalysis?.resistance || null,
-                durationSeconds: options?.testVariables?.durationSeconds ?? 60
-            }, options?.testVariables || {});
-
-            return {
-                version: '2025.11.02',
-                sessionName: options?.sessionName || 'Legacy Builder Export',
-                exportedAt: now.toISOString(),
-                source: {
-                    name: 'CircuiTry3D Builder',
-                    type: 'virtual-workspace',
-                    environment: 'legacy',
-                    bridgeVersion: 'arena-export-v1'
-                },
-                components: componentPayload,
-                wires: wirePayload,
-                junctions: junctionPayload,
-                analysis: {
-                    basic: basicAnalysis,
-                    advanced: advancedMetrics
-                },
-                testVariables,
-                metadata: {
-                    units: 'SI',
-                    componentCount: componentPayload.length,
-                    wireCount: wirePayload.length,
-                    junctionCount: junctionPayload.length
-                }
-            };
-        }
-
-        function persistArenaSession(sessionId, envelope) {
-            try {
-                const serialized = JSON.stringify(envelope);
-                if (typeof window !== 'undefined' && window.localStorage) {
-                    window.localStorage.setItem('circuitry:arena-session:' + sessionId, serialized);
-                    window.localStorage.setItem('circuitry:arena-session:last', sessionId);
-                    return true;
-                }
-            } catch (error) {
-                console.warn('Arena export: localStorage unavailable', error);
-            }
-
-            try {
-                const serialized = JSON.stringify(envelope);
-                if (typeof window !== 'undefined' && window.sessionStorage) {
-                    window.sessionStorage.setItem('circuitry:arena-session:' + sessionId, serialized);
-                    window.sessionStorage.setItem('circuitry:arena-session:last', sessionId);
-                    return true;
-                }
-            } catch (error) {
-                console.warn('Arena export: sessionStorage fallback unavailable', error);
-            }
-
-            return false;
-        }
-
-        function exportArenaSession(options) {
-            const config = options || {};
-            const requestId = config.requestId || null;
-            const openWindow = Boolean(config.openWindow);
-
-            try {
-                const sessionId = config.sessionId || ('arena-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6));
-                const payload = buildArenaExportPayload(config);
-                const envelope = {
-                    sessionId,
-                    exportedAt: payload.exportedAt,
-                    version: payload.version,
-                    payload
-                };
-
-                const persisted = persistArenaSession(sessionId, envelope);
-
-                const summary = {
-                    sessionId,
-                    exportedAt: payload.exportedAt,
-                    componentCount: payload.components.length,
-                    wireCount: payload.wires.length,
-                    junctionCount: payload.junctions.length,
-                    analysis: payload.analysis,
-                    testVariables: payload.testVariables,
-                    storage: persisted ? 'localStorage' : 'volatile',
-                    requestId
-                };
-
-                if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-                    try {
-                        window.parent.postMessage({ type: 'legacy:arena-export', payload: summary }, '*');
-                    } catch (postError) {
-                        console.warn('Arena export: unable to notify parent', postError);
-                    }
-                }
-
-                if (openWindow && (!window.parent || window.parent === window)) {
-                    try {
-                        window.open('/arena?session=' + encodeURIComponent(sessionId), '_blank');
-                    } catch (openError) {
-                        console.warn('Arena export: unable to open arena window', openError);
-                    }
-                }
-
-                return summary;
-            } catch (error) {
-                console.error('Arena export failed:', error);
-                if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-                    try {
-                        window.parent.postMessage({
-                            type: 'legacy:arena-export:error',
-                            payload: {
-                                message: error?.message || String(error),
-                                requestId
-                            }
-                        }, '*');
-                    } catch (postError) {
-                        console.warn('Arena export: unable to notify parent about failure', postError);
-                    }
-                }
-                return null;
             }
         }
         
@@ -9394,14 +7722,6 @@ Made with ? for visual learners everywhere!
                         displayText = '? Simple';
                         color = '#88ccff';
                         break;
-                    case 'Polarity':
-                        displayText = '? Polarity';
-                        color = WIRE_COLORS.I;
-                        break;
-                    case 'blocked':
-                        displayText = '? Blocked';
-                        color = '#ff8844';
-                        break;
                     case 'Open Circuit':
                         displayText = '? Open';
                         color = '#ff4444';
@@ -9457,8 +7777,6 @@ Made with ? for visual learners everywhere!
             if (currentAnalysisTab === 'practice' && currentPracticeCircuit) {
                 updatePracticeStatus();
             }
-
-            refreshWireWorksheetSolutions();
             
             if (current > 0 && resistance !== Infinity) {
                 setStatus(`?? W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}?, E=${voltage.toFixed(1)}V`);
@@ -9476,99 +7794,81 @@ Made with ? for visual learners everywhere!
             }
         }
 
-        function animateCurrentFlow(flowState) {
+        function animateCurrentFlow(hasFlow, currentValue = 0) {
             currentFlowParticles.forEach(particle => {
                 if (particle && scene) {
                     scene.remove(particle);
                 }
             });
             currentFlowParticles = [];
-
-            currentFlowState = flowState || null;
-
-            const hasFlow = Boolean(flowState?.hasFlow);
-            const currentValue = flowState?.currentValue ?? 0;
-
-            if (!hasFlow || currentValue <= 0) {
-                return;
-            }
-
-            const segments = (flowState.wireSegments && flowState.wireSegments.length > 0)
-                ? flowState.wireSegments
-                : wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
-
-            if (!segments.length) {
-                return;
-            }
-
-            const flowColor = calculateCurrentColor(flowState);
-            const baseSpeed = calculateFlowSpeed(currentValue);
+            
+            if (!hasFlow || currentValue <= 0) return;
+            
+            const wiresForAnimation = wires;
+            if (wiresForAnimation.length === 0) return;
+            
+            const currentIntensity = Math.min(currentValue / 0.5, 1.0);
+            const flowColor = calculateCurrentColor(currentValue);
+            const flowSpeed = calculateFlowSpeed(currentValue);
+            
+            // Reduce particle count for mobile performance
             const baseParticleCount = isMobile ? 3 : 4;
             const maxParticles = isMobile ? 8 : 12;
-
-            segments.forEach((segment, segmentIndex) => {
-                const wire = segment.wire;
-                if (!wire || !wire.wireGroup) {
-                    return;
-                }
-
+            const particleCount = Math.max(baseParticleCount, Math.min(maxParticles, Math.floor(currentValue * (isMobile ? 15 : 20))));
+            
+            wiresForAnimation.forEach((wire, wireIndex) => {
+                if (!wire || !wire.wireGroup) return;
+                
                 if (!wire.curve) {
                     wire.createCurve();
                 }
-                if (!wire.curve) {
-                    return;
-                }
-
-                const segmentSpeed = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
-                const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
-
-                let dynamicCount = Math.floor((currentValue * (isMobile ? 14 : 18)) * (segment.speedFactor || 1));
-                dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
-
-                const particleCount = dynamicCount;
-                const intensity = Math.min(1, currentValue / 0.5);
-
+                if (!wire.curve) return;
+                
                 for (let i = 0; i < particleCount; i++) {
                     try {
-                        const particleSize = 0.08 + (intensity * 0.06);
+                        const particleSize = 0.08 + (currentIntensity * 0.06);
                         const particleGeometry = new THREE.SphereGeometry(particleSize, isMobile ? 8 : 10, isMobile ? 6 : 8);
-
+                        
+                        // Apply misty or solid style
                         const baseMaterialProps = {
                             color: flowColor.hex,
                             emissive: flowColor.emissive,
-                            shininess: 160,
+                            shininess: 150,
                             transparent: true
                         };
-
+                        
                         if (currentFlowStyle === 'misty') {
-                            baseMaterialProps.opacity = 0.35 + (intensity * 0.25);
-                            baseMaterialProps.emissiveIntensity = 0.7;
+                            // Misty style: lower opacity, more ethereal
+                            baseMaterialProps.opacity = 0.4 + (currentIntensity * 0.3);
+                            baseMaterialProps.emissiveIntensity = 0.8;
                         } else {
-                            baseMaterialProps.opacity = 0.85 + (intensity * 0.1);
-                            baseMaterialProps.emissiveIntensity = 1.05;
+                            // Solid style: higher opacity, more defined
+                            baseMaterialProps.opacity = 0.85 + (currentIntensity * 0.15);
+                            baseMaterialProps.emissiveIntensity = 1.0;
                         }
-
+                        
                         const particleMaterial = new THREE.MeshPhongMaterial(baseMaterialProps);
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-
-                        const initialProgress = (i / particleCount) + (segmentIndex * 0.17);
-                        const clampedProgress = ((initialProgress % 1) + 1) % 1;
-
+                        
+                        const initialProgress = (i / particleCount) + (wireIndex * 0.1);
+                        const clampedProgress = Math.max(0, Math.min(1, initialProgress % 1));
+                        
                         const initialPosition = wire.curve.getPoint(clampedProgress);
                         particle.position.copy(initialPosition);
-
-                        particle.userData = {
-                            wire,
+                        
+                        particle.userData = { 
+                            wire: wire,
                             progress: clampedProgress,
-                            speed: segmentSpeed,
-                            direction: directionMultiplier,
-                            flowColor,
+                            baseSpeed: flowSpeed,
+                            currentValue: currentValue,
+                            flowColor: flowColor,
                             isFlowing: true,
                             flowStyle: currentFlowStyle
                         };
-
+                        
                         scene.add(particle);
                         currentFlowParticles.push(particle);
+                        
                     } catch (error) {
                         console.error(`Error creating particle ${i}:`, error);
                     }
@@ -9576,28 +7876,18 @@ Made with ? for visual learners everywhere!
             });
         }
 
-        function calculateCurrentColor(flowState) {
-            if (flowState?.warning === 'short') {
-                return { hex: 0xff4444, emissive: 0x330000 };
+        function calculateCurrentColor(current) {
+            if (current <= 0.02) {
+                return { hex: 0xff3333, emissive: 0x330000 };
+            } else if (current <= 0.05) {
+                return { hex: 0xff8800, emissive: 0x331100 };
+            } else if (current <= 0.1) {
+                return { hex: 0xffff00, emissive: 0x333300 };
+            } else if (current <= 0.2) {
+                return { hex: 0xffffff, emissive: 0x444444 };
+            } else {
+                return { hex: 0xaaffff, emissive: 0x0044aa };
             }
-
-            const currentValue = flowState?.currentValue ?? 0;
-            const blend = Math.min(1, Math.max(0, currentValue / 0.6));
-
-            const baseColor = new THREE.Color(WIRE_COLORS.I);
-            const highlightColor = new THREE.Color('#ffd8b1');
-            const displayColor = highlightColor.clone().lerp(baseColor, blend);
-
-            if (currentFlowStyle === 'misty') {
-                displayColor.lerp(new THREE.Color('#ffffff'), 0.2);
-            }
-
-            const emissiveColor = baseColor.clone().multiplyScalar(0.25 + (0.5 * blend));
-
-            return {
-                hex: displayColor.getHex(),
-                emissive: emissiveColor.getHex()
-            };
         }
 
         function calculateFlowSpeed(current) {
@@ -9966,157 +8256,86 @@ Made with ? for visual learners everywhere!
         // Preset Circuit Library
         const PRESET_CIRCUITS = {
             series_basic: {
-                name: "Series Square Loop",
-                description: "24 V source feeding three series resistors arranged as a square.",
+                name: "Basic Series Circuit",
+                description: "Simple series circuit with battery and two resistors",
                 objectives: [
-                    "Map a textbook square schematic into 3D space with battery, top, side, and bottom legs.",
-                    "Log known values with W.I.R.E. (R1=120 ohm, R2=180 ohm, R3=220 ohm, E=24 V) and identify I_T.",
-                    "Select the correct Ohm's Law identity I = E / R_T, then compute voltage drops and power.",
-                    "Confirm the solution using Kirchhoff's Voltage Law and the power identity W = I * E."
+                    "Calculate total resistance in series (R_total = R? + R?)",
+                    "Apply Ohm's law to find current (I = V ? R_total)",
+                    "Calculate power consumption (P = V ? I)"
                 ],
                 components: [
-                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
-                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 120 } },
-                    { id: 'R2', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
-                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 220 } }
+                    { type: 'battery', position: [-4, 0, 0], properties: { voltage: 12 } },
+                    { type: 'resistor', position: [0, 0, 0], properties: { resistance: 100 } },
+                    { type: 'resistor', position: [4, 0, 0], properties: { resistance: 200 } }
                 ],
-                junctions: [
-                    { id: 'J_TL', position: [-10, 0, 6] },
-                    { id: 'J_TR', position: [10, 0, 6] },
-                    { id: 'J_BR', position: [10, 0, -6] },
-                    { id: 'J_BL', position: [-10, 0, -6] }
-                ],
-                wires: [
-                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
-                    { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
-                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
-                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
-                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } },
-                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
-                    { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                connections: [
+                    { from: 'battery_1_positive', to: 'resistor_1_left' },
+                    { from: 'resistor_1_right', to: 'resistor_2_left' },
+                    { from: 'resistor_2_right', to: 'battery_1_negative' }
                 ]
             },
             parallel_basic: {
-                name: "Parallel Bus",
-                description: "12 V supply feeding three resistors on a classic parallel bus.",
+                name: "Basic Parallel Circuit",
+                description: "Two resistors in parallel with a battery",
                 objectives: [
-                    "Visualize how parallel branches hang between common positive and negative rails.",
-                    "Capture W.I.R.E. data (branch resistors and shared voltage) before solving reciprocals.",
-                    "Compute R_T with 1 / (1/R1 + 1/R2 + 1/R3) and find each branch current with I = E / R_branch.",
-                    "Check Kirchhoff's Current Law by summing branch currents and compare branch power with W = I * E."
+                    "Calculate total resistance in parallel (1/R_total = 1/R? + 1/R?)",
+                    "Understand current division in parallel circuits",
+                    "Compare parallel vs series power consumption"
                 ],
                 components: [
-                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 12 } },
-                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 100 } },
-                    { id: 'R2', type: 'resistor', position: [0, 0, 0], properties: { resistance: 220 } },
-                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
-                ],
-                junctions: [
-                    { id: 'J_POS_TOP', position: [-10, 0, 6] },
-                    { id: 'J_POS_MID', position: [-10, 0, 0] },
-                    { id: 'J_POS_BOTTOM', position: [-10, 0, -6] },
-                    { id: 'J_NEG_TOP', position: [10, 0, 6] },
-                    { id: 'J_NEG_MID', position: [10, 0, 0] },
-                    { id: 'J_NEG_BOTTOM', position: [10, 0, -6] }
-                ],
-                wires: [
-                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_POS_MID', side: 'center' } },
-                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'J_POS_TOP', side: 'center' } },
-                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'J_POS_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_POS_TOP', side: 'center' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'R2', side: 'left' } },
-                    { from: { ref: 'J_POS_BOTTOM', side: 'center' }, to: { ref: 'R3', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_NEG_TOP', side: 'center' } },
-                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_NEG_MID', side: 'center' } },
-                    { from: { ref: 'R3', side: 'right' }, to: { ref: 'J_NEG_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_NEG_TOP', side: 'center' }, to: { ref: 'J_NEG_MID', side: 'center' } },
-                    { from: { ref: 'J_NEG_MID', side: 'center' }, to: { ref: 'J_NEG_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_NEG_MID', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                    { type: 'battery', position: [-4, 0, 0], properties: { voltage: 9 } },
+                    { type: 'resistor', position: [2, 0, 2], properties: { resistance: 150 } },
+                    { type: 'resistor', position: [2, 0, -2], properties: { resistance: 300 } }
                 ]
             },
             mixed_circuit: {
-                name: "Series-Parallel Ladder",
-                description: "Series input resistor feeding two vertical branches with a return leg.",
+                name: "Mixed Series-Parallel Circuit",
+                description: "Combination of series and parallel resistors",
                 objectives: [
-                    "Practice collapsing a series element followed by a parallel pair in a spatial layout.",
-                    "Track W.I.R.E. values (R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm, E=18 V).",
-                    "Reduce the network step by step, using I = E / R_T and W = I^2 * R for branch power.",
-                    "Verify both Kirchhoff's Voltage Law and Current Law at key nodes."
+                    "Analyze complex circuits with mixed connections",
+                    "Break down circuit into series and parallel sections",
+                    "Apply equivalent resistance concepts"
                 ],
                 components: [
-                    { id: 'B1', type: 'battery', position: [-12, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 18 } },
-                    { id: 'R1', type: 'resistor', position: [-4, 0, 6], properties: { resistance: 150 } },
-                    { id: 'R2', type: 'resistor', position: [4, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
-                    { id: 'R3', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 330 } },
-                    { id: 'R4', type: 'resistor', position: [0, 0, -6], properties: { resistance: 180 } }
+                    { type: 'battery', position: [-6, 0, 0], properties: { voltage: 15 } },
+                    { type: 'resistor', position: [-2, 0, 0], properties: { resistance: 50 } },
+                    { type: 'resistor', position: [2, 0, 2], properties: { resistance: 100 } },
+                    { type: 'resistor', position: [2, 0, -2], properties: { resistance: 200 } },
+                    { type: 'led', position: [6, 0, 0], properties: { resistance: 25 } }
+                ]
+            },
+            switch_control: {
+                name: "Switch-Controlled Circuit",
+                description: "Circuit with switch to control current flow",
+                objectives: [
+                    "Understand open vs closed circuit behavior",
+                    "Analyze the effect of switches on circuit operation",
+                    "Calculate power consumption when switch is ON vs OFF",
+                    "Practice with switch resistance calculations"
                 ],
-                junctions: [
-                    { id: 'J_SOURCE_TOP', position: [-12, 0, 6] },
-                    { id: 'J_BRANCH_FEED', position: [0, 0, 6] },
-                    { id: 'J_BRANCH_TOP_RIGHT', position: [12, 0, 6] },
-                    { id: 'J_BRANCH_RETURN_RIGHT', position: [12, 0, -6] },
-                    { id: 'J_BRANCH_RETURN', position: [4, 0, -6] },
-                    { id: 'J_SOURCE_BOTTOM', position: [-12, 0, -6] }
-                ],
-                wires: [
-                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_SOURCE_TOP', side: 'center' } },
-                    { from: { ref: 'J_SOURCE_TOP', side: 'center' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_BRANCH_FEED', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'R2', side: 'right' } },
-                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'J_BRANCH_TOP_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_TOP_RIGHT', side: 'center' }, to: { ref: 'R3', side: 'right' } },
-                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_RETURN', side: 'center' } },
-                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_RETURN_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_RETURN_RIGHT', side: 'center' }, to: { ref: 'J_BRANCH_RETURN', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_RETURN', side: 'center' }, to: { ref: 'R4', side: 'right' } },
-                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_SOURCE_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_SOURCE_BOTTOM', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                components: [
+                    { type: 'battery', position: [-4, 0, 0], properties: { voltage: 6 } },
+                    { type: 'switch', position: [0, 0, 0], properties: { resistance: 0.1, isOn: false } },
+                    { type: 'led', position: [4, 0, 0], properties: { resistance: 20 } }
                 ]
             },
             combination_advanced: {
-                name: "Combo Challenge Network",
-                description: "Nested series-parallel network with dual branches and a lighting load.",
+                name: "Advanced Combination Circuit",
+                description: "Complex circuit combining series, parallel, and mixed configurations",
                 objectives: [
-                    "Interpret a multi-loop textbook problem inside the 3D workspace.",
-                    "Track W.I.R.E. entries for R1=120 ohm, R2=150 ohm, R3=180 ohm, R4=270 ohm, R5=220 ohm, LED=60 ohm, E=24 V.",
-                    "Jump between Ohm's Law and power identities (I = E / R, W = I * E, W = I^2 * R, W = E^2 / R).",
-                    "Validate results with Kirchhoff's Voltage Law on each loop and Current Law at every junction."
+                    "Master combination circuit analysis techniques",
+                    "Use junction nodes to create complex topologies",
+                    "Calculate equivalent resistance step by step",
+                    "Apply W.I.R.E. method to advanced circuits",
+                    "Understand current division in complex paths"
                 ],
                 components: [
-                    { id: 'B1', type: 'battery', position: [-14, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
-                    { id: 'R1', type: 'resistor', position: [-6, 0, 6], properties: { resistance: 120 } },
-                    { id: 'R2', type: 'resistor', position: [2, 0, 6], properties: { resistance: 150 } },
-                    { id: 'R3', type: 'resistor', position: [6, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
-                    { id: 'R4', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 270 } },
-                    { id: 'R5', type: 'resistor', position: [4, 0, -6], properties: { resistance: 220 } },
-                    { id: 'LED1', type: 'led', position: [-2, 0, -6], properties: { resistance: 60 } }
-                ],
-                junctions: [
-                    { id: 'J_TOP_LEFT', position: [-14, 0, 6] },
-                    { id: 'J_AFTER_R1', position: [-2, 0, 6] },
-                    { id: 'J_BRANCH_TOP', position: [6, 0, 6] },
-                    { id: 'J_TOP_RIGHT', position: [14, 0, 6] },
-                    { id: 'J_BRANCH_BOTTOM', position: [6, 0, -6] },
-                    { id: 'J_BOTTOM_RIGHT', position: [14, 0, -6] },
-                    { id: 'J_BOTTOM_LEFT', position: [-14, 0, -6] }
-                ],
-                wires: [
-                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TOP_LEFT', side: 'center' } },
-                    { from: { ref: 'J_TOP_LEFT', side: 'center' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_AFTER_R1', side: 'center' } },
-                    { from: { ref: 'J_AFTER_R1', side: 'center' }, to: { ref: 'R2', side: 'left' } },
-                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_BRANCH_TOP', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_TOP', side: 'center' }, to: { ref: 'R3', side: 'right' } },
-                    { from: { ref: 'J_BRANCH_TOP', side: 'center' }, to: { ref: 'J_TOP_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_TOP_RIGHT', side: 'center' }, to: { ref: 'R4', side: 'right' } },
-                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM', side: 'center' } },
-                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_BOTTOM_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_BOTTOM_RIGHT', side: 'center' }, to: { ref: 'J_BRANCH_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_BOTTOM', side: 'center' }, to: { ref: 'R5', side: 'right' } },
-                    { from: { ref: 'R5', side: 'left' }, to: { ref: 'LED1', side: 'right' } },
-                    { from: { ref: 'LED1', side: 'left' }, to: { ref: 'J_BOTTOM_LEFT', side: 'center' } },
-                    { from: { ref: 'J_BOTTOM_LEFT', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                    { type: 'battery', position: [-6, 0, 0], properties: { voltage: 18 } },
+                    { type: 'resistor', position: [-2, 0, 0], properties: { resistance: 80 } },
+                    { type: 'resistor', position: [2, 0, 3], properties: { resistance: 120 } },
+                    { type: 'resistor', position: [2, 0, 0], properties: { resistance: 180 } },
+                    { type: 'resistor', position: [2, 0, -3], properties: { resistance: 240 } },
+                    { type: 'led', position: [6, 0, 0], properties: { resistance: 30 } }
                 ]
             }
         };
@@ -10135,15 +8354,15 @@ Made with ? for visual learners everywhere!
             if (circuitStatusEl && circuitStatusTextEl) {
                 if (hasFlow) {
                     circuitStatusEl.className = 'circuit-status status-complete';
-                    circuitStatusTextEl.textContent = 'Circuit complete - current flowing! Switch to Solve tab.';
+                    circuitStatusTextEl.textContent = '? Circuit complete - Current flowing! Switch to Solve tab.';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'none';
                 } else if (isComplete) {
                     circuitStatusEl.className = 'circuit-status status-incomplete';
-                    circuitStatusTextEl.textContent = 'Circuit wired but not complete - check connections.';
+                    circuitStatusTextEl.textContent = '?? Circuit wired but not complete - Check connections';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'block';
                 } else {
                     circuitStatusEl.className = 'circuit-status status-incomplete';
-                    circuitStatusTextEl.textContent = 'Circuit incomplete - add wires to connect components.';
+                    circuitStatusTextEl.textContent = '?? Circuit incomplete - Add wires to connect components';
                     if (wireInstructionsEl) wireInstructionsEl.style.display = 'block';
                 }
             }
@@ -10152,132 +8371,61 @@ Made with ? for visual learners everywhere!
         function loadPresetCircuit(presetName) {
             const preset = PRESET_CIRCUITS[presetName];
             if (!preset) {
-                setStatus('Preset circuit not found!');
+                setStatus('? Preset circuit not found!');
                 return;
             }
-
+            
+            // Clear current circuit
             clearAll(false);
+            
+            // Set current practice circuit
             currentPracticeCircuit = presetName;
-
-            const index = practiceProblems.indexOf(presetName);
-            if (index !== -1) {
-                currentProblemIndex = index;
+            
+            // If loading individual circuit (not from sequence), update index
+            if (!practiceProblems.includes(presetName)) {
+                // This is for individual button clicks
+                currentProblemIndex = practiceProblems.indexOf(presetName);
+                if (currentProblemIndex === -1) currentProblemIndex = 0;
             }
-
-            const componentLookup = new Map();
-            const junctionLookup = new Map();
-
-            if (Array.isArray(preset.components)) {
-                preset.components.forEach((compData) => {
-                    const position = new THREE.Vector3(compData.position[0], compData.position[1], compData.position[2]);
-                    const component = new Component(compData.type, position);
-                    if (compData.properties) {
-                        component.updateProperties(compData.properties);
-                    }
-                    if (typeof compData.rotation === 'number' && component.mesh) {
-                        component.rotation = compData.rotation;
-                        component.mesh.rotation.y = compData.rotation;
-                    }
-                    if (compData.metadata) {
-                        component.metadata = { ...compData.metadata };
-                    }
-                    components.push(component);
-
-                    const identifier = component.getComponentIdentifier ? component.getComponentIdentifier() : null;
-                    if (identifier) {
-                        componentLookup.set(identifier, component);
-                    }
-                    if (compData.id) {
-                        componentLookup.set(compData.id, component);
-                    }
-                    if (Array.isArray(compData.aliases)) {
-                        compData.aliases.forEach((alias) => componentLookup.set(alias, component));
-                    }
-                    componentLookup.set(component.id, component);
-                });
-            }
-
-            if (Array.isArray(preset.junctions)) {
-                preset.junctions.forEach((junctionData) => {
-                    const position = new THREE.Vector3(junctionData.position[0], junctionData.position[1], junctionData.position[2]);
-                    const junction = new Junction(position);
-                    junctions.push(junction);
-                    if (junctionData.id) {
-                        junctionLookup.set(junctionData.id, junction);
-                    }
-                    junctionLookup.set(junction.id, junction);
-                });
-            }
-
-            const resolvePresetEndpoint = (endpoint) => {
-                if (!endpoint || !endpoint.ref) {
-                    return null;
-                }
-                let target = componentLookup.get(endpoint.ref) || junctionLookup.get(endpoint.ref);
-                if (!target) {
-                    const fallback = components.find((comp) => comp.getComponentIdentifier && comp.getComponentIdentifier() === endpoint.ref);
-                    if (fallback) {
-                        target = fallback;
-                    }
-                }
-                if (!target) {
-                    console.warn('Preset wiring missing endpoint', endpoint);
-                    return null;
-                }
-                const defaultSide = target instanceof Junction ? 'center' : (target.type === 'battery' ? 'positive' : 'left');
-                return {
-                    object: target,
-                    side: endpoint.side || defaultSide
-                };
-            };
-
-            if (Array.isArray(preset.wires)) {
-                preset.wires.forEach((wireSpec) => {
-                    const start = resolvePresetEndpoint(wireSpec.from);
-                    const end = resolvePresetEndpoint(wireSpec.to);
-                    if (!start || !end) {
-                        return;
-                    }
-                    try {
-                        const wire = new Wire(start.object, start.side, end.object, end.side);
-                        wires.push(wire);
-                    } catch (error) {
-                        console.warn('Failed to create preset wire', wireSpec, error);
-                    }
-                });
-            }
-
+            
+            // Load preset components
+            preset.components.forEach((compData, index) => {
+                const position = new THREE.Vector3(compData.position[0], compData.position[1], compData.position[2]);
+                const component = new Component(compData.type, position);
+                component.updateProperties(compData.properties);
+                components.push(component);
+            });
+            
+            // Update practice mode displays
             const questionEl = document.getElementById('practice-question');
             const descriptionEl = document.getElementById('practice-description');
             const practiceCardEl = document.getElementById('practice-problem-card');
             const helpTextEl = document.getElementById('practice-help-text');
             const objList = document.getElementById('objectives-list');
-
+            
             const practiceInfo = practiceQuestions[presetName];
-
+            
             if (questionEl && practiceInfo) {
-                questionEl.textContent = `Problem: ${practiceInfo.question}`;
+                questionEl.textContent = `?? Problem: ${practiceInfo.question}`;
             }
-
-            if (descriptionEl) {
-                const descriptionHtml = practiceInfo?.description || preset.description || '';
-                descriptionEl.innerHTML = descriptionHtml;
+            
+            if (descriptionEl && practiceInfo) {
+                descriptionEl.textContent = practiceInfo.description;
             }
-
+            
             if (practiceCardEl) {
                 practiceCardEl.style.display = 'block';
             }
-
+            
             if (helpTextEl) {
                 helpTextEl.style.display = 'none';
             }
-
+            
             if (objList && preset.objectives) {
                 objList.innerHTML = preset.objectives.map(obj => `<li>${obj}</li>`).join('');
             }
-
-            renderWireWorksheetFromPreset(presetName, preset);
-
+            
+            // Highlight the selected button (only for individual clicks)
             document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
             const buttonIds = {
                 'series_basic': 'btn-series',
@@ -10290,18 +8438,19 @@ Made with ? for visual learners everywhere!
                 const button = document.getElementById(buttonId);
                 if (button) button.classList.add('active');
             }
-
+            
+            // Update counter and navigation
             updatePracticeCounter();
             updateNavigationButtons();
-
+            
+            // Switch to practice tab if not already there
             if (currentAnalysisTab !== 'practice') {
                 switchAnalysisTab('practice');
             }
-
-            fitToScreen();
+            
             updateCircuitInfo();
             updatePracticeStatus();
-            setStatus(`Loaded practice problem: ${preset.name} - Apply W.I.R.E. to solve the unknowns.`);
+            setStatus(`?? Loaded practice problem: ${preset.name} - Wire the components!`);
         }
 
         function autoConnectSeries() {
@@ -10349,7 +8498,7 @@ Made with ? for visual learners everywhere!
 
         function generateRandomProblem() {
             // Generate a random circuit problem
-            const problemTypes = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced'];
+            const problemTypes = ['series_basic', 'parallel_basic', 'mixed_circuit'];
             const randomType = problemTypes[Math.floor(Math.random() * problemTypes.length)];
             
             loadPresetCircuit(randomType);
@@ -10365,8 +8514,6 @@ Made with ? for visual learners everywhere!
                 }
             });
             
-            renderWireWorksheetFromActiveCircuit('Randomised Circuit');
-
             // Highlight random button
             document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
             const randomBtn = document.getElementById('btn-random');
@@ -10459,7 +8606,6 @@ Made with ? for visual learners everywhere!
             disableRotateMode({ silent: true, skipNotify: true });
             exitMeasureMode({ silent: true, skipNotify: true });
             notifyParentToolState('select');
-
             wireStart = null;
             isDragging = false;
             selectedComponent = null;
@@ -10527,8 +8673,6 @@ Made with ? for visual learners everywhere!
                 // Reset practice sequence
                 currentProblemIndex = 0;
             }
-
-            clearWireWorksheetDisplay();
             
             updateButtonStates();
             updateCircuitInfo();

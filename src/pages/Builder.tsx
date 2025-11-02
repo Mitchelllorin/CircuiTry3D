@@ -28,17 +28,7 @@ type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
-  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } }
-  | { type: "builder:request-mode-state" }
-  | {
-      type: "builder:export-arena";
-      payload?: {
-        requestId?: string;
-        openWindow?: boolean;
-        sessionName?: string;
-        testVariables?: Record<string, unknown>;
-      };
-    };
+  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } };
 
 type ComponentAction = {
   id: string;
@@ -49,17 +39,6 @@ type ComponentAction = {
 };
 
 type BuilderToolId = "select" | "wire" | "measure";
-
-type LegacyModeState = {
-  isWireMode: boolean;
-  isRotateMode: boolean;
-  isMeasureMode: boolean;
-  currentFlowStyle: string;
-  showPolarityIndicators: boolean;
-  layoutMode: string;
-  showGrid: boolean;
-  showLabels: boolean;
-};
 
 type QuickAction = {
   id: string;
@@ -152,40 +131,6 @@ type PanelAction = {
   data?: Record<string, unknown>;
 };
 
-type ArenaExportSummary = {
-  sessionId: string;
-  exportedAt: string;
-  componentCount: number;
-  wireCount: number;
-  junctionCount: number;
-  analysis?: {
-    basic?: {
-      voltage?: number;
-      current?: number;
-      resistance?: number;
-      power?: number;
-      topology?: string;
-    };
-    advanced?: {
-      impedance?: number;
-      netReactance?: number;
-      phaseAngleDegrees?: number;
-      totalResistance?: number;
-      totalCapacitance?: number;
-      totalInductance?: number;
-      energyDelivered?: number;
-      estimatedThermalRise?: number;
-      frequencyHz?: number;
-      temperatureC?: number;
-    };
-  };
-  testVariables?: Record<string, unknown>;
-  storage?: string;
-  requestId?: string | null;
-};
-
-type ArenaExportStatus = "idle" | "exporting" | "ready" | "error";
-
 const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "wire-mode",
@@ -273,30 +218,30 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
   {
     id: "series-basic",
     label: "Series Circuit",
-    question: "Series loop: solve for total current (I_T).",
-    description: "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
+    question: "Find total resistance and current.",
+    description: "Combine series resistances and solve for current with W.I.R.E.",
     preset: "series_basic",
   },
   {
     id: "parallel-basic",
     label: "Parallel Circuit",
-    question: "Parallel bus: find equivalent resistance and branch currents.",
-    description: "Use W.I.R.E. to capture knowns, compute R_T with reciprocals, and check KCL/KVL compliance.",
+    question: "Find equivalent resistance in parallel.",
+    description: "Apply reciprocal sums to determine the total resistance.",
     preset: "parallel_basic",
   },
   {
     id: "mixed-circuit",
     label: "Mixed Circuit",
-    question: "Series-parallel combo: reduce and solve the ladder.",
-    description: "Collapse branches with W.I.R.E., select the right Ohm's Law form, and verify against Kirchhoff.",
+    question: "Analyze a mixed topology.",
+    description: "Break the network into series and parallel segments to solve.",
     preset: "mixed_circuit",
   },
   {
-    id: "combo-challenge",
-    label: "Combo Challenge",
-    question: "Multi-loop combo: determine every unknown.",
-    description: "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
-    preset: "combination_advanced",
+    id: "switch-control",
+    label: "Switch Control",
+    question: "Compare behaviour with the switch on or off.",
+    description: "Focus on how switching impacts overall power draw.",
+    preset: "switch_control",
   },
 ];
 
@@ -315,8 +260,8 @@ const PRACTICE_ACTIONS: PanelAction[] = [
   },
   {
     id: "open-arena",
-    label: "Component Arena Sync",
-    description: "Export the active build and open the Component Arena for testing.",
+    label: "Component Arena",
+    description: "Open the arena view for rapid-fire component drills.",
     action: "open-arena",
   },
 ];
@@ -759,9 +704,8 @@ function subscribeToMediaQuery(query: MediaQueryList, listener: (event: MediaQue
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
-  const pendingArenaRequests = useRef<Map<string, { openWindow: boolean }>>(new Map());
-  const simulationPulseTimer = useRef<number | null>(null);
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const simulationPulseTimer = useRef<number | null>(null);
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
@@ -775,24 +719,7 @@ export default function Builder() {
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
   const [activeQuickTool, setActiveQuickTool] = useState<BuilderToolId>("select");
-  const [modeState, setModeState] = useState<LegacyModeState>({
-    isWireMode: false,
-    isRotateMode: false,
-    isMeasureMode: false,
-    currentFlowStyle: "misty",
-    showPolarityIndicators: true,
-    layoutMode: "free",
-    showGrid: true,
-    showLabels: true,
-  });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
-  const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
-  const [arenaExportError, setArenaExportError] = useState<string | null>(null);
-  const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
-  const appBasePath = useMemo(() => {
-    const baseUrl = import.meta.env.BASE_URL ?? "/";
-    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  }, []);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -815,47 +742,11 @@ export default function Builder() {
 
       if (type === "legacy:tool-state") {
         const tool = typeof (payload as { tool?: string })?.tool === "string" ? (payload as { tool?: string }).tool : undefined;
-        if (tool === "wire" || tool === "measure") {
+        if (tool === "wire" || tool === "measure" || tool === "select") {
           setActiveQuickTool(tool);
         } else {
           setActiveQuickTool("select");
         }
-
-        setModeState((previous) => ({
-          ...previous,
-          isWireMode: tool === "wire",
-          isMeasureMode: tool === "measure",
-          isRotateMode: tool === "rotate",
-        }));
-        return;
-      }
-
-      if (type === "legacy:mode-state") {
-        if (!payload || typeof payload !== "object") {
-          return;
-        }
-
-        const next = payload as Partial<LegacyModeState>;
-        setModeState((previous) => ({
-          ...previous,
-          isWireMode: typeof next.isWireMode === "boolean" ? next.isWireMode : previous.isWireMode,
-          isRotateMode: typeof next.isRotateMode === "boolean" ? next.isRotateMode : previous.isRotateMode,
-          isMeasureMode: typeof next.isMeasureMode === "boolean" ? next.isMeasureMode : previous.isMeasureMode,
-          currentFlowStyle:
-            typeof next.currentFlowStyle === "string" && next.currentFlowStyle.trim() !== ""
-              ? next.currentFlowStyle
-              : previous.currentFlowStyle,
-          showPolarityIndicators:
-            typeof next.showPolarityIndicators === "boolean"
-              ? next.showPolarityIndicators
-              : previous.showPolarityIndicators,
-          layoutMode:
-            typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
-              ? next.layoutMode
-              : previous.layoutMode,
-          showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
-          showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
-        }));
         return;
       }
 
@@ -870,55 +761,13 @@ export default function Builder() {
         }, 1400);
         return;
       }
-
-      if (type === "legacy:arena-export") {
-        const summary = (payload || {}) as ArenaExportSummary | undefined;
-        if (summary && typeof summary.sessionId === "string") {
-          setArenaExportStatus("ready");
-          setArenaExportError(null);
-          setLastArenaExport(summary);
-
-          const requestId = typeof summary.requestId === "string" ? summary.requestId : undefined;
-          let shouldOpenWindow = false;
-
-          if (requestId) {
-            const meta = pendingArenaRequests.current.get(requestId);
-            if (meta) {
-              shouldOpenWindow = Boolean(meta.openWindow);
-              pendingArenaRequests.current.delete(requestId);
-            }
-          } else {
-            shouldOpenWindow = true;
-          }
-
-          if (shouldOpenWindow && typeof window !== "undefined") {
-            const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(summary.sessionId)}`;
-            window.open(targetUrl, "_blank", "noopener");
-          }
-        } else {
-          setArenaExportStatus("error");
-          setArenaExportError("Arena export returned an unexpected response");
-        }
-        return;
-      }
-
-      if (type === "legacy:arena-export:error") {
-        const errorPayload = (payload || {}) as { message?: string; requestId?: string };
-        setArenaExportStatus("error");
-        setArenaExportError(errorPayload?.message || "Arena export failed");
-        if (errorPayload?.requestId) {
-          pendingArenaRequests.current.delete(errorPayload.requestId);
-        }
-        return;
-      }
-
     };
 
     window.addEventListener("message", handleMessage);
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, [appBasePath]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -1029,14 +878,6 @@ export default function Builder() {
     [isFrameReady]
   );
 
-  useEffect(() => {
-    if (!isFrameReady) {
-      return;
-    }
-
-    postToBuilder({ type: "builder:request-mode-state" }, { allowQueue: false });
-  }, [isFrameReady, postToBuilder]);
-
   const triggerBuilderAction = useCallback(
     (action: BuilderInvokeAction, data?: Record<string, unknown>) => {
       postToBuilder({ type: "builder:invoke-action", payload: { action, data } });
@@ -1044,53 +885,27 @@ export default function Builder() {
     [postToBuilder]
   );
 
-  const handleArenaSync = useCallback(
-    (
-      options: {
-        openWindow?: boolean;
-        sessionName?: string;
-        testVariables?: Record<string, unknown>;
-      } = {}
-    ) => {
-      const openWindow = options.openWindow ?? true;
-      const requestId = `arena-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      pendingArenaRequests.current.set(requestId, { openWindow });
-      setArenaExportStatus("exporting");
-      setArenaExportError(null);
+  const handleQuickAction = useCallback(
+    (quickAction: QuickAction) => {
+      triggerBuilderAction(quickAction.action, quickAction.data);
 
-      const message: BuilderMessage = {
-        type: "builder:export-arena",
-        payload: {
-          requestId,
-          openWindow,
-          sessionName: options.sessionName,
-          testVariables: options.testVariables,
-        },
-      };
-
-      postToBuilder(message);
-    },
-    [postToBuilder]
-  );
-
-  const handlePracticeAction = useCallback(
-    (action: PanelAction) => {
-      if (action.action === "open-arena") {
-        handleArenaSync({ openWindow: true, sessionName: "Builder Hand-off" });
-        return;
+      if (quickAction.kind === "tool" && quickAction.tool) {
+        setActiveQuickTool(quickAction.tool);
       }
-      triggerBuilderAction(action.action, action.data);
-    },
-    [handleArenaSync, triggerBuilderAction]
-  );
 
-  const openLastArenaSession = useCallback(() => {
-    if (!lastArenaExport?.sessionId) {
-      return;
-    }
-    const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(lastArenaExport.sessionId)}`;
-    window.open(targetUrl, "_blank", "noopener");
-  }, [appBasePath, lastArenaExport]);
+      if (quickAction.id === "simulate") {
+        if (simulationPulseTimer.current !== null) {
+          window.clearTimeout(simulationPulseTimer.current);
+        }
+        setSimulatePulsing(true);
+        simulationPulseTimer.current = window.setTimeout(() => {
+          setSimulatePulsing(false);
+          simulationPulseTimer.current = null;
+        }, 1200);
+      }
+    },
+    [triggerBuilderAction, setActiveQuickTool, setSimulatePulsing]
+  );
 
   const openHelpCenter = useCallback(
     (view: HelpModalView = "overview", sectionTitle?: string) => {
@@ -1156,61 +971,6 @@ export default function Builder() {
     [postToBuilder]
   );
 
-  const handleQuickAction = useCallback(
-    (quickAction: QuickAction) => {
-      triggerBuilderAction(quickAction.action, quickAction.data);
-
-      if (quickAction.kind === "tool" && quickAction.tool) {
-        setActiveQuickTool(quickAction.tool);
-      }
-
-      if (quickAction.id === "simulate") {
-        if (simulationPulseTimer.current !== null) {
-          window.clearTimeout(simulationPulseTimer.current);
-        }
-        setSimulatePulsing(true);
-        simulationPulseTimer.current = window.setTimeout(() => {
-          setSimulatePulsing(false);
-          simulationPulseTimer.current = null;
-        }, 1200);
-      }
-    },
-    [triggerBuilderAction]
-  );
-
-  const arenaStatusMessage = useMemo(() => {
-    switch (arenaExportStatus) {
-      case "exporting":
-        return "Exporting current build to Component Arena...";
-      case "ready": {
-        if (!lastArenaExport) {
-          return "Component Arena export is ready.";
-        }
-        const exportedTime = lastArenaExport.exportedAt ? new Date(lastArenaExport.exportedAt) : null;
-        const formattedTime = exportedTime && !Number.isNaN(exportedTime.getTime())
-          ? exportedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : null;
-        const componentLabel = typeof lastArenaExport.componentCount === "number"
-          ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-          : null;
-        if (componentLabel && formattedTime) {
-          return `Last arena export: ${componentLabel} - ${formattedTime}`;
-        }
-        if (componentLabel) {
-          return `Last arena export: ${componentLabel}`;
-        }
-        return "Component Arena export is ready.";
-      }
-      case "error":
-        return arenaExportError ?? "Component Arena export failed.";
-      default:
-        return "Send this build to the Component Arena for advanced testing.";
-    }
-  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
-
-  const isArenaSyncing = arenaExportStatus === "exporting";
-  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
-
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
   const builderFrameSrc = useMemo(() => {
@@ -1219,14 +979,6 @@ export default function Builder() {
     return `${normalizedBase}legacy.html?embed=builder`;
   }, []);
   const activeHelpContent = HELP_VIEW_CONTENT[helpView];
-  const layoutModeNames: Record<string, string> = {
-    free: "Free",
-    square: "Square",
-    linear: "Linear",
-  };
-  const normalizedLayoutKey = typeof modeState.layoutMode === "string" ? modeState.layoutMode.toLowerCase() : "";
-  const layoutModeLabel = layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
-  const currentFlowLabel = modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
 
   return (
     <div className="builder-shell">
@@ -1303,37 +1055,20 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Wire Modes</span>
               <div className="slider-stack">
-                {WIRE_TOOL_ACTIONS.map((action) => {
-                  const isWireToggle = action.action === "toggle-wire-mode";
-                  const isRotateToggle = action.action === "toggle-rotate-mode";
-                  const isActionActive = (isWireToggle && modeState.isWireMode) || (isRotateToggle && modeState.isRotateMode);
-                  const description = (() => {
-                    if (isWireToggle) {
-                      return modeState.isWireMode ? "Wire tool active" : "Activate wire mode to sketch connections";
-                    }
-                    if (isRotateToggle) {
-                      return modeState.isRotateMode ? "Rotate mode active" : "Rotate the active component";
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(action.action, action.data)}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={isWireToggle || isRotateToggle ? isActionActive : undefined}
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
+                {WIRE_TOOL_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{action.description}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -1368,82 +1103,39 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
               <div className="slider-stack">
-                {CURRENT_MODE_ACTIONS.map((action) => {
-                  const isFlowToggle = action.action === "toggle-current-flow";
-                  const isPolarityToggle = action.action === "toggle-polarity";
-                  const isLayoutCycle = action.action === "cycle-layout";
-                  const isActionActive = isFlowToggle
-                    ? modeState.currentFlowStyle === "solid"
-                    : isPolarityToggle
-                    ? modeState.showPolarityIndicators
-                    : false;
-
-                  const description = (() => {
-                    if (isFlowToggle) {
-                      return `${currentFlowLabel} visualisation active`;
-                    }
-                    if (isPolarityToggle) {
-                      return modeState.showPolarityIndicators ? "Polarity markers visible" : "Polarity markers hidden";
-                    }
-                    if (isLayoutCycle) {
-                      return `Current layout: ${layoutModeLabel}`;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(action.action, action.data)}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={isFlowToggle || isPolarityToggle ? isActionActive : undefined}
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
+                {CURRENT_MODE_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{action.description}</span>
+                  </button>
+                ))}
               </div>
             </div>
             <div className="slider-section">
               <span className="slider-heading">View</span>
               <div className="slider-stack">
-                {VIEW_CONTROL_ACTIONS.map((action) => {
-                  const isGridToggle = action.action === "toggle-grid";
-                  const isLabelToggle = action.action === "toggle-labels";
-                  const isActionActive = (isGridToggle && modeState.showGrid) || (isLabelToggle && modeState.showLabels);
-                  const description = (() => {
-                    if (isGridToggle) {
-                      return modeState.showGrid ? "Grid visible" : "Grid hidden";
-                    }
-                    if (isLabelToggle) {
-                      return modeState.showLabels ? "Labels shown" : "Labels hidden";
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(action.action, action.data)}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={isGridToggle || isLabelToggle ? isActionActive : undefined}
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
+                {VIEW_CONTROL_ACTIONS.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                  >
+                    <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{action.description}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -1479,35 +1171,15 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Practice</span>
               <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {arenaStatusMessage}
-                </div>
                 {PRACTICE_ACTIONS.map((action) => (
                   <button
                     key={action.id}
                     type="button"
                     className="slider-chip"
-                    onClick={() => handlePracticeAction(action)}
-                    disabled={controlsDisabled || (action.action === "open-arena" && isArenaSyncing)}
-                    aria-disabled={controlsDisabled || (action.action === "open-arena" && isArenaSyncing)}
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : action.action === "open-arena" && isArenaSyncing
-                        ? "Preparing Component Arena export?"
-                        : action.description
-                    }
+                    onClick={() => triggerBuilderAction(action.action, action.data)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={controlsDisabled ? controlDisabledTitle : action.description}
                   >
                     <span className="slider-chip-label">{action.label}</span>
                   </button>
@@ -1525,20 +1197,6 @@ export default function Builder() {
                     <span className="slider-chip-label">{scenario.label}</span>
                   </button>
                 ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openLastArenaSession}
-                  disabled={!canOpenLastArena}
-                  aria-disabled={!canOpenLastArena}
-                  title={
-                    canOpenLastArena
-                      ? "Open the most recent Component Arena export"
-                      : "Run a Component Arena export first"
-                  }
-                >
-                  <span className="slider-chip-label">Open Last Arena Run</span>
-                </button>
               </div>
             </div>
             <div className="slider-section">
