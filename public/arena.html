@@ -196,6 +196,78 @@
       background: rgba(12, 22, 42, 0.65);
     }
 
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-header .section-heading {
+      margin: 0;
+    }
+
+    .panel-subtext {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(148, 163, 184, 0.85);
+    }
+
+    .chip-btn {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(136, 204, 255, 0.35);
+      background: rgba(12, 22, 42, 0.4);
+      color: var(--text-strong);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .chip-btn:hover {
+      background: rgba(24, 32, 48, 0.6);
+      border-color: rgba(136, 204, 255, 0.5);
+    }
+
+    .import-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .import-tag {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(12, 22, 42, 0.65);
+      border: 1px solid rgba(136, 204, 255, 0.18);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.85);
+    }
+
+    .summary-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .summary-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: rgba(148, 163, 184, 0.85);
+      border-bottom: 1px solid rgba(136, 204, 255, 0.12);
+      padding-bottom: 4px;
+    }
+
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -295,9 +367,9 @@
 </head>
 <body>
   <div class="hud">
-    <button class="btn" id="btn-reset">Reset</button>
-    <button class="btn" id="btn-run">Run Test</button>
-    <button class="btn" id="btn-export">Export Results</button>
+    <button class="btn" id="btn-reset" data-command="reset">Reset</button>
+    <button class="btn" id="btn-run" data-command="run-test">Run Test</button>
+    <button class="btn" id="btn-export" data-command="export">Export Results</button>
     <button class="btn" id="btn-import-builder">Load Builder Export</button>
     <label class="btn file-btn">
       Import JSON
@@ -307,8 +379,12 @@
   <div class="panel">
     <div class="panel-scroll">
       <section class="panel-section">
-        <div class="section-heading">Import Sources</div>
-        <div id="import-status" class="import-status">Using reference component library. Load a builder export to sync live components.</div>
+        <div class="panel-header">
+          <div class="section-heading">Import Sources</div>
+          <button class="chip-btn" id="reload-import" type="button">Reload</button>
+        </div>
+        <div id="import-status" class="import-status panel-subtext">Using reference component library. Load a builder export to sync live components.</div>
+        <div class="import-tags" id="import-tags"></div>
         <div class="row">
           <label for="mode">Mode</label>
           <select id="mode">
@@ -316,6 +392,10 @@
             <option value="compare">Compare (A vs B)</option>
           </select>
         </div>
+      </section>
+      <section class="panel-section" id="component-summary-section">
+        <div class="section-heading">Component Summary</div>
+        <ul class="summary-list" id="component-summary"></ul>
       </section>
       <section class="panel-section">
         <div class="section-heading">Component Selection</div>
@@ -400,6 +480,8 @@
         importManifest: null,
         lastRun: null,
       };
+
+      const ARENA_STORAGE_KEY = "circuiTry3d.arena.import";
 
       const STORAGE_KEYS = {
         prefix: "circuitry:arena-session:",
@@ -511,6 +593,9 @@
           metadata: { displayName: "SW1", source: "Reference Library" },
         },
       ];
+
+      const importTagsElement = document.getElementById("import-tags");
+      const componentSummaryElement = document.getElementById("component-summary");
 
       let scene;
       let camera;
@@ -1172,6 +1257,7 @@
           .filter(Boolean);
         state.selectedA = state.components[0] || null;
         state.selectedB = state.components.length > 1 ? state.components[1] : state.components[0] || null;
+        renderImportSummary(buildSummaryFromComponents(state.components));
       }
 
       function registerEvents() {
@@ -1243,6 +1329,25 @@
             input.addEventListener("change", readTestVariables);
             input.addEventListener("blur", readTestVariables);
           }
+        });
+
+        const reloadBtn = document.getElementById("reload-import");
+        if (reloadBtn) {
+          reloadBtn.addEventListener("click", () => {
+            const payload = loadArenaPayloadFromStorage({ announce: true });
+            if (!payload) {
+              setStatus("No builder snapshot found. Sync from the builder to populate real components.");
+            }
+          });
+        }
+
+        document.querySelectorAll("[data-command]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const command = button.getAttribute("data-command");
+            if (command) {
+              handleCommand(command);
+            }
+          });
         });
       }
 
@@ -1344,6 +1449,71 @@
         element.textContent = message;
       }
 
+      function buildSummaryFromComponents(components) {
+        if (!Array.isArray(components) || !components.length) {
+          return null;
+        }
+        const byType = components.reduce((acc, component) => {
+          const key = component.type || "unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        return {
+          totalComponents: components.length,
+          totalWires: 0,
+          totalJunctions: 0,
+          byType,
+        };
+      }
+
+      function renderImportSummary(summary) {
+        if (importTagsElement) {
+          importTagsElement.innerHTML = "";
+        }
+        if (componentSummaryElement) {
+          componentSummaryElement.innerHTML = "";
+        }
+
+        const resolved = summary || buildSummaryFromComponents(state.components);
+        if (!resolved) {
+          return;
+        }
+
+        const chips = [
+          ["Components", resolved.totalComponents ?? resolved.componentCount],
+          ["Wires", resolved.totalWires ?? resolved.wireCount],
+          ["Junctions", resolved.totalJunctions ?? resolved.junctionCount],
+        ];
+
+        if (importTagsElement) {
+          chips.forEach(([label, value]) => {
+            if (typeof value === "number" && Number.isFinite(value)) {
+              const tag = document.createElement("span");
+              tag.className = "import-tag";
+              tag.textContent = `${label}: ${value}`;
+              importTagsElement.appendChild(tag);
+            }
+          });
+        }
+
+        const byType = resolved.byType || resolved.componentsByType;
+        if (componentSummaryElement && byType && typeof byType === "object") {
+          Object.entries(byType)
+            .filter((entry) => typeof entry[1] === "number" && Number.isFinite(entry[1]))
+            .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+            .forEach(([type, count]) => {
+              const li = document.createElement("li");
+              const label = document.createElement("span");
+              label.textContent = String(type);
+              const value = document.createElement("span");
+              value.textContent = String(count);
+              li.appendChild(label);
+              li.appendChild(value);
+              componentSummaryElement.appendChild(li);
+            });
+        }
+      }
+
       function updateImportStatus() {
         if (state.importManifest) {
           const manifest = state.importManifest;
@@ -1354,8 +1524,10 @@
           setImportStatus(
             `${manifest.label} - ${manifest.componentCount} component${manifest.componentCount === 1 ? "" : "s"} - ${manifest.sourceName || "unknown source"} - ${exportedLabel}`
           );
+          renderImportSummary(manifest.summary || null);
         } else {
           setImportStatus("Using reference component library. Load a builder export to sync live components.");
+          renderImportSummary(null);
         }
       }
 
@@ -1405,6 +1577,31 @@
         });
       }
 
+      function loadArenaPayloadFromStorage({ announce = false } = {}) {
+        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
+          return null;
+        }
+        let payload = null;
+        try {
+          payload = parseArenaPayload(window.localStorage.getItem(ARENA_STORAGE_KEY));
+        } catch (error) {
+          console.warn("Arena: unable to read quick import payload", error);
+          payload = null;
+        }
+
+        if (!payload) {
+          return null;
+        }
+
+        const applied = applyArenaPayload(payload, { source: payload.source || "builder", label: payload.label || "Builder Snapshot" });
+        if (applied && announce) {
+          setStatus("Reloaded builder snapshot.");
+        } else if (!applied && announce) {
+          setStatus("Unable to load builder snapshot.");
+        }
+        return applied ? payload : null;
+      }
+
       function loadSessionFromUrl() {
         const url = new URL(window.location.href);
         const sessionId = url.searchParams.get("session");
@@ -1417,6 +1614,21 @@
           return false;
         }
         return applyImportEnvelope(envelope, { sessionId, label: envelope.payload?.sessionName || "Builder Export", source: "builder" });
+      }
+
+      function parseArenaPayload(value) {
+        if (!value) {
+          return null;
+        }
+        try {
+          const payload = JSON.parse(value);
+          if (payload && typeof payload === "object") {
+            return payload;
+          }
+        } catch (error) {
+          console.warn("Arena: failed to parse import payload", error);
+        }
+        return null;
       }
 
       function applyImportEnvelope(envelope, options) {
@@ -1445,7 +1657,8 @@
           sourceName: (payload.source && (payload.source.name || payload.source.type)) || options?.source || "import",
           componentCount: normalized.length,
           wireCount: Array.isArray(payload.wires) ? payload.wires.length : 0,
-          metrics: payload.analysis || null,
+          metrics: payload.analysis || payload.metrics || null,
+          summary: payload.summary || null,
         };
 
         populateComponentSelectors();
@@ -1453,6 +1666,57 @@
         updateImportStatus();
         setStatus("Loaded component set from import.");
         return true;
+      }
+
+      function applyArenaPayload(payload, options = {}) {
+        if (!payload || typeof payload !== "object") {
+          return false;
+        }
+
+        const fromPayload = (candidate, fallback) => {
+          if (Array.isArray(candidate)) {
+            return candidate;
+          }
+          if (fallback && Array.isArray(fallback)) {
+            return fallback;
+          }
+          return [];
+        };
+
+        const components = fromPayload(payload.components, payload.state?.components);
+        const wires = fromPayload(payload.wires, payload.state?.wires);
+        const junctions = fromPayload(payload.junctions, payload.state?.junctions);
+
+        const envelope = {
+          sessionId: options.sessionId || payload.sessionId || null,
+          exportedAt: payload.generatedAt ? new Date(payload.generatedAt).toISOString() : payload.exportedAt || null,
+          payload: {
+            components,
+            wires,
+            junctions,
+            analysis: payload.metrics || payload.analysis || null,
+            metrics: payload.metrics || null,
+            summary: payload.summary || null,
+            sessionName: payload.label || payload.sessionName || options.label || "Builder Snapshot",
+            source: typeof payload.source === "object" && payload.source !== null
+              ? payload.source
+              : { name: String(payload.source || options.source || "builder") },
+            testVariables: payload.testVariables || null,
+            state: payload.state || { components },
+          },
+        };
+
+        const applied = applyImportEnvelope(envelope, options);
+        if (applied && payload.metrics && state.importManifest) {
+          state.importManifest.metrics = payload.metrics;
+        }
+        if (applied && payload.summary && state.importManifest) {
+          state.importManifest.summary = payload.summary;
+        }
+        if (applied && payload.generatedAt && state.importManifest) {
+          state.importManifest.exportedAt = new Date(payload.generatedAt).toISOString();
+        }
+        return applied;
       }
 
       function handleFileImport(event) {
@@ -1797,6 +2061,22 @@
         updateCompareVisibility();
       }
 
+      function handleCommand(command) {
+        switch (command) {
+          case "reset":
+            resetArena();
+            break;
+          case "run-test":
+            runTest();
+            break;
+          case "export":
+            exportResults();
+            break;
+          default:
+            break;
+        }
+      }
+
       function resetArena() {
         const groupA = ensureComponentGroup("A", state.selectedA);
         if (groupA) {
@@ -1902,12 +2182,47 @@
         if (!loadedFromUrl) {
           const loadedBuilder = loadLatestBuilderExport();
           if (!loadedBuilder) {
-            updateImportStatus();
+            const quickPayload = loadArenaPayloadFromStorage();
+            if (!quickPayload) {
+              updateImportStatus();
+            }
           }
         }
 
         updateMeshesForSelection();
       }
+
+      window.addEventListener("message", (event) => {
+        const { data } = event;
+        if (!data || typeof data !== "object") {
+          return;
+        }
+        if (data.type === "arena:import") {
+          applyArenaPayload(data.payload, {
+            source: data.payload?.source || "bridge",
+            label: data.payload?.label || data.payload?.sessionName || "Builder Snapshot",
+          });
+        } else if (data.type === "arena:command" && data.payload && data.payload.command) {
+          handleCommand(data.payload.command);
+        }
+      });
+
+      window.addEventListener("storage", (event) => {
+        if (event.key !== ARENA_STORAGE_KEY) {
+          return;
+        }
+        const payload = parseArenaPayload(event.newValue);
+        if (!payload) {
+          return;
+        }
+        const applied = applyArenaPayload(payload, {
+          source: payload.source || "builder",
+          label: payload.label || payload.sessionName || "Builder Snapshot",
+        });
+        if (applied) {
+          setStatus("Synced builder snapshot from storage.");
+        }
+      });
 
       bootstrap();
     })();
