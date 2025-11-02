@@ -2643,6 +2643,7 @@
                 const body = document.body;
                 if (body) {
                     body.classList.add("embedded");
+                    body.classList.remove("menu-visible");
                 }
                 const hiddenIds = [
                     "menu-bar",
@@ -2671,7 +2672,8 @@
         let isWireMode = false, isRotateMode = false, wireStart = null;
         let isDragging = false, selectedComponent = null;
         let currentFlowParticles = [];
-        let menuVisible = true, analysisVisible = true;
+        let menuVisible = isEmbedded ? false : true;
+        let analysisVisible = isEmbedded ? false : true;
 
         const isAndroidDevice =
             (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "")) ||
