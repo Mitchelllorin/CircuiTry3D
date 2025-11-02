@@ -46,25 +46,18 @@
         }
 
         .landing-logo {
-            font-size: clamp(48px, 12vw, 92px);
-            font-weight: 900;
-            letter-spacing: -2px;
             margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .logo-circui {
-            color: #00ff88;
-            text-shadow: 0 0 12px rgba(0, 255, 136, 0.6), 0 0 24px rgba(0, 136, 255, 0.22);
-        }
-
-        .logo-try {
-            color: #ff8800;
-            text-shadow: 0 0 12px rgba(255, 136, 0, 0.6), 0 0 24px rgba(255, 255, 255, 0.2);
-        }
-
-        .logo-3d {
-            color: #00ff88;
-            text-shadow: 0 0 12px rgba(0, 255, 136, 0.6), 0 0 20px rgba(0, 255, 200, 0.3);
+        .landing-logo-image {
+            width: clamp(140px, 40vw, 200px);
+            aspect-ratio: 1 / 1;
+            border-radius: 36px;
+            display: block;
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.45), 0 0 32px rgba(0, 136, 255, 0.28);
         }
 
         .logo-pulse {
@@ -83,6 +76,17 @@
             }
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
         .landing-subtitle {
             margin: 0;
             font-size: clamp(14px, 3vw, 18px);
@@ -92,10 +96,10 @@
         }
 
         .circuit-preview {
-            width: min(90vw, 420px);
-            height: 190px;
+            width: min(82vw, 340px);
+            aspect-ratio: 1 / 1;
             border: 3px solid rgba(0, 255, 136, 0.85);
-            border-radius: 24px;
+            border-radius: 28px;
             background: rgba(5, 14, 28, 0.7);
             position: relative;
             overflow: hidden;
@@ -120,73 +124,30 @@
             }
         }
 
-        .circuit-svg {
-            width: 320px;
-            height: 140px;
+        .square-logo {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 0 16px rgba(0, 255, 150, 0.2));
         }
 
-        .circuit-wire {
-            stroke: #66bbff;
-            stroke-width: 2.2;
+        .photon-overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .photon-overlay path {
             fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .circuit-component {
-            stroke: #00ff88;
-            stroke-width: 2.6;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .circuit-battery-line {
-            stroke-width: 3.1;
-        }
-
-        .circuit-node {
-            fill: #00ff88;
-            filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.6));
-        }
-
-        .circuit-text {
-            fill: rgba(210, 234, 255, 0.95);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-        }
-
-        .circuit-label {
-            fill: rgba(200, 235, 255, 0.9);
-        }
-
-        .circuit-value {
-            fill: rgba(255, 214, 102, 0.92);
-            font-size: 10px;
-            font-weight: 500;
-            letter-spacing: 0.04em;
         }
 
         .circuit-photon {
             fill: #ffe066;
-            filter: drop-shadow(0 0 10px rgba(255, 224, 102, 0.75));
-        }
-
-        .photon-orbit {
-            transform-box: fill-box;
-            transform-origin: 180px 90px;
-            animation: photonOrbit 5.8s linear infinite;
-        }
-
-        .photon-orbit.photon-delay {
-            animation-delay: -2.9s;
-        }
-
-        @keyframes photonOrbit {
-            to {
-                transform: rotate(360deg);
-            }
+            filter: drop-shadow(0 0 12px rgba(255, 224, 102, 0.75));
         }
 
         .landing-actions {
@@ -346,61 +307,27 @@
 <body>
     <div class="landing-page">
         <h1 class="landing-logo logo-pulse">
-            <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
+            <span class="sr-only">CircuiTry3D</span>
+            <img src="circuit-logo.png" alt="" aria-hidden="true" class="landing-logo-image" />
         </h1>
         <p class="landing-subtitle">Professional Circuit Design</p>
 
         <div class="circuit-preview" aria-hidden="true">
-            <svg class="circuit-svg" viewBox="0 0 360 180" role="presentation">
-                <g>
-                    <path class="circuit-wire" d="M 100 60 H 150" />
-                    <path class="circuit-wire" d="M 230 60 H 300" />
-                    <path class="circuit-wire" d="M 300 60 V 80" />
-                    <path class="circuit-wire" d="M 150 120 H 252" />
-                    <path class="circuit-wire" d="M 100 120 H 150" />
-                    <path class="circuit-wire" d="M 100 60 V 76" />
-                    <path class="circuit-wire" d="M 100 104 V 120" />
-                </g>
-
-                <path class="circuit-component" d="M 150 60 l 10 -12 l 10 12 l 10 -12 l 10 12 l 10 -12 l 10 12 l 10 -12 l 10 12" />
-
-                <g>
-                    <line class="circuit-component circuit-battery-line" x1="84" y1="76" x2="116" y2="76" />
-                    <line class="circuit-component" x1="90" y1="104" x2="110" y2="104" />
-                </g>
-
-                <g>
-                    <circle class="circuit-node" cx="252" cy="120" r="4" />
-                    <circle class="circuit-node" cx="300" cy="80" r="4" />
-                    <path class="circuit-component" d="M 252 120 L 300 80" />
-                    <path class="circuit-wire" d="M 300 80 V 60" />
-                </g>
-
-                <g>
-                    <circle class="circuit-node" cx="100" cy="60" r="3.2" />
-                    <circle class="circuit-node" cx="100" cy="120" r="3.2" />
-                    <circle class="circuit-node" cx="150" cy="60" r="3.2" />
-                    <circle class="circuit-node" cx="230" cy="60" r="3.2" />
-                    <circle class="circuit-node" cx="300" cy="60" r="3.2" />
-                </g>
-
-                <text class="circuit-text circuit-label" x="190" y="36" text-anchor="middle">R1</text>
-                <text class="circuit-text circuit-value" x="190" y="52" text-anchor="middle">220 ohm</text>
-
-                <text class="circuit-text circuit-label" x="122" y="92">B1</text>
-                <text class="circuit-text circuit-value" x="122" y="108">12V</text>
-                <text class="circuit-text circuit-value" x="86" y="74">+</text>
-                <text class="circuit-text circuit-value" x="86" y="114">-</text>
-
-                <text class="circuit-text circuit-label" x="308" y="72">SW1</text>
-                <text class="circuit-text circuit-value" x="308" y="88">OPEN</text>
-
-                <g class="photon-orbit">
-                    <circle class="circuit-photon" cx="180" cy="18" r="4.4" />
-                </g>
-                <g class="photon-orbit photon-delay">
-                    <circle class="circuit-photon" cx="180" cy="162" r="4.4" />
-                </g>
+            <img src="circuit-logo.png" alt="CircuiTry3D circuit logo" class="square-logo" />
+            <svg class="photon-overlay" viewBox="0 0 512 512" role="presentation" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                    <path id="photon-path" d="M 126 209 H 384 V 297 H 126 Z" />
+                </defs>
+                <circle class="circuit-photon" r="7">
+                    <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#photon-path" xlink:href="#photon-path" />
+                    </animateMotion>
+                </circle>
+                <circle class="circuit-photon" r="7">
+                    <animateMotion dur="6s" begin="-3s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#photon-path" xlink:href="#photon-path" />
+                    </animateMotion>
+                </circle>
             </svg>
         </div>
 
