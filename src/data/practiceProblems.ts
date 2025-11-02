@@ -14,6 +14,7 @@ const practiceProblems: PracticeProblem[] = [
     targetQuestion: "What is the total current flowing through the series loop?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
+    diagram: "seriesSquare",
     source: {
       id: "battery",
       label: "Battery",
@@ -109,6 +110,7 @@ const practiceProblems: PracticeProblem[] = [
     targetQuestion: "What is the total equivalent resistance of the three parallel branches?",
     targetMetric: { componentId: "totals", key: "resistance" },
     conceptTags: ["parallel", "kirchhoff", "ohms-law"],
+    diagram: "parallelSquare",
     source: {
       id: "supply",
       label: "DC Supply",
@@ -193,6 +195,7 @@ const practiceProblems: PracticeProblem[] = [
     targetQuestion: "What current flows through branch R2?",
     targetMetric: { componentId: "R2", key: "current" },
     conceptTags: ["combination", "series", "parallel", "ohms-law", "kirchhoff"],
+    diagram: "comboSquare",
     source: {
       id: "source",
       label: "Source",
