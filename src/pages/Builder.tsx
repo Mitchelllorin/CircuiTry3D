@@ -1375,6 +1375,15 @@ export default function Builder() {
     [postToBuilder]
   );
 
+  const openHelpCenter = useCallback(
+    (view: HelpModalView = "overview", sectionTitle?: string) => {
+      setHelpView(view);
+      setHelpOpen(true);
+      setRequestedHelpSection(view === "overview" ? sectionTitle ?? null : null);
+    },
+    []
+  );
+
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
@@ -1397,15 +1406,6 @@ export default function Builder() {
     const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(lastArenaExport.sessionId)}`;
     window.open(targetUrl, "_blank", "noopener");
   }, [appBasePath, lastArenaExport]);
-
-  const openHelpCenter = useCallback(
-    (view: HelpModalView = "overview", sectionTitle?: string) => {
-      setHelpView(view);
-      setHelpOpen(true);
-      setRequestedHelpSection(view === "overview" ? sectionTitle ?? null : null);
-    },
-    []
-  );
 
   const updateLogoSetting = useCallback((key: keyof BuilderLogoSettings, value: number) => {
     setLogoSettings((previous) => {
