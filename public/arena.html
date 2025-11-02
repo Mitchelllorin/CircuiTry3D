@@ -34,41 +34,65 @@
     body {
       margin: 0;
       height: 100%;
-      background: #0a0a1a;
+      background: radial-gradient(ellipse at top, #1e1b4b 0%, #020617 55%, #010413 100%);
       color: var(--text-strong);
       font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
       padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+      box-sizing: border-box;
       overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% -10%, rgba(14, 165, 233, 0.28), transparent 55%),
+        radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.25), transparent 52%),
+        radial-gradient(circle at 20% 80%, rgba(244, 63, 94, 0.2), transparent 60%);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    #arena {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
     }
 
     .hud {
       position: fixed;
-      top: calc(12px + var(--safe-top));
-      left: calc(12px + var(--safe-left));
-      right: calc(12px + var(--safe-right));
+      top: calc(16px + var(--safe-top));
+      left: calc(16px + var(--safe-left));
+      right: calc(16px + var(--safe-right));
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
-      z-index: 10;
+      align-items: center;
+      z-index: 3;
     }
 
     .btn {
-      padding: 10px 16px;
-      border-radius: 10px;
-      border: 1px solid rgba(51, 65, 85, 0.9);
-      background: rgba(17, 24, 39, 0.88);
-      color: var(--text-strong);
-      font-weight: 600;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(94, 234, 212, 0.45);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      font-weight: 700;
       cursor: pointer;
       touch-action: manipulation;
+      letter-spacing: 0.01em;
       font-size: 14px;
-      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 0 0 rgba(34, 211, 238, 0);
     }
 
     .btn:hover {
-      border-color: var(--panel-border-strong);
-      background: rgba(24, 32, 48, 0.92);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(34, 211, 238, 0.25);
     }
 
     .btn:disabled {
@@ -91,21 +115,22 @@
 
     .panel {
       position: fixed;
-      top: calc(72px + var(--safe-top));
-      left: calc(12px + var(--safe-left));
+      top: calc(80px + var(--safe-top));
+      left: calc(16px + var(--safe-left));
       width: 340px;
-      max-width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
-      max-height: calc(100vh - 96px - var(--safe-top) - var(--safe-bottom));
-      background: var(--panel-bg);
-      backdrop-filter: blur(14px);
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
+      max-width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
+      max-height: calc(100vh - 110px - var(--safe-top) - var(--safe-bottom));
+      background: rgba(10, 12, 28, 0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-radius: 16px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
       overflow: hidden;
-      z-index: 8;
+      z-index: 4;
+      box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.45);
     }
 
     .panel-scroll {
@@ -225,12 +250,13 @@
 
     .stat {
       font-size: 12px;
-      color: rgba(148, 163, 184, 0.9);
-      background: rgba(12, 22, 42, 0.55);
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(136, 204, 255, 0.18);
-      min-height: 40px;
+      color: rgba(129, 140, 248, 0.95);
+      background: rgba(30, 64, 175, 0.25);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      letter-spacing: 0.02em;
+      min-height: 44px;
     }
 
     canvas {
@@ -246,9 +272,9 @@
 
     @media (pointer: coarse) {
       .btn {
-        min-height: 48px;
-        font-size: 15px;
-        padding: 12px 18px;
+        min-height: 52px;
+        padding: 14px 22px;
+        font-size: 16px;
       }
 
       .row label {
@@ -257,11 +283,11 @@
 
       .row input,
       .row select {
-        min-height: 44px;
+        min-height: 46px;
       }
 
       .panel {
-        width: calc(100vw - 24px - var(--safe-left) - var(--safe-right));
+        width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
         max-width: none;
       }
     }
@@ -334,11 +360,11 @@
         </div>
       </section>
       <section class="panel-section">
-        <div class="section-heading">Metrics — Component A</div>
+        <div class="section-heading">Metrics ? Component A</div>
         <div id="metrics-a" class="metric-grid"></div>
       </section>
       <section class="panel-section compare-only">
-        <div class="section-heading">Metrics — Component B</div>
+        <div class="section-heading">Metrics ? Component B</div>
         <div id="metrics-b" class="metric-grid"></div>
       </section>
       <section class="panel-section compare-only">
@@ -431,15 +457,14 @@
         },
       };
 
-      const COMPONENT_COLORS = {
-        battery: 0xffd166,
-        resistor: 0x88ccff,
-        capacitor: 0x5eead4,
-        inductor: 0xa855f7,
-        led: 0xff4d6d,
-        switch: 0x2dd4bf,
-        default: 0xb4c6ef,
-        secondary: 0xffa500,
+      const COMPONENT_PALETTES = {
+        battery: { base: 0xf97316, glow: 0xffedd5, orbit: 0xf59e0b, accent: 0x1f2937 },
+        resistor: { base: 0xf97316, glow: 0xffedd5, orbit: 0xfb923c, band: 0xfacc15 },
+        capacitor: { base: 0x38bdf8, glow: 0x22d3ee, orbit: 0x0ea5e9, accent: 0xffffff },
+        inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
+        led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
+        switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x0ea5e9, accent: 0x0d9488 },
+        default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8 },
       };
 
       const DEFAULT_COMPONENT_CATALOG = [
@@ -490,60 +515,637 @@
       let scene;
       let camera;
       let renderer;
-      let meshA;
-      let meshB;
+      let componentGroupA;
+      let componentGroupB;
+      let energyRing;
+      let pulseRing;
+      let particles;
+      let clock;
+
+      const particleSpeeds = [];
+      const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
 
       function initThree() {
         const canvas = document.getElementById("arena");
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a1a);
+        scene.background = new THREE.Color(0x050716);
+        scene.fog = new THREE.Fog(0x050716, 14, 36);
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 2, 6);
+        camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2.8, 7.6);
 
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
 
-        const light = new THREE.DirectionalLight(0xffffff, 1.2);
-        light.position.set(2, 4, 2);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040, 0.6));
+        clock = new THREE.Clock();
 
-        meshA = createComponentMesh(COMPONENT_COLORS.resistor);
-        meshA.position.set(-1.2, 0, 0);
-        scene.add(meshA);
+        addLights();
+        addStageElements();
+        addParticles();
 
-        meshB = createComponentMesh(COMPONENT_COLORS.secondary);
-        meshB.position.set(1.2, 0, 0);
-        meshB.visible = false;
-        scene.add(meshB);
+        componentGroupA = buildComponent("resistor", 100, true);
+        componentGroupA.position.x = COMPONENT_POSITIONS.A;
+        energizeComponent(componentGroupA, 0.24);
+        scene.add(componentGroupA);
 
-        window.addEventListener("resize", () => {
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        componentGroupB = buildComponent("resistor", 100, false);
+        componentGroupB.position.x = COMPONENT_POSITIONS.B;
+        componentGroupB.visible = false;
+        energizeComponent(componentGroupB, 0.24);
+        scene.add(componentGroupB);
+
+        window.addEventListener("resize", handleResize);
 
         animate();
       }
 
-      function createComponentMesh(colorHex) {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: colorHex });
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.userData.baseColor = colorHex;
-        return mesh;
+      function handleResize() {
+        if (!camera || !renderer) {
+          return;
+        }
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function addLights() {
+        const hemi = new THREE.HemisphereLight(0x4c86ff, 0x050716, 0.7);
+        scene.add(hemi);
+
+        const key = new THREE.SpotLight(0x8b5cf6, 2.1, 40, Math.PI / 5, 0.7, 1.3);
+        key.position.set(-6, 9, 6);
+        scene.add(key);
+        scene.add(key.target);
+        key.target.position.set(0, 0, 0);
+
+        const fill = new THREE.SpotLight(0x38bdf8, 1.8, 40, Math.PI / 5, 0.7, 1.1);
+        fill.position.set(7, 7, 2);
+        scene.add(fill);
+        scene.add(fill.target);
+        fill.target.position.set(0, 0, 0);
+
+        const rim = new THREE.DirectionalLight(0x22d3ee, 0.7);
+        rim.position.set(0, 6, -6);
+        scene.add(rim);
+
+        const uplight = new THREE.PointLight(0xfacc15, 0.8, 12, 2);
+        uplight.position.set(0, -0.2, 0);
+        scene.add(uplight);
+      }
+
+      function addStageElements() {
+        const grid = new THREE.GridHelper(28, 56, 0x1d4ed8, 0x14b8a6);
+        grid.position.y = -1.6;
+        grid.material.transparent = true;
+        grid.material.opacity = 0.2;
+        grid.material.depthWrite = false;
+        scene.add(grid);
+
+        const platform = new THREE.Mesh(
+          new THREE.CylinderGeometry(3.8, 3.8, 0.45, 72),
+          new THREE.MeshStandardMaterial({
+            color: 0x0b1220,
+            metalness: 0.45,
+            roughness: 0.35,
+            emissive: 0x0ea5e9,
+            emissiveIntensity: 0.24,
+          })
+        );
+        platform.position.y = -0.6;
+        scene.add(platform);
+
+        const innerGlow = new THREE.Mesh(
+          new THREE.CircleGeometry(2.6, 72),
+          new THREE.MeshBasicMaterial({
+            color: 0x1d4ed8,
+            transparent: true,
+            opacity: 0.45,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        innerGlow.rotation.x = -Math.PI / 2;
+        innerGlow.position.y = -0.37;
+        scene.add(innerGlow);
+
+        energyRing = new THREE.Mesh(
+          new THREE.TorusGeometry(3.2, 0.08, 24, 220),
+          new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.55,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        energyRing.rotation.x = Math.PI / 2;
+        energyRing.position.y = -0.28;
+        scene.add(energyRing);
+
+        pulseRing = new THREE.Mesh(
+          new THREE.RingGeometry(2.2, 2.45, 72),
+          new THREE.MeshBasicMaterial({
+            color: 0xfacc15,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        pulseRing.rotation.x = Math.PI / 2;
+        pulseRing.position.y = -0.32;
+        pulseRing.userData = { life: 0, strength: 0 };
+        scene.add(pulseRing);
+      }
+
+      function addParticles() {
+        const particleCount = 420;
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+          positions[i * 3] = (Math.random() - 0.5) * 16;
+          positions[i * 3 + 1] = Math.random() * 5.5 + 0.3;
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+          particleSpeeds.push(Math.random() * 0.7 + 0.25);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+          color: 0x60a5fa,
+          size: 0.07,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        particles = new THREE.Points(geometry, material);
+        particles.frustumCulled = false;
+        scene.add(particles);
+      }
+
+      function buildComponent(type, nominalValue, isPrimary) {
+        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES.default;
+        const group = new THREE.Group();
+        group.userData = {
+          palette,
+          componentType: type,
+          energy: 0.3,
+          bobOffset: Math.random() * Math.PI * 2,
+          baseScale: computeScale(nominalValue),
+          nominalValue,
+        };
+
+        const material = new THREE.MeshStandardMaterial({
+          color: palette.base,
+          metalness: 0.35,
+          roughness: 0.28,
+          emissive: palette.glow,
+          emissiveIntensity: 0.35,
+        });
+
+        let core;
+        switch (type) {
+          case "resistor": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.5), material);
+            const leadGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.9, 20);
+            const leadMaterial = new THREE.MeshStandardMaterial({
+              color: 0xbcd0ff,
+              metalness: 0.85,
+              roughness: 0.25,
+              emissive: 0x1e293b,
+              emissiveIntensity: 0.1,
+            });
+            const leadL = new THREE.Mesh(leadGeometry, leadMaterial);
+            leadL.position.x = -1.05;
+            leadL.rotation.z = Math.PI / 2;
+            const leadR = leadL.clone();
+            leadR.position.x = 1.05;
+            group.add(leadL, leadR);
+
+            const bandMaterial = new THREE.MeshStandardMaterial({
+              color: palette.band || 0xfacc15,
+              metalness: 0.45,
+              roughness: 0.35,
+              emissive: palette.band || palette.glow,
+              emissiveIntensity: 0.22,
+            });
+            [-0.35, 0, 0.35].forEach((offset) => {
+              const band = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.58), bandMaterial);
+              band.position.x = offset;
+              group.add(band);
+            });
+            break;
+          }
+          case "capacitor": {
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.2, 48), material);
+            const capTopMat = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0xffffff,
+              metalness: 0.9,
+              roughness: 0.18,
+              emissive: palette.glow,
+              emissiveIntensity: 0.12,
+            });
+            const top = new THREE.Mesh(new THREE.CircleGeometry(0.55, 48), capTopMat);
+            top.rotation.x = Math.PI / 2;
+            top.position.y = 0.6;
+            const bottom = top.clone();
+            bottom.position.y = -0.6;
+            bottom.rotation.x = -Math.PI / 2;
+            group.add(top, bottom);
+
+            const leadMaterial = new THREE.MeshStandardMaterial({
+              color: 0x86efac,
+              metalness: 0.6,
+              roughness: 0.45,
+            });
+            const leadGeometry = new THREE.CylinderGeometry(0.045, 0.045, 1.4, 16);
+            const lead1 = new THREE.Mesh(leadGeometry, leadMaterial);
+            lead1.position.set(-0.2, -1.1, 0);
+            const lead2 = lead1.clone();
+            lead2.position.x = 0.2;
+            group.add(lead1, lead2);
+            break;
+          }
+          case "inductor": {
+            core = new THREE.Mesh(new THREE.TorusKnotGeometry(0.55, 0.16, 100, 18, 2, 3), material);
+            break;
+          }
+          case "led": {
+            core = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.2, 36, 1, true), material);
+            core.position.y = 0.35;
+            const bulb = new THREE.Mesh(
+              new THREE.SphereGeometry(0.38, 36, 36),
+              new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: palette.glow,
+                emissiveIntensity: 0.85,
+                metalness: 0.1,
+                roughness: 0.08,
+                transparent: true,
+                opacity: 0.75,
+              })
+            );
+            bulb.position.y = 0.65;
+            group.add(bulb);
+
+            const base = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.26, 0.32, 0.28, 32),
+              new THREE.MeshStandardMaterial({
+                color: 0x1f2937,
+                metalness: 0.75,
+                roughness: 0.42,
+              })
+            );
+            base.position.y = -0.35;
+            group.add(base);
+
+            const legGeometry = new THREE.CylinderGeometry(0.045, 0.045, 1.35, 16);
+            const legMaterial = new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.9,
+              roughness: 0.25,
+            });
+            const leg1 = new THREE.Mesh(legGeometry, legMaterial);
+            leg1.position.set(-0.14, -1.05, 0);
+            const leg2 = leg1.clone();
+            leg2.position.x = 0.14;
+            group.add(leg1, leg2);
+            break;
+          }
+          case "battery": {
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, 1.2, 48), material);
+            const capMaterial = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0xffffff,
+              metalness: 0.85,
+              roughness: 0.2,
+              emissive: palette.glow,
+              emissiveIntensity: 0.18,
+            });
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.18, 32), capMaterial);
+            cap.position.y = 0.69;
+            const terminal = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.22, 24), capMaterial);
+            terminal.position.y = 0.84;
+            group.add(cap, terminal);
+            break;
+          }
+          case "switch": {
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 0.8), material);
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(1.4, 0.1, 1),
+              new THREE.MeshStandardMaterial({
+                color: palette.accent || 0x0f766e,
+                metalness: 0.4,
+                roughness: 0.35,
+                emissive: palette.glow,
+                emissiveIntensity: 0.12,
+              })
+            );
+            base.position.y = -0.25;
+            const lever = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.04, 0.9, 24),
+              new THREE.MeshStandardMaterial({
+                color: palette.glow,
+                metalness: 0.9,
+                roughness: 0.3,
+              })
+            );
+            lever.position.set(0, 0.45, 0);
+            lever.rotation.z = -Math.PI / 6;
+            group.add(base, lever);
+            break;
+          }
+          default: {
+            core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
+            break;
+          }
+        }
+
+        group.add(core);
+        group.userData.core = core;
+
+        const halo = new THREE.Mesh(
+          new THREE.SphereGeometry(0.95, 32, 32),
+          new THREE.MeshBasicMaterial({
+            color: palette.glow,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          })
+        );
+        group.add(halo);
+        group.userData.halo = halo;
+
+        const orbiters = [];
+        for (let i = 0; i < 3; i++) {
+          const orb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.12 + i * 0.03, 18, 18),
+            new THREE.MeshBasicMaterial({
+              color: palette.orbit,
+              transparent: true,
+              opacity: 0.78 - i * 0.2,
+              depthWrite: false,
+              blending: THREE.AdditiveBlending,
+            })
+          );
+          orb.userData = {
+            radius: 0.95 + i * 0.22,
+            height: 0.28 + i * 0.16,
+            speed: 0.7 + i * 0.42,
+          };
+          orbiters.push(orb);
+          group.add(orb);
+        }
+        group.userData.orbiters = orbiters;
+
+        group.scale.setScalar(group.userData.baseScale);
+        group.position.y = 0.25;
+
+        if (isPrimary) {
+          const badge = new THREE.Mesh(
+            new THREE.CircleGeometry(0.44, 32),
+            new THREE.MeshBasicMaterial({
+              color: 0x22d3ee,
+              transparent: true,
+              opacity: 0.4,
+              depthWrite: false,
+            })
+          );
+          badge.rotation.x = -Math.PI / 2;
+          badge.position.set(0, -0.68, 0);
+          group.add(badge);
+        }
+
+        return group;
+      }
+
+      function computeScale(value) {
+        if (!Number.isFinite(value) || value <= 0) {
+          return 1;
+        }
+        const scaled = Math.log10(value + 10) / 3;
+        return THREE.MathUtils.clamp(0.75 + scaled, 0.7, 2.3);
+      }
+
+      function rebuildComponentGroup(slot, type, nominalValue) {
+        const isPrimary = slot === "A";
+        const current = isPrimary ? componentGroupA : componentGroupB;
+        if (current) {
+          scene.remove(current);
+          disposeGroup(current);
+        }
+
+        const nextGroup = buildComponent(type, nominalValue, isPrimary);
+        nextGroup.position.x = COMPONENT_POSITIONS[slot];
+        nextGroup.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
+        scene.add(nextGroup);
+
+        if (isPrimary) {
+          componentGroupA = nextGroup;
+        } else {
+          componentGroupB = nextGroup;
+        }
+
+        return nextGroup;
+      }
+
+      function ensureComponentGroup(slot, component) {
+        const isPrimary = slot === "A";
+        const current = isPrimary ? componentGroupA : componentGroupB;
+
+        if (!component) {
+          if (current) {
+            current.visible = false;
+          }
+          return current || null;
+        }
+
+        const paletteKey = component.type && COMPONENT_PALETTES[component.type]
+          ? component.type
+          : "default";
+        const nominalValue = extractNominalValue(component);
+        const baseScale = computeScale(nominalValue);
+
+        let group = current;
+        if (!group || group.userData.componentType !== paletteKey) {
+          group = rebuildComponentGroup(slot, paletteKey, nominalValue);
+        } else {
+          group.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
+          group.userData.baseScale = baseScale;
+          group.scale.setScalar(group.userData.baseScale);
+        }
+
+        group.userData.nominalValue = nominalValue;
+        group.userData.componentType = paletteKey;
+        group.userData.bobOffset = group.userData.bobOffset ?? Math.random() * Math.PI * 2;
+        return group;
+      }
+
+      function disposeGroup(group) {
+        group.traverse((child) => {
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
       }
 
       function animate() {
         requestAnimationFrame(animate);
-        if (meshA) {
-          meshA.rotation.y += 0.01;
+        if (!clock) {
+          renderer.render(scene, camera);
+          return;
         }
-        if (meshB && meshB.visible) {
-          meshB.rotation.y -= 0.01;
+
+        const delta = clock.getDelta();
+        const elapsed = clock.elapsedTime;
+
+        updateComponentAnimation(componentGroupA, elapsed, delta);
+        if (componentGroupB && componentGroupB.visible) {
+          updateComponentAnimation(componentGroupB, elapsed + 0.6, delta);
         }
+
+        if (energyRing) {
+          energyRing.rotation.z += delta * 0.55;
+          const energyLevel = Math.max(
+            componentGroupA ? componentGroupA.userData.energy || 0 : 0,
+            componentGroupB && componentGroupB.visible ? componentGroupB.userData.energy || 0 : 0,
+          );
+          energyRing.material.opacity = 0.35 + energyLevel * 0.35;
+          const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04 + energyLevel * 0.12;
+          energyRing.scale.setScalar(pulse);
+        }
+
+        if (pulseRing && pulseRing.userData.life > 0) {
+          pulseRing.userData.life -= delta * 0.9;
+          const life = Math.max(pulseRing.userData.life, 0);
+          pulseRing.material.opacity = life * pulseRing.userData.strength;
+          const scale = 1 + (1 - life) * (1.4 + pulseRing.userData.strength * 1.2);
+          pulseRing.scale.setScalar(scale);
+        }
+
+        animateParticles(delta);
+
         renderer.render(scene, camera);
+      }
+
+      function updateComponentAnimation(group, elapsed, delta) {
+        if (!group) {
+          return;
+        }
+        const energy = group.userData.energy || 0.25;
+        group.rotation.y += delta * (0.8 + energy * 2.8);
+        group.rotation.x = Math.sin(elapsed * 0.8 + group.userData.bobOffset) * 0.2;
+        group.position.y = 0.25 + Math.sin(elapsed * 1.6 + group.userData.bobOffset) * (0.12 + energy * 0.12);
+        (group.userData.orbiters || []).forEach((orb, idx) => {
+          const data = orb.userData;
+          const angle = elapsed * (data.speed + energy) + idx * Math.PI * 0.75;
+          orb.position.set(
+            Math.cos(angle) * data.radius,
+            data.height + Math.sin(angle * 1.8) * 0.12,
+            Math.sin(angle) * data.radius,
+          );
+        });
+      }
+
+      function animateParticles(delta) {
+        if (!particles) {
+          return;
+        }
+        const positions = particles.geometry.getAttribute("position");
+        for (let i = 0; i < particleSpeeds.length; i++) {
+          positions.array[i * 3 + 1] += particleSpeeds[i] * delta;
+          if (positions.array[i * 3 + 1] > 7) {
+            positions.array[i * 3] = (Math.random() - 0.5) * 16;
+            positions.array[i * 3 + 1] = Math.random() * 2;
+            positions.array[i * 3 + 2] = (Math.random() - 0.5) * 16;
+          }
+        }
+        positions.needsUpdate = true;
+      }
+
+      function triggerPulse(intensity) {
+        if (!pulseRing) {
+          return;
+        }
+        pulseRing.userData.life = 1;
+        pulseRing.userData.strength = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
+        pulseRing.scale.setScalar(1);
+      }
+
+      function energizeComponent(group, energy) {
+        if (!group) {
+          return;
+        }
+        group.userData.energy = energy;
+        const core = group.userData.core;
+        if (core && core.material) {
+          core.material.emissiveIntensity = 0.3 + energy * 1.2;
+        }
+        group.scale.setScalar(group.userData.baseScale * (0.9 + energy * 0.45));
+        if (group.userData.halo) {
+          group.userData.halo.material.opacity = 0.22 + energy * 0.5;
+          group.userData.halo.scale.setScalar(1 + energy * 0.8);
+        }
+      }
+
+      function computeVisualEnergy(component, metrics) {
+        if (!component) {
+          return 0.24;
+        }
+        const fallback = Math.abs(extractNominalValue(component)) || 0.1;
+        if (!metrics) {
+          return THREE.MathUtils.clamp(Math.log10(fallback + 1.5) / 2.5, 0.18, 1);
+        }
+        const values = [
+          metrics.powerDissipation,
+          metrics.currentRms,
+          metrics.impedance,
+          metrics.storedEnergy,
+          metrics.energyDelivered,
+          metrics.thermalRise,
+        ];
+        let magnitude = Math.abs(fallback);
+        values.forEach((value) => {
+          if (Number.isFinite(value)) {
+            magnitude = Math.max(magnitude, Math.abs(value));
+          }
+        });
+        const normalized = Math.log10(magnitude + 1.5) / 2.5;
+        return THREE.MathUtils.clamp(normalized, 0.18, 1);
+      }
+
+      function extractNominalValue(component) {
+        if (!component) {
+          return 1;
+        }
+        const props = component.properties || {};
+        const candidates = [
+          props.resistance,
+          props.capacitance,
+          props.inductance,
+          props.forwardVoltage,
+          props.voltage,
+          props.internalResistance,
+          props.onResistance,
+          props.seriesResistance,
+          props.capacityMah,
+        ];
+        for (const value of candidates) {
+          if (typeof value === "number" && Number.isFinite(value) && value !== 0) {
+            return Math.abs(value);
+          }
+        }
+        return 1;
       }
 
       function normalizeComponent(raw, sourceLabel) {
@@ -691,28 +1293,21 @@
         document.querySelectorAll(".compare-only").forEach((element) => {
           element.style.display = compare ? "" : "none";
         });
-        if (!compare) {
-          meshB.visible = false;
-        } else {
-          meshB.visible = Boolean(state.selectedB);
+        if (componentGroupB) {
+          componentGroupB.visible = compare && Boolean(state.selectedB);
         }
       }
 
       function updateMeshesForSelection() {
-        if (meshA) {
-          const colorA = COMPONENT_COLORS[state.selectedA?.type] || COMPONENT_COLORS.default;
-          meshA.material.color.setHex(colorA);
-          meshA.visible = Boolean(state.selectedA);
-          meshA.material.emissive.setHex(0x000000);
-          meshA.scale.set(1, 1, 1);
+        const groupA = ensureComponentGroup("A", state.selectedA);
+        if (groupA) {
+          energizeComponent(groupA, 0.24);
         }
-        if (meshB) {
-          const colorB = COMPONENT_COLORS[state.selectedB?.type] || COMPONENT_COLORS.secondary;
-          meshB.material.color.setHex(colorB);
-          meshB.visible = state.mode === "compare" && Boolean(state.selectedB);
-          meshB.material.emissive.setHex(0x000000);
-          meshB.scale.set(1, 1, 1);
+        const groupB = ensureComponentGroup("B", state.selectedB);
+        if (groupB) {
+          energizeComponent(groupB, 0.24);
         }
+        updateCompareVisibility();
       }
 
       function readTestVariables() {
@@ -1176,37 +1771,46 @@
       }
 
       function updateMeshesForMetrics(metricsA, metricsB) {
-        const applyMetrics = (mesh, metrics) => {
-          if (!mesh) {
-            return;
-          }
-          mesh.material.emissive.setHex(0x000000);
-          mesh.scale.set(1, 1, 1);
-          if (!metrics) {
-            return;
-          }
-          const scaleBoost = Math.min(Math.max(metrics.powerDissipation || 0, 0) / 10, 0.6);
-          const scale = 1 + scaleBoost;
-          mesh.scale.set(scale, scale, scale);
-          const thermal = Math.min(Math.max(metrics.thermalRise || 0, 0), 120) / 120;
-          mesh.material.emissive.setRGB(thermal * 0.9, thermal * 0.3, 0.1);
-        };
+        const groupA = ensureComponentGroup("A", state.selectedA);
+        const groupB = ensureComponentGroup("B", state.selectedB);
 
-        applyMetrics(meshA, metricsA);
-        applyMetrics(meshB, metricsB);
+        let energyA = 0.24;
+        let energyB = 0.24;
+
+        if (groupA) {
+          energyA = computeVisualEnergy(state.selectedA, metricsA);
+          energizeComponent(groupA, energyA);
+        }
+
+        if (groupB) {
+          if (state.mode === "compare" && state.selectedB && metricsB) {
+            energyB = computeVisualEnergy(state.selectedB, metricsB);
+            energizeComponent(groupB, energyB);
+            groupB.visible = true;
+          } else {
+            energizeComponent(groupB, 0.2);
+            groupB.visible = false;
+          }
+        }
+
+        triggerPulse(Math.max(energyA, energyB));
+        updateCompareVisibility();
       }
 
       function resetArena() {
-        if (meshA) {
-          meshA.rotation.set(0, 0, 0);
-          meshA.scale.set(1, 1, 1);
-          meshA.material.emissive.setHex(0x000000);
+        const groupA = ensureComponentGroup("A", state.selectedA);
+        if (groupA) {
+          groupA.rotation.set(0, 0, 0);
+          energizeComponent(groupA, 0.24);
         }
-        if (meshB) {
-          meshB.rotation.set(0, 0, 0);
-          meshB.scale.set(1, 1, 1);
-          meshB.material.emissive.setHex(0x000000);
+        const groupB = ensureComponentGroup("B", state.selectedB);
+        if (groupB) {
+          groupB.rotation.set(0, 0, 0);
+          energizeComponent(groupB, 0.24);
         }
+        updateCompareVisibility();
+        triggerPulse(0.3);
+
         state.lastRun = null;
         renderMetricGrid("metrics-a", null);
         renderMetricGrid("metrics-b", null);
@@ -1232,7 +1836,7 @@
 
       function formatWithUnit(value, unit) {
         if (!Number.isFinite(value)) {
-          return "—";
+          return "?";
         }
         const abs = Math.abs(value);
         let scaled = value;
@@ -1257,7 +1861,7 @@
 
       function formatPercent(value) {
         if (!Number.isFinite(value)) {
-          return "—";
+          return "?";
         }
         const rounded = value.toFixed(1);
         const sign = value > 0 ? "+" : "";
@@ -1266,7 +1870,7 @@
 
       function formatAngle(value) {
         if (!Number.isFinite(value)) {
-          return "—";
+          return "?";
         }
         return `${value.toFixed(1)} deg`;
       }
