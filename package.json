@@ -12,15 +12,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mitchelllorin/Circuitry3D.git"
+    "url": "git+https://github.com/Mitchelllorin/CircuiTry3D.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Mitchelllorin/Circuitry3D/issues"
+    "url": "https://github.com/Mitchelllorin/CircuiTry3D/issues"
   },
-  "homepage": "https://github.com/Mitchelllorin/Circuitry3D#readme",
+  "homepage": "https://github.com/Mitchelllorin/CircuiTry3D#readme",
   "type": "module",
   "private": true,
   "engines": {

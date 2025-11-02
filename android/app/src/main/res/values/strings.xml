@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Circuitry 3D</string>
-    <string name="title_activity_main">Circuitry 3D</string>
+    <string name="app_name">CircuiTry3D</string>
+    <string name="title_activity_main">CircuiTry3D</string>
     <string name="package_name">com.circuitry3d.app</string>
     <string name="custom_url_scheme">com.circuitry3d.app</string>
 </resources>

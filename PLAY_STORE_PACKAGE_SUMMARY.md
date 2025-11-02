@@ -1,15 +1,15 @@
-# Circuitry 3D - Play Store Submission Package
+# CircuiTry3D - Play Store Submission Package
 
 ## 📦 Package Contents
 
-This repository now contains everything needed to submit Circuitry 3D to the Google Play Store.
+This repository now contains everything needed to submit CircuiTry3D to the Google Play Store.
 
 ---
 
 ## 📂 Directory Structure
 
 ```
-Circuitry3D/
+CircuiTry3D/
 ├── android/                           # Android project (Capacitor-generated)
 │   ├── app/
 │   │   ├── src/main/
@@ -157,7 +157,7 @@ Before submitting to Google Play Store:
 
 ## 📊 App Information Summary
 
-**App Name:** Circuitry 3D  
+**App Name:** CircuiTry3D  
 **Package Name:** com.circuitry3d.app  
 **Version:** 1.0.0 (versionCode: 1)  
 **Target SDK:** Android 14 (API 35)  
@@ -238,7 +238,7 @@ All data is encrypted in transit and at rest. Users can request deletion.
 - [Play Store Policies](https://play.google.com/about/developer-content-policy/)
 
 ### Contact
-- **GitHub:** https://github.com/Mitchelllorin/Circuitry 3D
+- **GitHub:** https://github.com/Mitchelllorin/CircuiTry3D
 - **Email:** support@circuitry3d.app (placeholder - update with real email)
 
 ---
@@ -298,4 +298,4 @@ Follow the `PLAY_STORE_SUBMISSION_GUIDE.md` for detailed step-by-step instructio
 
 **Document Version:** 1.0  
 **Created:** October 25, 2025  
-**Project:** Circuitry 3D Android App
+**Project:** CircuiTry3D Android App

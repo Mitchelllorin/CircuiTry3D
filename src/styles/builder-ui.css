@@ -10,6 +10,7 @@
   --builder-green: #00ff88;
   --builder-orange: #ff8800;
   --builder-cyan: #88ccff;
+  --builder-blue: #2fb4ff;
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
@@ -74,13 +75,8 @@ body.builder-body {
 }
 
 .builder-logo-3d {
-  color: var(--builder-green);
+  color: var(--builder-blue);
   letter-spacing: 0.18em;
-}
-
-.builder-logo-space {
-  width: 0.36em;
-  display: inline-block;
 }
 
 @keyframes builderLogoPulse {

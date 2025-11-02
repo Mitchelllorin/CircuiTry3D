@@ -1,6 +1,6 @@
-# Circuitry 3D - Google Play Store Submission Guide
+# CircuiTry3D - Google Play Store Submission Guide
 
-This guide provides complete step-by-step instructions for submitting Circuitry 3D to the Google Play Store.
+This guide provides complete step-by-step instructions for submitting CircuiTry3D to the Google Play Store.
 
 ## 📋 Prerequisites
 
@@ -53,7 +53,7 @@ Before you begin, ensure you have:
 
 1. **Navigate to the Android directory:**
    ```bash
-   cd /home/runner/work/Circuitry3D/Circuitry3D/android
+   cd /home/runner/work/CircuiTry3D/CircuiTry3D/android
    ```
 
 2. **Build the release AAB:**
@@ -138,7 +138,7 @@ All required assets are provided in the `play-store-assets/` directory:
 
 2. **Create New App:**
    - Click "Create app"
-   - App name: `Circuitry 3D`
+   - App name: `CircuiTry3D`
    - Default language: `English (United States)`
    - App type: `App`
    - Free or paid: `Free` (or select "Paid" if applicable)
@@ -194,7 +194,7 @@ All required assets are provided in the `play-store-assets/` directory:
 
 **App name:**
 ```
-Circuitry 3D
+CircuiTry3D
 ```
 
 **Short description (80 characters max):**
@@ -288,7 +288,7 @@ Circuitry 3D
 
 16. **Add Release Notes:**
     ```
-    Initial release of Circuitry 3D
+    Initial release of CircuiTry3D
     
     Features:
     - 3D interactive circuit builder
@@ -502,9 +502,9 @@ After launch, track these metrics in Play Console:
 - [App Bundle Guide](https://developer.android.com/guide/app-bundle)
 - [Data Safety Guide](https://support.google.com/googleplay/android-developer/answer/10787469)
 
-### Circuitry 3D Support
+### CircuiTry3D Support
 - Email: support@circuitry3d.app
-- GitHub: https://github.com/Mitchelllorin/Circuitry 3D
+- GitHub: https://github.com/Mitchelllorin/CircuiTry3D
 
 ### Google Play Support
 - [Submit a support ticket](https://support.google.com/googleplay/android-developer/answer/7218994)
@@ -536,7 +536,7 @@ Use this checklist to ensure you've completed all steps:
 
 ## 🎉 Success!
 
-Congratulations on preparing Circuitry 3D for Google Play Store! 
+Congratulations on preparing CircuiTry3D for Google Play Store! 
 
 Remember:
 - First review may take 1-7 days
@@ -551,4 +551,4 @@ Remember:
 
 **Document Version:** 1.0  
 **Last Updated:** October 25, 2025  
-**Author:** Circuitry 3D Development Team
+**Author:** CircuiTry3D Development Team

@@ -1,4 +1,4 @@
-# Circuitry 3D - Play Store Submission Checklist
+# CircuiTry3D - Play Store Submission Checklist
 
 Use this checklist to track your progress through the submission process.
 
@@ -73,7 +73,7 @@ Use this checklist to track your progress through the submission process.
 
 - [ ] Go to Google Play Console: https://play.google.com/console
 - [ ] Click "Create app"
-- [ ] Enter app name: `Circuitry 3D`
+- [ ] Enter app name: `CircuiTry3D`
 - [ ] Select default language: `English (United States)`
 - [ ] Select app type: `App`
 - [ ] Select free or paid: `Free` (or Paid if applicable)
@@ -112,7 +112,7 @@ Use this checklist to track your progress through the submission process.
 ### Phase 8: Complete Store Listing
 
 - [ ] Navigate to "Main store listing"
-- [ ] App name: `Circuitry 3D`
+- [ ] App name: `CircuiTry3D`
 - [ ] Short description: Copy from `play-store-assets/metadata/app-description.md`
 - [ ] Full description: Copy from `play-store-assets/metadata/app-description.md`
 - [ ] Upload app icon: `play-store-assets/icons/app-icon-512.png`
@@ -159,7 +159,7 @@ Use this checklist to track your progress through the submission process.
 - [ ] Review any warnings (address critical ones)
 - [ ] Add release notes:
   ```
-  Initial release of Circuitry 3D
+  Initial release of CircuiTry3D
   
   Features:
   - 3D interactive circuit builder

@@ -1,4 +1,4 @@
-# Circuitry 3D - Data Safety Section
+# CircuiTry3D - Data Safety Section
 
 This document provides the information needed to fill out the Data Safety section in Google Play Console.
 
