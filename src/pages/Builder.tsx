@@ -1958,7 +1958,7 @@ export default function Builder() {
                   className="slider-chip"
                   onClick={() => {
                     if (typeof window !== "undefined") {
-                      const targetUrl = `${appBasePath}practice`;
+                      const targetUrl = `${appBasePath}#/practice`;
                       window.open(targetUrl, "_blank", "noopener");
                     }
                   }}

@@ -179,21 +179,106 @@
   padding: 16px 20px;
 }
 
+.target-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
 .target-card .target-icon {
   width: 42px;
   height: 42px;
   border-radius: 12px;
   background: rgba(136, 204, 255, 0.18);
+  border: 1px solid rgba(136, 204, 255, 0.28);
   display: grid;
   place-items: center;
+  padding: 0;
   font-size: 1.4rem;
   color: #8ecaff;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.target-card .target-icon:hover,
+.target-card .target-icon:focus-visible {
+  background: rgba(136, 204, 255, 0.28);
+  border-color: rgba(160, 220, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(136, 204, 255, 0.18);
+  outline: none;
 }
 
 .target-answer {
   font-size: 1.1rem;
   font-weight: 600;
   color: #c7ecff;
+}
+
+.practice-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 260px;
+  max-width: calc(100vw - 64px);
+  background: rgba(8, 18, 36, 0.95);
+  border: 1px solid rgba(136, 204, 255, 0.42);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 18px 36px rgba(12, 28, 58, 0.48);
+  z-index: 12;
+  display: grid;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.practice-popover--right {
+  left: auto;
+  right: 0;
+}
+
+.practice-popover strong {
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fdcff;
+}
+
+.practice-popover p {
+  margin: 0;
+  color: rgba(216, 236, 255, 0.85);
+}
+
+.practice-popover ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: rgba(210, 232, 255, 0.85);
+}
+
+.practice-popover li {
+  list-style: disc;
+}
+
+.practice-popover-close {
+  justify-self: start;
+  background: rgba(14, 34, 68, 0.8);
+  border: 1px solid rgba(136, 204, 255, 0.38);
+  border-radius: 10px;
+  padding: 6px 12px;
+  color: #cfe8ff;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.practice-popover-close:hover,
+.practice-popover-close:focus-visible {
+  background: rgba(24, 54, 96, 0.88);
+  border-color: rgba(160, 220, 255, 0.6);
+  outline: none;
 }
 
 .diagram-card {
@@ -242,12 +327,43 @@
   display: grid;
   gap: 6px;
   transition: border-color 0.2s ease, background 0.2s ease;
+  position: relative;
 }
 
 .worksheet-status-banner[data-complete="true"] {
   background: rgba(28, 94, 122, 0.68);
   border-color: rgba(108, 228, 204, 0.56);
   box-shadow: 0 0 24px rgba(80, 220, 200, 0.24);
+}
+
+.worksheet-status-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.worksheet-icon-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.36);
+  background: rgba(18, 40, 78, 0.82);
+  color: #b4e2ff;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.worksheet-icon-button:hover,
+.worksheet-icon-button:focus-visible {
+  background: rgba(36, 72, 126, 0.9);
+  border-color: rgba(160, 220, 255, 0.58);
+  box-shadow: 0 0 0 2px rgba(136, 204, 255, 0.18);
+  outline: none;
 }
 
 .worksheet-status-banner strong {
