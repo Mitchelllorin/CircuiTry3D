@@ -16,6 +16,63 @@ const WIRE_HIT_RADIUS = 10; // px - detect clicks on existing wire segments
 const ROUTING_GRID_SIZE = 24; // px - grid cell size for routing mode
 const MIN_WIRE_LENGTH = 1; // px - ignore jitter-sized wires
 
+const CANVAS_COLORS = {
+  backgroundTop: "#040d20",
+  backgroundMid: "#081b35",
+  backgroundBottom: "#030d1e",
+  gridMinor: "rgba(132, 186, 255, 0.09)",
+  gridMajor: "rgba(0, 255, 180, 0.16)",
+  ambientCore: "rgba(0, 210, 255, 0.14)",
+  ambientMid: "rgba(0, 160, 220, 0.08)",
+  ambientEdge: "rgba(0, 0, 0, 0)",
+  vignette: "rgba(3, 10, 24, 0.72)",
+  wireShadow: "rgba(2, 10, 20, 0.85)",
+  wireGlow: "rgba(38, 212, 255, 0.5)",
+  wireGlowActive: "rgba(60, 255, 220, 0.75)",
+  wireCoreStart: "#9bf5ff",
+  wireCoreMid: "#19ffc9",
+  wireCoreEnd: "#9bf5ff",
+  previewGlow: "rgba(255, 172, 64, 0.65)",
+  previewCore: "rgba(255, 230, 195, 0.95)",
+  hoveredWirePulse: "rgba(60, 255, 220, 0.6)",
+} as const;
+
+type NodeVisualStyle = {
+  radius: number;
+  center: string;
+  mid: string;
+  edge: string;
+  stroke: string;
+  glow: string;
+};
+
+const NODE_STYLE: Record<Node['type'], NodeVisualStyle> = {
+  componentPin: {
+    radius: 5.8,
+    center: "#ffffff",
+    mid: "#afffe8",
+    edge: "#16e4b3",
+    stroke: "#d5fff1",
+    glow: "rgba(46, 255, 190, 0.78)",
+  },
+  junction: {
+    radius: 6.3,
+    center: "#fff3e4",
+    mid: "#ffc17f",
+    edge: "#ff7a2f",
+    stroke: "#ffe1c5",
+    glow: "rgba(255, 166, 80, 0.78)",
+  },
+  wireAnchor: {
+    radius: 5.1,
+    center: "#f6fbff",
+    mid: "#a8d9ff",
+    edge: "#3aa5ff",
+    stroke: "#d6ebff",
+    glow: "rgba(122, 198, 255, 0.72)",
+  },
+} as const;
+
 export type WireMode = 'free' | 'schematic' | 'star' | 'routing';
 
 interface WireDrawerProps {
@@ -440,85 +497,318 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
    */
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Draw existing wires
-    ctx.strokeStyle = '#60a5fa';
-    ctx.lineWidth = 2;
-    
-    for (const wire of wires) {
-      if (wire.points.length < 2) continue;
-      
-      ctx.beginPath();
-      ctx.moveTo(wire.points[0].x, wire.points[0].y);
-      
-      for (let i = 1; i < wire.points.length; i++) {
-        ctx.lineTo(wire.points[i].x, wire.points[i].y);
-      }
-      
-      ctx.stroke();
-    }
-    
-    // Draw nodes
-    for (const node of nodes) {
-      const radius = node.type === 'junction' ? 4 : 3;
-      
-      ctx.beginPath();
-      ctx.arc(node.pos.x, node.pos.y, radius, 0, 2 * Math.PI);
-      
-      if (node === hoveredNode) {
-        ctx.fillStyle = '#fbbf24';
-      } else if (node.type === 'junction') {
-        ctx.fillStyle = '#ef4444';
-      } else if (node.type === 'componentPin') {
-        ctx.fillStyle = '#22c55e';
-      } else {
-        ctx.fillStyle = '#94a3b8';
-      }
-      
-      ctx.fill();
-    }
-    
-    // Draw current wire being drawn
-    if (isDrawing && currentWire.length > 0) {
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
-      
-      ctx.beginPath();
-      ctx.moveTo(currentWire[0].x, currentWire[0].y);
-      
-      for (let i = 1; i < currentWire.length; i++) {
-        ctx.lineTo(currentWire[i].x, currentWire[i].y);
-      }
-      
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    
-    // Draw snap target indicator
-    if (hoveredNode) {
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(hoveredNode.pos.x, hoveredNode.pos.y, 8, 0, 2 * Math.PI);
-      ctx.stroke();
+    if (!canvas) {
+      return;
     }
 
-    if (hoveredWireInfo) {
-      ctx.strokeStyle = '#34d399';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(hoveredWireInfo.point.x, hoveredWireInfo.point.y, 6, 0, 2 * Math.PI);
-      ctx.stroke();
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
     }
-  }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height]);
+
+    const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+    const displayWidth = width;
+    const displayHeight = height;
+    const scaledWidth = Math.round(displayWidth * deviceRatio);
+    const scaledHeight = Math.round(displayHeight * deviceRatio);
+
+    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+      canvas.width = scaledWidth;
+      canvas.height = scaledHeight;
+    }
+
+    if (canvas.style.width !== `${displayWidth}px`) {
+      canvas.style.width = `${displayWidth}px`;
+    }
+    if (canvas.style.height !== `${displayHeight}px`) {
+      canvas.style.height = `${displayHeight}px`;
+    }
+
+    ctx.save();
+    ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    const tracePolyline = (points: Vec2[]) => {
+      if (points.length < 2) {
+        return false;
+      }
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i += 1) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      return true;
+    };
+
+    const drawBackground = () => {
+      const gradient = ctx.createLinearGradient(0, 0, 0, displayHeight);
+      gradient.addColorStop(0, CANVAS_COLORS.backgroundTop);
+      gradient.addColorStop(0.55, CANVAS_COLORS.backgroundMid);
+      gradient.addColorStop(1, CANVAS_COLORS.backgroundBottom);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+      const minorSpacing = ROUTING_GRID_SIZE / 2;
+      const majorSpacing = ROUTING_GRID_SIZE * 2;
+
+      if (minorSpacing >= 1) {
+        ctx.save();
+        ctx.strokeStyle = CANVAS_COLORS.gridMinor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = minorSpacing; x < displayWidth; x += minorSpacing) {
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, displayHeight);
+        }
+        for (let y = minorSpacing; y < displayHeight; y += minorSpacing) {
+          ctx.moveTo(0, y);
+          ctx.lineTo(displayWidth, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.strokeStyle = CANVAS_COLORS.gridMajor;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      for (let x = majorSpacing; x < displayWidth; x += majorSpacing) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, displayHeight);
+      }
+      for (let y = majorSpacing; y < displayHeight; y += majorSpacing) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(displayWidth, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      const ambient = ctx.createRadialGradient(
+        displayWidth * 0.45,
+        displayHeight * 0.38,
+        Math.max(displayWidth, displayHeight) * 0.05,
+        displayWidth * 0.55,
+        displayHeight * 0.58,
+        Math.max(displayWidth, displayHeight) * 0.9
+      );
+      ambient.addColorStop(0, CANVAS_COLORS.ambientCore);
+      ambient.addColorStop(0.55, CANVAS_COLORS.ambientMid);
+      ambient.addColorStop(1, CANVAS_COLORS.ambientEdge);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = ambient;
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+      ctx.restore();
+
+      ctx.save();
+      const vignette = ctx.createRadialGradient(
+        displayWidth / 2,
+        displayHeight / 2,
+        Math.max(displayWidth, displayHeight) * 0.32,
+        displayWidth / 2,
+        displayHeight / 2,
+        Math.max(displayWidth, displayHeight) * 0.78
+      );
+      vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vignette.addColorStop(1, CANVAS_COLORS.vignette);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+      ctx.restore();
+
+      ctx.globalCompositeOperation = 'source-over';
+    };
+
+    const drawWire = (wire: Wire, isHighlighted: boolean) => {
+      if (wire.points.length < 2) {
+        return;
+      }
+
+      const start = wire.points[0];
+      const end = wire.points[wire.points.length - 1];
+      const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+      gradient.addColorStop(0, CANVAS_COLORS.wireCoreStart);
+      gradient.addColorStop(0.5, CANVAS_COLORS.wireCoreMid);
+      gradient.addColorStop(1, CANVAS_COLORS.wireCoreEnd);
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = CANVAS_COLORS.wireShadow;
+      ctx.lineWidth = 6.6;
+      ctx.shadowColor = CANVAS_COLORS.wireShadow;
+      ctx.shadowBlur = 18;
+      tracePolyline(wire.points);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = isHighlighted ? CANVAS_COLORS.wireGlowActive : CANVAS_COLORS.wireGlow;
+      ctx.lineWidth = isHighlighted ? 4.8 : 4.2;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = isHighlighted ? 0.9 : 0.6;
+      ctx.shadowColor = isHighlighted ? CANVAS_COLORS.wireGlowActive : CANVAS_COLORS.wireGlow;
+      ctx.shadowBlur = isHighlighted ? 28 : 18;
+      tracePolyline(wire.points);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = isHighlighted ? 3.6 : 3.2;
+      ctx.globalAlpha = 0.96;
+      tracePolyline(wire.points);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = isHighlighted ? 0.75 : 0.4;
+      tracePolyline(wire.points);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    const drawNode = (node: Node) => {
+      const style = NODE_STYLE[node.type];
+      const isHovered = hoveredNode?.id === node.id;
+      const isSnap = snapTarget?.id === node.id;
+      const radius = style.radius + (isHovered || isSnap ? 1.1 : 0);
+
+      ctx.save();
+      ctx.shadowColor = style.glow;
+      ctx.shadowBlur = isHovered || isSnap ? 24 : 14;
+      const gradient = ctx.createRadialGradient(
+        node.pos.x - radius * 0.35,
+        node.pos.y - radius * 0.35,
+        radius * 0.1,
+        node.pos.x,
+        node.pos.y,
+        radius + 1.4
+      );
+      gradient.addColorStop(0, style.center);
+      gradient.addColorStop(0.45, style.mid);
+      gradient.addColorStop(1, style.edge);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(node.pos.x, node.pos.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = style.stroke;
+      ctx.lineWidth = isHovered || isSnap ? 2 : 1.4;
+      ctx.beginPath();
+      ctx.arc(node.pos.x, node.pos.y, radius + 0.5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.ellipse(
+        node.pos.x - radius * 0.3,
+        node.pos.y - radius * 0.48,
+        radius * 0.45,
+        radius * 0.28,
+        -0.6,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+      ctx.restore();
+
+      if (isSnap) {
+        ctx.save();
+        ctx.lineWidth = 1.6;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = 'rgba(255, 196, 120, 0.9)';
+        ctx.shadowColor = 'rgba(255, 196, 120, 0.65)';
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(node.pos.x, node.pos.y, radius + 5.5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+
+    const drawActiveWire = () => {
+      if (!isDrawing || currentWire.length < 2) {
+        return;
+      }
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.setLineDash([10, 6]);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = CANVAS_COLORS.previewGlow;
+      ctx.lineWidth = 4.4;
+      ctx.shadowColor = CANVAS_COLORS.previewGlow;
+      ctx.shadowBlur = 22;
+      tracePolyline(currentWire);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.setLineDash([10, 6]);
+      ctx.strokeStyle = CANVAS_COLORS.previewCore;
+      ctx.lineWidth = 2.6;
+      ctx.globalAlpha = 0.92;
+      tracePolyline(currentWire);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    const drawHoveredWireCue = () => {
+      if (!hoveredWireInfo) {
+        return;
+      }
+
+      const { point } = hoveredWireInfo;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = CANVAS_COLORS.hoveredWirePulse;
+      ctx.shadowColor = CANVAS_COLORS.hoveredWirePulse;
+      ctx.shadowBlur = 26;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    drawBackground();
+
+    for (const wire of wires) {
+      drawWire(wire, hoveredWireInfo?.wireId === wire.id);
+    }
+
+    for (const node of nodes) {
+      drawNode(node);
+    }
+
+    drawActiveWire();
+    drawHoveredWireCue();
+
+    ctx.restore();
+  }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget]);
 
   return (
     <canvas
@@ -530,7 +820,10 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       onMouseUp={handleMouseUp}
       style={{
         cursor: isDrawing ? 'crosshair' : hoveredNode || hoveredWireInfo ? 'pointer' : 'default',
-        border: '1px solid #374151'
+        borderRadius: '18px',
+        border: '1px solid rgba(136, 204, 255, 0.28)',
+        boxShadow: '0 24px 48px rgba(6, 16, 36, 0.45)',
+        background: 'transparent'
       }}
     />
   );
