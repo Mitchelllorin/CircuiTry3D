@@ -149,7 +149,7 @@ body.builder-body {
   left: calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px));
   flex-direction: row;
   width: var(--builder-menu-toggle-width);
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .builder-menu-stage-left.open {
@@ -185,7 +185,7 @@ body.builder-body {
 }
 
 .builder-menu-stage-left .builder-menu {
-  transform: translateX(-100%);
+  transform: translateX(100%);
   opacity: 0;
 }
 
@@ -255,11 +255,7 @@ body.builder-body {
 }
 
 .builder-menu-toggle-left {
-  align-self: stretch;
-  height: 100%;
-  min-height: 0;
-  justify-content: center;
-  padding: 18px 6px 14px;
+  border-radius: 0 14px 14px 0;
 }
 
 .builder-menu-toggle-bottom {
