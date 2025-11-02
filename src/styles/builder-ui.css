@@ -1260,6 +1260,66 @@ body.builder-body {
   gap: 12px;
 }
 
+.setting-value {
+  font-size: 0.74rem;
+  color: rgba(209, 231, 255, 0.88);
+  min-width: 38px;
+  text-align: right;
+}
+
+.setting-switch {
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 46px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.4);
+  background: rgba(136, 204, 255, 0.25);
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  appearance: none;
+  flex-shrink: 0;
+}
+
+.setting-switch:hover {
+  border-color: rgba(2, 255, 147, 0.6);
+}
+
+.setting-switch:focus {
+  outline: none;
+}
+
+.setting-switch:focus-visible {
+  outline: 2px solid rgba(2, 255, 147, 0.7);
+  outline-offset: 3px;
+}
+
+.setting-switch .setting-switch-handle {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(3, 12, 32, 0.45);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.setting-switch.on {
+  background: rgba(2, 255, 147, 0.35);
+  border-color: rgba(2, 255, 147, 0.78);
+}
+
+.setting-switch.on .setting-switch-handle {
+  transform: translateX(22px);
+  background: #02ff93;
+  box-shadow: 0 4px 12px rgba(2, 255, 147, 0.45);
+}
+
 .setting-input input[type="range"] {
   flex: 1;
   appearance: none;

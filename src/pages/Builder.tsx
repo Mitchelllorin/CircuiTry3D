@@ -209,7 +209,11 @@ type BuilderLogoSettings = {
   travelX: number;
   travelY: number;
   bounce: number;
+  opacity: number;
+  isVisible: boolean;
 };
+
+type LogoNumericSettingKey = "speed" | "travelX" | "travelY" | "bounce" | "opacity";
 
 const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
 const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
@@ -217,6 +221,8 @@ const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
   travelX: 70,
   travelY: 55,
   bounce: 28,
+  opacity: 100,
+  isVisible: true,
 };
 
 const clamp = (value: number, min: number, max: number) => {
@@ -947,6 +953,8 @@ export default function Builder() {
         travelX: clamp(typeof parsed.travelX === "number" ? parsed.travelX : DEFAULT_LOGO_SETTINGS.travelX, 10, 100),
         travelY: clamp(typeof parsed.travelY === "number" ? parsed.travelY : DEFAULT_LOGO_SETTINGS.travelY, 10, 100),
         bounce: clamp(typeof parsed.bounce === "number" ? parsed.bounce : DEFAULT_LOGO_SETTINGS.bounce, 0, 120),
+        opacity: clamp(typeof parsed.opacity === "number" ? parsed.opacity : DEFAULT_LOGO_SETTINGS.opacity, 0, 100),
+        isVisible: typeof parsed.isVisible === "boolean" ? parsed.isVisible : DEFAULT_LOGO_SETTINGS.isVisible,
       };
     } catch {
       return DEFAULT_LOGO_SETTINGS;
@@ -1226,9 +1234,27 @@ export default function Builder() {
       floatingLogoAnimationRef.current = null;
     }
 
-    if (prefersReducedMotion) {
+    const normalizedOpacity = clamp(logoSettings.opacity, 0, 100) / 100;
+
+    if (!logoSettings.isVisible || normalizedOpacity <= 0) {
+      element.style.display = "none";
+      element.style.opacity = "0";
+      element.style.textShadow = "none";
       element.style.transform = "translateX(-50%) translateY(-50%)";
-      element.style.textShadow = "0 0 44px rgba(0, 255, 136, 0.38), 0 0 68px rgba(136, 204, 255, 0.24)";
+      return;
+    }
+
+    element.style.display = "";
+    element.style.opacity = normalizedOpacity.toFixed(2);
+
+    if (prefersReducedMotion) {
+      const staticPrimary = 0.38 * normalizedOpacity;
+      const staticSecondary = 0.24 * normalizedOpacity;
+      element.style.transform = "translateX(-50%) translateY(-50%)";
+      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, staticPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
+        0,
+        staticSecondary
+      ).toFixed(2)})`;
       return;
     }
 
@@ -1275,11 +1301,12 @@ export default function Builder() {
         1
       )}px)) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
 
-      const glowPrimary = 0.34 + Math.sin(angle * 1.7) * 0.12;
-      const glowSecondary = 0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08;
-      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${glowPrimary.toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${glowSecondary.toFixed(
-        2
-      )})`;
+      const glowPrimary = (0.34 + Math.sin(angle * 1.7) * 0.12) * normalizedOpacity;
+      const glowSecondary = (0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08) * normalizedOpacity;
+      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, glowPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
+        0,
+        glowSecondary
+      ).toFixed(2)})`;
 
       frameId = window.requestAnimationFrame(animate);
       floatingLogoAnimationRef.current = frameId;
@@ -1407,7 +1434,7 @@ export default function Builder() {
     window.open(targetUrl, "_blank", "noopener");
   }, [appBasePath, lastArenaExport]);
 
-  const updateLogoSetting = useCallback((key: keyof BuilderLogoSettings, value: number) => {
+  const updateLogoSetting = useCallback((key: LogoNumericSettingKey, value: number) => {
     setLogoSettings((previous) => {
       const nextValue = (() => {
         switch (key) {
@@ -1416,6 +1443,8 @@ export default function Builder() {
           case "travelX":
           case "travelY":
             return clamp(value, 10, 100);
+          case "opacity":
+            return clamp(value, 0, 100);
           case "bounce":
           default:
             return clamp(value, 0, 120);
@@ -1430,6 +1459,16 @@ export default function Builder() {
     });
   }, []);
 
+  const setLogoVisibility = useCallback((visible: boolean) => {
+    setLogoSettings((previous) => {
+      if (previous.isVisible === visible) {
+        return previous;
+      }
+
+      return { ...previous, isVisible: visible };
+    });
+  }, []);
+
   const resetLogoSettings = useCallback(() => {
     setLogoSettings((previous) => {
       const defaults = { ...DEFAULT_LOGO_SETTINGS };
@@ -1437,7 +1476,9 @@ export default function Builder() {
         previous.speed === defaults.speed &&
         previous.travelX === defaults.travelX &&
         previous.travelY === defaults.travelY &&
-        previous.bounce === defaults.bounce
+        previous.bounce === defaults.bounce &&
+        previous.opacity === defaults.opacity &&
+        previous.isVisible === defaults.isVisible
       ) {
         return previous;
       }
@@ -2090,6 +2131,44 @@ export default function Builder() {
         >
           <h3>Logo Motion</h3>
           <p className="builder-logo-settings-description">Fine-tune how the logo drifts across the workspace.</p>
+          <div className="builder-logo-setting">
+            <label id="builder-logo-visible-label" htmlFor="builder-logo-visible">
+              Display logo
+            </label>
+            <div className="setting-input">
+              <button
+                type="button"
+                id="builder-logo-visible"
+                className={`setting-switch${logoSettings.isVisible ? " on" : ""}`}
+                role="switch"
+                aria-checked={logoSettings.isVisible}
+                aria-labelledby="builder-logo-visible-label"
+                onClick={() => setLogoVisibility(!logoSettings.isVisible)}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+              >
+                <span className="setting-switch-handle" aria-hidden="true" />
+              </button>
+              <span className="setting-value">{logoSettings.isVisible ? "On" : "Off"}</span>
+            </div>
+          </div>
+          <div className="builder-logo-setting">
+            <label htmlFor="builder-logo-opacity">Opacity</label>
+            <div className="setting-input">
+              <input
+                id="builder-logo-opacity"
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={logoSettings.opacity}
+                onChange={(event) => updateLogoSetting("opacity", Number(event.target.value))}
+                disabled={prefersReducedMotion}
+                tabIndex={isLogoSettingsOpen ? 0 : -1}
+                aria-valuetext={`${Math.round(logoSettings.opacity)} percent opacity`}
+              />
+              <span className="setting-value">{Math.round(logoSettings.opacity)}%</span>
+            </div>
+          </div>
           <div className="builder-logo-setting">
             <label htmlFor="builder-logo-speed">Orbit duration</label>
             <div className="setting-input">
