@@ -181,8 +181,47 @@ const METRIC_UNIT_MAP: Record<string, string> = {
   operatingtemperature: "C"
 };
 
+const COMPONENT_BADGE_LABELS: Record<string, string> = {
+  battery: "BAT",
+  capacitor: "CAP",
+  controller: "CTL",
+  diode: "DIO",
+  inductor: "IND",
+  led: "LED",
+  module: "MOD",
+  motor: "MTR",
+  resistor: "RES",
+  sensor: "SNS",
+  switch: "SW",
+  transistor: "TRN",
+  generic: "CMP"
+};
+
 function normalisePropertyKey(key: string): string {
   return key.replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function normaliseTypeForClass(type?: string | null): string {
+  if (!type) {
+    return "generic";
+  }
+  const normalised = type.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  return normalised.length > 0 ? normalised : "generic";
+}
+
+function getComponentBadgeLabel(type?: string | null): string {
+  const key = normaliseTypeForClass(type);
+  if (COMPONENT_BADGE_LABELS[key]) {
+    return COMPONENT_BADGE_LABELS[key];
+  }
+  if (type && type.trim().length > 0) {
+    const trimmed = type.trim().toUpperCase();
+    if (trimmed.length <= 3) {
+      return trimmed;
+    }
+    return trimmed.slice(0, 3);
+  }
+  return COMPONENT_BADGE_LABELS.generic;
 }
 
 function scaleNumber(value: number): { scaled: number; prefix: string } {
@@ -520,7 +559,7 @@ function buildComponentProfile(component: ArenaComponent, index: number, uid: st
 
   const descriptiveMetrics = metrics.filter((entry) => entry.numericValue === null);
 
-  const orderedMetrics = [...numericMetrics, ...descriptiveMetrics].slice(0, 8);
+  const orderedMetrics = [...numericMetrics, ...descriptiveMetrics].slice(0, 12);
 
   return {
     uid,
@@ -1170,6 +1209,20 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     return componentProfiles.length > 1 ? componentProfiles[1] : null;
   }, [componentProfiles, showdownSelection.right]);
 
+  const componentAMetricMap = useMemo(
+    () => new Map(componentAProfile?.metrics.map((metric) => [metric.key, metric]) ?? []),
+    [componentAProfile]
+  );
+
+  const componentBMetricMap = useMemo(
+    () => new Map(componentBProfile?.metrics.map((metric) => [metric.key, metric]) ?? []),
+    [componentBProfile]
+  );
+
+  const leftHighlightMetrics = useMemo(() => (componentAProfile ? componentAProfile.metrics.slice(0, 12) : []), [componentAProfile]);
+
+  const rightHighlightMetrics = useMemo(() => (componentBProfile ? componentBProfile.metrics.slice(0, 12) : []), [componentBProfile]);
+
   const comparisonRows = useMemo<ComparisonRow[]>(() => {
     if (!componentAProfile && !componentBProfile) {
       return [];
@@ -1217,6 +1270,13 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const teamAChampion = showdownWinner === "left";
   const teamBChampion = showdownWinner === "right";
   const showdownTie = showdownWinner === "tie";
+  const showdownRoundByKey = useMemo(() => {
+    const map = new Map<string, ShowdownRound>();
+    showdownScore.rounds.forEach((round) => {
+      map.set(round.key, round);
+    });
+    return map;
+  }, [showdownScore.rounds]);
   const leftRecord = useMemo(() => formatShowdownRecord(showdownScore.leftWins, showdownScore.rightWins, showdownScore.ties), [showdownScore.leftWins, showdownScore.rightWins, showdownScore.ties]);
   const rightRecord = useMemo(() => formatShowdownRecord(showdownScore.rightWins, showdownScore.leftWins, showdownScore.ties), [showdownScore.leftWins, showdownScore.rightWins, showdownScore.ties]);
   const topRounds = useMemo(() => showdownScore.rounds.slice(0, 5), [showdownScore]);
@@ -1530,6 +1590,11 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
 
                 <div className="arena-showdown-competitors">
                   <div className={`arena-showdown-team${teamAChampion ? " winner" : showdownTie ? " tie" : ""}`}>
+                    {componentAProfile && (
+                      <div className={`arena-showdown-avatar arena-avatar-${normaliseTypeForClass(componentAProfile.type)}`}>
+                        <span>{getComponentBadgeLabel(componentAProfile.type)}</span>
+                      </div>
+                    )}
                     <span className="arena-showdown-tag">Component A</span>
                     {teamAChampion && <span className="arena-showdown-badge">Champion</span>}
                     {showdownTie && <span className="arena-showdown-badge neutral">Dead Heat</span>}
@@ -1537,9 +1602,42 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                     <span className="arena-showdown-type">{componentAProfile?.type ?? "—"}</span>
                     {componentAProfile?.summary && <p>{componentAProfile.summary}</p>}
                     {hasShowdown && <span className="arena-showdown-record">Record {leftRecord}</span>}
+                    {leftHighlightMetrics.length > 0 && (
+                      <ul className="arena-showdown-statlist">
+                        {leftHighlightMetrics.map((metric) => {
+                          const counterpart = componentBMetricMap.get(metric.key);
+                          const counterpartNumeric = counterpart?.numericValue ?? null;
+                          const round = showdownRoundByKey.get(metric.key);
+                          const hasNumeric = metric.numericValue !== null && counterpartNumeric !== null;
+                          const deltaLabel = hasNumeric ? round?.deltaLabel ?? formatDeltaLabel(metric.label, metric.unit ?? counterpart?.unit ?? null, metric.numericValue, counterpartNumeric) : null;
+                          let statusClass = "";
+                          if (round) {
+                            if (round.winner === "left") {
+                              statusClass = " win";
+                            } else if (round.winner === "right") {
+                              statusClass = " loss";
+                            } else {
+                              statusClass = " tie";
+                            }
+                          }
+                          return (
+                            <li key={`left-${metric.key}`} className={`arena-showdown-stat${statusClass}`}>
+                              <span className="arena-stat-label">{metric.label}</span>
+                              <span className="arena-stat-value">{metric.displayValue}</span>
+                              {deltaLabel && <span className="arena-stat-delta">{deltaLabel}</span>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                   <div className="arena-showdown-versus">VS</div>
                   <div className={`arena-showdown-team${teamBChampion ? " winner" : showdownTie ? " tie" : ""}`}>
+                    {componentBProfile && (
+                      <div className={`arena-showdown-avatar arena-avatar-${normaliseTypeForClass(componentBProfile.type)}`}>
+                        <span>{getComponentBadgeLabel(componentBProfile.type)}</span>
+                      </div>
+                    )}
                     <span className="arena-showdown-tag">Component B</span>
                     {teamBChampion && <span className="arena-showdown-badge">Champion</span>}
                     {showdownTie && <span className="arena-showdown-badge neutral">Dead Heat</span>}
@@ -1547,6 +1645,34 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                     <span className="arena-showdown-type">{componentBProfile?.type ?? "—"}</span>
                     {componentBProfile?.summary && <p>{componentBProfile.summary}</p>}
                     {hasShowdown && <span className="arena-showdown-record">Record {rightRecord}</span>}
+                    {rightHighlightMetrics.length > 0 && (
+                      <ul className="arena-showdown-statlist">
+                        {rightHighlightMetrics.map((metric) => {
+                          const counterpart = componentAMetricMap.get(metric.key);
+                          const counterpartNumeric = counterpart?.numericValue ?? null;
+                          const round = showdownRoundByKey.get(metric.key);
+                          const hasNumeric = metric.numericValue !== null && counterpartNumeric !== null;
+                          const deltaLabel = hasNumeric ? formatDeltaLabel(metric.label, metric.unit ?? counterpart?.unit ?? null, metric.numericValue, counterpartNumeric) : null;
+                          let statusClass = "";
+                          if (round) {
+                            if (round.winner === "right") {
+                              statusClass = " win";
+                            } else if (round.winner === "left") {
+                              statusClass = " loss";
+                            } else {
+                              statusClass = " tie";
+                            }
+                          }
+                          return (
+                            <li key={`right-${metric.key}`} className={`arena-showdown-stat${statusClass}`}>
+                              <span className="arena-stat-label">{metric.label}</span>
+                              <span className="arena-stat-value">{metric.displayValue}</span>
+                              {deltaLabel && <span className="arena-stat-delta">{deltaLabel}</span>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </div>
                 </div>
 
