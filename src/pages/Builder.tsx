@@ -48,6 +48,15 @@ type HelpLegendItem = {
   label: string;
 };
 
+type HelpModalView = "overview" | "tutorial" | "wire-guide" | "shortcuts" | "about";
+
+type HelpEntry = {
+  id: string;
+  label: string;
+  description: string;
+  view: HelpModalView;
+};
+
 const COMPONENT_ACTIONS: ComponentAction[] = [
   { id: "battery", icon: "B", label: "Battery", action: "component", builderType: "battery" },
   { id: "resistor", icon: "R", label: "Resistor", action: "component", builderType: "resistor" },
@@ -237,7 +246,7 @@ const HELP_SECTIONS: HelpSection[] = [
     title: "Workspace Navigation",
     paragraphs: [
       "Orbit with left-click drag, pan with right-click or two fingers, and scroll or pinch to zoom.",
-      "Toggle panels closed when you need the full canvas?only the slim toggles remain visible.",
+      "Toggle panels closed when you need the full canvas; only the slim toggles remain visible.",
     ],
     bullets: [
       "Double-tap a component to focus the camera.",
@@ -267,43 +276,364 @@ const HELP_SECTIONS: HelpSection[] = [
     ],
   },
 ];
+const TUTORIAL_SECTIONS: HelpSection[] = [
+  {
+    title: "Getting Started",
+    paragraphs: [
+      "Add components from the Components menu, then place them directly into the 3D workspace.",
+      "Use the Wire tool to connect terminals and close the circuit loop so current can flow.",
+      "Open the analysis panels on the right to watch live calculations while you build.",
+    ],
+    bullets: [
+      "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
+      "Wire tool supports freeform, schematic, star, and auto-routing modes.",
+      "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
+    ],
+  },
+  {
+    title: "Visual Learning",
+    paragraphs: [
+      "CircuiTry3D leans on the W.I.R.E. colour system so you always know which value you are adjusting.",
+      "Switch between flow visualizations to compare electron movement with conventional current.",
+    ],
+    bullets: [
+      "Colour legend: blue watts, orange current, green resistance, red voltage.",
+      "Electron Flow mode shows semi-transparent particles moving negative to positive.",
+      "Current Flow mode renders solid particles in the conventional positive to negative direction.",
+      "Toggle polarity indicators to keep track of positive and negative terminals while wiring.",
+    ],
+  },
+  {
+    title: "Advanced Features",
+    paragraphs: [
+      "Explore routing, junctions, and layout tools to organise complex practice problems quickly.",
+    ],
+    bullets: [
+      "Swap between free-form and Manhattan routes for textbook wiring.",
+      "Drop junctions to branch into parallel paths.",
+      "Auto-arrange builds clean study-ready layouts in a single click.",
+      "Cycle through free, square, and linear layout modes from the View controls.",
+    ],
+  },
+  {
+    title: "Controls",
+    paragraphs: [
+      "Use mouse, keyboard, or touch controls depending on your device.",
+    ],
+    bullets: [
+      "Drag to move components, long-press to edit values, and use two-finger gestures to zoom or pan.",
+      "Keyboard: W toggles wire mode, T toggles rotate mode, Space toggles the legacy menu.",
+      "Quick keys add components instantly: B, R, L, S, and J.",
+    ],
+  },
+  {
+    title: "View Controls & Tips",
+    paragraphs: [
+      "Keep the scene readable while you iterate on designs.",
+    ],
+    bullets: [
+      "Reset View recentres the camera; Fit to Screen frames the active circuit.",
+      "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
+      "Complete the circuit loop, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
+    ],
+  },
+];
 
-type HelpShortcut = {
-  id: string;
-  title: string;
-  summary: string;
+const WIRE_GUIDE_SECTIONS: HelpSection[] = [
+  {
+    title: "W.I.R.E. Overview",
+    paragraphs: [
+      "The W.I.R.E. method keeps four core electrical values front and centre while you design circuits.",
+    ],
+    bullets: [
+      "W - Watts (power)",
+      "I - Current (amperes)",
+      "R - Resistance (ohms)",
+      "E - EMF / Voltage (volts)",
+    ],
+  },
+  {
+    title: "W - Watts (Power)",
+    paragraphs: [
+      "Watts describe how much energy a circuit uses each second.",
+    ],
+    bullets: [
+      "Formula: P = V x I.",
+      "Watch for power changes as you adjust voltage or current.",
+      "Higher power means brighter lights and increased heat generation.",
+    ],
+  },
+  {
+    title: "I - Current (Amperes)",
+    paragraphs: [
+      "Current is the flow rate of electrons through the circuit.",
+    ],
+    bullets: [
+      "Formula: I = V / R (Ohm's Law).",
+      "Compare electron flow and conventional current visualisations inside the workspace.",
+      "Measured in amperes; increasing resistance lowers current for a fixed voltage.",
+    ],
+  },
+  {
+    title: "R - Resistance (Ohms)",
+    paragraphs: [
+      "Resistance opposes current flow and is set by components like resistors and LEDs.",
+    ],
+    bullets: [
+      "Formula: R = V / I.",
+      "Higher resistance reduces current under the same voltage.",
+      "Use resistors to protect LEDs and control current draw.",
+    ],
+  },
+  {
+    title: "E - EMF / Voltage (Volts)",
+    paragraphs: [
+      "Voltage is the electrical pressure supplied by your source.",
+    ],
+    bullets: [
+      "Formula: V = I x R.",
+      "Raising voltage increases current if resistance stays the same.",
+      "Battery components provide the EMF that drives the circuit.",
+    ],
+  },
+  {
+    title: "Key Formulas",
+    paragraphs: [
+      "Keep the classic triangles in mind when solving problems.",
+    ],
+    bullets: [
+      "Ohm's Law triangle (E over I and R) helps rearrange for voltage, current, or resistance.",
+      "Power triangle (P over V and I) ties wattage to voltage and current.",
+      "Remember: adjusting one value affects the others across the circuit.",
+    ],
+  },
+  {
+    title: "Practice Tips",
+    paragraphs: [
+      "Build small circuits and watch the analysis panel respond in real time.",
+    ],
+    bullets: [
+      "Add or remove resistors to see how total resistance changes.",
+      "Swap battery voltages to explore how EMF affects the rest of the system.",
+      "Parallel paths lower total resistance; practice mode provides guided challenges.",
+    ],
+  },
+];
+
+const SHORTCUT_SECTIONS: HelpSection[] = [
+  {
+    title: "Components",
+    bullets: [
+      "B - add battery",
+      "R - add resistor",
+      "L - add LED",
+      "S - add switch",
+      "J - add junction",
+    ],
+    paragraphs: [
+      "Use the quick keys whenever you need to drop the next component without leaving the workspace.",
+    ],
+  },
+  {
+    title: "Tools & Modes",
+    bullets: [
+      "W - toggle wire mode",
+      "T - toggle rotate mode",
+      "Space - toggle the legacy menu",
+      "Esc - close menus or cancel the active mode",
+    ],
+  },
+  {
+    title: "Editing & Files",
+    bullets: [
+      "Ctrl+Z - undo",
+      "Ctrl+Y - redo",
+      "Ctrl+C - copy selected",
+      "Ctrl+V - paste",
+      "Delete or Backspace - remove selected",
+      "Ctrl+S - save circuit",
+      "Ctrl+O - load circuit",
+      "Ctrl+N - new circuit",
+    ],
+  },
+  {
+    title: "View Control",
+    bullets: [
+      "H - reset camera",
+      "F - fit to screen",
+      "G - toggle grid",
+    ],
+  },
+  {
+    title: "Mouse Actions",
+    bullets: [
+      "Click to select and drag to move components.",
+      "Scroll to zoom; right-click for context actions.",
+      "In wire mode, click terminals to create connections and press Esc to exit.",
+      "In rotate mode, clicking rotates by 90 degrees; press Esc to stop rotating.",
+      "Long-press components or wires to edit, reroute, or delete.",
+    ],
+  },
+  {
+    title: "Touch Actions",
+    bullets: [
+      "Tap to select, drag to move, and long-press to edit.",
+      "Pinch to zoom; two-finger drag to pan the workspace.",
+      "Rotate with two fingers to adjust the view on supported devices.",
+      "Tap terminals in wire mode to connect and long-press wires to manage branches.",
+    ],
+  },
+  {
+    title: "Pro Tips",
+    bullets: [
+      "Hold Shift while dragging to temporarily disable grid snapping.",
+      "Use arrow keys for fine component positioning.",
+      "Ctrl+scroll to speed up zooming.",
+      "Double-click (or double-tap) for quick edits, then Space to reveal menus again.",
+      "Try the quick workflow: B (battery), R (resistor), W (wire), connect, Space to review.",
+    ],
+  },
+];
+
+const ABOUT_SECTIONS: HelpSection[] = [
+  {
+    title: "Version & Focus",
+    paragraphs: [
+      "CircuiTry3D W.I.R.E. Circuit Builder v2.5 is a Three.js powered learning environment for visual thinkers.",
+    ],
+    bullets: [
+      "Educational 3D circuit simulator with real-time calculations.",
+      "Designed for classrooms, distance learning, and independent study.",
+    ],
+  },
+  {
+    title: "Circuit Building",
+    bullets: [
+      "Interactive 3D workspace with colour-coded W.I.R.E. metrics.",
+      "Components auto-label as B1, R1, LED1, SW1 for quick reference.",
+      "Grid snapping can be toggled for freeform placement versus precise layouts.",
+    ],
+  },
+  {
+    title: "Visualization",
+    bullets: [
+      "Electron flow and conventional current particle systems show movement through wires.",
+      "Polarity indicators mark positive and negative terminals at a glance.",
+      "Branding overlay can be toggled inside the legacy interface.",
+    ],
+  },
+  {
+    title: "Flexible Wiring & Layouts",
+    bullets: [
+      "Free-form, Manhattan, simple, perimeter, and A* routing styles.",
+      "Smart junction placement with long-press editing for parallel branches.",
+      "Auto-arrange plus free, square, and linear layout modes for presentation-ready circuits.",
+    ],
+  },
+  {
+    title: "Educational Tools",
+    bullets: [
+      "W.I.R.E., EIR triangle, power, worksheet, and solve panels support multiple learning paths.",
+      "Practice mode covers series, parallel, mixed, and switch-controlled circuits with guided steps.",
+      "Random problem generator keeps drills fresh.",
+    ],
+  },
+  {
+    title: "Purpose & Pedagogy",
+    paragraphs: [
+      "The W.I.R.E. framework reinforces Watts, Current, Resistance, and Voltage with immediate visual feedback.",
+      "Hands-on experimentation makes abstract electrical concepts tangible.",
+    ],
+  },
+  {
+    title: "Platform Support",
+    bullets: [
+      "Desktop: full keyboard and mouse support with high-performance rendering.",
+      "Mobile and tablet: touch-optimised gestures, pinch-to-zoom, long-press editing, responsive layout.",
+    ],
+  },
+  {
+    title: "Technical Details",
+    bullets: [
+      "Built with Three.js, JavaScript, HTML5 Canvas, and CSS3.",
+      "Features real-time simulation, graph-based topology detection, multiple routing algorithms, and persistent storage.",
+    ],
+  },
+  {
+    title: "For Students & Educators",
+    bullets: [
+      "Students get instant feedback, practice problems, and exportable circuits.",
+      "Educators can rapidly build examples, rely on professional layouts, and use the tool freely in class.",
+    ],
+  },
+  {
+    title: "Support & Feedback",
+    paragraphs: [
+      "Report ideas or issues at github.com/Mitchelllorin/CircuiTry3D.",
+      "2025 CircuiTry3D - crafted for visual learners everywhere.",
+    ],
+  },
+];
+
+const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: string; sections: HelpSection[]; showLegend?: boolean }> = {
+  overview: {
+    title: "CircuiTry3D Help Center",
+    description: "Browse quick-start advice, navigation tips, and the W.I.R.E. legend.",
+    sections: HELP_SECTIONS,
+    showLegend: true,
+  },
+  "tutorial": {
+    title: "Guided Tutorial",
+    description: "Follow the original legacy walkthrough rebuilt for the modern interface.",
+    sections: TUTORIAL_SECTIONS,
+  },
+  "wire-guide": {
+    title: "W.I.R.E. Guide",
+    description: "Understand how Watts, Current, Resistance, and Voltage relate while you design.",
+    sections: WIRE_GUIDE_SECTIONS,
+  },
+  "shortcuts": {
+    title: "Keyboard & Gesture Shortcuts",
+    description: "Reference the complete set of controls for desktop and mobile builders.",
+    sections: SHORTCUT_SECTIONS,
+  },
+  "about": {
+    title: "About CircuiTry3D",
+    description: "Review feature highlights, learning goals, and support resources from the legacy release.",
+    sections: ABOUT_SECTIONS,
+  },
 };
 
-const HELP_SHORTCUTS: HelpShortcut[] = HELP_SECTIONS.map((section) => ({
-  id: section.title,
-  title: section.title,
-  summary: section.paragraphs[0] ?? "",
-}));
-
-const HELP_ACTIONS: PanelAction[] = [
+const HELP_ENTRIES: HelpEntry[] = [
   {
     id: "tutorial",
     label: "Guided Tutorial",
-    description: "Launch the original guided walkthrough inside the workspace.",
-    action: "show-tutorial",
+    description: "Step-by-step quick start copied from the legacy onboarding flow.",
+    view: "tutorial",
   },
   {
     id: "wire-guide",
     label: "W.I.R.E. Guide",
-    description: "Review the classic breakdown of Watts, Current, Resistance, and Voltage.",
-    action: "show-wire-guide",
+    description: "Break down Watts, Current, Resistance, and Voltage in detail.",
+    view: "wire-guide",
   },
   {
     id: "shortcuts",
     label: "Keyboard Shortcuts",
-    description: "See every keyboard accelerator available in the builder.",
-    action: "show-shortcuts",
+    description: "Look up every keyboard, mouse, and touch shortcut in one place.",
+    view: "shortcuts",
   },
   {
     id: "about",
     label: "About CircuiTry3D",
-    description: "View the release notes and version information.",
-    action: "show-about",
+    description: "Learn what is new in v2.5 and how the simulator supports teaching.",
+    view: "about",
+  },
+  {
+    id: "help-center",
+    label: "Help Center",
+    description: "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
+    view: "overview",
   },
 ];
 
@@ -334,6 +664,7 @@ export default function Builder() {
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
   const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
+  const [helpView, setHelpView] = useState<HelpModalView>("overview");
   const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") {
       return false;
@@ -430,7 +761,7 @@ export default function Builder() {
   }, [isHelpOpen]);
 
   useEffect(() => {
-    if (!isHelpOpen || !requestedHelpSection) {
+    if (!isHelpOpen || helpView !== "overview" || !requestedHelpSection) {
       return;
     }
 
@@ -439,7 +770,11 @@ export default function Builder() {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     setRequestedHelpSection(null);
-  }, [isHelpOpen, requestedHelpSection]);
+  }, [helpView, isHelpOpen, requestedHelpSection]);
+
+  useEffect(() => {
+    helpSectionRefs.current = {};
+  }, [helpView]);
 
   const postToBuilder = useCallback(
     (message: BuilderMessage, options: { allowQueue?: boolean } = {}) => {
@@ -473,10 +808,11 @@ export default function Builder() {
     [postToBuilder]
   );
 
-  const openHelpSection = useCallback(
-    (sectionTitle?: string) => {
+  const openHelpCenter = useCallback(
+    (view: HelpModalView = "overview", sectionTitle?: string) => {
+      setHelpView(view);
       setHelpOpen(true);
-      setRequestedHelpSection(sectionTitle ?? null);
+      setRequestedHelpSection(view === "overview" ? sectionTitle ?? null : null);
     },
     []
   );
@@ -543,6 +879,7 @@ export default function Builder() {
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
     return `${normalizedBase}legacy.html?embed=builder`;
   }, []);
+  const activeHelpContent = HELP_VIEW_CONTENT[helpView];
 
   return (
     <div className="builder-shell">
@@ -751,33 +1088,17 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Guides</span>
               <div className="menu-track menu-track-chips">
-                {HELP_ACTIONS.map((action) => (
+                {HELP_ENTRIES.map((entry) => (
                   <button
-                    key={action.id}
+                    key={entry.id}
                     type="button"
                     className="slider-chip"
-                    onClick={() => triggerBuilderAction(action.action, action.data)}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : action.description}
+                    onClick={() => openHelpCenter(entry.view)}
+                    title={entry.description}
                   >
-                    <span className="slider-chip-label">{action.label}</span>
+                    <span className="slider-chip-label">{entry.label}</span>
                   </button>
                 ))}
-                {HELP_SHORTCUTS.map((shortcut) => (
-                  <button
-                    key={shortcut.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => openHelpSection(shortcut.title)}
-                    title={shortcut.summary}
-                  >
-                    <span className="slider-chip-label">{shortcut.title}</span>
-                  </button>
-                ))}
-                <button type="button" className="slider-chip" onClick={() => openHelpSection()}>
-                  <span className="slider-chip-label">Help Center</span>
-                </button>
               </div>
             </div>
           </div>
@@ -786,7 +1107,7 @@ export default function Builder() {
 
       <div className="builder-status-bar">
         <span className="status-indicator" aria-hidden="true" />
-        {isFrameReady ? "Workspace ready?tap and drag to build." : "Loading workspace?"}
+        {isFrameReady ? "Workspace ready: tap and drag to build." : "Loading workspace..."}
       </div>
 
       <div className="builder-workspace" aria-busy={!isFrameReady}>
@@ -819,40 +1140,69 @@ export default function Builder() {
           <button type="button" className="help-close" onClick={() => setHelpOpen(false)} aria-label="Close help">
             X
           </button>
-          <h2 className="help-title">CircuiTry3D Help Center</h2>
-          {HELP_SECTIONS.map((section) => (
+          {helpView !== "overview" && (
+            <button
+              type="button"
+              className="help-back"
+              onClick={() => openHelpCenter("overview")}
+              aria-label="Back to CircuiTry3D help overview"
+            >
+              {"< Back"}
+            </button>
+          )}
+          <h2 className="help-title">{activeHelpContent.title}</h2>
+          {activeHelpContent.description && <p className="help-description">{activeHelpContent.description}</p>}
+          {helpView === "overview" && (
+            <div className="help-nav" role="navigation" aria-label="Help section shortcuts">
+              {HELP_SECTIONS.map((section) => (
+                <button
+                  key={section.title}
+                  type="button"
+                  className="help-nav-btn"
+                  onClick={() => openHelpCenter("overview", section.title)}
+                >
+                  {section.title}
+                </button>
+              ))}
+            </div>
+          )}
+          {activeHelpContent.sections.map((section) => (
             <div
-              key={section.title}
+              key={`${helpView}-${section.title}`}
               className="help-section"
-              ref={(element) => {
-                if (element) {
-                  helpSectionRefs.current[section.title] = element;
-                } else {
-                  delete helpSectionRefs.current[section.title];
-                }
-              }}
+              ref={helpView === "overview"
+                ? (element) => {
+                    if (element) {
+                      helpSectionRefs.current[section.title] = element;
+                    } else {
+                      delete helpSectionRefs.current[section.title];
+                    }
+                  }
+                : undefined}
             >
               <h3>{section.title}</h3>
-              {section.paragraphs.map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
+              {section.paragraphs.map((paragraph, paragraphIndex) => (
+                <p key={`${section.title}-p-${paragraphIndex}`}>{paragraph}</p>
               ))}
               {section.bullets && (
                 <ul>
-                  {section.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
+                  {section.bullets.map((bullet, bulletIndex) => (
+                    <li key={`${section.title}-b-${bulletIndex}`}>{bullet}</li>
                   ))}
                 </ul>
               )}
             </div>
           ))}
-          <div className="wire-legend">
-            {WIRE_LEGEND.map((legend) => (
-              <div key={legend.id} className={`legend-item ${legend.letter.toLowerCase()}`}>
-                <div className="legend-letter">{legend.letter}</div>
-                <div className="legend-label">{legend.label}</div>
-              </div>
-            ))}
-          </div>
+          {activeHelpContent.showLegend && (
+            <div className="wire-legend">
+              {WIRE_LEGEND.map((legend) => (
+                <div key={legend.id} className={`legend-item ${legend.letter.toLowerCase()}`}>
+                  <div className="legend-letter">{legend.letter}</div>
+                  <div className="legend-label">{legend.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
