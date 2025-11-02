@@ -2271,6 +2271,518 @@
             transition: opacity 0.5s ease;
         }
         
+        /* Subscription Pricing Overlay */
+        .subscription-overlay-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 110;
+            background: rgba(4, 12, 24, 0.78);
+            backdrop-filter: blur(6px);
+            display: none;
+        }
+        
+        .subscription-overlay-backdrop.visible {
+            display: block;
+        }
+        
+        .subscription-overlay {
+            position: fixed;
+            inset: auto;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(960px, calc(100vw - 48px));
+            max-height: calc(100vh - 64px);
+            padding: clamp(24px, 4vw, 40px);
+            background: rgba(12, 24, 48, 0.96);
+            border: 1px solid rgba(0, 255, 136, 0.28);
+            border-radius: 28px;
+            box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55);
+            color: #e8f6ff;
+            overflow-y: auto;
+            display: none;
+            flex-direction: column;
+            gap: clamp(24px, 4vw, 40px);
+            z-index: 120;
+            backdrop-filter: blur(12px);
+        }
+        
+        .subscription-overlay.visible {
+            display: flex;
+        }
+        
+        .subscription-overlay:focus {
+            outline: none;
+        }
+        
+        .subscription-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            border: 1px solid rgba(232, 246, 255, 0.35);
+            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.25), rgba(0, 0, 0, 0.65));
+            color: #e8f6ff;
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .subscription-close:hover,
+        .subscription-close:focus-visible {
+            transform: scale(1.05);
+            box-shadow: 0 0 18px rgba(0, 255, 136, 0.45);
+            border-color: rgba(0, 255, 136, 0.55);
+        }
+        
+        .subscription-header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .subscription-kicker {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.32em;
+            color: rgba(0, 255, 136, 0.85);
+        }
+        
+        .subscription-header h2 {
+            font-size: clamp(26px, 4vw, 36px);
+            letter-spacing: -0.02em;
+        }
+        
+        .subscription-header p {
+            color: rgba(220, 234, 255, 0.78);
+            max-width: 640px;
+            line-height: 1.6;
+        }
+
+        .subscription-status {
+            align-self: flex-start;
+            margin-top: 4px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 255, 136, 0.28);
+            background: rgba(8, 20, 40, 0.65);
+            display: inline-flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .subscription-status-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: rgba(220, 234, 255, 0.66);
+        }
+
+        .subscription-status-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(0, 255, 136, 0.88);
+            letter-spacing: 0.08em;
+        }
+
+        .subscription-status-note {
+            font-size: 12px;
+            color: rgba(220, 234, 255, 0.72);
+            max-width: 380px;
+            line-height: 1.4;
+        }
+        
+        .subscription-cycle-toggle {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .subscription-cycle-btn {
+            border: 1px solid rgba(0, 255, 136, 0.28);
+            background: rgba(8, 20, 40, 0.6);
+            color: #e8f6ff;
+            padding: 12px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+        
+        .subscription-cycle-btn .subscription-cycle-note {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(0, 255, 136, 0.72);
+        }
+        
+        .subscription-cycle-btn:hover,
+        .subscription-cycle-btn:focus-visible {
+            border-color: rgba(0, 255, 136, 0.55);
+            transform: translateY(-1px);
+        }
+        
+        .subscription-cycle-btn.active {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.18), rgba(0, 255, 136, 0.05));
+            border-color: rgba(0, 255, 136, 0.7);
+            box-shadow: 0 0 18px rgba(0, 255, 136, 0.2);
+        }
+        
+        .subscription-plan-grid {
+            display: grid;
+            gap: clamp(16px, 3vw, 24px);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+        
+        .subscription-plan-card {
+            background: linear-gradient(160deg, rgba(15, 32, 64, 0.85), rgba(10, 24, 52, 0.65));
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .subscription-plan-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(0, 255, 136, 0.08), transparent 58%);
+            pointer-events: none;
+        }
+        
+        .subscription-plan-header h3 {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+        
+        .subscription-plan-header p {
+            color: rgba(220, 234, 255, 0.68);
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .subscription-plan-price {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-weight: 700;
+        }
+
+        .subscription-plan-renewal {
+            font-size: 13px;
+            color: rgba(220, 234, 255, 0.62);
+        }
+        
+        .subscription-price-amount {
+            font-size: 28px;
+            letter-spacing: -0.01em;
+            display: none;
+        }
+        
+        .subscription-overlay[data-active-cycle="monthly"] .subscription-price-amount[data-price-cycle="monthly"],
+        .subscription-overlay[data-active-cycle="annual"] .subscription-price-amount[data-price-cycle="annual"] {
+            display: inline-flex;
+        }
+        
+        .subscription-price-unit {
+            font-size: 14px;
+            color: rgba(220, 234, 255, 0.68);
+        }
+        
+        .subscription-price-cycle-note {
+            font-size: 12px;
+            color: rgba(0, 255, 136, 0.65);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            display: none;
+        }
+
+        .subscription-overlay[data-active-cycle="monthly"] .subscription-price-cycle-note[data-price-cycle="monthly"],
+        .subscription-overlay[data-active-cycle="annual"] .subscription-price-cycle-note[data-price-cycle="annual"] {
+            display: inline-flex;
+        }
+        
+        .subscription-plan-features {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: rgba(220, 234, 255, 0.78);
+        }
+        
+        .subscription-plan-features li::before {
+            content: "?";
+            color: rgba(0, 255, 136, 0.85);
+            margin-right: 10px;
+        }
+        
+        .subscription-plan-cta {
+            margin-top: auto;
+        }
+
+        .subscription-plan-bulk {
+            font-size: 13px;
+            color: rgba(220, 234, 255, 0.68);
+            background: rgba(8, 20, 40, 0.55);
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .subscription-plan-button {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            background: rgba(0, 255, 136, 0.12);
+            color: #e8f6ff;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .subscription-plan-button:hover,
+        .subscription-plan-button:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(0, 255, 136, 0.25);
+            border-color: rgba(0, 255, 136, 0.6);
+        }
+        
+        .subscription-support-grid {
+            display: grid;
+            gap: clamp(16px, 3vw, 24px);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+        
+        .subscription-support-card {
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            border-radius: 18px;
+            padding: 20px;
+            background: rgba(8, 20, 40, 0.65);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .subscription-support-badge {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: rgba(0, 255, 136, 0.82);
+        }
+        
+        .subscription-support-card h4 {
+            margin: 0;
+            font-size: 18px;
+        }
+        
+        .subscription-support-summary {
+            color: rgba(220, 234, 255, 0.74);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .subscription-support-card ul {
+            margin: 0;
+            padding-left: 18px;
+            color: rgba(220, 234, 255, 0.78);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .subscription-steps h3,
+        .subscription-faq h3 {
+            font-size: 18px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            color: rgba(0, 255, 136, 0.75);
+        }
+        
+        .subscription-step-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 16px;
+        }
+        
+        .subscription-step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            background: rgba(8, 20, 40, 0.6);
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            border-radius: 16px;
+            padding: 16px 18px;
+        }
+        
+        .subscription-step-number {
+            font-size: 16px;
+            font-weight: 700;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.18);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e8f6ff;
+        }
+        
+        .subscription-step-content h4 {
+            margin: 0 0 6px 0;
+            font-size: 16px;
+        }
+        
+        .subscription-step-content p {
+            margin: 0;
+            color: rgba(220, 234, 255, 0.78);
+            line-height: 1.5;
+        }
+        
+        .subscription-faq-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1fr;
+        }
+        
+        .subscription-faq-item {
+            background: rgba(8, 20, 40, 0.6);
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            border-radius: 14px;
+            padding: 14px 16px;
+            color: rgba(220, 234, 255, 0.85);
+        }
+        
+        .subscription-faq-item summary {
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        
+        .subscription-faq-item p {
+            margin: 10px 0 0 0;
+            color: rgba(220, 234, 255, 0.78);
+            line-height: 1.5;
+        }
+        
+        .subscription-cta {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            background: linear-gradient(160deg, rgba(15, 32, 64, 0.75), rgba(10, 24, 52, 0.55));
+        }
+        
+        .subscription-cta-text h3 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+        }
+        
+        .subscription-cta-text p {
+            margin: 0;
+            color: rgba(220, 234, 255, 0.78);
+        }
+        
+        .subscription-cta-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .subscription-cta-button {
+            padding: 12px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            background: rgba(0, 255, 136, 0.15);
+            color: #e8f6ff;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .subscription-cta-button:hover,
+        .subscription-cta-button:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(0, 255, 136, 0.25);
+            border-color: rgba(0, 255, 136, 0.6);
+        }
+        
+        body.subscription-pricing-open {
+            overflow: hidden;
+        }
+        
+        @media (min-width: 768px) {
+            .subscription-faq-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            
+            .subscription-cta {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+            
+            .subscription-cta-text {
+                max-width: 60%;
+            }
+        }
+        
+        @media (max-width: 599px) {
+            .subscription-plan-card {
+                padding: 20px;
+            }
+            
+            .subscription-overlay {
+                width: calc(100vw - 24px);
+                padding: 24px 18px 28px;
+            }
+            
+            .subscription-close {
+                top: 12px;
+                right: 12px;
+            }
+        }
+        
         /* Improved circuit centering and alignment */
         .circuit-container {
             display: flex;
@@ -2461,6 +2973,16 @@
                 <div class="submenu" id="submenu-arena">
                     <div class="submenu-row">
                         <button class="btn" onclick="openArena()">Open Component Arena</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-tab" onclick="toggleSubmenu('subscription')">
+                Subscription
+                <div class="submenu" id="submenu-subscription">
+                    <div class="submenu-row">
+                        <button class="btn" onclick="openSubscriptionPricing()">Subscription Pricing</button>
+                        <button class="btn" onclick="contactSubscriptionTeam()">Contact Team</button>
                     </div>
                 </div>
             </div>
@@ -2795,6 +3317,214 @@
     </div>
     
     <canvas id="canvas" style="display: none;"></canvas>
+
+    <div class="subscription-overlay-backdrop" id="subscription-pricing-backdrop"></div>
+
+    <div
+        class="subscription-overlay"
+        id="subscription-pricing-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="subscription-pricing-title"
+        tabindex="-1"
+        data-active-cycle="annual"
+    >
+        <button class="subscription-close" type="button" aria-label="Close subscription pricing" onclick="closeSubscriptionPricing()">&times;</button>
+        <div class="subscription-header">
+            <span class="subscription-kicker">Subscription Success</span>
+            <h2 id="subscription-pricing-title">Launch CircuiTry3D across your program</h2>
+            <p>Planning a classroom, campus, or district rollout? This playbook highlights the support included in every subscription tier so your team can move from pilot to full adoption with confidence.</p>
+            <div class="subscription-status" data-subscription-status="pending">
+                <span class="subscription-status-label">Billing status</span>
+                <span class="subscription-status-value">Pending</span>
+                <span class="subscription-status-note">Stripe checkout links will populate sku-based buttons as soon as they are live.</span>
+            </div>
+        </div>
+        <div class="subscription-cycle-toggle" role="group" aria-label="Billing cycle selector">
+            <button type="button" class="subscription-cycle-btn active" data-cycle="annual" aria-pressed="true" onclick="setSubscriptionPricingCycle('annual')">
+                Annual
+                <span class="subscription-cycle-note">Save 15%</span>
+            </button>
+            <button type="button" class="subscription-cycle-btn" data-cycle="monthly" aria-pressed="false" onclick="setSubscriptionPricingCycle('monthly')">
+                Monthly
+                <span class="subscription-cycle-note">Pay as you go</span>
+            </button>
+        </div>
+
+        <div class="subscription-plan-grid">
+            <article class="subscription-plan-card" data-plan="free">
+                <header class="subscription-plan-header">
+                    <h3>Free Sandbox</h3>
+                    <p>Explore core circuit tools</p>
+                </header>
+                <div class="subscription-plan-price">
+                    <span class="subscription-price-amount" data-price-cycle="annual">Free</span>
+                    <span class="subscription-price-amount" data-price-cycle="monthly">Free</span>
+                    <span class="subscription-price-unit">per educator</span>
+                    <span class="subscription-price-cycle-note" data-price-cycle="annual">per year</span>
+                    <span class="subscription-price-cycle-note" data-price-cycle="monthly">per month</span>
+                </div>
+                <ul class="subscription-plan-features">
+                    <li>3 active circuits</li>
+                    <li>Core component library</li>
+                    <li>W.I.R.E. analysis preview</li>
+                    <li>Community resource hub</li>
+                </ul>
+                <div class="subscription-plan-cta">
+                    <button type="button" class="subscription-plan-button" onclick="startSandboxFromPricing()">Start Free</button>
+                </div>
+            </article>
+
+            <article class="subscription-plan-card" data-plan="educator">
+                <header class="subscription-plan-header">
+                    <h3>Educator License</h3>
+                    <p>Full toolkit for classroom instruction</p>
+                </header>
+                <div class="subscription-plan-price">
+                    <span class="subscription-price-amount" data-price-cycle="annual">$299</span>
+                    <span class="subscription-price-amount" data-price-cycle="monthly">$29</span>
+                    <span class="subscription-price-unit">per educator</span>
+                    <span class="subscription-price-cycle-note" data-price-cycle="annual">per year</span>
+                    <span class="subscription-price-cycle-note" data-price-cycle="monthly">per month</span>
+                    <span class="subscription-plan-renewal">Auto-renews, cancel anytime</span>
+                </div>
+                <ul class="subscription-plan-features">
+                    <li>Unlimited saved circuits</li>
+                    <li>Advanced W.I.R.E. coaching</li>
+                    <li>Lesson templates &amp; assessments</li>
+                    <li>Priority email support</li>
+                </ul>
+                <div class="subscription-plan-cta">
+                    <button type="button" class="subscription-plan-button" onclick="launchStripeComingSoon('educator-license')">Stripe checkout (coming soon)</button>
+                </div>
+            </article>
+
+            <article class="subscription-plan-card" data-plan="institutional">
+                <header class="subscription-plan-header">
+                    <h3>Institutional License</h3>
+                    <p>Campus-wide access with admin controls</p>
+                </header>
+                <div class="subscription-plan-price">
+                    <span class="subscription-price-amount" data-price-cycle="annual">Contact</span>
+                    <span class="subscription-price-amount" data-price-cycle="monthly">Contact</span>
+                    <span class="subscription-price-unit">per site</span>
+                </div>
+                <ul class="subscription-plan-features">
+                    <li>Bulk educator seats</li>
+                    <li>Dedicated onboarding</li>
+                    <li>SIS integrations &amp; SSO</li>
+                    <li>Curriculum alignment toolkit</li>
+                </ul>
+                <div class="subscription-plan-bulk">
+                    <span>Minimum 10 seats</span>
+                    <span>Volume discounts start at 25 seats</span>
+                </div>
+                <div class="subscription-plan-cta">
+                    <a class="subscription-plan-button" href="mailto:hello@circuitry3d.com?subject=Institutional%20Pricing">Contact Us</a>
+                </div>
+            </article>
+        </div>
+
+        <div class="subscription-support-grid">
+            <article class="subscription-support-card">
+                <span class="subscription-support-badge">Program Planning</span>
+                <h4>District &amp; Campus Rollouts</h4>
+                <p class="subscription-support-summary">Partner with our team to scope the right subscription footprint for your program.</p>
+                <ul>
+                    <li>Discovery session with admin &amp; lead teachers</li>
+                    <li>Seat provisioning and roster import guidance</li>
+                    <li>Dedicated rollout timeline template</li>
+                </ul>
+            </article>
+            <article class="subscription-support-card">
+                <span class="subscription-support-badge">Teacher Enablement</span>
+                <h4>Teacher Success Accelerator</h4>
+                <p class="subscription-support-summary">Ensure every educator is confident launching CircuiTry3D on day one.</p>
+                <ul>
+                    <li>Live or recorded onboarding workshops</li>
+                    <li>Lesson launch kits with pacing guides</li>
+                    <li>Priority support channel for classroom questions</li>
+                </ul>
+            </article>
+            <article class="subscription-support-card">
+                <span class="subscription-support-badge">Student Experience</span>
+                <h4>Student Engagement Toolkit</h4>
+                <p class="subscription-support-summary">Keep learners motivated with ready-to-run activities and analytics.</p>
+                <ul>
+                    <li>Circuit templates aligned to NGSS &amp; CTE standards</li>
+                    <li>Auto-saved progress and classroom monitoring</li>
+                    <li>W.I.R.E. analytics exports for reflections</li>
+                </ul>
+            </article>
+        </div>
+
+        <div class="subscription-steps">
+            <h3>Rollout playbook</h3>
+            <ol class="subscription-step-list">
+                <li class="subscription-step">
+                    <span class="subscription-step-number">01</span>
+                    <div class="subscription-step-content">
+                        <h4>Discovery &amp; Goal Setting</h4>
+                        <p>Share your outcomes, roster counts, and timelines so we can scope the subscription tier that fits best.</p>
+                    </div>
+                </li>
+                <li class="subscription-step">
+                    <span class="subscription-step-number">02</span>
+                    <div class="subscription-step-content">
+                        <h4>Pilot With Lead Classrooms</h4>
+                        <p>Launch a focused pilot with a small teacher cohort and capture quick feedback on access, pacing, and support needs.</p>
+                    </div>
+                </li>
+                <li class="subscription-step">
+                    <span class="subscription-step-number">03</span>
+                    <div class="subscription-step-content">
+                        <h4>Campus-Wide Launch</h4>
+                        <p>Provision remaining seats, finalize billing, and host an all-staff enablement session to kick off the program.</p>
+                    </div>
+                </li>
+                <li class="subscription-step">
+                    <span class="subscription-step-number">04</span>
+                    <div class="subscription-step-content">
+                        <h4>Measure &amp; Expand</h4>
+                        <p>Review usage analytics, celebrate wins, and plan the next phase - additional campuses, certifications, or advanced bundles.</p>
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="subscription-faq">
+            <h3>Common questions</h3>
+            <div class="subscription-faq-grid">
+                <details class="subscription-faq-item">
+                    <summary>How do we purchase educator seats?</summary>
+                    <p>Start with a discovery call so we can confirm seat counts and billing cadence. Stripe checkout links roll out soon; until then we issue invoices or purchase orders.</p>
+                </details>
+                <details class="subscription-faq-item">
+                    <summary>Can we mix monthly and annual billing?</summary>
+                    <p>Educator plans can mix terms. Many districts choose annual licensing for core staff plus monthly add-ons during summer academies.</p>
+                </details>
+                <details class="subscription-faq-item">
+                    <summary>Do you support purchase orders or vendor onboarding?</summary>
+                    <p>Yes. We provide W-9, vendor packets, and Net 30 invoicing. Our team coordinates with your procurement office to simplify onboarding.</p>
+                </details>
+                <details class="subscription-faq-item">
+                    <summary>How is student data handled?</summary>
+                    <p>CircuiTry3D stores minimal student data, encrypts it in transit and at rest, and supports district SSO. Review our privacy policy or request a data-sharing agreement.</p>
+                </details>
+            </div>
+        </div>
+
+        <div class="subscription-cta">
+            <div class="subscription-cta-text">
+                <h3>Ready to activate your subscription?</h3>
+                <p>Start in the sandbox today or schedule a planning call to customize your rollout, invoicing, and training needs.</p>
+            </div>
+            <div class="subscription-cta-actions">
+                <button type="button" class="subscription-cta-button" onclick="startSandboxFromPricing()">Start free sandbox</button>
+                <a class="subscription-cta-button" href="mailto:hello@circuitry3d.com?subject=CircuiTry3D%20Subscription%20Planning">Book a planning call</a>
+            </div>
+        </div>
+    </div>
     
     <!-- Branding Overlay -->
     <div class="branding-overlay" id="branding-overlay">
@@ -6954,6 +7684,124 @@ body.android-optimized.menu-visible .status {
                 tab.classList.remove('active');
             });
         }
+
+        const subscriptionPricingState = {
+            overlay: null,
+            backdrop: null,
+            activeCycle: 'annual',
+            cycleButtons: []
+        };
+
+        function setupSubscriptionPricing() {
+            if (subscriptionPricingState.overlay && subscriptionPricingState.backdrop) {
+                return;
+            }
+
+            const overlay = document.getElementById('subscription-pricing-overlay');
+            const backdrop = document.getElementById('subscription-pricing-backdrop');
+
+            if (!overlay || !backdrop) {
+                return;
+            }
+
+            subscriptionPricingState.overlay = overlay;
+            subscriptionPricingState.backdrop = backdrop;
+            subscriptionPricingState.cycleButtons = Array.from(
+                overlay.querySelectorAll('.subscription-cycle-btn')
+            );
+
+            backdrop.addEventListener('click', closeSubscriptionPricing);
+        }
+
+        function syncSubscriptionCycleButtons(cycle) {
+            if (!subscriptionPricingState.cycleButtons.length) {
+                return;
+            }
+
+            subscriptionPricingState.cycleButtons.forEach(button => {
+                const isActive = button.dataset.cycle === cycle;
+                button.classList.toggle('active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
+        function setSubscriptionPricingCycle(cycle) {
+            if (cycle !== 'monthly' && cycle !== 'annual') {
+                cycle = 'annual';
+            }
+
+            if (!subscriptionPricingState.overlay || !subscriptionPricingState.backdrop) {
+                setupSubscriptionPricing();
+            }
+
+            subscriptionPricingState.activeCycle = cycle;
+
+            const overlay = subscriptionPricingState.overlay;
+            if (!overlay) {
+                return;
+            }
+
+            overlay.setAttribute('data-active-cycle', cycle);
+            syncSubscriptionCycleButtons(cycle);
+        }
+
+        function openSubscriptionPricing() {
+            if (!subscriptionPricingState.overlay || !subscriptionPricingState.backdrop) {
+                setupSubscriptionPricing();
+            }
+
+            const { overlay, backdrop } = subscriptionPricingState;
+            if (!overlay || !backdrop) {
+                return;
+            }
+
+            closeAllSubmenus();
+            overlay.classList.add('visible');
+            backdrop.classList.add('visible');
+            document.body.classList.add('subscription-pricing-open');
+            setSubscriptionPricingCycle(subscriptionPricingState.activeCycle);
+            overlay.focus({ preventScroll: true });
+        }
+
+        function closeSubscriptionPricing() {
+            const { overlay, backdrop } = subscriptionPricingState;
+            if (!overlay || !backdrop) {
+                return;
+            }
+
+            overlay.classList.remove('visible');
+            backdrop.classList.remove('visible');
+            document.body.classList.remove('subscription-pricing-open');
+        }
+
+        function contactSubscriptionTeam() {
+            window.location.href = 'mailto:hello@circuitry3d.com?subject=CircuiTry3D%20Subscription%20Planning';
+        }
+
+        function startSandboxFromPricing() {
+            closeSubscriptionPricing();
+            if (!menuVisible) {
+                toggleMenuBar();
+            }
+            setStatus('?? Sandbox ready - choose a component to begin building!');
+        }
+
+        function launchStripeComingSoon(sku) {
+            console.info('Stripe checkout pending integration', { sku });
+            alert('Stripe checkout coming soon. Contact us to activate your subscription.');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupSubscriptionPricing, { once: true });
+        } else {
+            setupSubscriptionPricing();
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && subscriptionPricingState.overlay?.classList.contains('visible')) {
+                closeSubscriptionPricing();
+            }
+        });
 
         function toggleAnalysis() {
             const panel = document.getElementById('wire-analysis');
