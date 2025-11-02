@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/builder-ui.css";
 
 type BuilderInvokeAction =
@@ -83,7 +83,7 @@ type HelpLegendItem = {
   label: string;
 };
 
-type HelpModalView = "overview" | "tutorial" | "wire-guide" | "shortcuts" | "about";
+type HelpModalView = "overview" | "tutorial" | "wire-guide" | "practice" | "shortcuts" | "about";
 
 type HelpEntry = {
   id: string;
@@ -309,8 +309,8 @@ const PRACTICE_ACTIONS: PanelAction[] = [
   },
   {
     id: "practice-help",
-    label: "Practice Mode Guide",
-    description: "Review tips on how to approach the guided problems.",
+    label: "Table Method Guide",
+    description: "Open the W.I.R.E. table method worksheet and solving steps.",
     action: "practice-help",
   },
   {
@@ -519,6 +519,62 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   },
 ];
 
+const TABLE_METHOD_SECTIONS: HelpSection[] = [
+  {
+    title: "Why the Table Method",
+    paragraphs: [
+      "The W.I.R.E. table gives every component its own row so you can log what is known before solving any unknowns.",
+      "Keep the columns locked to the W.I.R.E. compass: Watts (W), Current (I), Resistance (R), and Voltage (E).",
+    ],
+    bullets: [
+      "Start with the givens from the prompt or schematic.",
+      "Copy shared values (for example, series current) into each affected row.",
+      "Leave blanks or '?' markers anywhere you still need to solve.",
+    ],
+  },
+  {
+    title: "Solve in Five Moves",
+    paragraphs: [
+      "1. Read the question and circle the target variable.",
+      "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
+      "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
+      "4. Record the newly solved value in the table, then update the totals row when complete.",
+      "5. Check your work with Kirchhoff: sum voltages around each loop and verify currents at junctions.",
+    ],
+  },
+  {
+    title: "Formula Picker",
+    paragraphs: [
+      "Keep these identities beside the worksheet and grab the one that matches the givens in a row.",
+    ],
+    bullets: [
+      "Ohm's Law: E = I * R, I = E / R, R = E / I.",
+      "Power rules: P = E * I, P = I * I * R, P = (E * E) / R.",
+      "Series recap: R_T = R1 + R2 + ..., current the same through every element.",
+      "Parallel recap: 1 / R_T = 1/R1 + 1/R2 + ..., voltage the same on every branch.",
+    ],
+  },
+  {
+    title: "Worksheet Template",
+    paragraphs: [
+      "Copy this layout or print it from the guide panel whenever you need a blank sheet.",
+      "```\nComponent        | W (Power) | I (Current) | R (Resistance) | E (Voltage)\n-----------------|-----------|-------------|----------------|-----------\nSource / Battery |           |             |                |           \nLoad 1           |           |             |                |           \nLoad 2           |           |             |                |           \nTotals           |           |             |                |           \n```",
+    ],
+    bullets: [
+      "Add extra rows for more loads or branches.",
+      "Totals confirm once every component row is solved.",
+    ],
+  },
+  {
+    title: "Where to Find It",
+    paragraphs: [
+      "Load any practice circuit inside the Builder and scroll to the Practice panel to see the interactive W.I.R.E. worksheet.",
+      "Use Clear entries to reset your work and Reveal totals to compare against the simulator once you finish.",
+      "Need a paper copy? Tap the Table Method Guide button again and print this view.",
+    ],
+  },
+];
+
 const SHORTCUT_SECTIONS: HelpSection[] = [
   {
     title: "Components",
@@ -691,6 +747,11 @@ const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: st
     description: "Understand how Watts, Current, Resistance, and Voltage relate while you design.",
     sections: WIRE_GUIDE_SECTIONS,
   },
+  practice: {
+    title: "Table Method Worksheet",
+    description: "Log the givens, pick the matching formula, and solve every W.I.R.E. slot step by step.",
+    sections: TABLE_METHOD_SECTIONS,
+  },
   "shortcuts": {
     title: "Keyboard & Gesture Shortcuts",
     description: "Reference the complete set of controls for desktop and mobile builders.",
@@ -704,6 +765,12 @@ const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: st
 };
 
 const HELP_ENTRIES: HelpEntry[] = [
+  {
+    id: "practice",
+    label: "Table Method Worksheet",
+    description: "Open the W.I.R.E. table method steps plus a printable worksheet.",
+    view: "practice",
+  },
   {
     id: "tutorial",
     label: "Guided Tutorial",
@@ -1079,9 +1146,13 @@ export default function Builder() {
         handleArenaSync({ openWindow: true, sessionName: "Builder Hand-off" });
         return;
       }
+      if (action.action === "practice-help") {
+        openHelpCenter("practice");
+        return;
+      }
       triggerBuilderAction(action.action, action.data);
     },
-    [handleArenaSync, triggerBuilderAction]
+    [handleArenaSync, openHelpCenter, triggerBuilderAction]
   );
 
   const openLastArenaSession = useCallback(() => {
@@ -1227,6 +1298,30 @@ export default function Builder() {
   const normalizedLayoutKey = typeof modeState.layoutMode === "string" ? modeState.layoutMode.toLowerCase() : "";
   const layoutModeLabel = layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
   const currentFlowLabel = modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
+
+  const renderHelpParagraph = (paragraph: string, key: string) => {
+    const trimmed = paragraph.trim();
+    if (trimmed.startsWith("```") && trimmed.endsWith("```") && trimmed.length >= 6) {
+      const content = trimmed.slice(3, -3).trimEnd();
+      return (
+        <pre key={key} className="help-code">
+          {content}
+        </pre>
+      );
+    }
+
+    const lines = paragraph.split("\n");
+    return (
+      <p key={key}>
+        {lines.map((line, lineIndex) => (
+          <Fragment key={`${key}-line-${lineIndex}`}>
+            {line}
+            {lineIndex < lines.length - 1 && <br />}
+          </Fragment>
+        ))}
+      </p>
+    );
+  };
 
   return (
     <div className="builder-shell">
@@ -1637,9 +1732,9 @@ export default function Builder() {
                 : undefined}
             >
               <h3>{section.title}</h3>
-              {section.paragraphs.map((paragraph, paragraphIndex) => (
-                <p key={`${section.title}-p-${paragraphIndex}`}>{paragraph}</p>
-              ))}
+              {section.paragraphs.map((paragraph, paragraphIndex) =>
+                renderHelpParagraph(paragraph, `${section.title}-p-${paragraphIndex}`)
+              )}
               {section.bullets && (
                 <ul>
                   {section.bullets.map((bullet, bulletIndex) => (
