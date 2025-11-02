@@ -260,6 +260,207 @@ body.builder-body .arena-page {
   background: #020617;
 }
 
+.arena-showdown-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.arena-showdown-card .arena-card-header {
+  margin-bottom: 0;
+}
+
+.arena-showdown-intro {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.arena-showdown-selects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.arena-showdown-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.arena-showdown-select-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.arena-showdown-select select {
+  appearance: none;
+  background: rgba(9, 15, 26, 0.92);
+  border: 1px solid rgba(71, 85, 105, 0.7);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #e2e8f0;
+  font-size: 0.92rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.arena-showdown-select select:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+}
+
+.arena-showdown-competitors {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.arena-showdown-team {
+  padding: 16px 18px;
+  background: rgba(8, 14, 28, 0.92);
+  border: 1px solid rgba(51, 65, 85, 0.65);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.45);
+}
+
+.arena-showdown-team h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.arena-showdown-tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(94, 234, 212, 0.78);
+}
+
+.arena-showdown-type {
+  font-size: 0.82rem;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.arena-showdown-team p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.arena-showdown-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.arena-showdown-versus {
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.arena-showdown-table {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arena-showdown-table li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, auto) minmax(0, 1fr);
+  grid-template-areas: "value-a metric value-b";
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 65, 85, 0.65);
+  background: rgba(10, 18, 32, 0.88);
+}
+
+.arena-showdown-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.arena-showdown-value.value-a {
+  grid-area: value-a;
+  text-align: left;
+}
+
+.arena-showdown-value.value-b {
+  grid-area: value-b;
+  text-align: right;
+}
+
+.arena-showdown-metric {
+  grid-area: metric;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+
+.arena-showdown-metric .metric-name {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(148, 163, 184, 0.82);
+}
+
+.arena-showdown-delta {
+  font-size: 0.78rem;
+  color: rgba(56, 189, 248, 0.88);
+}
+
+@media (max-width: 960px) {
+  .arena-showdown-competitors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-showdown-versus {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .arena-showdown-selects {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arena-showdown-table li {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "metric"
+      "value-a"
+      "value-b";
+    gap: 12px;
+    text-align: left;
+  }
+
+  .arena-showdown-metric {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .arena-showdown-value.value-b {
+    text-align: left;
+  }
+}
+
 .arena-roster,
 .arena-breakdown {
   list-style: none;
