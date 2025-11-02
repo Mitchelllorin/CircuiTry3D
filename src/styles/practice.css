@@ -263,6 +263,27 @@
   opacity: 0.82;
 }
 
+.worksheet-sync {
+  background: rgba(12, 32, 64, 0.62);
+  border: 1px solid rgba(106, 182, 255, 0.28);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.worksheet-sync strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ccaff;
+}
+
+.worksheet-sync span {
+  font-size: 0.86rem;
+  color: rgba(212, 236, 255, 0.85);
+}
+
 .practice-table {
   --worksheet-metric-width: 160px;
   border-radius: 18px;
@@ -328,6 +349,14 @@
   gap: 6px;
 }
 
+.column-letter {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(156, 206, 255, 0.7);
+  text-transform: uppercase;
+}
+
 .component-label {
   font-weight: 600;
   font-size: 0.95rem;
@@ -348,6 +377,20 @@
 
 .metric-row:nth-child(even) .metric-label {
   background: rgba(18, 40, 82, 0.42);
+}
+
+.row-index {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: rgba(90, 148, 230, 0.25);
+  color: rgba(208, 232, 255, 0.78);
+  margin-bottom: 4px;
 }
 
 .metric-pill {
@@ -389,6 +432,11 @@
   justify-content: center;
   background: rgba(12, 30, 58, 0.48);
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.worksheet-cell[data-active="true"] {
+  box-shadow: inset 0 0 0 2px rgba(164, 218, 255, 0.85);
+  transform: translateY(-1px);
 }
 
 .worksheet-cell.status-given {
@@ -461,6 +509,10 @@
   border-color: rgba(90, 220, 190, 0.7);
 }
 
+.worksheet-cell[data-active="true"] .worksheet-input {
+  border-color: rgba(160, 220, 255, 0.76);
+}
+
 .worksheet-unit {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -482,6 +534,49 @@
 
 .worksheet-cell[data-reveal="true"] .worksheet-value {
   color: #d8f1ff;
+}
+
+.worksheet-chip {
+  margin-top: 6px;
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(118, 188, 255, 0.18);
+  color: #a8d8ff;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.worksheet-hint {
+  margin-top: 6px;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  color: rgba(208, 232, 255, 0.72);
+}
+
+.worksheet-hint.hint-given {
+  color: rgba(168, 212, 255, 0.82);
+}
+
+.worksheet-hint.hint-blank {
+  color: rgba(198, 224, 255, 0.62);
+}
+
+.worksheet-hint.hint-correct {
+  color: rgba(146, 236, 206, 0.9);
+}
+
+.worksheet-hint.hint-incorrect {
+  color: rgba(255, 160, 160, 0.82);
+}
+
+.worksheet-hint.hint-invalid {
+  color: rgba(255, 178, 226, 0.82);
+}
+
+.worksheet-hint.hint-revealed {
+  color: rgba(210, 242, 255, 0.82);
 }
 
 .worksheet-controls .next-problem {
