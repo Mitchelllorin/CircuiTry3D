@@ -464,7 +464,7 @@
       "use strict";
 
       const state = {
-        mode: "single",
+        mode: "compare",
         components: [],
         selectedA: null,
         selectedB: null,
@@ -1293,6 +1293,7 @@
 
         const modeSelect = document.getElementById("mode");
         if (modeSelect) {
+          modeSelect.value = state.mode;
           modeSelect.addEventListener("change", (event) => {
             state.mode = event.target.value === "compare" ? "compare" : "single";
             updateCompareVisibility();
@@ -1390,6 +1391,12 @@
 
         state.selectedA = state.components.find((component) => component.id === selectA.value) || null;
         state.selectedB = state.components.find((component) => component.id === selectB.value) || null;
+        const modeSelect = document.getElementById("mode");
+        const hasOpponents = state.components.length > 1 && Boolean(state.selectedA) && Boolean(state.selectedB);
+        state.mode = hasOpponents ? "compare" : "single";
+        if (modeSelect) {
+          modeSelect.value = state.mode;
+        }
         updateMeshesForSelection();
       }
 
