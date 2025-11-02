@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/builder-ui.css";
 
 type BuilderInvokeAction =
@@ -538,6 +538,11 @@ export default function Builder() {
 
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
+  const builderFrameSrc = useMemo(() => {
+    const baseUrl = import.meta.env.BASE_URL ?? "/";
+    const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+    return `${normalizedBase}legacy.html?embed=builder`;
+  }, []);
 
   return (
     <div className="builder-shell">
@@ -789,7 +794,7 @@ export default function Builder() {
           ref={iframeRef}
           className="builder-iframe"
           title="CircuiTry3D Builder"
-          src="/legacy.html?embed=builder"
+          src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
           onLoad={() => {
             setFrameReady(true);
