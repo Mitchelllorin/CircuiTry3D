@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import practiceProblems from "../data/practiceProblems";
 import type { PracticeProblem } from "../model/practice";
 import type { PracticeTopology } from "../model/practice";
@@ -136,6 +136,7 @@ export default function Practice() {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
+  const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(null);
 
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
   const selectedProblem = useMemo(() => findProblem(selectedProblemId), [selectedProblemId]);
@@ -146,6 +147,13 @@ export default function Practice() {
     () => buildStepPresentations(selectedProblem, solution),
     [selectedProblem, solution]
   );
+
+  const toggleHint = useCallback((hint: "target" | "worksheet") => {
+    setActiveHint((previous) => (previous === hint ? null : hint));
+  }, []);
+
+  const targetHintOpen = activeHint === "target";
+  const worksheetHintOpen = activeHint === "worksheet";
 
   const expectedValues = useMemo(() => {
     const map: Record<string, Record<WireMetricKey, number>> = {};
@@ -193,6 +201,23 @@ export default function Practice() {
       setAnswerRevealed(true);
     }
   }, [worksheetComplete, answerRevealed]);
+
+  useEffect(() => {
+    if (!activeHint) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActiveHint(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeHint]);
+
+  useEffect(() => {
+    setActiveHint(null);
+  }, [selectedProblem.id]);
 
   const targetValue = resolveTarget(selectedProblem, solution);
 
@@ -342,8 +367,36 @@ export default function Practice() {
         </section>
 
         <section className="target-card" aria-live="polite">
-          <div className="target-icon" aria-hidden="true">
-            ?
+          <div className="target-icon-wrapper">
+            <button
+              type="button"
+              className="target-icon"
+              onClick={() => toggleHint("target")}
+              aria-label="Explain the question mark icon"
+              aria-haspopup="dialog"
+              aria-expanded={targetHintOpen}
+              aria-controls="practice-target-hint"
+            >
+              ?
+            </button>
+            {targetHintOpen ? (
+              <div className="practice-popover" role="dialog" id="practice-target-hint" aria-modal="false">
+                <strong>Question Mark</strong>
+                <p>This marks the value the prompt wants you to solve.</p>
+                <ul>
+                  <li>Fill in each unknown W.I.R.E. cell using the givens and formulas.</li>
+                  <li>Compare with the circuit diagram to keep the totals consistent.</li>
+                  <li>Reveal the answer once you are confident in your work.</li>
+                </ul>
+                <button
+                  type="button"
+                  className="practice-popover-close"
+                  onClick={() => setActiveHint(null)}
+                >
+                  Got it
+                </button>
+              </div>
+            ) : null}
           </div>
           <div>
             <div className="target-question">{selectedProblem.targetQuestion}</div>
@@ -386,12 +439,48 @@ export default function Practice() {
             aria-live="polite"
             data-complete={worksheetComplete ? "true" : undefined}
           >
-            <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
+            <div className="worksheet-status-header">
+              <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
+              <button
+                type="button"
+                className="worksheet-icon-button"
+                onClick={() => toggleHint("worksheet")}
+                aria-label="Show worksheet help"
+                aria-haspopup="dialog"
+                aria-expanded={worksheetHintOpen}
+                aria-controls="practice-worksheet-hint"
+              >
+                +
+              </button>
+            </div>
             <span>
               {worksheetComplete
                 ? "Every unknown matches the solved circuit. Advance when you're ready."
                 : "Enter the missing watts, amps, ohms, and volts using the circuit diagram and formula helpers."}
             </span>
+            {worksheetHintOpen ? (
+              <div
+                className="practice-popover practice-popover--right"
+                role="dialog"
+                id="practice-worksheet-hint"
+                aria-modal="false"
+              >
+                <strong>Plus Sign</strong>
+                <p>Use the worksheet to add each missing value:</p>
+                <ul>
+                  <li>Start by copying the givens from the prompt into the locked cells.</li>
+                  <li>Pick the Ohm's law or power identity that matches the known values for each row.</li>
+                  <li>Cells turn green when the entry is correct, and once every unknown is solved the next problem unlocks.</li>
+                </ul>
+                <button
+                  type="button"
+                  className="practice-popover-close"
+                  onClick={() => setActiveHint(null)}
+                >
+                  Got it
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="worksheet-sync" role="status" aria-live="polite">
