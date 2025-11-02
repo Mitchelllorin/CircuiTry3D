@@ -2767,11 +2767,15 @@
                 </div>
                 
                 <div id="practice-help-text" style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px; color: #ccc; text-align: center; font-size: 12px;">
-                    <strong>Choose your practice method:</strong><br>
-                    - <strong>Practice Sequence</strong> - Work through problems in order<br>
-                    - <strong>Individual Problems</strong> - Jump to any specific circuit<br>
-                    - <strong>Random</strong> - Get randomized component values<br><br>
-                    <small>Circuits load with reference wiring; press Clear if you want to rebuild it yourself.</small>
+                    <strong>Run the Table Method on every problem:</strong><br>
+                    1. Load a circuit above, then scroll to the W.I.R.E. worksheet that appears below.<br>
+                    2. Record the givens for each component across W, I, R, E columns.<br>
+                    3. Use the matching Ohm's Law or power formula to solve the blanks, then tap <em>Reveal totals</em> to check.<br><br>
+                    <strong>Pick your practice flow:</strong><br>
+                    - <strong>Practice Sequence</strong> - Work through all four problems in order.<br>
+                    - <strong>Individual Problems</strong> - Jump straight to series, parallel, mixed, or combo.<br>
+                    - <strong>Random</strong> - Regenerate the same layouts with fresh values.<br><br>
+                    <small>Need a printable sheet? Open the Table Method Guide from the Builder panel or tap Clear entries to start over.</small>
                 </div>
             </div>
         </div>
@@ -10538,44 +10542,23 @@ Made with ? for visual learners everywhere!
 
         function showPracticeModeHelp() {
             const help = `
-?? PRACTICE MODE HELP
+TABLE METHOD CHECKLIST
 
-?? HOW TO GET NEXT PROBLEMS:
+1. Load a practice problem using Start Practice Sequence, the individual circuit buttons, or Random.
+2. Scroll to the W.I.R.E. worksheet under the Practice panel.
+3. Record every given value in the table columns: W (power), I (current), R (resistance), E (voltage).
+4. Pick the matching formula:
+   - Ohm's Law: E = I * R, I = E / R, R = E / I
+   - Power: P = E * I, P = I * I * R, P = (E * E) / R
+5. Solve each unknown in the table, then tap Reveal totals to confirm with Kirchhoff.
+6. Press Clear entries anytime you want a fresh worksheet without reloading the circuit.
 
-?? PRACTICE SEQUENCE (Recommended):
-   ? Click "Start Practice Sequence" for guided progression
-   ? Work through 4 problems in order: Series ? Parallel ? Mixed ? Switch
-   ? Use "? Prev" and "Next ?" buttons to navigate
-   ? See "Problem 1 of 4" counter to track progress
-   ? Click "Finish ??" on the last problem
+Navigation tips:
+- Start Practice Sequence walks through the four core problems in order.
+- Use Prev / Next buttons to move through the sequence and Finish when the counter reaches the end.
+- Load individual problems to focus on one topology or use Random for new values with the same layout.
 
-?? INDIVIDUAL PROBLEMS:
-   ? Click specific buttons: "Basic Series", "Basic Parallel", etc.
-   ? Jump to any problem for review or extra practice
-   ? Still shows problem counter and navigation
-
-?? RANDOM PROBLEMS:
-   ? Click "Random" for randomized component values
-   ? Same circuit types, but different numbers each time
-   ? Perfect for extra practice and testing
-
-?? WIRING PROCESS:
-   1. Problem loads with components placed automatically
-   2. Read the question: "Find total resistance", etc.
-   3. Click ??? Tools ? ?? Wire Mode
-   4. Touch colored terminals to connect:
-      - Red = Battery positive (+)
-      - Gray = Battery negative (-)
-      - White = Component terminals
-   5. Status changes: ?? Incomplete ? ? Complete
-
-?? SOLVING PROBLEMS:
-   ? Switch to EIR ? for Ohm's law (E=I?R)
-   ? Use Power ? for power calculations (W=I?E)
-   ? Try Worksheet for step-by-step formulas
-   ? Go to Solve tab to check your answers
-
-Perfect sequence for learning circuit analysis!
+Need more detail? Open the Table Method Guide in the Builder sidebar for printable worksheets and step-by-step examples.
             `;
             alert(help);
         }
