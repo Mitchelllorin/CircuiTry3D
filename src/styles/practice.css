@@ -400,13 +400,38 @@
   color: rgba(212, 236, 255, 0.85);
 }
 
+.practice-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  margin-bottom: -8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.practice-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.practice-table-wrapper::-webkit-scrollbar-track {
+  background: rgba(6, 16, 34, 0.4);
+  border-radius: 999px;
+}
+
+.practice-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(110, 180, 255, 0.38);
+  border-radius: 999px;
+}
+
 .practice-table {
   --worksheet-metric-width: 160px;
+  --worksheet-column-min: 180px;
   border-radius: 18px;
   border: 1px solid rgba(90, 148, 230, 0.3);
   overflow: hidden;
   backdrop-filter: blur(10px);
   background: rgba(8, 18, 36, 0.82);
+  min-width: calc(var(--worksheet-metric-width, 160px) + var(--worksheet-column-min, 180px));
 }
 
 .practice-table-header,
@@ -883,6 +908,7 @@
 
   .practice-table {
     --worksheet-metric-width: 140px;
+    --worksheet-column-min: 160px;
   }
 }
 
@@ -894,6 +920,7 @@
 
   .practice-table {
     --worksheet-metric-width: 120px;
+    --worksheet-column-min: 140px;
   }
 
   .worksheet-input {
