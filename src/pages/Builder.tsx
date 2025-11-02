@@ -22,6 +22,7 @@ type BuilderInvokeAction =
   | "show-about"
   | "open-arena"
   | "set-tool"
+  | "clear-workspace"
   | "run-simulation";
 
 type BuilderMessage =
@@ -127,6 +128,13 @@ const QUICK_ACTIONS: QuickAction[] = [
     action: "set-tool",
     data: { tool: "measure" },
     tool: "measure",
+  },
+  {
+    id: "clear",
+    label: "Clear Workspace",
+    description: "Remove all components, wires, and analysis data",
+    kind: "action",
+    action: "clear-workspace",
   },
   {
     id: "simulate",
@@ -1214,6 +1222,17 @@ export default function Builder() {
     [postToBuilder]
   );
 
+  const triggerSimulationPulse = useCallback(() => {
+    if (simulationPulseTimer.current !== null) {
+      window.clearTimeout(simulationPulseTimer.current);
+    }
+    setSimulatePulsing(true);
+    simulationPulseTimer.current = window.setTimeout(() => {
+      setSimulatePulsing(false);
+      simulationPulseTimer.current = null;
+    }, 1200);
+  }, []);
+
   const handleArenaSync = useCallback(
     (
       options: {
@@ -1378,18 +1397,20 @@ export default function Builder() {
       }
 
       if (quickAction.id === "simulate") {
-        if (simulationPulseTimer.current !== null) {
-          window.clearTimeout(simulationPulseTimer.current);
-        }
-        setSimulatePulsing(true);
-        simulationPulseTimer.current = window.setTimeout(() => {
-          setSimulatePulsing(false);
-          simulationPulseTimer.current = null;
-        }, 1200);
+        triggerSimulationPulse();
       }
     },
-    [triggerBuilderAction]
+    [triggerBuilderAction, triggerSimulationPulse]
   );
+
+  const handleClearWorkspace = useCallback(() => {
+    triggerBuilderAction("clear-workspace");
+  }, [triggerBuilderAction]);
+
+  const handleRunSimulationClick = useCallback(() => {
+    triggerBuilderAction("run-simulation");
+    triggerSimulationPulse();
+  }, [triggerBuilderAction, triggerSimulationPulse]);
 
   const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
@@ -1423,6 +1444,14 @@ export default function Builder() {
 
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
+
+  const floatingControlsBottom = useMemo(
+    () =>
+      isBottomMenuOpen
+        ? "calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width) + 44px + var(--builder-safe-area-bottom))"
+        : "calc(32px + var(--builder-safe-area-bottom) + var(--builder-menu-toggle-width))",
+    [isBottomMenuOpen]
+  );
 
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
@@ -1790,6 +1819,37 @@ export default function Builder() {
             setFrameReady(true);
           }}
         />
+      </div>
+
+      <div
+        className="builder-floating-controls"
+        style={{ bottom: floatingControlsBottom }}
+        role="group"
+        aria-label="Workspace actions"
+      >
+        <button
+          type="button"
+          className="builder-floating-button"
+          data-variant="clear"
+          onClick={handleClearWorkspace}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
+        >
+          Clear Workspace
+        </button>
+        <button
+          type="button"
+          className="builder-floating-button"
+          data-variant="simulate"
+          onClick={handleRunSimulationClick}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          data-pulse={isSimulatePulsing ? "true" : undefined}
+          title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
+        >
+          Run Simulation
+        </button>
       </div>
 
       <div ref={floatingLogoRef} className="builder-floating-logo" aria-hidden="true">

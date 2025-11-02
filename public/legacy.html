@@ -3169,6 +3169,9 @@ body.android-optimized.menu-visible .status {
                             case 'open-arena':
                                 if (typeof openArena === 'function') openArena();
                                 break;
+                            case 'clear-workspace':
+                                if (typeof clearAll === 'function') clearAll();
+                                break;
                             case 'run-simulation':
                                 if (typeof runSimulation === 'function') runSimulation();
                                 break;
