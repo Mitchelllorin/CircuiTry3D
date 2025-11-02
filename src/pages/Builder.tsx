@@ -152,6 +152,15 @@ type PanelAction = {
   data?: Record<string, unknown>;
 };
 
+type SettingsItem = {
+  id: string;
+  label: string;
+  action: BuilderInvokeAction;
+  data?: Record<string, unknown>;
+  getDescription: (state: LegacyModeState, helpers: { currentFlowLabel: string }) => string;
+  isActive?: (state: LegacyModeState) => boolean;
+};
+
 type ArenaExportSummary = {
   sessionId: string;
   exportedAt: string;
@@ -258,6 +267,37 @@ const VIEW_CONTROL_ACTIONS: PanelAction[] = [
     label: "Toggle Labels",
     description: "Display or conceal component reference labels.",
     action: "toggle-labels",
+  },
+];
+
+const SETTINGS_ITEMS: SettingsItem[] = [
+  {
+    id: "flow-visualisation",
+    label: "Flow Visualisation",
+    action: "toggle-current-flow",
+    getDescription: (_state, { currentFlowLabel }) => `${currentFlowLabel} visualisation active`,
+    isActive: (state) => state.currentFlowStyle === "solid",
+  },
+  {
+    id: "polarity-markers",
+    label: "Polarity Markers",
+    action: "toggle-polarity",
+    getDescription: (state) => (state.showPolarityIndicators ? "Polarity markers visible" : "Polarity markers hidden"),
+    isActive: (state) => state.showPolarityIndicators,
+  },
+  {
+    id: "design-grid",
+    label: "Design Grid",
+    action: "toggle-grid",
+    getDescription: (state) => (state.showGrid ? "Grid visible" : "Grid hidden"),
+    isActive: (state) => state.showGrid,
+  },
+  {
+    id: "component-labels",
+    label: "Component Labels",
+    action: "toggle-labels",
+    getDescription: (state) => (state.showLabels ? "Labels shown" : "Labels hidden"),
+    isActive: (state) => state.showLabels,
   },
 ];
 
@@ -1539,6 +1579,32 @@ export default function Builder() {
                 >
                   <span className="slider-chip-label">Open Last Arena Run</span>
                 </button>
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Settings</span>
+              <div className="slider-stack">
+                {SETTINGS_ITEMS.map((setting) => {
+                  const description = setting.getDescription(modeState, { currentFlowLabel });
+                  const isActive = setting.isActive?.(modeState) ?? false;
+                  return (
+                    <button
+                      key={setting.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => triggerBuilderAction(setting.action, setting.data)}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      aria-pressed={setting.isActive ? isActive : undefined}
+                      data-active={setting.isActive && isActive ? "true" : undefined}
+                      title={controlsDisabled ? controlDisabledTitle : description}
+                      data-intent="settings"
+                    >
+                      <span className="slider-label">{setting.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="slider-section">
