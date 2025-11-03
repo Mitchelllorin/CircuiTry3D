@@ -1,406 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="application-name" content="CircuiTry3D" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="format-detection" content="telephone=no" />
-    <title>CircuiTry3D</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            background: #0f1b3d;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
-            color: #ffffff;
-            background: linear-gradient(135deg, #0f1b3d 0%, #16213e 45%, #0a1028 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: calc(24px + env(safe-area-inset-top, 0px)) calc(24px + env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) calc(24px + env(safe-area-inset-left, 0px));
-        }
-
-        .landing-page {
-            position: relative;
-            width: min(620px, 100%);
-            padding: clamp(24px, 6vw, 48px);
-            border-radius: 28px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 20px;
-            background: rgba(8, 16, 32, 0.82);
-            border: 1px solid rgba(0, 255, 136, 0.35);
-            box-shadow: 0 26px 120px rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(16px);
-        }
-
-        .landing-logo {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .landing-logo-image {
-            width: clamp(140px, 40vw, 200px);
-            aspect-ratio: 1 / 1;
-            border-radius: 36px;
-            display: block;
-            box-shadow: 0 0 16px rgba(0, 255, 136, 0.45), 0 0 32px rgba(0, 136, 255, 0.28);
-        }
-
-        .logo-pulse {
-            animation: logoPulse 2.2s ease-in-out infinite;
-        }
-
-        @keyframes logoPulse {
-            0% {
-                filter: drop-shadow(0 0 8px rgba(100, 160, 255, 0.4)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.25));
-            }
-            50% {
-                filter: drop-shadow(0 0 16px rgba(140, 200, 255, 0.85)) drop-shadow(0 0 28px rgba(255, 255, 255, 0.35));
-            }
-            100% {
-                filter: drop-shadow(0 0 10px rgba(100, 160, 255, 0.5)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.3));
-            }
-        }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
-
-        .landing-subtitle {
-            margin: 0;
-            font-size: clamp(14px, 3vw, 18px);
-            text-transform: uppercase;
-            letter-spacing: 0.32em;
-            color: rgba(160, 199, 240, 0.85);
-        }
-
-        .circuit-preview {
-            width: min(82vw, 340px);
-            aspect-ratio: 1 / 1;
-            border: 3px solid rgba(0, 255, 136, 0.85);
-            border-radius: 28px;
-            background: rgba(5, 14, 28, 0.7);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: inset 0 0 30px rgba(0, 255, 136, 0.08);
-        }
-
-        .circuit-preview::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
-            transform: translateX(-100%);
-            animation: shimmer 3.2s linear infinite;
-        }
-
-        @keyframes shimmer {
-            100% {
-                transform: translateX(100%);
-            }
-        }
-
-        .square-logo {
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            object-fit: contain;
-            display: block;
-            filter: drop-shadow(0 0 16px rgba(0, 255, 150, 0.2));
-        }
-
-        .photon-overlay {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .photon-overlay path {
-            fill: none;
-        }
-
-        .circuit-photon {
-            fill: #ffe066;
-            filter: drop-shadow(0 0 12px rgba(255, 224, 102, 0.75));
-        }
-
-        .landing-actions {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            width: 100%;
-        }
-
-        .status-badge {
-            display: none;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 20px;
-            border-radius: 999px;
-            border: 1px solid rgba(0, 255, 136, 0.45);
-            background: rgba(0, 30, 60, 0.6);
-            color: rgba(220, 255, 245, 0.9);
-            text-transform: uppercase;
-            letter-spacing: 0.18em;
-            font-weight: 600;
-        }
-
-        .status-badge::before {
-            content: "";
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #00ff88;
-            box-shadow: 0 0 12px rgba(0, 255, 136, 0.8);
-            animation: statusPulse 1.4s ease-in-out infinite;
-        }
-
-        @keyframes statusPulse {
-            0% {
-                transform: scale(0.85);
-                opacity: 0.6;
-            }
-            50% {
-                transform: scale(1.2);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(0.85);
-                opacity: 0.6;
-            }
-        }
-
-        .loading-progress {
-            display: none;
-            width: min(80vw, 360px);
-            height: 5px;
-            background: rgba(255, 255, 255, 0.16);
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .loading-bar {
-            width: 0;
-            height: 100%;
-            background: linear-gradient(90deg, #00ff88 0%, #00ccff 50%, #00ff88 100%);
-            background-size: 200% 100%;
-            border-radius: inherit;
-            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.35);
-            transition: width 0.6s cubic-bezier(0.33, 1, 0.68, 1);
-            animation: barShimmer 2.8s linear infinite;
-        }
-
-        @keyframes barShimmer {
-            0% {
-                background-position: 0% 50%;
-            }
-            100% {
-                background-position: 200% 50%;
-            }
-        }
-
-        .loading-text {
-            display: none;
-            font-size: clamp(13px, 3.4vw, 16px);
-            text-transform: uppercase;
-            letter-spacing: 0.22em;
-            color: rgba(200, 235, 255, 0.82);
-        }
-
-        .launch-button {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 18px 40px;
-            border-radius: 999px;
-            border: none;
-            font-weight: 800;
-            font-size: clamp(16px, 4vw, 20px);
-            letter-spacing: 0.24em;
-            text-transform: uppercase;
-            cursor: pointer;
-            background: linear-gradient(135deg, #00ff88 0%, #00d977 100%);
-            color: #04121f;
-            box-shadow: 0 16px 40px rgba(0, 255, 136, 0.32);
-            transition: transform 0.24s ease, box-shadow 0.24s ease;
-        }
-
-        .launch-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 22px 56px rgba(0, 255, 180, 0.45);
-        }
-
-        .launch-button:active {
-            transform: translateY(-1px);
-        }
-
-        .version-text {
-            margin: 12px 0 0;
-            font-size: 12px;
-            letter-spacing: 0.32em;
-            text-transform: uppercase;
-            color: rgba(148, 163, 184, 0.55);
-        }
-
-        @media (max-width: 640px) {
-            body {
-                padding: 16px;
-            }
-
-            .landing-page {
-                border-radius: 22px;
-                padding: clamp(20px, 8vw, 32px);
-            }
-
-            .landing-subtitle {
-                letter-spacing: 0.24em;
-            }
-
-            .landing-actions {
-                gap: 14px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .logo-pulse,
-            .circuit-preview::before,
-            .status-badge::before,
-            .loading-bar {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-            }
-
-            .loading-bar {
-                transition: none;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: linear-gradient(135deg, #0f1b3d, #16213e 40%, #0a1028); color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif; }
+    .landing-page { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
+    .landing-logo { font-size: clamp(48px, 10vw, 92px); font-weight: 900; text-align: center; line-height: 1; }
+    .logo-circui { color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.6), 0 0 24px rgba(0,136,255,0.2); }
+    .logo-try { color: #ff8800; text-shadow: 0 0 12px rgba(255,136,0,0.6), 0 0 24px rgba(255,255,255,0.15); }
+    .logo-pulse { animation: logoPulse 2.2s ease-in-out infinite; }
+    @keyframes logoPulse {
+      0% { filter: drop-shadow(0 0 8px rgba(100,160,255,0.4)) drop-shadow(0 0 18px rgba(255,255,255,0.25)); }
+      50% { filter: drop-shadow(0 0 14px rgba(140,200,255,0.8)) drop-shadow(0 0 28px rgba(255,255,255,0.35)); }
+      100% { filter: drop-shadow(0 0 10px rgba(100,160,255,0.6)) drop-shadow(0 0 24px rgba(255,255,255,0.3)); }
+    }
+    .landing-subtitle { color: #88ccff; margin: 4px 0 8px; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: 700; opacity: 0.9; }
+    .logo-circuit { width: min(640px, 90vw); height: auto; }
+    .wire { stroke: #88ccff; stroke-width: 3; fill: none; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(136,204,255,0.5)); }
+    .element { stroke: #00ff88; stroke-width: 2; fill: none; }
+    .photon { fill: #cfe9ff; filter: drop-shadow(0 0 6px rgba(180,220,255,0.9)); }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+    .btn { padding: 14px 20px; border-radius: 9999px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .btn-launch { background: #00ff88; color: #111827; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
+    .btn-github { background: #111827; color: #fff; border: 1px solid #374151; }
+  </style>
 </head>
 <body>
-    <div class="landing-page">
-        <h1 class="landing-logo logo-pulse">
-            <span class="sr-only">CircuiTry3D</span>
-            <img src="circuit-logo.svg" alt="" aria-hidden="true" class="landing-logo-image" />
-        </h1>
-        <p class="landing-subtitle">Professional Circuit Design</p>
-
-        <div class="circuit-preview" aria-hidden="true">
-            <img src="circuit-logo.svg" alt="CircuiTry3D circuit logo" class="square-logo" />
-            <svg class="photon-overlay" viewBox="0 0 512 512" role="presentation" xmlns:xlink="http://www.w3.org/1999/xlink">
-                <defs>
-                    <path id="photon-path" d="M 126 209 H 384 V 297 H 126 Z" />
-                </defs>
-                <circle class="circuit-photon" r="7">
-                    <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
-                        <mpath href="#photon-path" xlink:href="#photon-path" />
-                    </animateMotion>
-                </circle>
-                <circle class="circuit-photon" r="7">
-                    <animateMotion dur="6s" begin="-3s" repeatCount="indefinite" rotate="auto">
-                        <mpath href="#photon-path" xlink:href="#photon-path" />
-                    </animateMotion>
-                </circle>
-            </svg>
-        </div>
-
-        <div class="landing-actions">
-            <div class="status-badge" id="status-badge">Initializing W.I.R.E. systems</div>
-            <div class="loading-progress" id="loading-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                <div class="loading-bar" id="loading-bar"></div>
-            </div>
-            <p class="loading-text" id="loading-text">Preparing launch sequence</p>
-            <button id="launch-btn" class="launch-button" type="button">Launch CircuiTry</button>
-        </div>
-
-        <p class="version-text">Professional Edition v2.0</p>
+  <div class="landing-page">
+    <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span style="color:#00ff88">3D</span></div>
+    <div class="landing-subtitle">Professional Circuit Design</div>
+    <svg class="logo-circuit" viewBox="0 0 380 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <!-- Series schematic path -->
+      <path id="logo-path" class="wire" filter="url(#glow)" d="M20,60 H90 M90,60 h25 m10,-15 h30 v30 h-30 m40,-15 h65 m10,-15 h30 v30 h-30 m40,-15 H360"/>
+      <!-- Battery symbol at start -->
+      <line x1="20" y1="50" x2="20" y2="70" class="element"/>
+      <line x1="26" y1="45" x2="26" y2="75" class="element"/>
+      <!-- Resistor block 1 -->
+      <rect x="125" y="45" width="30" height="30" class="element" rx="4"/>
+      <!-- LED block -->
+      <rect x="270" y="45" width="30" height="30" class="element" rx="4"/>
+      <!-- Photons -->
+      <g id="photons"></g>
+    </svg>
+    <div class="actions">
+      <a class="btn btn-launch" href="/app">Launch App</a>
+      <a class="btn btn-github" href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer">View on GitHub</a>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const progress = document.getElementById("loading-progress");
-            const bar = document.getElementById("loading-bar");
-            const text = document.getElementById("loading-text");
-            const status = document.getElementById("status-badge");
-            const launchBtn = document.getElementById("launch-btn");
-
-            if (!progress || !bar || !text || !status || !launchBtn) {
-                return;
-            }
-
-            const navigateToBuilder = () => {
-                const topWindow = window.top ?? window;
-
-                try {
-                    if (typeof topWindow.location?.hash === "string") {
-                        topWindow.location.hash = "/app";
-                    } else {
-                        topWindow.location.href = "/app";
-                    }
-                } catch (error) {
-                    console.warn("Landing page: unable to update hash, falling back to href", error);
-                    topWindow.location.href = "/#/app";
-                }
-            };
-
-            launchBtn.addEventListener("click", navigateToBuilder);
-
-            const phases = [
-                { delay: 400, width: 24, text: "Booting W.I.R.E. core" },
-                { delay: 1100, width: 52, text: "Calibrating instrumentation" },
-                { delay: 1800, width: 76, text: "Loading component library" },
-                { delay: 2500, width: 92, text: "Optimizing render pipeline" },
-                { delay: 3200, width: 100, text: "Systems nominal", statusText: "W.I.R.E. Circuit Builder Ready!" }
-            ];
-
-            status.style.display = "inline-flex";
-            progress.style.display = "block";
-            text.style.display = "block";
-
-            phases.forEach(({ delay, width, text: phaseText, statusText }, index) => {
-                setTimeout(() => {
-                    bar.style.width = width + "%";
-                    progress.setAttribute("aria-valuenow", String(width));
-                    text.textContent = phaseText;
-
-                    if (statusText) {
-                        status.textContent = statusText;
-                    }
-
-                    if (index === phases.length - 1) {
-                        launchBtn.style.display = "inline-flex";
-                        launchBtn.focus({ preventScroll: true });
-                    }
-                }, delay);
-            });
-        });
-    </script>
+  </div>
 </body>
+<script>
+  // Animate small blue-white photons along the logo path
+  (function(){
+    const svg = document.querySelector('.logo-circuit');
+    const path = document.getElementById('logo-path');
+    const holder = document.getElementById('photons');
+    if (!svg || !path || !holder) return;
+    const total = Math.max(8, Math.floor(path.getTotalLength()/80));
+    const dots = [];
+    for (let i=0;i<total;i++){
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('r','2.6');
+      c.setAttribute('class','photon');
+      holder.appendChild(c);
+      dots.push({ el:c, t:(i/total) });
+    }
+    function tick(){
+      const len = path.getTotalLength();
+      dots.forEach((d,idx)=>{
+        d.t += 0.004 + (idx%3)*0.0008; if (d.t>1) d.t -= 1;
+        const p = path.getPointAtLength(d.t*len);
+        d.el.setAttribute('cx', p.x);
+        d.el.setAttribute('cy', p.y);
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+</script>
 </html>
