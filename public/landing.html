@@ -39,7 +39,7 @@
       text-align: center;
     }
     .wordmark {
-      font-size: clamp(48px, 12vw, 108px);
+      font-size: clamp(38px, 9.4vw, 92px);
       font-weight: 900;
       letter-spacing: -0.015em;
       display: inline-flex;
@@ -83,7 +83,7 @@
     }
     .wire {
       stroke: #41ffc0;
-      stroke-width: 5;
+      stroke-width: 4;
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -102,32 +102,35 @@
       font-size: 16px;
       letter-spacing: 0.08em;
     }
-    .battery-line {
+    .battery-plate {
       stroke: #39ffb7;
       stroke-width: 4;
       stroke-linecap: round;
       filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
     }
-    .battery-line.battery-negative {
-      stroke-width: 3;
+    .battery-plate.battery-positive {
+      stroke-width: 4.4;
+    }
+    .battery-plate.battery-negative {
+      stroke-width: 3.2;
     }
     .resistor-body {
       stroke: #39ffb7;
       stroke-width: 4;
-      fill: none;
-      stroke-linejoin: round;
+      fill: rgba(6,16,38,0.88);
       filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
     }
-    .switch-line {
+    .switch-arm,
+    .switch-fixed {
       stroke: #39ffb7;
-      stroke-width: 4.2;
+      stroke-width: 4;
       stroke-linecap: round;
       filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
     }
     .switch-contact {
       fill: rgba(6,16,38,0.92);
       stroke: #39ffb7;
-      stroke-width: 2.2;
+      stroke-width: 2.6;
       filter: drop-shadow(0 0 8px rgba(57,255,183,0.65));
     }
     .led-poly {
@@ -244,53 +247,56 @@
         </defs>
         <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
 
-        <path id="series-path" class="trace-path" d="M150 120 H360 V220 H150 Z" />
-        <g class="wires" aria-hidden="true">
-          <line class="wire" x1="150" y1="120" x2="200" y2="120" />
-          <line class="wire" x1="320" y1="120" x2="360" y2="120" />
-          <line class="wire" x1="150" y1="220" x2="200" y2="220" />
-          <line class="wire" x1="320" y1="220" x2="360" y2="220" />
+        <path id="series-path" class="trace-path" d="M160 120 H360 V220 H160 Z" />
+
+        <g aria-hidden="true">
+          <!-- Top run -->
+          <circle class="node" cx="160" cy="120" r="4.6" />
+          <line class="wire" x1="160" y1="120" x2="200" y2="120" />
+
+          <g class="switch" transform="translate(200,120)">
+            <circle class="switch-contact" cx="0" cy="0" r="5.2" />
+            <line class="switch-arm" x1="0" y1="0" x2="48" y2="-26" />
+            <circle class="switch-contact" cx="60" cy="0" r="5.2" />
+            <line class="switch-fixed" x1="60" y1="0" x2="80" y2="0" />
+          </g>
+
+          <line class="wire" x1="280" y1="120" x2="296" y2="120" />
+
+          <g class="resistor" transform="translate(296,120)">
+            <rect class="resistor-body" x="0" y="-16" width="64" height="32" />
+          </g>
+
+          <circle class="node" cx="360" cy="120" r="4.6" />
+
+          <!-- Right run -->
+          <line class="wire" x1="360" y1="120" x2="360" y2="140" />
+          <g class="led" transform="translate(360,170) rotate(90)">
+            <line class="wire" x1="-50" y1="0" x2="-24" y2="0" />
+            <polygon class="led-poly" points="-24,-20 -24,20 6,0" />
+            <line class="led-bar" x1="12" y1="-22" x2="12" y2="22" />
+            <line class="wire" x1="12" y1="0" x2="50" y2="0" />
+            <line class="led-arrow" x1="24" y1="-12" x2="42" y2="-28" />
+            <line class="led-arrow" x1="32" y1="-4" x2="50" y2="-20" />
+          </g>
+          <line class="wire" x1="360" y1="200" x2="360" y2="220" />
+          <circle class="node" cx="360" cy="220" r="4.6" />
+
+          <!-- Bottom run -->
+          <line class="wire" x1="360" y1="220" x2="160" y2="220" />
+          <circle class="node" cx="160" cy="220" r="4.6" />
+
+          <!-- Left run -->
+          <line class="wire" x1="160" y1="220" x2="160" y2="190" />
+          <line class="battery-plate battery-negative" x1="148" y1="190" x2="172" y2="190" />
+          <line class="battery-plate battery-positive" x1="136" y1="150" x2="184" y2="150" />
+          <line class="wire" x1="160" y1="150" x2="160" y2="120" />
         </g>
 
-        <g class="battery" transform="translate(150,120)">
-          <line class="wire" x1="0" y1="0" x2="0" y2="38" />
-          <line class="battery-line" x1="-22" y1="38" x2="22" y2="38" />
-          <line class="wire" x1="0" y1="62" x2="0" y2="100" />
-          <line class="battery-line battery-negative" x1="-16" y1="62" x2="16" y2="62" />
-          <circle class="node" cx="0" cy="0" r="5" />
-          <circle class="node" cx="0" cy="100" r="5" />
-          <text class="component-label" x="-36" y="60" text-anchor="end">B1</text>
-        </g>
-
-        <g class="resistor" transform="translate(200,120)">
-          <polyline class="resistor-body" points="0,0 10,-16 20,16 30,-16 40,16 50,-16 60,16 70,-16 80,16 90,-16 100,16 110,-16 120,0" />
-          <circle class="node" cx="0" cy="0" r="5" />
-          <circle class="node" cx="120" cy="0" r="5" />
-          <text class="component-label" x="60" y="-30" text-anchor="middle">R1</text>
-        </g>
-
-        <g class="switch" transform="translate(200,220)">
-          <line class="wire" x1="0" y1="0" x2="36" y2="0" />
-          <line class="switch-line" x1="36" y1="0" x2="78" y2="-24" />
-          <line class="wire" x1="84" y1="0" x2="120" y2="0" />
-          <circle class="node" cx="0" cy="0" r="5" />
-          <circle class="node" cx="120" cy="0" r="5" />
-          <circle class="switch-contact" cx="36" cy="0" r="4" />
-          <circle class="switch-contact" cx="84" cy="0" r="4" />
-          <text class="component-label" x="60" y="48" text-anchor="middle">SW1</text>
-        </g>
-
-        <g class="led" transform="translate(360,170) rotate(90)">
-          <line class="wire" x1="-50" y1="0" x2="-24" y2="0" />
-          <polygon class="led-poly" points="-24,-20 -24,20 6,0" />
-          <line class="led-bar" x1="12" y1="-22" x2="12" y2="22" />
-          <line class="wire" x1="12" y1="0" x2="50" y2="0" />
-          <line class="led-arrow" x1="24" y1="-12" x2="42" y2="-28" />
-          <line class="led-arrow" x1="32" y1="-4" x2="50" y2="-20" />
-          <circle class="node" cx="-50" cy="0" r="5" />
-          <circle class="node" cx="50" cy="0" r="5" />
-        </g>
-        <text class="component-label" x="402" y="176">L1</text>
+        <text class="component-label" x="122" y="168" text-anchor="end">B1</text>
+        <text class="component-label" x="236" y="92" text-anchor="middle">S1</text>
+        <text class="component-label" x="328" y="92" text-anchor="middle">R1</text>
+        <text class="component-label" x="398" y="172">LED1</text>
 
         <g class="photons" id="photons"></g>
       </svg>
