@@ -87,7 +87,7 @@ const buildTableRows = (problem: PracticeProblem, solution: SolveResult): WireTa
     ...componentRows,
     {
       id: "totals",
-      label: "Totals",
+      label: "Circuit Totals",
       role: "total" as const,
       givens: problem.totalsGivens,
       metrics: solution.totals,

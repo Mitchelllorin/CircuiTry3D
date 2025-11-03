@@ -11,7 +11,7 @@ const LABEL_COLOR = "#d6ecff";
 
 const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   if (componentId === "totals") {
-    return "Totals";
+    return "Circuit Totals";
   }
 
   if (componentId === problem.source.id) {
@@ -109,75 +109,75 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
   const r4TopY = r2TopY;
   const r4BottomY = r2BottomY;
 
-  const verticalResWidth = 30;
-  const horizontalResHeight = 26;
+    const verticalResWidth = 30;
+    const horizontalResHeight = 26;
 
-  return (
-    <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series rectangular circuit">
-      {drawBattery(batteryX, batteryY)}
-      {/* Source leads */}
-      <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+    return (
+      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series circuit diagram">
+        {drawBattery(batteryX, batteryY)}
+        {/* Source leads */}
+        <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      {/* Top side */}
-      <line x1={positiveX} y1={topY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={loopLeftX} y1={topY} x2={r1StartX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {drawResistor({
-        key: "series-resistor-R1",
-        x: r1CenterX,
-        y: topY,
-        width: horizontalResWidth,
-        height: horizontalResHeight,
-        label: labels.R1,
-        orientation: "horizontal",
-      })}
-      <line x1={r1EndX} y1={topY} x2={loopRightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {/* Top side */}
+        <line x1={positiveX} y1={topY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={loopLeftX} y1={topY} x2={r1StartX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {drawResistor({
+          key: "series-resistor-R1",
+          x: r1CenterX,
+          y: topY,
+          width: horizontalResWidth,
+          height: horizontalResHeight,
+          label: labels.R1,
+          orientation: "horizontal",
+        })}
+        <line x1={r1EndX} y1={topY} x2={loopRightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      {/* Right side */}
-      <line x1={loopRightX} y1={topY} x2={loopRightX} y2={r2TopY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {drawResistor({
-        key: "series-resistor-R2",
-        x: loopRightX,
-        y: r2CenterY,
-        width: verticalResWidth,
-        height: verticalResHeight,
-        label: labels.R2,
-        orientation: "vertical",
-      })}
-      <line x1={loopRightX} y1={r2BottomY} x2={loopRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {/* Right side */}
+        <line x1={loopRightX} y1={topY} x2={loopRightX} y2={r2TopY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {drawResistor({
+          key: "series-resistor-R2",
+          x: loopRightX,
+          y: r2CenterY,
+          width: verticalResWidth,
+          height: verticalResHeight,
+          label: labels.R2,
+          orientation: "vertical",
+        })}
+        <line x1={loopRightX} y1={r2BottomY} x2={loopRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      {/* Bottom side */}
-      <line x1={loopRightX} y1={bottomY} x2={r3EndX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {drawResistor({
-        key: "series-resistor-R3",
-        x: r3CenterX,
-        y: bottomY,
-        width: horizontalResWidth,
-        height: horizontalResHeight,
-        label: labels.R3,
-        orientation: "horizontal",
-      })}
-      <line x1={r3StartX} y1={bottomY} x2={loopLeftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={loopLeftX} y1={bottomY} x2={negativeX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {/* Bottom side */}
+        <line x1={loopRightX} y1={bottomY} x2={r3EndX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {drawResistor({
+          key: "series-resistor-R3",
+          x: r3CenterX,
+          y: bottomY,
+          width: horizontalResWidth,
+          height: horizontalResHeight,
+          label: labels.R3,
+          orientation: "horizontal",
+        })}
+        <line x1={r3StartX} y1={bottomY} x2={loopLeftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={loopLeftX} y1={bottomY} x2={negativeX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      {/* Left side */}
-      <line x1={loopLeftX} y1={bottomY} x2={loopLeftX} y2={r4BottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {drawResistor({
-        key: "series-resistor-R4",
-        x: loopLeftX,
-        y: r4CenterY,
-        width: verticalResWidth,
-        height: verticalResHeight,
-        label: labels.R4,
-        orientation: "vertical",
-      })}
-      <line x1={loopLeftX} y1={r4TopY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {/* Left side */}
+        <line x1={loopLeftX} y1={bottomY} x2={loopLeftX} y2={r4BottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {drawResistor({
+          key: "series-resistor-R4",
+          x: loopLeftX,
+          y: r4CenterY,
+          width: verticalResWidth,
+          height: verticalResHeight,
+          label: labels.R4,
+          orientation: "vertical",
+        })}
+        <line x1={loopLeftX} y1={r4TopY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
-        {problem.source.label ?? "Source"}
-      </text>
-    </svg>
-  );
+        <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
+          {problem.source.label ?? "Source"}
+        </text>
+      </svg>
+    );
 };
 
 const ParallelRectDiagram = ({ problem }: DiagramProps) => {
@@ -206,38 +206,38 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
   const resistorWidth = 28;
   const resistorCenterY = (topY + bottomY) / 2;
   const resistorTopY = resistorCenterY - resistorHeight / 2;
-  const resistorBottomY = resistorCenterY + resistorHeight / 2;
+    const resistorBottomY = resistorCenterY + resistorHeight / 2;
 
-  return (
-    <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Parallel rectangular circuit">
-      {drawBattery(batteryX, batteryY)}
-      <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={positiveX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={negativeX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+    return (
+      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Parallel circuit diagram">
+        {drawBattery(batteryX, batteryY)}
+        <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={positiveX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={negativeX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      {branchXs.map((x, index) => (
-        <g key={`parallel-branch-${branchIds[index]}`}>
-          <line x1={x} y1={topY} x2={x} y2={resistorTopY} stroke={WIRE_COLOR} strokeWidth={4} />
-          {drawResistor({
-            key: `parallel-resistor-${branchIds[index]}`,
-            x,
-            y: resistorCenterY,
-            width: resistorWidth,
-            height: resistorHeight,
-            label: labels[branchIds[index]],
-            orientation: "vertical",
-          })}
-          <line x1={x} y1={resistorBottomY} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-        </g>
-      ))}
+        {branchXs.map((x, index) => (
+          <g key={`parallel-branch-${branchIds[index]}`}>
+            <line x1={x} y1={topY} x2={x} y2={resistorTopY} stroke={WIRE_COLOR} strokeWidth={4} />
+            {drawResistor({
+              key: `parallel-resistor-${branchIds[index]}`,
+              x,
+              y: resistorCenterY,
+              width: resistorWidth,
+              height: resistorHeight,
+              label: labels[branchIds[index]],
+              orientation: "vertical",
+            })}
+            <line x1={x} y1={resistorBottomY} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+          </g>
+        ))}
 
-      <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
-        {problem.source.label ?? "Source"}
-      </text>
-    </svg>
-  );
+        <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
+          {problem.source.label ?? "Source"}
+        </text>
+      </svg>
+    );
 };
 
 const CombinationRectDiagram = ({ problem }: DiagramProps) => {
@@ -280,64 +280,64 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   const r4Lead = Math.max(30, (bottomSpan - r4Width) / 2);
   const r4StartX = negativeX + r4Lead;
   const r4EndX = r4StartX + r4Width;
-  const r4CenterX = (r4StartX + r4EndX) / 2;
+    const r4CenterX = (r4StartX + r4EndX) / 2;
 
-  return (
-    <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Combination rectangular circuit">
-      {drawBattery(batteryX, batteryY)}
-      <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={positiveX} y1={topY} x2={r1StartX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {drawResistor({
-        key: "combo-resistor-R1",
-        x: r1CenterX,
-        y: topY,
-        width: r1Width,
-        height: 26,
-        label: labels.R1,
-        orientation: "horizontal",
-      })}
-      <line x1={r1EndX} y1={topY} x2={branchX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+    return (
+      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Combination circuit diagram">
+        {drawBattery(batteryX, batteryY)}
+        <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={positiveX} y1={topY} x2={r1StartX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {drawResistor({
+          key: "combo-resistor-R1",
+          x: r1CenterX,
+          y: topY,
+          width: r1Width,
+          height: 26,
+          label: labels.R1,
+          orientation: "horizontal",
+        })}
+        <line x1={r1EndX} y1={topY} x2={branchX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      {branchOrder.map((id) => {
-        const offset = branchOffsets[id];
-        const x = branchX + offset;
-        return (
-          <g key={`combo-branch-${id}`}>
-            <line x1={branchX} y1={topY} x2={x} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-            <line x1={x} y1={topY} x2={x} y2={branchResTopY} stroke={WIRE_COLOR} strokeWidth={4} />
-            {drawResistor({
-              key: `combo-resistor-${id}`,
-              x,
-              y: branchCenterY,
-              width: branchResWidth,
-              height: branchResHeight,
-              label: labels[id],
-              orientation: "vertical",
-            })}
-            <line x1={x} y1={branchResBottomY} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-            <line x1={x} y1={bottomY} x2={branchX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-          </g>
-        );
-      })}
+        {branchOrder.map((id) => {
+          const offset = branchOffsets[id];
+          const x = branchX + offset;
+          return (
+            <g key={`combo-branch-${id}`}>
+              <line x1={branchX} y1={topY} x2={x} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+              <line x1={x} y1={topY} x2={x} y2={branchResTopY} stroke={WIRE_COLOR} strokeWidth={4} />
+              {drawResistor({
+                key: `combo-resistor-${id}`,
+                x,
+                y: branchCenterY,
+                width: branchResWidth,
+                height: branchResHeight,
+                label: labels[id],
+                orientation: "vertical",
+              })}
+              <line x1={x} y1={branchResBottomY} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+              <line x1={x} y1={bottomY} x2={branchX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+            </g>
+          );
+        })}
 
-      <line x1={branchX} y1={bottomY} x2={r4EndX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {drawResistor({
-        key: "combo-resistor-R4",
-        x: r4CenterX,
-        y: bottomY,
-        width: r4Width,
-        height: 26,
-        label: labels.R4,
-        orientation: "horizontal",
-      })}
-      <line x1={negativeX} y1={bottomY} x2={r4StartX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={branchX} y1={bottomY} x2={r4EndX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        {drawResistor({
+          key: "combo-resistor-R4",
+          x: r4CenterX,
+          y: bottomY,
+          width: r4Width,
+          height: 26,
+          label: labels.R4,
+          orientation: "horizontal",
+        })}
+        <line x1={negativeX} y1={bottomY} x2={r4StartX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+        <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
 
-      <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
-        {problem.source.label ?? "Source"}
-      </text>
-    </svg>
-  );
+        <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
+          {problem.source.label ?? "Source"}
+        </text>
+      </svg>
+    );
 };
 
 export default function CircuitDiagram({ problem }: DiagramProps) {

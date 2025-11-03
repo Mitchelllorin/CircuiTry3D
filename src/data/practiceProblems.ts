@@ -6,11 +6,11 @@ const SERIES_IDS = ["R1", "R2", "R3", "R4"] as const;
 const practiceProblems: PracticeProblem[] = [
   {
     id: "series-square-01",
-    title: "Series Rectangular · Loop Current",
+    title: "Series Circuit · Loop Current",
     topology: "series",
     difficulty: "intro",
-    prompt:
-      "A rectangular loop holds four resistors connected in series along the path. The battery feeds 24 V around the frame. Complete the W.I.R.E. table and determine the loop current.",
+      prompt:
+        "A series circuit holds four resistors connected end to end and powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the loop current.",
     targetQuestion: "What is the total current flowing through the series loop?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
@@ -25,28 +25,28 @@ const practiceProblems: PracticeProblem[] = [
     components: [
       {
         id: "R1",
-        label: "Top Resistor",
+        label: "R1",
         role: "load",
         givens: { resistance: 120 },
         values: { resistance: 120 },
       },
       {
         id: "R2",
-        label: "Right Resistor",
+        label: "R2",
         role: "load",
         givens: { resistance: 150 },
         values: { resistance: 150 },
       },
       {
         id: "R3",
-        label: "Bottom Resistor",
+        label: "R3",
         role: "load",
         givens: { resistance: 180 },
         values: { resistance: 180 },
       },
       {
         id: "R4",
-        label: "Left Resistor",
+        label: "R4",
         role: "load",
         givens: { resistance: 100 },
         values: { resistance: 100 },
@@ -102,11 +102,11 @@ const practiceProblems: PracticeProblem[] = [
   },
   {
     id: "parallel-square-02",
-    title: "Parallel Rectangular · Branch Currents",
+    title: "Parallel Circuit · Branch Currents",
     topology: "parallel",
     difficulty: "standard",
-    prompt:
-      "Three resistors bridge the opposite nodes of a rectangular bus, all tied across an 18 V source. Complete the W.I.R.E. worksheet and find each branch current along with the equivalent resistance.",
+      prompt:
+        "A parallel circuit places three resistors across the same 18 V source. Complete the W.I.R.E. worksheet, solve the circuit totals, and find each branch current along with the equivalent resistance.",
     targetQuestion: "What is the total equivalent resistance of the three parallel branches?",
     targetMetric: { componentId: "totals", key: "resistance" },
     conceptTags: ["parallel", "kirchhoff", "ohms-law"],
@@ -121,21 +121,21 @@ const practiceProblems: PracticeProblem[] = [
     components: [
       {
         id: "R1",
-        label: "Upper Branch",
+        label: "R1",
         role: "load",
         givens: { resistance: 180 },
         values: { resistance: 180 },
       },
       {
         id: "R2",
-        label: "Middle Branch",
+        label: "R2",
         role: "load",
         givens: { resistance: 90 },
         values: { resistance: 90 },
       },
       {
         id: "R3",
-        label: "Lower Branch",
+        label: "R3",
         role: "load",
         givens: { resistance: 270 },
         values: { resistance: 270 },
@@ -187,11 +187,11 @@ const practiceProblems: PracticeProblem[] = [
   },
   {
     id: "combo-square-03",
-    title: "Combination Rectangular · Ladder Solve",
+    title: "Combination Circuit · Ladder Solve",
     topology: "combination",
     difficulty: "challenge",
-    prompt:
-      "A ladder circuit wraps a rectangular frame: R1 on the top leg, a parallel pair on the right leg (R2 || R3), and R4 closing the bottom leg back to the source. The supply provides 30 V. Use the table method to solve every component and report the current through R2.",
+      prompt:
+        "A ladder-style combination circuit features R1 in series with a parallel branch (R2 || R3) followed by R4 returning to the source. The supply provides 30 V. Use the table method to solve every component, fill in the circuit totals, and report the current through R2.",
     targetQuestion: "What current flows through branch R2?",
     targetMetric: { componentId: "R2", key: "current" },
     conceptTags: ["combination", "series", "parallel", "ohms-law", "kirchhoff"],
@@ -206,28 +206,28 @@ const practiceProblems: PracticeProblem[] = [
     components: [
       {
         id: "R1",
-        label: "Entry Resistor",
+        label: "R1",
         role: "load",
         givens: { resistance: 100 },
         values: { resistance: 100 },
       },
       {
         id: "R2",
-        label: "Upper Branch",
+        label: "R2",
         role: "load",
         givens: { resistance: 150 },
         values: { resistance: 150 },
       },
       {
         id: "R3",
-        label: "Lower Branch",
+        label: "R3",
         role: "load",
         givens: { resistance: 300 },
         values: { resistance: 300 },
       },
       {
         id: "R4",
-        label: "Return Resistor",
+        label: "R4",
         role: "load",
         givens: { resistance: 75 },
         values: { resistance: 75 },
