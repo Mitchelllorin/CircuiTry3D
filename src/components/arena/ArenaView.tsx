@@ -1100,6 +1100,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const showOpenBuilderButton = typeof onOpenBuilder === "function";
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const sampleFallbackAppliedRef = useRef(false);
 
   const [importPayload, setImportPayload] = useState<ArenaPayload | null>(null);
   const [frameReady, setFrameReady] = useState(false);
@@ -1403,6 +1404,31 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   }, [frameReady, importPayload, sendArenaMessage]);
 
   const sampleImports = useMemo(() => SAMPLE_IMPORTS, []);
+
+  useEffect(() => {
+    if (sampleFallbackAppliedRef.current) {
+      return;
+    }
+
+    const componentCount = importPayload?.state?.components?.length ?? 0;
+    if (importPayload && componentCount > 0) {
+      sampleFallbackAppliedRef.current = true;
+      return;
+    }
+
+    if (!importPayload && sampleImports.length > 0) {
+      sampleFallbackAppliedRef.current = true;
+      const fallbackPayload = {
+        ...sampleImports[0].payload,
+        generatedAt: Date.now()
+      };
+      applyResolvedPayload(fallbackPayload, {
+        sourceOverride: fallbackPayload.source ?? "sample",
+        statusMessage: `Loaded ${fallbackPayload.label ?? "sample"}.`,
+        persist: false
+      });
+    }
+  }, [importPayload, sampleImports, applyResolvedPayload]);
 
   const resolvedComponents = useMemo(() => {
     const components = importPayload?.state?.components ?? [];
