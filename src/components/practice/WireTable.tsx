@@ -351,7 +351,7 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
             </span>
             <span className="component-label">{row.label}</span>
             <span className="component-caption">
-              {row.role === "source" ? "Source" : row.role === "total" ? "Totals" : "Component"}
+              {row.role === "source" ? "Source" : row.role === "total" ? "Circuit Totals" : "Component"}
             </span>
           </div>
         ))}
