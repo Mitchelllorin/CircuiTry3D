@@ -5,93 +5,192 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CircuiTry3D</title>
   <style>
+    :root { color-scheme: dark; }
     * { box-sizing: border-box; }
-    body { margin: 0; background: linear-gradient(135deg, #0f1b3d, #16213e 40%, #0a1028); color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif; }
-    .landing-page { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 16px; }
-    .landing-logo { font-size: clamp(48px, 10vw, 92px); font-weight: 900; text-align: center; line-height: 1; }
-    .logo-circui { color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.6), 0 0 24px rgba(0,136,255,0.2); }
-    .logo-try { color: #ff8800; text-shadow: 0 0 12px rgba(255,136,0,0.6), 0 0 24px rgba(255,255,255,0.15); }
-    .logo-pulse { animation: logoPulse 2.2s ease-in-out infinite; }
-    @keyframes logoPulse {
-      0% { filter: drop-shadow(0 0 8px rgba(100,160,255,0.4)) drop-shadow(0 0 18px rgba(255,255,255,0.25)); }
-      50% { filter: drop-shadow(0 0 14px rgba(140,200,255,0.8)) drop-shadow(0 0 28px rgba(255,255,255,0.35)); }
-      100% { filter: drop-shadow(0 0 10px rgba(100,160,255,0.6)) drop-shadow(0 0 24px rgba(255,255,255,0.3)); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(125% 125% at 50% 10%, rgba(47,84,235,0.25) 0%, rgba(9,17,43,0.85) 45%, #050b1f 100%);
+      color: #f9fafc;
+      font-family: "Inter", "Poppins", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
     }
-    .landing-subtitle { color: #88ccff; margin: 4px 0 8px; text-transform: uppercase; letter-spacing: 2px; text-align: center; font-weight: 700; opacity: 0.9; }
-    .logo-circuit { width: min(640px, 90vw); height: auto; }
-    .wire { stroke: #88ccff; stroke-width: 3; fill: none; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(136,204,255,0.5)); }
-    .element { stroke: #00ff88; stroke-width: 2; fill: none; }
-    .photon { fill: #cfe9ff; filter: drop-shadow(0 0 6px rgba(180,220,255,0.9)); }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-    .btn { padding: 14px 20px; border-radius: 9999px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-    .btn-launch { background: #00ff88; color: #111827; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
-    .btn-github { background: #111827; color: #fff; border: 1px solid #374151; }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(80% 80% at 50% 20%, rgba(15,54,120,0.35) 0%, rgba(4,9,26,0.8) 60%, rgba(4,9,26,0.95) 100%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+    .landing-page {
+      position: relative;
+      z-index: 1;
+      width: min(560px, calc(100vw - 32px));
+      padding: clamp(32px, 6vw, 56px) 12px clamp(40px, 8vw, 72px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(18px, 5vw, 36px);
+      text-align: center;
+    }
+    .wordmark {
+      font-size: clamp(48px, 12vw, 108px);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      display: inline-flex;
+      gap: 6px;
+      filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
+    }
+    .wordmark span { display: inline-block; }
+    .wordmark .brand-green {
+      color: #39ffb7;
+      text-shadow: 0 0 18px rgba(57,255,183,0.7), 0 0 34px rgba(5,214,172,0.55);
+    }
+    .wordmark .brand-orange {
+      color: #ff8b2b;
+      text-shadow: 0 0 16px rgba(255,167,65,0.65), 0 0 30px rgba(255,120,28,0.55);
+    }
+    .subtitle {
+      color: #9db8ff;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.42em;
+      font-size: clamp(0.72rem, 2.4vw, 0.95rem);
+      margin-top: -6px;
+      text-align: center;
+      opacity: 0.92;
+    }
+    .circuit-wrapper {
+      width: min(520px, 94vw);
+      filter: drop-shadow(0 24px 60px rgba(22,255,177,0.25));
+    }
+    svg { width: 100%; height: auto; display: block; }
+    .panel-bg {
+      fill: rgba(8,18,45,0.85);
+      stroke: rgba(24,255,170,0.95);
+      stroke-width: 5;
+    }
+    .panel-glow {
+      filter: drop-shadow(0 0 25px rgba(24,255,170,0.45));
+    }
+    .wire {
+      stroke: #3cf7c0;
+      stroke-width: 4.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 14px rgba(60,247,192,0.6));
+    }
+    .node {
+      fill: #27f2af;
+      stroke: rgba(13,38,44,0.65);
+      stroke-width: 2;
+      filter: drop-shadow(0 0 10px rgba(39,242,175,0.95));
+    }
+    .resistor {
+      fill: rgba(4,16,42,0.95);
+      stroke: #27f2af;
+      stroke-width: 3;
+      rx: 6;
+      filter: drop-shadow(0 0 14px rgba(39,242,175,0.65));
+    }
+    .resistor-x {
+      stroke: #27f2af;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+    }
+    .label {
+      fill: #dce5ff;
+      font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.05em;
+    }
+    .label-top { text-anchor: middle; }
+    .label-right { text-anchor: start; }
+    .label-bottom { text-anchor: middle; }
+    .voltage {
+      fill: #ff6666;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.08em;
+    }
+    .battery-line {
+      stroke: #27f2af;
+      stroke-width: 3.2;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 8px rgba(39,242,175,0.7));
+    }
+    @media (max-height: 640px) {
+      body { align-items: flex-start; padding-top: 48px; }
+      .landing-page { gap: 22px; }
+    }
   </style>
 </head>
 <body>
   <div class="landing-page">
-    <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span style="color:#00ff88">3D</span></div>
-    <div class="landing-subtitle">Professional Circuit Design</div>
-    <svg class="logo-circuit" viewBox="0 0 380 120" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <!-- Rectangular series schematic path -->
-      <path
-        id="logo-path"
-        class="wire"
-        filter="url(#glow)"
-        d="M26,45 L70,45 H320 V155 L70,155 V75 L20,75 V50 L26,50 V75 V45 Z"
-      />
-      <!-- Battery symbol at start -->
-      <line x1="20" y1="50" x2="20" y2="75" class="element"/>
-      <line x1="26" y1="45" x2="26" y2="75" class="element"/>
-      <!-- Series resistors along the top rail -->
-      <rect x="118" y="32" width="48" height="26" class="element" rx="6"/>
-      <rect x="198" y="32" width="48" height="26" class="element" rx="6"/>
-      <rect x="278" y="32" width="48" height="26" class="element" rx="6"/>
-      <!-- Photons -->
-      <g id="photons"></g>
-    </svg>
-    <div class="actions">
-      <a class="btn btn-launch" href="/app">Launch App</a>
-      <a class="btn btn-github" href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer">View on GitHub</a>
+    <div class="wordmark">
+      <span class="brand-green">Circui</span>
+      <span class="brand-orange">Try</span>
+      <span class="brand-green">3D</span>
+    </div>
+    <div class="subtitle">Professional Circuit Design</div>
+    <div class="circuit-wrapper">
+      <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+        <title id="landing-circuit-title">Minimal neon circuit sketch</title>
+        <defs>
+          <filter id="panelBlur" x="-35%" y="-35%" width="170%" height="170%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <g class="panel-glow">
+          <rect class="panel-bg" x="20" y="24" width="380" height="212" rx="34" />
+        </g>
+        <path class="wire" d="M120 88 H296 V168 H120 V88 Z" />
+        <line class="wire" x1="76" y1="128" x2="120" y2="128" />
+        <line class="battery-line" x1="66" y1="110" x2="66" y2="146" />
+        <line class="battery-line" x1="58" y1="118" x2="58" y2="138" />
+        <text class="voltage" x="48" y="108">12V</text>
+
+        <!-- Nodes -->
+        <circle class="node" cx="120" cy="128" r="6" />
+        <circle class="node" cx="120" cy="88" r="6" />
+        <circle class="node" cx="120" cy="168" r="6" />
+        <circle class="node" cx="296" cy="88" r="6" />
+        <circle class="node" cx="296" cy="168" r="6" />
+
+        <!-- Resistors -->
+        <g>
+          <rect class="resistor" x="186" y="68" width="44" height="40" />
+          <line class="resistor-x" x1="190" y1="72" x2="226" y2="104" />
+          <line class="resistor-x" x1="226" y1="72" x2="190" y2="104" />
+          <text class="label label-top" x="208" y="60">R1</text>
+        </g>
+
+        <g>
+          <rect class="resistor" x="292" y="116" width="44" height="40" />
+          <line class="resistor-x" x1="296" y1="120" x2="332" y2="152" />
+          <line class="resistor-x" x1="332" y1="120" x2="296" y2="152" />
+          <text class="label label-right" x="342" y="140">R2</text>
+        </g>
+
+        <g>
+          <rect class="resistor" x="186" y="148" width="44" height="40" />
+          <line class="resistor-x" x1="190" y1="152" x2="226" y2="184" />
+          <line class="resistor-x" x1="226" y1="152" x2="190" y2="184" />
+          <text class="label label-bottom" x="208" y="212">R3</text>
+        </g>
+      </svg>
     </div>
   </div>
 </body>
-<script>
-  // Animate small blue-white photons along the logo path
-  (function(){
-    const svg = document.querySelector('.logo-circuit');
-    const path = document.getElementById('logo-path');
-    const holder = document.getElementById('photons');
-    if (!svg || !path || !holder) return;
-    const total = Math.max(8, Math.floor(path.getTotalLength()/80));
-    const dots = [];
-    for (let i=0;i<total;i++){
-      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('r','2.6');
-      c.setAttribute('class','photon');
-      holder.appendChild(c);
-      dots.push({ el:c, t:(i/total) });
-    }
-    function tick(){
-      const len = path.getTotalLength();
-      dots.forEach((d,idx)=>{
-        d.t += 0.004 + (idx%3)*0.0008; if (d.t>1) d.t -= 1;
-        const p = path.getPointAtLength(d.t*len);
-        d.el.setAttribute('cx', p.x);
-        d.el.setAttribute('cy', p.y);
-      });
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  })();
-</script>
 </html>
