@@ -456,10 +456,15 @@
         <div class="stat" id="stat-out">Ready.</div>
       </section>
     </div>
-  </div>
-  <canvas id="arena"></canvas>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
+    </div>
+    <canvas id="arena"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+    <script>
+      if (typeof window.THREE === "undefined") {
+        document.write('<script src="vendor/three.min.js"><\\/script>');
+      }
+    </script>
+    <script>
     (() => {
       "use strict";
 
