@@ -334,6 +334,52 @@
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+
+    const normalisePath = (href) => {
+      if (!href || typeof href !== "string") {
+        return "/";
+      }
+
+      try {
+        const url = new URL(href, window.location.origin);
+        return `${url.pathname}${url.search}${url.hash}` || "/";
+      } catch (error) {
+        return href.charAt(0) === "/" ? href : `/${href}`;
+      }
+    };
+
+    const sendNavigationMessage = (pathTarget) => {
+      if (!pathTarget) {
+        return false;
+      }
+
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "landing:navigate", path: pathTarget }, "*");
+          return true;
+        }
+      } catch (error) {
+        // Ignore bridge failures and fall back to default navigation
+      }
+
+      return false;
+    };
+
+    const navButtons = Array.from(document.querySelectorAll('.nav-button'));
+    navButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const href = button.getAttribute('href');
+        if (!href) {
+          return;
+        }
+
+        const pathTarget = normalisePath(href);
+        const handled = sendNavigationMessage(pathTarget);
+        if (handled) {
+          event.preventDefault();
+        }
+      });
+    });
   })();
 </script>
 </body>
