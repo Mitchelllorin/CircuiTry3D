@@ -94,7 +94,7 @@ type HelpLegendItem = {
   label: string;
 };
 
-type HelpModalView = "overview" | "tutorial" | "wire-guide" | "practice" | "shortcuts" | "about";
+ type HelpModalView = "overview" | "tutorial" | "wire-guide" | "schematic" | "practice" | "shortcuts" | "about";
 
 type HelpEntry = {
   id: string;
@@ -245,7 +245,7 @@ const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "wire-mode",
     label: "Wire Mode",
-    description: "Switch into wiring mode to pick freeform, schematic, star, or auto-routing paths.",
+    description: "Switch into wiring mode to pick freeform, schematic (90 deg), star, or auto-routing paths.",
     action: "toggle-wire-mode",
   },
   {
@@ -435,6 +435,7 @@ const HELP_SECTIONS: HelpSection[] = [
       "One-touch buttons add, rotate, duplicate, or delete components.",
       "Click anywhere along an existing wire to drop a junction and branch a new run - junctions can fan out in any direction.",
       "Use the bottom analysis panel to monitor live circuit health via W.I.R.E.",
+      "Open the Schematic Standards guide when you need a refresher on textbook layout and symbol rules.",
     ],
   },
   {
@@ -611,6 +612,64 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
       "Add or remove resistors to see how total resistance changes.",
       "Swap battery voltages to explore how EMF affects the rest of the system.",
       "Parallel paths lower total resistance; practice mode provides guided challenges.",
+    ],
+  },
+];
+
+const SCHEMATIC_SECTIONS: HelpSection[] = [
+  {
+    title: "Standards & References",
+    paragraphs: [
+      "Professional schematics rely on common symbol libraries so anyone can read the circuit without guesswork.",
+    ],
+    bullets: [
+      "IEC 60617 (international) and IEEE Std 315/ASME Y14.44 (North America) define the canonical symbols.",
+      "Use your organisation's template if it specifies a particular standard or title block.",
+      "Keep reference designators (R1, C3, SW1) unique and match the bill of materials.",
+    ],
+  },
+  {
+    title: "Symbol Conventions",
+    paragraphs: [
+      "Align symbols to a grid, keep power sources at the top or left, and ground points at the bottom to reinforce current direction.",
+    ],
+    bullets: [
+      "Rotate symbols so pins face the wiring direction; avoid upside-down text or mirrored glyphs.",
+      "Place component values close to the symbol (for example, R1 2 kOhm) and leave space for tolerance or part numbers.",
+      "For polarized parts (LEDs, capacitors), ensure markings clearly indicate anode/cathode or positive/negative terminals.",
+    ],
+  },
+  {
+    title: "Wiring Discipline",
+    paragraphs: [
+      "Tidy wiring is just as important as the symbols. Readers should trace nets instantly without ambiguity.",
+    ],
+    bullets: [
+      "Route nets horizontally and vertically; use the schematic (Manhattan) wire mode for 90 deg elbows in CircuiTry3D.",
+      "Never create four-way junctions; stagger crossings and add a clear dot wherever conductors join.",
+      "Use wire labels for long runs or nets that jump between sections instead of drawing huge detours.",
+    ],
+  },
+  {
+    title: "Layout Checklist",
+    paragraphs: [
+      "Before sharing a schematic, run through this quick audit.",
+    ],
+    bullets: [
+      "Power enters top/left, returns bottom/right; functional blocks flow left-to-right (inputs to outputs).",
+      "Group related components (filters, bias networks, bridges) inside neat rectangles or subtle callouts.",
+      "Reference designators read left-to-right, top-to-bottom so automated annotation remains predictable.",
+    ],
+  },
+  {
+    title: "Applying It in CircuiTry3D",
+    paragraphs: [
+      "CircuiTry3D tools map directly onto these schematic habits so you can prototype in 3D and export a clean diagram.",
+    ],
+    bullets: [
+      "Toggle Schematic routing (Wire tool -> routing preset) to snap to 90 deg elbows and match textbook diagrams.",
+      "Turn on grid and labels while arranging; lock them off again when you capture screenshots for a cleaner finish.",
+      "Use junction placements instead of overlapping wires to branch parallel nets, and mirror/rotate parts for consistent alignment.",
     ],
   },
 ];
@@ -843,6 +902,11 @@ const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: st
     description: "Understand how Watts, Current, Resistance, and Voltage relate while you design.",
     sections: WIRE_GUIDE_SECTIONS,
   },
+  "schematic": {
+    title: "Schematic Layout Guide",
+    description: "Apply industry schematic standards while wiring inside the Builder.",
+    sections: SCHEMATIC_SECTIONS,
+  },
   practice: {
     title: "Table Method Worksheet",
     description: "Log the givens, pick the matching formula, and solve every W.I.R.E. slot step by step.",
@@ -878,6 +942,12 @@ const HELP_ENTRIES: HelpEntry[] = [
     label: "W.I.R.E. Guide",
     description: "Break down Watts, Current, Resistance, and Voltage in detail.",
     view: "wire-guide",
+  },
+  {
+    id: "schematic",
+    label: "Schematic Standards",
+    description: "Reference best practices for clean, recognisable circuit diagrams.",
+    view: "schematic",
   },
   {
     id: "shortcuts",
@@ -1725,7 +1795,7 @@ export default function Builder() {
   };
   const wireRoutingNames: Record<string, string> = {
     freeform: "Freeform",
-    manhattan: "Schematic",
+    manhattan: "Schematic 90deg",
     simple: "Simple",
     perimeter: "Perimeter",
     astar: "A* Auto",
