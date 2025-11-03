@@ -71,8 +71,7 @@ const drawResistor = ({ x, y, width, height, label, orientation, key }: Resistor
 };
 
 const SeriesRectDiagram = ({ problem }: DiagramProps) => {
-  const resistorIds = ["R1", "R2", "R3", "R4"] as const;
-  const labels: Record<(typeof resistorIds)[number], string> = {
+  const labels = {
     R1: getComponentLabel(problem, "R1"),
     R2: getComponentLabel(problem, "R2"),
     R3: getComponentLabel(problem, "R3"),
@@ -85,67 +84,95 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
   const positiveTopY = batteryY - 28;
   const negativeX = batteryX;
   const negativeBottomY = batteryY + 18;
-  const topY = 70;
-  const bottomY = 200;
-  const rightX = 320;
 
-  const wireSpan = rightX - positiveX;
-  const segmentWidth = wireSpan / resistorIds.length;
-  const resistorWidth = Math.min(76, Math.max(48, segmentWidth - 12));
-  const resistorHeight = 26;
+  const loopLeftX = positiveX + 56;
+  const loopRightX = 320;
+  const topY = 68;
+  const bottomY = 204;
+  const lead = 22;
 
-  const resistorCenters = resistorIds.map((_, index) => positiveX + segmentWidth * (index + 0.5));
-  const resistorStarts = resistorCenters.map((center) => center - resistorWidth / 2);
-  const resistorEnds = resistorCenters.map((center) => center + resistorWidth / 2);
+  const horizontalResWidth = loopRightX - loopLeftX - lead * 2;
+  const verticalResHeight = bottomY - topY - lead * 2;
 
-  const topWireSegments = resistorStarts.map((startX, index) => {
-    const prevEnd = index === 0 ? positiveX : resistorEnds[index - 1];
-    return (
-      <line
-        key={`series-wire-${resistorIds[index]}`}
-        x1={prevEnd}
-        y1={topY}
-        x2={startX}
-        y2={topY}
-        stroke={WIRE_COLOR}
-        strokeWidth={4}
-      />
-    );
-  });
+  const r1CenterX = loopLeftX + lead + horizontalResWidth / 2;
+  const r3CenterX = r1CenterX;
+  const r2CenterY = topY + lead + verticalResHeight / 2;
+  const r4CenterY = r2CenterY;
 
-  const finalTopWire =
-    resistorEnds.length > 0 ? (
-      <line
-        key="series-wire-end"
-        x1={resistorEnds[resistorEnds.length - 1]}
-        y1={topY}
-        x2={rightX}
-        y2={topY}
-        stroke={WIRE_COLOR}
-        strokeWidth={4}
-      />
-    ) : null;
+  const r1StartX = loopLeftX + lead;
+  const r1EndX = loopRightX - lead;
+  const r3StartX = r1StartX;
+  const r3EndX = r1EndX;
+
+  const r2TopY = topY + lead;
+  const r2BottomY = bottomY - lead;
+  const r4TopY = r2TopY;
+  const r4BottomY = r2BottomY;
+
+  const verticalResWidth = 30;
+  const horizontalResHeight = 26;
 
   return (
     <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series rectangular circuit">
       {drawBattery(batteryX, batteryY)}
+      {/* Source leads */}
       <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
-      {topWireSegments}
-      {resistorCenters.map((centerX, index) =>
-        drawResistor({
-          key: `series-resistor-${resistorIds[index]}`,
-          x: centerX,
-          y: topY,
-          width: resistorWidth,
-          height: resistorHeight,
-          label: labels[resistorIds[index]],
-          orientation: "horizontal",
-        })
-      )}
-      {finalTopWire}
-      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
-      <line x1={rightX} y1={bottomY} x2={negativeX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
       <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+
+      {/* Top side */}
+      <line x1={positiveX} y1={topY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+      <line x1={loopLeftX} y1={topY} x2={r1StartX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+      {drawResistor({
+        key: "series-resistor-R1",
+        x: r1CenterX,
+        y: topY,
+        width: horizontalResWidth,
+        height: horizontalResHeight,
+        label: labels.R1,
+        orientation: "horizontal",
+      })}
+      <line x1={r1EndX} y1={topY} x2={loopRightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+
+      {/* Right side */}
+      <line x1={loopRightX} y1={topY} x2={loopRightX} y2={r2TopY} stroke={WIRE_COLOR} strokeWidth={4} />
+      {drawResistor({
+        key: "series-resistor-R2",
+        x: loopRightX,
+        y: r2CenterY,
+        width: verticalResWidth,
+        height: verticalResHeight,
+        label: labels.R2,
+        orientation: "vertical",
+      })}
+      <line x1={loopRightX} y1={r2BottomY} x2={loopRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+
+      {/* Bottom side */}
+      <line x1={loopRightX} y1={bottomY} x2={r3EndX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+      {drawResistor({
+        key: "series-resistor-R3",
+        x: r3CenterX,
+        y: bottomY,
+        width: horizontalResWidth,
+        height: horizontalResHeight,
+        label: labels.R3,
+        orientation: "horizontal",
+      })}
+      <line x1={r3StartX} y1={bottomY} x2={loopLeftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+      <line x1={loopLeftX} y1={bottomY} x2={negativeX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+
+      {/* Left side */}
+      <line x1={loopLeftX} y1={bottomY} x2={loopLeftX} y2={r4BottomY} stroke={WIRE_COLOR} strokeWidth={4} />
+      {drawResistor({
+        key: "series-resistor-R4",
+        x: loopLeftX,
+        y: r4CenterY,
+        width: verticalResWidth,
+        height: verticalResHeight,
+        label: labels.R4,
+        orientation: "vertical",
+      })}
+      <line x1={loopLeftX} y1={r4TopY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={4} />
+
       <text x={positiveX - 12} y={positiveTopY - 12} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
         {problem.source.label ?? "Source"}
       </text>
