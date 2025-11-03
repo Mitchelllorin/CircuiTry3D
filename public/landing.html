@@ -76,6 +76,11 @@
       stroke-width: 6;
       filter: drop-shadow(0 0 28px rgba(42,255,189,0.45));
     }
+    .trace-path {
+      fill: none;
+      stroke: transparent;
+      stroke-width: 6;
+    }
     .wire {
       stroke: #41ffc0;
       stroke-width: 5;
@@ -94,26 +99,24 @@
       fill: #dce9ff;
       font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
       font-weight: 700;
-      font-size: 17px;
-      letter-spacing: 0.06em;
-    }
-    .voltage {
-      fill: #ff6f6f;
-      font-weight: 800;
       font-size: 16px;
       letter-spacing: 0.08em;
     }
     .battery-line {
       stroke: #39ffb7;
-      stroke-width: 3.4;
+      stroke-width: 4;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .battery-line.battery-negative {
+      stroke-width: 3;
     }
     .resistor-body {
       stroke: #39ffb7;
       stroke-width: 4;
       fill: none;
       stroke-linejoin: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
     }
     .switch-line {
       stroke: #39ffb7;
@@ -121,12 +124,24 @@
       stroke-linecap: round;
       filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
     }
+    .switch-contact {
+      fill: rgba(6,16,38,0.92);
+      stroke: #39ffb7;
+      stroke-width: 2.2;
+      filter: drop-shadow(0 0 8px rgba(57,255,183,0.65));
+    }
     .led-poly {
       stroke: #39ffb7;
       stroke-width: 4;
       fill: none;
       stroke-linejoin: round;
       filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .led-bar {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
     }
     .led-arrow {
       stroke: #39ffb7;
@@ -139,6 +154,36 @@
       stroke: rgba(110,198,255,0.5);
       stroke-width: 1;
       filter: drop-shadow(0 0 12px rgba(221,244,255,0.9));
+    }
+    .nav-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px;
+      width: min(440px, 90vw);
+    }
+    .nav-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(57,255,183,0.32);
+      background: rgba(8,26,36,0.58);
+      color: #dbeafe;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-size: 0.78rem;
+      font-weight: 700;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 16px 38px rgba(1, 19, 30, 0.6);
+    }
+    .nav-button:hover {
+      border-color: rgba(57,255,183,0.65);
+      background: rgba(14,48,60,0.68);
+      color: #f8fafc;
     }
     .status-wrapper {
       display: flex;
@@ -190,61 +235,62 @@
     </div>
     <div class="subtitle">Professional Circuit Design</div>
     <div class="circuit-wrapper">
-      <svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
-        <title id="landing-circuit-title">Neon green rectangular circuit schematic</title>
+      <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+        <title id="landing-circuit-title">Neon green rectangular series circuit with labeled components</title>
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
             <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
           </marker>
-          <filter id="panelBlur" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
-        <rect class="panel-bg" x="30" y="34" width="400" height="232" rx="38" />
+        <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
 
-        <g id="circuit-path">
-          <path id="series-path" class="wire" d="M110 120 H360 V190 H110 V120 Z" />
-          <line class="wire" x1="82" y1="150" x2="110" y2="150" />
+        <path id="series-path" class="trace-path" d="M150 120 H360 V220 H150 Z" />
+        <g class="wires" aria-hidden="true">
+          <line class="wire" x1="150" y1="120" x2="200" y2="120" />
+          <line class="wire" x1="320" y1="120" x2="360" y2="120" />
+          <line class="wire" x1="150" y1="220" x2="200" y2="220" />
+          <line class="wire" x1="320" y1="220" x2="360" y2="220" />
         </g>
 
-        <g class="battery">
-          <line class="battery-line" x1="72" y1="132" x2="72" y2="168" />
-          <line class="battery-line" x1="64" y1="138" x2="64" y2="162" />
-          <text class="voltage" x="48" y="126">12V</text>
-          <text class="component-label" x="70" y="188">Battery</text>
+        <g class="battery" transform="translate(150,120)">
+          <line class="wire" x1="0" y1="0" x2="0" y2="38" />
+          <line class="battery-line" x1="-22" y1="38" x2="22" y2="38" />
+          <line class="wire" x1="0" y1="62" x2="0" y2="100" />
+          <line class="battery-line battery-negative" x1="-16" y1="62" x2="16" y2="62" />
+          <circle class="node" cx="0" cy="0" r="5" />
+          <circle class="node" cx="0" cy="100" r="5" />
+          <text class="component-label" x="-36" y="60" text-anchor="end">B1</text>
         </g>
 
-        <g class="switch" transform="translate(140,90)">
-          <line class="wire" x1="-30" y1="30" x2="-8" y2="30" />
-          <line class="switch-line" x1="-6" y1="30" x2="18" y2="18" />
-          <circle class="node" cx="-32" cy="30" r="5" />
-          <circle class="node" cx="20" cy="30" r="5" />
-          <line class="wire" x1="20" y1="30" x2="44" y2="30" />
-          <text class="component-label" x="4" y="64" text-anchor="middle">Switch</text>
+        <g class="resistor" transform="translate(200,120)">
+          <polyline class="resistor-body" points="0,0 10,-16 20,16 30,-16 40,16 50,-16 60,16 70,-16 80,16 90,-16 100,16 110,-16 120,0" />
+          <circle class="node" cx="0" cy="0" r="5" />
+          <circle class="node" cx="120" cy="0" r="5" />
+          <text class="component-label" x="60" y="-30" text-anchor="middle">R1</text>
         </g>
 
-        <g class="resistor" transform="translate(230,80)">
-          <polyline class="resistor-body" points="0 40 10 20 20 60 30 20 40 60 50 20 60 60 70 40" />
-          <circle class="node" cx="0" cy="40" r="5" />
-          <circle class="node" cx="70" cy="40" r="5" />
-          <text class="component-label" x="35" y="-12" text-anchor="middle">Resistor</text>
+        <g class="switch" transform="translate(200,220)">
+          <line class="wire" x1="0" y1="0" x2="36" y2="0" />
+          <line class="switch-line" x1="36" y1="0" x2="78" y2="-24" />
+          <line class="wire" x1="84" y1="0" x2="120" y2="0" />
+          <circle class="node" cx="0" cy="0" r="5" />
+          <circle class="node" cx="120" cy="0" r="5" />
+          <circle class="switch-contact" cx="36" cy="0" r="4" />
+          <circle class="switch-contact" cx="84" cy="0" r="4" />
+          <text class="component-label" x="60" y="48" text-anchor="middle">SW1</text>
         </g>
 
-        <g class="led" transform="translate(320,120)">
-          <polygon class="led-poly" points="0 30 28 15 28 45" />
-          <line class="led-poly" x1="28" y1="15" x2="56" y2="30" />
-          <line class="led-poly" x1="28" y1="45" x2="56" y2="30" />
-          <line class="led-poly" x1="56" y1="30" x2="74" y2="30" />
-          <circle class="node" cx="0" cy="30" r="5" />
-          <circle class="node" cx="74" cy="30" r="5" />
-          <line class="led-arrow" x1="40" y1="-4" x2="22" y2="-16" />
-          <line class="led-arrow" x1="48" y1="4" x2="30" y2="-8" />
-          <text class="component-label" x="32" y="70" text-anchor="middle">LED</text>
+        <g class="led" transform="translate(360,170) rotate(90)">
+          <line class="wire" x1="-50" y1="0" x2="-24" y2="0" />
+          <polygon class="led-poly" points="-24,-20 -24,20 6,0" />
+          <line class="led-bar" x1="12" y1="-22" x2="12" y2="22" />
+          <line class="wire" x1="12" y1="0" x2="50" y2="0" />
+          <line class="led-arrow" x1="24" y1="-12" x2="42" y2="-28" />
+          <line class="led-arrow" x1="32" y1="-4" x2="50" y2="-20" />
+          <circle class="node" cx="-50" cy="0" r="5" />
+          <circle class="node" cx="50" cy="0" r="5" />
         </g>
+        <text class="component-label" x="402" y="176">L1</text>
 
         <g class="photons" id="photons"></g>
       </svg>
@@ -253,6 +299,14 @@
       <div class="status-text">Circuit environment ready</div>
       <div class="status-bar"></div>
     </div>
+    <nav class="nav-buttons" aria-label="Primary navigation">
+      <a class="nav-button" href="/app" target="_top">Builder</a>
+      <a class="nav-button" href="/arena" target="_top">Arena</a>
+      <a class="nav-button" href="/practice" target="_top">Practice</a>
+      <a class="nav-button" href="/pricing" target="_top">Pricing</a>
+      <a class="nav-button" href="/community" target="_top">Community</a>
+      <a class="nav-button" href="/account" target="_top">Account</a>
+    </nav>
   </div>
   <script>
   (function(){
