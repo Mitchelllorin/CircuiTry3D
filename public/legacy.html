@@ -199,6 +199,52 @@
             border-color: #8800ff;
             box-shadow: 0 0 20px rgba(136,0,255,0.4);
         }
+
+        .component-context-menu {
+            position: fixed;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 180px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(10, 22, 44, 0.94);
+            border: 1px solid rgba(136, 204, 255, 0.35);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+            z-index: 10000;
+            backdrop-filter: blur(18px);
+        }
+
+        .component-context-menu[data-visible="true"] {
+            display: flex;
+        }
+
+        .component-context-menu button {
+            border: 1px solid rgba(136, 204, 255, 0.18);
+            border-radius: 10px;
+            background: rgba(34, 62, 108, 0.78);
+            color: rgba(228, 240, 255, 0.96);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+        }
+
+        .component-context-menu button:hover,
+        .component-context-menu button:focus {
+            border-color: rgba(136, 204, 255, 0.5);
+            background: rgba(46, 92, 152, 0.92);
+            transform: translateY(-1px);
+        }
+
+        .component-context-menu button[data-action="wire"] {
+            color: #00ffb2;
+        }
         
         .wire-analysis-fixed {
             position: fixed;
@@ -4523,6 +4569,10 @@ body.android-optimized.menu-visible .status {
         let isLongPressing = false;
         let currentEditComponent = null;
         const LONG_PRESS_DURATION = 600; // Shorter for mobile
+        const COMPONENT_DRAG_THRESHOLD = 8;
+        let componentContextMenu = null;
+        let componentContextTarget = null;
+        let componentContextConnectionPoint = null;
         
         // Grid and snapping variables
         const GRID_SIZE = 2; // Grid spacing
@@ -5675,6 +5725,13 @@ body.android-optimized.menu-visible .status {
                         hideEditPopup();
                     }
                 }
+
+                if (!e.target.closest('#component-context-menu')) {
+                    const isMenuVisible = componentContextMenu?.dataset?.visible === 'true';
+                    if (isMenuVisible) {
+                        hideComponentContextMenu();
+                    }
+                }
             });
             
             window.addEventListener('resize', onResize);
@@ -5696,6 +5753,11 @@ body.android-optimized.menu-visible .status {
                     cancelEdit();
                     return;
                 }
+                return;
+            }
+
+            if (componentContextMenu?.dataset?.visible === 'true' && e.key === 'Escape') {
+                hideComponentContextMenu();
                 return;
             }
             
@@ -5843,6 +5905,10 @@ body.android-optimized.menu-visible .status {
                     cancelLongPress();
                 }
                 
+                if (selectedComponent && !isDragging) {
+                    maybeStartDrag(touch.clientX, touch.clientY);
+                }
+
                 if (isDragging && selectedComponent) {
                     handleComponentDrag(touch.clientX, touch.clientY);
                 } else if (isRotating) {
@@ -5951,6 +6017,10 @@ body.android-optimized.menu-visible .status {
                 cancelLongPress();
             }
             
+            if (selectedComponent && !isDragging) {
+                maybeStartDrag(e.clientX, e.clientY);
+            }
+
             if (isRotating) {
                 const deltaX = e.clientX - lastTouchPos.x;
                 const deltaY = e.clientY - lastTouchPos.y;
@@ -6906,7 +6976,7 @@ body.android-optimized.menu-visible .status {
             if (componentHits.length > 0) {
                 const hitBox = componentHits[0].object;
                 if (hitBox.userData?.component) {
-                    showEditPopup(hitBox.userData.component, clientX, clientY);
+                    showComponentContextMenu(hitBox.userData.component, clientX, clientY);
                     
                     // Add haptic feedback for mobile devices
                     if (navigator.vibrate && isMobile) {
@@ -6960,6 +7030,157 @@ body.android-optimized.menu-visible .status {
                     }
                     return;
                 }
+            }
+        }
+        
+        function getNearestConnectionPointData(component, clientX, clientY) {
+            if (!component?.connectionPoints?.length) {
+                return null;
+            }
+
+            let closest = null;
+            let minDistance = Infinity;
+
+            component.connectionPoints.forEach(point => {
+                if (!point?.userData) {
+                    return;
+                }
+
+                const worldPosition = new THREE.Vector3();
+                if (typeof point.getWorldPosition === 'function') {
+                    point.getWorldPosition(worldPosition);
+                } else if (component?.position) {
+                    worldPosition.copy(component.position);
+                }
+
+                const screenPosition = worldToScreen(worldPosition);
+                if (!screenPosition) {
+                    return;
+                }
+
+                const dx = screenPosition.x - clientX;
+                const dy = screenPosition.y - clientY;
+                const distance = dx * dx + dy * dy;
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closest = {
+                        data: point.userData,
+                        mesh: point
+                    };
+                }
+            });
+
+            return closest;
+        }
+
+        function ensureComponentContextMenu() {
+            if (componentContextMenu) {
+                return componentContextMenu;
+            }
+
+            const menu = document.createElement('div');
+            menu.id = 'component-context-menu';
+            menu.className = 'component-context-menu';
+            menu.setAttribute('role', 'menu');
+            menu.innerHTML = `
+                <button type="button" data-action="edit" role="menuitem">Edit Values</button>
+                <button type="button" data-action="rotate" role="menuitem">Rotate 90?</button>
+                <button type="button" data-action="wire" role="menuitem">Start Wire</button>
+            `;
+
+            menu.addEventListener('click', (event) => {
+                const action = event.target.closest('button')?.dataset?.action;
+                if (!action) {
+                    return;
+                }
+                event.preventDefault();
+                handleComponentContextAction(action);
+            });
+
+            document.body.appendChild(menu);
+            componentContextMenu = menu;
+            return menu;
+        }
+
+        function showComponentContextMenu(component, clientX, clientY) {
+            if (!component) {
+                return;
+            }
+
+            hideComponentContextMenu();
+            const menu = ensureComponentContextMenu();
+
+            componentContextTarget = component;
+            selectComponent(component, { startDragging: false, silent: true });
+            componentContextConnectionPoint = getNearestConnectionPointData(component, clientX, clientY);
+            isLongPressing = false;
+
+            const labelText = getComponentFriendlyName(component).toUpperCase();
+            setStatus(`?? ${labelText} actions - choose edit, rotate, or start wire`);
+
+            menu.dataset.visible = 'true';
+            menu.style.left = '0px';
+            menu.style.top = '0px';
+
+            const { offsetWidth, offsetHeight } = menu;
+            const padding = 12;
+            let left = clientX - offsetWidth / 2;
+            let top = clientY - offsetHeight - 16;
+
+            left = Math.max(padding, Math.min(window.innerWidth - offsetWidth - padding, left));
+            top = Math.max(padding, Math.min(window.innerHeight - offsetHeight - padding, top));
+
+            menu.style.left = `${left}px`;
+            menu.style.top = `${top}px`;
+
+            requestAnimationFrame(() => {
+                const firstButton = menu.querySelector('button');
+                if (firstButton) {
+                    firstButton.focus({ preventScroll: true });
+                }
+            });
+        }
+
+        function hideComponentContextMenu() {
+            if (!componentContextMenu) {
+                componentContextTarget = null;
+                componentContextConnectionPoint = null;
+                return;
+            }
+
+            componentContextMenu.dataset.visible = 'false';
+            componentContextTarget = null;
+            componentContextConnectionPoint = null;
+        }
+
+        function handleComponentContextAction(action) {
+            if (!componentContextTarget) {
+                hideComponentContextMenu();
+                return;
+            }
+
+            const component = componentContextTarget;
+            const connectionPoint = componentContextConnectionPoint;
+            hideComponentContextMenu();
+
+            switch (action) {
+                case 'edit':
+                    showEditPopup(component);
+                    break;
+                case 'rotate':
+                    rotateComponent(component, { animate: true, silent: false });
+                    break;
+                case 'wire':
+                    enableWireMode({ silent: true });
+                    if (connectionPoint?.data) {
+                        handleConnectionPointClick(connectionPoint.data);
+                    } else {
+                        setStatus('?? WIRE MODE! Touch terminals to connect components');
+                    }
+                    break;
+                default:
+                    break;
             }
         }
         
@@ -7270,6 +7491,52 @@ body.android-optimized.menu-visible .status {
                     }
                 }
             }
+
+            if (!isWireMode) {
+                const componentMeshes = components
+                    .map(comp => comp?.mesh)
+                    .filter(mesh => Boolean(mesh));
+
+                if (componentMeshes.length > 0) {
+                    const meshHits = raycaster.intersectObjects(componentMeshes, true);
+                    for (const hit of meshHits) {
+                        let owner = hit.object;
+                        while (owner && !owner.userData?.component && !owner.userData?.junction) {
+                            owner = owner.parent;
+                        }
+
+                        if (!owner) {
+                            continue;
+                        }
+
+                        if (owner.userData?.component) {
+                            if (isMeasureMode) {
+                                const worldPos = screenToWorld(clientX, clientY);
+                                if (worldPos) {
+                                    handleMeasurementPoint(worldPos);
+                                    return true;
+                                }
+                            } else {
+                                handleComponentClick(owner.userData.component);
+                                return true;
+                            }
+                        }
+
+                        if (owner.userData?.junction) {
+                            if (isMeasureMode) {
+                                const worldPos = screenToWorld(clientX, clientY);
+                                if (worldPos) {
+                                    handleMeasurementPoint(worldPos);
+                                    return true;
+                                }
+                            } else {
+                                handleJunctionClick(owner.userData.junction);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
             
             if (isMeasureMode) {
                 const worldPos = screenToWorld(clientX, clientY);
@@ -7413,31 +7680,63 @@ body.android-optimized.menu-visible .status {
             }
         }
 
-        function handleComponentClick(component) {
-            if (isRotateMode) {
-                saveState(); // Save for undo
-                const rotationAmount = Math.PI / 2;
-                component.rotation += rotationAmount;
-                component.mesh.rotation.y = component.rotation;
-                
+        function normalizeAngle(angle) {
+            if (!Number.isFinite(angle)) {
+                return 0;
+            }
+            const twoPi = Math.PI * 2;
+            let normalized = angle % twoPi;
+            if (normalized < 0) {
+                normalized += twoPi;
+            }
+            return normalized;
+        }
+
+        function rotateComponent(component, options = {}) {
+            if (!component || !component.mesh) {
+                return;
+            }
+
+            const { animate = true, silent = false } = options;
+            saveState(); // Save for undo
+
+            const rotationAmount = Math.PI / 2;
+            const nextRotation = normalizeAngle((component.rotation || 0) + rotationAmount);
+
+            component.rotation = nextRotation;
+            component.mesh.rotation.y = nextRotation;
+
+            if (animate && component.mesh?.scale) {
                 component.mesh.scale.setScalar(1.5);
                 setTimeout(() => {
-                    component.mesh.scale.setScalar(1.0);
-                }, 500);
-                
-                const rotationDegrees = Math.round((component.rotation * 180 / Math.PI) % 360);
+                    if (component.mesh?.scale) {
+                        component.mesh.scale.setScalar(1.0);
+                    }
+                }, 400);
+            }
+
+            if (component.connections) {
+                component.connections.forEach(conn => {
+                    if (conn?.wire?.updatePath) {
+                        conn.wire.updatePath();
+                    }
+                });
+            }
+
+            analyzeCircuit();
+
+            if (!silent) {
+                const rotationDegrees = Math.round((nextRotation * 180) / Math.PI) % 360;
                 setStatus(`?? ${component.type.toUpperCase()} ROTATED 90?! Now at ${rotationDegrees}?`);
-                
-                if (component.connections) {
-                    component.connections.forEach(conn => {
-                        if (conn.wire && conn.wire.updatePath) {
-                            conn.wire.updatePath();
-                        }
-                    });
-                }
-                
-                analyzeCircuit();
-                
+            }
+        }
+
+        function handleComponentClick(component) {
+            hideComponentContextMenu();
+
+            if (isRotateMode) {
+                rotateComponent(component);
+
             } else if (component.type === 'switch' && !isWireMode) {
                 saveState(); // Save for undo
                 component.properties.isOn = !component.properties.isOn;
@@ -7446,26 +7745,97 @@ body.android-optimized.menu-visible .status {
                 setStatus(`?? Switch ${state} - circuit updated`);
                 analyzeCircuit();
             } else if (!isWireMode && !isDragging) {
-                selectComponent(component);
+                selectComponent(component, { startDragging: false });
             }
         }
 
         function handleJunctionClick(junction) {
+            hideComponentContextMenu();
+
             if (!isWireMode && !isDragging) {
-                selectJunction(junction);
+                selectJunction(junction, { startDragging: false });
             }
         }
 
-        function selectComponent(component) {
+        function selectComponent(component, options = {}) {
+            if (!component) {
+                return;
+            }
+
+            const { startDragging = false, silent = false } = options;
             selectedComponent = component;
-            isDragging = true;
-            setStatus(`?? Dragging ${component.type} - tap to place`);
+            isDragging = Boolean(startDragging);
+
+            if (silent) {
+                return;
+            }
+
+            const label = getComponentFriendlyName(component);
+            if (isDragging) {
+                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+            } else {
+                setStatus(`?? ${label} selected - drag to move or long-press for actions`);
+            }
         }
 
-        function selectJunction(junction) {
+        function selectJunction(junction, options = {}) {
+            if (!junction) {
+                return;
+            }
+
+            const { startDragging = false, silent = false } = options;
             selectedComponent = junction;
+            isDragging = Boolean(startDragging);
+
+            if (silent) {
+                return;
+            }
+
+            const label = getComponentFriendlyName(junction);
+            if (isDragging) {
+                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+            } else {
+                setStatus(`?? ${label} selected - drag to move or long-press for options`);
+            }
+        }
+
+        function maybeStartDrag(clientX, clientY) {
+            if (!selectedComponent || isDragging || isWireMode || isRotateMode || isMeasureMode) {
+                return;
+            }
+
+            const deltaX = Math.abs(clientX - longPressStartPos.x);
+            const deltaY = Math.abs(clientY - longPressStartPos.y);
+            if (deltaX < COMPONENT_DRAG_THRESHOLD && deltaY < COMPONENT_DRAG_THRESHOLD) {
+                return;
+            }
+
             isDragging = true;
-            setStatus(`?? Dragging junction - tap to place`);
+            cancelLongPress();
+            hideComponentContextMenu();
+
+            const label = getComponentFriendlyName(selectedComponent);
+            setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+        }
+
+        function getComponentFriendlyName(entity) {
+            if (!entity) {
+                return 'component';
+            }
+
+            if (entity.type) {
+                const type = String(entity.type);
+                if (type.length <= 4) {
+                    return type.toUpperCase();
+                }
+                return type.charAt(0).toUpperCase() + type.slice(1);
+            }
+
+            if (entity.id && entity.id.startsWith('junction')) {
+                return 'junction';
+            }
+
+            return 'component';
         }
 
         function handleGroundClick(clientX, clientY) {
@@ -7928,7 +8298,7 @@ body.android-optimized.menu-visible .status {
             state.components.forEach(compData => {
                 const position = new THREE.Vector3().fromArray(compData.position);
                 const component = new Component(compData.type, position);
-                component.rotation = compData.rotation;
+                component.rotation = normalizeAngle(compData.rotation || 0);
                 component.properties = compData.properties;
                 component.id = compData.id;
                 
@@ -8141,7 +8511,7 @@ body.android-optimized.menu-visible .status {
             clipboard.components.forEach(compData => {
                 const position = new THREE.Vector3().fromArray(compData.position).add(offset);
                 const component = new Component(compData.type, position);
-                component.rotation = compData.rotation;
+                component.rotation = normalizeAngle(compData.rotation || 0);
                 component.properties = { ...compData.properties };
                 component.mesh.rotation.y = component.rotation;
                 component.updateProperties(component.properties);
@@ -8791,7 +9161,7 @@ Made with ? for visual learners everywhere!
             
             const component = new Component(type, position);
             components.push(component);
-            selectComponent(component);
+            selectComponent(component, { startDragging: true, silent: true });
             
             setStatus(`? ${type} added - drag to grid position, tap to place, long press to edit values`);
             updateCircuitInfo();
@@ -8816,7 +9186,7 @@ Made with ? for visual learners everywhere!
             const junction = new Junction(position);
             junctions.push(junction);
             
-            selectJunction(junction);
+            selectJunction(junction, { startDragging: true, silent: true });
             
             setStatus(`? Junction node added - drag to grid position and tap to place!`);
             updateCircuitInfo();
@@ -11081,8 +11451,9 @@ Made with ? for visual learners everywhere!
                         component.updateProperties(compData.properties);
                     }
                     if (typeof compData.rotation === 'number' && component.mesh) {
-                        component.rotation = compData.rotation;
-                        component.mesh.rotation.y = compData.rotation;
+                        const normalizedRotation = normalizeAngle(compData.rotation || 0);
+                        component.rotation = normalizedRotation;
+                        component.mesh.rotation.y = normalizedRotation;
                     }
                     if (compData.metadata) {
                         component.metadata = { ...compData.metadata };
@@ -11361,6 +11732,8 @@ Made with ? for visual learners everywhere!
                 saveState(); // Save for undo
             }
             
+            hideComponentContextMenu();
+
             disableWireMode({ silent: true, skipNotify: true });
             disableRotateMode({ silent: true, skipNotify: true });
             exitMeasureMode({ silent: true, skipNotify: true });
