@@ -22,10 +22,7 @@
     .wire { stroke: #88ccff; stroke-width: 3; fill: none; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(136,204,255,0.5)); }
     .element { stroke: #00ff88; stroke-width: 2; fill: none; }
     .photon { fill: #cfe9ff; filter: drop-shadow(0 0 6px rgba(180,220,255,0.9)); }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
-    .btn { padding: 14px 20px; border-radius: 9999px; font-weight: 800; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-    .btn-launch { background: #00ff88; color: #111827; box-shadow: 0 6px 20px rgba(0,255,136,0.3); }
-    .btn-github { background: #111827; color: #fff; border: 1px solid #374151; }
+    .loading-note { margin-top: 24px; font-size: 16px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.65); }
   </style>
 </head>
 <body>
@@ -59,10 +56,7 @@
       <!-- Photons -->
       <g id="photons"></g>
     </svg>
-    <div class="actions">
-      <a class="btn btn-launch" href="/app">Launch App</a>
-      <a class="btn btn-github" href="https://github.com/Mitchelllorin/CircuiTry3D" target="_blank" rel="noreferrer">View on GitHub</a>
-    </div>
+    <div class="loading-note">Loading CircuiTry3D...</div>
   </div>
 </body>
 <script>
