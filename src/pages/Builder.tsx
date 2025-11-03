@@ -1,5 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/builder-ui.css";
+import ArenaView from "../components/arena/ArenaView";
+import Practice from "./Practice";
 
 type BuilderInvokeAction =
   | "toggle-wire-mode"
@@ -936,6 +938,8 @@ export default function Builder() {
   const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
   const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
+  const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
+  const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
   const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
     if (typeof window === "undefined") {
       return DEFAULT_LOGO_SETTINGS;
@@ -1204,6 +1208,26 @@ export default function Builder() {
   }, [isHelpOpen]);
 
   useEffect(() => {
+    if (!isArenaPanelOpen && !isPracticePanelOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isArenaPanelOpen) {
+          setArenaPanelOpen(false);
+        }
+        if (isPracticePanelOpen) {
+          setPracticePanelOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isArenaPanelOpen, isPracticePanelOpen]);
+
+  useEffect(() => {
     if (!isHelpOpen || helpView !== "overview" || !requestedHelpSection) {
       return;
     }
@@ -1414,7 +1438,8 @@ export default function Builder() {
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
-        handleArenaSync({ openWindow: true, sessionName: "Builder Hand-off" });
+        setArenaPanelOpen(true);
+        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
         return;
       }
       if (action.action === "practice-help") {
@@ -1423,16 +1448,15 @@ export default function Builder() {
       }
       triggerBuilderAction(action.action, action.data);
     },
-    [handleArenaSync, openHelpCenter, triggerBuilderAction]
+    [handleArenaSync, openHelpCenter, setArenaPanelOpen, triggerBuilderAction]
   );
 
   const openLastArenaSession = useCallback(() => {
     if (!lastArenaExport?.sessionId) {
       return;
     }
-    const targetUrl = `${appBasePath}arena?session=${encodeURIComponent(lastArenaExport.sessionId)}`;
-    window.open(targetUrl, "_blank", "noopener");
-  }, [appBasePath, lastArenaExport]);
+    setArenaPanelOpen(true);
+  }, [lastArenaExport, setArenaPanelOpen]);
 
   const updateLogoSetting = useCallback((key: LogoNumericSettingKey, value: number) => {
     setLogoSettings((previous) => {
@@ -1956,12 +1980,7 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => {
-                    if (typeof window !== "undefined") {
-                      const targetUrl = `${appBasePath}#/practice`;
-                      window.open(targetUrl, "_blank", "noopener");
-                    }
-                  }}
+                  onClick={() => setPracticePanelOpen(true)}
                   title="Open the guided practice worksheets and Ohm's law wheel"
                 >
                   <span className="slider-chip-label">Practice Worksheets</span>
@@ -2253,6 +2272,50 @@ export default function Builder() {
             >
               Reset defaults
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay${isPracticePanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isPracticePanelOpen}
+        onClick={() => setPracticePanelOpen(false)}
+      >
+        <div className="builder-panel-shell builder-panel-shell--practice" onClick={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setPracticePanelOpen(false)}
+            aria-label="Close practice worksheets"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--practice">
+            <Practice />
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--arena${isArenaPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isArenaPanelOpen}
+        onClick={() => setArenaPanelOpen(false)}
+      >
+        <div className="builder-panel-shell builder-panel-shell--arena" onClick={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setArenaPanelOpen(false)}
+            aria-label="Close component arena"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--arena">
+            <ArenaView variant="embedded" onNavigateBack={() => setArenaPanelOpen(false)} />
           </div>
         </div>
       </div>
