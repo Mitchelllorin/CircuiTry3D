@@ -35,7 +35,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: clamp(18px, 5vw, 36px);
+      gap: clamp(18px, 5vw, 44px);
       text-align: center;
     }
     .wordmark {
@@ -66,65 +66,114 @@
       opacity: 0.92;
     }
     .circuit-wrapper {
-      width: min(520px, 94vw);
-      filter: drop-shadow(0 24px 60px rgba(22,255,177,0.25));
+      width: min(540px, 96vw);
+      filter: drop-shadow(0 28px 80px rgba(54,255,196,0.3));
     }
     svg { width: 100%; height: auto; display: block; }
     .panel-bg {
-      fill: rgba(8,18,45,0.85);
-      stroke: rgba(24,255,170,0.95);
-      stroke-width: 5;
-    }
-    .panel-glow {
-      filter: drop-shadow(0 0 25px rgba(24,255,170,0.45));
+      fill: rgba(6,16,38,0.9);
+      stroke: rgba(36,255,170,0.95);
+      stroke-width: 6;
+      filter: drop-shadow(0 0 28px rgba(42,255,189,0.45));
     }
     .wire {
-      stroke: #3cf7c0;
-      stroke-width: 4.5;
+      stroke: #41ffc0;
+      stroke-width: 5;
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
-      filter: drop-shadow(0 0 14px rgba(60,247,192,0.6));
+      filter: drop-shadow(0 0 18px rgba(65,255,192,0.6));
     }
     .node {
-      fill: #27f2af;
-      stroke: rgba(13,38,44,0.65);
-      stroke-width: 2;
-      filter: drop-shadow(0 0 10px rgba(39,242,175,0.95));
+      fill: #39ffb7;
+      stroke: rgba(5,20,28,0.65);
+      stroke-width: 2.6;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.95));
     }
-    .resistor {
-      fill: rgba(4,16,42,0.95);
-      stroke: #27f2af;
-      stroke-width: 3;
-      rx: 6;
-      filter: drop-shadow(0 0 14px rgba(39,242,175,0.65));
-    }
-    .resistor-x {
-      stroke: #27f2af;
-      stroke-width: 2.4;
-      stroke-linecap: round;
-    }
-    .label {
-      fill: #dce5ff;
+    .component-label {
+      fill: #dce9ff;
       font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
       font-weight: 700;
-      font-size: 16px;
-      letter-spacing: 0.05em;
+      font-size: 17px;
+      letter-spacing: 0.06em;
     }
-    .label-top { text-anchor: middle; }
-    .label-right { text-anchor: start; }
-    .label-bottom { text-anchor: middle; }
     .voltage {
-      fill: #ff6666;
+      fill: #ff6f6f;
       font-weight: 800;
-      font-size: 15px;
+      font-size: 16px;
       letter-spacing: 0.08em;
     }
     .battery-line {
-      stroke: #27f2af;
-      stroke-width: 3.2;
+      stroke: #39ffb7;
+      stroke-width: 3.4;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 8px rgba(39,242,175,0.7));
+      filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
+    }
+    .resistor-body {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      fill: none;
+      stroke-linejoin: round;
+    }
+    .switch-line {
+      stroke: #39ffb7;
+      stroke-width: 4.2;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .led-poly {
+      stroke: #39ffb7;
+      stroke-width: 4;
+      fill: none;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+    }
+    .led-arrow {
+      stroke: #39ffb7;
+      stroke-width: 3;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+    .photons circle {
+      fill: #d7f7ff;
+      stroke: rgba(110,198,255,0.5);
+      stroke-width: 1;
+      filter: drop-shadow(0 0 12px rgba(221,244,255,0.9));
+    }
+    .status-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      width: min(420px, 90vw);
+    }
+    .status-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    }
+    .status-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(57,255,183,0.2) 0%, rgba(57,255,183,0.9) 45%, rgba(57,255,183,0.2) 100%);
+      transform: translateX(-100%);
+      animation: sweep 3.2s ease-in-out infinite;
+    }
+    .status-text {
+      font-size: 0.95rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(157,184,255,0.95);
+    }
+    @keyframes sweep {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(0%); }
+      100% { transform: translateX(100%); }
     }
     @media (max-height: 640px) {
       body { align-items: flex-start; padding-top: 48px; }
@@ -141,56 +190,97 @@
     </div>
     <div class="subtitle">Professional Circuit Design</div>
     <div class="circuit-wrapper">
-      <svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
-        <title id="landing-circuit-title">Minimal neon circuit sketch</title>
+      <svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+        <title id="landing-circuit-title">Neon green rectangular circuit schematic</title>
         <defs>
-          <filter id="panelBlur" x="-35%" y="-35%" width="170%" height="170%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
+          </marker>
+          <filter id="panelBlur" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
-        <g class="panel-glow">
-          <rect class="panel-bg" x="20" y="24" width="380" height="212" rx="34" />
-        </g>
-        <path class="wire" d="M120 88 H296 V168 H120 V88 Z" />
-        <line class="wire" x1="76" y1="128" x2="120" y2="128" />
-        <line class="battery-line" x1="66" y1="110" x2="66" y2="146" />
-        <line class="battery-line" x1="58" y1="118" x2="58" y2="138" />
-        <text class="voltage" x="48" y="108">12V</text>
+        <rect class="panel-bg" x="30" y="34" width="400" height="232" rx="38" />
 
-        <!-- Nodes -->
-        <circle class="node" cx="120" cy="128" r="6" />
-        <circle class="node" cx="120" cy="88" r="6" />
-        <circle class="node" cx="120" cy="168" r="6" />
-        <circle class="node" cx="296" cy="88" r="6" />
-        <circle class="node" cx="296" cy="168" r="6" />
-
-        <!-- Resistors -->
-        <g>
-          <rect class="resistor" x="186" y="68" width="44" height="40" />
-          <line class="resistor-x" x1="190" y1="72" x2="226" y2="104" />
-          <line class="resistor-x" x1="226" y1="72" x2="190" y2="104" />
-          <text class="label label-top" x="208" y="60">R1</text>
+        <g id="circuit-path">
+          <path id="series-path" class="wire" d="M110 120 H360 V190 H110 V120 Z" />
+          <line class="wire" x1="82" y1="150" x2="110" y2="150" />
         </g>
 
-        <g>
-          <rect class="resistor" x="292" y="116" width="44" height="40" />
-          <line class="resistor-x" x1="296" y1="120" x2="332" y2="152" />
-          <line class="resistor-x" x1="332" y1="120" x2="296" y2="152" />
-          <text class="label label-right" x="342" y="140">R2</text>
+        <g class="battery">
+          <line class="battery-line" x1="72" y1="132" x2="72" y2="168" />
+          <line class="battery-line" x1="64" y1="138" x2="64" y2="162" />
+          <text class="voltage" x="48" y="126">12V</text>
+          <text class="component-label" x="70" y="188">Battery</text>
         </g>
 
-        <g>
-          <rect class="resistor" x="186" y="148" width="44" height="40" />
-          <line class="resistor-x" x1="190" y1="152" x2="226" y2="184" />
-          <line class="resistor-x" x1="226" y1="152" x2="190" y2="184" />
-          <text class="label label-bottom" x="208" y="212">R3</text>
+        <g class="switch" transform="translate(140,90)">
+          <line class="wire" x1="-30" y1="30" x2="-8" y2="30" />
+          <line class="switch-line" x1="-6" y1="30" x2="18" y2="18" />
+          <circle class="node" cx="-32" cy="30" r="5" />
+          <circle class="node" cx="20" cy="30" r="5" />
+          <line class="wire" x1="20" y1="30" x2="44" y2="30" />
+          <text class="component-label" x="4" y="64" text-anchor="middle">Switch</text>
         </g>
+
+        <g class="resistor" transform="translate(230,80)">
+          <polyline class="resistor-body" points="0 40 10 20 20 60 30 20 40 60 50 20 60 60 70 40" />
+          <circle class="node" cx="0" cy="40" r="5" />
+          <circle class="node" cx="70" cy="40" r="5" />
+          <text class="component-label" x="35" y="-12" text-anchor="middle">Resistor</text>
+        </g>
+
+        <g class="led" transform="translate(320,120)">
+          <polygon class="led-poly" points="0 30 28 15 28 45" />
+          <line class="led-poly" x1="28" y1="15" x2="56" y2="30" />
+          <line class="led-poly" x1="28" y1="45" x2="56" y2="30" />
+          <line class="led-poly" x1="56" y1="30" x2="74" y2="30" />
+          <circle class="node" cx="0" cy="30" r="5" />
+          <circle class="node" cx="74" cy="30" r="5" />
+          <line class="led-arrow" x1="40" y1="-4" x2="22" y2="-16" />
+          <line class="led-arrow" x1="48" y1="4" x2="30" y2="-8" />
+          <text class="component-label" x="32" y="70" text-anchor="middle">LED</text>
+        </g>
+
+        <g class="photons" id="photons"></g>
       </svg>
     </div>
+    <div class="status-wrapper">
+      <div class="status-text">Circuit environment ready</div>
+      <div class="status-bar"></div>
+    </div>
   </div>
+  <script>
+  (function(){
+    const path = document.getElementById('series-path');
+    const holder = document.getElementById('photons');
+    if (!path || !holder) return;
+    const length = path.getTotalLength();
+    const total = Math.max(10, Math.floor(length / 70));
+    const dots = [];
+    for (let i = 0; i < total; i++) {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('r', '3.1');
+      holder.appendChild(c);
+      dots.push({ el: c, t: (i / total) });
+    }
+    function tick(){
+      const len = path.getTotalLength();
+      dots.forEach((d, idx) => {
+        d.t += 0.0038 + (idx % 4) * 0.0012;
+        if (d.t > 1) d.t -= 1;
+        const p = path.getPointAtLength(d.t * len);
+        d.el.setAttribute('cx', p.x);
+        d.el.setAttribute('cy', p.y);
+      });
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+</script>
 </body>
 </html>
