@@ -2,6 +2,13 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import "../styles/builder-ui.css";
 import ArenaView from "../components/arena/ArenaView";
 import Practice from "./Practice";
+import {
+  DEFAULT_PRACTICE_PROBLEM,
+  findPracticeProblemById,
+  findPracticeProblemByPreset,
+  getRandomPracticeProblem,
+} from "../data/practiceProblems";
+import type { PracticeProblem } from "../model/practice";
 
 type BuilderInvokeAction =
   | "toggle-wire-mode"
@@ -346,6 +353,12 @@ type PracticeScenario = {
   question: string;
   description: string;
   preset: string;
+  problemId?: string;
+};
+
+type PracticeWorksheetStatus = {
+  problemId: string;
+  complete: boolean;
 };
 
 const PRACTICE_SCENARIOS: PracticeScenario[] = [
@@ -355,6 +368,7 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     question: "Series loop: solve for total current (I_T).",
     description: "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
     preset: "series_basic",
+    problemId: "series-square-01",
   },
   {
     id: "parallel-basic",
@@ -362,6 +376,7 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     question: "Parallel bus: find equivalent resistance and branch currents.",
     description: "Use W.I.R.E. to capture knowns, compute R_T with reciprocals, and check KCL/KVL compliance.",
     preset: "parallel_basic",
+    problemId: "parallel-square-02",
   },
   {
     id: "mixed-circuit",
@@ -369,6 +384,7 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     question: "Series-parallel combo: reduce and solve the ladder.",
     description: "Collapse branches with W.I.R.E., select the right Ohm's Law form, and verify against Kirchhoff.",
     preset: "mixed_circuit",
+    problemId: "combo-square-03",
   },
   {
     id: "combo-challenge",
@@ -376,6 +392,7 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     question: "Multi-loop combo: determine every unknown.",
     description: "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
     preset: "combination_advanced",
+    problemId: "combo-square-03",
   },
 ];
 
@@ -940,6 +957,10 @@ export default function Builder() {
   const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
+  const [activePracticeProblemId, setActivePracticeProblemId] = useState<string | null>(
+    DEFAULT_PRACTICE_PROBLEM?.id ?? null
+  );
+  const [practiceWorksheetState, setPracticeWorksheetState] = useState<PracticeWorksheetStatus | null>(null);
   const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
     if (typeof window === "undefined") {
       return DEFAULT_LOGO_SETTINGS;
@@ -972,6 +993,7 @@ export default function Builder() {
 
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
+  const practiceProblemRef = useRef<string | null>(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
   const appBasePath = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1435,6 +1457,27 @@ export default function Builder() {
     []
   );
 
+  const handlePracticeProblemChange = useCallback(
+    (problem: PracticeProblem) => {
+      setActivePracticeProblemId(problem.id);
+      setPracticeWorksheetState((previous) =>
+        previous?.problemId === problem.id ? previous : { problemId: problem.id, complete: false }
+      );
+
+      const previousId = practiceProblemRef.current;
+      if (problem.presetHint && previousId !== problem.id) {
+        triggerBuilderAction("load-preset", { preset: problem.presetHint });
+      }
+      practiceProblemRef.current = problem.id;
+    },
+    [triggerBuilderAction]
+  );
+
+  const handlePracticeWorksheetStatusChange = useCallback((update: { problem: PracticeProblem; complete: boolean }) => {
+    setPracticeWorksheetState({ problemId: update.problem.id, complete: update.complete });
+    practiceProblemRef.current = update.problem.id;
+  }, []);
+
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
@@ -1444,6 +1487,20 @@ export default function Builder() {
       }
       if (action.action === "practice-help") {
         openHelpCenter("practice");
+        return;
+      }
+      if (action.action === "generate-practice") {
+        triggerBuilderAction(action.action, action.data);
+        const randomProblem = getRandomPracticeProblem();
+        if (randomProblem) {
+          practiceProblemRef.current = randomProblem.id;
+          setActivePracticeProblemId(randomProblem.id);
+          setPracticeWorksheetState({ problemId: randomProblem.id, complete: false });
+          if (randomProblem.presetHint) {
+            triggerBuilderAction("load-preset", { preset: randomProblem.presetHint });
+          }
+          setPracticePanelOpen(true);
+        }
         return;
       }
       triggerBuilderAction(action.action, action.data);
@@ -1623,6 +1680,24 @@ export default function Builder() {
         return "Send this build to the Component Arena for advanced testing.";
     }
   }, [arenaExportStatus, arenaExportError, lastArenaExport]);
+
+  const practiceWorksheetMessage = useMemo(() => {
+    const currentId = activePracticeProblemId ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null;
+    if (!currentId) {
+      return "Select a practice problem to start the guided worksheet.";
+    }
+
+    const problem = findPracticeProblemById(currentId);
+    if (!problem) {
+      return "Select a practice problem to start the guided worksheet.";
+    }
+
+    if (practiceWorksheetState?.problemId === problem.id && practiceWorksheetState.complete) {
+      return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
+    }
+
+    return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
+  }, [activePracticeProblemId, practiceWorksheetState]);
 
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
@@ -1958,6 +2033,20 @@ export default function Builder() {
                 >
                   {arenaStatusMessage}
                 </div>
+                <div
+                  role="status"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(200, 236, 255, 0.8)",
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(136, 204, 255, 0.22)",
+                    background: "rgba(18, 36, 66, 0.48)",
+                  }}
+                >
+                  {practiceWorksheetMessage}
+                </div>
                 {PRACTICE_ACTIONS.map((action) => (
                   <button
                     key={action.id}
@@ -1981,7 +2070,15 @@ export default function Builder() {
                   type="button"
                   className="slider-chip"
                   onClick={() => setPracticePanelOpen(true)}
-                  title="Open the guided practice worksheets and Ohm's law wheel"
+                  title={practiceWorksheetMessage}
+                  data-complete={
+                    practiceWorksheetState &&
+                    activePracticeProblemId &&
+                    practiceWorksheetState.problemId === activePracticeProblemId &&
+                    practiceWorksheetState.complete
+                      ? "true"
+                      : undefined
+                  }
                 >
                   <span className="slider-chip-label">Practice Worksheets</span>
                 </button>
@@ -1990,7 +2087,18 @@ export default function Builder() {
                     key={scenario.id}
                     type="button"
                     className="slider-chip"
-                    onClick={() => triggerBuilderAction("load-preset", { preset: scenario.preset })}
+                    onClick={() => {
+                      triggerBuilderAction("load-preset", { preset: scenario.preset });
+                      const problem = scenario.problemId
+                        ? findPracticeProblemById(scenario.problemId)
+                        : findPracticeProblemByPreset(scenario.preset);
+                      if (problem) {
+                        practiceProblemRef.current = problem.id;
+                        setActivePracticeProblemId(problem.id);
+                        setPracticeWorksheetState({ problemId: problem.id, complete: false });
+                      }
+                      setPracticePanelOpen(true);
+                    }}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
                     title={controlsDisabled ? controlDisabledTitle : scenario.question}
@@ -2293,7 +2401,11 @@ export default function Builder() {
             X
           </button>
           <div className="builder-panel-body builder-panel-body--practice">
-            <Practice />
+            <Practice
+              selectedProblemId={activePracticeProblemId}
+              onProblemChange={handlePracticeProblemChange}
+              onWorksheetStatusChange={handlePracticeWorksheetStatusChange}
+            />
           </div>
         </div>
       </div>
