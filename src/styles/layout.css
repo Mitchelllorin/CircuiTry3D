@@ -118,15 +118,6 @@ body {
   overflow-y: auto;
 }
 
-.home-page {
-  flex: 1;
-  display: flex;
-  min-height: calc(100vh - 72px);
-}
-
-.home-page iframe {
-  flex: 1;
-}
 
 @media (max-width: 960px) {
   .app-header {
