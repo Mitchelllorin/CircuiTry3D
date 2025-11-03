@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: clamp(24px, 6vw, 72px);
-  min-height: calc(100vh - 72px);
+  min-height: 100vh;
   background: linear-gradient(135deg, #0f1b3d, #16213e 40%, #0a1028);
   color: #ffffff;
 }

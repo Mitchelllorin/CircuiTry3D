@@ -119,6 +119,11 @@ body {
 }
 
 
+.app-shell.is-landing .app-content {
+  padding: 0;
+  overflow: visible;
+}
+
 @media (max-width: 960px) {
   .app-header {
     height: auto;

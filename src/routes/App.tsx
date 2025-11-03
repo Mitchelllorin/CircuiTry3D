@@ -1,4 +1,4 @@
-import { Routes, Route, Link, NavLink, Outlet } from "react-router-dom";
+import { Routes, Route, Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
 import Arena from "../pages/Arena";
@@ -40,6 +40,8 @@ function NotFound() {
 
 function AppLayout() {
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const isLanding = location.pathname === "/";
 
   const buildNavClass = ({ isActive }: { isActive: boolean }) => (isActive ? "app-nav-link is-active" : "app-nav-link");
 
@@ -53,54 +55,59 @@ function AppLayout() {
         .toUpperCase()
     : null;
 
+  const shellClass = isLanding ? "app-shell is-landing" : "app-shell";
+  const contentClass = isLanding ? "app-content is-landing" : "app-content";
+
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <Link to="/" className="app-brand">
-          Circui<span>Try</span>3D
-        </Link>
-        <nav className="app-nav">
-          <NavLink end to="/" className={buildNavClass}>
-            Home
-          </NavLink>
-          <NavLink to="/app" className={buildNavClass}>
-            Builder
-          </NavLink>
-          <NavLink to="/arena" className={buildNavClass}>
-            Arena
-          </NavLink>
-          <NavLink to="/practice" className={buildNavClass}>
-            Practice
-          </NavLink>
-          <NavLink to="/pricing" className={buildNavClass}>
-            Pricing
-          </NavLink>
-          <NavLink to="/community" className={buildNavClass}>
-            Community
-          </NavLink>
-        </nav>
-        <div className="app-account">
-          <Link to="/account" className={currentUser ? "account-link is-auth" : "account-link"}>
-            {currentUser ? (
-              <>
-                <span
-                  className="account-avatar"
-                  aria-hidden="true"
-                  style={{ backgroundColor: currentUser.avatarColor }}
-                >
-                  {initials ?? currentUser.displayName.slice(0, 2).toUpperCase()}
-                </span>
-                <span className="account-label">{currentUser.displayName}</span>
-              </>
-            ) : (
-              <>
-                <span className="account-label">Sign In</span>
-              </>
-            )}
+    <div className={shellClass}>
+      {!isLanding && (
+        <header className="app-header">
+          <Link to="/" className="app-brand">
+            Circui<span>Try</span>3D
           </Link>
-        </div>
-      </header>
-      <main className="app-content">
+          <nav className="app-nav">
+            <NavLink end to="/" className={buildNavClass}>
+              Home
+            </NavLink>
+            <NavLink to="/app" className={buildNavClass}>
+              Builder
+            </NavLink>
+            <NavLink to="/arena" className={buildNavClass}>
+              Arena
+            </NavLink>
+            <NavLink to="/practice" className={buildNavClass}>
+              Practice
+            </NavLink>
+            <NavLink to="/pricing" className={buildNavClass}>
+              Pricing
+            </NavLink>
+            <NavLink to="/community" className={buildNavClass}>
+              Community
+            </NavLink>
+          </nav>
+          <div className="app-account">
+            <Link to="/account" className={currentUser ? "account-link is-auth" : "account-link"}>
+              {currentUser ? (
+                <>
+                  <span
+                    className="account-avatar"
+                    aria-hidden="true"
+                    style={{ backgroundColor: currentUser.avatarColor }}
+                  >
+                    {initials ?? currentUser.displayName.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="account-label">{currentUser.displayName}</span>
+                </>
+              ) : (
+                <>
+                  <span className="account-label">Sign In</span>
+                </>
+              )}
+            </Link>
+          </div>
+        </header>
+      )}
+      <main className={contentClass}>
         <Outlet />
       </main>
     </div>
