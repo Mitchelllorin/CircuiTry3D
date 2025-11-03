@@ -6,7 +6,7 @@ export type PracticeTopology = "series" | "parallel" | "combination";
 
 export type ComponentRole = "source" | "load";
 
-export type PracticeDiagramId = "seriesSquare" | "parallelSquare" | "comboSquare";
+export type PracticeDiagramId = "seriesRect" | "parallelRect" | "comboRect";
 
 export type PracticeComponent = {
   id: string;

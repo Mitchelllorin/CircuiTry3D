@@ -42,15 +42,20 @@
           </feMerge>
         </filter>
       </defs>
-      <!-- Series schematic path -->
-      <path id="logo-path" class="wire" filter="url(#glow)" d="M20,60 H90 M90,60 h25 m10,-15 h30 v30 h-30 m40,-15 h65 m10,-15 h30 v30 h-30 m40,-15 H360"/>
+      <!-- Rectangular series schematic path -->
+      <path
+        id="logo-path"
+        class="wire"
+        filter="url(#glow)"
+        d="M26,45 L70,45 H320 V155 L70,155 V75 L20,75 V50 L26,50 V75 V45 Z"
+      />
       <!-- Battery symbol at start -->
-      <line x1="20" y1="50" x2="20" y2="70" class="element"/>
+      <line x1="20" y1="50" x2="20" y2="75" class="element"/>
       <line x1="26" y1="45" x2="26" y2="75" class="element"/>
-      <!-- Resistor block 1 -->
-      <rect x="125" y="45" width="30" height="30" class="element" rx="4"/>
-      <!-- LED block -->
-      <rect x="270" y="45" width="30" height="30" class="element" rx="4"/>
+      <!-- Series resistors along the top rail -->
+      <rect x="118" y="32" width="48" height="26" class="element" rx="6"/>
+      <rect x="198" y="32" width="48" height="26" class="element" rx="6"/>
+      <rect x="278" y="32" width="48" height="26" class="element" rx="6"/>
       <!-- Photons -->
       <g id="photons"></g>
     </svg>

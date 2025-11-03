@@ -6,15 +6,15 @@ const SERIES_IDS = ["R1", "R2", "R3", "R4"] as const;
 const practiceProblems: PracticeProblem[] = [
   {
     id: "series-square-01",
-    title: "Series Square · Loop Current",
+    title: "Series Rectangular · Loop Current",
     topology: "series",
     difficulty: "intro",
     prompt:
-      "A square loop holds four resistors connected in series around the path. The battery feeds 24 V to the loop. Complete the W.I.R.E. table and determine the loop current.",
+      "A rectangular loop holds four resistors connected in series along the path. The battery feeds 24 V around the frame. Complete the W.I.R.E. table and determine the loop current.",
     targetQuestion: "What is the total current flowing through the series loop?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
-    diagram: "seriesSquare",
+    diagram: "seriesRect",
     source: {
       id: "battery",
       label: "Battery",
@@ -102,15 +102,15 @@ const practiceProblems: PracticeProblem[] = [
   },
   {
     id: "parallel-square-02",
-    title: "Parallel Square · Branch Currents",
+    title: "Parallel Rectangular · Branch Currents",
     topology: "parallel",
     difficulty: "standard",
     prompt:
-      "Three resistors bridge the opposite nodes of a square bus, all tied across an 18 V source. Complete the W.I.R.E. worksheet and find each branch current along with the equivalent resistance.",
+      "Three resistors bridge the opposite nodes of a rectangular bus, all tied across an 18 V source. Complete the W.I.R.E. worksheet and find each branch current along with the equivalent resistance.",
     targetQuestion: "What is the total equivalent resistance of the three parallel branches?",
     targetMetric: { componentId: "totals", key: "resistance" },
     conceptTags: ["parallel", "kirchhoff", "ohms-law"],
-    diagram: "parallelSquare",
+    diagram: "parallelRect",
     source: {
       id: "supply",
       label: "DC Supply",
@@ -187,15 +187,15 @@ const practiceProblems: PracticeProblem[] = [
   },
   {
     id: "combo-square-03",
-    title: "Combination Square · Ladder Solve",
+    title: "Combination Rectangular · Ladder Solve",
     topology: "combination",
     difficulty: "challenge",
     prompt:
-      "A ladder circuit wraps a square: R1 on the top leg, a parallel pair on the right leg (R2 || R3), and R4 closing the bottom leg back to the source. The supply provides 30 V. Use the table method to solve every component and report the current through R2.",
+      "A ladder circuit wraps a rectangular frame: R1 on the top leg, a parallel pair on the right leg (R2 || R3), and R4 closing the bottom leg back to the source. The supply provides 30 V. Use the table method to solve every component and report the current through R2.",
     targetQuestion: "What current flows through branch R2?",
     targetMetric: { componentId: "R2", key: "current" },
     conceptTags: ["combination", "series", "parallel", "ohms-law", "kirchhoff"],
-    diagram: "comboSquare",
+    diagram: "comboRect",
     source: {
       id: "source",
       label: "Source",
