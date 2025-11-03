@@ -3577,7 +3577,12 @@
         <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+    <script>
+        if (typeof window.THREE === "undefined") {
+            document.write('<script src="vendor/three.min.js"><\\/script>');
+        }
+    </script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let isEmbedded = false;
