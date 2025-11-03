@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import practiceProblems from "../data/practiceProblems";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import practiceProblems, { DEFAULT_PRACTICE_PROBLEM, findPracticeProblemById } from "../data/practiceProblems";
 import type { PracticeProblem } from "../model/practice";
 import type { PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
@@ -34,6 +36,12 @@ const DIFFICULTY_LABEL: Record<PracticeProblem["difficulty"], string> = {
 type GroupedProblems = Record<PracticeTopology, PracticeProblem[]>;
 
 type WorksheetState = Record<string, Record<WireMetricKey, WorksheetEntry>>;
+
+type PracticeProps = {
+  selectedProblemId?: string | null;
+  onProblemChange?: (problem: PracticeProblem) => void;
+  onWorksheetStatusChange?: (update: { problem: PracticeProblem; complete: boolean }) => void;
+};
 
 const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
   problems.reduce<GroupedProblems>(
@@ -90,13 +98,18 @@ const buildTableRows = (problem: PracticeProblem, solution: SolveResult): WireTa
 const buildStepPresentations = (problem: PracticeProblem, solution: SolveResult) =>
   problem.steps.map((step) => step(solution.stepContext));
 
-const findProblem = (id: string | null): PracticeProblem => {
-  const fallback = practiceProblems[0];
-  if (!id) {
-    return fallback;
+const ensureProblem = (problem: PracticeProblem | null): PracticeProblem => {
+  const fallback = DEFAULT_PRACTICE_PROBLEM;
+  if (problem) {
+    return problem;
   }
-  return practiceProblems.find((problem) => problem.id === id) ?? fallback;
+  if (!fallback) {
+    throw new Error("No practice problems available");
+  }
+  return fallback;
 };
+
+const findProblem = (id: string | null): PracticeProblem => ensureProblem(findPracticeProblemById(id));
 
 const parseMetricInput = (raw: string): number | null => {
   const trimmed = raw.trim();
@@ -129,17 +142,108 @@ const withinTolerance = (expected: number, actual: number, tolerance = 0.01): bo
 
 const formatSeedValue = (value: number, key: WireMetricKey) => formatNumber(value, METRIC_PRECISION[key]);
 
-export default function Practice() {
-  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(practiceProblems[0]?.id ?? null);
+type PracticeHintDialogProps = {
+  open: boolean;
+  id: string;
+  title: string;
+  onClose(): void;
+  children: ReactNode;
+};
+
+function PracticeHintDialog({ open, id, title, onClose, children }: PracticeHintDialogProps) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open || typeof document === "undefined") {
+      return;
+    }
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusTimer = window.setTimeout(() => {
+      dialogRef.current?.focus({ preventScroll: true });
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      previouslyFocused?.focus?.();
+    };
+  }, [open]);
+
+  if (!open || typeof document === "undefined") {
+    return null;
+  }
+
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
+
+  return createPortal(
+    <div className="practice-hint-backdrop" onClick={handleBackdropClick} role="presentation">
+      <div
+        id={id}
+        ref={dialogRef}
+        className="practice-hint-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${id}-title`}
+        aria-describedby={`${id}-body`}
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="practice-hint-close"
+          onClick={onClose}
+          aria-label="Close practice hint"
+        >
+          X
+        </button>
+        <h3 id={`${id}-title`}>{title}</h3>
+        <div id={`${id}-body`} className="practice-hint-body">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+export default function Practice({
+  selectedProblemId,
+  onProblemChange,
+  onWorksheetStatusChange,
+}: PracticeProps = {}) {
+  const fallbackProblemId = DEFAULT_PRACTICE_PROBLEM?.id ?? null;
+  const [internalProblemId, setInternalProblemId] = useState<string | null>(() => {
+    if (selectedProblemId !== undefined && selectedProblemId !== null) {
+      return findProblem(selectedProblemId).id;
+    }
+    return fallbackProblemId;
+  });
   const [tableRevealed, setTableRevealed] = useState(false);
   const [stepsVisible, setStepsVisible] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
   const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(null);
+  const lastReportedProblemId = useRef<string | null>(null);
+  const lastWorksheetReport = useRef<{ problemId: string; complete: boolean } | null>(null);
+
+  useEffect(() => {
+    if (selectedProblemId === undefined) {
+      return;
+    }
+
+    const resolved = findProblem(selectedProblemId);
+    if (resolved.id !== internalProblemId) {
+      setInternalProblemId(resolved.id);
+    }
+  }, [internalProblemId, selectedProblemId]);
 
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
-  const selectedProblem = useMemo(() => findProblem(selectedProblemId), [selectedProblemId]);
+  const selectedProblem = useMemo(() => findProblem(internalProblemId), [internalProblemId]);
 
   const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
   const tableRows = useMemo(() => buildTableRows(selectedProblem, solution), [selectedProblem, solution]);
@@ -150,6 +254,15 @@ export default function Practice() {
 
   const toggleHint = useCallback((hint: "target" | "worksheet") => {
     setActiveHint((previous) => (previous === hint ? null : hint));
+  }, []);
+
+  const selectProblemById = useCallback((problemId: string) => {
+    const next = findProblem(problemId);
+    setInternalProblemId(next.id);
+    setTableRevealed(false);
+    setStepsVisible(false);
+    setAnswerRevealed(false);
+    setActiveHint(null);
   }, []);
 
   const targetHintOpen = activeHint === "target";
@@ -169,6 +282,19 @@ export default function Practice() {
 
     return map;
   }, [tableRows]);
+
+  useEffect(() => {
+    if (!selectedProblem) {
+      return;
+    }
+
+    if (lastReportedProblemId.current === selectedProblem.id) {
+      return;
+    }
+
+    onProblemChange?.(selectedProblem);
+    lastReportedProblemId.current = selectedProblem.id;
+  }, [onProblemChange, selectedProblem]);
 
   const baselineWorksheet = useMemo(() => {
     const baseline: WorksheetState = {};
@@ -201,6 +327,22 @@ export default function Practice() {
       setAnswerRevealed(true);
     }
   }, [worksheetComplete, answerRevealed]);
+
+  useEffect(() => {
+    if (!selectedProblem) {
+      return;
+    }
+
+    const nextStatus = { problemId: selectedProblem.id, complete: worksheetComplete };
+    const previous = lastWorksheetReport.current;
+
+    if (previous && previous.problemId === nextStatus.problemId && previous.complete === nextStatus.complete) {
+      return;
+    }
+
+    onWorksheetStatusChange?.({ problem: selectedProblem, complete: worksheetComplete });
+    lastWorksheetReport.current = nextStatus;
+  }, [onWorksheetStatusChange, selectedProblem, worksheetComplete]);
 
   useEffect(() => {
     if (!activeHint) {
@@ -305,210 +447,197 @@ export default function Practice() {
       (currentIndex >= 0 && bucket[(currentIndex + 1) % bucket.length]) || practiceProblems[0] || null;
 
     if (nextProblem) {
-      setSelectedProblemId(nextProblem.id);
-      setTableRevealed(false);
-      setStepsVisible(false);
-      setAnswerRevealed(false);
+      selectProblemById(nextProblem.id);
     }
   };
 
   return (
-    <div className="practice-page">
-      <aside className="practice-sidebar">
-        {TOPOLOGY_ORDER.map((topology) => {
-          const bucket = grouped[topology];
-          if (!bucket.length) {
-            return null;
-          }
-          return (
-            <div key={topology}>
-              <h2>{TOPOLOGY_LABEL[topology]}</h2>
-              <div className="problem-list">
-                {bucket.map((problem) => (
-                  <button
-                    key={problem.id}
-                    type="button"
-                    className="problem-button"
-                    data-active={problem.id === selectedProblem.id ? "true" : undefined}
-                    onClick={() => {
-                      setSelectedProblemId(problem.id);
-                      setTableRevealed(false);
-                      setStepsVisible(false);
-                      setAnswerRevealed(false);
-                    }}
-                  >
-                    <strong>{problem.title}</strong>
-                    <small>
-                      {TOPOLOGY_LABEL[problem.topology]} ? {DIFFICULTY_LABEL[problem.difficulty]}
-                    </small>
-                  </button>
-                ))}
+    <>
+      <PracticeHintDialog
+        open={targetHintOpen}
+        id="practice-target-hint"
+        title="Target Value Guide"
+        onClose={() => setActiveHint(null)}
+      >
+        <p>The question mark flags the metric that the prompt expects you to solve.</p>
+        <ul>
+          <li>Use the worksheet and circuit diagram to capture every given before you calculate the unknowns.</li>
+          <li>Lean on the formula deck and solving steps to choose the right Ohm&apos;s Law or power identity.</li>
+          <li>Once your entries are green, reveal the answer to compare your work with the solved circuit.</li>
+        </ul>
+        <button type="button" className="practice-hint-dismiss" onClick={() => setActiveHint(null)}>
+          Back to worksheet
+        </button>
+      </PracticeHintDialog>
+
+      <PracticeHintDialog
+        open={worksheetHintOpen}
+        id="practice-worksheet-hint"
+        title="Worksheet Walkthrough"
+        onClose={() => setActiveHint(null)}
+      >
+        <p>The plus icon opens the worksheet playbook so you always know how to progress:</p>
+        <ul>
+          <li>Lock in the givens first - they populate the worksheet automatically when you load a problem.</li>
+          <li>Fill each blank W.I.R.E. cell by pairing a known value with the correct formula; the cell turns green when it matches the solved circuit.</li>
+          <li>Every unknown must be correct to unlock the next challenge, so take your time and check totals against the circuit diagram.</li>
+        </ul>
+        <button type="button" className="practice-hint-dismiss" onClick={() => setActiveHint(null)}>
+          Back to worksheet
+        </button>
+      </PracticeHintDialog>
+
+      <div className="practice-page">
+        <aside className="practice-sidebar">
+          {TOPOLOGY_ORDER.map((topology) => {
+            const bucket = grouped[topology];
+            if (!bucket.length) {
+              return null;
+            }
+            return (
+              <div key={topology}>
+                <h2>{TOPOLOGY_LABEL[topology]}</h2>
+                <div className="problem-list">
+                  {bucket.map((problem) => (
+                    <button
+                      key={problem.id}
+                      type="button"
+                      className="problem-button"
+                      data-active={problem.id === selectedProblem.id ? "true" : undefined}
+                      onClick={() => selectProblemById(problem.id)}
+                    >
+                      <strong>{problem.title}</strong>
+                      <small>
+                        {TOPOLOGY_LABEL[problem.topology]} ? {DIFFICULTY_LABEL[problem.difficulty]}
+                      </small>
+                    </button>
+                  ))}
+                </div>
               </div>
+            );
+          })}
+        </aside>
+        <main className="practice-main">
+          <header className="practice-header">
+            <h1>{selectedProblem.title}</h1>
+            <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
+            <div className="tag-group" aria-label="Concept tags">
+              {selectedProblem.conceptTags.map((tag) => (
+                <span key={tag} className="tag">
+                  {tag}
+                </span>
+              ))}
             </div>
-          );
-        })}
-      </aside>
-      <main className="practice-main">
-        <header className="practice-header">
-          <h1>{selectedProblem.title}</h1>
-          <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
-          <div className="tag-group" aria-label="Concept tags">
-            {selectedProblem.conceptTags.map((tag) => (
-              <span key={tag} className="tag">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </header>
+          </header>
 
-        <section className="prompt-card">
-          <strong>Practice Prompt</strong>
-          <p>{selectedProblem.prompt}</p>
-        </section>
+          <section className="prompt-card">
+            <strong>Practice Prompt</strong>
+            <p>{selectedProblem.prompt}</p>
+          </section>
 
-        <section className="target-card" aria-live="polite">
-          <div className="target-icon-wrapper">
-            <button
-              type="button"
-              className="target-icon"
-              onClick={() => toggleHint("target")}
-              aria-label="Explain the question mark icon"
-              aria-haspopup="dialog"
-              aria-expanded={targetHintOpen}
-              aria-controls="practice-target-hint"
-            >
-              ?
-            </button>
-            {targetHintOpen ? (
-              <div className="practice-popover" role="dialog" id="practice-target-hint" aria-modal="false">
-                <strong>Question Mark</strong>
-                <p>This marks the value the prompt wants you to solve.</p>
-                <ul>
-                  <li>Fill in each unknown W.I.R.E. cell using the givens and formulas.</li>
-                  <li>Compare with the circuit diagram to keep the totals consistent.</li>
-                  <li>Reveal the answer once you are confident in your work.</li>
-                </ul>
-                <button
-                  type="button"
-                  className="practice-popover-close"
-                  onClick={() => setActiveHint(null)}
-                >
-                  Got it
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <div>
-            <div className="target-question">{selectedProblem.targetQuestion}</div>
-            <div className="target-answer">
-              {answerRevealed && Number.isFinite(targetValue) ? (
-                formatMetricValue(targetValue as number, selectedProblem.targetMetric.key)
-              ) : (
-                <span>Reveal the answer when you&apos;re ready.</span>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="practice-grid">
-          <div className="worksheet-controls">
-            <button type="button" onClick={() => setTableRevealed((value) => !value)}>
-              {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
-            </button>
-            <button type="button" onClick={() => setStepsVisible((value) => !value)}>
-              {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
-            </button>
-            <button type="button" onClick={() => setAnswerRevealed((value) => !value)}>
-              {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
-            </button>
-            <button
-              type="button"
-              onClick={advanceToNextProblem}
-              disabled={!worksheetComplete}
-              className="next-problem"
-            >
-              {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
-            </button>
-          </div>
-
-          <CircuitDiagram problem={selectedProblem} />
-
-          <div
-            className="worksheet-status-banner"
-            role="status"
-            aria-live="polite"
-            data-complete={worksheetComplete ? "true" : undefined}
-          >
-            <div className="worksheet-status-header">
-              <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
+          <section className="target-card" aria-live="polite">
+            <div className="target-icon-wrapper">
               <button
                 type="button"
-                className="worksheet-icon-button"
-                onClick={() => toggleHint("worksheet")}
-                aria-label="Show worksheet help"
+                className="target-icon"
+                onClick={() => toggleHint("target")}
+                aria-label="Explain the question mark icon"
                 aria-haspopup="dialog"
-                aria-expanded={worksheetHintOpen}
-                aria-controls="practice-worksheet-hint"
+                aria-expanded={targetHintOpen}
+                aria-controls="practice-target-hint"
               >
-                +
+                ?
               </button>
             </div>
-            <span>
-              {worksheetComplete
-                ? "Every unknown matches the solved circuit. Advance when you're ready."
-                : "Enter the missing watts, amps, ohms, and volts using the circuit diagram and formula helpers."}
-            </span>
-            {worksheetHintOpen ? (
-              <div
-                className="practice-popover practice-popover--right"
-                role="dialog"
-                id="practice-worksheet-hint"
-                aria-modal="false"
+            <div>
+              <div className="target-question">{selectedProblem.targetQuestion}</div>
+              <div className="target-answer">
+                {answerRevealed && Number.isFinite(targetValue) ? (
+                  formatMetricValue(targetValue as number, selectedProblem.targetMetric.key)
+                ) : (
+                  <span>Reveal the answer when you&apos;re ready.</span>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="practice-grid">
+            <div className="worksheet-controls">
+              <button type="button" onClick={() => setTableRevealed((value) => !value)}>
+                {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
+              </button>
+              <button type="button" onClick={() => setStepsVisible((value) => !value)}>
+                {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
+              </button>
+              <button type="button" onClick={() => setAnswerRevealed((value) => !value)}>
+                {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
+              </button>
+              <button
+                type="button"
+                onClick={advanceToNextProblem}
+                disabled={!worksheetComplete}
+                className="next-problem"
               >
-                <strong>Plus Sign</strong>
-                <p>Use the worksheet to add each missing value:</p>
-                <ul>
-                  <li>Start by copying the givens from the prompt into the locked cells.</li>
-                  <li>Pick the Ohm's law or power identity that matches the known values for each row.</li>
-                  <li>Cells turn green when the entry is correct, and once every unknown is solved the next problem unlocks.</li>
-                </ul>
+                {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
+              </button>
+            </div>
+
+            <CircuitDiagram problem={selectedProblem} />
+
+            <div
+              className="worksheet-status-banner"
+              role="status"
+              aria-live="polite"
+              data-complete={worksheetComplete ? "true" : undefined}
+            >
+              <div className="worksheet-status-header">
+                <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
                 <button
                   type="button"
-                  className="practice-popover-close"
-                  onClick={() => setActiveHint(null)}
+                  className="worksheet-icon-button"
+                  onClick={() => toggleHint("worksheet")}
+                  aria-label="Show worksheet help"
+                  aria-haspopup="dialog"
+                  aria-expanded={worksheetHintOpen}
+                  aria-controls="practice-worksheet-hint"
                 >
-                  Got it
+                  +
                 </button>
               </div>
-            ) : null}
-          </div>
+              <span>
+                {worksheetComplete
+                  ? "Every unknown matches the solved circuit. Advance when you're ready."
+                  : "Enter the missing watts, amps, ohms, and volts using the circuit diagram and formula helpers."}
+              </span>
+            </div>
 
-          <div className="worksheet-sync" role="status" aria-live="polite">
-            <strong>Synced to schematic</strong>
-            <span>
-              {`Givens from ${selectedProblem.title} are locked in. Update only the unknowns and compare against the circuit diagram as you go.`}
-            </span>
-          </div>
+            <div className="worksheet-sync" role="status" aria-live="polite">
+              <strong>Synced to schematic</strong>
+              <span>
+                {`Givens from ${selectedProblem.title} are locked in. Update only the unknowns and compare against the circuit diagram as you go.`}
+              </span>
+            </div>
 
-          <div className="practice-table-wrapper">
-            <WireTable
-              rows={tableRows}
-              revealAll={tableRevealed}
-              highlight={{ rowId: highlightRowId, key: highlightKey }}
-              entries={worksheetEntries}
-              onChange={handleWorksheetChange}
-            />
-          </div>
+            <div className="practice-table-wrapper">
+              <WireTable
+                rows={tableRows}
+                revealAll={tableRevealed}
+                highlight={{ rowId: highlightRowId, key: highlightKey }}
+                entries={worksheetEntries}
+                onChange={handleWorksheetChange}
+              />
+            </div>
 
-          <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
-        </section>
+            <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
+          </section>
 
-        <section className="practice-supplement">
-          <TriangleDeck />
-          <OhmsLawWheel />
-        </section>
-      </main>
-    </div>
+          <section className="practice-supplement">
+            <TriangleDeck />
+            <OhmsLawWheel />
+          </section>
+        </main>
+      </div>
+    </>
   );
 }
 

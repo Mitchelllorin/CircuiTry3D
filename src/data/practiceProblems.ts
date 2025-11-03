@@ -295,5 +295,48 @@ const practiceProblems: PracticeProblem[] = [
   },
 ];
 
+const practiceProblemById = new Map<string, PracticeProblem>(
+  practiceProblems.map((problem) => [problem.id, problem])
+);
+
+const practiceProblemByPreset = new Map<string, PracticeProblem>(
+  practiceProblems
+    .filter((problem) => typeof problem.presetHint === "string")
+    .map((problem) => [problem.presetHint as string, problem])
+);
+
+export const DEFAULT_PRACTICE_PROBLEM = practiceProblems[0] ?? null;
+
+export const findPracticeProblemById = (id: string | null | undefined): PracticeProblem | null => {
+  if (!id) {
+    return DEFAULT_PRACTICE_PROBLEM;
+  }
+  return practiceProblemById.get(id) ?? DEFAULT_PRACTICE_PROBLEM;
+};
+
+export const findPracticeProblemByPreset = (preset: string | null | undefined): PracticeProblem | null => {
+  if (!preset) {
+    return null;
+  }
+  return practiceProblemByPreset.get(preset) ?? null;
+};
+
+export const getRandomPracticeProblem = (topology?: PracticeProblem["topology"]): PracticeProblem | null => {
+  if (!practiceProblems.length) {
+    return null;
+  }
+
+  const pool = topology
+    ? practiceProblems.filter((problem) => problem.topology === topology)
+    : practiceProblems;
+
+  if (!pool.length) {
+    return DEFAULT_PRACTICE_PROBLEM;
+  }
+
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex] ?? DEFAULT_PRACTICE_PROBLEM;
+};
+
 export default practiceProblems;
 
