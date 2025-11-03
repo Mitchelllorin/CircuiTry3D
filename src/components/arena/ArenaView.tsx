@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, DragEvent } from "react";
+import type { ChangeEvent, DragEvent, CSSProperties } from "react";
 import "../../styles/arena.css";
 
 type ArenaViewProps = {
@@ -145,6 +145,27 @@ type ComponentShowdownProfile = {
   metrics: ComponentMetricEntry[];
 };
 
+type TelemetryPreset = {
+  id: string;
+  label: string;
+  tokens: string[];
+  icon: string;
+  thresholds: {
+    warning: number;
+    critical: number;
+  };
+  direction?: "higher" | "lower";
+};
+
+type ComponentTelemetryEntry = {
+  id: string;
+  label: string;
+  icon: string;
+  displayValue: string;
+  severity: "normal" | "warning" | "critical";
+  metric: ComponentMetricEntry | null;
+};
+
 const METRIC_UNIT_MAP: Record<string, string> = {
   ambienthumiditypercent: "%",
   ambienttemperature: "C",
@@ -196,6 +217,45 @@ const COMPONENT_BADGE_LABELS: Record<string, string> = {
   transistor: "TRN",
   generic: "CMP"
 };
+
+const TELEMETRY_PRESETS: TelemetryPreset[] = [
+  {
+    id: "power",
+    label: "Power Output",
+    tokens: ["power", "powerdissipation", "energydelivered", "energy"],
+    icon: "⚡",
+    thresholds: { warning: 50, critical: 150 }
+  },
+  {
+    id: "current",
+    label: "Current Draw",
+    tokens: ["current", "currentpeak", "currentrms", "maxdischargecurrent"],
+    icon: "🔌",
+    thresholds: { warning: 5, critical: 15 }
+  },
+  {
+    id: "voltage",
+    label: "Voltage",
+    tokens: ["voltage", "forwardvoltage", "operatingvoltage"],
+    icon: "🔋",
+    thresholds: { warning: 24, critical: 60 }
+  },
+  {
+    id: "temperature",
+    label: "Thermal Load",
+    tokens: ["temperature", "operatingtemperature", "thermalrise"],
+    icon: "🔥",
+    thresholds: { warning: 60, critical: 90 }
+  },
+  {
+    id: "efficiency",
+    label: "Efficiency",
+    tokens: ["efficiency"],
+    icon: "🎯",
+    thresholds: { warning: 0.6, critical: 0.4 },
+    direction: "lower"
+  }
+];
 
 function normalisePropertyKey(key: string): string {
   return key.replace(/[^a-z0-9]/gi, "").toLowerCase();
@@ -312,6 +372,186 @@ function formatPropertyValue(key: string, value: unknown): {
   }
 
   return { displayValue: "—", numericValue: null, unit: null };
+}
+
+function evaluateSeverity(value: number | null, preset: TelemetryPreset): "normal" | "warning" | "critical" {
+  if (value === null || !Number.isFinite(value)) {
+    return "normal";
+  }
+
+  const direction = preset.direction ?? "higher";
+  if (direction === "higher") {
+    const magnitude = Math.abs(value);
+    if (magnitude >= preset.thresholds.critical) {
+      return "critical";
+    }
+    if (magnitude >= preset.thresholds.warning) {
+      return "warning";
+    }
+    return "normal";
+  }
+
+  if (value <= preset.thresholds.critical) {
+    return "critical";
+  }
+  if (value <= preset.thresholds.warning) {
+    return "warning";
+  }
+  return "normal";
+}
+
+function findMetricByTokens(profile: ComponentShowdownProfile | null, tokens: string[]): ComponentMetricEntry | null {
+  if (!profile) {
+    return null;
+  }
+
+  return (
+    profile.metrics.find((metric) => tokens.some((token) => metric.key.includes(token))) ?? null
+  );
+}
+
+function buildComponentTelemetry(profile: ComponentShowdownProfile | null): ComponentTelemetryEntry[] {
+  return TELEMETRY_PRESETS.map((preset) => {
+    const metric = findMetricByTokens(profile, preset.tokens);
+    const displayValue = metric?.displayValue ?? "—";
+    const severity = evaluateSeverity(metric?.numericValue ?? null, preset);
+
+    return {
+      id: preset.id,
+      label: preset.label,
+      icon: preset.icon,
+      displayValue,
+      severity,
+      metric
+    };
+  }).filter((entry) => profile !== null || entry.metric !== null);
+}
+
+function resolveGlyphKey(type?: string | null): string {
+  if (!type) {
+    return "generic";
+  }
+
+  const normalised = normaliseTypeForClass(type).split("-")[0];
+  if (!normalised || normalised.trim().length === 0) {
+    return "generic";
+  }
+  return normalised;
+}
+
+type ComponentGlyphProps = {
+  type?: string | null;
+};
+
+function ComponentGlyph({ type }: ComponentGlyphProps) {
+  const glyphKey = resolveGlyphKey(type);
+  const ariaLabel = type ? `${type} visual` : "Component visual";
+
+  const renderShape = () => {
+    switch (glyphKey) {
+      case "resistor":
+        return (
+          <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="6" y1="30" x2="26" y2="30" />
+            <polyline points="26,30 36,18 46,42 56,18 66,42 76,18 86,30" />
+            <line x1="86" y1="30" x2="114" y2="30" />
+          </g>
+        );
+      case "capacitor":
+        return (
+          <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round">
+            <line x1="10" y1="30" x2="46" y2="30" />
+            <line x1="46" y1="12" x2="46" y2="48" />
+            <line x1="74" y1="12" x2="74" y2="48" />
+            <line x1="74" y1="30" x2="110" y2="30" />
+          </g>
+        );
+      case "battery":
+        return (
+          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round">
+            <rect x="20" y="14" width="24" height="32" rx="6" />
+            <rect x="52" y="18" width="24" height="24" rx="4" />
+            <line x1="84" y1="24" x2="84" y2="36" />
+            <line x1="96" y1="18" x2="96" y2="42" />
+          </g>
+        );
+      case "led":
+        return (
+          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="34,12 74,30 34,48" fill="currentColor" opacity="0.2" />
+            <line x1="10" y1="30" x2="34" y2="30" />
+            <line x1="74" y1="30" x2="110" y2="30" />
+            <polyline points="58,16 72,4 80,10" />
+            <polyline points="62,42 76,30 84,36" />
+          </g>
+        );
+      case "inductor":
+        return (
+          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+            <line x1="6" y1="30" x2="18" y2="30" />
+            <path d="M18,30 C30,10 42,50 54,30 C66,10 78,50 90,30 C102,10 114,50 126,30" transform="translate(-12 0)" />
+            <line x1="90" y1="30" x2="108" y2="30" />
+          </g>
+        );
+      case "switch":
+        return (
+          <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round">
+            <line x1="10" y1="36" x2="46" y2="36" />
+            <line x1="46" y1="36" x2="86" y2="16" />
+            <line x1="86" y1="16" x2="110" y2="16" />
+            <circle cx="46" cy="36" r="6" fill="currentColor" />
+          </g>
+        );
+      case "transistor":
+        return (
+          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round">
+            <circle cx="46" cy="30" r="18" />
+            <line x1="64" y1="30" x2="104" y2="30" />
+            <line x1="30" y1="12" x2="18" y2="6" />
+            <line x1="30" y1="48" x2="18" y2="54" />
+            <polyline points="44,12 70,12 70,26" />
+            <polyline points="44,48 70,48 70,34" />
+          </g>
+        );
+      case "sensor":
+        return (
+          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round">
+            <circle cx="46" cy="30" r="16" />
+            <path d="M62,18 C78,10 92,10 106,18" />
+            <path d="M62,42 C78,50 92,50 106,42" />
+            <line x1="18" y1="30" x2="30" y2="30" />
+          </g>
+        );
+      case "motor":
+        return (
+          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="46" cy="30" r="20" />
+            <line x1="10" y1="12" x2="22" y2="24" />
+            <line x1="10" y1="48" x2="22" y2="36" />
+            <line x1="66" y1="30" x2="110" y2="30" />
+            <polyline points="78,18 94,18 94,42 78,42" />
+          </g>
+        );
+      default:
+        return (
+          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="18" y="14" width="64" height="32" rx="10" />
+            <circle cx="38" cy="30" r="6" />
+            <circle cx="62" cy="30" r="6" />
+            <line x1="10" y1="30" x2="18" y2="30" />
+            <line x1="82" y1="30" x2="110" y2="30" />
+          </g>
+        );
+    }
+  };
+
+  return (
+    <div className={`arena-component-glyph arena-glyph-${glyphKey}`}>
+      <svg viewBox="0 0 120 60" role="img" aria-label={ariaLabel} focusable="false">
+        {renderShape()}
+      </svg>
+    </div>
+  );
 }
 
 function sanitiseComponent(raw: unknown, index: number): ArenaComponent | null {
@@ -1064,6 +1304,45 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     }
   }, [handleExternalImport, manualImportText]);
 
+  const handleClipboardImport = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard || typeof navigator.clipboard.readText !== "function") {
+      setImportError("Clipboard import is not supported in this browser. Paste JSON instead.");
+      setBridgeStatus("Clipboard import unavailable on this device.");
+      return;
+    }
+
+    setImportPending(true);
+    setImportError(null);
+    setBridgeStatus("Reading clipboard...");
+
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText.trim()) {
+        setImportError("Clipboard was empty. Copy JSON from the builder first.");
+        setBridgeStatus("Clipboard empty.");
+        return;
+      }
+
+      const parsed = JSON.parse(clipboardText);
+      const success = handleExternalImport(parsed, {
+        source: "clipboard",
+        label: "Clipboard Import",
+        statusMessage: "Imported components from clipboard snapshot.",
+        persist: true
+      });
+
+      if (!success) {
+        setImportError("Clipboard data did not contain any components.");
+      }
+    } catch (error) {
+      console.warn("Arena: clipboard import failed", error);
+      setImportError("Clipboard contents were not valid JSON. Try copying again from the builder.");
+      setBridgeStatus("Import failed. Invalid clipboard dataset.");
+    } finally {
+      setImportPending(false);
+    }
+  }, [handleExternalImport]);
+
   const handleSampleImport = useCallback(
     (payload: ArenaPayload) => {
       applyResolvedPayload(
@@ -1218,6 +1497,45 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     () => new Map(componentBProfile?.metrics.map((metric) => [metric.key, metric]) ?? []),
     [componentBProfile]
   );
+
+  const componentATelemetry = useMemo(() => buildComponentTelemetry(componentAProfile), [componentAProfile]);
+  const componentBTelemetry = useMemo(() => buildComponentTelemetry(componentBProfile), [componentBProfile]);
+
+  const componentAWarnings = useMemo(
+    () => componentATelemetry.filter((entry) => entry.severity !== "normal" && entry.metric !== null),
+    [componentATelemetry]
+  );
+
+  const componentBWarnings = useMemo(
+    () => componentBTelemetry.filter((entry) => entry.severity !== "normal" && entry.metric !== null),
+    [componentBTelemetry]
+  );
+
+  const battleFlow = useMemo(() => {
+    const currentA = componentATelemetry.find((entry) => entry.id === "current")?.metric?.numericValue ?? null;
+    const currentB = componentBTelemetry.find((entry) => entry.id === "current")?.metric?.numericValue ?? null;
+
+    if ((currentA === null || !Number.isFinite(currentA)) && (currentB === null || !Number.isFinite(currentB))) {
+      return { direction: "none" as const, strength: 0, label: "Flow idle" };
+    }
+
+    const safeA = Number.isFinite(currentA as number) ? (currentA as number) : 0;
+    const safeB = Number.isFinite(currentB as number) ? (currentB as number) : 0;
+    const base = Math.max(Math.abs(safeA), Math.abs(safeB), 1e-6);
+    const diff = safeA - safeB;
+
+    if (Math.abs(diff) < 1e-6) {
+      return { direction: "none" as const, strength: Math.min(base / 10, 0.35), label: "Flow balanced" };
+    }
+
+    const direction = diff > 0 ? ("right" as const) : ("left" as const);
+    const strength = Math.min(Math.abs(diff) / base, 1);
+    const label = direction === "right" ? "Flow favoring Component A" : "Flow favoring Component B";
+
+    return { direction, strength, label };
+  }, [componentATelemetry, componentBTelemetry]);
+
+  const flowStyles = useMemo(() => ({ "--flow-strength": battleFlow.strength } as CSSProperties), [battleFlow.strength]);
 
   const leftHighlightMetrics = useMemo(() => (componentAProfile ? componentAProfile.metrics.slice(0, 12) : []), [componentAProfile]);
 
@@ -1429,6 +1747,9 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                       Open Builder
                     </button>
                   ) : null}
+                  <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
+                    Import from Clipboard
+                  </button>
                   <button className="arena-btn outline" type="button" onClick={() => handleCommand("export")}>Export Results</button>
                 </div>
                 <div className="arena-import-samples">
@@ -1602,6 +1923,32 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                     <span className="arena-showdown-type">{componentAProfile?.type ?? "—"}</span>
                     {componentAProfile?.summary && <p>{componentAProfile.summary}</p>}
                     {hasShowdown && <span className="arena-showdown-record">Record {leftRecord}</span>}
+                    <div className="arena-component-visual">
+                      <ComponentGlyph type={componentAProfile?.type} />
+                      {componentAWarnings.length > 0 && (
+                        <div className="arena-threshold-badges">
+                          {componentAWarnings.slice(0, 3).map((warning) => (
+                            <span key={`left-warning-${warning.id}`} className={`arena-threshold-badge ${warning.severity}`}>
+                              {warning.icon} {warning.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {componentATelemetry.length > 0 && (
+                        <div className="arena-telemetry-grid">
+                          {componentATelemetry.map((entry) => (
+                            <div
+                              key={`left-telemetry-${entry.id}`}
+                              className={`arena-telemetry-card${entry.severity !== "normal" ? ` ${entry.severity}` : ""}`}
+                            >
+                              <span className="telemetry-icon">{entry.icon}</span>
+                              <span className="telemetry-label">{entry.label}</span>
+                              <span className="telemetry-value">{entry.displayValue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     {leftHighlightMetrics.length > 0 && (
                       <ul className="arena-showdown-statlist">
                         {leftHighlightMetrics.map((metric) => {
@@ -1631,7 +1978,13 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                       </ul>
                     )}
                   </div>
-                  <div className="arena-showdown-versus">VS</div>
+                  <div className="arena-showdown-center">
+                    <div className="arena-flow-lane" data-direction={battleFlow.direction} style={flowStyles}>
+                      <div className="arena-flow-current" />
+                    </div>
+                    <div className="arena-showdown-versus">VS</div>
+                    <span className="arena-flow-label">{battleFlow.label}</span>
+                  </div>
                   <div className={`arena-showdown-team${teamBChampion ? " winner" : showdownTie ? " tie" : ""}`}>
                     {componentBProfile && (
                       <div className={`arena-showdown-avatar arena-avatar-${normaliseTypeForClass(componentBProfile.type)}`}>
@@ -1645,6 +1998,32 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                     <span className="arena-showdown-type">{componentBProfile?.type ?? "—"}</span>
                     {componentBProfile?.summary && <p>{componentBProfile.summary}</p>}
                     {hasShowdown && <span className="arena-showdown-record">Record {rightRecord}</span>}
+                    <div className="arena-component-visual">
+                      <ComponentGlyph type={componentBProfile?.type} />
+                      {componentBWarnings.length > 0 && (
+                        <div className="arena-threshold-badges">
+                          {componentBWarnings.slice(0, 3).map((warning) => (
+                            <span key={`right-warning-${warning.id}`} className={`arena-threshold-badge ${warning.severity}`}>
+                              {warning.icon} {warning.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {componentBTelemetry.length > 0 && (
+                        <div className="arena-telemetry-grid">
+                          {componentBTelemetry.map((entry) => (
+                            <div
+                              key={`right-telemetry-${entry.id}`}
+                              className={`arena-telemetry-card${entry.severity !== "normal" ? ` ${entry.severity}` : ""}`}
+                            >
+                              <span className="telemetry-icon">{entry.icon}</span>
+                              <span className="telemetry-label">{entry.label}</span>
+                              <span className="telemetry-value">{entry.displayValue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     {rightHighlightMetrics.length > 0 && (
                       <ul className="arena-showdown-statlist">
                         {rightHighlightMetrics.map((metric) => {
