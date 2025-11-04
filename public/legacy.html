@@ -5847,6 +5847,37 @@ body.android-optimized.menu-visible .status {
                     case 'escape':
                         if (currentEditComponent) {
                             cancelEdit();
+                            break;
+                        }
+
+                        let clearedMode = false;
+
+                        if (isDragging) {
+                            handleRelease();
+                            clearedMode = true;
+                        }
+
+                        if (isWireMode) {
+                            disableWireMode({ silent: true, skipNotify: true });
+                            clearedMode = true;
+                        }
+
+                        if (isRotateMode) {
+                            disableRotateMode({ silent: true, skipNotify: true });
+                            clearedMode = true;
+                        }
+
+                        if (isMeasureMode) {
+                            exitMeasureMode({ silent: true, skipNotify: true });
+                            clearedMode = true;
+                        }
+
+                        hideComponentContextMenu();
+                        cancelLongPress();
+
+                        if (clearedMode) {
+                            notifyParentToolState('select');
+                            setStatus('?? Select mode active - tap components to edit');
                         }
                         break;
                 }
@@ -5861,8 +5892,12 @@ body.android-optimized.menu-visible .status {
                 lastTouchPos = { x: touch.clientX, y: touch.clientY };
                 longPressStartPos = { x: touch.clientX, y: touch.clientY };
                 
-                // Start long press timer
-                startLongPressTimer(touch.clientX, touch.clientY);
+                // Start long press timer when allowed
+                if (shouldAllowLongPress()) {
+                    startLongPressTimer(touch.clientX, touch.clientY);
+                } else {
+                    cancelLongPress();
+                }
 
                 isRotating = false;
                 isPanning = false;
@@ -6006,7 +6041,11 @@ body.android-optimized.menu-visible .status {
         function handleMouseDown(e) {
             if (e.button === 0) {
                 longPressStartPos = { x: e.clientX, y: e.clientY };
-                startLongPressTimer(e.clientX, e.clientY);
+                if (shouldAllowLongPress()) {
+                    startLongPressTimer(e.clientX, e.clientY);
+                } else {
+                    cancelLongPress();
+                }
                 checkComponentHit(e.clientX, e.clientY);
             } else if (e.button === 2) {
                 isRotating = true;
@@ -6945,6 +6984,10 @@ body.android-optimized.menu-visible .status {
         });
 
         // Long press detection functions
+        function shouldAllowLongPress() {
+            return !isRotateMode;
+        }
+
         function startLongPressTimer(clientX, clientY) {
             cancelLongPress(); // Clear any existing timer
             
@@ -6963,6 +7006,10 @@ body.android-optimized.menu-visible .status {
         }
 
         function handleLongPress(clientX, clientY) {
+            if (!shouldAllowLongPress()) {
+                cancelLongPress();
+                return;
+            }
             const rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -7805,7 +7852,7 @@ body.android-optimized.menu-visible .status {
         }
 
         function maybeStartDrag(clientX, clientY) {
-            if (!selectedComponent || isDragging || isWireMode || isRotateMode || isMeasureMode) {
+            if (!selectedComponent || isDragging || isWireMode || isMeasureMode) {
                 return;
             }
 
@@ -7815,12 +7862,22 @@ body.android-optimized.menu-visible .status {
                 return;
             }
 
+            const wasRotateMode = isRotateMode;
+            if (wasRotateMode) {
+                disableRotateMode({ silent: true, skipNotify: true, skipCloseMenus: true });
+            }
+
             isDragging = true;
             cancelLongPress();
             hideComponentContextMenu();
 
             const label = getComponentFriendlyName(selectedComponent);
-            setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+            if (wasRotateMode) {
+                setStatus(`?? Rotate mode paused - dragging ${label}. Tap Rotate again to resume.`);
+                notifyParentToolState('select');
+            } else {
+                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+            }
         }
 
         function getComponentFriendlyName(entity) {
@@ -9337,7 +9394,7 @@ Made with ? for visual learners everywhere!
         }
 
         function disableRotateMode(options = {}) {
-            const { silent = false, skipNotify = false } = options;
+            const { silent = false, skipNotify = false, skipCloseMenus = false } = options;
             if (!isRotateMode) {
                 if (!skipNotify) {
                     const nextTool = isWireMode ? 'wire' : (isMeasureMode ? 'measure' : 'select');
@@ -9349,7 +9406,9 @@ Made with ? for visual learners everywhere!
             isRotateMode = false;
             updateButtonStates();
             notifyParentModeState();
-            closeAllSubmenus();
+            if (!skipCloseMenus) {
+                closeAllSubmenus();
+            }
 
             if (!silent) {
                 setStatus('?? Rotate mode disabled');
