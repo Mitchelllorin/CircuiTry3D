@@ -1859,6 +1859,19 @@ body.builder-body {
   }
 }
 
+@media (pointer: coarse) and (orientation: landscape) and (min-width: 721px) {
+  .builder-menu-stage-bottom {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+  }
+
+  .builder-menu-stage-bottom.open {
+    transform: translateX(-50%);
+  }
+}
+
 @media (max-width: 900px), (pointer: coarse) {
   .builder-menu-stage-left {
     top: calc(72px + var(--builder-safe-area-top));
