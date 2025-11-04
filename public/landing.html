@@ -236,56 +236,120 @@
       </div>
       <div class="subtitle">Professional Circuit Design</div>
       <div class="circuit-wrapper">
-        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
-          <title id="landing-circuit-title">Horizontal series circuit schematic with battery, switch, resistor, and LED</title>
+          <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+            <title id="landing-circuit-title">Panel illustrating series, parallel, and combination circuit schematics</title>
           <defs>
             <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
               <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
             </marker>
           </defs>
-          <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
+            <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
 
-          <path id="series-path" class="trace-path" d="M120 110 H430 V220 H120 Z" />
+            <path id="series-path" class="trace-path" d="M96 124 H400 V232 H96 Z" />
 
-          <g aria-hidden="true">
-            <circle class="node" cx="120" cy="110" r="5.2" />
-            <line class="wire" x1="120" y1="110" x2="170" y2="110" />
-            <circle class="node" cx="170" cy="110" r="5.2" />
+            <g aria-hidden="true">
+              <!-- Series section -->
+              <g transform="translate(96 142)">
+                <line class="battery-plate battery-negative" x1="0" y1="18" x2="0" y2="58" />
+                <line class="battery-plate battery-positive" x1="12" y1="10" x2="12" y2="66" />
+                <line class="wire" x1="12" y1="10" x2="12" y2="0" />
+                <line class="wire" x1="0" y1="58" x2="0" y2="68" />
+                <line class="wire" x1="0" y1="68" x2="12" y2="68" />
+                <line class="wire" x1="12" y1="0" x2="32" y2="0" />
+                <line class="switch-arm" x1="32" y1="0" x2="48" y2="-12" />
+                <line class="switch-base" x1="58" y1="0" x2="48" y2="-12" />
+                <line class="wire" x1="58" y1="0" x2="66" y2="0" />
+                <polyline class="resistor-zig" points="66,0 72,-10 78,10 84,-10 90,10 96,-10 102,0" />
+                <line class="wire" x1="102" y1="0" x2="108" y2="0" />
+                <line class="wire" x1="108" y1="0" x2="108" y2="68" />
+                <line class="wire" x1="108" y1="68" x2="12" y2="68" />
+                <line class="wire" x1="12" y1="66" x2="12" y2="68" />
+                <circle class="node" cx="12" cy="0" r="4" />
+                <circle class="node" cx="32" cy="0" r="4" />
+                <circle class="node" cx="58" cy="0" r="4" />
+                <circle class="node" cx="102" cy="0" r="4" />
+                <circle class="node" cx="108" cy="68" r="4" />
+                <circle class="node" cx="0" cy="68" r="4" />
+              </g>
 
-            <line class="switch-arm" x1="170" y1="110" x2="206" y2="92" />
-            <line class="switch-base" x1="236" y1="110" x2="206" y2="92" />
-            <circle class="node" cx="236" cy="110" r="5.2" />
+              <!-- Parallel section -->
+              <g transform="translate(220 142)">
+                <line class="wire" x1="0" y1="0" x2="88" y2="0" />
+                <line class="wire" x1="0" y1="68" x2="88" y2="68" />
+                <line class="wire" x1="0" y1="0" x2="0" y2="68" />
+                <line class="wire" x1="88" y1="0" x2="88" y2="68" />
+                <circle class="node" cx="0" cy="0" r="4" />
+                <circle class="node" cx="0" cy="68" r="4" />
+                <circle class="node" cx="88" cy="0" r="4" />
+                <circle class="node" cx="88" cy="68" r="4" />
 
-            <line class="wire" x1="236" y1="110" x2="256" y2="110" />
-            <polyline class="resistor-zig" points="256,110 268,94 280,126 292,94 304,126 316,94 328,126 340,94 352,110" />
-            <circle class="node" cx="352" cy="110" r="5.2" />
+                <g>
+                  <line class="wire" x1="20" y1="0" x2="20" y2="20" />
+                  <polyline class="resistor-zig" points="20,20 10,26 30,32 10,38 30,44 10,50 20,56" />
+                  <line class="wire" x1="20" y1="56" x2="20" y2="68" />
+                  <circle class="node" cx="20" cy="0" r="4" />
+                  <circle class="node" cx="20" cy="68" r="4" />
+                </g>
 
-            <line class="wire" x1="352" y1="110" x2="364" y2="110" />
-            <polygon class="led-triangle" points="364,132 364,88 398,110" />
-            <line class="led-bar" x1="404" y1="88" x2="404" y2="132" />
-            <line class="wire" x1="404" y1="110" x2="430" y2="110" />
-            <circle class="node" cx="430" cy="110" r="5.2" />
-            <line class="led-arrow" x1="410" y1="100" x2="428" y2="82" />
-            <line class="led-arrow" x1="410" y1="120" x2="428" y2="138" />
+                <g>
+                  <line class="wire" x1="44" y1="0" x2="44" y2="20" />
+                  <polyline class="resistor-zig" points="44,20 34,26 54,32 34,38 54,44 34,50 44,56" />
+                  <line class="wire" x1="44" y1="56" x2="44" y2="68" />
+                  <circle class="node" cx="44" cy="0" r="4" />
+                  <circle class="node" cx="44" cy="68" r="4" />
+                </g>
 
-            <line class="wire" x1="430" y1="110" x2="430" y2="220" />
-            <circle class="node" cx="430" cy="220" r="5.2" />
-            <line class="wire" x1="430" y1="220" x2="120" y2="220" />
-            <circle class="node" cx="120" cy="220" r="5.2" />
+                <g>
+                  <line class="wire" x1="68" y1="0" x2="68" y2="20" />
+                  <polyline class="resistor-zig" points="68,20 58,26 78,32 58,38 78,44 58,50 68,56" />
+                  <line class="wire" x1="68" y1="56" x2="68" y2="68" />
+                  <circle class="node" cx="68" cy="0" r="4" />
+                  <circle class="node" cx="68" cy="68" r="4" />
+                </g>
+              </g>
 
-            <line class="wire" x1="120" y1="220" x2="120" y2="204" />
-            <line class="battery-plate battery-negative" x1="108" y1="204" x2="132" y2="204" />
-            <line class="wire" x1="120" y1="204" x2="120" y2="178" />
-            <line class="battery-plate battery-positive" x1="104" y1="178" x2="136" y2="178" />
-            <line class="wire" x1="120" y1="178" x2="120" y2="110" />
-          </g>
+              <!-- Combination section -->
+              <g transform="translate(344 142)">
+                <line class="wire" x1="0" y1="0" x2="0" y2="68" />
+                <line class="wire" x1="0" y1="0" x2="26" y2="0" />
+                <polyline class="resistor-zig" points="26,0 32,-10 38,10 44,-10 50,10 56,-10 62,0" />
+                <line class="wire" x1="62" y1="0" x2="74" y2="0" />
+                <circle class="node" cx="0" cy="0" r="4" />
+                <circle class="node" cx="0" cy="68" r="4" />
+                <circle class="node" cx="74" cy="0" r="4" />
+                <circle class="node" cx="74" cy="68" r="4" />
 
-          <text class="component-label" x="102" y="186" text-anchor="end">B1</text>
-          <text class="component-label" x="206" y="72" text-anchor="middle">S1</text>
-          <text class="component-label" x="304" y="72" text-anchor="middle">R1</text>
-          <text class="component-label" x="420" y="150" text-anchor="start">LED1</text>
+                <g>
+                  <line class="wire" x1="74" y1="0" x2="58" y2="0" />
+                  <line class="wire" x1="58" y1="0" x2="58" y2="20" />
+                  <polyline class="resistor-zig" points="58,20 48,26 68,32 48,38 68,44 48,50 58,56" />
+                  <line class="wire" x1="58" y1="56" x2="58" y2="68" />
+                  <line class="wire" x1="58" y1="68" x2="74" y2="68" />
+                  <circle class="node" cx="58" cy="0" r="4" />
+                  <circle class="node" cx="58" cy="68" r="4" />
+                </g>
 
-          <g class="photons" id="photons"></g>
+                <g>
+                  <line class="wire" x1="74" y1="0" x2="90" y2="0" />
+                  <line class="wire" x1="90" y1="0" x2="90" y2="20" />
+                  <polyline class="resistor-zig" points="90,20 80,26 100,32 80,38 100,44 80,50 90,56" />
+                  <line class="wire" x1="90" y1="56" x2="90" y2="68" />
+                  <line class="wire" x1="90" y1="68" x2="74" y2="68" />
+                  <circle class="node" cx="90" cy="0" r="4" />
+                  <circle class="node" cx="90" cy="68" r="4" />
+                </g>
+
+                <line class="wire" x1="74" y1="68" x2="58" y2="68" />
+                <polyline class="resistor-zig" points="58,68 52,78 46,58 40,78 34,58 28,78 20,68" />
+                <line class="wire" x1="20" y1="68" x2="0" y2="68" />
+              </g>
+            </g>
+
+            <text class="component-label" x="136" y="236" text-anchor="middle">Series</text>
+            <text class="component-label" x="260" y="236" text-anchor="middle">Parallel</text>
+            <text class="component-label" x="384" y="236" text-anchor="middle">Combo</text>
+
+            <g class="photons" id="photons"></g>
         </svg>
       </div>
     <div class="status-wrapper">
