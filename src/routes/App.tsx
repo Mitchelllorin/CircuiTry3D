@@ -7,6 +7,7 @@ import Pricing from "../pages/Pricing";
 import Practice from "../pages/Practice";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
+import SchematicMode from "../pages/SchematicMode";
 import { useAuth } from "../context/AuthContext";
 import "../styles/layout.css";
 
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/app" element={<Builder />} />
         <Route path="/arena" element={<Arena />} />
         <Route path="/wire-demo" element={<WireDemo />} />
+        <Route path="/schematic" element={<SchematicMode />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/practice" element={<Practice />} />
         <Route path="/community" element={<Community />} />
@@ -74,6 +76,9 @@ function AppLayout() {
             </NavLink>
             <NavLink to="/arena" className={buildNavClass}>
               Arena
+            </NavLink>
+            <NavLink to="/schematic" className={buildNavClass}>
+              Schematic
             </NavLink>
             <NavLink to="/practice" className={buildNavClass}>
               Practice
