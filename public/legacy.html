@@ -4578,6 +4578,7 @@ body.android-optimized.menu-visible .status {
         let componentContextMenu = null;
         let componentContextTarget = null;
         let componentContextConnectionPoint = null;
+        let componentContextMenuCloseSuppressUntil = 0;
         
         // Grid and snapping variables
         const GRID_SIZE = 2; // Grid spacing
@@ -5731,10 +5732,14 @@ body.android-optimized.menu-visible .status {
                     }
                 }
 
-                if (!e.target.closest('#component-context-menu')) {
-                    const isMenuVisible = componentContextMenu?.dataset?.visible === 'true';
-                    if (isMenuVisible) {
-                        hideComponentContextMenu();
+                const contextMenuTarget = e.target.closest('#component-context-menu');
+                if (!contextMenuTarget) {
+                    const now = Date.now();
+                    if (now >= componentContextMenuCloseSuppressUntil) {
+                        const isMenuVisible = componentContextMenu?.dataset?.visible === 'true';
+                        if (isMenuVisible) {
+                            hideComponentContextMenu();
+                        }
                     }
                 }
             });
@@ -7090,8 +7095,8 @@ body.android-optimized.menu-visible .status {
             menu.setAttribute('role', 'menu');
             menu.innerHTML = `
                 <button type="button" data-action="edit" role="menuitem">Edit Values</button>
-                <button type="button" data-action="rotate" role="menuitem">Rotate 90?</button>
-                <button type="button" data-action="wire" role="menuitem">Start Wire</button>
+                <button type="button" data-action="wire" role="menuitem">Wire Edit</button>
+                <button type="button" data-action="rotate" role="menuitem">Rotate Component</button>
             `;
 
             menu.addEventListener('click', (event) => {
@@ -7122,9 +7127,10 @@ body.android-optimized.menu-visible .status {
             isLongPressing = false;
 
             const labelText = getComponentFriendlyName(component).toUpperCase();
-            setStatus(`?? ${labelText} actions - choose edit, rotate, or start wire`);
+            setStatus(`?? ${labelText} actions - choose edit, wire edit, or rotate`);
 
             menu.dataset.visible = 'true';
+            componentContextMenuCloseSuppressUntil = Date.now() + 350;
             menu.style.left = '0px';
             menu.style.top = '0px';
 
@@ -7157,6 +7163,7 @@ body.android-optimized.menu-visible .status {
             componentContextMenu.dataset.visible = 'false';
             componentContextTarget = null;
             componentContextConnectionPoint = null;
+            componentContextMenuCloseSuppressUntil = 0;
         }
 
         function handleComponentContextAction(action) {
