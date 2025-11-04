@@ -1,3 +1,4 @@
+
 .schematic-shell {
   display: flex;
   flex-direction: column;
@@ -28,10 +29,49 @@
   color: rgba(209, 230, 255, 0.82);
 }
 
+.schematic-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.schematic-toggle {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 150, 255, 0.35);
+  background: rgba(14, 32, 68, 0.65);
+  color: inherit;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.schematic-toggle:hover,
+.schematic-toggle:focus {
+  border-color: rgba(140, 210, 255, 0.7);
+  background: rgba(20, 48, 88, 0.82);
+  transform: translateY(-1px);
+}
+
+.schematic-toggle.is-active {
+  border-color: rgba(0, 208, 255, 0.9);
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.22), rgba(60, 228, 200, 0.22));
+  box-shadow: 0 12px 32px rgba(0, 165, 255, 0.2);
+}
+
 .schematic-body {
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(320px, 420px);
   gap: 24px;
+  align-items: start;
+}
+
+.schematic-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 28px;
   align-items: start;
 }
 
@@ -65,37 +105,6 @@
   margin-top: 0;
 }
 
-.schematic-main {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.schematic-main-header h2 {
-  margin: 0;
-  font-size: 1.9rem;
-  letter-spacing: 0.04em;
-}
-
-.schematic-meta {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.schematic-chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(12, 52, 92, 0.78);
-  border: 1px solid rgba(98, 176, 255, 0.48);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(214, 237, 255, 0.86);
-}
-
 .schematic-stage {
   position: relative;
   background: linear-gradient(155deg, rgba(3, 12, 28, 0.96), rgba(10, 26, 52, 0.92));
@@ -108,7 +117,7 @@
 .schematic-viewport {
   position: relative;
   width: 100%;
-  min-height: clamp(320px, 55vh, 620px);
+  min-height: clamp(360px, 60vh, 640px);
   border-radius: 20px;
   overflow: hidden;
   background: radial-gradient(circle at 20% 20%, rgba(0, 208, 255, 0.08), transparent 55%),
@@ -137,6 +146,134 @@
 
 .schematic-status.schematic-error {
   color: #ffb4c6;
+}
+
+.schematic-overlay {
+  position: absolute;
+  inset: auto 24px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.schematic-instructions {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(9, 22, 44, 0.82);
+  border: 1px solid rgba(88, 146, 255, 0.32);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.schematic-readout {
+  display: inline-flex;
+  gap: 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(12, 28, 54, 0.75);
+  border: 1px solid rgba(72, 124, 255, 0.2);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+.schematic-feedback {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(30, 94, 255, 0.4), rgba(0, 180, 216, 0.35));
+  border: 1px solid rgba(116, 200, 255, 0.45);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f5fcff;
+}
+
+.schematic-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.schematic-main-header h2 {
+  margin: 0;
+  font-size: 1.9rem;
+  letter-spacing: 0.04em;
+}
+
+.schematic-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.difficulty-pill,
+.schematic-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(12, 52, 92, 0.78);
+  border: 1px solid rgba(98, 176, 255, 0.48);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(214, 237, 255, 0.86);
+}
+
+.tag {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(20, 54, 94, 0.6);
+  border: 1px solid rgba(90, 160, 255, 0.35);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(203, 224, 255, 0.85);
+}
+
+.problem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.problem-button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(76, 128, 220, 0.24);
+  background: rgba(14, 30, 56, 0.55);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.problem-button:hover,
+.problem-button:focus {
+  border-color: rgba(112, 188, 255, 0.45);
+  background: rgba(20, 46, 82, 0.72);
+  transform: translateY(-1px);
+}
+
+.problem-button[data-active="true"] {
+  border-color: rgba(0, 208, 255, 0.9);
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.2), rgba(56, 228, 200, 0.2));
+  box-shadow: 0 10px 24px rgba(0, 160, 255, 0.18);
+}
+
+.problem-button strong {
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.problem-button small {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: rgba(186, 212, 255, 0.85);
 }
 
 .schematic-main-grid {
@@ -225,7 +362,76 @@
 }
 
 .schematic-panel .worksheet-controls {
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.schematic-panel .worksheet-controls button {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(86, 140, 255, 0.35);
+  background: rgba(18, 34, 64, 0.75);
+  color: rgba(224, 240, 255, 0.9);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schematic-panel .worksheet-controls button:hover:enabled {
+  transform: translateY(-1px);
+  border-color: rgba(120, 200, 255, 0.55);
+  background: rgba(24, 48, 88, 0.85);
+}
+
+.schematic-panel .worksheet-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.next-problem {
+  background: linear-gradient(135deg, rgba(0, 184, 255, 0.24), rgba(28, 220, 180, 0.24)) !important;
+  border-color: rgba(0, 208, 255, 0.6) !important;
+}
+
+.next-problem:disabled {
+  background: rgba(16, 34, 60, 0.6) !important;
+  border-color: rgba(70, 120, 200, 0.3) !important;
+}
+
+.worksheet-status-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(14, 30, 58, 0.7);
+  border: 1px solid rgba(80, 136, 220, 0.28);
+  color: rgba(214, 234, 255, 0.88);
+}
+
+.worksheet-status-banner[data-complete="true"] {
+  background: linear-gradient(135deg, rgba(32, 120, 200, 0.35), rgba(52, 216, 188, 0.35));
+  border-color: rgba(104, 198, 255, 0.6);
+}
+
+.worksheet-status-header {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.worksheet-sync {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(12, 30, 58, 0.6);
+  border: 1px solid rgba(82, 148, 220, 0.3);
+  color: rgba(203, 224, 255, 0.88);
 }
 
 .schematic-worksheet-wrapper {
@@ -249,10 +455,11 @@
   border-radius: 24px;
   background: linear-gradient(150deg, rgba(12, 24, 48, 0.92), rgba(6, 16, 34, 0.94));
   border: 1px solid rgba(64, 120, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .schematic-legend h3 {
-  margin-bottom: 16px;
+  margin: 0 0 16px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.95rem;
@@ -286,6 +493,195 @@
   line-height: 1.5;
 }
 
+.schematic-catalog {
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(150deg, rgba(12, 24, 48, 0.92), rgba(6, 16, 34, 0.94));
+  border: 1px solid rgba(64, 120, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.schematic-catalog h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(132, 180, 255, 0.86);
+}
+
+.catalog-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.catalog-entry {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(74, 128, 255, 0.2);
+  background: rgba(12, 28, 52, 0.55);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.catalog-entry:hover {
+  transform: translateY(-2px);
+  border-color: rgba(112, 188, 255, 0.45);
+  background: rgba(18, 36, 72, 0.72);
+}
+
+.catalog-entry.is-selected {
+  border-color: rgba(0, 210, 255, 0.75);
+  background: linear-gradient(135deg, rgba(0, 204, 255, 0.18), rgba(64, 228, 200, 0.18));
+  box-shadow: 0 12px 32px rgba(0, 170, 255, 0.18);
+}
+
+.catalog-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(56, 128, 255, 0.18);
+  color: rgba(210, 234, 255, 0.92);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalog-name {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(218, 236, 255, 0.92);
+}
+
+.catalog-desc {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: rgba(200, 220, 255, 0.76);
+  line-height: 1.45;
+}
+
+.schematic-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.schematic-panel-section h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(144, 190, 255, 0.84);
+}
+
+.schematic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.schematic-actions button {
+  flex: 1 1 140px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(86, 140, 255, 0.35);
+  background: rgba(18, 34, 64, 0.75);
+  color: rgba(224, 240, 255, 0.9);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schematic-actions button:hover:enabled {
+  transform: translateY(-1px);
+  border-color: rgba(120, 200, 255, 0.55);
+  background: rgba(24, 48, 88, 0.85);
+}
+
+.schematic-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.schematic-secondary {
+  border-color: rgba(120, 214, 255, 0.4) !important;
+  background: rgba(24, 60, 92, 0.65) !important;
+}
+
+.schematic-selection {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: rgba(204, 224, 255, 0.88);
+  font-size: 0.9rem;
+}
+
+.schematic-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(180, 204, 240, 0.68);
+}
+
+.schematic-element-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.element-button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(72, 128, 255, 0.22);
+  background: rgba(14, 30, 56, 0.65);
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.element-button:hover {
+  border-color: rgba(112, 188, 255, 0.42);
+  background: rgba(20, 44, 78, 0.78);
+}
+
+.element-button.is-selected {
+  border-color: rgba(0, 200, 255, 0.65);
+  background: linear-gradient(135deg, rgba(0, 190, 255, 0.18), rgba(56, 228, 200, 0.18));
+}
+
+.element-title {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(218, 236, 255, 0.9);
+}
+
+.element-detail {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: rgba(192, 214, 244, 0.75);
+}
+
 @media (max-width: 1280px) {
   .schematic-body {
     grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
@@ -296,9 +692,16 @@
   }
 }
 
+@media (max-width: 1080px) {
+  .schematic-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .schematic-body {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
   .schematic-sidebar {
@@ -314,7 +717,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .schematic-shell {
     padding: 18px 14px 32px;
     gap: 28px;
@@ -324,22 +727,28 @@
     font-size: 1.8rem;
   }
 
-  .schematic-body {
-    gap: 20px;
-  }
-
-  .schematic-main-header h2 {
-    font-size: 1.6rem;
-  }
-
   .schematic-stage {
-    padding: 12px;
+    padding: 14px;
+  }
+
+  .schematic-overlay {
+    inset: auto 16px 16px 16px;
+  }
+
+  .schematic-readout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schematic-actions button {
+    flex: 1 1 100%;
   }
 
   .schematic-panel,
   .schematic-sidebar,
   .schematic-card,
-  .schematic-legend {
+  .schematic-legend,
+  .schematic-catalog {
     padding: 18px;
   }
 }
