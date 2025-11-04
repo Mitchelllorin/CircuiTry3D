@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/schematic.css";
-
-type CircuitTopology = "series" | "parallel" | "combination";
+import "../styles/practice.css";
+import practiceProblems, {
+  DEFAULT_PRACTICE_PROBLEM,
+  findPracticeProblemById,
+} from "../data/practiceProblems";
+import type { PracticeProblem, PracticeTopology } from "../model/practice";
+import type { WireMetricKey } from "../utils/electrical";
+import { formatMetricValue, formatNumber } from "../utils/electrical";
+import { solvePracticeProblem, type SolveResult } from "../utils/practiceSolver";
+import WireTable, {
+  METRIC_ORDER,
+  METRIC_PRECISION,
+  type WireTableRow,
+  type WorksheetEntry,
+} from "../components/practice/WireTable";
+import SolutionSteps from "../components/practice/SolutionSteps";
 
 declare global {
   interface Window {
@@ -18,59 +32,344 @@ type TopologyInfo = {
   bulletPoints: string[];
 };
 
-const TOPOLOGY_CONTENT: Record<CircuitTopology, TopologyInfo> = {
+const TOPOLOGY_CONTENT: Record<PracticeTopology, TopologyInfo> = {
   series: {
     title: "Series Circuit",
-    summary: "Single current path with elements chained end-to-end. Current is identical through every component while voltage divides proportionally to resistance.",
+    summary:
+      "Single current path with elements chained end-to-end. Current is identical through every component while voltage divides proportionally to resistance.",
     bulletPoints: [
       "Current is constant at every point in the loop.",
       "Voltage drops add to the source voltage (Kirchhoff's Voltage Law).",
-      "Equivalent resistance is the algebraic sum of individual resistances."
-    ]
+      "Equivalent resistance is the algebraic sum of individual resistances.",
+    ],
   },
   parallel: {
     title: "Parallel Circuit",
-    summary: "Multiple branches share the same voltage across each load. Total current equals the sum of branch currents, inversely related to branch resistances.",
+    summary:
+      "Multiple branches share the same voltage across each load. Total current equals the sum of branch currents, inversely related to branch resistances.",
     bulletPoints: [
       "Voltage across every branch equals the source voltage.",
       "Branch currents sum to the source current (Kirchhoff's Current Law).",
-      "Equivalent resistance follows the reciprocal rule 1/Rₜ = Σ(1/Rᵢ)."
-    ]
+      "Equivalent resistance follows the reciprocal rule 1/Rₜ = Σ(1/Rᵢ).",
+    ],
   },
   combination: {
     title: "Series-Parallel Combination",
-    summary: "Series sections feed a parallel network before recombining. Total behaviour blends series voltage division with parallel current splitting.",
+    summary:
+      "Series sections feed a parallel network before recombining. Total behaviour blends series voltage division with parallel current splitting.",
     bulletPoints: [
       "Identify series portions and solve sequentially for total resistance.",
       "At the parallel node, voltage is common while branch currents diverge.",
-      "Recombine branch currents and continue series analysis back to the source."
-    ]
-  }
+      "Recombine branch currents and continue series analysis back to the source.",
+    ],
+  },
 };
 
 const LEGEND_ITEMS = [
   {
     label: "Resistor",
-    description: "Rendered with a 3D zig-zag symbol aligned to the connection axis and labelled R₁, R₂, R₃, etc."
+    description:
+      "Rendered with a 3D zig-zag symbol aligned to the connection axis and labelled R₁, R₂, R₃, etc.",
   },
   {
     label: "Battery",
-    description: "Twin plates with the longer positive terminal and explicit + / − identifiers on the supply side."
+    description:
+      "Twin plates with the longer positive terminal and explicit + / − identifiers on the supply side.",
   },
   {
     label: "Node",
-    description: "Glowing junction spheres emphasise connection points and branch nodes within the topology."
+    description:
+      "Glowing junction spheres emphasise connection points and branch nodes within the topology.",
   },
   {
     label: "Wire",
-    description: "Cylindrical conductors follow the schematic path, hovering above the reference plane for clear depth separation."
-  }
+    description:
+      "Cylindrical conductors follow the schematic path, hovering above the reference plane for clear depth separation.",
+  },
 ];
 
-export default function SchematicMode() {
-  const [topology, setTopology] = useState<CircuitTopology>("series");
+const TOPOLOGY_ORDER: PracticeTopology[] = ["series", "parallel", "combination"];
 
-  const info = useMemo(() => TOPOLOGY_CONTENT[topology], [topology]);
+const TOPOLOGY_LABEL: Record<PracticeTopology, string> = {
+  series: "Series",
+  parallel: "Parallel",
+  combination: "Combination",
+};
+
+const DIFFICULTY_LABEL: Record<PracticeProblem["difficulty"], string> = {
+  intro: "Intro",
+  standard: "Standard",
+  challenge: "Challenge",
+};
+
+type GroupedProblems = Record<PracticeTopology, PracticeProblem[]>;
+
+type WorksheetState = Record<string, Record<WireMetricKey, WorksheetEntry>>;
+
+const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
+  problems.reduce<GroupedProblems>(
+    (acc, problem) => {
+      acc[problem.topology] = acc[problem.topology] || [];
+      acc[problem.topology].push(problem);
+      return acc;
+    },
+    { series: [], parallel: [], combination: [] }
+  );
+
+const ensureProblem = (problem: PracticeProblem | null): PracticeProblem => {
+  if (problem) {
+    return problem;
+  }
+  if (!DEFAULT_PRACTICE_PROBLEM) {
+    throw new Error("No practice problems available");
+  }
+  return DEFAULT_PRACTICE_PROBLEM;
+};
+
+const resolveProblem = (id: string | null): PracticeProblem => ensureProblem(findPracticeProblemById(id));
+
+const buildTableRows = (problem: PracticeProblem, solution: SolveResult): WireTableRow[] => {
+  const componentRows = problem.components.map((component) => ({
+    id: component.id,
+    label: component.label,
+    role: "load" as const,
+    givens: component.givens,
+    metrics: solution.components[component.id],
+  }));
+
+  return [
+    {
+      id: problem.source.id,
+      label: problem.source.label,
+      role: "source" as const,
+      givens: problem.source.givens,
+      metrics: solution.source,
+    },
+    ...componentRows,
+    {
+      id: "totals",
+      label: "Circuit Totals",
+      role: "total" as const,
+      givens: problem.totalsGivens,
+      metrics: solution.totals,
+    },
+  ];
+};
+
+const resolveTarget = (problem: PracticeProblem, solution: SolveResult) => {
+  const { componentId, key } = problem.targetMetric;
+
+  if (componentId === "totals") {
+    return solution.totals[key];
+  }
+
+  if (componentId === "source" || componentId === problem.source.id) {
+    return solution.source[key];
+  }
+
+  return solution.components[componentId]?.[key];
+};
+
+const parseMetricInput = (raw: string): number | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const numericMatch = trimmed.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/);
+  if (numericMatch) {
+    const candidate = Number(numericMatch[0]);
+    if (Number.isFinite(candidate)) {
+      return candidate;
+    }
+  }
+
+  const fallback = Number(trimmed);
+  return Number.isFinite(fallback) ? fallback : null;
+};
+
+const withinTolerance = (expected: number, actual: number, tolerance = 0.01): boolean => {
+  const absoluteExpected = Math.abs(expected);
+  const absoluteDiff = Math.abs(expected - actual);
+
+  if (absoluteExpected < 1e-4) {
+    return absoluteDiff <= 1e-3;
+  }
+
+  return absoluteDiff / absoluteExpected <= tolerance;
+};
+
+const formatSeedValue = (value: number, key: WireMetricKey) => formatNumber(value, METRIC_PRECISION[key]);
+
+export default function SchematicMode() {
+  const grouped = useMemo(() => groupProblems(practiceProblems), []);
+  const fallbackProblemId = practiceProblems[0]?.id ?? null;
+
+  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(fallbackProblemId);
+  const [tableRevealed, setTableRevealed] = useState(false);
+  const [stepsVisible, setStepsVisible] = useState(false);
+  const [answerRevealed, setAnswerRevealed] = useState(false);
+  const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
+  const [worksheetComplete, setWorksheetComplete] = useState(false);
+
+  const selectedProblem = useMemo(() => resolveProblem(selectedProblemId), [selectedProblemId]);
+  const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
+  const tableRows = useMemo(
+    () => buildTableRows(selectedProblem, solution),
+    [selectedProblem, solution]
+  );
+  const stepPresentations = useMemo(
+    () => selectedProblem.steps.map((step) => step(solution.stepContext)),
+    [selectedProblem, solution]
+  );
+
+  const expectedValues = useMemo(() => {
+    const map: Record<string, Record<WireMetricKey, number>> = {};
+
+    tableRows.forEach((row) => {
+      map[row.id] = {
+        watts: row.metrics.watts,
+        current: row.metrics.current,
+        resistance: row.metrics.resistance,
+        voltage: row.metrics.voltage,
+      };
+    });
+
+    return map;
+  }, [tableRows]);
+
+  const baselineWorksheet = useMemo(() => {
+    const baseline: WorksheetState = {};
+
+    tableRows.forEach((row) => {
+      baseline[row.id] = {} as Record<WireMetricKey, WorksheetEntry>;
+
+      METRIC_ORDER.forEach((key) => {
+        const given = typeof row.givens?.[key] === "number" && Number.isFinite(row.givens[key]);
+        const expected = expectedValues[row.id]?.[key];
+        baseline[row.id][key] = {
+          raw: given && Number.isFinite(expected) ? formatSeedValue(expected!, key) : "",
+          value: given && Number.isFinite(expected) ? expected! : null,
+          status: given ? "given" : "blank",
+          given,
+        };
+      });
+    });
+
+    return baseline;
+  }, [expectedValues, tableRows]);
+
+  useEffect(() => {
+    setWorksheetEntries(baselineWorksheet);
+    setWorksheetComplete(false);
+    setTableRevealed(false);
+    setStepsVisible(false);
+    setAnswerRevealed(false);
+  }, [baselineWorksheet, selectedProblem.id]);
+
+  useEffect(() => {
+    if (worksheetComplete && !answerRevealed) {
+      setAnswerRevealed(true);
+    }
+  }, [worksheetComplete, answerRevealed]);
+
+  const targetValue = resolveTarget(selectedProblem, solution);
+
+  const highlightRowId = (() => {
+    const id = selectedProblem.targetMetric.componentId;
+    if (id === "source") {
+      return selectedProblem.source.id;
+    }
+    return id;
+  })();
+
+  const highlightKey = selectedProblem.targetMetric.key as WireMetricKey;
+
+  const computeWorksheetComplete = (state: WorksheetState) =>
+    tableRows.every((row) =>
+      METRIC_ORDER.every((metric) => {
+        const cell = state[row.id]?.[metric];
+        if (!cell || cell.given) {
+          return true;
+        }
+        return cell.status === "correct";
+      })
+    );
+
+  const handleWorksheetChange = (rowId: string, key: WireMetricKey, raw: string) => {
+    setWorksheetEntries((prev) => {
+      const next: WorksheetState = { ...prev };
+      const previousRow = prev[rowId] ?? {};
+      const row: Record<WireMetricKey, WorksheetEntry> = {
+        ...previousRow,
+      } as Record<WireMetricKey, WorksheetEntry>;
+
+      const matchingRow = tableRows.find((entry) => entry.id === rowId);
+      const givenFromRow =
+        typeof matchingRow?.givens?.[key] === "number" && Number.isFinite(matchingRow.givens[key]);
+
+      if (givenFromRow) {
+        return prev;
+      }
+
+      const baseCell: WorksheetEntry = row[key] ?? {
+        raw: "",
+        value: null,
+        status: "blank",
+        given: false,
+      };
+
+      if (baseCell.given) {
+        return prev;
+      }
+
+      const parsed = parseMetricInput(raw);
+      const expected = expectedValues[rowId]?.[key];
+
+      let status: WorksheetEntry["status"] = "blank";
+      let value: number | null = null;
+
+      if (!raw.trim()) {
+        status = "blank";
+      } else if (parsed === null) {
+        status = "invalid";
+      } else if (expected === undefined) {
+        status = "incorrect";
+        value = parsed;
+      } else if (withinTolerance(expected, parsed)) {
+        status = "correct";
+        value = parsed;
+      } else {
+        status = "incorrect";
+        value = parsed;
+      }
+
+      row[key] = {
+        raw,
+        value,
+        status,
+        given: baseCell.given,
+      };
+
+      next[rowId] = row;
+
+      const complete = computeWorksheetComplete(next);
+      setWorksheetComplete(complete);
+
+      return next;
+    });
+  };
+
+  const advanceToNextProblem = () => {
+    const bucket = grouped[selectedProblem.topology] ?? practiceProblems;
+    const currentIndex = bucket.findIndex((problem) => problem.id === selectedProblem.id);
+    const nextProblem =
+      (currentIndex >= 0 && bucket[(currentIndex + 1) % bucket.length]) || practiceProblems[0] || null;
+
+    if (nextProblem) {
+      setSelectedProblemId(nextProblem.id);
+    }
+  };
 
   return (
     <div className="schematic-shell">
@@ -78,71 +377,184 @@ export default function SchematicMode() {
         <div>
           <h1>3D Schematic Mode</h1>
           <p>
-            Explore canonical DC circuit topologies rendered with accurate schematic symbols in a three-dimensional staging area.
-            Swap between series, parallel, and combination layouts to see how current paths and component placement change.
+            Load practice presets, manipulate the W.I.R.E. worksheet, and see the schematic rendered as floating 3D symbols.
+            Each preset mirrors the classic practice mode but presents the circuit in a playful spatial scene.
           </p>
-        </div>
-        <div className="schematic-controls" role="tablist" aria-label="Circuit topology selector">
-          {(
-            ["series", "parallel", "combination"] as CircuitTopology[]
-          ).map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="tab"
-              aria-selected={topology === option}
-              className={topology === option ? "schematic-toggle is-active" : "schematic-toggle"}
-              onClick={() => setTopology(option)}
-            >
-              {TOPOLOGY_CONTENT[option].title}
-            </button>
-          ))}
         </div>
       </header>
 
-      <section className="schematic-stage" aria-live="polite">
-        <SchematicViewport topology={topology} />
-      </section>
-
-      <section className="schematic-summary">
-        <div className="schematic-summary-card">
-          <h2>{info.title}</h2>
-          <p>{info.summary}</p>
-          <ul>
-            {info.bulletPoints.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </div>
-        <aside className="schematic-legend">
-          <h3>Symbol Legend</h3>
-          <ul>
-            {LEGEND_ITEMS.map((item) => (
-              <li key={item.label}>
-                <span className="legend-term">{item.label}</span>
-                <span className="legend-desc">{item.description}</span>
-              </li>
-            ))}
-          </ul>
+      <div className="schematic-body">
+        <aside className="schematic-sidebar" aria-label="Practice preset selection">
+          <h2>Practice Presets</h2>
+          {TOPOLOGY_ORDER.map((topology) => {
+            const bucket = grouped[topology];
+            if (!bucket.length) {
+              return null;
+            }
+            return (
+              <section key={topology} className="schematic-problem-group">
+                <h3>{TOPOLOGY_LABEL[topology]}</h3>
+                <div className="problem-list">
+                  {bucket.map((problem) => (
+                    <button
+                      key={problem.id}
+                      type="button"
+                      className="problem-button"
+                      data-active={problem.id === selectedProblem.id ? "true" : undefined}
+                      onClick={() => setSelectedProblemId(problem.id)}
+                    >
+                      <strong>{problem.title}</strong>
+                      <small>
+                        {TOPOLOGY_LABEL[problem.topology]} · {DIFFICULTY_LABEL[problem.difficulty]}
+                      </small>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </aside>
-      </section>
+
+        <section className="schematic-main" aria-live="polite">
+          <header className="schematic-main-header">
+            <div>
+              <h2>{selectedProblem.title}</h2>
+              <div className="schematic-meta">
+                <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
+                <span className="schematic-chip">{TOPOLOGY_LABEL[selectedProblem.topology]}</span>
+                {selectedProblem.conceptTags.map((tag) => (
+                  <span key={tag} className="tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          <div className="schematic-stage">
+            <SchematicViewport problem={selectedProblem} />
+          </div>
+
+          <div className="schematic-main-grid">
+            <article className="schematic-card">
+              <h3>Practice Prompt</h3>
+              <p>{selectedProblem.prompt}</p>
+            </article>
+            <article className="schematic-card target-card">
+              <h3>Target Metric</h3>
+              <p className="target-question">{selectedProblem.targetQuestion}</p>
+              <div className="target-answer" aria-live="polite">
+                {answerRevealed && Number.isFinite(targetValue) ? (
+                  <strong>
+                    {formatMetricValue(targetValue as number, selectedProblem.targetMetric.key)}
+                  </strong>
+                ) : (
+                  <span>Reveal the answer once your worksheet is complete.</span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="target-toggle"
+                onClick={() => setAnswerRevealed((value) => !value)}
+              >
+                {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
+              </button>
+            </article>
+            <article className="schematic-card">
+              <h3>{TOPOLOGY_CONTENT[selectedProblem.topology].title}</h3>
+              <p>{TOPOLOGY_CONTENT[selectedProblem.topology].summary}</p>
+              <ul>
+                {TOPOLOGY_CONTENT[selectedProblem.topology].bulletPoints.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <aside className="schematic-panel">
+          <div className="worksheet-controls">
+            <button type="button" onClick={() => setTableRevealed((value) => !value)}>
+              {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
+            </button>
+            <button type="button" onClick={() => setStepsVisible((value) => !value)}>
+              {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
+            </button>
+            <button
+              type="button"
+              onClick={advanceToNextProblem}
+              disabled={!worksheetComplete}
+              className="next-problem"
+            >
+              {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
+            </button>
+          </div>
+
+          <div
+            className="worksheet-status-banner"
+            role="status"
+            aria-live="polite"
+            data-complete={worksheetComplete ? "true" : undefined}
+          >
+            <div className="worksheet-status-header">
+              <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
+            </div>
+            <span>
+              {worksheetComplete
+                ? "Every unknown matches the solved circuit. Advance when you're ready."
+                : "Enter the missing watts, amps, ohms, and volts using the 3D schematic as your guide."}
+            </span>
+          </div>
+
+          <div className="worksheet-sync" role="status" aria-live="polite">
+            <strong>Synced to schematic</strong>
+            <span>
+              {`Preset givens from ${selectedProblem.title} are locked in. Update only the unknowns and compare against the 3D layout.`}
+            </span>
+          </div>
+
+          <div className="schematic-worksheet-wrapper">
+            <WireTable
+              rows={tableRows}
+              revealAll={tableRevealed}
+              highlight={{ rowId: highlightRowId, key: highlightKey }}
+              entries={worksheetEntries}
+              onChange={handleWorksheetChange}
+            />
+          </div>
+
+          <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
+
+          <aside className="schematic-legend">
+            <h3>Symbol Legend</h3>
+            <ul>
+              {LEGEND_ITEMS.map((item) => (
+                <li key={item.label}>
+                  <span className="legend-term">{item.label}</span>
+                  <span className="legend-desc">{item.description}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </aside>
+      </div>
     </div>
   );
 }
 
 type ViewportProps = {
-  topology: CircuitTopology;
+  problem: PracticeProblem;
 };
 
-function SchematicViewport({ topology }: ViewportProps) {
+function SchematicViewport({ problem }: ViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const topologyRef = useRef<CircuitTopology>(topology);
-  topologyRef.current = topology;
+  const problemRef = useRef<PracticeProblem>(problem);
+  problemRef.current = problem;
 
-  const applyTopologyRef = useRef<((mode: CircuitTopology) => void) | null>(null);
+  const applyProblemRef = useRef<((nextProblem: PracticeProblem) => void) | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -170,7 +582,12 @@ function SchematicViewport({ topology }: ViewportProps) {
         const scene = new three.Scene();
         scene.background = new three.Color(0x050c19);
 
-        const camera = new three.PerspectiveCamera(44, container.clientWidth / container.clientHeight, 0.1, 200);
+        const camera = new three.PerspectiveCamera(
+          44,
+          container.clientWidth / container.clientHeight,
+          0.1,
+          200
+        );
         camera.position.set(9.5, 7.8, 12.4);
         camera.lookAt(new three.Vector3(0, 0, 0));
 
@@ -196,7 +613,7 @@ function SchematicViewport({ topology }: ViewportProps) {
           roughness: 0.75,
           transparent: true,
           opacity: 0.96,
-          side: three.DoubleSide
+          side: three.DoubleSide,
         });
         const board = new three.Mesh(boardGeometry, boardMaterial);
         board.rotation.x = -Math.PI / 2;
@@ -213,18 +630,18 @@ function SchematicViewport({ topology }: ViewportProps) {
 
         let circuitGroup: any = null;
 
-        const setCircuit = (mode: CircuitTopology) => {
+        const setCircuit = (practiceProblem: PracticeProblem) => {
           if (circuitGroup) {
             scene.remove(circuitGroup);
             disposeThreeObject(circuitGroup);
             circuitGroup = null;
           }
-          circuitGroup = buildCircuit(three, mode);
+          circuitGroup = buildCircuit(three, practiceProblem);
           scene.add(circuitGroup);
         };
 
-        applyTopologyRef.current = setCircuit;
-        setCircuit(topologyRef.current);
+        applyProblemRef.current = setCircuit;
+        setCircuit(problemRef.current);
 
         const clock = new three.Clock();
         let animationFrame = 0;
@@ -281,10 +698,10 @@ function SchematicViewport({ topology }: ViewportProps) {
   }, []);
 
   useEffect(() => {
-    if (applyTopologyRef.current) {
-      applyTopologyRef.current(topology);
+    if (applyProblemRef.current) {
+      applyProblemRef.current(problem);
     }
-  }, [topology]);
+  }, [problem]);
 
   return (
     <div className="schematic-viewport">
@@ -307,16 +724,16 @@ const WIRE_HEIGHT = 0.18;
 const COMPONENT_HEIGHT = 0.22;
 const LABEL_HEIGHT = 0.55;
 
-function buildCircuit(three: any, topology: CircuitTopology) {
+function buildCircuit(three: any, problem: PracticeProblem) {
   const group = new three.Group();
-  group.name = `circuit-${topology}`;
+  group.name = `circuit-${problem.id}`;
 
   const wireMaterial = new three.MeshStandardMaterial({
     color: 0x8ec9ff,
     metalness: 0.55,
     roughness: 0.32,
     emissive: 0x1d4ed8,
-    emissiveIntensity: 0.2
+    emissiveIntensity: 0.2,
   });
 
   const resistorMaterial = new three.MeshStandardMaterial({
@@ -324,7 +741,7 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     metalness: 0.38,
     roughness: 0.4,
     emissive: 0x7a431f,
-    emissiveIntensity: 0.12
+    emissiveIntensity: 0.12,
   });
 
   const nodeMaterial = new three.MeshStandardMaterial({
@@ -332,7 +749,7 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     emissive: 0xff7aa7,
     emissiveIntensity: 0.35,
     metalness: 0.25,
-    roughness: 0.5
+    roughness: 0.5,
   });
 
   const batteryPositiveMaterial = new three.MeshStandardMaterial({
@@ -340,7 +757,7 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     emissive: 0x38bdf8,
     emissiveIntensity: 0.55,
     metalness: 0.65,
-    roughness: 0.28
+    roughness: 0.28,
   });
 
   const batteryNegativeMaterial = new three.MeshStandardMaterial({
@@ -348,7 +765,7 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     emissive: 0x233547,
     emissiveIntensity: 0.2,
     metalness: 0.5,
-    roughness: 0.45
+    roughness: 0.45,
   });
 
   const toVec3 = (point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
@@ -370,7 +787,10 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     const mesh = new three.Mesh(geometry, material);
     const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
     mesh.position.copy(midpoint);
-    const quaternion = new three.Quaternion().setFromUnitVectors(new three.Vector3(0, 1, 0), direction.clone().normalize());
+    const quaternion = new three.Quaternion().setFromUnitVectors(
+      new three.Vector3(0, 1, 0),
+      direction.clone().normalize()
+    );
     mesh.setRotationFromQuaternion(quaternion);
     return mesh;
   };
@@ -401,10 +821,23 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 12);
     const texture = new three.CanvasTexture(canvas);
     texture.anisotropy = 4;
-    const material = new three.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
+    const material = new three.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
     const sprite = new three.Sprite(material);
     sprite.scale.set(1.4, 0.7, 1);
     sprite.userData.texture = texture;
+    return sprite;
+  };
+
+  const createComponentLabel = (label: string) => {
+    const sprite = createLabelSprite(label);
+    if (sprite) {
+      sprite.scale.set(1.4, 0.6, 1);
+    }
     return sprite;
   };
 
@@ -419,11 +852,11 @@ function buildCircuit(three: any, topology: CircuitTopology) {
       const t = i / zigCount;
       if (horizontal) {
         const x = start.x + (end.x - start.x) * t;
-        const zOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? -amplitude : amplitude);
+        const zOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? -amplitude : amplitude;
         points.push({ x, z: start.z + zOffset });
       } else {
         const z = start.z + (end.z - start.z) * t;
-        const xOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? amplitude : -amplitude);
+        const xOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? amplitude : -amplitude;
         points.push({ x: start.x + xOffset, z });
       }
     }
@@ -448,7 +881,7 @@ function buildCircuit(three: any, topology: CircuitTopology) {
       resistorGroup.add(leadEnd);
     }
 
-    const labelSprite = createLabelSprite(label);
+    const labelSprite = createComponentLabel(label);
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
       labelSprite.position.copy(midpoint);
@@ -459,7 +892,7 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     group.add(resistorGroup);
   };
 
-  const createBattery = (start: Vec2, end: Vec2) => {
+  const createBattery = (start: Vec2, end: Vec2, label: string) => {
     const batteryGroup = new three.Group();
     const startVec = toVec3(start, COMPONENT_HEIGHT - 0.05);
     const endVec = toVec3(end, COMPONENT_HEIGHT - 0.05);
@@ -518,6 +951,14 @@ function buildCircuit(three: any, topology: CircuitTopology) {
       batteryGroup.add(leadEnd);
     }
 
+    const labelSprite = createComponentLabel(label);
+    if (labelSprite) {
+      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
+      labelSprite.position.copy(midpoint);
+      labelSprite.position.y += LABEL_HEIGHT;
+      batteryGroup.add(labelSprite);
+    }
+
     group.add(batteryGroup);
   };
 
@@ -525,59 +966,85 @@ function buildCircuit(three: any, topology: CircuitTopology) {
     points.forEach((point) => addNode(point));
   };
 
+  const sourceLabel = problem.source.label ?? "Source";
+  const componentLabels = new Map(problem.components.map((component) => [component.id, component.label]));
+
   const buildSeries = () => {
-    const start: Vec2 = { x: -4, z: -2.6 };
-    const batteryStart: Vec2 = { x: -4, z: -1.6 };
-    const batteryEnd: Vec2 = { x: -4, z: 1.6 };
-    const topLeft: Vec2 = { x: -4, z: 2.6 };
-    const r1Start: Vec2 = { x: -3.2, z: 2.6 };
-    const r1End: Vec2 = { x: -0.6, z: 2.6 };
-    const topRight: Vec2 = { x: 2.6, z: 2.6 };
-    const r2Start: Vec2 = { x: 2.6, z: 2.1 };
-    const r2End: Vec2 = { x: 2.6, z: -0.2 };
-    const bottomRight: Vec2 = { x: 2.6, z: -2.6 };
-    const r3Start: Vec2 = { x: 1.1, z: -2.6 };
-    const r3End: Vec2 = { x: -2.4, z: -2.6 };
+    const left = -4.4;
+    const right = 4.4;
+    const top = 2.7;
+    const bottom = -2.7;
+
+    const start: Vec2 = { x: left, z: bottom };
+    const batteryStart: Vec2 = { x: left, z: bottom + 0.9 };
+    const batteryEnd: Vec2 = { x: left, z: top - 0.9 };
+    const topLeft: Vec2 = { x: left, z: top };
+    const topRight: Vec2 = { x: right, z: top };
+    const bottomRight: Vec2 = { x: right, z: bottom };
 
     addWireSegment(start, batteryStart);
-    createBattery(batteryStart, batteryEnd);
+    createBattery(batteryStart, batteryEnd, sourceLabel);
     addWireSegment(batteryEnd, topLeft);
-    addWireSegment(topLeft, r1Start);
-    createResistor(r1Start, r1End, "R1");
-    addWireSegment(r1End, topRight);
-    addWireSegment(topRight, r2Start);
-    createResistor(r2Start, r2End, "R2");
-    addWireSegment(r2End, bottomRight);
-    addWireSegment(bottomRight, r3Start);
-    createResistor(r3Start, r3End, "R3");
-    addWireSegment(r3End, start);
 
-    addSegmentNodes([batteryStart, batteryEnd, topLeft, topRight, bottomRight, start]);
+    const componentCount = Math.max(problem.components.length, 1);
+    const segmentWidth = (topRight.x - topLeft.x) / componentCount;
+    const margin = Math.min(segmentWidth * 0.2, 0.5);
+
+    let previousPoint = topLeft;
+    problem.components.forEach((component, index) => {
+      const startX = topLeft.x + index * segmentWidth + margin;
+      const endX = topLeft.x + (index + 1) * segmentWidth - margin;
+      const resistorStart: Vec2 = { x: startX, z: top };
+      const resistorEnd: Vec2 = { x: endX, z: top };
+      addWireSegment(previousPoint, resistorStart);
+      createResistor(resistorStart, resistorEnd, component.label ?? component.id);
+      addNode(resistorStart);
+      addNode(resistorEnd);
+      previousPoint = resistorEnd;
+    });
+
+    addWireSegment(previousPoint, topRight);
+    addWireSegment(topRight, bottomRight);
+    addWireSegment(bottomRight, start);
+
+    addSegmentNodes([start, batteryStart, batteryEnd, topLeft, topRight, bottomRight]);
   };
 
   const buildParallel = () => {
-    const leftBottom: Vec2 = { x: -2.2, z: -2.2 };
-    const batteryStart: Vec2 = { x: -2.2, z: -1.4 };
-    const batteryEnd: Vec2 = { x: -2.2, z: 1.4 };
-    const leftTop: Vec2 = { x: -2.2, z: 2.2 };
-    const rightTop: Vec2 = { x: 3.6, z: 2.2 };
-    const rightBottom: Vec2 = { x: 3.6, z: -2.2 };
+    const left = -2.6;
+    const right = 3.8;
+    const top = 2.5;
+    const bottom = -2.5;
+
+    const leftBottom: Vec2 = { x: left, z: bottom };
+    const batteryStart: Vec2 = { x: left, z: bottom + 0.9 };
+    const batteryEnd: Vec2 = { x: left, z: top - 0.9 };
+    const leftTop: Vec2 = { x: left, z: top };
+    const rightTop: Vec2 = { x: right, z: top };
+    const rightBottom: Vec2 = { x: right, z: bottom };
 
     addWireSegment(leftBottom, batteryStart);
-    createBattery(batteryStart, batteryEnd);
+    createBattery(batteryStart, batteryEnd, sourceLabel);
     addWireSegment(batteryEnd, leftTop);
     addWireSegment(leftTop, rightTop);
     addWireSegment(leftBottom, rightBottom);
 
-    const branchXs = [0, 1.8, 3.2];
-    branchXs.forEach((x, index) => {
-      const topNode: Vec2 = { x, z: 2.2 };
-      const bottomNode: Vec2 = { x, z: -2.2 };
-      const resistorStart: Vec2 = { x, z: 1.5 };
-      const resistorEnd: Vec2 = { x, z: -1.5 };
+    const branchCount = Math.max(problem.components.length, 1);
+    const spacing = (right - left) / (branchCount + 1);
+    const branchSpan = Math.min(Math.abs(top - bottom) - 1, 4.2);
+    const offset = Math.max((Math.abs(top - bottom) - branchSpan) / 2, 0.6);
+
+    problem.components.forEach((component, index) => {
+      const x = left + spacing * (index + 1);
+      const topNode: Vec2 = { x, z: top };
+      const bottomNode: Vec2 = { x, z: bottom };
+      const resistorStart: Vec2 = { x, z: top - offset };
+      const resistorEnd: Vec2 = { x, z: bottom + offset };
+
       addWireSegment(topNode, resistorStart);
-      createResistor(resistorStart, resistorEnd, `R${index + 1}`);
+      createResistor(resistorStart, resistorEnd, component.label ?? component.id);
       addWireSegment(resistorEnd, bottomNode);
+
       addNode(topNode);
       addNode(bottomNode);
     });
@@ -586,54 +1053,78 @@ function buildCircuit(three: any, topology: CircuitTopology) {
   };
 
   const buildCombination = () => {
-    const start: Vec2 = { x: -4, z: -2.3 };
-    const batteryStart: Vec2 = { x: -4, z: -1.4 };
-    const batteryEnd: Vec2 = { x: -4, z: 1.4 };
-    const topLeft: Vec2 = { x: -4, z: 2.3 };
-    const r1Start: Vec2 = { x: -3.2, z: 2.3 };
-    const r1End: Vec2 = { x: -0.8, z: 2.3 };
-    const branchTop: Vec2 = { x: 1.5, z: 2.3 };
-    const branchRightTop: Vec2 = { x: 3, z: 2.3 };
-    const branchBottom: Vec2 = { x: 1.5, z: -0.4 };
-    const branchRightBottom: Vec2 = { x: 3, z: -0.4 };
-    const dropNode: Vec2 = { x: 1.5, z: -2.3 };
-    const r4Start: Vec2 = { x: 1.5, z: -2.3 };
-    const r4End: Vec2 = { x: -1.2, z: -2.3 };
+    const start: Vec2 = { x: -4.2, z: -2.3 };
+    const batteryStart: Vec2 = { x: -4.2, z: -1.5 };
+    const batteryEnd: Vec2 = { x: -4.2, z: 1.5 };
+    const topLeft: Vec2 = { x: -4.2, z: 2.3 };
+    const topMid: Vec2 = { x: -1.2, z: 2.3 };
+    const branchTop: Vec2 = { x: 1.4, z: 2.3 };
+    const branchRightTop: Vec2 = { x: 3.2, z: 2.3 };
+    const branchBottom: Vec2 = { x: 1.4, z: -0.3 };
+    const branchRightBottom: Vec2 = { x: 3.2, z: -0.3 };
+    const dropNode: Vec2 = { x: 1.4, z: -2.3 };
+    const bottomLeft: Vec2 = { x: -2.0, z: -2.3 };
+
+    const labelFor = (id: string) => componentLabels.get(id) ?? id;
 
     addWireSegment(start, batteryStart);
-    createBattery(batteryStart, batteryEnd);
+    createBattery(batteryStart, batteryEnd, sourceLabel);
     addWireSegment(batteryEnd, topLeft);
-    addWireSegment(topLeft, r1Start);
-    createResistor(r1Start, r1End, "R1");
-    addWireSegment(r1End, branchTop);
-    createResistor(branchTop, branchBottom, "R2");
+    addWireSegment(topLeft, topMid);
+
+    const seriesTop: Vec2 = { x: 0.4, z: 2.3 };
+    const r1Start: Vec2 = topMid;
+    const r1End: Vec2 = seriesTop;
+    createResistor(r1Start, r1End, labelFor("R1"));
+
+    addWireSegment(seriesTop, branchTop);
+
+    const r2Start: Vec2 = { x: branchTop.x, z: branchTop.z };
+    const r2End: Vec2 = { x: branchBottom.x, z: branchBottom.z };
+    createResistor(r2Start, r2End, labelFor("R2"));
+
     addWireSegment(branchTop, branchRightTop);
-    createResistor(branchRightTop, branchRightBottom, "R3");
+
+    const r3Start: Vec2 = { x: branchRightTop.x, z: branchRightTop.z };
+    const r3End: Vec2 = { x: branchRightBottom.x, z: branchRightBottom.z };
+    createResistor(r3Start, r3End, labelFor("R3"));
+
     addWireSegment(branchRightBottom, branchBottom);
     addWireSegment(branchBottom, dropNode);
-    createResistor(r4Start, r4End, "R4");
+
+    const r4Start: Vec2 = { x: dropNode.x, z: dropNode.z };
+    const r4End: Vec2 = { x: bottomLeft.x, z: bottomLeft.z };
+    createResistor(r4Start, r4End, labelFor("R4"));
+
     addWireSegment(r4End, start);
 
+    addNode(seriesTop);
     addNode(branchTop);
     addNode(branchBottom);
     addNode(branchRightTop);
     addNode(branchRightBottom);
     addNode(dropNode);
-    addSegmentNodes([batteryStart, batteryEnd, start, topLeft]);
+    addSegmentNodes([topLeft, start, batteryStart, batteryEnd]);
   };
 
-  switch (topology) {
-    case "series":
-      buildSeries();
-      break;
-    case "parallel":
+  const presetKey = problem.presetHint ?? problem.topology;
+
+  switch (presetKey) {
+    case "parallel_basic":
       buildParallel();
       break;
-    case "combination":
+    case "mixed_circuit":
       buildCombination();
       break;
+    case "series_basic":
     default:
-      buildSeries();
+      if (problem.topology === "parallel") {
+        buildParallel();
+      } else if (problem.topology === "combination") {
+        buildCombination();
+      } else {
+        buildSeries();
+      }
       break;
   }
 
@@ -703,12 +1194,17 @@ function loadThree(): Promise<any> {
       }
       attemptedFallback = true;
       const fallback = document.createElement("script");
-      const base = (typeof import.meta !== "undefined" && import.meta && import.meta.env && import.meta.env.BASE_URL) ? import.meta.env.BASE_URL : "/";
+      const base =
+        typeof import.meta !== "undefined" && import.meta && import.meta.env && import.meta.env.BASE_URL
+          ? import.meta.env.BASE_URL
+          : "/";
       const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
       fallback.src = `${normalizedBase}/vendor/three.min.js`;
       fallback.async = true;
       fallback.addEventListener("load", finish);
-      fallback.addEventListener("error", () => reject(new Error("Failed to load three.js from both CDN and packaged fallback.")));
+      fallback.addEventListener("error", () =>
+        reject(new Error("Failed to load three.js from both CDN and packaged fallback."))
+      );
       document.body.appendChild(fallback);
     });
 
