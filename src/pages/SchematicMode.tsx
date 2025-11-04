@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/schematic.css";
-
-type CircuitTopology = "series" | "parallel" | "combination";
+import { COMPONENT_CATALOG } from "../schematic/catalog";
+import {
+  BoardLimits,
+  CatalogEntry,
+  Orientation,
+  SchematicElement,
+  TwoTerminalElement,
+  Vec2,
+  WireElement,
+  GroundElement
+} from "../schematic/types";
+import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/threeFactory";
 
 declare global {
   interface Window {
@@ -12,137 +22,574 @@ declare global {
 const THREE_CDN = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js";
 let threeLoaderPromise: Promise<any> | null = null;
 
-type TopologyInfo = {
-  title: string;
-  summary: string;
-  bulletPoints: string[];
+const SNAP_STEP = 0.5;
+const MIN_SEGMENT_LENGTH = SNAP_STEP;
+
+const BOARD_LIMITS: BoardLimits = {
+  minX: -7.5,
+  maxX: 7.5,
+  minZ: -5.5,
+  maxZ: 5.5
 };
 
-const TOPOLOGY_CONTENT: Record<CircuitTopology, TopologyInfo> = {
-  series: {
-    title: "Series Circuit",
-    summary: "Single current path with elements chained end-to-end. Current is identical through every component while voltage divides proportionally to resistance.",
-    bulletPoints: [
-      "Current is constant at every point in the loop.",
-      "Voltage drops add to the source voltage (Kirchhoff's Voltage Law).",
-      "Equivalent resistance is the algebraic sum of individual resistances."
-    ]
-  },
-  parallel: {
-    title: "Parallel Circuit",
-    summary: "Multiple branches share the same voltage across each load. Total current equals the sum of branch currents, inversely related to branch resistances.",
-    bulletPoints: [
-      "Voltage across every branch equals the source voltage.",
-      "Branch currents sum to the source current (Kirchhoff's Current Law).",
-      "Equivalent resistance follows the reciprocal rule 1/Rₜ = Σ(1/Rᵢ)."
-    ]
-  },
-  combination: {
-    title: "Series-Parallel Combination",
-    summary: "Series sections feed a parallel network before recombining. Total behaviour blends series voltage division with parallel current splitting.",
-    bulletPoints: [
-      "Identify series portions and solve sequentially for total resistance.",
-      "At the parallel node, voltage is common while branch currents diverge.",
-      "Recombine branch currents and continue series analysis back to the source."
-    ]
-  }
+type PlacementDraft = {
+  mode: "two-point";
+  entry: CatalogEntry;
+  start: Vec2;
+  current: Vec2;
 };
 
-const LEGEND_ITEMS = [
-  {
-    label: "Resistor",
-    description: "Rendered with a 3D zig-zag symbol aligned to the connection axis and labelled R₁, R₂, R₃, etc."
-  },
-  {
-    label: "Battery",
-    description: "Twin plates with the longer positive terminal and explicit + / − identifiers on the supply side."
-  },
-  {
-    label: "Node",
-    description: "Glowing junction spheres emphasise connection points and branch nodes within the topology."
-  },
-  {
-    label: "Wire",
-    description: "Cylindrical conductors follow the schematic path, hovering above the reference plane for clear depth separation."
+const clampValue = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const snapValue = (value: number, step = SNAP_STEP) => Math.round(value / step) * step;
+
+const clampPoint = (point: Vec2): Vec2 => ({
+  x: clampValue(snapValue(point.x), BOARD_LIMITS.minX, BOARD_LIMITS.maxX),
+  z: clampValue(snapValue(point.z), BOARD_LIMITS.minZ, BOARD_LIMITS.maxZ)
+});
+
+const resolveAxisPlacement = (start: Vec2, target: Vec2) => {
+  const snappedStart = clampPoint(start);
+  const snappedTarget = clampPoint(target);
+  const dx = Math.abs(snappedTarget.x - snappedStart.x);
+  const dz = Math.abs(snappedTarget.z - snappedStart.z);
+  if (dx >= dz) {
+    const end: Vec2 = { x: snappedTarget.x, z: snappedStart.z };
+    return {
+      start: snappedStart,
+      end,
+      orientation: "horizontal" as Orientation,
+      length: Math.abs(end.x - snappedStart.x)
+    };
   }
-];
+  const end: Vec2 = { x: snappedStart.x, z: snappedTarget.z };
+  return {
+    start: snappedStart,
+    end,
+    orientation: "vertical" as Orientation,
+    length: Math.abs(end.z - snappedStart.z)
+  };
+};
+
+const createId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `element-${Math.random().toString(36).slice(2, 10)}`);
+
+const pointKey = (point: Vec2) => `${point.x.toFixed(3)}|${point.z.toFixed(3)}`;
+
+const formatPoint = (point: Vec2) => `(${point.x.toFixed(1)}, ${point.z.toFixed(1)})`;
 
 export default function SchematicMode() {
-  const [topology, setTopology] = useState<CircuitTopology>("series");
+  const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
+  const [elements, setElements] = useState<SchematicElement[]>([]);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<PlacementDraft | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<Vec2 | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [labelCounters, setLabelCounters] = useState<Record<string, number>>({});
+  const [singleNodeOrientation, setSingleNodeOrientation] = useState<Orientation>("horizontal");
 
-  const info = useMemo(() => TOPOLOGY_CONTENT[topology], [topology]);
+  const selectedCatalogEntry = useMemo(() => {
+    const entry = COMPONENT_CATALOG.find((item) => item.id === selectedCatalogId);
+    return entry ?? COMPONENT_CATALOG[0];
+  }, [selectedCatalogId]);
+
+  const selectedElement = useMemo(() => elements.find((element) => element.id === selectedElementId) ?? null, [elements, selectedElementId]);
+
+  const instructions = draft
+    ? `Move the cursor to set the ${draft.entry.name.toLowerCase()} span, then click to confirm placement.`
+    : `Click on the board to place a ${selectedCatalogEntry.name.toLowerCase()}.`;
+
+  useEffect(() => {
+    if (!feedbackMessage) {
+      return;
+    }
+    const timeout = window.setTimeout(() => setFeedbackMessage(null), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [feedbackMessage]);
+
+  const handleCatalogSelect = useCallback((entry: CatalogEntry) => {
+    setSelectedCatalogId(entry.id);
+    setDraft(null);
+    setSelectedElementId(null);
+    setFeedbackMessage(`${entry.name} ready for placement.`);
+  }, []);
+
+  const handleBoardHover = useCallback((point: Vec2 | null) => {
+    if (!point) {
+      setHoverPoint(null);
+      return;
+    }
+    const snapped = clampPoint(point);
+    setHoverPoint(snapped);
+    setDraft((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      return {
+        ...prev,
+        current: snapped
+      };
+    });
+  }, []);
+
+  const handleRemoveSelected = useCallback(() => {
+    if (!selectedElementId) {
+      return;
+    }
+    setElements((prev) => prev.filter((element) => element.id !== selectedElementId));
+    setSelectedElementId(null);
+    setFeedbackMessage("Selected component removed.");
+  }, [selectedElementId]);
+
+  const handleClearBoard = useCallback(() => {
+    setElements([]);
+    setSelectedElementId(null);
+    setDraft(null);
+    setLabelCounters({});
+    setFeedbackMessage("Board cleared.");
+  }, []);
+
+  const toggleSingleNodeOrientation = useCallback(() => {
+    setSingleNodeOrientation((prev) => (prev === "horizontal" ? "vertical" : "horizontal"));
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.key === "Delete" || event.key === "Backspace") && selectedElementId) {
+        event.preventDefault();
+        handleRemoveSelected();
+      }
+      if (event.key === "Escape") {
+        setDraft(null);
+        setSelectedElementId(null);
+        setFeedbackMessage("Placement cancelled.");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedElementId, handleRemoveSelected]);
+
+  const handleBoardClick = useCallback(
+    (point: Vec2) => {
+      const entry = selectedCatalogEntry;
+      if (!entry) {
+        return;
+      }
+
+      const snapped = clampPoint(point);
+
+      if (entry.placement === "single-point") {
+        const newElement: GroundElement = {
+          id: createId(),
+          kind: "ground",
+          position: snapped,
+          orientation: singleNodeOrientation
+        };
+        setElements((prev) => [...prev, newElement]);
+        setSelectedElementId(newElement.id);
+        setFeedbackMessage(`${entry.name} placed ${formatPoint(snapped)}.`);
+        return;
+      }
+
+      if (!draft || draft.entry.id !== entry.id) {
+        setDraft({ mode: "two-point", entry, start: snapped, current: snapped });
+        setSelectedElementId(null);
+        setFeedbackMessage("Anchor set. Choose a second point to complete placement.");
+        return;
+      }
+
+      const resolved = resolveAxisPlacement(draft.start, snapped);
+      if (resolved.length < MIN_SEGMENT_LENGTH) {
+        setFeedbackMessage("Segment too short. Extend the component before placing.");
+        return;
+      }
+
+      if (entry.kind === "wire") {
+        const newWire: WireElement = {
+          id: createId(),
+          kind: "wire",
+          path: [resolved.start, resolved.end]
+        };
+        setElements((prev) => [...prev, newWire]);
+        setSelectedElementId(newWire.id);
+        setFeedbackMessage("Wire segment placed.");
+      } else {
+        const prefix = entry.defaultLabelPrefix;
+        let label = entry.name;
+        if (prefix) {
+          const nextIndex = (labelCounters[prefix] ?? 0) + 1;
+          label = `${prefix}${nextIndex}`;
+          setLabelCounters((prev) => ({
+            ...prev,
+            [prefix]: nextIndex
+          }));
+        }
+
+        const newComponent: TwoTerminalElement = {
+          id: createId(),
+          kind: entry.kind as TwoTerminalElement["kind"],
+          label,
+          start: resolved.start,
+          end: resolved.end,
+          orientation: resolved.orientation
+        };
+        setElements((prev) => [...prev, newComponent]);
+        setSelectedElementId(newComponent.id);
+        setFeedbackMessage(`${entry.name} placed ${formatPoint(resolved.start)} → ${formatPoint(resolved.end)}.`);
+      }
+
+      setDraft(null);
+    },
+    [selectedCatalogEntry, draft, labelCounters, singleNodeOrientation]
+  );
+
+  const handleElementClick = useCallback((elementId: string) => {
+    setSelectedElementId(elementId);
+    setDraft(null);
+    setFeedbackMessage("Component selected.");
+  }, []);
+
+  const previewElement = useMemo<SchematicElement | null>(() => {
+    if (!draft) {
+      return null;
+    }
+    const resolved = resolveAxisPlacement(draft.start, draft.current);
+    if (resolved.length < MIN_SEGMENT_LENGTH) {
+      return null;
+    }
+
+    if (draft.entry.kind === "wire") {
+      const previewWire: WireElement = {
+        id: "preview-wire",
+        kind: "wire",
+        path: [resolved.start, resolved.end]
+      };
+      return previewWire;
+    }
+
+    const prefix = draft.entry.defaultLabelPrefix;
+    const suggestion = prefix ? `${prefix}${(labelCounters[prefix] ?? 0) + 1}` : draft.entry.name;
+
+    const previewComponent: TwoTerminalElement = {
+      id: "preview-component",
+      kind: draft.entry.kind as TwoTerminalElement["kind"],
+      label: suggestion,
+      start: resolved.start,
+      end: resolved.end,
+      orientation: resolved.orientation
+    };
+    return previewComponent;
+  }, [draft, labelCounters]);
+
+  const elementSummaries = useMemo(
+    () =>
+      elements.map((element) => {
+        if (element.kind === "wire") {
+          const wire = element as WireElement;
+          return {
+            id: element.id,
+            title: "Wire",
+            detail: `${formatPoint(wire.path[0])} → ${formatPoint(wire.path[wire.path.length - 1])}`
+          };
+        }
+        if (element.kind === "ground") {
+          const ground = element as GroundElement;
+          return {
+            id: element.id,
+            title: "Ground",
+            detail: `${formatPoint(ground.position)} · ${ground.orientation}`
+          };
+        }
+        const component = element as TwoTerminalElement;
+        return {
+          id: element.id,
+          title: component.label,
+          detail: `${formatPoint(component.start)} → ${formatPoint(component.end)}`
+        };
+      }),
+    [elements]
+  );
 
   return (
     <div className="schematic-shell">
       <header className="schematic-header">
         <div>
-          <h1>3D Schematic Mode</h1>
+          <h1>3D Schematic Builder</h1>
           <p>
-            Explore canonical DC circuit topologies rendered with accurate schematic symbols in a three-dimensional staging area.
-            Swap between series, parallel, and combination layouts to see how current paths and component placement change.
+            Assemble custom DC circuits using a catalog of three-dimensional schematic symbols. Pick a component, snap it to the
+            placement grid, and watch battery plates, resistive bodies, inductive coils, and more take shape in the viewport.
           </p>
-        </div>
-        <div className="schematic-controls" role="tablist" aria-label="Circuit topology selector">
-          {(
-            ["series", "parallel", "combination"] as CircuitTopology[]
-          ).map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="tab"
-              aria-selected={topology === option}
-              className={topology === option ? "schematic-toggle is-active" : "schematic-toggle"}
-              onClick={() => setTopology(option)}
-            >
-              {TOPOLOGY_CONTENT[option].title}
-            </button>
-          ))}
         </div>
       </header>
 
-      <section className="schematic-stage" aria-live="polite">
-        <SchematicViewport topology={topology} />
-      </section>
+      <div className="schematic-workspace">
+        <section className="schematic-stage" aria-live="polite">
+          <SchematicViewport
+            elements={elements}
+            previewElement={previewElement}
+            selectedElementId={selectedElementId}
+            draftAnchor={draft ? draft.start : null}
+            hoverPoint={hoverPoint}
+            onBoardPointClick={handleBoardClick}
+            onBoardPointMove={handleBoardHover}
+            onElementClick={handleElementClick}
+          />
+          <div className="schematic-overlay">
+            <div className="schematic-instructions">{instructions}</div>
+            <div className="schematic-readout">
+              <span>Snapped: {hoverPoint ? formatPoint(hoverPoint) : "—"}</span>
+              <span>Tool: {selectedCatalogEntry.name}</span>
+            </div>
+            {feedbackMessage && <div className="schematic-feedback">{feedbackMessage}</div>}
+          </div>
+        </section>
 
-      <section className="schematic-summary">
-        <div className="schematic-summary-card">
-          <h2>{info.title}</h2>
-          <p>{info.summary}</p>
-          <ul>
-            {info.bulletPoints.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </div>
-        <aside className="schematic-legend">
-          <h3>Symbol Legend</h3>
-          <ul>
-            {LEGEND_ITEMS.map((item) => (
-              <li key={item.label}>
-                <span className="legend-term">{item.label}</span>
-                <span className="legend-desc">{item.description}</span>
-              </li>
-            ))}
-          </ul>
+        <aside className="schematic-sidebar">
+          <div className="schematic-catalog">
+            <h2>Component Catalog</h2>
+            <div className="catalog-grid" role="list">
+              {COMPONENT_CATALOG.map((entry) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  role="listitem"
+                  className={entry.id === selectedCatalogEntry.id ? "catalog-entry is-selected" : "catalog-entry"}
+                  onClick={() => handleCatalogSelect(entry)}
+                >
+                  <span className="catalog-icon">{entry.icon}</span>
+                  <span className="catalog-name">{entry.name}</span>
+                  <span className="catalog-desc">{entry.description}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="schematic-panel">
+            <div className="schematic-panel-section">
+              <h3>Board Controls</h3>
+              <div className="schematic-actions">
+                <button type="button" onClick={handleClearBoard} disabled={!elements.length}>
+                  Clear Board
+                </button>
+                <button type="button" onClick={handleRemoveSelected} disabled={!selectedElementId}>
+                  Remove Selected
+                </button>
+                <button type="button" onClick={toggleSingleNodeOrientation} className="schematic-secondary">
+                  Rotate Ground ({singleNodeOrientation === "horizontal" ? "⇔" : "⇕"})
+                </button>
+              </div>
+            </div>
+
+            <div className="schematic-panel-section">
+              <h3>Selection</h3>
+              {selectedElement ? (
+                <ul className="schematic-selection">
+                  {selectedElement.kind === "ground" ? (
+                    <>
+                      <li>Kind: Ground</li>
+                      <li>Position: {formatPoint((selectedElement as GroundElement).position)}</li>
+                      <li>Orientation: {(selectedElement as GroundElement).orientation}</li>
+                    </>
+                  ) : selectedElement.kind === "wire" ? (
+                    <>
+                      <li>Kind: Wire</li>
+                      <li>
+                        Path: {formatPoint((selectedElement as WireElement).path[0])} →
+                        {formatPoint((selectedElement as WireElement).path[(selectedElement as WireElement).path.length - 1])}
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Label: {(selectedElement as TwoTerminalElement).label}</li>
+                      <li>
+                        Span: {formatPoint((selectedElement as TwoTerminalElement).start)} →
+                        {formatPoint((selectedElement as TwoTerminalElement).end)}
+                      </li>
+                      <li>Orientation: {(selectedElement as TwoTerminalElement).orientation}</li>
+                    </>
+                  )}
+                </ul>
+              ) : (
+                <p className="schematic-empty">No component selected.</p>
+              )}
+            </div>
+
+            <div className="schematic-panel-section">
+              <h3>Placed Components</h3>
+              {elements.length === 0 ? (
+                <p className="schematic-empty">Board is empty. Start by placing a component.</p>
+              ) : (
+                <ul className="schematic-element-list">
+                  {elementSummaries.map((element) => (
+                    <li key={element.id}>
+                      <button
+                        type="button"
+                        className={element.id === selectedElementId ? "element-button is-selected" : "element-button"}
+                        onClick={() => setSelectedElementId(element.id)}
+                      >
+                        <span className="element-title">{element.title}</span>
+                        <span className="element-detail">{element.detail}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </aside>
-      </section>
+      </div>
     </div>
   );
 }
 
-type ViewportProps = {
-  topology: CircuitTopology;
+type SchematicViewportProps = {
+  elements: SchematicElement[];
+  previewElement: SchematicElement | null;
+  selectedElementId: string | null;
+  draftAnchor: Vec2 | null;
+  hoverPoint: Vec2 | null;
+  onBoardPointClick: (point: Vec2, event: PointerEvent) => void;
+  onBoardPointMove: (point: Vec2 | null) => void;
+  onElementClick: (elementId: string, event: PointerEvent) => void;
 };
 
-function SchematicViewport({ topology }: ViewportProps) {
+function SchematicViewport({
+  elements,
+  previewElement,
+  selectedElementId,
+  draftAnchor,
+  hoverPoint,
+  onBoardPointClick,
+  onBoardPointMove,
+  onElementClick
+}: SchematicViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const topologyRef = useRef<CircuitTopology>(topology);
-  topologyRef.current = topology;
+  const threeRef = useRef<any>(null);
+  const rendererRef = useRef<any>(null);
+  const sceneRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const boardMeshRef = useRef<any>(null);
+  const componentGroupRef = useRef<any>(null);
+  const nodeGroupRef = useRef<any>(null);
+  const previewGroupRef = useRef<any>(null);
+  const anchorGroupRef = useRef<any>(null);
+  const hoverMarkerRef = useRef<any>(null);
+  const raycasterRef = useRef<any>(null);
+  const pointerRef = useRef<any>(null);
+  const animationFrameRef = useRef<number>(0);
 
-  const applyTopologyRef = useRef<((mode: CircuitTopology) => void) | null>(null);
+  const rebuildSceneContent = useCallback(() => {
+    const three = threeRef.current;
+    const scene = sceneRef.current;
+    if (!three || !scene) {
+      return;
+    }
+
+    const tagWithElementId = (root: any, elementId: string) => {
+      if (!root || typeof root.traverse !== "function") {
+        return;
+      }
+      root.traverse((child: any) => {
+        child.userData = { ...(child.userData || {}), elementId };
+      });
+    };
+
+    if (componentGroupRef.current) {
+      scene.remove(componentGroupRef.current);
+      disposeThreeObject(componentGroupRef.current);
+      componentGroupRef.current = null;
+    }
+
+    if (nodeGroupRef.current) {
+      scene.remove(nodeGroupRef.current);
+      disposeThreeObject(nodeGroupRef.current);
+      nodeGroupRef.current = null;
+    }
+
+    if (previewGroupRef.current) {
+      scene.remove(previewGroupRef.current);
+      disposeThreeObject(previewGroupRef.current);
+      previewGroupRef.current = null;
+    }
+
+    if (anchorGroupRef.current) {
+      scene.remove(anchorGroupRef.current);
+      disposeThreeObject(anchorGroupRef.current);
+      anchorGroupRef.current = null;
+    }
+
+    if (hoverMarkerRef.current) {
+      scene.remove(hoverMarkerRef.current);
+      disposeThreeObject(hoverMarkerRef.current);
+      hoverMarkerRef.current = null;
+    }
+
+    const elementGroup = new three.Group();
+    const terminalKeys = new Set<string>();
+    const terminalPoints: Vec2[] = [];
+
+    elements.forEach((element) => {
+      const { group, terminals } = buildElement(three, element, { highlight: element.id === selectedElementId });
+      tagWithElementId(group, element.id);
+      elementGroup.add(group);
+      terminals.forEach((point) => {
+        const key = pointKey(point);
+        if (!terminalKeys.has(key)) {
+          terminalKeys.add(key);
+          terminalPoints.push(point);
+        }
+      });
+    });
+
+    scene.add(elementGroup);
+    componentGroupRef.current = elementGroup;
+
+    const nodesGroup = new three.Group();
+    terminalPoints.forEach((point) => {
+      const mesh = buildNodeMesh(three, point, {});
+      nodesGroup.add(mesh);
+    });
+    scene.add(nodesGroup);
+    nodeGroupRef.current = nodesGroup;
+
+    if (previewElement) {
+      const { group, terminals } = buildElement(three, previewElement, { preview: true });
+      tagWithElementId(group, previewElement.id);
+      if (terminals.length) {
+        terminals.forEach((point) => {
+          const mesh = buildNodeMesh(three, point, { preview: true });
+          group.add(mesh);
+        });
+      }
+      scene.add(group);
+      previewGroupRef.current = group;
+    }
+
+    if (draftAnchor) {
+      const anchorGroup = new three.Group();
+      const anchorMesh = buildNodeMesh(three, draftAnchor, { preview: true, highlight: true });
+      anchorGroup.add(anchorMesh);
+      scene.add(anchorGroup);
+      anchorGroupRef.current = anchorGroup;
+    }
+
+    if (hoverPoint) {
+      const geometry = new three.RingGeometry(0.18, 0.26, 36);
+      const material = new three.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.65, side: three.DoubleSide });
+      const hoverMesh = new three.Mesh(geometry, material);
+      hoverMesh.rotation.x = -Math.PI / 2;
+      hoverMesh.position.set(hoverPoint.x, 0.02, hoverPoint.z);
+      scene.add(hoverMesh);
+      hoverMarkerRef.current = hoverMesh;
+    }
+  }, [elements, previewElement, selectedElementId, draftAnchor, hoverPoint]);
+
+  useEffect(() => {
+    rebuildSceneContent();
+  }, [rebuildSceneContent]);
 
   useEffect(() => {
     let isMounted = true;
@@ -201,6 +648,8 @@ function SchematicViewport({ topology }: ViewportProps) {
         const board = new three.Mesh(boardGeometry, boardMaterial);
         board.rotation.x = -Math.PI / 2;
         board.position.y = -0.05;
+        board.name = "schematic-board";
+        board.userData.isBoard = true;
         scene.add(board);
 
         const grid = new three.GridHelper(12, 12, 0x1d95ff, 0x144472);
@@ -211,36 +660,14 @@ function SchematicViewport({ topology }: ViewportProps) {
         }
         scene.add(grid);
 
-        let circuitGroup: any = null;
+        threeRef.current = three;
+        rendererRef.current = renderer;
+        sceneRef.current = scene;
+        cameraRef.current = camera;
+        boardMeshRef.current = board;
 
-        const setCircuit = (mode: CircuitTopology) => {
-          if (circuitGroup) {
-            scene.remove(circuitGroup);
-            disposeThreeObject(circuitGroup);
-            circuitGroup = null;
-          }
-          circuitGroup = buildCircuit(three, mode);
-          scene.add(circuitGroup);
-        };
-
-        applyTopologyRef.current = setCircuit;
-        setCircuit(topologyRef.current);
-
-        const clock = new three.Clock();
-        let animationFrame = 0;
-
-        const animate = () => {
-          animationFrame = window.requestAnimationFrame(animate);
-          const elapsed = clock.getElapsedTime();
-          if (circuitGroup) {
-            const wobble = Math.sin(elapsed * 0.35) * 0.12;
-            circuitGroup.rotation.y = wobble;
-            circuitGroup.position.y = Math.sin(elapsed * 0.45) * 0.04;
-          }
-          renderer.render(scene, camera);
-        };
-
-        animate();
+        raycasterRef.current = new three.Raycaster();
+        pointerRef.current = new three.Vector2();
 
         const handleResize = () => {
           if (!container) {
@@ -251,16 +678,109 @@ function SchematicViewport({ topology }: ViewportProps) {
           camera.updateProjectionMatrix();
         };
 
+        const updateRaycasterFromEvent = (event: PointerEvent) => {
+          const pointer = pointerRef.current;
+          const raycaster = raycasterRef.current;
+          if (!pointer || !raycaster) {
+            return;
+          }
+          const rect = renderer.domElement.getBoundingClientRect();
+          pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+          pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(pointer, camera);
+        };
+
+        const intersectBoard = () => {
+          const raycaster = raycasterRef.current;
+          const boardMesh = boardMeshRef.current;
+          if (!raycaster || !boardMesh) {
+            return null;
+          }
+          const hits = raycaster.intersectObject(boardMesh, false);
+          return hits.length > 0 ? hits[0] : null;
+        };
+
+        const pickComponent = () => {
+          const raycaster = raycasterRef.current;
+          const group = componentGroupRef.current;
+          if (!raycaster || !group) {
+            return null;
+          }
+          const hits = raycaster.intersectObjects(group.children, true);
+          for (const hit of hits) {
+            if (hit.object && hit.object.userData && hit.object.userData.elementId) {
+              return hit.object.userData.elementId as string;
+            }
+          }
+          return null;
+        };
+
+        const handlePointerMove = (event: PointerEvent) => {
+          updateRaycasterFromEvent(event);
+          const boardHit = intersectBoard();
+          if (boardHit) {
+            onBoardPointMove({ x: boardHit.point.x, z: boardHit.point.z });
+          } else {
+            onBoardPointMove(null);
+          }
+        };
+
+        const handlePointerDown = (event: PointerEvent) => {
+          if (event.button !== 0) {
+            return;
+          }
+          updateRaycasterFromEvent(event);
+          const elementId = pickComponent();
+          if (elementId) {
+            onElementClick(elementId, event);
+            return;
+          }
+          const boardHit = intersectBoard();
+          if (boardHit) {
+            onBoardPointClick({ x: boardHit.point.x, z: boardHit.point.z }, event);
+          }
+        };
+
+        const handlePointerLeave = () => {
+          onBoardPointMove(null);
+        };
+
+        renderer.domElement.addEventListener("pointermove", handlePointerMove);
+        renderer.domElement.addEventListener("pointerdown", handlePointerDown);
+        renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
+
+        rebuildSceneContent();
+
+        const animate = () => {
+          animationFrameRef.current = window.requestAnimationFrame(animate);
+          renderer.render(scene, camera);
+        };
+
+        animate();
+
         window.addEventListener("resize", handleResize);
 
         cleanup = () => {
-          window.cancelAnimationFrame(animationFrame);
+          window.cancelAnimationFrame(animationFrameRef.current);
           window.removeEventListener("resize", handleResize);
+          renderer.domElement.removeEventListener("pointermove", handlePointerMove);
+          renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
+          renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
           if (container && renderer.domElement.parentNode === container) {
             container.removeChild(renderer.domElement);
           }
           disposeThreeObject(scene);
           renderer.dispose();
+          threeRef.current = null;
+          rendererRef.current = null;
+          sceneRef.current = null;
+          cameraRef.current = null;
+          boardMeshRef.current = null;
+          componentGroupRef.current = null;
+          nodeGroupRef.current = null;
+          previewGroupRef.current = null;
+          anchorGroupRef.current = null;
+          hoverMarkerRef.current = null;
         };
       })
       .catch((err) => {
@@ -278,13 +798,7 @@ function SchematicViewport({ topology }: ViewportProps) {
         cleanup();
       }
     };
-  }, []);
-
-  useEffect(() => {
-    if (applyTopologyRef.current) {
-      applyTopologyRef.current(topology);
-    }
-  }, [topology]);
+  }, [onBoardPointClick, onBoardPointMove, onElementClick, rebuildSceneContent]);
 
   return (
     <div className="schematic-viewport">
@@ -293,378 +807,6 @@ function SchematicViewport({ topology }: ViewportProps) {
       {error && <div className="schematic-status schematic-error">{error}</div>}
     </div>
   );
-}
-
-type Vec2 = {
-  x: number;
-  z: number;
-};
-
-const WIRE_RADIUS = 0.08;
-const RESISTOR_RADIUS = 0.085;
-const NODE_RADIUS = 0.14;
-const WIRE_HEIGHT = 0.18;
-const COMPONENT_HEIGHT = 0.22;
-const LABEL_HEIGHT = 0.55;
-
-function buildCircuit(three: any, topology: CircuitTopology) {
-  const group = new three.Group();
-  group.name = `circuit-${topology}`;
-
-  const wireMaterial = new three.MeshStandardMaterial({
-    color: 0x8ec9ff,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: 0x1d4ed8,
-    emissiveIntensity: 0.2
-  });
-
-  const resistorMaterial = new three.MeshStandardMaterial({
-    color: 0xffe4b5,
-    metalness: 0.38,
-    roughness: 0.4,
-    emissive: 0x7a431f,
-    emissiveIntensity: 0.12
-  });
-
-  const nodeMaterial = new three.MeshStandardMaterial({
-    color: 0xffb3c6,
-    emissive: 0xff7aa7,
-    emissiveIntensity: 0.35,
-    metalness: 0.25,
-    roughness: 0.5
-  });
-
-  const batteryPositiveMaterial = new three.MeshStandardMaterial({
-    color: 0x9be5ff,
-    emissive: 0x38bdf8,
-    emissiveIntensity: 0.55,
-    metalness: 0.65,
-    roughness: 0.28
-  });
-
-  const batteryNegativeMaterial = new three.MeshStandardMaterial({
-    color: 0x3a4f6d,
-    emissive: 0x233547,
-    emissiveIntensity: 0.2,
-    metalness: 0.5,
-    roughness: 0.45
-  });
-
-  const toVec3 = (point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
-
-  const addNode = (point: Vec2) => {
-    const geometry = new three.SphereGeometry(NODE_RADIUS, 28, 20);
-    const mesh = new three.Mesh(geometry, nodeMaterial);
-    mesh.position.copy(toVec3(point, COMPONENT_HEIGHT + 0.08));
-    group.add(mesh);
-  };
-
-  const cylinderBetween = (startVec: any, endVec: any, radius: number, material: any) => {
-    const direction = new three.Vector3().subVectors(endVec, startVec);
-    const length = direction.length();
-    if (length <= 1e-6) {
-      return null;
-    }
-    const geometry = new three.CylinderGeometry(radius, radius, length, 24, 1, true);
-    const mesh = new three.Mesh(geometry, material);
-    const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-    mesh.position.copy(midpoint);
-    const quaternion = new three.Quaternion().setFromUnitVectors(new three.Vector3(0, 1, 0), direction.clone().normalize());
-    mesh.setRotationFromQuaternion(quaternion);
-    return mesh;
-  };
-
-  const addWireSegment = (start: Vec2, end: Vec2) => {
-    const startVec = toVec3(start, WIRE_HEIGHT);
-    const endVec = toVec3(end, WIRE_HEIGHT);
-    const mesh = cylinderBetween(startVec, endVec, WIRE_RADIUS, wireMaterial);
-    if (mesh) {
-      group.add(mesh);
-    }
-  };
-
-  const createLabelSprite = (text: string, color = "#dbe9ff") => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return null;
-    }
-    ctx.fillStyle = "rgba(6, 18, 42, 0.82)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = color;
-    ctx.font = "bold 150px 'Inter', 'Segoe UI', sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 12);
-    const texture = new three.CanvasTexture(canvas);
-    texture.anisotropy = 4;
-    const material = new three.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
-    const sprite = new three.Sprite(material);
-    sprite.scale.set(1.4, 0.7, 1);
-    sprite.userData.texture = texture;
-    return sprite;
-  };
-
-  const createResistor = (start: Vec2, end: Vec2, label: string) => {
-    const resistorGroup = new three.Group();
-    const horizontal = Math.abs(end.x - start.x) >= Math.abs(end.z - start.z);
-    const zigCount = 6;
-    const amplitude = 0.35;
-
-    const points: Vec2[] = [];
-    for (let i = 0; i <= zigCount; i += 1) {
-      const t = i / zigCount;
-      if (horizontal) {
-        const x = start.x + (end.x - start.x) * t;
-        const zOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? -amplitude : amplitude);
-        points.push({ x, z: start.z + zOffset });
-      } else {
-        const z = start.z + (end.z - start.z) * t;
-        const xOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? amplitude : -amplitude);
-        points.push({ x: start.x + xOffset, z });
-      }
-    }
-
-    for (let i = 0; i < points.length - 1; i += 1) {
-      const segStart = toVec3(points[i], COMPONENT_HEIGHT);
-      const segEnd = toVec3(points[i + 1], COMPONENT_HEIGHT);
-      const mesh = cylinderBetween(segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
-      if (mesh) {
-        resistorGroup.add(mesh);
-      }
-    }
-
-    const startVec = toVec3(start, COMPONENT_HEIGHT);
-    const endVec = toVec3(end, COMPONENT_HEIGHT);
-    const leadStart = cylinderBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
-    const leadEnd = cylinderBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
-    if (leadStart) {
-      resistorGroup.add(leadStart);
-    }
-    if (leadEnd) {
-      resistorGroup.add(leadEnd);
-    }
-
-    const labelSprite = createLabelSprite(label);
-    if (labelSprite) {
-      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-      labelSprite.position.copy(midpoint);
-      labelSprite.position.y += LABEL_HEIGHT;
-      resistorGroup.add(labelSprite);
-    }
-
-    group.add(resistorGroup);
-  };
-
-  const createBattery = (start: Vec2, end: Vec2) => {
-    const batteryGroup = new three.Group();
-    const startVec = toVec3(start, COMPONENT_HEIGHT - 0.05);
-    const endVec = toVec3(end, COMPONENT_HEIGHT - 0.05);
-    const vertical = Math.abs(end.x - start.x) < Math.abs(end.z - start.z);
-
-    if (vertical) {
-      const centerZ = (start.z + end.z) / 2;
-      const x = start.x;
-      const longPlate = new three.Mesh(new three.BoxGeometry(1.0, 0.18, 0.9), batteryPositiveMaterial);
-      longPlate.position.set(x, COMPONENT_HEIGHT, centerZ + 0.4);
-      const shortPlate = new three.Mesh(new three.BoxGeometry(0.8, 0.18, 0.45), batteryNegativeMaterial);
-      shortPlate.position.set(x, COMPONENT_HEIGHT, centerZ - 0.4);
-      batteryGroup.add(longPlate, shortPlate);
-
-      const plusLabel = createLabelSprite("+", "#ffffff");
-      if (plusLabel) {
-        plusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ + 0.6);
-        plusLabel.scale.set(0.9, 0.9, 1);
-        batteryGroup.add(plusLabel);
-      }
-      const minusLabel = createLabelSprite("−", "#cdd6f4");
-      if (minusLabel) {
-        minusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ - 0.6);
-        minusLabel.scale.set(0.9, 0.9, 1);
-        batteryGroup.add(minusLabel);
-      }
-    } else {
-      const centerX = (start.x + end.x) / 2;
-      const z = start.z;
-      const longPlate = new three.Mesh(new three.BoxGeometry(0.9, 0.18, 1.0), batteryPositiveMaterial);
-      longPlate.position.set(centerX + 0.4, COMPONENT_HEIGHT, z);
-      const shortPlate = new three.Mesh(new three.BoxGeometry(0.45, 0.18, 0.8), batteryNegativeMaterial);
-      shortPlate.position.set(centerX - 0.4, COMPONENT_HEIGHT, z);
-      batteryGroup.add(longPlate, shortPlate);
-
-      const plusLabel = createLabelSprite("+", "#ffffff");
-      if (plusLabel) {
-        plusLabel.position.set(centerX + 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
-        plusLabel.scale.set(0.9, 0.9, 1);
-        batteryGroup.add(plusLabel);
-      }
-      const minusLabel = createLabelSprite("−", "#cdd6f4");
-      if (minusLabel) {
-        minusLabel.position.set(centerX - 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
-        minusLabel.scale.set(0.9, 0.9, 1);
-        batteryGroup.add(minusLabel);
-      }
-    }
-
-    const leadStart = cylinderBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
-    const leadEnd = cylinderBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
-    if (leadStart) {
-      batteryGroup.add(leadStart);
-    }
-    if (leadEnd) {
-      batteryGroup.add(leadEnd);
-    }
-
-    group.add(batteryGroup);
-  };
-
-  const addSegmentNodes = (points: Vec2[]) => {
-    points.forEach((point) => addNode(point));
-  };
-
-  const buildSeries = () => {
-    const start: Vec2 = { x: -4, z: -2.6 };
-    const batteryStart: Vec2 = { x: -4, z: -1.6 };
-    const batteryEnd: Vec2 = { x: -4, z: 1.6 };
-    const topLeft: Vec2 = { x: -4, z: 2.6 };
-    const r1Start: Vec2 = { x: -3.2, z: 2.6 };
-    const r1End: Vec2 = { x: -0.6, z: 2.6 };
-    const topRight: Vec2 = { x: 2.6, z: 2.6 };
-    const r2Start: Vec2 = { x: 2.6, z: 2.1 };
-    const r2End: Vec2 = { x: 2.6, z: -0.2 };
-    const bottomRight: Vec2 = { x: 2.6, z: -2.6 };
-    const r3Start: Vec2 = { x: 1.1, z: -2.6 };
-    const r3End: Vec2 = { x: -2.4, z: -2.6 };
-
-    addWireSegment(start, batteryStart);
-    createBattery(batteryStart, batteryEnd);
-    addWireSegment(batteryEnd, topLeft);
-    addWireSegment(topLeft, r1Start);
-    createResistor(r1Start, r1End, "R1");
-    addWireSegment(r1End, topRight);
-    addWireSegment(topRight, r2Start);
-    createResistor(r2Start, r2End, "R2");
-    addWireSegment(r2End, bottomRight);
-    addWireSegment(bottomRight, r3Start);
-    createResistor(r3Start, r3End, "R3");
-    addWireSegment(r3End, start);
-
-    addSegmentNodes([batteryStart, batteryEnd, topLeft, topRight, bottomRight, start]);
-  };
-
-  const buildParallel = () => {
-    const leftBottom: Vec2 = { x: -2.2, z: -2.2 };
-    const batteryStart: Vec2 = { x: -2.2, z: -1.4 };
-    const batteryEnd: Vec2 = { x: -2.2, z: 1.4 };
-    const leftTop: Vec2 = { x: -2.2, z: 2.2 };
-    const rightTop: Vec2 = { x: 3.6, z: 2.2 };
-    const rightBottom: Vec2 = { x: 3.6, z: -2.2 };
-
-    addWireSegment(leftBottom, batteryStart);
-    createBattery(batteryStart, batteryEnd);
-    addWireSegment(batteryEnd, leftTop);
-    addWireSegment(leftTop, rightTop);
-    addWireSegment(leftBottom, rightBottom);
-
-    const branchXs = [0, 1.8, 3.2];
-    branchXs.forEach((x, index) => {
-      const topNode: Vec2 = { x, z: 2.2 };
-      const bottomNode: Vec2 = { x, z: -2.2 };
-      const resistorStart: Vec2 = { x, z: 1.5 };
-      const resistorEnd: Vec2 = { x, z: -1.5 };
-      addWireSegment(topNode, resistorStart);
-      createResistor(resistorStart, resistorEnd, `R${index + 1}`);
-      addWireSegment(resistorEnd, bottomNode);
-      addNode(topNode);
-      addNode(bottomNode);
-    });
-
-    addSegmentNodes([leftTop, rightTop, leftBottom, rightBottom, batteryStart, batteryEnd]);
-  };
-
-  const buildCombination = () => {
-    const start: Vec2 = { x: -4, z: -2.3 };
-    const batteryStart: Vec2 = { x: -4, z: -1.4 };
-    const batteryEnd: Vec2 = { x: -4, z: 1.4 };
-    const topLeft: Vec2 = { x: -4, z: 2.3 };
-    const r1Start: Vec2 = { x: -3.2, z: 2.3 };
-    const r1End: Vec2 = { x: -0.8, z: 2.3 };
-    const branchTop: Vec2 = { x: 1.5, z: 2.3 };
-    const branchRightTop: Vec2 = { x: 3, z: 2.3 };
-    const branchBottom: Vec2 = { x: 1.5, z: -0.4 };
-    const branchRightBottom: Vec2 = { x: 3, z: -0.4 };
-    const dropNode: Vec2 = { x: 1.5, z: -2.3 };
-    const r4Start: Vec2 = { x: 1.5, z: -2.3 };
-    const r4End: Vec2 = { x: -1.2, z: -2.3 };
-
-    addWireSegment(start, batteryStart);
-    createBattery(batteryStart, batteryEnd);
-    addWireSegment(batteryEnd, topLeft);
-    addWireSegment(topLeft, r1Start);
-    createResistor(r1Start, r1End, "R1");
-    addWireSegment(r1End, branchTop);
-    createResistor(branchTop, branchBottom, "R2");
-    addWireSegment(branchTop, branchRightTop);
-    createResistor(branchRightTop, branchRightBottom, "R3");
-    addWireSegment(branchRightBottom, branchBottom);
-    addWireSegment(branchBottom, dropNode);
-    createResistor(r4Start, r4End, "R4");
-    addWireSegment(r4End, start);
-
-    addNode(branchTop);
-    addNode(branchBottom);
-    addNode(branchRightTop);
-    addNode(branchRightBottom);
-    addNode(dropNode);
-    addSegmentNodes([batteryStart, batteryEnd, start, topLeft]);
-  };
-
-  switch (topology) {
-    case "series":
-      buildSeries();
-      break;
-    case "parallel":
-      buildParallel();
-      break;
-    case "combination":
-      buildCombination();
-      break;
-    default:
-      buildSeries();
-      break;
-  }
-
-  return group;
-}
-
-function disposeThreeObject(root: any) {
-  const disposeMaterial = (material: any) => {
-    if (!material) {
-      return;
-    }
-    if (Array.isArray(material)) {
-      material.forEach((mat) => disposeMaterial(mat));
-      return;
-    }
-    if (material.dispose && typeof material.dispose === "function") {
-      material.dispose();
-    }
-  };
-
-  root.traverse((child: any) => {
-    if (child.geometry && typeof child.geometry.dispose === "function") {
-      child.geometry.dispose();
-    }
-    if (child.material) {
-      disposeMaterial(child.material);
-    }
-    if (child.userData && child.userData.texture && typeof child.userData.texture.dispose === "function") {
-      child.userData.texture.dispose();
-    }
-  });
 }
 
 function loadThree(): Promise<any> {
