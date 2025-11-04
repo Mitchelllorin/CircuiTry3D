@@ -76,88 +76,86 @@
       stroke-width: 6;
       filter: drop-shadow(0 0 28px rgba(42,255,189,0.45));
     }
-    .trace-path {
-      fill: none;
-      stroke: transparent;
-      stroke-width: 6;
-    }
-    .wire {
-      stroke: #41ffc0;
-      stroke-width: 4;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      filter: drop-shadow(0 0 18px rgba(65,255,192,0.6));
-    }
-    .node {
-      fill: #39ffb7;
-      stroke: rgba(5,20,28,0.65);
-      stroke-width: 2.6;
-      filter: drop-shadow(0 0 12px rgba(57,255,183,0.95));
-    }
-    .component-label {
-      fill: #dce9ff;
-      font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: 0.08em;
-    }
-    .battery-plate {
-      stroke: #39ffb7;
-      stroke-width: 4;
-      stroke-linecap: round;
-      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-    }
-    .battery-plate.battery-positive {
-      stroke-width: 4.4;
-    }
-    .battery-plate.battery-negative {
-      stroke-width: 3.2;
-    }
-    .resistor-body {
-      stroke: #39ffb7;
-      stroke-width: 4;
-      fill: rgba(6,16,38,0.88);
-      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-    }
-    .switch-arm,
-    .switch-fixed {
-      stroke: #39ffb7;
-      stroke-width: 4;
-      stroke-linecap: round;
-      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-    }
-    .switch-contact {
-      fill: rgba(6,16,38,0.92);
-      stroke: #39ffb7;
-      stroke-width: 2.6;
-      filter: drop-shadow(0 0 8px rgba(57,255,183,0.65));
-    }
-    .led-poly {
-      stroke: #39ffb7;
-      stroke-width: 4;
-      fill: none;
-      stroke-linejoin: round;
-      filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-    }
-    .led-bar {
-      stroke: #39ffb7;
-      stroke-width: 4;
-      stroke-linecap: round;
-      filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
-    }
-    .led-arrow {
-      stroke: #39ffb7;
-      stroke-width: 3;
-      fill: none;
-      marker-end: url(#arrowhead);
-    }
-    .photons circle {
-      fill: #d7f7ff;
-      stroke: rgba(110,198,255,0.5);
-      stroke-width: 1;
-      filter: drop-shadow(0 0 12px rgba(221,244,255,0.9));
-    }
+      .trace-path {
+        fill: none;
+        stroke: transparent;
+        stroke-width: 6;
+      }
+      .wire {
+        stroke: #41ffc0;
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 18px rgba(65,255,192,0.6));
+      }
+      .node {
+        fill: #39ffb7;
+        stroke: rgba(5,20,28,0.65);
+        stroke-width: 2.4;
+        filter: drop-shadow(0 0 12px rgba(57,255,183,0.95));
+      }
+      .component-label {
+        fill: #dce9ff;
+        font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+      }
+      .battery-plate {
+        stroke: #39ffb7;
+        stroke-width: 4;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+      }
+      .battery-plate.battery-positive {
+        stroke-width: 4.6;
+      }
+      .battery-plate.battery-negative {
+        stroke-width: 3.2;
+      }
+      .switch-arm,
+      .switch-base {
+        stroke: #39ffb7;
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+      }
+      .resistor-zig {
+        stroke: #39ffb7;
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+      }
+      .led-triangle {
+        stroke: #39ffb7;
+        stroke-width: 4;
+        fill: rgba(6,16,38,0.92);
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+      }
+      .led-bar {
+        stroke: #39ffb7;
+        stroke-width: 4;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
+      }
+      .led-arrow {
+        stroke: #39ffb7;
+        stroke-width: 3;
+        fill: none;
+        marker-end: url(#arrowhead);
+      }
+      .photons circle {
+        fill: #d7f7ff;
+        stroke: rgba(110,198,255,0.5);
+        stroke-width: 1;
+        filter: drop-shadow(0 0 12px rgba(221,244,255,0.9));
+      }
     .nav-buttons {
       display: flex;
       flex-wrap: wrap;
@@ -231,76 +229,65 @@
 </head>
 <body>
   <div class="landing-page">
-    <div class="wordmark">
-      <span class="brand-green">Circui</span>
-      <span class="brand-orange">Try</span>
-      <span class="brand-green">3D</span>
-    </div>
-    <div class="subtitle">Professional Circuit Design</div>
-    <div class="circuit-wrapper">
-      <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
-        <title id="landing-circuit-title">Neon green rectangular series circuit with labeled components</title>
-        <defs>
-          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
-          </marker>
-        </defs>
-        <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
+      <div class="wordmark">
+        <span class="brand-green">Circui</span>
+        <span class="brand-orange">Try</span>
+        <span class="brand-green">3D</span>
+      </div>
+      <div class="subtitle">Professional Circuit Design</div>
+      <div class="circuit-wrapper">
+        <svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+          <title id="landing-circuit-title">Horizontal series circuit schematic with battery, switch, resistor, and LED</title>
+          <defs>
+            <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
+            </marker>
+          </defs>
+          <rect class="panel-bg" x="32" y="36" width="416" height="248" rx="36" />
 
-        <path id="series-path" class="trace-path" d="M160 120 H360 V220 H160 Z" />
+          <path id="series-path" class="trace-path" d="M120 110 H430 V220 H120 Z" />
 
-        <g aria-hidden="true">
-          <!-- Top run -->
-          <circle class="node" cx="160" cy="120" r="4.6" />
-          <line class="wire" x1="160" y1="120" x2="200" y2="120" />
+          <g aria-hidden="true">
+            <circle class="node" cx="120" cy="110" r="5.2" />
+            <line class="wire" x1="120" y1="110" x2="170" y2="110" />
+            <circle class="node" cx="170" cy="110" r="5.2" />
 
-          <g class="switch" transform="translate(200,120)">
-            <circle class="switch-contact" cx="0" cy="0" r="5.2" />
-            <line class="switch-arm" x1="0" y1="0" x2="48" y2="-26" />
-            <circle class="switch-contact" cx="60" cy="0" r="5.2" />
-            <line class="switch-fixed" x1="60" y1="0" x2="80" y2="0" />
+            <line class="switch-arm" x1="170" y1="110" x2="206" y2="92" />
+            <line class="switch-base" x1="236" y1="110" x2="206" y2="92" />
+            <circle class="node" cx="236" cy="110" r="5.2" />
+
+            <line class="wire" x1="236" y1="110" x2="256" y2="110" />
+            <polyline class="resistor-zig" points="256,110 268,94 280,126 292,94 304,126 316,94 328,126 340,94 352,110" />
+            <circle class="node" cx="352" cy="110" r="5.2" />
+
+            <line class="wire" x1="352" y1="110" x2="364" y2="110" />
+            <polygon class="led-triangle" points="364,132 364,88 398,110" />
+            <line class="led-bar" x1="404" y1="88" x2="404" y2="132" />
+            <line class="wire" x1="404" y1="110" x2="430" y2="110" />
+            <circle class="node" cx="430" cy="110" r="5.2" />
+            <line class="led-arrow" x1="410" y1="100" x2="428" y2="82" />
+            <line class="led-arrow" x1="410" y1="120" x2="428" y2="138" />
+
+            <line class="wire" x1="430" y1="110" x2="430" y2="220" />
+            <circle class="node" cx="430" cy="220" r="5.2" />
+            <line class="wire" x1="430" y1="220" x2="120" y2="220" />
+            <circle class="node" cx="120" cy="220" r="5.2" />
+
+            <line class="wire" x1="120" y1="220" x2="120" y2="204" />
+            <line class="battery-plate battery-negative" x1="108" y1="204" x2="132" y2="204" />
+            <line class="wire" x1="120" y1="204" x2="120" y2="178" />
+            <line class="battery-plate battery-positive" x1="104" y1="178" x2="136" y2="178" />
+            <line class="wire" x1="120" y1="178" x2="120" y2="110" />
           </g>
 
-          <line class="wire" x1="280" y1="120" x2="296" y2="120" />
+          <text class="component-label" x="102" y="186" text-anchor="end">B1</text>
+          <text class="component-label" x="206" y="72" text-anchor="middle">S1</text>
+          <text class="component-label" x="304" y="72" text-anchor="middle">R1</text>
+          <text class="component-label" x="420" y="150" text-anchor="start">LED1</text>
 
-          <g class="resistor" transform="translate(296,120)">
-            <rect class="resistor-body" x="0" y="-16" width="64" height="32" />
-          </g>
-
-          <circle class="node" cx="360" cy="120" r="4.6" />
-
-          <!-- Right run -->
-          <line class="wire" x1="360" y1="120" x2="360" y2="140" />
-          <g class="led" transform="translate(360,170) rotate(90)">
-            <line class="wire" x1="-50" y1="0" x2="-24" y2="0" />
-            <polygon class="led-poly" points="-24,-20 -24,20 6,0" />
-            <line class="led-bar" x1="12" y1="-22" x2="12" y2="22" />
-            <line class="wire" x1="12" y1="0" x2="50" y2="0" />
-            <line class="led-arrow" x1="24" y1="-12" x2="42" y2="-28" />
-            <line class="led-arrow" x1="32" y1="-4" x2="50" y2="-20" />
-          </g>
-          <line class="wire" x1="360" y1="200" x2="360" y2="220" />
-          <circle class="node" cx="360" cy="220" r="4.6" />
-
-          <!-- Bottom run -->
-          <line class="wire" x1="360" y1="220" x2="160" y2="220" />
-          <circle class="node" cx="160" cy="220" r="4.6" />
-
-          <!-- Left run -->
-          <line class="wire" x1="160" y1="220" x2="160" y2="190" />
-          <line class="battery-plate battery-negative" x1="148" y1="190" x2="172" y2="190" />
-          <line class="battery-plate battery-positive" x1="136" y1="150" x2="184" y2="150" />
-          <line class="wire" x1="160" y1="150" x2="160" y2="120" />
-        </g>
-
-        <text class="component-label" x="122" y="168" text-anchor="end">B1</text>
-        <text class="component-label" x="236" y="92" text-anchor="middle">S1</text>
-        <text class="component-label" x="328" y="92" text-anchor="middle">R1</text>
-        <text class="component-label" x="398" y="172">LED1</text>
-
-        <g class="photons" id="photons"></g>
-      </svg>
-    </div>
+          <g class="photons" id="photons"></g>
+        </svg>
+      </div>
     <div class="status-wrapper">
       <div class="status-text">Circuit environment ready</div>
       <div class="status-bar"></div>
