@@ -70,113 +70,114 @@
       filter: drop-shadow(0 28px 80px rgba(54,255,196,0.3));
     }
     svg { width: 100%; height: auto; display: block; }
-    .panel-bg {
-      fill: rgba(6,16,38,0.9);
-      stroke: rgba(36,255,170,0.95);
-      stroke-width: 6;
-      filter: drop-shadow(0 0 28px rgba(42,255,189,0.45));
-    }
-      .trace-path {
-        fill: none;
-        stroke: transparent;
+      .panel-bg {
+        fill: rgba(6,16,38,0.9);
+        stroke: rgba(36,255,170,0.95);
         stroke-width: 6;
+        filter: drop-shadow(0 0 28px rgba(42,255,189,0.45));
       }
-      .wire {
-        stroke: #41ffc0;
-        stroke-width: 4;
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        filter: drop-shadow(0 0 18px rgba(65,255,192,0.6));
-      }
-      .node {
-        fill: #39ffb7;
-        stroke: rgba(5,20,28,0.65);
-        stroke-width: 2.4;
-        filter: drop-shadow(0 0 12px rgba(57,255,183,0.95));
-      }
-      .component-label {
-        fill: #dce9ff;
-        font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
-        font-weight: 700;
-        font-size: 16px;
-        letter-spacing: 0.08em;
-      }
-        .component-tag {
+        .trace-path {
+          fill: none;
+          stroke: transparent;
+          stroke-width: 6;
+        }
+        .wire {
+          stroke: #41ffc0;
+          stroke-width: 4;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          filter: drop-shadow(0 0 18px rgba(65,255,192,0.6));
+        }
+        .node {
           fill: #39ffb7;
-          font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
-          font-weight: 800;
-          letter-spacing: 0.18em;
-          font-size: 14px;
-          paint-order: stroke fill;
-          stroke: rgba(6,16,38,0.8);
-          stroke-width: 0.6;
+          stroke: rgba(5,20,28,0.65);
+          stroke-width: 2.4;
+          filter: drop-shadow(0 0 12px rgba(57,255,183,0.95));
         }
-        .component-tag .tag-id {
-          text-transform: uppercase;
-        }
-        .component-tag .tag-value {
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.12em;
-          stroke-width: 0;
-        }
-        .polarity-mark {
-          fill: #39ffb7;
+        .component-label {
+          fill: #dce9ff;
           font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
           font-weight: 700;
-          letter-spacing: 0.18em;
-          font-size: 13px;
+          font-size: 16px;
+          letter-spacing: 0.08em;
         }
-      .battery-plate {
-        stroke: #39ffb7;
-        stroke-width: 4;
-        stroke-linecap: round;
-        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-      }
-      .battery-plate.battery-positive {
-        stroke-width: 4.6;
-      }
-      .battery-plate.battery-negative {
-        stroke-width: 3.2;
-      }
-      .switch-arm,
-      .switch-base {
-        stroke: #39ffb7;
-        stroke-width: 4;
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-      }
-      .resistor-zig {
-        stroke: #39ffb7;
-        stroke-width: 4;
-        fill: none;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-      }
-      .led-triangle {
-        stroke: #39ffb7;
-        stroke-width: 4;
-        fill: rgba(6,16,38,0.92);
-        stroke-linejoin: round;
-        filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-      }
-      .led-bar {
-        stroke: #39ffb7;
-        stroke-width: 4;
-        stroke-linecap: round;
-        filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
-      }
-      .led-arrow {
-        stroke: #39ffb7;
-        stroke-width: 3;
-        fill: none;
-        marker-end: url(#arrowhead);
-      }
-      .photons circle {
+          .component-tag {
+            fill: #39ffb7;
+            font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            font-size: 14px;
+            paint-order: stroke fill;
+            stroke: rgba(6,16,38,0.8);
+            stroke-width: 0.6;
+          }
+          .component-tag .tag-id {
+            text-transform: uppercase;
+          }
+          .component-tag .tag-value {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            stroke-width: 0;
+          }
+          .polarity-mark {
+            fill: #39ffb7;
+            font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            font-size: 13px;
+          }
+        .battery-plate {
+          stroke: #39ffb7;
+          stroke-width: 4;
+          stroke-linecap: round;
+          filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+        }
+        .battery-plate.battery-positive {
+          stroke-width: 4.6;
+        }
+        .battery-plate.battery-negative {
+          stroke-width: 3.2;
+        }
+        .switch-arm,
+        .switch-base {
+          stroke: #39ffb7;
+          stroke-width: 4;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+        }
+        .resistor-zig {
+          stroke: #39ffb7;
+          stroke-width: 4;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+        }
+        .led-triangle {
+          stroke: #39ffb7;
+          stroke-width: 4;
+          fill: rgba(6,16,38,0.92);
+          stroke-linejoin: round;
+          filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+        }
+        .led-bar {
+          stroke: #39ffb7;
+          stroke-width: 4;
+          stroke-linecap: round;
+          filter: drop-shadow(0 0 10px rgba(57,255,183,0.75));
+        }
+        .led-emission {
+          stroke: #39ffb7;
+          stroke-width: 3;
+          fill: none;
+          stroke-linecap: round;
+          marker-end: url(#arrowhead);
+        }
+        .photons circle {
         fill: #d7f7ff;
         stroke: rgba(110,198,255,0.5);
         stroke-width: 1;
@@ -261,86 +262,83 @@
         <span class="brand-green">3D</span>
       </div>
       <div class="subtitle">Professional Circuit Design</div>
-      <div class="circuit-wrapper">
-            <svg viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
-              <title id="landing-circuit-title">Series circuit with battery, switch, resistor, and LED</title>
-              <defs>
-                <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto" markerUnits="strokeWidth">
-                  <path d="M1 1 L7 3 L1 5 Z" fill="#39ffb7" />
-                </marker>
-              </defs>
-              <rect class="panel-bg" x="48" y="64" width="424" height="392" rx="36" />
+        <div class="circuit-wrapper">
+              <svg viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+                <title id="landing-circuit-title">Series circuit with battery, switch, resistor, and LED</title>
+                <defs>
+                  <marker id="arrowhead" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="strokeWidth">
+                    <path d="M1 1 L7 4.5 L1 8 Z" fill="#39ffb7" />
+                  </marker>
+                </defs>
+                <rect class="panel-bg" x="52" y="60" width="456" height="240" rx="34" />
 
-              <g aria-hidden="true">
-                <!-- Wiring framework -->
-                <line class="wire" x1="180" y1="140" x2="210" y2="140" />
-                <line class="wire" x1="310" y1="140" x2="340" y2="140" />
-                <line class="wire" x1="340" y1="140" x2="340" y2="200" />
-                <line class="wire" x1="340" y1="300" x2="340" y2="360" />
-                <line class="wire" x1="300" y1="360" x2="340" y2="360" />
-                <line class="wire" x1="180" y1="360" x2="220" y2="360" />
-                <line class="wire" x1="180" y1="140" x2="180" y2="224" />
-                <line class="wire" x1="180" y1="276" x2="180" y2="360" />
+                <g aria-hidden="true">
+                  <!-- Wiring framework -->
+                  <line class="wire" x1="180" y1="140" x2="210" y2="140" />
+                  <line class="wire" x1="330" y1="140" x2="380" y2="140" />
+                  <line class="wire" x1="380" y1="140" x2="380" y2="170" />
+                  <line class="wire" x1="380" y1="220" x2="380" y2="260" />
+                  <line class="wire" x1="294" y1="260" x2="380" y2="260" />
+                  <line class="wire" x1="180" y1="260" x2="210" y2="260" />
+                  <line class="wire" x1="180" y1="260" x2="180" y2="220" />
+                  <line class="wire" x1="180" y1="206" x2="180" y2="140" />
 
-                <!-- Resistor R1 on top side -->
-                <g transform="translate(210 140)">
-                  <polyline class="resistor-zig" points="0,0 10,-18 20,18 30,-18 40,18 50,-18 60,18 70,-18 80,18 90,-18 100,0" />
+                  <!-- Resistor R1 on top side -->
+                  <g transform="translate(210 140)">
+                    <polyline class="resistor-zig" points="0,0 24,-18 48,18 72,-18 96,18 120,0" />
+                  </g>
+
+                  <!-- Switch SW1 on right side -->
+                  <line class="switch-arm" x1="380" y1="170" x2="394" y2="214" />
+                  <line class="switch-base" x1="380" y1="220" x2="404" y2="220" />
+
+                  <!-- Battery B1 on left side -->
+                  <line class="battery-plate battery-positive" x1="164" y1="206" x2="196" y2="206" />
+                  <line class="battery-plate battery-negative" x1="170" y1="220" x2="190" y2="220" />
+
+                  <!-- LED1 on bottom side -->
+                  <g transform="translate(210 260)">
+                    <line class="wire" x1="0" y1="0" x2="12" y2="0" />
+                    <polygon class="led-triangle" points="12,-18 12,18 60,0" />
+                    <line class="led-bar" x1="60" y1="-18" x2="60" y2="18" />
+                    <line class="wire" x1="60" y1="0" x2="84" y2="0" />
+                    <line class="led-emission" x1="66" y1="-10" x2="92" y2="-30" />
+                    <line class="led-emission" x1="72" y1="4" x2="98" y2="-16" />
+                  </g>
+
+                  <!-- Nodes -->
+                  <circle class="node" cx="180" cy="140" r="4.2" />
+                  <circle class="node" cx="210" cy="140" r="4.2" />
+                  <circle class="node" cx="330" cy="140" r="4.2" />
+                  <circle class="node" cx="380" cy="140" r="4.2" />
+                  <circle class="node" cx="380" cy="220" r="4.2" />
+                  <circle class="node" cx="380" cy="260" r="4.2" />
+                  <circle class="node" cx="294" cy="260" r="4.2" />
+                  <circle class="node" cx="210" cy="260" r="4.2" />
+                  <circle class="node" cx="180" cy="260" r="4.2" />
                 </g>
 
-                <!-- Switch SW1 on right side -->
-                <line class="switch-arm" x1="340" y1="200" x2="334" y2="300" />
-                <line class="switch-base" x1="328" y1="300" x2="352" y2="300" />
-
-                <!-- Battery B1 on left side -->
-                <line class="battery-plate battery-positive" x1="150" y1="224" x2="210" y2="224" />
-                <line class="battery-plate battery-negative" x1="156" y1="276" x2="204" y2="276" />
-
-                <!-- LED1 on bottom side -->
-                <g transform="translate(220 360)">
-                  <line class="wire" x1="0" y1="0" x2="12" y2="0" />
-                  <polygon class="led-triangle" points="12,-18 12,18 58,0" />
-                  <line class="led-bar" x1="58" y1="-18" x2="58" y2="18" />
-                  <line class="wire" x1="58" y1="0" x2="80" y2="0" />
-                  <line class="led-arrow" x1="74" y1="-12" x2="94" y2="-32" />
-                  <line class="led-arrow" x1="82" y1="2" x2="102" y2="-18" />
-                </g>
-
-                <!-- Nodes -->
-                <circle class="node" cx="180" cy="140" r="4.2" />
-                <circle class="node" cx="210" cy="140" r="4.2" />
-                <circle class="node" cx="310" cy="140" r="4.2" />
-                <circle class="node" cx="340" cy="140" r="4.2" />
-                <circle class="node" cx="340" cy="200" r="4.2" />
-                <circle class="node" cx="340" cy="300" r="4.2" />
-                <circle class="node" cx="340" cy="360" r="4.2" />
-                <circle class="node" cx="300" cy="360" r="4.2" />
-                <circle class="node" cx="220" cy="360" r="4.2" />
-                <circle class="node" cx="180" cy="360" r="4.2" />
-                <circle class="node" cx="180" cy="276" r="4.2" />
-                <circle class="node" cx="180" cy="224" r="4.2" />
-              </g>
-
-              <!-- Component labels -->
-              <text class="component-tag" x="260" y="108" text-anchor="middle">
-                <tspan class="tag-id">R1</tspan>
-                <tspan class="tag-value" x="260" dy="16">220 Ω</tspan>
-              </text>
-                <text class="component-tag" x="392" y="252" text-anchor="start">
+                <!-- Component labels -->
+                <text class="component-tag" x="270" y="108" text-anchor="middle">
+                  <tspan class="tag-id">R1</tspan>
+                  <tspan class="tag-value" x="270" dy="16">220 Ω</tspan>
+                </text>
+                <text class="component-tag" x="418" y="208" text-anchor="start">
                   <tspan class="tag-id">SW1</tspan>
-                  <tspan class="tag-value" x="392" dy="16">SPST · Closed</tspan>
-              </text>
-              <text class="component-tag" x="128" y="252" text-anchor="end">
-                <tspan class="tag-id">B1</tspan>
-                <tspan class="tag-value" x="128" dy="16">9 V DC</tspan>
-              </text>
-              <text class="component-tag" x="260" y="404" text-anchor="middle">
-                <tspan class="tag-id">LED1</tspan>
-                <tspan class="tag-value" x="260" dy="16">2 V · 20 mA</tspan>
-              </text>
+                  <tspan class="tag-value" x="418" dy="16">SPST · Open</tspan>
+                </text>
+                <text class="component-tag" x="144" y="214" text-anchor="end">
+                  <tspan class="tag-id">B1</tspan>
+                  <tspan class="tag-value" x="144" dy="16">9 V DC</tspan>
+                </text>
+                <text class="component-tag" x="270" y="304" text-anchor="middle">
+                  <tspan class="tag-id">LED1</tspan>
+                  <tspan class="tag-value" x="270" dy="16">2 V · 20 mA</tspan>
+                </text>
 
-              <text class="polarity-mark" x="214" y="228" text-anchor="start">+</text>
-              <text class="polarity-mark" x="214" y="280" text-anchor="start">-</text>
-            </svg>
+                <text class="polarity-mark" x="202" y="210" text-anchor="start">+</text>
+                <text class="polarity-mark" x="202" y="224" text-anchor="start">-</text>
+              </svg>
       </div>
     <div class="status-wrapper">
       <div class="status-text">Circuit environment ready</div>
