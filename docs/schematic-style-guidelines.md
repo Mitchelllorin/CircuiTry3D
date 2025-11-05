@@ -1,40 +1,33 @@
-## Schematic Style Reference
+## Schematic Style Reference (3D Presentation)
 
-The schematic mode must render 2D diagrams that match classic textbook conventions as illustrated in the reference screenshots provided (series circuits, parallel circuits, and series-parallel combinations).
+Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every component must read exactly like the textbook references when viewed from above, while still offering depth cues and hover interactions.
 
-- **Canvas**
-  - White or light background (#ffffff).
-  - All wiring runs are rendered as black lines (#000000) with consistent stroke width (2px @ 1× scale).
-  - Only right-angle routing (horizontal/vertical segments); no perspective or 3D shading.
+- **Board & Lighting**
+  - Use a neutral, low-saturation board colour so black strokes are easy to read.
+  - Lighting should emphasise silhouettes without introducing coloured reflections or emissive glows.
+
+- **Stroke Geometry**
+  - Wires, component bodies, and symbol outlines are slender prisms/tubes coloured pure black (`#111111`).
+  - Preview placements desaturate to a soft grey, and selection highlights switch to a single accent blue (`#2563EB`).
 
 - **Nodes / Junctions**
-  - Use filled black circles (diameter ≈ 6px) at every electrical junction where three or more conductors meet.
-  - No glow or gradients; the dot should sit centered on the wire intersection.
+  - Model junction dots as small black hemispheres/spheres positioned just above the board plane.
+  - No bloom or emissive glow—clarity comes from silhouette only.
 
-- **Battery (DC Source)**
-  - Two parallel plates oriented perpendicular to the current path.
-  - Positive terminal = longer line, negative terminal = shorter line.
-  - Spacing between plates ≈ stroke width × 4.
-  - Optional polarity labels `+` / `−` placed adjacent to terminals.
+- **Symbol Profiles**
+  - **Battery:** Two flat plates (long/short) with optional `+` / `−` sprites positioned near the respective terminals.
+  - **Resistor:** Six-peak zig-zag made from connected straight segments with the same thickness as the leads.
+  - **Capacitor:** Two parallel plates separated by a neutral dielectric block; leads must stop at the plate faces.
+  - **Inductor:** Four semi-circular turns rendered as thin rings aligned to the wire axis.
+  - **Lamp:** Circular disc with a thin ring and crossed conductors to match the standard lamp symbol.
+  - **Switch:** Two posts with a single angled blade segment indicating the open switch gap.
+  - **Ground:** Three progressively shorter bars stacked vertically beneath the node.
 
-- **Resistor**
-  - Use the US zig-zag symbol with 6 peaks.
-  - Same stroke width as wires.
-  - Labels (e.g., `R1`) centred near the resistor without overlapping conductors.
+- **Labels**
+  - Component sprites use black text on a semi-transparent white card for readability over the board.
+  - Preview states dim label opacity; selected components keep the card but the geometry shifts to highlight blue.
 
-- **Series Layout**
-  - Components aligned horizontally across the top span with the source placed on the left leg.
-  - Return path closes the rectangle with no skew.
+- **Layouts**
+  - Series, parallel, and combination presets follow the exact node placements and proportions from the provided references so students can recognise the topology instantly.
 
-- **Parallel Layout**
-  - Bus rails horizontal; branches vertical.
-  - Branch spacing uniform; all components aligned to share the same start/end nodes.
-
-- **Series-Parallel Combination**
-  - Depict series elements on top branch and parallel branch stacked vertically, matching the ladder version shown in the reference.
-
-- **Typography**
-  - Use sans-serif font (e.g., `Inter`, `Arial`) for labels at 12–14px.
-  - Text should render in black and sit on a transparent background.
-
-These rules apply to both pre-built practice presets and the interactive builder so that every generated circuit matches the canonical diagrams the user supplied.
+These guidelines apply to both preset practice scenes and the interactive builder to ensure consistency between learning material and student-created circuits.
