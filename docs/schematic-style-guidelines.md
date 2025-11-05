@@ -2,6 +2,11 @@
 
 Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every component must read exactly like the textbook references when viewed from above, while still offering depth cues and hover interactions.
 
+- **Standards Compliance**
+  - A "Symbol Standard" selector sits alongside the mode toggle and defaults to ANSI.
+  - `ANSI` and `IEEE` share the same zig-zag resistor profile; `IEC` swaps resistors to a rectangular body. All other symbols already conform across the three standards.
+  - Builder and Practice viewports read the selection live so students see consistent geometry everywhere.
+
 - **Board & Lighting**
   - Use a neutral, low-saturation board colour so black strokes are easy to read.
   - Lighting should emphasise silhouettes without introducing coloured reflections or emissive glows.
@@ -16,7 +21,7 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
 
 - **Symbol Profiles**
   - **Battery:** Two flat plates (long/short) with optional `+` / `−` sprites positioned near the respective terminals.
-  - **Resistor:** Six-peak zig-zag made from connected straight segments with the same thickness as the leads.
+  - **Resistor:** Zig-zag for ANSI/IEEE; flat rectangular body for IEC. Both variants keep the same lead spacing and raised label cards.
   - **Capacitor:** Two parallel plates separated by a neutral dielectric block; leads must stop at the plate faces.
   - **Inductor:** Four semi-circular turns rendered as thin rings aligned to the wire axis.
   - **Lamp:** Circular disc with a thin ring and crossed conductors to match the standard lamp symbol.

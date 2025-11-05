@@ -1,4 +1,4 @@
-import { GroundElement, SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./types";
+import { GroundElement, SchematicElement, SchematicStandard, TwoTerminalElement, Vec2, WireElement } from "./types";
 
 export const WIRE_RADIUS = 0.055;
 export const RESISTOR_RADIUS = 0.05;
@@ -10,7 +10,10 @@ export const LABEL_HEIGHT = 0.4;
 type BuildOptions = {
   preview?: boolean;
   highlight?: boolean;
+  standard?: SchematicStandard;
 };
+
+const DEFAULT_STANDARD: SchematicStandard = "ansi";
 
 type BuildResult = {
   group: any;
@@ -118,7 +121,7 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
   return sprite;
 };
 
-const buildWireElement = (three: any, element: WireElement, options: BuildOptions): BuildResult => {
+const buildWireElement = (three: any, element: WireElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `wire-${element.id}`;
   const material = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
@@ -142,7 +145,7 @@ const buildWireElement = (three: any, element: WireElement, options: BuildOption
   return { group, terminals };
 };
 
-const buildResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `resistor-${element.id}`;
   const resistorMaterial = new three.MeshStandardMaterial({
@@ -154,34 +157,54 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   styliseMaterial(three, resistorMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, wireMaterial, options, COLOR_HELPERS.stroke);
 
-  const zigCount = 6;
-  const amplitude = 0.35;
-  const points: Vec2[] = [];
-
-  for (let i = 0; i <= zigCount; i += 1) {
-    const t = i / zigCount;
-    if (element.orientation === "horizontal") {
-      const x = element.start.x + (element.end.x - element.start.x) * t;
-      const zOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? -amplitude : amplitude);
-      points.push({ x, z: element.start.z + zOffset });
-    } else {
-      const z = element.start.z + (element.end.z - element.start.z) * t;
-      const xOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? amplitude : -amplitude);
-      points.push({ x: element.start.x + xOffset, z });
-    }
-  }
-
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const segStart = toVec3(three, points[i], COMPONENT_HEIGHT);
-    const segEnd = toVec3(three, points[i + 1], COMPONENT_HEIGHT);
-    const mesh = cylinderBetween(three, segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
-    if (mesh) {
-      group.add(mesh);
-    }
-  }
-
+  const standard = options.standard ?? DEFAULT_STANDARD;
   const startVec = toVec3(three, element.start, COMPONENT_HEIGHT);
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
+
+  if (standard === "iec") {
+    const axisDelta =
+      element.orientation === "horizontal"
+        ? element.end.x - element.start.x
+        : element.end.z - element.start.z;
+    const axisLength = Math.max(Math.abs(axisDelta), 1e-3);
+    const bodyThickness = 0.38;
+    const bodyHeight = 0.28;
+    const centerX = (element.start.x + element.end.x) / 2;
+    const centerZ = (element.start.z + element.end.z) / 2;
+    const geometry =
+      element.orientation === "horizontal"
+        ? new three.BoxGeometry(axisLength, bodyHeight, bodyThickness)
+        : new three.BoxGeometry(bodyThickness, bodyHeight, axisLength);
+    const body = new three.Mesh(geometry, resistorMaterial);
+    body.position.set(centerX, COMPONENT_HEIGHT, centerZ);
+    group.add(body);
+  } else {
+    const zigCount = 6;
+    const amplitude = 0.35;
+    const points: Vec2[] = [];
+
+    for (let i = 0; i <= zigCount; i += 1) {
+      const t = i / zigCount;
+      if (element.orientation === "horizontal") {
+        const x = element.start.x + (element.end.x - element.start.x) * t;
+        const zOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? -amplitude : amplitude);
+        points.push({ x, z: element.start.z + zOffset });
+      } else {
+        const z = element.start.z + (element.end.z - element.start.z) * t;
+        const xOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? amplitude : -amplitude);
+        points.push({ x: element.start.x + xOffset, z });
+      }
+    }
+
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const segStart = toVec3(three, points[i], COMPONENT_HEIGHT);
+      const segEnd = toVec3(three, points[i + 1], COMPONENT_HEIGHT);
+      const mesh = cylinderBetween(three, segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
+      if (mesh) {
+        group.add(mesh);
+      }
+    }
+  }
   const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
   const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
   if (leadStart) {
@@ -204,7 +227,7 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   return { group, terminals: [element.start, element.end] };
 };
 
-const buildBatteryElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildBatteryElement = (three: any, element: TwoTerminalElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `battery-${element.id}`;
   const positiveMaterial = new three.MeshStandardMaterial({
@@ -294,7 +317,7 @@ const buildBatteryElement = (three: any, element: TwoTerminalElement, options: B
   return { group, terminals: [element.start, element.end] };
 };
 
-const buildCapacitorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildCapacitorElement = (three: any, element: TwoTerminalElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `capacitor-${element.id}`;
   const plateMaterial = new three.MeshStandardMaterial({
@@ -358,7 +381,7 @@ const buildCapacitorElement = (three: any, element: TwoTerminalElement, options:
   return { group, terminals: [element.start, element.end] };
 };
 
-const buildInductorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildInductorElement = (three: any, element: TwoTerminalElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `inductor-${element.id}`;
   const coilMaterial = new three.MeshStandardMaterial({
@@ -417,7 +440,7 @@ const buildInductorElement = (three: any, element: TwoTerminalElement, options: 
   return { group, terminals: [element.start, element.end] };
 };
 
-const buildLampElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildLampElement = (three: any, element: TwoTerminalElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `lamp-${element.id}`;
   const ringMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampRing });
@@ -433,6 +456,7 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
     COMPONENT_HEIGHT,
     (element.start.z + element.end.z) / 2
   );
+
   const disc = new three.Mesh(new three.CylinderGeometry(0.55, 0.55, 0.02, 32), fillMaterial);
   disc.position.copy(center);
   disc.rotation.x = Math.PI / 2;
@@ -466,7 +490,7 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "LAMP");
     if (labelSprite) {
-      labelSprite.position.copy(bulbCenter.clone().setY(bulbCenter.y + 0.9));
+      labelSprite.position.copy(center.clone().setY(center.y + 0.9));
       group.add(labelSprite);
     }
   }
@@ -474,7 +498,7 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   return { group, terminals: [element.start, element.end] };
 };
 
-const buildSwitchElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildSwitchElement = (three: any, element: TwoTerminalElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `switch-${element.id}`;
   const postMaterial = new three.MeshStandardMaterial({
@@ -538,7 +562,7 @@ const buildSwitchElement = (three: any, element: TwoTerminalElement, options: Bu
   return { group, terminals: [element.start, element.end] };
 };
 
-const buildGroundElement = (three: any, element: GroundElement, options: BuildOptions): BuildResult => {
+const buildGroundElement = (three: any, element: GroundElement, options: BuildOptions = {}): BuildResult => {
   const group = new three.Group();
   group.name = `ground-${element.id}`;
   const lineMaterial = new three.MeshStandardMaterial({
@@ -584,7 +608,7 @@ const buildTwoTerminalElement = (three: any, element: TwoTerminalElement, option
   }
 };
 
-export const buildElement = (three: any, element: SchematicElement, options: BuildOptions): BuildResult => {
+export const buildElement = (three: any, element: SchematicElement, options: BuildOptions = {}): BuildResult => {
   if (element.kind === "wire") {
     return buildWireElement(three, element as WireElement, options);
   }
@@ -594,7 +618,7 @@ export const buildElement = (three: any, element: SchematicElement, options: Bui
   return buildTwoTerminalElement(three, element as TwoTerminalElement, options);
 };
 
-export const buildNodeMesh = (three: any, point: Vec2, options: BuildOptions) => {
+export const buildNodeMesh = (three: any, point: Vec2, options: BuildOptions = {}) => {
   const material = new three.MeshStandardMaterial({
     color: COLOR_HELPERS.nodeFill
   });

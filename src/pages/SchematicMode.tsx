@@ -22,6 +22,7 @@ import {
   CatalogEntry,
   GroundElement,
   Orientation,
+  SchematicStandard,
   SchematicElement,
   TwoTerminalElement,
   Vec2,
@@ -81,7 +82,7 @@ const LEGEND_ITEMS = [
   {
     label: "Resistor",
     description:
-      "Rendered with a 3D zig-zag symbol aligned to the connection axis and labelled R₁, R₂, R₃, etc.",
+      "Symbol swaps between ANSI/IEEE zig-zag and IEC rectangle based on the selected standard, with labelled leads.",
   },
   {
     label: "Battery",
@@ -285,8 +286,15 @@ const MODE_TABS: { key: ViewMode; label: string }[] = [
   { key: "builder", label: "Custom Builder" },
 ];
 
+const STANDARD_LABELS: Record<SchematicStandard, string> = {
+  ansi: "ANSI",
+  ieee: "IEEE",
+  iec: "IEC",
+};
+
 export default function SchematicMode() {
   const [viewMode, setViewMode] = useState<ViewMode>("practice");
+  const [standard, setStandard] = useState<SchematicStandard>("ansi");
 
   return (
     <div className="schematic-shell">
@@ -295,28 +303,44 @@ export default function SchematicMode() {
           <h1>3D Schematic Mode</h1>
           <p>{MODE_SUMMARY[viewMode]}</p>
         </div>
-        <div className="schematic-controls" role="tablist" aria-label="Schematic mode selector">
-          {MODE_TABS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={viewMode === key}
-              className={viewMode === key ? "schematic-toggle is-active" : "schematic-toggle"}
-              onClick={() => setViewMode(key)}
+        <div className="schematic-header-actions">
+          <div className="schematic-controls" role="tablist" aria-label="Schematic mode selector">
+            {MODE_TABS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={viewMode === key}
+                className={viewMode === key ? "schematic-toggle is-active" : "schematic-toggle"}
+                onClick={() => setViewMode(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <label className="schematic-standard-control">
+            <span className="schematic-standard-label">Symbol Standard</span>
+            <select
+              className="schematic-standard-select"
+              value={standard}
+              onChange={(event) => setStandard(event.target.value as SchematicStandard)}
             >
-              {label}
-            </button>
-          ))}
+              {(Object.keys(STANDARD_LABELS) as SchematicStandard[]).map((option) => (
+                <option key={option} value={option}>
+                  {STANDARD_LABELS[option]}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </header>
 
-      {viewMode === "practice" ? <PracticeModeView /> : <BuilderModeView />}
+      {viewMode === "practice" ? <PracticeModeView standard={standard} /> : <BuilderModeView standard={standard} />}
     </div>
   );
 }
 
-function PracticeModeView() {
+function PracticeModeView({ standard }: { standard: SchematicStandard }) {
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
   const fallbackProblemId = practiceProblems[0]?.id ?? null;
 
@@ -547,7 +571,7 @@ function PracticeModeView() {
           </header>
 
           <div className="schematic-stage">
-            <SchematicViewport problem={selectedProblem} />
+            <PracticeViewport problem={selectedProblem} standard={standard} />
           </div>
 
           <div className="schematic-main-grid">
@@ -657,7 +681,7 @@ function PracticeModeView() {
   );
 }
 
-function BuilderModeView() {
+function BuilderModeView({ standard }: { standard: SchematicStandard }) {
   const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -895,19 +919,20 @@ function BuilderModeView() {
     [elements]
   );
 
-  return (
-    <div className="schematic-workspace builder-mode">
-      <section className="schematic-stage" aria-live="polite">
-        <BuilderViewport
-          elements={elements}
-          previewElement={previewElement}
-          selectedElementId={selectedElementId}
-          draftAnchor={draft ? draft.start : null}
-          hoverPoint={hoverPoint}
-          onBoardPointClick={handleBoardClick}
-          onBoardPointMove={handleBoardHover}
-          onElementClick={handleElementClick}
-        />
+    return (
+      <div className="schematic-workspace builder-mode">
+        <section className="schematic-stage" aria-live="polite">
+          <BuilderViewport
+            elements={elements}
+            previewElement={previewElement}
+            selectedElementId={selectedElementId}
+            draftAnchor={draft ? draft.start : null}
+            hoverPoint={hoverPoint}
+            onBoardPointClick={handleBoardClick}
+            onBoardPointMove={handleBoardHover}
+            onElementClick={handleElementClick}
+            standard={standard}
+          />
         <div className="schematic-overlay">
           <div className="schematic-instructions">{instructions}</div>
           <div className="schematic-readout">
@@ -916,9 +941,9 @@ function BuilderModeView() {
           </div>
           {feedbackMessage && <div className="schematic-feedback">{feedbackMessage}</div>}
         </div>
-      </section>
+        </section>
 
-      <aside className="schematic-sidebar">
+        <aside className="schematic-sidebar">
         <div className="schematic-catalog">
           <h2>Component Catalog</h2>
           <div className="catalog-grid" role="list">
@@ -1012,9 +1037,9 @@ function BuilderModeView() {
             )}
           </div>
         </div>
-      </aside>
-    </div>
-  );
+        </aside>
+      </div>
+    );
 }
 
 type BuilderViewportProps = {
@@ -1026,6 +1051,7 @@ type BuilderViewportProps = {
   onBoardPointClick: (point: Vec2, event: PointerEvent) => void;
   onBoardPointMove: (point: Vec2 | null) => void;
   onElementClick: (elementId: string, event: PointerEvent) => void;
+  standard: SchematicStandard;
 };
 
 function BuilderViewport({
@@ -1037,6 +1063,7 @@ function BuilderViewport({
   onBoardPointClick,
   onBoardPointMove,
   onElementClick,
+  standard,
 }: BuilderViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1107,7 +1134,10 @@ function BuilderViewport({
     const terminalPoints: Vec2[] = [];
 
     elements.forEach((element) => {
-      const { group, terminals } = buildElement(three, element, { highlight: element.id === selectedElementId });
+      const { group, terminals } = buildElement(three, element, {
+        highlight: element.id === selectedElementId,
+        standard,
+      });
       tagWithElementId(group, element.id);
       elementGroup.add(group);
       terminals.forEach((point) => {
@@ -1131,7 +1161,7 @@ function BuilderViewport({
     nodeGroupRef.current = nodesGroup;
 
     if (previewElement) {
-      const { group, terminals } = buildElement(three, previewElement, { preview: true });
+      const { group, terminals } = buildElement(three, previewElement, { preview: true, standard });
       tagWithElementId(group, previewElement.id);
       if (terminals.length) {
         terminals.forEach((point) => {
@@ -1165,7 +1195,7 @@ function BuilderViewport({
       scene.add(hoverMesh);
       hoverMarkerRef.current = hoverMesh;
     }
-  }, [elements, previewElement, selectedElementId, draftAnchor, hoverPoint]);
+    }, [elements, previewElement, selectedElementId, draftAnchor, hoverPoint, standard]);
 
   useEffect(() => {
     rebuildSceneContent();
@@ -1396,15 +1426,19 @@ function BuilderViewport({
 
 type PracticeViewportProps = {
   problem: PracticeProblem;
+  standard: SchematicStandard;
 };
 
-function PracticeViewport({ problem }: PracticeViewportProps) {
+function PracticeViewport({ problem, standard }: PracticeViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const problemRef = useRef<PracticeProblem>(problem);
   problemRef.current = problem;
+
+  const standardRef = useRef<SchematicStandard>(standard);
+  standardRef.current = standard;
 
   const applyProblemRef = useRef<((nextProblem: PracticeProblem) => void) | null>(null);
 
@@ -1478,19 +1512,19 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
           grid.material.transparent = true;
           grid.material.opacity = 0.22;
         }
-        scene.add(grid);
+          scene.add(grid);
 
-        let circuitGroup: any = null;
+          let circuitGroup: any = null;
 
-        const setCircuit = (practiceProblem: PracticeProblem) => {
-          if (circuitGroup) {
-            scene.remove(circuitGroup);
-            disposeThreeObject(circuitGroup);
-            circuitGroup = null;
-          }
-          circuitGroup = buildCircuit(three, practiceProblem);
-          scene.add(circuitGroup);
-        };
+          const setCircuit = (practiceProblem: PracticeProblem) => {
+            if (circuitGroup) {
+              scene.remove(circuitGroup);
+              disposeThreeObject(circuitGroup);
+              circuitGroup = null;
+            }
+            circuitGroup = buildCircuit(three, practiceProblem, standardRef.current);
+            scene.add(circuitGroup);
+          };
 
         applyProblemRef.current = setCircuit;
         setCircuit(problemRef.current);
@@ -1555,6 +1589,12 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
     }
   }, [problem]);
 
+  useEffect(() => {
+    if (applyProblemRef.current) {
+      applyProblemRef.current(problemRef.current);
+    }
+  }, [standard]);
+
   return (
     <div className="schematic-viewport">
       <div ref={containerRef} className="schematic-canvas" />
@@ -1576,7 +1616,7 @@ const WIRE_HEIGHT = 0.18;
 const COMPONENT_HEIGHT = 0.22;
 const LABEL_HEIGHT = 0.55;
 
-function buildCircuit(three: any, problem: PracticeProblem) {
+function buildCircuit(three: any, problem: PracticeProblem, standard: SchematicStandard) {
   const group = new three.Group();
   group.name = `circuit-${problem.id}`;
 
@@ -1698,29 +1738,48 @@ function buildCircuit(three: any, problem: PracticeProblem) {
   const createResistor = (start: Vec2, end: Vec2, label: string) => {
     const resistorGroup = new three.Group();
     const horizontal = Math.abs(end.x - start.x) >= Math.abs(end.z - start.z);
-    const zigCount = 6;
-    const amplitude = 0.35;
+    const resistorStandard = standard;
 
-    const points: Vec2[] = [];
-    for (let i = 0; i <= zigCount; i += 1) {
-      const t = i / zigCount;
-      if (horizontal) {
-        const x = start.x + (end.x - start.x) * t;
-        const zOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? -amplitude : amplitude;
-        points.push({ x, z: start.z + zOffset });
-      } else {
-        const z = start.z + (end.z - start.z) * t;
-        const xOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? amplitude : -amplitude;
-        points.push({ x: start.x + xOffset, z });
+    if (resistorStandard === "iec") {
+      const axisLength = Math.max(
+        horizontal ? Math.abs(end.x - start.x) : Math.abs(end.z - start.z),
+        1e-3
+      );
+      const bodyThickness = 0.42;
+      const bodyHeight = 0.3;
+      const centerX = (start.x + end.x) / 2;
+      const centerZ = (start.z + end.z) / 2;
+      const geometry = horizontal
+        ? new three.BoxGeometry(axisLength, bodyHeight, bodyThickness)
+        : new three.BoxGeometry(bodyThickness, bodyHeight, axisLength);
+      const body = new three.Mesh(geometry, resistorMaterial);
+      body.position.set(centerX, COMPONENT_HEIGHT, centerZ);
+      resistorGroup.add(body);
+    } else {
+      const zigCount = 6;
+      const amplitude = 0.35;
+
+      const points: Vec2[] = [];
+      for (let i = 0; i <= zigCount; i += 1) {
+        const t = i / zigCount;
+        if (horizontal) {
+          const x = start.x + (end.x - start.x) * t;
+          const zOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? -amplitude : amplitude;
+          points.push({ x, z: start.z + zOffset });
+        } else {
+          const z = start.z + (end.z - start.z) * t;
+          const xOffset = i === 0 || i === zigCount ? 0 : i % 2 === 0 ? amplitude : -amplitude;
+          points.push({ x: start.x + xOffset, z });
+        }
       }
-    }
 
-    for (let i = 0; i < points.length - 1; i += 1) {
-      const segStart = toVec3(points[i], COMPONENT_HEIGHT);
-      const segEnd = toVec3(points[i + 1], COMPONENT_HEIGHT);
-      const mesh = cylinderBetween(segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
-      if (mesh) {
-        resistorGroup.add(mesh);
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const segStart = toVec3(points[i], COMPONENT_HEIGHT);
+        const segEnd = toVec3(points[i + 1], COMPONENT_HEIGHT);
+        const mesh = cylinderBetween(segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
+        if (mesh) {
+          resistorGroup.add(mesh);
+        }
       }
     }
 
@@ -1848,13 +1907,13 @@ function buildCircuit(three: any, problem: PracticeProblem) {
     problem.components.forEach((component, index) => {
       const startX = topLeft.x + index * segmentWidth + margin;
       const endX = topLeft.x + (index + 1) * segmentWidth - margin;
-      const resistorStart: Vec2 = { x: startX, z: top };
-      const resistorEnd: Vec2 = { x: endX, z: top };
-      addWireSegment(previousPoint, resistorStart);
-      createResistor(resistorStart, resistorEnd, component.label ?? component.id);
-      addNode(resistorStart);
-      addNode(resistorEnd);
-      previousPoint = resistorEnd;
+        const resistorStart: Vec2 = { x: startX, z: top };
+        const resistorEnd: Vec2 = { x: endX, z: top };
+        addWireSegment(previousPoint, resistorStart);
+        createResistor(resistorStart, resistorEnd, component.label ?? component.id);
+        addNode(resistorStart);
+        addNode(resistorEnd);
+        previousPoint = resistorEnd;
     });
 
     addWireSegment(previousPoint, topRight);
@@ -1892,15 +1951,15 @@ function buildCircuit(three: any, problem: PracticeProblem) {
       const x = left + spacing * (index + 1);
       const topNode: Vec2 = { x, z: top };
       const bottomNode: Vec2 = { x, z: bottom };
-      const resistorStart: Vec2 = { x, z: top - offset };
-      const resistorEnd: Vec2 = { x, z: bottom + offset };
+        const resistorStart: Vec2 = { x, z: top - offset };
+        const resistorEnd: Vec2 = { x, z: bottom + offset };
 
-      addWireSegment(topNode, resistorStart);
-      createResistor(resistorStart, resistorEnd, component.label ?? component.id);
-      addWireSegment(resistorEnd, bottomNode);
+        addWireSegment(topNode, resistorStart);
+        createResistor(resistorStart, resistorEnd, component.label ?? component.id);
+        addWireSegment(resistorEnd, bottomNode);
 
-      addNode(topNode);
-      addNode(bottomNode);
+        addNode(topNode);
+        addNode(bottomNode);
     });
 
     addSegmentNodes([leftTop, rightTop, leftBottom, rightBottom, batteryStart, batteryEnd]);
