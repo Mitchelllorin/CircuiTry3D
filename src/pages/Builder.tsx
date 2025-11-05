@@ -2282,7 +2282,15 @@ export default function Builder() {
           aria-disabled={controlsDisabled}
           title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
         >
-          Clear Workspace
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M9 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h4a1 1 0 1 1 0 2h-.92l-1.1 15.2A2 2 0 0 1 15 22H9a2 2 0 0 1-1.98-1.8L6.02 5H5a1 1 0 1 1 0-2h4Zm1 .5V5h4V3.5h-4Zm-1.88 3 1 14h6.76l1-14H8.12ZM10 10a1 1 0 0 1 2 0v7a1 1 0 1 1-2 0v-7Zm4 0a1 1 0 1 1 2 0v7a1 1 0 1 1-2 0v-7Z"
+              />
+            </svg>
+          </span>
+          <span className="sr-only">Clear workspace</span>
         </button>
       </div>
       <div
@@ -2299,7 +2307,15 @@ export default function Builder() {
           data-pulse={isSimulatePulsing ? "true" : undefined}
           title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
         >
-          Run Simulation
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img" focusable="false" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M8.39 5.05a1 1 0 0 1 1.02.05l8 5a1 1 0 0 1 0 1.68l-8 5A1 1 0 0 1 8 16V7a1 1 0 0 1 .39-.95ZM10 8.62v5.76L14.52 12 10 8.62Z"
+              />
+            </svg>
+          </span>
+          <span className="sr-only">Run simulation</span>
         </button>
       </div>
 

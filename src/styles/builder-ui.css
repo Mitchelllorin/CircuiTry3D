@@ -13,7 +13,7 @@
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  --builder-menu-toggle-width: 36px;
+  --builder-menu-toggle-width: 32px;
   --builder-menu-toggle-side-width: calc(var(--builder-menu-toggle-width) - 8px);
   --builder-menu-left-width: 208px;
   --builder-menu-right-width: 216px;
@@ -140,10 +140,17 @@ body.builder-body {
   will-change: width, height;
 }
 
+
 .builder-menu-stage-left,
 .builder-menu-stage-right {
   top: calc(84px + var(--builder-safe-area-top));
   bottom: calc(28px + var(--builder-safe-area-bottom));
+  align-items: flex-start;
+}
+
+.builder-menu-stage-left.open,
+.builder-menu-stage-right.open {
+  align-items: stretch;
 }
 
 .builder-menu-stage-left {
@@ -358,21 +365,49 @@ body.builder-body {
 
 .builder-menu-toggle-left,
 .builder-menu-toggle-right {
-  width: var(--builder-menu-toggle-side-width);
-  height: 100%;
+  width: var(--builder-menu-toggle-width);
+  height: auto;
+  min-height: var(--builder-menu-toggle-width);
   flex-shrink: 0;
   flex-direction: column;
-  border-radius: 0 12px 12px 0;
-  padding: 7px 3px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px;
   gap: 2px;
 }
 
+.builder-menu-toggle-left[aria-expanded="true"],
+.builder-menu-toggle-right[aria-expanded="true"] {
+  width: var(--builder-menu-toggle-side-width);
+  min-height: 100%;
+  padding: 7px 3px;
+}
+
 .builder-menu-toggle-right {
-  border-radius: 12px 0 0 12px;
+  border-radius: 999px;
 }
 
 .builder-menu-toggle-left {
+  border-radius: 999px;
+}
+
+.builder-menu-toggle-left[aria-expanded="true"] {
   border-radius: 0 12px 12px 0;
+}
+
+.builder-menu-toggle-right[aria-expanded="true"] {
+  border-radius: 12px 0 0 12px;
+}
+
+.builder-menu-toggle-left[aria-expanded="true"],
+.builder-menu-toggle-right[aria-expanded="true"] {
+  align-items: center;
+}
+
+.builder-menu-toggle-left[aria-expanded="false"],
+.builder-menu-toggle-right[aria-expanded="false"] {
+  box-shadow: 0 10px 24px rgba(3, 12, 32, 0.45);
 }
 
 .builder-menu-toggle-bottom {
@@ -385,7 +420,7 @@ body.builder-body {
 }
 
 .toggle-icon {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -394,6 +429,14 @@ body.builder-body {
   letter-spacing: 0.14em;
   text-align: center;
   line-height: 1.2;
+}
+
+.builder-menu-toggle[aria-expanded="false"] .toggle-text {
+  display: none;
+}
+
+.builder-menu-toggle[aria-expanded="false"] .toggle-icon {
+  font-size: 16px;
 }
 
 .builder-menu-bottom::-webkit-scrollbar {
@@ -1168,7 +1211,7 @@ body.builder-body {
 
 .builder-floating-action {
   position: fixed;
-  top: calc(104px + var(--builder-safe-area-top));
+  top: calc(72px + var(--builder-safe-area-top) + 16px);
   z-index: 880;
   pointer-events: none;
   display: flex;
@@ -1182,28 +1225,29 @@ body.builder-body {
   justify-content: flex-end;
 }
 
+
 .builder-floating-button {
   pointer-events: auto;
-  border-radius: 12px;
-  border: 1px solid rgba(136, 204, 255, 0.35);
-  background: rgba(14, 32, 64, 0.9);
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(136, 204, 255, 0.4);
+  background: rgba(14, 32, 64, 0.92);
   color: var(--builder-text);
-  font: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
-  box-shadow: 0 12px 26px var(--builder-shadow);
+  box-shadow: 0 12px 26px rgba(3, 12, 32, 0.55);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-  line-height: 1.1;
 }
 
 .builder-floating-button:hover:not([disabled]) {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   border-color: rgba(0, 255, 136, 0.55);
-  box-shadow: 0 20px 40px rgba(0, 255, 136, 0.28);
+  box-shadow: 0 18px 36px rgba(0, 255, 136, 0.22);
 }
 
 .builder-floating-button[disabled],
@@ -1214,25 +1258,25 @@ body.builder-body {
 }
 
 .builder-floating-button[data-variant="clear"] {
-  background: linear-gradient(135deg, rgba(255, 86, 86, 0.95), rgba(255, 142, 86, 0.9));
+  background: linear-gradient(145deg, rgba(255, 86, 86, 0.92), rgba(255, 142, 86, 0.85));
   border-color: rgba(255, 142, 86, 0.6);
   color: #0a1a2f;
-  box-shadow: 0 16px 32px rgba(255, 86, 86, 0.22);
+  box-shadow: 0 14px 28px rgba(255, 86, 86, 0.24);
 }
 
 .builder-floating-button[data-variant="clear"]:hover:not([disabled]) {
-  box-shadow: 0 22px 44px rgba(255, 86, 86, 0.32);
+  box-shadow: 0 20px 36px rgba(255, 86, 86, 0.28);
 }
 
 .builder-floating-button[data-variant="simulate"] {
-  background: linear-gradient(135deg, rgba(0, 255, 176, 0.95), rgba(0, 204, 255, 0.88));
+  background: linear-gradient(145deg, rgba(0, 255, 176, 0.92), rgba(0, 204, 255, 0.85));
   border-color: rgba(136, 255, 220, 0.58);
   color: #02131f;
-  box-shadow: 0 16px 32px rgba(0, 204, 255, 0.24);
+  box-shadow: 0 14px 28px rgba(0, 204, 255, 0.2);
 }
 
 .builder-floating-button[data-variant="simulate"]:hover:not([disabled]) {
-  box-shadow: 0 22px 44px rgba(0, 204, 255, 0.32);
+  box-shadow: 0 20px 36px rgba(0, 204, 255, 0.26);
 }
 
 .builder-floating-button[data-pulse="true"] {
@@ -1244,15 +1288,51 @@ body.builder-body {
   outline-offset: 3px;
 }
 
+.builder-floating-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.builder-floating-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .builder-floating-action {
-    top: calc(88px + var(--builder-safe-area-top));
+    top: calc(64px + var(--builder-safe-area-top) + 12px);
   }
 
   .builder-floating-button {
-    padding: 9px 14px;
-    font-size: 9px;
-    letter-spacing: 0.16em;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .builder-floating-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .builder-floating-icon svg {
+    width: 18px;
+    height: 18px;
   }
 }
 
