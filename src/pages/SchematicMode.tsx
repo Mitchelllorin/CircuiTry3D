@@ -16,6 +16,7 @@ import WireTable, {
   type WorksheetEntry,
 } from "../components/practice/WireTable";
 import SolutionSteps from "../components/practice/SolutionSteps";
+import RenderCatalogDrawer, { RenderCatalogSection } from "../components/schematic/RenderCatalogDrawer";
 import { COMPONENT_CATALOG } from "../schematic/catalog";
 import {
   BoardLimits,
@@ -326,6 +327,8 @@ function PracticeModeView() {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
+  const [renderDrawerOpen, setRenderDrawerOpen] = useState(false);
+  const [renderDrawerDesktop, setRenderDrawerDesktop] = useState(false);
 
   const selectedProblem = useMemo(() => resolveProblem(selectedProblemId), [selectedProblemId]);
   const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
@@ -375,6 +378,42 @@ function PracticeModeView() {
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const media = window.matchMedia("(min-width: 1024px)");
+    const applyMatches = (matches: boolean) => {
+      setRenderDrawerDesktop(matches);
+      setRenderDrawerOpen(matches);
+    };
+
+    applyMatches(media.matches);
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      applyMatches(event.matches);
+    };
+
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (renderDrawerDesktop || !renderDrawerOpen || typeof window === "undefined") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setRenderDrawerOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [renderDrawerDesktop, renderDrawerOpen]);
+
+  useEffect(() => {
     setWorksheetEntries(baselineWorksheet);
     setWorksheetComplete(false);
     setTableRevealed(false);
@@ -399,6 +438,48 @@ function PracticeModeView() {
   })();
 
   const highlightKey = selectedProblem.targetMetric.key as WireMetricKey;
+
+  const renderCatalogSections = useMemo<RenderCatalogSection[]>(() => {
+    return TOPOLOGY_ORDER.map((topology) => {
+      const problems = grouped[topology] ?? [];
+      if (!problems.length) {
+        return null;
+      }
+      return {
+        key: topology,
+        label: TOPOLOGY_LABEL[topology],
+        items: problems.map((problem) => ({
+          id: problem.id,
+          title: problem.title,
+          topologyLabel: TOPOLOGY_LABEL[problem.topology],
+          difficultyLabel: DIFFICULTY_LABEL[problem.difficulty],
+          tags: problem.conceptTags,
+          summary: problem.prompt,
+          target: problem.targetQuestion,
+        })),
+      };
+    }).filter((section): section is RenderCatalogSection => Boolean(section));
+  }, [grouped]);
+
+  const handleOpenRenderDrawer = useCallback(() => {
+    setRenderDrawerOpen(true);
+  }, []);
+
+  const handleCloseRenderDrawer = useCallback(() => {
+    if (!renderDrawerDesktop) {
+      setRenderDrawerOpen(false);
+    }
+  }, [renderDrawerDesktop]);
+
+  const handleSelectProblem = useCallback(
+    (problemId: string) => {
+      setSelectedProblemId(problemId);
+      if (!renderDrawerDesktop) {
+        setRenderDrawerOpen(false);
+      }
+    },
+    [renderDrawerDesktop]
+  );
 
   const computeWorksheetComplete = (state: WorksheetState) =>
     tableRows.every((row) =>
@@ -486,175 +567,170 @@ function PracticeModeView() {
     }
   };
 
-  return (
-    <div className="schematic-shell">
-      <header className="schematic-header">
-        <div>
-          <h1>3D Schematic Mode</h1>
-          <p>
-            Load practice presets, manipulate the W.I.R.E. worksheet, and see the schematic rendered as floating 3D symbols.
-            Each preset mirrors the classic practice mode but presents the circuit in a playful spatial scene.
-          </p>
-        </div>
-      </header>
+    return (
+      <div className="schematic-shell">
+        <header className="schematic-header">
+          <div>
+            <h1>3D Schematic Mode</h1>
+            <p>
+              Load practice presets, manipulate the W.I.R.E. worksheet, and see the schematic rendered as floating 3D symbols.
+              Each preset mirrors the classic practice mode but presents the circuit in a playful spatial scene.
+            </p>
+          </div>
+        </header>
 
-      <div className="schematic-body">
-        <aside className="schematic-sidebar" aria-label="Practice preset selection">
-          <h2>Practice Presets</h2>
-          {TOPOLOGY_ORDER.map((topology) => {
-            const bucket = grouped[topology];
-            if (!bucket.length) {
-              return null;
-            }
-            return (
-              <section key={topology} className="schematic-problem-group">
-                <h3>{TOPOLOGY_LABEL[topology]}</h3>
-                <div className="problem-list">
-                  {bucket.map((problem) => (
-                    <button
-                      key={problem.id}
-                      type="button"
-                      className="problem-button"
-                      data-active={problem.id === selectedProblem.id ? "true" : undefined}
-                      onClick={() => setSelectedProblemId(problem.id)}
-                    >
-                      <strong>{problem.title}</strong>
-                      <small>
-                        {TOPOLOGY_LABEL[problem.topology]} · {DIFFICULTY_LABEL[problem.difficulty]}
-                      </small>
-                    </button>
+        {!renderDrawerDesktop && (
+          <div className="schematic-mobile-open">
+            <button type="button" className="render-drawer-toggle" onClick={handleOpenRenderDrawer}>
+              Browse 3D Renders
+            </button>
+          </div>
+        )}
+
+        <div className="schematic-body">
+          <RenderCatalogDrawer
+            open={renderDrawerOpen}
+            isDesktop={renderDrawerDesktop}
+            sections={renderCatalogSections}
+            selectedProblemId={selectedProblem.id}
+            onSelect={handleSelectProblem}
+            onClose={handleCloseRenderDrawer}
+          />
+
+          <section className="schematic-main" aria-live="polite">
+            <header className="schematic-main-header">
+              <div>
+                <h2>{selectedProblem.title}</h2>
+                <div className="schematic-meta">
+                  <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
+                  <span className="schematic-chip">{TOPOLOGY_LABEL[selectedProblem.topology]}</span>
+                  {selectedProblem.conceptTags.map((tag) => (
+                    <span key={tag} className="tag">
+                      {tag}
+                    </span>
                   ))}
                 </div>
-              </section>
-            );
-          })}
-        </aside>
-
-        <section className="schematic-main" aria-live="polite">
-          <header className="schematic-main-header">
-            <div>
-              <h2>{selectedProblem.title}</h2>
-              <div className="schematic-meta">
-                <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
-                <span className="schematic-chip">{TOPOLOGY_LABEL[selectedProblem.topology]}</span>
-                {selectedProblem.conceptTags.map((tag) => (
-                  <span key={tag} className="tag">
-                    {tag}
-                  </span>
-                ))}
               </div>
+            </header>
+
+            <div className="schematic-stage">
+              <SchematicViewport problem={selectedProblem} />
             </div>
-          </header>
 
-          <div className="schematic-stage">
-            <SchematicViewport problem={selectedProblem} />
-          </div>
+            <div className="schematic-main-grid">
+              <article className="schematic-card">
+                <h3>Practice Prompt</h3>
+                <p>{selectedProblem.prompt}</p>
+              </article>
+              <article className="schematic-card target-card">
+                <h3>Target Metric</h3>
+                <p className="target-question">{selectedProblem.targetQuestion}</p>
+                <div className="target-answer" aria-live="polite">
+                  {answerRevealed && Number.isFinite(targetValue) ? (
+                    <strong>
+                      {formatMetricValue(targetValue as number, selectedProblem.targetMetric.key)}
+                    </strong>
+                  ) : (
+                    <span>Reveal the answer once your worksheet is complete.</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="target-toggle"
+                  onClick={() => setAnswerRevealed((value) => !value)}
+                >
+                  {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
+                </button>
+              </article>
+              <article className="schematic-card">
+                <h3>{TOPOLOGY_CONTENT[selectedProblem.topology].title}</h3>
+                <p>{TOPOLOGY_CONTENT[selectedProblem.topology].summary}</p>
+                <ul>
+                  {TOPOLOGY_CONTENT[selectedProblem.topology].bulletPoints.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              </article>
+            </div>
+          </section>
 
-          <div className="schematic-main-grid">
-            <article className="schematic-card">
-              <h3>Practice Prompt</h3>
-              <p>{selectedProblem.prompt}</p>
-            </article>
-            <article className="schematic-card target-card">
-              <h3>Target Metric</h3>
-              <p className="target-question">{selectedProblem.targetQuestion}</p>
-              <div className="target-answer" aria-live="polite">
-                {answerRevealed && Number.isFinite(targetValue) ? (
-                  <strong>
-                    {formatMetricValue(targetValue as number, selectedProblem.targetMetric.key)}
-                  </strong>
-                ) : (
-                  <span>Reveal the answer once your worksheet is complete.</span>
-                )}
-              </div>
+          <aside className="schematic-panel">
+            <div className="worksheet-controls">
+              <button type="button" onClick={() => setTableRevealed((value) => !value)}>
+                {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
+              </button>
+              <button type="button" onClick={() => setStepsVisible((value) => !value)}>
+                {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
+              </button>
               <button
                 type="button"
-                className="target-toggle"
-                onClick={() => setAnswerRevealed((value) => !value)}
+                onClick={advanceToNextProblem}
+                disabled={!worksheetComplete}
+                className="next-problem"
               >
-                {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
+                {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
               </button>
-            </article>
-            <article className="schematic-card">
-              <h3>{TOPOLOGY_CONTENT[selectedProblem.topology].title}</h3>
-              <p>{TOPOLOGY_CONTENT[selectedProblem.topology].summary}</p>
+            </div>
+
+            <div
+              className="worksheet-status-banner"
+              role="status"
+              aria-live="polite"
+              data-complete={worksheetComplete ? "true" : undefined}
+            >
+              <div className="worksheet-status-header">
+                <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
+              </div>
+              <span>
+                {worksheetComplete
+                  ? "Every unknown matches the solved circuit. Advance when you're ready."
+                  : "Enter the missing watts, amps, ohms, and volts using the 3D schematic as your guide."}
+              </span>
+            </div>
+
+            <div className="worksheet-sync" role="status" aria-live="polite">
+              <strong>Synced to schematic</strong>
+              <span>
+                {`Preset givens from ${selectedProblem.title} are locked in. Update only the unknowns and compare against the 3D layout.`}
+              </span>
+            </div>
+
+            <div className="schematic-worksheet-wrapper">
+              <WireTable
+                rows={tableRows}
+                revealAll={tableRevealed}
+                highlight={{ rowId: highlightRowId, key: highlightKey }}
+                entries={worksheetEntries}
+                onChange={handleWorksheetChange}
+              />
+            </div>
+
+            <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
+
+            <aside className="schematic-legend">
+              <h3>Symbol Legend</h3>
               <ul>
-                {TOPOLOGY_CONTENT[selectedProblem.topology].bulletPoints.map((point) => (
-                  <li key={point}>{point}</li>
+                {LEGEND_ITEMS.map((item) => (
+                  <li key={item.label}>
+                    <span className="legend-term">{item.label}</span>
+                    <span className="legend-desc">{item.description}</span>
+                  </li>
                 ))}
               </ul>
-            </article>
-          </div>
-        </section>
-
-        <aside className="schematic-panel">
-          <div className="worksheet-controls">
-            <button type="button" onClick={() => setTableRevealed((value) => !value)}>
-              {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
-            </button>
-            <button type="button" onClick={() => setStepsVisible((value) => !value)}>
-              {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
-            </button>
-            <button
-              type="button"
-              onClick={advanceToNextProblem}
-              disabled={!worksheetComplete}
-              className="next-problem"
-            >
-              {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
-            </button>
-          </div>
-
-          <div
-            className="worksheet-status-banner"
-            role="status"
-            aria-live="polite"
-            data-complete={worksheetComplete ? "true" : undefined}
-          >
-            <div className="worksheet-status-header">
-              <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
-            </div>
-            <span>
-              {worksheetComplete
-                ? "Every unknown matches the solved circuit. Advance when you're ready."
-                : "Enter the missing watts, amps, ohms, and volts using the 3D schematic as your guide."}
-            </span>
-          </div>
-
-          <div className="worksheet-sync" role="status" aria-live="polite">
-            <strong>Synced to schematic</strong>
-            <span>
-              {`Preset givens from ${selectedProblem.title} are locked in. Update only the unknowns and compare against the 3D layout.`}
-            </span>
-          </div>
-
-          <div className="schematic-worksheet-wrapper">
-            <WireTable
-              rows={tableRows}
-              revealAll={tableRevealed}
-              highlight={{ rowId: highlightRowId, key: highlightKey }}
-              entries={worksheetEntries}
-              onChange={handleWorksheetChange}
-            />
-          </div>
-
-          <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
-
-          <aside className="schematic-legend">
-            <h3>Symbol Legend</h3>
-            <ul>
-              {LEGEND_ITEMS.map((item) => (
-                <li key={item.label}>
-                  <span className="legend-term">{item.label}</span>
-                  <span className="legend-desc">{item.description}</span>
-                </li>
-              ))}
-            </ul>
+            </aside>
           </aside>
-        </aside>
+        </div>
+
+        {!renderDrawerDesktop && (
+          <div
+            className="render-drawer-backdrop"
+            data-open={renderDrawerOpen ? "true" : undefined}
+            onClick={handleCloseRenderDrawer}
+            aria-hidden="true"
+          />
+        )}
       </div>
-    </div>
-  );
+    );
 }
 
 function BuilderModeView() {
