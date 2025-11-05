@@ -1772,8 +1772,8 @@ export default function Builder() {
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const leftFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px) + var(--builder-menu-toggle-side-width) + 12px)";
-  const rightFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px) + var(--builder-menu-toggle-side-width) + 12px)";
+  const leftFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px) + 48px + 12px)";
+  const rightFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px) + 48px + 12px)";
 
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
@@ -2280,9 +2280,14 @@ export default function Builder() {
           onClick={handleClearWorkspace}
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
+          aria-label="Clear workspace"
           title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
         >
-          Clear Workspace
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm2 8v7h2v-7h-2zm-4 0v7h2v-7H7zm8 0v7h2v-7h-2z" />
+            </svg>
+          </span>
         </button>
       </div>
       <div
@@ -2297,9 +2302,14 @@ export default function Builder() {
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
           data-pulse={isSimulatePulsing ? "true" : undefined}
+          aria-label="Run simulation"
           title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
         >
-          Run Simulation
+          <span className="builder-floating-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
         </button>
       </div>
 
