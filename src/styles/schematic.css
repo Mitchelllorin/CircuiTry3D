@@ -1,4 +1,3 @@
-
 .schematic-shell {
   display: flex;
   flex-direction: column;
@@ -72,7 +71,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.72rem;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .schematic-standard-button:hover,
@@ -84,7 +86,11 @@
 
 .schematic-standard-button.is-active {
   border-color: rgba(0, 208, 255, 0.85);
-  background: linear-gradient(135deg, rgba(0, 200, 255, 0.2), rgba(56, 228, 200, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 200, 255, 0.2),
+    rgba(56, 228, 200, 0.2)
+  );
   box-shadow: 0 10px 24px rgba(0, 160, 255, 0.18);
 }
 
@@ -98,7 +104,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.78rem;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .schematic-toggle:hover,
@@ -110,13 +119,20 @@
 
 .schematic-toggle.is-active {
   border-color: rgba(0, 208, 255, 0.9);
-  background: linear-gradient(135deg, rgba(0, 200, 255, 0.22), rgba(60, 228, 200, 0.22));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 200, 255, 0.22),
+    rgba(60, 228, 200, 0.22)
+  );
   box-shadow: 0 12px 32px rgba(0, 165, 255, 0.2);
 }
 
 .schematic-body {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(320px, 420px);
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(
+      320px,
+      420px
+    );
   gap: 24px;
   align-items: start;
 }
@@ -130,13 +146,21 @@
 }
 
 .schematic-sidebar {
-  background: linear-gradient(168deg, rgba(10, 24, 44, 0.9), rgba(4, 10, 22, 0.92));
+  background: linear-gradient(
+    168deg,
+    rgba(10, 24, 44, 0.9),
+    rgba(4, 10, 22, 0.92)
+  );
   border: 1px solid rgba(70, 128, 220, 0.24);
   border-radius: 22px;
-  padding: 24px 20px;
+  padding: 20px 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+  position: relative;
+  width: clamp(240px, 24vw, 360px);
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .schematic-sidebar h2 {
@@ -161,7 +185,11 @@
 
 .schematic-stage {
   position: relative;
-  background: linear-gradient(155deg, rgba(3, 12, 28, 0.96), rgba(10, 26, 52, 0.92));
+  background: linear-gradient(
+    155deg,
+    rgba(3, 12, 28, 0.96),
+    rgba(10, 26, 52, 0.92)
+  );
   border-radius: 28px;
   padding: 18px;
   border: 1px solid rgba(70, 130, 255, 0.2);
@@ -174,8 +202,17 @@
   min-height: clamp(360px, 60vh, 640px);
   border-radius: 20px;
   overflow: hidden;
-  background: radial-gradient(circle at 20% 20%, rgba(0, 208, 255, 0.08), transparent 55%),
-    radial-gradient(circle at 80% 80%, rgba(144, 96, 255, 0.08), transparent 65%);
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(0, 208, 255, 0.08),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(144, 96, 255, 0.08),
+      transparent 65%
+    );
 }
 
 .schematic-canvas {
@@ -195,7 +232,11 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(218, 236, 255, 0.92);
-  background: linear-gradient(135deg, rgba(2, 12, 26, 0.9), rgba(6, 16, 32, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(2, 12, 26, 0.9),
+    rgba(6, 16, 32, 0.9)
+  );
 }
 
 .schematic-status.schematic-error {
@@ -234,7 +275,11 @@
 .schematic-feedback {
   padding: 10px 14px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(30, 94, 255, 0.4), rgba(0, 180, 216, 0.35));
+  background: linear-gradient(
+    135deg,
+    rgba(30, 94, 255, 0.4),
+    rgba(0, 180, 216, 0.35)
+  );
   border: 1px solid rgba(116, 200, 255, 0.45);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
@@ -303,7 +348,10 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
 }
 
 .problem-button:hover,
@@ -315,7 +363,11 @@
 
 .problem-button[data-active="true"] {
   border-color: rgba(0, 208, 255, 0.9);
-  background: linear-gradient(135deg, rgba(0, 200, 255, 0.2), rgba(56, 228, 200, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 200, 255, 0.2),
+    rgba(56, 228, 200, 0.2)
+  );
   box-shadow: 0 10px 24px rgba(0, 160, 255, 0.18);
 }
 
@@ -339,7 +391,11 @@
 .schematic-card {
   padding: 24px;
   border-radius: 24px;
-  background: linear-gradient(150deg, rgba(8, 18, 36, 0.92), rgba(4, 17, 34, 0.94));
+  background: linear-gradient(
+    150deg,
+    rgba(8, 18, 36, 0.92),
+    rgba(4, 17, 34, 0.94)
+  );
   border: 1px solid rgba(72, 124, 255, 0.18);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -415,7 +471,10 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-size: 0.78rem;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .target-toggle:hover,
@@ -430,10 +489,63 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  background: linear-gradient(158deg, rgba(8, 20, 38, 0.94), rgba(5, 12, 26, 0.94));
+  background: linear-gradient(
+    158deg,
+    rgba(8, 20, 38, 0.94),
+    rgba(5, 12, 26, 0.94)
+  );
   border: 1px solid rgba(70, 124, 220, 0.22);
   border-radius: 26px;
   padding: 24px;
+}
+
+.schematic-drawer-toggle {
+  align-self: stretch;
+  border-radius: 14px;
+  border: 1px solid rgba(90, 150, 255, 0.32);
+  background: rgba(8, 22, 44, 0.78);
+  color: inherit;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.schematic-drawer-toggle:hover,
+.schematic-drawer-toggle:focus-visible {
+  border-color: rgba(140, 210, 255, 0.6);
+  background: rgba(16, 36, 72, 0.86);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.schematic-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  margin-top: 6px;
+  padding-right: 6px;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.25s ease;
+  max-height: calc(100% - 48px);
+}
+
+.schematic-sidebar[data-open="false"] .schematic-drawer-body {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.schematic-sidebar[data-open="false"] {
+  gap: 10px;
+  padding-bottom: 20px;
 }
 
 .schematic-panel .worksheet-controls {
@@ -452,7 +564,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .schematic-panel .worksheet-controls button:hover:enabled {
@@ -467,7 +582,11 @@
 }
 
 .next-problem {
-  background: linear-gradient(135deg, rgba(0, 184, 255, 0.24), rgba(28, 220, 180, 0.24)) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 184, 255, 0.24),
+    rgba(28, 220, 180, 0.24)
+  ) !important;
   border-color: rgba(0, 208, 255, 0.6) !important;
 }
 
@@ -488,7 +607,11 @@
 }
 
 .worksheet-status-banner[data-complete="true"] {
-  background: linear-gradient(135deg, rgba(32, 120, 200, 0.35), rgba(52, 216, 188, 0.35));
+  background: linear-gradient(
+    135deg,
+    rgba(32, 120, 200, 0.35),
+    rgba(52, 216, 188, 0.35)
+  );
   border-color: rgba(104, 198, 255, 0.6);
 }
 
@@ -528,7 +651,11 @@
 .schematic-legend {
   padding: 24px;
   border-radius: 24px;
-  background: linear-gradient(150deg, rgba(12, 24, 48, 0.92), rgba(6, 16, 34, 0.94));
+  background: linear-gradient(
+    150deg,
+    rgba(12, 24, 48, 0.92),
+    rgba(6, 16, 34, 0.94)
+  );
   border: 1px solid rgba(64, 120, 255, 0.18);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
@@ -571,7 +698,11 @@
 .schematic-catalog {
   padding: 20px;
   border-radius: 24px;
-  background: linear-gradient(150deg, rgba(12, 24, 48, 0.92), rgba(6, 16, 34, 0.94));
+  background: linear-gradient(
+    150deg,
+    rgba(12, 24, 48, 0.92),
+    rgba(6, 16, 34, 0.94)
+  );
   border: 1px solid rgba(64, 120, 255, 0.18);
   display: flex;
   flex-direction: column;
@@ -602,7 +733,10 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .catalog-entry:hover {
@@ -613,7 +747,11 @@
 
 .catalog-entry.is-selected {
   border-color: rgba(0, 210, 255, 0.75);
-  background: linear-gradient(135deg, rgba(0, 204, 255, 0.18), rgba(64, 228, 200, 0.18));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 204, 255, 0.18),
+    rgba(64, 228, 200, 0.18)
+  );
   box-shadow: 0 12px 32px rgba(0, 170, 255, 0.18);
 }
 
@@ -674,7 +812,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .schematic-actions button:hover:enabled {
@@ -731,7 +872,9 @@
   text-align: left;
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .element-button:hover {
@@ -741,7 +884,11 @@
 
 .element-button.is-selected {
   border-color: rgba(0, 200, 255, 0.65);
-  background: linear-gradient(135deg, rgba(0, 190, 255, 0.18), rgba(56, 228, 200, 0.18));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 190, 255, 0.18),
+    rgba(56, 228, 200, 0.18)
+  );
 }
 
 .element-title {

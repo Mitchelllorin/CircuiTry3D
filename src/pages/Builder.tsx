@@ -1,10 +1,16 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import ArenaView from "../components/arena/ArenaView";
 import Practice from "./Practice";
 import BuilderWorkspace from "../components/schematic/BuilderWorkspace";
-import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 import {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -12,6 +18,11 @@ import {
   getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import type { PracticeProblem } from "../model/practice";
+import {
+  DEFAULT_SYMBOL_STANDARD,
+  SYMBOL_STANDARD_OPTIONS,
+  type SymbolStandard,
+} from "../schematic/standards";
 
 type BuilderInvokeAction =
   | "toggle-wire-mode"
@@ -41,7 +52,10 @@ type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
   | { type: "builder:set-analysis-open"; payload: { open: boolean } }
-  | { type: "builder:invoke-action"; payload: { action: BuilderInvokeAction; data?: Record<string, unknown> } }
+  | {
+      type: "builder:invoke-action";
+      payload: { action: BuilderInvokeAction; data?: Record<string, unknown> };
+    }
   | { type: "builder:request-mode-state" }
   | {
       type: "builder:export-arena";
@@ -97,7 +111,14 @@ type HelpLegendItem = {
   label: string;
 };
 
- type HelpModalView = "overview" | "tutorial" | "wire-guide" | "schematic" | "practice" | "shortcuts" | "about";
+type HelpModalView =
+  | "overview"
+  | "tutorial"
+  | "wire-guide"
+  | "schematic"
+  | "practice"
+  | "shortcuts"
+  | "about";
 
 type HelpEntry = {
   id: string;
@@ -107,10 +128,34 @@ type HelpEntry = {
 };
 
 const COMPONENT_ACTIONS: ComponentAction[] = [
-  { id: "battery", icon: "B", label: "Battery", action: "component", builderType: "battery" },
-  { id: "resistor", icon: "R", label: "Resistor", action: "component", builderType: "resistor" },
-  { id: "led", icon: "LED", label: "LED", action: "component", builderType: "led" },
-  { id: "switch", icon: "SW", label: "Switch", action: "component", builderType: "switch" },
+  {
+    id: "battery",
+    icon: "B",
+    label: "Battery",
+    action: "component",
+    builderType: "battery",
+  },
+  {
+    id: "resistor",
+    icon: "R",
+    label: "Resistor",
+    action: "component",
+    builderType: "resistor",
+  },
+  {
+    id: "led",
+    icon: "LED",
+    label: "LED",
+    action: "component",
+    builderType: "led",
+  },
+  {
+    id: "switch",
+    icon: "SW",
+    label: "Switch",
+    action: "component",
+    builderType: "switch",
+  },
   { id: "junction", icon: "J", label: "Junction", action: "junction" },
 ];
 
@@ -178,7 +223,10 @@ type SettingsItem = {
   label: string;
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
-  getDescription: (state: LegacyModeState, helpers: { currentFlowLabel: string }) => string;
+  getDescription: (
+    state: LegacyModeState,
+    helpers: { currentFlowLabel: string },
+  ) => string;
   isActive?: (state: LegacyModeState) => boolean;
 };
 
@@ -225,7 +273,12 @@ type BuilderLogoSettings = {
   isVisible: boolean;
 };
 
-type LogoNumericSettingKey = "speed" | "travelX" | "travelY" | "bounce" | "opacity";
+type LogoNumericSettingKey =
+  | "speed"
+  | "travelX"
+  | "travelY"
+  | "bounce"
+  | "opacity";
 
 const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
 const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
@@ -248,7 +301,8 @@ const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "wire-mode",
     label: "Wire Mode",
-    description: "Switch into wiring mode to pick freeform, schematic (90 deg), star, or auto-routing paths.",
+    description:
+      "Switch into wiring mode to pick freeform, schematic (90 deg), star, or auto-routing paths.",
     action: "toggle-wire-mode",
   },
   {
@@ -324,28 +378,34 @@ const SETTINGS_ITEMS: SettingsItem[] = [
     id: "flow-visualisation",
     label: "Flow Visualisation",
     action: "toggle-current-flow",
-    getDescription: (_state, { currentFlowLabel }) => `${currentFlowLabel} visualisation active`,
+    getDescription: (_state, { currentFlowLabel }) =>
+      `${currentFlowLabel} visualisation active`,
     isActive: (state) => state.currentFlowStyle === "solid",
   },
   {
     id: "polarity-markers",
     label: "Polarity Markers",
     action: "toggle-polarity",
-    getDescription: (state) => (state.showPolarityIndicators ? "Polarity markers visible" : "Polarity markers hidden"),
+    getDescription: (state) =>
+      state.showPolarityIndicators
+        ? "Polarity markers visible"
+        : "Polarity markers hidden",
     isActive: (state) => state.showPolarityIndicators,
   },
   {
     id: "design-grid",
     label: "Design Grid",
     action: "toggle-grid",
-    getDescription: (state) => (state.showGrid ? "Grid visible" : "Grid hidden"),
+    getDescription: (state) =>
+      state.showGrid ? "Grid visible" : "Grid hidden",
     isActive: (state) => state.showGrid,
   },
   {
     id: "component-labels",
     label: "Component Labels",
     action: "toggle-labels",
-    getDescription: (state) => (state.showLabels ? "Labels shown" : "Labels hidden"),
+    getDescription: (state) =>
+      state.showLabels ? "Labels shown" : "Labels hidden",
     isActive: (state) => state.showLabels,
   },
 ];
@@ -369,7 +429,8 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     id: "series-basic",
     label: "Series Circuit",
     question: "Series loop: solve for total current (I_T).",
-    description: "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
+    description:
+      "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
     preset: "series_basic",
     problemId: "series-square-01",
   },
@@ -377,7 +438,8 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     id: "parallel-basic",
     label: "Parallel Circuit",
     question: "Parallel bus: find equivalent resistance and branch currents.",
-    description: "Use W.I.R.E. to capture knowns, compute R_T with reciprocals, and check KCL/KVL compliance.",
+    description:
+      "Use W.I.R.E. to capture knowns, compute R_T with reciprocals, and check KCL/KVL compliance.",
     preset: "parallel_basic",
     problemId: "parallel-square-02",
   },
@@ -385,7 +447,8 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     id: "mixed-circuit",
     label: "Mixed Circuit",
     question: "Series-parallel combo: reduce and solve the ladder.",
-    description: "Collapse branches with W.I.R.E., select the right Ohm's Law form, and verify against Kirchhoff.",
+    description:
+      "Collapse branches with W.I.R.E., select the right Ohm's Law form, and verify against Kirchhoff.",
     preset: "mixed_circuit",
     problemId: "combo-square-03",
   },
@@ -393,7 +456,8 @@ const PRACTICE_SCENARIOS: PracticeScenario[] = [
     id: "combo-challenge",
     label: "Combo Challenge",
     question: "Multi-loop combo: determine every unknown.",
-    description: "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
+    description:
+      "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
     preset: "combination_advanced",
     problemId: "combo-square-03",
   },
@@ -415,7 +479,8 @@ const PRACTICE_ACTIONS: PanelAction[] = [
   {
     id: "open-arena",
     label: "Component Arena Sync",
-    description: "Export the active build and open the Component Arena for testing.",
+    description:
+      "Export the active build and open the Component Arena for testing.",
     action: "open-arena",
   },
 ];
@@ -527,9 +592,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
   },
   {
     title: "View Controls & Tips",
-    paragraphs: [
-      "Keep the scene readable while you iterate on designs.",
-    ],
+    paragraphs: ["Keep the scene readable while you iterate on designs."],
     bullets: [
       "Reset View recentres the camera; Fit to Screen frames the active circuit.",
       "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
@@ -553,9 +616,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   },
   {
     title: "W - Watts (Power)",
-    paragraphs: [
-      "Watts describe how much energy a circuit uses each second.",
-    ],
+    paragraphs: ["Watts describe how much energy a circuit uses each second."],
     bullets: [
       "Formula: P = V x I.",
       "Watch for power changes as you adjust voltage or current.",
@@ -564,9 +625,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   },
   {
     title: "I - Current (Amperes)",
-    paragraphs: [
-      "Current is the flow rate of electrons through the circuit.",
-    ],
+    paragraphs: ["Current is the flow rate of electrons through the circuit."],
     bullets: [
       "Formula: I = V / R (Ohm's Law).",
       "Compare electron flow and conventional current visualisations inside the workspace.",
@@ -586,9 +645,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   },
   {
     title: "E - EMF / Voltage (Volts)",
-    paragraphs: [
-      "Voltage is the electrical pressure supplied by your source.",
-    ],
+    paragraphs: ["Voltage is the electrical pressure supplied by your source."],
     bullets: [
       "Formula: V = I x R.",
       "Raising voltage increases current if resistance stays the same.",
@@ -597,9 +654,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   },
   {
     title: "Key Formulas",
-    paragraphs: [
-      "Keep the classic triangles in mind when solving problems.",
-    ],
+    paragraphs: ["Keep the classic triangles in mind when solving problems."],
     bullets: [
       "Ohm's Law triangle (E over I and R) helps rearrange for voltage, current, or resistance.",
       "Power triangle (P over V and I) ties wattage to voltage and current.",
@@ -655,9 +710,7 @@ const SCHEMATIC_SECTIONS: HelpSection[] = [
   },
   {
     title: "Layout Checklist",
-    paragraphs: [
-      "Before sharing a schematic, run through this quick audit.",
-    ],
+    paragraphs: ["Before sharing a schematic, run through this quick audit."],
     bullets: [
       "Power enters top/left, returns bottom/right; functional blocks flow left-to-right (inputs to outputs).",
       "Group related components (filters, bias networks, bridges) inside neat rectangles or subtle callouts.",
@@ -771,11 +824,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "View Control",
-    bullets: [
-      "H - reset camera",
-      "F - fit to screen",
-      "G - toggle grid",
-    ],
+    bullets: ["H - reset camera", "F - fit to screen", "G - toggle grid"],
   },
   {
     title: "Mouse Actions",
@@ -888,41 +937,56 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
 ];
 
-const HELP_VIEW_CONTENT: Record<HelpModalView, { title: string; description?: string; sections: HelpSection[]; showLegend?: boolean }> = {
+const HELP_VIEW_CONTENT: Record<
+  HelpModalView,
+  {
+    title: string;
+    description?: string;
+    sections: HelpSection[];
+    showLegend?: boolean;
+  }
+> = {
   overview: {
     title: "CircuiTry3D Help Center",
-    description: "Browse quick-start advice, navigation tips, and the W.I.R.E. legend.",
+    description:
+      "Browse quick-start advice, navigation tips, and the W.I.R.E. legend.",
     sections: HELP_SECTIONS,
     showLegend: true,
   },
-  "tutorial": {
+  tutorial: {
     title: "Guided Tutorial",
-    description: "Follow the guided walkthrough tailored for the modern interface.",
+    description:
+      "Follow the guided walkthrough tailored for the modern interface.",
     sections: TUTORIAL_SECTIONS,
   },
   "wire-guide": {
     title: "W.I.R.E. Guide",
-    description: "Understand how Watts, Current, Resistance, and Voltage relate while you design.",
+    description:
+      "Understand how Watts, Current, Resistance, and Voltage relate while you design.",
     sections: WIRE_GUIDE_SECTIONS,
   },
-  "schematic": {
+  schematic: {
     title: "Schematic Layout Guide",
-    description: "Apply industry schematic standards while wiring inside the Builder.",
+    description:
+      "Apply industry schematic standards while wiring inside the Builder.",
     sections: SCHEMATIC_SECTIONS,
   },
   practice: {
     title: "Table Method Worksheet",
-    description: "Log the givens, pick the matching formula, and solve every W.I.R.E. slot step by step.",
+    description:
+      "Log the givens, pick the matching formula, and solve every W.I.R.E. slot step by step.",
     sections: TABLE_METHOD_SECTIONS,
   },
-  "shortcuts": {
+  shortcuts: {
     title: "Keyboard & Gesture Shortcuts",
-    description: "Reference the complete set of controls for desktop and mobile builders.",
+    description:
+      "Reference the complete set of controls for desktop and mobile builders.",
     sections: SHORTCUT_SECTIONS,
   },
-  "about": {
+  about: {
     title: "About CircuiTry3D",
-    description: "Review feature highlights, learning goals, and support resources.",
+    description:
+      "Review feature highlights, learning goals, and support resources.",
     sections: ABOUT_SECTIONS,
   },
 };
@@ -931,7 +995,8 @@ const HELP_ENTRIES: HelpEntry[] = [
   {
     id: "practice",
     label: "Table Method Worksheet",
-    description: "Open the W.I.R.E. table method steps plus a printable worksheet.",
+    description:
+      "Open the W.I.R.E. table method steps plus a printable worksheet.",
     view: "practice",
   },
   {
@@ -943,31 +1008,36 @@ const HELP_ENTRIES: HelpEntry[] = [
   {
     id: "wire-guide",
     label: "W.I.R.E. Guide",
-    description: "Break down Watts, Current, Resistance, and Voltage in detail.",
+    description:
+      "Break down Watts, Current, Resistance, and Voltage in detail.",
     view: "wire-guide",
   },
   {
     id: "schematic",
     label: "Schematic Standards",
-    description: "Reference best practices for clean, recognisable circuit diagrams.",
+    description:
+      "Reference best practices for clean, recognisable circuit diagrams.",
     view: "schematic",
   },
   {
     id: "shortcuts",
     label: "Keyboard Shortcuts",
-    description: "Look up every keyboard, mouse, and touch shortcut in one place.",
+    description:
+      "Look up every keyboard, mouse, and touch shortcut in one place.",
     view: "shortcuts",
   },
   {
     id: "about",
     label: "About CircuiTry3D",
-    description: "Learn what is new in v2.5 and how the simulator supports teaching.",
+    description:
+      "Learn what is new in v2.5 and how the simulator supports teaching.",
     view: "about",
   },
   {
     id: "help-center",
     label: "Help Center",
-    description: "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
+    description:
+      "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
     view: "overview",
   },
 ];
@@ -1015,7 +1085,10 @@ const IconPlay = ({ className }: IconProps) => (
   </svg>
 );
 
-function subscribeToMediaQuery(query: MediaQueryList, listener: (event: MediaQueryListEvent) => void) {
+function subscribeToMediaQuery(
+  query: MediaQueryList,
+  listener: (event: MediaQueryListEvent) => void,
+) {
   if (typeof query.addEventListener === "function") {
     query.addEventListener("change", listener);
     return () => query.removeEventListener("change", listener);
@@ -1031,14 +1104,18 @@ function subscribeToMediaQuery(query: MediaQueryList, listener: (event: MediaQue
 export default function Builder() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
-  const pendingArenaRequests = useRef<Map<string, { openWindow: boolean }>>(new Map());
+  const pendingArenaRequests = useRef<Map<string, { openWindow: boolean }>>(
+    new Map(),
+  );
   const simulationPulseTimer = useRef<number | null>(null);
   const helpSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const floatingLogoRef = useRef<HTMLDivElement | null>(null);
   const floatingLogoAnimationRef = useRef<number | null>(null);
   const [isFrameReady, setFrameReady] = useState(false);
   const [isHelpOpen, setHelpOpen] = useState(false);
-  const [requestedHelpSection, setRequestedHelpSection] = useState<string | null>(null);
+  const [requestedHelpSection, setRequestedHelpSection] = useState<
+    string | null
+  >(null);
   const [helpView, setHelpView] = useState<HelpModalView>("overview");
   const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") {
@@ -1048,7 +1125,8 @@ export default function Builder() {
   });
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
-  const [activeQuickTool, setActiveQuickTool] = useState<BuilderToolId>("select");
+  const [activeQuickTool, setActiveQuickTool] =
+    useState<BuilderToolId>("select");
   const [modeState, setModeState] = useState<LegacyModeState>({
     isWireMode: false,
     isRotateMode: false,
@@ -1061,17 +1139,22 @@ export default function Builder() {
     showLabels: true,
   });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
-  const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
+  const [arenaExportStatus, setArenaExportStatus] =
+    useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
-  const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
+  const [lastArenaExport, setLastArenaExport] =
+    useState<ArenaExportSummary | null>(null);
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
   const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
-  const [schematicSymbolStandard, setSchematicSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
-  const [activePracticeProblemId, setActivePracticeProblemId] = useState<string | null>(
-    DEFAULT_PRACTICE_PROBLEM?.id ?? null
+  const [schematicStandard, setSchematicStandard] = useState<SymbolStandard>(
+    DEFAULT_SYMBOL_STANDARD,
   );
-  const [practiceWorksheetState, setPracticeWorksheetState] = useState<PracticeWorksheetStatus | null>(null);
+  const [activePracticeProblemId, setActivePracticeProblemId] = useState<
+    string | null
+  >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
+  const [practiceWorksheetState, setPracticeWorksheetState] =
+    useState<PracticeWorksheetStatus | null>(null);
   const [logoSettings, setLogoSettings] = useState<BuilderLogoSettings>(() => {
     if (typeof window === "undefined") {
       return DEFAULT_LOGO_SETTINGS;
@@ -1085,26 +1168,66 @@ export default function Builder() {
 
       const parsed = JSON.parse(stored) as Partial<BuilderLogoSettings>;
       return {
-        speed: clamp(typeof parsed.speed === "number" ? parsed.speed : DEFAULT_LOGO_SETTINGS.speed, 6, 60),
-        travelX: clamp(typeof parsed.travelX === "number" ? parsed.travelX : DEFAULT_LOGO_SETTINGS.travelX, 10, 100),
-        travelY: clamp(typeof parsed.travelY === "number" ? parsed.travelY : DEFAULT_LOGO_SETTINGS.travelY, 10, 100),
-        bounce: clamp(typeof parsed.bounce === "number" ? parsed.bounce : DEFAULT_LOGO_SETTINGS.bounce, 0, 120),
-        opacity: clamp(typeof parsed.opacity === "number" ? parsed.opacity : DEFAULT_LOGO_SETTINGS.opacity, 0, 100),
-        isVisible: typeof parsed.isVisible === "boolean" ? parsed.isVisible : DEFAULT_LOGO_SETTINGS.isVisible,
+        speed: clamp(
+          typeof parsed.speed === "number"
+            ? parsed.speed
+            : DEFAULT_LOGO_SETTINGS.speed,
+          6,
+          60,
+        ),
+        travelX: clamp(
+          typeof parsed.travelX === "number"
+            ? parsed.travelX
+            : DEFAULT_LOGO_SETTINGS.travelX,
+          10,
+          100,
+        ),
+        travelY: clamp(
+          typeof parsed.travelY === "number"
+            ? parsed.travelY
+            : DEFAULT_LOGO_SETTINGS.travelY,
+          10,
+          100,
+        ),
+        bounce: clamp(
+          typeof parsed.bounce === "number"
+            ? parsed.bounce
+            : DEFAULT_LOGO_SETTINGS.bounce,
+          0,
+          120,
+        ),
+        opacity: clamp(
+          typeof parsed.opacity === "number"
+            ? parsed.opacity
+            : DEFAULT_LOGO_SETTINGS.opacity,
+          0,
+          100,
+        ),
+        isVisible:
+          typeof parsed.isVisible === "boolean"
+            ? parsed.isVisible
+            : DEFAULT_LOGO_SETTINGS.isVisible,
       };
     } catch {
       return DEFAULT_LOGO_SETTINGS;
     }
   });
   const [isLogoSettingsOpen, setLogoSettingsOpen] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return false;
-    }
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(
+    () => {
+      if (
+        typeof window === "undefined" ||
+        typeof window.matchMedia !== "function"
+      ) {
+        return false;
+      }
 
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
-  const practiceProblemRef = useRef<string | null>(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    },
+  );
+  const practiceProblemRef = useRef<string | null>(
+    DEFAULT_PRACTICE_PROBLEM?.id ?? null,
+  );
   const appBasePath = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1130,7 +1253,10 @@ export default function Builder() {
       }
 
       if (type === "legacy:tool-state") {
-        const tool = typeof (payload as { tool?: string })?.tool === "string" ? (payload as { tool?: string }).tool : undefined;
+        const tool =
+          typeof (payload as { tool?: string })?.tool === "string"
+            ? (payload as { tool?: string }).tool
+            : undefined;
         if (tool === "wire" || tool === "measure") {
           setActiveQuickTool(tool);
         } else {
@@ -1154,11 +1280,21 @@ export default function Builder() {
         const next = payload as Partial<LegacyModeState>;
         setModeState((previous) => ({
           ...previous,
-          isWireMode: typeof next.isWireMode === "boolean" ? next.isWireMode : previous.isWireMode,
-          isRotateMode: typeof next.isRotateMode === "boolean" ? next.isRotateMode : previous.isRotateMode,
-          isMeasureMode: typeof next.isMeasureMode === "boolean" ? next.isMeasureMode : previous.isMeasureMode,
+          isWireMode:
+            typeof next.isWireMode === "boolean"
+              ? next.isWireMode
+              : previous.isWireMode,
+          isRotateMode:
+            typeof next.isRotateMode === "boolean"
+              ? next.isRotateMode
+              : previous.isRotateMode,
+          isMeasureMode:
+            typeof next.isMeasureMode === "boolean"
+              ? next.isMeasureMode
+              : previous.isMeasureMode,
           currentFlowStyle:
-            typeof next.currentFlowStyle === "string" && next.currentFlowStyle.trim() !== ""
+            typeof next.currentFlowStyle === "string" &&
+            next.currentFlowStyle.trim() !== ""
               ? next.currentFlowStyle
               : previous.currentFlowStyle,
           showPolarityIndicators:
@@ -1170,11 +1306,18 @@ export default function Builder() {
               ? next.layoutMode
               : previous.layoutMode,
           wireRoutingMode:
-            typeof next.wireRoutingMode === "string" && next.wireRoutingMode.trim() !== ""
+            typeof next.wireRoutingMode === "string" &&
+            next.wireRoutingMode.trim() !== ""
               ? next.wireRoutingMode
               : previous.wireRoutingMode,
-          showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
-          showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
+          showGrid:
+            typeof next.showGrid === "boolean"
+              ? next.showGrid
+              : previous.showGrid,
+          showLabels:
+            typeof next.showLabels === "boolean"
+              ? next.showLabels
+              : previous.showLabels,
         }));
         return;
       }
@@ -1198,7 +1341,10 @@ export default function Builder() {
           setArenaExportError(null);
           setLastArenaExport(summary);
 
-          const requestId = typeof summary.requestId === "string" ? summary.requestId : undefined;
+          const requestId =
+            typeof summary.requestId === "string"
+              ? summary.requestId
+              : undefined;
           let shouldOpenWindow = false;
 
           if (requestId) {
@@ -1223,7 +1369,10 @@ export default function Builder() {
       }
 
       if (type === "legacy:arena-export:error") {
-        const errorPayload = (payload || {}) as { message?: string; requestId?: string };
+        const errorPayload = (payload || {}) as {
+          message?: string;
+          requestId?: string;
+        };
         setArenaExportStatus("error");
         setArenaExportError(errorPayload?.message || "Arena export failed");
         if (errorPayload?.requestId) {
@@ -1231,7 +1380,6 @@ export default function Builder() {
         }
         return;
       }
-
     };
 
     window.addEventListener("message", handleMessage);
@@ -1257,7 +1405,10 @@ export default function Builder() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
       return;
     }
 
@@ -1276,7 +1427,10 @@ export default function Builder() {
     }
 
     try {
-      window.localStorage.setItem(LOGO_SETTINGS_STORAGE_KEY, JSON.stringify(logoSettings));
+      window.localStorage.setItem(
+        LOGO_SETTINGS_STORAGE_KEY,
+        JSON.stringify(logoSettings),
+      );
     } catch {
       // Ignore storage write failures (private browsing, quota, etc.)
     }
@@ -1289,7 +1443,10 @@ export default function Builder() {
   }, [prefersReducedMotion]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
       return;
     }
 
@@ -1314,8 +1471,14 @@ export default function Builder() {
       setLeftMenuOpen(true);
     }
 
-    const detachLargeScreen = subscribeToMediaQuery(largeScreenQuery, handleLargeScreen);
-    const detachCompactScreen = subscribeToMediaQuery(compactScreenQuery, handleCompactScreen);
+    const detachLargeScreen = subscribeToMediaQuery(
+      largeScreenQuery,
+      handleLargeScreen,
+    );
+    const detachCompactScreen = subscribeToMediaQuery(
+      compactScreenQuery,
+      handleCompactScreen,
+    );
 
     return () => {
       detachLargeScreen();
@@ -1413,7 +1576,7 @@ export default function Builder() {
       element.style.transform = "translateX(-50%) translateY(-50%)";
       element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, staticPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
         0,
-        staticSecondary
+        staticSecondary,
       ).toFixed(2)})`;
       return;
     }
@@ -1431,7 +1594,9 @@ export default function Builder() {
       previousTimestamp = timestamp;
 
       const orbitDuration = Math.max(logoSettings.speed, 4);
-      angle = (angle + (deltaSeconds * (Math.PI * 2)) / orbitDuration) % (Math.PI * 2);
+      angle =
+        (angle + (deltaSeconds * (Math.PI * 2)) / orbitDuration) %
+        (Math.PI * 2);
 
       const viewportWidth = window.innerWidth || 1440;
       const viewportHeight = window.innerHeight || 900;
@@ -1439,11 +1604,19 @@ export default function Builder() {
       const horizontalMargin = 160;
       const verticalMargin = 200;
 
-      const maxHorizontal = Math.max(0, (viewportWidth - horizontalMargin * 2) / 2);
-      const maxVertical = Math.max(0, (viewportHeight - verticalMargin * 2) / 2);
+      const maxHorizontal = Math.max(
+        0,
+        (viewportWidth - horizontalMargin * 2) / 2,
+      );
+      const maxVertical = Math.max(
+        0,
+        (viewportHeight - verticalMargin * 2) / 2,
+      );
 
-      const amplitudeX = maxHorizontal * (clamp(logoSettings.travelX, 10, 100) / 100);
-      const amplitudeY = maxVertical * (clamp(logoSettings.travelY, 10, 100) / 100);
+      const amplitudeX =
+        maxHorizontal * (clamp(logoSettings.travelX, 10, 100) / 100);
+      const amplitudeY =
+        maxVertical * (clamp(logoSettings.travelY, 10, 100) / 100);
 
       const orbitX = Math.cos(angle) * amplitudeX;
       const orbitY = Math.sin(angle) * amplitudeY;
@@ -1458,14 +1631,16 @@ export default function Builder() {
       const translateY = orbitY + bounceOffset;
 
       element.style.transform = `translateX(calc(-50% + ${translateX.toFixed(1)}px)) translateY(calc(-50% + ${translateY.toFixed(
-        1
+        1,
       )}px)) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
 
-      const glowPrimary = (0.34 + Math.sin(angle * 1.7) * 0.12) * normalizedOpacity;
-      const glowSecondary = (0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08) * normalizedOpacity;
+      const glowPrimary =
+        (0.34 + Math.sin(angle * 1.7) * 0.12) * normalizedOpacity;
+      const glowSecondary =
+        (0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08) * normalizedOpacity;
       element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, glowPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
         0,
-        glowSecondary
+        glowSecondary,
       ).toFixed(2)})`;
 
       frameId = window.requestAnimationFrame(animate);
@@ -1504,7 +1679,7 @@ export default function Builder() {
         return false;
       }
     },
-    [isFrameReady]
+    [isFrameReady],
   );
 
   useEffect(() => {
@@ -1512,14 +1687,20 @@ export default function Builder() {
       return;
     }
 
-    postToBuilder({ type: "builder:request-mode-state" }, { allowQueue: false });
+    postToBuilder(
+      { type: "builder:request-mode-state" },
+      { allowQueue: false },
+    );
   }, [isFrameReady, postToBuilder]);
 
   const triggerBuilderAction = useCallback(
     (action: BuilderInvokeAction, data?: Record<string, unknown>) => {
-      postToBuilder({ type: "builder:invoke-action", payload: { action, data } });
+      postToBuilder({
+        type: "builder:invoke-action",
+        payload: { action, data },
+      });
     },
-    [postToBuilder]
+    [postToBuilder],
   );
 
   const triggerSimulationPulse = useCallback(() => {
@@ -1539,7 +1720,7 @@ export default function Builder() {
         openWindow?: boolean;
         sessionName?: string;
         testVariables?: Record<string, unknown>;
-      } = {}
+      } = {},
     ) => {
       const openWindow = options.openWindow ?? true;
       const requestId = `arena-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -1559,23 +1740,27 @@ export default function Builder() {
 
       postToBuilder(message);
     },
-    [postToBuilder]
+    [postToBuilder],
   );
 
   const openHelpCenter = useCallback(
     (view: HelpModalView = "overview", sectionTitle?: string) => {
       setHelpView(view);
       setHelpOpen(true);
-      setRequestedHelpSection(view === "overview" ? sectionTitle ?? null : null);
+      setRequestedHelpSection(
+        view === "overview" ? (sectionTitle ?? null) : null,
+      );
     },
-    []
+    [],
   );
 
   const handlePracticeProblemChange = useCallback(
     (problem: PracticeProblem) => {
       setActivePracticeProblemId(problem.id);
       setPracticeWorksheetState((previous) =>
-        previous?.problemId === problem.id ? previous : { problemId: problem.id, complete: false }
+        previous?.problemId === problem.id
+          ? previous
+          : { problemId: problem.id, complete: false },
       );
 
       const previousId = practiceProblemRef.current;
@@ -1584,13 +1769,19 @@ export default function Builder() {
       }
       practiceProblemRef.current = problem.id;
     },
-    [triggerBuilderAction]
+    [triggerBuilderAction],
   );
 
-  const handlePracticeWorksheetStatusChange = useCallback((update: { problem: PracticeProblem; complete: boolean }) => {
-    setPracticeWorksheetState({ problemId: update.problem.id, complete: update.complete });
-    practiceProblemRef.current = update.problem.id;
-  }, []);
+  const handlePracticeWorksheetStatusChange = useCallback(
+    (update: { problem: PracticeProblem; complete: boolean }) => {
+      setPracticeWorksheetState({
+        problemId: update.problem.id,
+        complete: update.complete,
+      });
+      practiceProblemRef.current = update.problem.id;
+    },
+    [],
+  );
 
   const openPracticePanel = useCallback(() => {
     setSchematicPanelOpen(false);
@@ -1619,9 +1810,14 @@ export default function Builder() {
         if (randomProblem) {
           practiceProblemRef.current = randomProblem.id;
           setActivePracticeProblemId(randomProblem.id);
-          setPracticeWorksheetState({ problemId: randomProblem.id, complete: false });
+          setPracticeWorksheetState({
+            problemId: randomProblem.id,
+            complete: false,
+          });
           if (randomProblem.presetHint) {
-            triggerBuilderAction("load-preset", { preset: randomProblem.presetHint });
+            triggerBuilderAction("load-preset", {
+              preset: randomProblem.presetHint,
+            });
           }
           openPracticePanel();
         }
@@ -1629,7 +1825,7 @@ export default function Builder() {
       }
       triggerBuilderAction(action.action, action.data);
     },
-    [handleArenaSync, openHelpCenter, triggerBuilderAction, openPracticePanel]
+    [handleArenaSync, openHelpCenter, triggerBuilderAction, openPracticePanel],
   );
 
   const openLastArenaSession = useCallback(() => {
@@ -1639,30 +1835,33 @@ export default function Builder() {
     setArenaPanelOpen(true);
   }, [lastArenaExport, setArenaPanelOpen]);
 
-  const updateLogoSetting = useCallback((key: LogoNumericSettingKey, value: number) => {
-    setLogoSettings((previous) => {
-      const nextValue = (() => {
-        switch (key) {
-          case "speed":
-            return clamp(value, 6, 60);
-          case "travelX":
-          case "travelY":
-            return clamp(value, 10, 100);
-          case "opacity":
-            return clamp(value, 0, 100);
-          case "bounce":
-          default:
-            return clamp(value, 0, 120);
+  const updateLogoSetting = useCallback(
+    (key: LogoNumericSettingKey, value: number) => {
+      setLogoSettings((previous) => {
+        const nextValue = (() => {
+          switch (key) {
+            case "speed":
+              return clamp(value, 6, 60);
+            case "travelX":
+            case "travelY":
+              return clamp(value, 10, 100);
+            case "opacity":
+              return clamp(value, 0, 100);
+            case "bounce":
+            default:
+              return clamp(value, 0, 120);
+          }
+        })();
+
+        if (previous[key] === nextValue) {
+          return previous;
         }
-      })();
 
-      if (previous[key] === nextValue) {
-        return previous;
-      }
-
-      return { ...previous, [key]: nextValue };
-    });
-  }, []);
+        return { ...previous, [key]: nextValue };
+      });
+    },
+    [],
+  );
 
   const setLogoVisibility = useCallback((visible: boolean) => {
     setLogoSettings((previous) => {
@@ -1748,7 +1947,7 @@ export default function Builder() {
         payload: { componentType: component.builderType },
       });
     },
-    [postToBuilder]
+    [postToBuilder],
   );
 
   const handleQuickAction = useCallback(
@@ -1763,7 +1962,7 @@ export default function Builder() {
         triggerSimulationPulse();
       }
     },
-    [triggerBuilderAction, triggerSimulationPulse]
+    [triggerBuilderAction, triggerSimulationPulse],
   );
 
   const handleClearWorkspace = useCallback(() => {
@@ -1783,13 +1982,20 @@ export default function Builder() {
         if (!lastArenaExport) {
           return "Component Arena export is ready.";
         }
-        const exportedTime = lastArenaExport.exportedAt ? new Date(lastArenaExport.exportedAt) : null;
-        const formattedTime = exportedTime && !Number.isNaN(exportedTime.getTime())
-          ? exportedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        const exportedTime = lastArenaExport.exportedAt
+          ? new Date(lastArenaExport.exportedAt)
           : null;
-        const componentLabel = typeof lastArenaExport.componentCount === "number"
-          ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-          : null;
+        const formattedTime =
+          exportedTime && !Number.isNaN(exportedTime.getTime())
+            ? exportedTime.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null;
+        const componentLabel =
+          typeof lastArenaExport.componentCount === "number"
+            ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
+            : null;
         if (componentLabel && formattedTime) {
           return `Last arena export: ${componentLabel} - ${formattedTime}`;
         }
@@ -1806,7 +2012,8 @@ export default function Builder() {
   }, [arenaExportStatus, arenaExportError, lastArenaExport]);
 
   const practiceWorksheetMessage = useMemo(() => {
-    const currentId = activePracticeProblemId ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null;
+    const currentId =
+      activePracticeProblemId ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null;
     if (!currentId) {
       return "Select a practice problem to start the guided worksheet.";
     }
@@ -1816,21 +2023,35 @@ export default function Builder() {
       return "Select a practice problem to start the guided worksheet.";
     }
 
-    if (practiceWorksheetState?.problemId === problem.id && practiceWorksheetState.complete) {
+    if (
+      practiceWorksheetState?.problemId === problem.id &&
+      practiceWorksheetState.complete
+    ) {
       return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
     }
 
     return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
   }, [activePracticeProblemId, practiceWorksheetState]);
 
+  const schematicStandardLabel = useMemo(
+    () =>
+      SYMBOL_STANDARD_OPTIONS.find((option) => option.key === schematicStandard)
+        ?.label ?? "ANSI/IEEE",
+    [schematicStandard],
+  );
+
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const leftFloatingOffset = "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-left, 0px))";
-  const rightFloatingOffset = "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px))";
+  const leftFloatingOffset =
+    "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-left, 0px))";
+  const rightFloatingOffset =
+    "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px))";
 
   const controlsDisabled = !isFrameReady;
-  const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
+  const controlDisabledTitle = controlsDisabled
+    ? "Workspace is still loading"
+    : undefined;
   const builderFrameSrc = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1849,11 +2070,22 @@ export default function Builder() {
     perimeter: "Perimeter",
     astar: "A* Auto",
   };
-  const normalizedLayoutKey = typeof modeState.layoutMode === "string" ? modeState.layoutMode.toLowerCase() : "";
-  const normalizedRoutingKey = typeof modeState.wireRoutingMode === "string" ? modeState.wireRoutingMode.toLowerCase() : "";
-  const layoutModeLabel = layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
-  const wireRoutingLabel = wireRoutingNames[normalizedRoutingKey] ?? modeState.wireRoutingMode ?? "Unknown";
-  const currentFlowLabel = modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
+  const normalizedLayoutKey =
+    typeof modeState.layoutMode === "string"
+      ? modeState.layoutMode.toLowerCase()
+      : "";
+  const normalizedRoutingKey =
+    typeof modeState.wireRoutingMode === "string"
+      ? modeState.wireRoutingMode.toLowerCase()
+      : "";
+  const layoutModeLabel =
+    layoutModeNames[normalizedLayoutKey] ?? modeState.layoutMode ?? "Unknown";
+  const wireRoutingLabel =
+    wireRoutingNames[normalizedRoutingKey] ??
+    modeState.wireRoutingMode ??
+    "Unknown";
+  const currentFlowLabel =
+    modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
   const isWireToolActive = modeState.isWireMode;
   const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
   const wireRoutingTitle = isWireToolActive
@@ -1865,7 +2097,11 @@ export default function Builder() {
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
-    if (trimmed.startsWith("```") && trimmed.endsWith("```") && trimmed.length >= 6) {
+    if (
+      trimmed.startsWith("```") &&
+      trimmed.endsWith("```") &&
+      trimmed.length >= 6
+    ) {
       const content = trimmed.slice(3, -3).trimEnd();
       return (
         <pre key={key} className="help-code">
@@ -1897,19 +2133,33 @@ export default function Builder() {
         </div>
       </div>
 
-      <div className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}>
+      <div
+        className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
+      >
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-left"
           onClick={() => setLeftMenuOpen((open) => !open)}
           aria-expanded={isLeftMenuOpen}
-          aria-label={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
-          title={isLeftMenuOpen ? "Collapse component library" : "Expand component library"}
+          aria-label={
+            isLeftMenuOpen
+              ? "Collapse component library"
+              : "Expand component library"
+          }
+          title={
+            isLeftMenuOpen
+              ? "Collapse component library"
+              : "Expand component library"
+          }
         >
           <span className="toggle-icon">{isLeftMenuOpen ? "<" : ">"}</span>
           <span className="toggle-text">Library</span>
         </button>
-        <nav className="builder-menu builder-menu-left" role="navigation" aria-label="Component and wiring controls">
+        <nav
+          className="builder-menu builder-menu-left"
+          role="navigation"
+          aria-label="Component and wiring controls"
+        >
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Parts</span>
@@ -1922,7 +2172,9 @@ export default function Builder() {
                     onClick={() => handleComponentAction(component)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : component.label}
+                    title={
+                      controlsDisabled ? controlDisabledTitle : component.label
+                    }
                     data-component-action={component.action}
                   >
                     <span className="slider-icon" aria-hidden="true">
@@ -1937,7 +2189,8 @@ export default function Builder() {
               <span className="slider-heading">Quick Actions</span>
               <div className="slider-stack">
                 {QUICK_ACTIONS.map((action) => {
-                  const isActive = action.kind === "tool" && action.tool === activeQuickTool;
+                  const isActive =
+                    action.kind === "tool" && action.tool === activeQuickTool;
                   const isSimulation = action.id === "simulate";
                   return (
                     <button
@@ -1947,16 +2200,44 @@ export default function Builder() {
                       onClick={() => handleQuickAction(action)}
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
-                      aria-pressed={action.kind === "tool" ? isActive : undefined}
-                      data-active={action.kind === "tool" && isActive ? "true" : undefined}
-                      data-pulse={isSimulation && isSimulatePulsing ? "true" : undefined}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      aria-pressed={
+                        action.kind === "tool" ? isActive : undefined
+                      }
+                      data-active={
+                        action.kind === "tool" && isActive ? "true" : undefined
+                      }
+                      data-pulse={
+                        isSimulation && isSimulatePulsing ? "true" : undefined
+                      }
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
                     >
                       <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{action.description}</span>
+                      <span className="slider-description">
+                        {action.description}
+                      </span>
                     </button>
                   );
                 })}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Schematic Mode</span>
+              <div className="slider-stack">
+                <button
+                  type="button"
+                  className="slider-btn slider-btn-stacked"
+                  onClick={() => setSchematicPanelOpen(true)}
+                  title="Open the 3D schematic workspace"
+                >
+                  <span className="slider-label">Launch Builder</span>
+                  <span className="slider-description">
+                    Place ANSI/IEC symbols on the snap grid
+                  </span>
+                </button>
               </div>
             </div>
             <div className="slider-section">
@@ -1965,13 +2246,19 @@ export default function Builder() {
                 {WIRE_TOOL_ACTIONS.map((action) => {
                   const isWireToggle = action.action === "toggle-wire-mode";
                   const isRotateToggle = action.action === "toggle-rotate-mode";
-                  const isActionActive = (isWireToggle && modeState.isWireMode) || (isRotateToggle && modeState.isRotateMode);
+                  const isActionActive =
+                    (isWireToggle && modeState.isWireMode) ||
+                    (isRotateToggle && modeState.isRotateMode);
                   const description = (() => {
                     if (isWireToggle) {
-                      return modeState.isWireMode ? "Wire tool active" : "Activate wire mode to sketch connections";
+                      return modeState.isWireMode
+                        ? "Wire tool active"
+                        : "Activate wire mode to sketch connections";
                     }
                     if (isRotateToggle) {
-                      return modeState.isRotateMode ? "Rotate mode active" : "Rotate the active component";
+                      return modeState.isRotateMode
+                        ? "Rotate mode active"
+                        : "Rotate the active component";
                     }
                     return action.description;
                   })();
@@ -1981,12 +2268,22 @@ export default function Builder() {
                       key={action.id}
                       type="button"
                       className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(action.action, action.data)}
+                      onClick={() =>
+                        triggerBuilderAction(action.action, action.data)
+                      }
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
                       data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={isWireToggle || isRotateToggle ? isActionActive : undefined}
+                      aria-pressed={
+                        isWireToggle || isRotateToggle
+                          ? isActionActive
+                          : undefined
+                      }
                     >
                       <span className="slider-label">{action.label}</span>
                       <span className="slider-description">{description}</span>
@@ -1999,19 +2296,33 @@ export default function Builder() {
         </nav>
       </div>
 
-      <div className={`builder-menu-stage builder-menu-stage-right${isRightMenuOpen ? " open" : ""}`}>
+      <div
+        className={`builder-menu-stage builder-menu-stage-right${isRightMenuOpen ? " open" : ""}`}
+      >
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-right"
           onClick={() => setRightMenuOpen((open) => !open)}
           aria-expanded={isRightMenuOpen}
-          aria-label={isRightMenuOpen ? "Collapse mode and view controls" : "Expand mode and view controls"}
-          title={isRightMenuOpen ? "Collapse mode and view controls" : "Expand mode and view controls"}
+          aria-label={
+            isRightMenuOpen
+              ? "Collapse mode and view controls"
+              : "Expand mode and view controls"
+          }
+          title={
+            isRightMenuOpen
+              ? "Collapse mode and view controls"
+              : "Expand mode and view controls"
+          }
         >
           <span className="toggle-icon">{isRightMenuOpen ? ">" : "<"}</span>
           <span className="toggle-text">Controls</span>
         </button>
-        <nav className="builder-menu builder-menu-right" role="complementary" aria-label="Mode and view controls">
+        <nav
+          className="builder-menu builder-menu-right"
+          role="complementary"
+          aria-label="Mode and view controls"
+        >
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Properties</span>
@@ -2034,15 +2345,17 @@ export default function Builder() {
                   const isActionActive = isFlowToggle
                     ? modeState.currentFlowStyle === "solid"
                     : isPolarityToggle
-                    ? modeState.showPolarityIndicators
-                    : false;
+                      ? modeState.showPolarityIndicators
+                      : false;
 
                   const description = (() => {
                     if (isFlowToggle) {
                       return `${currentFlowLabel} visualisation active`;
                     }
                     if (isPolarityToggle) {
-                      return modeState.showPolarityIndicators ? "Polarity markers visible" : "Polarity markers hidden";
+                      return modeState.showPolarityIndicators
+                        ? "Polarity markers visible"
+                        : "Polarity markers hidden";
                     }
                     if (isLayoutCycle) {
                       return `Current layout: ${layoutModeLabel}`;
@@ -2055,12 +2368,22 @@ export default function Builder() {
                       key={action.id}
                       type="button"
                       className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(action.action, action.data)}
+                      onClick={() =>
+                        triggerBuilderAction(action.action, action.data)
+                      }
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
                       data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={isFlowToggle || isPolarityToggle ? isActionActive : undefined}
+                      aria-pressed={
+                        isFlowToggle || isPolarityToggle
+                          ? isActionActive
+                          : undefined
+                      }
                     >
                       <span className="slider-label">{action.label}</span>
                       <span className="slider-description">{description}</span>
@@ -2075,13 +2398,19 @@ export default function Builder() {
                 {VIEW_CONTROL_ACTIONS.map((action) => {
                   const isGridToggle = action.action === "toggle-grid";
                   const isLabelToggle = action.action === "toggle-labels";
-                  const isActionActive = (isGridToggle && modeState.showGrid) || (isLabelToggle && modeState.showLabels);
+                  const isActionActive =
+                    (isGridToggle && modeState.showGrid) ||
+                    (isLabelToggle && modeState.showLabels);
                   const description = (() => {
                     if (isGridToggle) {
-                      return modeState.showGrid ? "Grid visible" : "Grid hidden";
+                      return modeState.showGrid
+                        ? "Grid visible"
+                        : "Grid hidden";
                     }
                     if (isLabelToggle) {
-                      return modeState.showLabels ? "Labels shown" : "Labels hidden";
+                      return modeState.showLabels
+                        ? "Labels shown"
+                        : "Labels hidden";
                     }
                     return action.description;
                   })();
@@ -2091,12 +2420,22 @@ export default function Builder() {
                       key={action.id}
                       type="button"
                       className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(action.action, action.data)}
+                      onClick={() =>
+                        triggerBuilderAction(action.action, action.data)
+                      }
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
-                      title={controlsDisabled ? controlDisabledTitle : action.description}
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
                       data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={isGridToggle || isLabelToggle ? isActionActive : undefined}
+                      aria-pressed={
+                        isGridToggle || isLabelToggle
+                          ? isActionActive
+                          : undefined
+                      }
                     >
                       <span className="slider-label">{action.label}</span>
                       <span className="slider-description">{description}</span>
@@ -2109,19 +2448,33 @@ export default function Builder() {
         </nav>
       </div>
 
-      <div className={`builder-menu-stage builder-menu-stage-bottom${isBottomMenuOpen ? " open" : ""}`}>
+      <div
+        className={`builder-menu-stage builder-menu-stage-bottom${isBottomMenuOpen ? " open" : ""}`}
+      >
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-bottom"
           onClick={() => setBottomMenuOpen((open) => !open)}
           aria-expanded={isBottomMenuOpen}
-          aria-label={isBottomMenuOpen ? "Collapse analysis and guidance" : "Expand analysis and guidance"}
-          title={isBottomMenuOpen ? "Collapse analysis and guidance" : "Expand analysis and guidance"}
+          aria-label={
+            isBottomMenuOpen
+              ? "Collapse analysis and guidance"
+              : "Expand analysis and guidance"
+          }
+          title={
+            isBottomMenuOpen
+              ? "Collapse analysis and guidance"
+              : "Expand analysis and guidance"
+          }
         >
           <span className="toggle-icon">{isBottomMenuOpen ? "v" : "^"}</span>
           <span className="toggle-text">Insights</span>
         </button>
-        <nav className="builder-menu builder-menu-bottom" role="navigation" aria-label="Analysis, practice, and guides">
+        <nav
+          className="builder-menu builder-menu-bottom"
+          role="navigation"
+          aria-label="Analysis, practice, and guides"
+        >
           <div className="builder-menu-scroll builder-menu-scroll-bottom">
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
@@ -2172,14 +2525,20 @@ export default function Builder() {
                     type="button"
                     className="slider-chip"
                     onClick={() => handlePracticeAction(action)}
-                    disabled={controlsDisabled || (action.action === "open-arena" && isArenaSyncing)}
-                    aria-disabled={controlsDisabled || (action.action === "open-arena" && isArenaSyncing)}
+                    disabled={
+                      controlsDisabled ||
+                      (action.action === "open-arena" && isArenaSyncing)
+                    }
+                    aria-disabled={
+                      controlsDisabled ||
+                      (action.action === "open-arena" && isArenaSyncing)
+                    }
                     title={
                       controlsDisabled
                         ? controlDisabledTitle
                         : action.action === "open-arena" && isArenaSyncing
-                        ? "Preparing Component Arena export?"
-                        : action.description
+                          ? "Preparing Component Arena export?"
+                          : action.description
                     }
                   >
                     <span className="slider-chip-label">{action.label}</span>
@@ -2193,7 +2552,8 @@ export default function Builder() {
                   data-complete={
                     practiceWorksheetState &&
                     activePracticeProblemId &&
-                    practiceWorksheetState.problemId === activePracticeProblemId &&
+                    practiceWorksheetState.problemId ===
+                      activePracticeProblemId &&
                     practiceWorksheetState.complete
                       ? "true"
                       : undefined
@@ -2221,20 +2581,29 @@ export default function Builder() {
                     type="button"
                     className="slider-chip"
                     onClick={() => {
-                      triggerBuilderAction("load-preset", { preset: scenario.preset });
+                      triggerBuilderAction("load-preset", {
+                        preset: scenario.preset,
+                      });
                       const problem = scenario.problemId
                         ? findPracticeProblemById(scenario.problemId)
                         : findPracticeProblemByPreset(scenario.preset);
                       if (problem) {
                         practiceProblemRef.current = problem.id;
                         setActivePracticeProblemId(problem.id);
-                        setPracticeWorksheetState({ problemId: problem.id, complete: false });
+                        setPracticeWorksheetState({
+                          problemId: problem.id,
+                          complete: false,
+                        });
                       }
                       openPracticePanel();
                     }}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
-                    title={controlsDisabled ? controlDisabledTitle : scenario.question}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : scenario.question
+                    }
                   >
                     <span className="slider-chip-label">{scenario.label}</span>
                   </button>
@@ -2259,19 +2628,27 @@ export default function Builder() {
               <span className="slider-heading">Settings</span>
               <div className="slider-stack">
                 {SETTINGS_ITEMS.map((setting) => {
-                  const description = setting.getDescription(modeState, { currentFlowLabel });
+                  const description = setting.getDescription(modeState, {
+                    currentFlowLabel,
+                  });
                   const isActive = setting.isActive?.(modeState) ?? false;
                   return (
                     <button
                       key={setting.id}
                       type="button"
                       className="slider-btn slider-btn-stacked"
-                      onClick={() => triggerBuilderAction(setting.action, setting.data)}
+                      onClick={() =>
+                        triggerBuilderAction(setting.action, setting.data)
+                      }
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
                       aria-pressed={setting.isActive ? isActive : undefined}
-                      data-active={setting.isActive && isActive ? "true" : undefined}
-                      title={controlsDisabled ? controlDisabledTitle : description}
+                      data-active={
+                        setting.isActive && isActive ? "true" : undefined
+                      }
+                      title={
+                        controlsDisabled ? controlDisabledTitle : description
+                      }
                       data-intent="settings"
                     >
                       <span className="slider-label">{setting.label}</span>
@@ -2304,7 +2681,9 @@ export default function Builder() {
       <div className="builder-status-bar" role="status" aria-live="polite">
         <span className="status-indicator" aria-hidden="true" />
         <span className="status-message">
-          {isFrameReady ? "Workspace ready: tap and drag to build." : "Loading workspace..."}
+          {isFrameReady
+            ? "Workspace ready: tap and drag to build."
+            : "Loading workspace..."}
         </span>
         <div className="status-pill-group" aria-label="Active modes">
           <span
@@ -2349,7 +2728,11 @@ export default function Builder() {
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
           aria-label="Clear workspace"
-          title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
+          title={
+            controlsDisabled
+              ? controlDisabledTitle
+              : "Clear all components, wires, and analysis data"
+          }
         >
           <IconTrash className="builder-floating-icon" />
         </button>
@@ -2367,19 +2750,29 @@ export default function Builder() {
           aria-disabled={controlsDisabled}
           data-pulse={isSimulatePulsing ? "true" : undefined}
           aria-label="Run simulation"
-          title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
+          title={
+            controlsDisabled
+              ? controlDisabledTitle
+              : "Run the current circuit simulation"
+          }
         >
           <IconPlay className="builder-floating-icon" />
         </button>
       </div>
 
-      <div ref={floatingLogoRef} className="builder-floating-logo" aria-hidden="true">
+      <div
+        ref={floatingLogoRef}
+        className="builder-floating-logo"
+        aria-hidden="true"
+      >
         <span className="builder-logo-circui">Circui</span>
         <span className="builder-logo-try">Try</span>
         <span className="builder-logo-3d">3D</span>
       </div>
 
-      <div className={`builder-logo-controls${isLogoSettingsOpen ? " open" : ""}`}>
+      <div
+        className={`builder-logo-controls${isLogoSettingsOpen ? " open" : ""}`}
+      >
         <button
           type="button"
           className={`logo-controls-toggle${isLogoSettingsOpen ? " active" : ""}`}
@@ -2395,9 +2788,14 @@ export default function Builder() {
           aria-hidden={!isLogoSettingsOpen}
         >
           <h3>Logo Motion</h3>
-          <p className="builder-logo-settings-description">Fine-tune how the logo drifts across the workspace.</p>
+          <p className="builder-logo-settings-description">
+            Fine-tune how the logo drifts across the workspace.
+          </p>
           <div className="builder-logo-setting">
-            <label id="builder-logo-visible-label" htmlFor="builder-logo-visible">
+            <label
+              id="builder-logo-visible-label"
+              htmlFor="builder-logo-visible"
+            >
               Display logo
             </label>
             <div className="setting-input">
@@ -2413,7 +2811,9 @@ export default function Builder() {
               >
                 <span className="setting-switch-handle" aria-hidden="true" />
               </button>
-              <span className="setting-value">{logoSettings.isVisible ? "On" : "Off"}</span>
+              <span className="setting-value">
+                {logoSettings.isVisible ? "On" : "Off"}
+              </span>
             </div>
           </div>
           <div className="builder-logo-setting">
@@ -2426,12 +2826,16 @@ export default function Builder() {
                 max={100}
                 step={1}
                 value={logoSettings.opacity}
-                onChange={(event) => updateLogoSetting("opacity", Number(event.target.value))}
+                onChange={(event) =>
+                  updateLogoSetting("opacity", Number(event.target.value))
+                }
                 disabled={prefersReducedMotion}
                 tabIndex={isLogoSettingsOpen ? 0 : -1}
                 aria-valuetext={`${Math.round(logoSettings.opacity)} percent opacity`}
               />
-              <span className="setting-value">{Math.round(logoSettings.opacity)}%</span>
+              <span className="setting-value">
+                {Math.round(logoSettings.opacity)}%
+              </span>
             </div>
           </div>
           <div className="builder-logo-setting">
@@ -2444,12 +2848,16 @@ export default function Builder() {
                 max={60}
                 step={1}
                 value={logoSettings.speed}
-                onChange={(event) => updateLogoSetting("speed", Number(event.target.value))}
+                onChange={(event) =>
+                  updateLogoSetting("speed", Number(event.target.value))
+                }
                 disabled={prefersReducedMotion}
                 tabIndex={isLogoSettingsOpen ? 0 : -1}
                 aria-valuetext={`${Math.round(logoSettings.speed)} second cycle`}
               />
-              <span className="setting-value">{Math.round(logoSettings.speed)}s</span>
+              <span className="setting-value">
+                {Math.round(logoSettings.speed)}s
+              </span>
             </div>
           </div>
           <div className="builder-logo-setting">
@@ -2462,12 +2870,16 @@ export default function Builder() {
                 max={100}
                 step={1}
                 value={logoSettings.travelX}
-                onChange={(event) => updateLogoSetting("travelX", Number(event.target.value))}
+                onChange={(event) =>
+                  updateLogoSetting("travelX", Number(event.target.value))
+                }
                 disabled={prefersReducedMotion}
                 tabIndex={isLogoSettingsOpen ? 0 : -1}
                 aria-valuetext={`${Math.round(logoSettings.travelX)} percent width`}
               />
-              <span className="setting-value">{Math.round(logoSettings.travelX)}%</span>
+              <span className="setting-value">
+                {Math.round(logoSettings.travelX)}%
+              </span>
             </div>
           </div>
           <div className="builder-logo-setting">
@@ -2480,12 +2892,16 @@ export default function Builder() {
                 max={100}
                 step={1}
                 value={logoSettings.travelY}
-                onChange={(event) => updateLogoSetting("travelY", Number(event.target.value))}
+                onChange={(event) =>
+                  updateLogoSetting("travelY", Number(event.target.value))
+                }
                 disabled={prefersReducedMotion}
                 tabIndex={isLogoSettingsOpen ? 0 : -1}
                 aria-valuetext={`${Math.round(logoSettings.travelY)} percent height`}
               />
-              <span className="setting-value">{Math.round(logoSettings.travelY)}%</span>
+              <span className="setting-value">
+                {Math.round(logoSettings.travelY)}%
+              </span>
             </div>
           </div>
           <div className="builder-logo-setting">
@@ -2498,16 +2914,22 @@ export default function Builder() {
                 max={120}
                 step={1}
                 value={logoSettings.bounce}
-                onChange={(event) => updateLogoSetting("bounce", Number(event.target.value))}
+                onChange={(event) =>
+                  updateLogoSetting("bounce", Number(event.target.value))
+                }
                 disabled={prefersReducedMotion}
                 tabIndex={isLogoSettingsOpen ? 0 : -1}
                 aria-valuetext={`${Math.round(logoSettings.bounce)} pixel bounce`}
               />
-              <span className="setting-value">{Math.round(logoSettings.bounce)}px</span>
+              <span className="setting-value">
+                {Math.round(logoSettings.bounce)}px
+              </span>
             </div>
           </div>
           {prefersReducedMotion ? (
-            <p className="builder-logo-settings-note">Motion is paused because your system prefers reduced motion.</p>
+            <p className="builder-logo-settings-note">
+              Motion is paused because your system prefers reduced motion.
+            </p>
           ) : null}
           <div className="builder-logo-settings-actions">
             <button
@@ -2542,31 +2964,42 @@ export default function Builder() {
             X
           </button>
           <div className="builder-panel-body builder-panel-body--schematic">
-            <div
-              className="schematic-standard-control"
-              role="group"
-              aria-label="Schematic symbol standard"
-            >
-              <span className="schematic-standard-label">Symbol Standard</span>
-              <div className="schematic-standard-buttons">
-                {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    className={
-                      schematicSymbolStandard === option.key
-                        ? "schematic-standard-button is-active"
-                        : "schematic-standard-button"
-                    }
-                    onClick={() => setSchematicSymbolStandard(option.key)}
-                    title={option.description}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            <div className="schematic-overlay-header">
+              <div>
+                <h2>3D Schematic Builder</h2>
+                <p>
+                  Using {schematicStandardLabel} symbol profiles. Toggle
+                  standards to match your textbook layout.
+                </p>
+              </div>
+              <div
+                className="schematic-standard-control"
+                role="group"
+                aria-label="Schematic symbol standard"
+              >
+                <span className="schematic-standard-label">
+                  Symbol Standard
+                </span>
+                <div className="schematic-standard-buttons">
+                  {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      className={
+                        schematicStandard === option.key
+                          ? "schematic-standard-button is-active"
+                          : "schematic-standard-button"
+                      }
+                      onClick={() => setSchematicStandard(option.key)}
+                      title={option.description}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-            <BuilderWorkspace symbolStandard={schematicSymbolStandard} />
+            <BuilderWorkspace symbolStandard={schematicStandard} />
           </div>
         </div>
       </div>
@@ -2578,7 +3011,10 @@ export default function Builder() {
         aria-hidden={!isPracticePanelOpen}
         onClick={() => setPracticePanelOpen(false)}
       >
-        <div className="builder-panel-shell builder-panel-shell--practice" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="builder-panel-shell builder-panel-shell--practice"
+          onClick={(event) => event.stopPropagation()}
+        >
           <button
             type="button"
             className="builder-panel-close"
@@ -2604,7 +3040,10 @@ export default function Builder() {
         aria-hidden={!isArenaPanelOpen}
         onClick={() => setArenaPanelOpen(false)}
       >
-        <div className="builder-panel-shell builder-panel-shell--arena" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="builder-panel-shell builder-panel-shell--arena"
+          onClick={(event) => event.stopPropagation()}
+        >
           <button
             type="button"
             className="builder-panel-close"
@@ -2614,7 +3053,10 @@ export default function Builder() {
             X
           </button>
           <div className="builder-panel-body builder-panel-body--arena">
-            <ArenaView variant="embedded" onNavigateBack={() => setArenaPanelOpen(false)} />
+            <ArenaView
+              variant="embedded"
+              onNavigateBack={() => setArenaPanelOpen(false)}
+            />
           </div>
         </div>
       </div>
@@ -2626,8 +3068,16 @@ export default function Builder() {
         aria-hidden={!isHelpOpen}
         onClick={() => setHelpOpen(false)}
       >
-        <div className="builder-help-content" onClick={(event) => event.stopPropagation()}>
-          <button type="button" className="help-close" onClick={() => setHelpOpen(false)} aria-label="Close help">
+        <div
+          className="builder-help-content"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="help-close"
+            onClick={() => setHelpOpen(false)}
+            aria-label="Close help"
+          >
             X
           </button>
           {helpView !== "overview" && (
@@ -2641,9 +3091,15 @@ export default function Builder() {
             </button>
           )}
           <h2 className="help-title">{activeHelpContent.title}</h2>
-          {activeHelpContent.description && <p className="help-description">{activeHelpContent.description}</p>}
+          {activeHelpContent.description && (
+            <p className="help-description">{activeHelpContent.description}</p>
+          )}
           {helpView === "overview" && (
-            <div className="help-nav" role="navigation" aria-label="Help section shortcuts">
+            <div
+              className="help-nav"
+              role="navigation"
+              aria-label="Help section shortcuts"
+            >
               {HELP_SECTIONS.map((section) => (
                 <button
                   key={section.title}
@@ -2660,19 +3116,24 @@ export default function Builder() {
             <div
               key={`${helpView}-${section.title}`}
               className="help-section"
-              ref={helpView === "overview"
-                ? (element) => {
-                    if (element) {
-                      helpSectionRefs.current[section.title] = element;
-                    } else {
-                      delete helpSectionRefs.current[section.title];
+              ref={
+                helpView === "overview"
+                  ? (element) => {
+                      if (element) {
+                        helpSectionRefs.current[section.title] = element;
+                      } else {
+                        delete helpSectionRefs.current[section.title];
+                      }
                     }
-                  }
-                : undefined}
+                  : undefined
+              }
             >
               <h3>{section.title}</h3>
               {section.paragraphs.map((paragraph, paragraphIndex) =>
-                renderHelpParagraph(paragraph, `${section.title}-p-${paragraphIndex}`)
+                renderHelpParagraph(
+                  paragraph,
+                  `${section.title}-p-${paragraphIndex}`,
+                ),
               )}
               {section.bullets && (
                 <ul>
@@ -2686,7 +3147,10 @@ export default function Builder() {
           {activeHelpContent.showLegend && (
             <div className="wire-legend">
               {WIRE_LEGEND.map((legend) => (
-                <div key={legend.id} className={`legend-item ${legend.letter.toLowerCase()}`}>
+                <div
+                  key={legend.id}
+                  className={`legend-item ${legend.letter.toLowerCase()}`}
+                >
                   <div className="legend-letter">{legend.letter}</div>
                   <div className="legend-label">{legend.label}</div>
                 </div>

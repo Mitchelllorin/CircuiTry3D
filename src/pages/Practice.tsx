@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
-import practiceProblems, { DEFAULT_PRACTICE_PROBLEM, findPracticeProblemById } from "../data/practiceProblems";
+import practiceProblems, {
+  DEFAULT_PRACTICE_PROBLEM,
+  findPracticeProblemById,
+} from "../data/practiceProblems";
 import type { PracticeProblem } from "../model/practice";
 import type { PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
 import { formatMetricValue, formatNumber } from "../utils/electrical";
-import { solvePracticeProblem, type SolveResult } from "../utils/practiceSolver";
+import {
+  solvePracticeProblem,
+  type SolveResult,
+} from "../utils/practiceSolver";
 import WireTable, {
   METRIC_ORDER,
   METRIC_PRECISION,
@@ -18,14 +24,22 @@ import SolutionSteps from "../components/practice/SolutionSteps";
 import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
-import "../styles/practice.css";
-import "../styles/schematic.css";
 import PracticeViewport from "../components/schematic/PracticeViewport";
 import ComponentDrawer from "../components/schematic/ComponentDrawer";
 import { COMPONENT_CATALOG } from "../schematic/catalog";
-import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
+import {
+  DEFAULT_SYMBOL_STANDARD,
+  SYMBOL_STANDARD_OPTIONS,
+  type SymbolStandard,
+} from "../schematic/standards";
+import "../styles/practice.css";
+import "../styles/schematic.css";
 
-const TOPOLOGY_ORDER: PracticeTopology[] = ["series", "parallel", "combination"];
+const TOPOLOGY_ORDER: PracticeTopology[] = [
+  "series",
+  "parallel",
+  "combination",
+];
 const TOPOLOGY_LABEL: Record<PracticeTopology, string> = {
   series: "Series",
   parallel: "Parallel",
@@ -45,7 +59,10 @@ type WorksheetState = Record<string, Record<WireMetricKey, WorksheetEntry>>;
 type PracticeProps = {
   selectedProblemId?: string | null;
   onProblemChange?: (problem: PracticeProblem) => void;
-  onWorksheetStatusChange?: (update: { problem: PracticeProblem; complete: boolean }) => void;
+  onWorksheetStatusChange?: (update: {
+    problem: PracticeProblem;
+    complete: boolean;
+  }) => void;
 };
 
 const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
@@ -55,7 +72,7 @@ const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
       acc[problem.topology].push(problem);
       return acc;
     },
-    { series: [], parallel: [], combination: [] }
+    { series: [], parallel: [], combination: [] },
   );
 
 const resolveTarget = (problem: PracticeProblem, solution: SolveResult) => {
@@ -72,7 +89,10 @@ const resolveTarget = (problem: PracticeProblem, solution: SolveResult) => {
   return solution.components[componentId]?.[key];
 };
 
-const buildTableRows = (problem: PracticeProblem, solution: SolveResult): WireTableRow[] => {
+const buildTableRows = (
+  problem: PracticeProblem,
+  solution: SolveResult,
+): WireTableRow[] => {
   const componentRows = problem.components.map((component) => ({
     id: component.id,
     label: component.label,
@@ -100,8 +120,10 @@ const buildTableRows = (problem: PracticeProblem, solution: SolveResult): WireTa
   ];
 };
 
-const buildStepPresentations = (problem: PracticeProblem, solution: SolveResult) =>
-  problem.steps.map((step) => step(solution.stepContext));
+const buildStepPresentations = (
+  problem: PracticeProblem,
+  solution: SolveResult,
+) => problem.steps.map((step) => step(solution.stepContext));
 
 const ensureProblem = (problem: PracticeProblem | null): PracticeProblem => {
   const fallback = DEFAULT_PRACTICE_PROBLEM;
@@ -114,7 +136,8 @@ const ensureProblem = (problem: PracticeProblem | null): PracticeProblem => {
   return fallback;
 };
 
-const findProblem = (id: string | null): PracticeProblem => ensureProblem(findPracticeProblemById(id));
+const findProblem = (id: string | null): PracticeProblem =>
+  ensureProblem(findPracticeProblemById(id));
 
 const parseMetricInput = (raw: string): number | null => {
   const trimmed = raw.trim();
@@ -134,7 +157,11 @@ const parseMetricInput = (raw: string): number | null => {
   return Number.isFinite(fallback) ? fallback : null;
 };
 
-const withinTolerance = (expected: number, actual: number, tolerance = 0.01): boolean => {
+const withinTolerance = (
+  expected: number,
+  actual: number,
+  tolerance = 0.01,
+): boolean => {
   const absoluteExpected = Math.abs(expected);
   const absoluteDiff = Math.abs(expected - actual);
 
@@ -145,7 +172,8 @@ const withinTolerance = (expected: number, actual: number, tolerance = 0.01): bo
   return absoluteDiff / absoluteExpected <= tolerance;
 };
 
-const formatSeedValue = (value: number, key: WireMetricKey) => formatNumber(value, METRIC_PRECISION[key]);
+const formatSeedValue = (value: number, key: WireMetricKey) =>
+  formatNumber(value, METRIC_PRECISION[key]);
 
 type PracticeHintDialogProps = {
   open: boolean;
@@ -155,7 +183,13 @@ type PracticeHintDialogProps = {
   children: ReactNode;
 };
 
-function PracticeHintDialog({ open, id, title, onClose, children }: PracticeHintDialogProps) {
+function PracticeHintDialog({
+  open,
+  id,
+  title,
+  onClose,
+  children,
+}: PracticeHintDialogProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -163,7 +197,10 @@ function PracticeHintDialog({ open, id, title, onClose, children }: PracticeHint
       return;
     }
 
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     const focusTimer = window.setTimeout(() => {
       dialogRef.current?.focus({ preventScroll: true });
     }, 0);
@@ -185,7 +222,11 @@ function PracticeHintDialog({ open, id, title, onClose, children }: PracticeHint
   };
 
   return createPortal(
-    <div className="practice-hint-backdrop" onClick={handleBackdropClick} role="presentation">
+    <div
+      className="practice-hint-backdrop"
+      onClick={handleBackdropClick}
+      role="presentation"
+    >
       <div
         id={id}
         ref={dialogRef}
@@ -211,7 +252,7 @@ function PracticeHintDialog({ open, id, title, onClose, children }: PracticeHint
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -221,12 +262,14 @@ export default function Practice({
   onWorksheetStatusChange,
 }: PracticeProps = {}) {
   const fallbackProblemId = DEFAULT_PRACTICE_PROBLEM?.id ?? null;
-  const [internalProblemId, setInternalProblemId] = useState<string | null>(() => {
-    if (selectedProblemId !== undefined && selectedProblemId !== null) {
-      return findProblem(selectedProblemId).id;
-    }
-    return fallbackProblemId;
-  });
+  const [internalProblemId, setInternalProblemId] = useState<string | null>(
+    () => {
+      if (selectedProblemId !== undefined && selectedProblemId !== null) {
+        return findProblem(selectedProblemId).id;
+      }
+      return fallbackProblemId;
+    },
+  );
   const [tableRevealed, setTableRevealed] = useState(false);
   const [stepsVisible, setStepsVisible] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
@@ -237,7 +280,10 @@ export default function Practice({
   const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
   const [drawerSelection, setDrawerSelection] = useState<string | null>(null);
   const lastReportedProblemId = useRef<string | null>(null);
-  const lastWorksheetReport = useRef<{ problemId: string; complete: boolean } | null>(null);
+  const lastWorksheetReport = useRef<{
+    problemId: string;
+    complete: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (visualMode === "schematic" && !drawerSelection) {
@@ -257,17 +303,26 @@ export default function Practice({
   }, [internalProblemId, selectedProblemId]);
 
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
-  const selectedProblem = useMemo(() => findProblem(internalProblemId), [internalProblemId]);
+  const selectedProblem = useMemo(
+    () => findProblem(internalProblemId),
+    [internalProblemId],
+  );
 
-  const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
-  const tableRows = useMemo(() => buildTableRows(selectedProblem, solution), [selectedProblem, solution]);
+  const solution = useMemo(
+    () => solvePracticeProblem(selectedProblem),
+    [selectedProblem],
+  );
+  const tableRows = useMemo(
+    () => buildTableRows(selectedProblem, solution),
+    [selectedProblem, solution],
+  );
   const selectedCatalogEntry = useMemo(
     () => COMPONENT_CATALOG.find((entry) => entry.id === drawerSelection) ?? null,
-    [drawerSelection]
+    [drawerSelection],
   );
   const stepPresentations = useMemo(
     () => buildStepPresentations(selectedProblem, solution),
-    [selectedProblem, solution]
+    [selectedProblem, solution],
   );
 
   const toggleHint = useCallback((hint: "target" | "worksheet") => {
@@ -321,10 +376,15 @@ export default function Practice({
       baseline[row.id] = {} as Record<WireMetricKey, WorksheetEntry>;
 
       METRIC_ORDER.forEach((key) => {
-        const given = typeof row.givens?.[key] === "number" && Number.isFinite(row.givens[key]);
+        const given =
+          typeof row.givens?.[key] === "number" &&
+          Number.isFinite(row.givens[key]);
         const expected = expectedValues[row.id]?.[key];
         baseline[row.id][key] = {
-          raw: given && Number.isFinite(expected) ? formatSeedValue(expected!, key) : "",
+          raw:
+            given && Number.isFinite(expected)
+              ? formatSeedValue(expected!, key)
+              : "",
           value: given && Number.isFinite(expected) ? expected! : null,
           status: given ? "given" : "blank",
           given,
@@ -351,14 +411,24 @@ export default function Practice({
       return;
     }
 
-    const nextStatus = { problemId: selectedProblem.id, complete: worksheetComplete };
+    const nextStatus = {
+      problemId: selectedProblem.id,
+      complete: worksheetComplete,
+    };
     const previous = lastWorksheetReport.current;
 
-    if (previous && previous.problemId === nextStatus.problemId && previous.complete === nextStatus.complete) {
+    if (
+      previous &&
+      previous.problemId === nextStatus.problemId &&
+      previous.complete === nextStatus.complete
+    ) {
       return;
     }
 
-    onWorksheetStatusChange?.({ problem: selectedProblem, complete: worksheetComplete });
+    onWorksheetStatusChange?.({
+      problem: selectedProblem,
+      complete: worksheetComplete,
+    });
     lastWorksheetReport.current = nextStatus;
   }, [onWorksheetStatusChange, selectedProblem, worksheetComplete]);
 
@@ -391,6 +461,13 @@ export default function Practice({
 
   const highlightKey = selectedProblem.targetMetric.key as WireMetricKey;
 
+  const activeStandardLabel = useMemo(
+    () =>
+      SYMBOL_STANDARD_OPTIONS.find((option) => option.key === symbolStandard)
+        ?.label ?? "",
+    [symbolStandard],
+  );
+
   const computeWorksheetComplete = (state: WorksheetState) =>
     tableRows.every((row) =>
       METRIC_ORDER.every((metric) => {
@@ -399,23 +476,36 @@ export default function Practice({
           return true;
         }
         return cell.status === "correct";
-      })
+      }),
     );
 
-  const handleWorksheetChange = (rowId: string, key: WireMetricKey, raw: string) => {
+  const handleWorksheetChange = (
+    rowId: string,
+    key: WireMetricKey,
+    raw: string,
+  ) => {
     setWorksheetEntries((prev) => {
       const next: WorksheetState = { ...prev };
       const previousRow = prev[rowId] ?? {};
-      const row: Record<WireMetricKey, WorksheetEntry> = { ...previousRow } as Record<WireMetricKey, WorksheetEntry>;
+      const row: Record<WireMetricKey, WorksheetEntry> = {
+        ...previousRow,
+      } as Record<WireMetricKey, WorksheetEntry>;
 
       const matchingRow = tableRows.find((entry) => entry.id === rowId);
-      const givenFromRow = typeof matchingRow?.givens?.[key] === "number" && Number.isFinite(matchingRow.givens[key]);
+      const givenFromRow =
+        typeof matchingRow?.givens?.[key] === "number" &&
+        Number.isFinite(matchingRow.givens[key]);
 
       if (givenFromRow) {
         return prev;
       }
 
-      const baseCell: WorksheetEntry = row[key] ?? { raw: "", value: null, status: "blank", given: false };
+      const baseCell: WorksheetEntry = row[key] ?? {
+        raw: "",
+        value: null,
+        status: "blank",
+        given: false,
+      };
 
       if (baseCell.given) {
         return prev;
@@ -460,9 +550,13 @@ export default function Practice({
 
   const advanceToNextProblem = () => {
     const bucket = grouped[selectedProblem.topology] ?? practiceProblems;
-    const currentIndex = bucket.findIndex((problem) => problem.id === selectedProblem.id);
+    const currentIndex = bucket.findIndex(
+      (problem) => problem.id === selectedProblem.id,
+    );
     const nextProblem =
-      (currentIndex >= 0 && bucket[(currentIndex + 1) % bucket.length]) || practiceProblems[0] || null;
+      (currentIndex >= 0 && bucket[(currentIndex + 1) % bucket.length]) ||
+      practiceProblems[0] ||
+      null;
 
     if (nextProblem) {
       selectProblemById(nextProblem.id);
@@ -477,13 +571,29 @@ export default function Practice({
         title="Target Value Guide"
         onClose={() => setActiveHint(null)}
       >
-        <p>The question mark flags the metric that the prompt expects you to solve.</p>
+        <p>
+          The question mark flags the metric that the prompt expects you to
+          solve.
+        </p>
         <ul>
-          <li>Use the worksheet and circuit diagram to capture every given before you calculate the unknowns.</li>
-          <li>Lean on the formula deck and solving steps to choose the right Ohm&apos;s Law or power identity.</li>
-          <li>Once your entries are green, reveal the answer to compare your work with the solved circuit.</li>
+          <li>
+            Use the worksheet and circuit diagram to capture every given before
+            you calculate the unknowns.
+          </li>
+          <li>
+            Lean on the formula deck and solving steps to choose the right
+            Ohm&apos;s Law or power identity.
+          </li>
+          <li>
+            Once your entries are green, reveal the answer to compare your work
+            with the solved circuit.
+          </li>
         </ul>
-        <button type="button" className="practice-hint-dismiss" onClick={() => setActiveHint(null)}>
+        <button
+          type="button"
+          className="practice-hint-dismiss"
+          onClick={() => setActiveHint(null)}
+        >
           Back to worksheet
         </button>
       </PracticeHintDialog>
@@ -494,13 +604,30 @@ export default function Practice({
         title="Worksheet Walkthrough"
         onClose={() => setActiveHint(null)}
       >
-        <p>The plus icon opens the worksheet playbook so you always know how to progress:</p>
+        <p>
+          The plus icon opens the worksheet playbook so you always know how to
+          progress:
+        </p>
         <ul>
-          <li>Lock in the givens first - they populate the worksheet automatically when you load a problem.</li>
-          <li>Fill each blank W.I.R.E. cell by pairing a known value with the correct formula; the cell turns green when it matches the solved circuit.</li>
-          <li>Every unknown must be correct to unlock the next challenge, so take your time and check totals against the circuit diagram.</li>
+          <li>
+            Lock in the givens first - they populate the worksheet automatically
+            when you load a problem.
+          </li>
+          <li>
+            Fill each blank W.I.R.E. cell by pairing a known value with the
+            correct formula; the cell turns green when it matches the solved
+            circuit.
+          </li>
+          <li>
+            Every unknown must be correct to unlock the next challenge, so take
+            your time and check totals against the circuit diagram.
+          </li>
         </ul>
-        <button type="button" className="practice-hint-dismiss" onClick={() => setActiveHint(null)}>
+        <button
+          type="button"
+          className="practice-hint-dismiss"
+          onClick={() => setActiveHint(null)}
+        >
           Back to worksheet
         </button>
       </PracticeHintDialog>
@@ -521,12 +648,15 @@ export default function Practice({
                       key={problem.id}
                       type="button"
                       className="problem-button"
-                      data-active={problem.id === selectedProblem.id ? "true" : undefined}
+                      data-active={
+                        problem.id === selectedProblem.id ? "true" : undefined
+                      }
                       onClick={() => selectProblemById(problem.id)}
                     >
                       <strong>{problem.title}</strong>
                       <small>
-                        {TOPOLOGY_LABEL[problem.topology]} ? {DIFFICULTY_LABEL[problem.difficulty]}
+                        {TOPOLOGY_LABEL[problem.topology]} ?{" "}
+                        {DIFFICULTY_LABEL[problem.difficulty]}
                       </small>
                     </button>
                   ))}
@@ -538,7 +668,9 @@ export default function Practice({
         <main className="practice-main">
           <header className="practice-header">
             <h1>{selectedProblem.title}</h1>
-            <span className="difficulty-pill">{DIFFICULTY_LABEL[selectedProblem.difficulty]}</span>
+            <span className="difficulty-pill">
+              {DIFFICULTY_LABEL[selectedProblem.difficulty]}
+            </span>
             <div className="tag-group" aria-label="Concept tags">
               {selectedProblem.conceptTags.map((tag) => (
                 <span key={tag} className="tag">
@@ -568,10 +700,15 @@ export default function Practice({
               </button>
             </div>
             <div>
-              <div className="target-question">{selectedProblem.targetQuestion}</div>
+              <div className="target-question">
+                {selectedProblem.targetQuestion}
+              </div>
               <div className="target-answer">
                 {answerRevealed && Number.isFinite(targetValue) ? (
-                  formatMetricValue(targetValue as number, selectedProblem.targetMetric.key)
+                  formatMetricValue(
+                    targetValue as number,
+                    selectedProblem.targetMetric.key,
+                  )
                 ) : (
                   <span>Reveal the answer when you&apos;re ready.</span>
                 )}
@@ -581,13 +718,22 @@ export default function Practice({
 
           <section className="practice-grid">
             <div className="worksheet-controls">
-              <button type="button" onClick={() => setTableRevealed((value) => !value)}>
+              <button
+                type="button"
+                onClick={() => setTableRevealed((value) => !value)}
+              >
                 {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
               </button>
-              <button type="button" onClick={() => setStepsVisible((value) => !value)}>
+              <button
+                type="button"
+                onClick={() => setStepsVisible((value) => !value)}
+              >
                 {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
               </button>
-              <button type="button" onClick={() => setAnswerRevealed((value) => !value)}>
+              <button
+                type="button"
+                onClick={() => setAnswerRevealed((value) => !value)}
+              >
                 {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
               </button>
               <button
@@ -600,13 +746,19 @@ export default function Practice({
               </button>
             </div>
 
-              <div className="practice-visualization">
-                <div className="practice-visual-toggle" role="tablist" aria-label="Visualization mode">
+            <div className="practice-visual-wrapper">
+              <div className="practice-visual-toolbar">
+                <div
+                  className="practice-visual-toggle"
+                  role="tablist"
+                  aria-label="Visualization mode"
+                >
                   <button
                     type="button"
                     role="tab"
                     aria-selected={visualMode === "diagram"}
-                    className={visualMode === "diagram" ? "practice-visual-button is-active" : "practice-visual-button"}
+                    className="practice-visual-button"
+                    data-active={visualMode === "diagram" ? "true" : undefined}
                     onClick={() => setVisualMode("diagram")}
                   >
                     Diagram
@@ -615,68 +767,77 @@ export default function Practice({
                     type="button"
                     role="tab"
                     aria-selected={visualMode === "schematic"}
-                    className={
-                      visualMode === "schematic" ? "practice-visual-button is-active" : "practice-visual-button"
-                    }
+                    className="practice-visual-button"
+                    data-active={visualMode === "schematic" ? "true" : undefined}
                     onClick={() => setVisualMode("schematic")}
                   >
                     3D Schematic
                   </button>
                 </div>
-
-                {visualMode === "schematic" ? (
-                  <div className="practice-schematic-container">
-                    <div className="practice-schematic-toolbar">
-                      <div
-                        className="schematic-standard-control"
-                        role="group"
-                        aria-label="Schematic symbol standard"
-                      >
-                        <span className="schematic-standard-label">Symbol Standard</span>
-                        <div className="schematic-standard-buttons">
-                          {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                            <button
-                              key={option.key}
-                              type="button"
-                              className={
-                                symbolStandard === option.key
-                                  ? "schematic-standard-button is-active"
-                                  : "schematic-standard-button"
-                              }
-                              onClick={() => setSymbolStandard(option.key)}
-                              title={option.description}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {selectedCatalogEntry ? (
-                        <div className="practice-catalog-note">
-                          <strong>{selectedCatalogEntry.name}</strong>
-                          <span>{selectedCatalogEntry.description}</span>
-                        </div>
-                      ) : null}
+                {visualMode === "schematic" && (
+                  <div
+                    className="practice-standard-control"
+                    role="group"
+                    aria-label="Schematic symbol standard"
+                  >
+                    <span className="practice-standard-label">
+                      Symbol Standard
+                    </span>
+                    <div className="practice-standard-buttons">
+                      {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          className="schematic-standard-button"
+                          data-active={
+                            symbolStandard === option.key ? "true" : undefined
+                          }
+                          onClick={() => setSymbolStandard(option.key)}
+                          title={option.description}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
                     </div>
-
-                    <div className="practice-schematic-stage">
-                      <ComponentDrawer
-                        entries={COMPONENT_CATALOG}
-                        selectedId={drawerSelection}
-                        onSelect={(entry) => setDrawerSelection(entry.id)}
-                        placement="right"
-                        defaultOpen
+                  </div>
+                )}
+                {visualMode === "schematic" && selectedCatalogEntry ? (
+                  <div className="practice-catalog-note">
+                    <strong>{selectedCatalogEntry.name}</strong>
+                    <span>{selectedCatalogEntry.description}</span>
+                  </div>
+                ) : null}
+              </div>
+              <div
+                className={`practice-visual-stage${visualMode === "schematic" ? " is-schematic" : ""}`}
+                aria-live="polite"
+              >
+                {visualMode === "schematic" ? (
+                  <div className="practice-schematic-stage">
+                    <ComponentDrawer
+                      entries={COMPONENT_CATALOG}
+                      selectedId={drawerSelection}
+                      onSelect={(entry) => setDrawerSelection(entry.id)}
+                      placement="right"
+                      defaultOpen
+                    />
+                    <div className="schematic-stage">
+                      <PracticeViewport
+                        problem={selectedProblem}
+                        symbolStandard={symbolStandard}
                       />
-                      <div className="schematic-stage">
-                        <PracticeViewport problem={selectedProblem} symbolStandard={symbolStandard} />
-                      </div>
                     </div>
                   </div>
                 ) : (
                   <CircuitDiagram problem={selectedProblem} />
                 )}
               </div>
-
+              {visualMode === "schematic" && (
+                <p className="practice-visual-caption">
+                  Rendering {activeStandardLabel} symbols.
+                </p>
+              )}
+            </div>
             <div
               className="worksheet-status-banner"
               role="status"
@@ -684,7 +845,11 @@ export default function Practice({
               data-complete={worksheetComplete ? "true" : undefined}
             >
               <div className="worksheet-status-header">
-                <strong>{worksheetComplete ? "Worksheet Complete" : "Fill the W.I.R.E. table"}</strong>
+                <strong>
+                  {worksheetComplete
+                    ? "Worksheet Complete"
+                    : "Fill the W.I.R.E. table"}
+                </strong>
                 <button
                   type="button"
                   className="worksheet-icon-button"
@@ -733,4 +898,3 @@ export default function Practice({
     </>
   );
 }
-

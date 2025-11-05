@@ -2,13 +2,27 @@
   display: grid;
   grid-template-columns: 280px 1fr;
   min-height: 100vh;
-  background: radial-gradient(circle at top, rgba(12, 20, 34, 0.92), #04070c 58%);
+  background: radial-gradient(
+    circle at top,
+    rgba(12, 20, 34, 0.92),
+    #04070c 58%
+  );
   color: #f3f8ff;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 .practice-sidebar {
-  background: linear-gradient(180deg, rgba(14, 30, 58, 0.78), rgba(4, 9, 18, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(14, 30, 58, 0.78),
+    rgba(4, 9, 18, 0.92)
+  );
   border-right: 1px solid rgba(80, 140, 220, 0.24);
   padding: 28px 24px;
   display: flex;
@@ -38,7 +52,10 @@
   text-align: left;
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
 }
 
 .problem-button:hover,
@@ -74,7 +91,9 @@
   padding: 10px 14px;
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .practice-controls button:hover,
@@ -104,7 +123,10 @@
   padding: 10px 16px;
   color: inherit;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
 }
 
 .worksheet-controls button:hover,
@@ -196,7 +218,10 @@
   font-size: 1.4rem;
   color: #8ecaff;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .target-card .target-icon:hover,
@@ -287,7 +312,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .practice-hint-close:hover,
@@ -309,7 +337,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .practice-hint-dismiss:hover,
@@ -355,7 +386,13 @@
 }
 
 .diagram-svg text {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 .worksheet-status-banner {
@@ -365,7 +402,9 @@
   padding: 18px 22px;
   display: grid;
   gap: 6px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
   position: relative;
 }
 
@@ -394,7 +433,10 @@
   place-items: center;
   padding: 0;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .worksheet-icon-button:hover,
@@ -470,7 +512,9 @@
   overflow: hidden;
   backdrop-filter: blur(10px);
   background: rgba(8, 18, 36, 0.82);
-  min-width: calc(var(--worksheet-metric-width, 160px) + var(--worksheet-column-min, 180px));
+  min-width: calc(
+    var(--worksheet-metric-width, 160px) + var(--worksheet-column-min, 180px)
+  );
 }
 
 .practice-table-header,
@@ -611,7 +655,11 @@
   align-items: center;
   justify-content: center;
   background: rgba(12, 30, 58, 0.48);
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .worksheet-cell[data-active="true"] {
@@ -666,7 +714,10 @@
   color: #e8f6ff;
   font-size: 0.95rem;
   text-align: center;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .worksheet-input::placeholder {
@@ -911,6 +962,153 @@
   gap: 24px;
 }
 
+.practice-visual-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.practice-visual-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.practice-visual-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(10, 24, 48, 0.72);
+  border: 1px solid rgba(86, 156, 255, 0.32);
+}
+
+.practice-visual-toggle button {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.practice-visual-toggle button[data-active="true"] {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 200, 255, 0.22),
+    rgba(56, 228, 200, 0.22)
+  );
+  color: #e7f5ff;
+  box-shadow: 0 12px 28px rgba(0, 150, 255, 0.22);
+}
+
+.practice-visual-toggle button:hover,
+.practice-visual-toggle button:focus {
+  background: rgba(40, 88, 148, 0.6);
+  color: #f2f9ff;
+  outline: none;
+}
+
+.practice-standard-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  align-items: flex-end;
+}
+
+.practice-standard-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(160, 214, 255, 0.72);
+}
+
+.practice-standard-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.practice-standard-buttons button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(86, 156, 255, 0.28);
+  background: rgba(12, 34, 62, 0.7);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.practice-standard-buttons button[data-active="true"] {
+  border-color: rgba(0, 208, 255, 0.8);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 200, 255, 0.22),
+    rgba(56, 228, 200, 0.22)
+  );
+  transform: translateY(-1px);
+}
+
+.practice-standard-buttons button:hover,
+.practice-standard-buttons button:focus {
+  border-color: rgba(140, 210, 255, 0.6);
+  background: rgba(20, 48, 88, 0.82);
+  outline: none;
+}
+
+.practice-visual-stage {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.practice-visual-stage.is-schematic {
+  padding: 18px;
+  background: linear-gradient(
+    155deg,
+    rgba(3, 12, 28, 0.96),
+    rgba(10, 26, 52, 0.92)
+  );
+  border: 1px solid rgba(70, 130, 255, 0.24);
+  box-shadow: 0 20px 40px rgba(4, 12, 28, 0.55);
+}
+
+.practice-visual-stage.is-schematic .schematic-viewport {
+  min-height: clamp(320px, 45vh, 520px);
+}
+
+.practice-visual-stage:not(.is-schematic) {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.practice-visual-stage:not(.is-schematic) .diagram-card {
+  margin: 0;
+}
+
+.practice-visual-caption {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(160, 214, 255, 0.68);
+}
+
 .practice-supplement {
   display: grid;
   gap: 24px;
@@ -1077,4 +1275,3 @@
     padding: 18px;
   }
 }
-
