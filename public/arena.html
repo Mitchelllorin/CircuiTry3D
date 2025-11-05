@@ -336,6 +336,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
+      touch-action: none;
     }
 
     .compare-only {
@@ -614,6 +615,297 @@
 
       const particleSpeeds = [];
       const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
+      const cameraRig = {
+        target: new THREE.Vector3(0, 0.6, 0),
+        radius: 7.6,
+        azimuth: 0,
+        polar: THREE.MathUtils.degToRad(32),
+        minRadius: 3,
+        maxRadius: 16,
+      };
+      const pointerInteraction = {
+        pointers: new Map(),
+        rotateTimer: null,
+        rotateReady: false,
+        mode: "idle",
+        lastSinglePosition: null,
+        lastAveragePosition: null,
+        lastDistance: null,
+      };
+      const HOLD_DELAY_TOUCH_MS = 120;
+      const HOLD_DISTANCE_TOLERANCE = 6;
+      const ROTATION_SPEED = 0.0045;
+      const PAN_SPEED = 0.0022;
+      const ZOOM_FACTOR_PER_PIXEL = 0.003;
+      let interactionCanvas = null;
+      const tempForward = new THREE.Vector3();
+      const tempRight = new THREE.Vector3();
+      const tempOffset = new THREE.Vector3();
+
+        function initialiseCameraRig() {
+          if (!camera) {
+            return;
+          }
+          tempOffset.subVectors(camera.position, cameraRig.target);
+          cameraRig.radius = tempOffset.length();
+          const horizontal = Math.max(Math.sqrt(tempOffset.x * tempOffset.x + tempOffset.z * tempOffset.z), 1e-6);
+          cameraRig.azimuth = Math.atan2(tempOffset.x, tempOffset.z);
+          cameraRig.polar = Math.atan2(tempOffset.y, horizontal);
+          updateCameraRigPosition();
+        }
+
+        function updateCameraRigPosition() {
+          if (!camera) {
+            return;
+          }
+          cameraRig.radius = THREE.MathUtils.clamp(cameraRig.radius, cameraRig.minRadius, cameraRig.maxRadius);
+          const radius = cameraRig.radius;
+          const polar = cameraRig.polar;
+          const azimuth = cameraRig.azimuth;
+          const sinPolar = Math.sin(polar);
+          const cosPolar = Math.cos(polar);
+          camera.position.set(
+            cameraRig.target.x + radius * Math.sin(azimuth) * cosPolar,
+            cameraRig.target.y + radius * sinPolar,
+            cameraRig.target.z + radius * Math.cos(azimuth) * cosPolar
+          );
+          camera.lookAt(cameraRig.target);
+        }
+
+        function setupPointerInteractions(canvas) {
+          interactionCanvas = canvas;
+          if (!interactionCanvas) {
+            return;
+          }
+          interactionCanvas.style.touchAction = "none";
+          interactionCanvas.style.userSelect = "none";
+          interactionCanvas.addEventListener("pointerdown", handlePointerDown);
+          window.addEventListener("pointermove", handlePointerMove, { passive: false });
+          window.addEventListener("pointerup", handlePointerUp);
+          window.addEventListener("pointercancel", handlePointerUp);
+        }
+
+        function handlePointerDown(event) {
+          if (!interactionCanvas) {
+            return;
+          }
+          storePointer(event);
+          if (pointerInteraction.pointers.size === 1) {
+            pointerInteraction.mode = "single";
+            pointerInteraction.rotateReady = false;
+            pointerInteraction.lastSinglePosition = { x: event.clientX, y: event.clientY };
+            scheduleRotateReady(event.pointerType);
+          } else {
+            pointerInteraction.mode = "multi";
+            pointerInteraction.rotateReady = false;
+            clearRotateTimer();
+            pointerInteraction.lastAveragePosition = getAveragePointerPosition();
+            pointerInteraction.lastDistance = getPointersDistance();
+          }
+          interactionCanvas.setPointerCapture?.(event.pointerId);
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+        }
+
+        function handlePointerMove(event) {
+          if (!pointerInteraction.pointers.has(event.pointerId)) {
+            return;
+          }
+          updatePointer(event);
+
+          if (pointerInteraction.mode === "single") {
+            const pointer = pointerInteraction.pointers.get(event.pointerId);
+            if (!pointer) {
+              return;
+            }
+            if (!pointerInteraction.rotateReady) {
+              const moved = Math.hypot(pointer.clientX - pointer.startX, pointer.clientY - pointer.startY);
+              if (moved > HOLD_DISTANCE_TOLERANCE) {
+                pointerInteraction.rotateReady = true;
+                clearRotateTimer();
+              }
+            }
+            const last = pointerInteraction.lastSinglePosition;
+            pointerInteraction.lastSinglePosition = { x: pointer.clientX, y: pointer.clientY };
+            if (pointerInteraction.rotateReady && last) {
+              const deltaX = pointer.clientX - last.x;
+              if (Math.abs(deltaX) > 0.15) {
+                applyRotation(deltaX);
+              }
+              if (event.pointerType === "touch") {
+                event.preventDefault();
+              }
+            }
+          } else if (pointerInteraction.mode === "multi" && pointerInteraction.pointers.size >= 2) {
+            const average = getAveragePointerPosition();
+            const previous = pointerInteraction.lastAveragePosition || average;
+            const deltaX = average.x - previous.x;
+            const deltaY = average.y - previous.y;
+            if (Math.abs(deltaX) > 0.1 || Math.abs(deltaY) > 0.1) {
+              applyPan(deltaX, deltaY);
+            }
+            pointerInteraction.lastAveragePosition = average;
+
+            const distance = getPointersDistance();
+            if (pointerInteraction.lastDistance !== null && pointerInteraction.lastDistance !== undefined) {
+              const deltaDistance = distance - pointerInteraction.lastDistance;
+              if (Math.abs(deltaDistance) > 0.25) {
+                applyZoomDelta(deltaDistance);
+              }
+            }
+            pointerInteraction.lastDistance = distance;
+            event.preventDefault();
+          }
+        }
+
+        function handlePointerUp(event) {
+          if (!pointerInteraction.pointers.has(event.pointerId)) {
+            return;
+          }
+          interactionCanvas?.releasePointerCapture?.(event.pointerId);
+          pointerInteraction.pointers.delete(event.pointerId);
+
+          if (pointerInteraction.pointers.size === 0) {
+            resetInteractionState();
+            return;
+          }
+
+          if (pointerInteraction.pointers.size === 1) {
+            const remaining = pointerInteraction.pointers.values().next().value;
+            pointerInteraction.mode = "single";
+            pointerInteraction.rotateReady = false;
+            pointerInteraction.lastAveragePosition = null;
+            pointerInteraction.lastDistance = null;
+            pointerInteraction.lastSinglePosition = { x: remaining.clientX, y: remaining.clientY };
+            scheduleRotateReady(remaining.pointerType);
+          } else {
+            pointerInteraction.mode = "multi";
+            pointerInteraction.rotateReady = false;
+            clearRotateTimer();
+            pointerInteraction.lastAveragePosition = getAveragePointerPosition();
+            pointerInteraction.lastDistance = getPointersDistance();
+          }
+        }
+
+        function scheduleRotateReady(pointerType) {
+          clearRotateTimer();
+          const delay = pointerType === "mouse" ? 0 : HOLD_DELAY_TOUCH_MS;
+          if (delay === 0) {
+            pointerInteraction.rotateReady = true;
+            return;
+          }
+          pointerInteraction.rotateTimer = window.setTimeout(() => {
+            pointerInteraction.rotateReady = true;
+          }, delay);
+        }
+
+        function clearRotateTimer() {
+          if (pointerInteraction.rotateTimer !== null) {
+            window.clearTimeout(pointerInteraction.rotateTimer);
+            pointerInteraction.rotateTimer = null;
+          }
+        }
+
+        function resetInteractionState() {
+          clearRotateTimer();
+          pointerInteraction.rotateReady = false;
+          pointerInteraction.mode = "idle";
+          pointerInteraction.lastSinglePosition = null;
+          pointerInteraction.lastAveragePosition = null;
+          pointerInteraction.lastDistance = null;
+          pointerInteraction.pointers.clear();
+        }
+
+        function storePointer(event) {
+          pointerInteraction.pointers.set(event.pointerId, {
+            id: event.pointerId,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            startX: event.clientX,
+            startY: event.clientY,
+            pointerType: event.pointerType || "mouse",
+          });
+        }
+
+        function updatePointer(event) {
+          const pointer = pointerInteraction.pointers.get(event.pointerId);
+          if (!pointer) {
+            return;
+          }
+          pointer.clientX = event.clientX;
+          pointer.clientY = event.clientY;
+        }
+
+        function getAveragePointerPosition() {
+          let sumX = 0;
+          let sumY = 0;
+          let count = 0;
+          pointerInteraction.pointers.forEach((pointer) => {
+            sumX += pointer.clientX;
+            sumY += pointer.clientY;
+            count += 1;
+          });
+          if (count === 0) {
+            return { x: 0, y: 0 };
+          }
+          return { x: sumX / count, y: sumY / count };
+        }
+
+        function getPointersDistance() {
+          const values = Array.from(pointerInteraction.pointers.values());
+          if (values.length < 2) {
+            return 0;
+          }
+          const a = values[0];
+          const b = values[1];
+          return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+        }
+
+        function applyRotation(deltaX) {
+          cameraRig.azimuth = THREE.MathUtils.euclideanModulo(
+            cameraRig.azimuth - deltaX * ROTATION_SPEED,
+            Math.PI * 2
+          );
+          updateCameraRigPosition();
+        }
+
+        function applyPan(deltaX, deltaY) {
+          if (!camera) {
+            return;
+          }
+          camera.getWorldDirection(tempForward);
+          tempForward.y = 0;
+          if (tempForward.lengthSq() < 1e-6) {
+            tempForward.set(0, 0, -1);
+          } else {
+            tempForward.normalize();
+          }
+          tempRight.crossVectors(tempForward, camera.up);
+          tempRight.y = 0;
+          if (tempRight.lengthSq() < 1e-6) {
+            tempRight.set(1, 0, 0);
+          } else {
+            tempRight.normalize();
+          }
+          const panFactor = cameraRig.radius * PAN_SPEED;
+          cameraRig.target.addScaledVector(tempRight, -deltaX * panFactor);
+          cameraRig.target.addScaledVector(tempForward, deltaY * panFactor);
+          updateCameraRigPosition();
+        }
+
+        function applyZoomDelta(deltaDistance) {
+          if (!Number.isFinite(deltaDistance) || deltaDistance === 0) {
+            return;
+          }
+          const factor = THREE.MathUtils.clamp(1 - deltaDistance * ZOOM_FACTOR_PER_PIXEL, 0.5, 1.5);
+          cameraRig.radius = THREE.MathUtils.clamp(
+            cameraRig.radius * factor,
+            cameraRig.minRadius,
+            cameraRig.maxRadius
+          );
+          updateCameraRigPosition();
+        }
 
       function initThree() {
         const canvas = document.getElementById("arena");
@@ -629,6 +921,9 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         clock = new THREE.Clock();
+
+        initialiseCameraRig();
+        setupPointerInteractions(canvas);
 
         addLights();
         addStageElements();
@@ -657,6 +952,7 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        updateCameraRigPosition();
       }
 
       function addLights() {
