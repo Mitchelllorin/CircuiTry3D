@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import "../styles/schematic.css";
 import "../styles/practice.css";
 import practiceProblems, {
@@ -23,11 +23,13 @@ import {
   GroundElement,
   Orientation,
   SchematicElement,
+  SymbolStandard,
   TwoTerminalElement,
   Vec2,
   WireElement,
 } from "../schematic/types";
 import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/threeFactory";
+import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, isSymbolStandard } from "../schematic/standards";
 
 declare global {
   interface Window {
@@ -666,11 +668,23 @@ function BuilderModeView() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [labelCounters, setLabelCounters] = useState<Record<string, number>>({});
   const [singleNodeOrientation, setSingleNodeOrientation] = useState<Orientation>("horizontal");
+  const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_SYMBOL_STANDARD;
+    }
+    const stored = window.localStorage.getItem("schematic.symbolStandard");
+    return isSymbolStandard(stored) ? stored : DEFAULT_SYMBOL_STANDARD;
+  });
 
   const selectedCatalogEntry = useMemo(() => {
     const entry = COMPONENT_CATALOG.find((item) => item.id === selectedCatalogId);
     return entry ?? COMPONENT_CATALOG[0];
   }, [selectedCatalogId]);
+
+  const standardMeta = useMemo(
+    () => SYMBOL_STANDARD_OPTIONS.find((option) => option.value === symbolStandard),
+    [symbolStandard]
+  );
 
   const selectedElement = useMemo(
     () => elements.find((element) => element.id === selectedElementId) ?? null,
@@ -688,6 +702,23 @@ function BuilderModeView() {
     const timeout = window.setTimeout(() => setFeedbackMessage(null), 3500);
     return () => window.clearTimeout(timeout);
   }, [feedbackMessage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem("schematic.symbolStandard", symbolStandard);
+  }, [symbolStandard]);
+
+  const handleStandardChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const next = event.target.value;
+      if (isSymbolStandard(next)) {
+        setSymbolStandard(next);
+      }
+    },
+    []
+  );
 
   const handleCatalogSelect = useCallback((entry: CatalogEntry) => {
     setSelectedCatalogId(entry.id);
@@ -904,6 +935,7 @@ function BuilderModeView() {
           selectedElementId={selectedElementId}
           draftAnchor={draft ? draft.start : null}
           hoverPoint={hoverPoint}
+          symbolStandard={symbolStandard}
           onBoardPointClick={handleBoardClick}
           onBoardPointMove={handleBoardHover}
           onElementClick={handleElementClick}
@@ -952,6 +984,30 @@ function BuilderModeView() {
                 Rotate Ground ({singleNodeOrientation === "horizontal" ? "⇔" : "⇕"})
               </button>
             </div>
+          </div>
+
+          <div className="schematic-panel-section">
+            <h3>Symbol Standard</h3>
+            <p className="schematic-panel-description">
+              {standardMeta?.description ?? "Select the symbol library to mirror your documentation standard."}
+            </p>
+            <select
+              aria-label="Symbol standard"
+              className="schematic-standard-select"
+              value={symbolStandard}
+              onChange={handleStandardChange}
+            >
+              {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {standardMeta?.references?.length ? (
+              <p className="schematic-panel-footnote">
+                Standards: {standardMeta.references.join(", ")}
+              </p>
+            ) : null}
           </div>
 
           <div className="schematic-panel-section">
@@ -1023,6 +1079,7 @@ type BuilderViewportProps = {
   selectedElementId: string | null;
   draftAnchor: Vec2 | null;
   hoverPoint: Vec2 | null;
+  symbolStandard: SymbolStandard;
   onBoardPointClick: (point: Vec2, event: PointerEvent) => void;
   onBoardPointMove: (point: Vec2 | null) => void;
   onElementClick: (elementId: string, event: PointerEvent) => void;
@@ -1034,6 +1091,7 @@ function BuilderViewport({
   selectedElementId,
   draftAnchor,
   hoverPoint,
+  symbolStandard,
   onBoardPointClick,
   onBoardPointMove,
   onElementClick,
@@ -1107,7 +1165,10 @@ function BuilderViewport({
     const terminalPoints: Vec2[] = [];
 
     elements.forEach((element) => {
-      const { group, terminals } = buildElement(three, element, { highlight: element.id === selectedElementId });
+      const { group, terminals } = buildElement(three, element, {
+        highlight: element.id === selectedElementId,
+        standard: symbolStandard,
+      });
       tagWithElementId(group, element.id);
       elementGroup.add(group);
       terminals.forEach((point) => {
@@ -1124,18 +1185,21 @@ function BuilderViewport({
 
     const nodesGroup = new three.Group();
     terminalPoints.forEach((point) => {
-      const mesh = buildNodeMesh(three, point, {});
+      const mesh = buildNodeMesh(three, point, { standard: symbolStandard });
       nodesGroup.add(mesh);
     });
     scene.add(nodesGroup);
     nodeGroupRef.current = nodesGroup;
 
     if (previewElement) {
-      const { group, terminals } = buildElement(three, previewElement, { preview: true });
+      const { group, terminals } = buildElement(three, previewElement, {
+        preview: true,
+        standard: symbolStandard,
+      });
       tagWithElementId(group, previewElement.id);
       if (terminals.length) {
         terminals.forEach((point) => {
-          const mesh = buildNodeMesh(three, point, { preview: true });
+          const mesh = buildNodeMesh(three, point, { preview: true, standard: symbolStandard });
           group.add(mesh);
         });
       }
@@ -1145,7 +1209,11 @@ function BuilderViewport({
 
     if (draftAnchor) {
       const anchorGroup = new three.Group();
-      const anchorMesh = buildNodeMesh(three, draftAnchor, { preview: true, highlight: true });
+      const anchorMesh = buildNodeMesh(three, draftAnchor, {
+        preview: true,
+        highlight: true,
+        standard: symbolStandard,
+      });
       anchorGroup.add(anchorMesh);
       scene.add(anchorGroup);
       anchorGroupRef.current = anchorGroup;
@@ -1165,7 +1233,7 @@ function BuilderViewport({
       scene.add(hoverMesh);
       hoverMarkerRef.current = hoverMesh;
     }
-  }, [elements, previewElement, selectedElementId, draftAnchor, hoverPoint]);
+  }, [elements, previewElement, selectedElementId, draftAnchor, hoverPoint, symbolStandard]);
 
   useEffect(() => {
     rebuildSceneContent();

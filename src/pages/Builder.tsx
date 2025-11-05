@@ -617,17 +617,18 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
 ];
 
 const SCHEMATIC_SECTIONS: HelpSection[] = [
-  {
-    title: "Standards & References",
-    paragraphs: [
-      "Professional schematics rely on common symbol libraries so anyone can read the circuit without guesswork.",
-    ],
-    bullets: [
-      "IEC 60617 (international) and IEEE Std 315/ASME Y14.44 (North America) define the canonical symbols.",
-      "Use your organisation's template if it specifies a particular standard or title block.",
-      "Keep reference designators (R1, C3, SW1) unique and match the bill of materials.",
-    ],
-  },
+    {
+      title: "Standards & References",
+      paragraphs: [
+        "Professional schematics rely on common symbol libraries so anyone can read the circuit without guesswork.",
+      ],
+      bullets: [
+        "IEC 60617 (international) and IEEE Std 315/ASME Y14.44 (North America) define the canonical symbols.",
+        "Use your organisation's template if it specifies a particular standard or title block.",
+        "Keep reference designators (R1, C3, SW1) unique and match the bill of materials.",
+        "Set the Symbol Standard selector (ANSI/IEEE vs IEC) before exporting so resistor bodies match your documentation standard.",
+      ],
+    },
   {
     title: "Symbol Conventions",
     paragraphs: [

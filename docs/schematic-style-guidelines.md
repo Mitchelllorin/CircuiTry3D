@@ -23,6 +23,11 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
   - **Switch:** Two posts with a single angled blade segment indicating the open switch gap.
   - **Ground:** Three progressively shorter bars stacked vertically beneath the node.
 
+- **Standards Compliance**
+  - Use the **Symbol Standard** selector in Schematic mode to toggle between *ANSI / IEEE Std 315* (zig-zag resistor) and *IEC 60617* (rectangular resistor) profiles.
+  - Shared geometry (battery plates, capacitor plates, inductors, grounds, lamps, switches) follows the common definitions used across IEEE, IEC, and ANSI libraries.
+  - Default exports use the ANSI/IEEE profile; team members targeting IEC deliverables should switch profiles before capturing renders or exporting.
+
 - **Labels**
   - Component sprites use black text on a semi-transparent white card for readability over the board.
   - Preview states dim label opacity; selected components keep the card but the geometry shifts to highlight blue.

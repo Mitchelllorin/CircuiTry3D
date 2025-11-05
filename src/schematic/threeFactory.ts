@@ -1,4 +1,5 @@
-import { GroundElement, SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./types";
+import { GroundElement, SchematicElement, SymbolStandard, TwoTerminalElement, Vec2, WireElement } from "./types";
+import { DEFAULT_SYMBOL_STANDARD } from "./standards";
 
 export const WIRE_RADIUS = 0.055;
 export const RESISTOR_RADIUS = 0.05;
@@ -10,6 +11,7 @@ export const LABEL_HEIGHT = 0.4;
 type BuildOptions = {
   preview?: boolean;
   highlight?: boolean;
+  standard?: SymbolStandard;
 };
 
 type BuildResult = {
@@ -142,7 +144,7 @@ const buildWireElement = (three: any, element: WireElement, options: BuildOption
   return { group, terminals };
 };
 
-const buildResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+const buildAnsiIeeeResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `resistor-${element.id}`;
   const resistorMaterial = new three.MeshStandardMaterial({
@@ -202,6 +204,84 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   }
 
   return { group, terminals: [element.start, element.end] };
+};
+
+const buildIecResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `resistor-${element.id}`;
+  const bodyMaterial = new three.MeshStandardMaterial({
+    color: COLOR_HELPERS.stroke
+  });
+  const leadMaterial = new three.MeshStandardMaterial({
+    color: COLOR_HELPERS.stroke
+  });
+  styliseMaterial(three, bodyMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
+
+  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT);
+  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
+  const axisVector = new three.Vector3().subVectors(endVec, startVec);
+  const axisLength = axisVector.length();
+
+  if (axisLength <= SNAP_EPSILON) {
+    return { group, terminals: [element.start, element.end] };
+  }
+
+  const axisDirection = axisVector.clone().normalize();
+  let leadLength = Math.min(axisLength * 0.25, 0.45);
+  const maxLeadLength = Math.max(axisLength / 2 - 0.05, 0);
+  leadLength = Math.min(leadLength, maxLeadLength);
+  leadLength = Math.max(leadLength, Math.min(0.12, axisLength / 4));
+
+  let bodyLength = axisLength - leadLength * 2;
+  const desiredBodyMin = Math.max(axisLength * 0.48, 0.32);
+  if (bodyLength < desiredBodyMin) {
+    bodyLength = Math.min(axisLength, Math.max(desiredBodyMin, axisLength - 0.16));
+    leadLength = Math.max((axisLength - bodyLength) / 2, 0.08);
+  }
+
+  const bodyStartVec = startVec.clone().add(axisDirection.clone().multiplyScalar(leadLength));
+  const bodyEndVec = endVec.clone().add(axisDirection.clone().multiplyScalar(-leadLength));
+  const bodyMidpoint = new three.Vector3().addVectors(bodyStartVec, bodyEndVec).multiplyScalar(0.5);
+
+  const bodyGeometry = new three.BoxGeometry(bodyLength, 0.3, 0.74);
+  const bodyMesh = new three.Mesh(bodyGeometry, bodyMaterial);
+  const axisOrientation = new three.Vector3(axisDirection.x, 0, axisDirection.z);
+  if (axisOrientation.lengthSq() > 0) {
+    axisOrientation.normalize();
+    const quaternion = new three.Quaternion().setFromUnitVectors(new three.Vector3(1, 0, 0), axisOrientation);
+    bodyMesh.setRotationFromQuaternion(quaternion);
+  }
+  bodyMesh.position.copy(bodyMidpoint);
+  group.add(bodyMesh);
+
+  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), bodyStartVec, WIRE_RADIUS, leadMaterial);
+  const leadEnd = cylinderBetween(three, bodyEndVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
+  if (leadStart) {
+    group.add(leadStart);
+  }
+  if (leadEnd) {
+    group.add(leadEnd);
+  }
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label);
+    if (labelSprite) {
+      labelSprite.position.copy(bodyMidpoint.clone());
+      labelSprite.position.y += LABEL_HEIGHT;
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.start, element.end] };
+};
+
+const buildResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const standard = options.standard ?? DEFAULT_SYMBOL_STANDARD;
+  if (standard === "iec") {
+    return buildIecResistorElement(three, element, options);
+  }
+  return buildAnsiIeeeResistorElement(three, element, options);
 };
 
 const buildBatteryElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
@@ -466,7 +546,8 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "LAMP");
     if (labelSprite) {
-      labelSprite.position.copy(bulbCenter.clone().setY(bulbCenter.y + 0.9));
+      labelSprite.position.copy(center.clone());
+      labelSprite.position.y += 0.9;
       group.add(labelSprite);
     }
   }
@@ -585,13 +666,15 @@ const buildTwoTerminalElement = (three: any, element: TwoTerminalElement, option
 };
 
 export const buildElement = (three: any, element: SchematicElement, options: BuildOptions): BuildResult => {
+  const standard = options.standard ?? DEFAULT_SYMBOL_STANDARD;
+  const resolvedOptions: BuildOptions = { ...options, standard };
   if (element.kind === "wire") {
-    return buildWireElement(three, element as WireElement, options);
+    return buildWireElement(three, element as WireElement, resolvedOptions);
   }
   if (element.kind === "ground") {
-    return buildGroundElement(three, element as GroundElement, options);
+    return buildGroundElement(three, element as GroundElement, resolvedOptions);
   }
-  return buildTwoTerminalElement(three, element as TwoTerminalElement, options);
+  return buildTwoTerminalElement(three, element as TwoTerminalElement, resolvedOptions);
 };
 
 export const buildNodeMesh = (three: any, point: Vec2, options: BuildOptions) => {
