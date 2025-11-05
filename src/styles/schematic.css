@@ -29,10 +29,38 @@
   color: rgba(209, 230, 255, 0.82);
 }
 
+.schematic-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .schematic-controls {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.schematic-drawer-trigger {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 206, 255, 0.55);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.16), rgba(56, 228, 200, 0.16));
+  color: rgba(224, 244, 255, 0.95);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schematic-drawer-trigger:hover,
+.schematic-drawer-trigger:focus {
+  transform: translateY(-1px);
+  border-color: rgba(120, 236, 255, 0.75);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.24), rgba(80, 232, 204, 0.24));
 }
 
 .schematic-toggle {
@@ -361,6 +389,29 @@
   padding: 24px;
 }
 
+.schematic-panel-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(14, 38, 72, 0.78), rgba(4, 16, 34, 0.85));
+  border: 1px solid rgba(80, 150, 240, 0.32);
+  color: rgba(208, 228, 255, 0.88);
+}
+
+.schematic-panel-callout strong {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.schematic-panel-callout p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(196, 216, 244, 0.76);
+  line-height: 1.5;
+}
+
 .schematic-panel .worksheet-controls {
   display: flex;
   flex-direction: column;
@@ -503,6 +554,33 @@
   gap: 18px;
 }
 
+.schematic-catalog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schematic-catalog-drawer {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 206, 255, 0.45);
+  background: rgba(10, 30, 56, 0.7);
+  color: rgba(214, 236, 255, 0.92);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schematic-catalog-drawer:hover,
+.schematic-catalog-drawer:focus {
+  transform: translateY(-1px);
+  border-color: rgba(120, 236, 255, 0.7);
+  background: rgba(16, 40, 72, 0.82);
+}
+
 .schematic-catalog h2 {
   margin: 0;
   font-size: 1.05rem;
@@ -616,6 +694,205 @@
 .schematic-secondary {
   border-color: rgba(120, 214, 255, 0.4) !important;
   background: rgba(24, 60, 92, 0.65) !important;
+}
+
+.schematic-drawer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  z-index: 90;
+}
+
+.schematic-drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 10, 22, 0.6);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.schematic-drawer-panel {
+  position: relative;
+  width: min(480px, 90vw);
+  height: 100%;
+  background: linear-gradient(165deg, rgba(6, 16, 32, 0.98), rgba(3, 8, 20, 0.98));
+  border-left: 1px solid rgba(72, 126, 220, 0.32);
+  box-shadow: -22px 0 48px rgba(0, 0, 0, 0.45);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.schematic-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.schematic-drawer-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(210, 234, 255, 0.95);
+}
+
+.schematic-drawer-header p {
+  margin: 0;
+  color: rgba(188, 212, 244, 0.78);
+  line-height: 1.5;
+}
+
+.schematic-drawer-close {
+  border: 1px solid rgba(82, 140, 220, 0.4);
+  background: rgba(12, 28, 54, 0.7);
+  color: rgba(224, 240, 255, 0.9);
+  border-radius: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schematic-drawer-close:hover,
+.schematic-drawer-close:focus {
+  transform: translateY(-1px);
+  border-color: rgba(130, 206, 255, 0.6);
+  background: rgba(18, 36, 72, 0.85);
+}
+
+.schematic-drawer-content {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.schematic-drawer-list {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.schematic-drawer-item {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(72, 128, 220, 0.24);
+  background: rgba(12, 26, 48, 0.65);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.schematic-drawer-item:hover,
+.schematic-drawer-item:focus {
+  transform: translateY(-1px);
+  border-color: rgba(110, 188, 255, 0.45);
+  background: rgba(18, 36, 68, 0.78);
+}
+
+.schematic-drawer-item.is-selected {
+  border-color: rgba(0, 210, 255, 0.8);
+  background: linear-gradient(135deg, rgba(0, 204, 255, 0.18), rgba(60, 228, 200, 0.18));
+  box-shadow: 0 12px 30px rgba(0, 180, 255, 0.18);
+}
+
+.drawer-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(52, 120, 220, 0.2);
+  color: rgba(222, 240, 255, 0.92);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drawer-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-item-title {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(222, 240, 255, 0.94);
+}
+
+.drawer-item-description {
+  font-size: 0.84rem;
+  color: rgba(198, 218, 244, 0.78);
+  line-height: 1.5;
+}
+
+.schematic-drawer-preview {
+  flex: 1 1 55%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: rgba(6, 16, 32, 0.72);
+  border: 1px solid rgba(72, 120, 220, 0.22);
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.schematic-drawer-canvas {
+  flex: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, rgba(0, 208, 255, 0.08), transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(144, 96, 255, 0.08), transparent 65%);
+}
+
+.schematic-drawer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: rgba(204, 226, 255, 0.86);
+}
+
+.drawer-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+}
+
+.drawer-meta-row strong {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(210, 234, 255, 0.92);
+}
+
+.drawer-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(24, 60, 100, 0.7);
+  border: 1px solid rgba(88, 150, 232, 0.4);
+  color: rgba(198, 220, 255, 0.85);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .schematic-selection {

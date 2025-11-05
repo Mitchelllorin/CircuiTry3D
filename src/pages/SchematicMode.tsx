@@ -16,6 +16,7 @@ import WireTable, {
   type WorksheetEntry,
 } from "../components/practice/WireTable";
 import SolutionSteps from "../components/practice/SolutionSteps";
+import ComponentRenderDrawer from "../components/schematic/ComponentRenderDrawer";
 import { COMPONENT_CATALOG } from "../schematic/catalog";
 import {
   BoardLimits,
@@ -28,15 +29,7 @@ import {
   WireElement,
 } from "../schematic/types";
 import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/threeFactory";
-
-declare global {
-  interface Window {
-    THREE?: any;
-  }
-}
-
-const THREE_CDN = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js";
-let threeLoaderPromise: Promise<any> | null = null;
+import { loadThree } from "../schematic/threeLoader";
 
 type TopologyInfo = {
   title: string;
@@ -286,37 +279,64 @@ const MODE_TABS: { key: ViewMode; label: string }[] = [
 ];
 
 export default function SchematicMode() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerInitialId, setDrawerInitialId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("practice");
+
+  const handleShowCatalog = useCallback((componentId?: string) => {
+    setDrawerInitialId(componentId ?? null);
+    setDrawerOpen(true);
+  }, []);
+
+  const handleCloseCatalog = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
 
   return (
     <div className="schematic-shell">
+      <ComponentRenderDrawer open={drawerOpen} onClose={handleCloseCatalog} initialComponentId={drawerInitialId} />
       <header className="schematic-header">
         <div>
           <h1>3D Schematic Mode</h1>
           <p>{MODE_SUMMARY[viewMode]}</p>
         </div>
-        <div className="schematic-controls" role="tablist" aria-label="Schematic mode selector">
-          {MODE_TABS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={viewMode === key}
-              className={viewMode === key ? "schematic-toggle is-active" : "schematic-toggle"}
-              onClick={() => setViewMode(key)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="schematic-header-actions">
+          <button
+            type="button"
+            className="schematic-drawer-trigger"
+            onClick={() => handleShowCatalog()}
+          >
+            Browse 3D Catalog
+          </button>
+          <div className="schematic-controls" role="tablist" aria-label="Schematic mode selector">
+            {MODE_TABS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={viewMode === key}
+                className={viewMode === key ? "schematic-toggle is-active" : "schematic-toggle"}
+                onClick={() => setViewMode(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      {viewMode === "practice" ? <PracticeModeView /> : <BuilderModeView />}
+      {viewMode === "practice" ? (
+        <PracticeModeView onShowCatalog={handleShowCatalog} />
+      ) : (
+        <BuilderModeView onShowCatalog={handleShowCatalog} />
+      )}
     </div>
   );
 }
 
-function PracticeModeView() {
+type CatalogOpener = (componentId?: string) => void;
+
+function PracticeModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
   const fallbackProblemId = practiceProblems[0]?.id ?? null;
 
@@ -588,6 +608,16 @@ function PracticeModeView() {
         </section>
 
         <aside className="schematic-panel">
+          <div className="schematic-panel-callout">
+            <div>
+              <strong>Explore 3D components</strong>
+              <p>Open the render drawer to inspect every schematic element up close.</p>
+            </div>
+            <button type="button" className="schematic-secondary" onClick={() => onShowCatalog()}>
+              Open Drawer
+            </button>
+          </div>
+
           <div className="worksheet-controls">
             <button type="button" onClick={() => setTableRevealed((value) => !value)}>
               {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
@@ -657,7 +687,7 @@ function PracticeModeView() {
   );
 }
 
-function BuilderModeView() {
+function BuilderModeView({ onShowCatalog }: { onShowCatalog: CatalogOpener }) {
   const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -920,7 +950,16 @@ function BuilderModeView() {
 
       <aside className="schematic-sidebar">
         <div className="schematic-catalog">
-          <h2>Component Catalog</h2>
+          <div className="schematic-catalog-header">
+            <h2>Component Catalog</h2>
+            <button
+              type="button"
+              className="schematic-catalog-drawer"
+              onClick={() => onShowCatalog(selectedCatalogId)}
+            >
+              3D Drawer
+            </button>
+          </div>
           <div className="catalog-grid" role="list">
             {COMPONENT_CATALOG.map((entry) => (
               <button
@@ -2010,60 +2049,4 @@ function disposeThreeObject(root: any) {
       child.userData.texture.dispose();
     }
   });
-}
-
-function loadThree(): Promise<any> {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("three.js can only be loaded in a browser environment"));
-  }
-
-  if (window.THREE) {
-    return Promise.resolve(window.THREE);
-  }
-
-  if (threeLoaderPromise) {
-    return threeLoaderPromise;
-  }
-
-  threeLoaderPromise = new Promise((resolve, reject) => {
-    const finish = () => {
-      if (window.THREE) {
-        resolve(window.THREE);
-      } else {
-        reject(new Error("three.js failed to initialise"));
-      }
-    };
-
-    const script = document.createElement("script");
-    script.src = THREE_CDN;
-    script.async = true;
-
-    let attemptedFallback = false;
-
-    script.addEventListener("load", finish);
-    script.addEventListener("error", () => {
-      if (attemptedFallback) {
-        reject(new Error("Failed to load three.js from CDN and local fallback."));
-        return;
-      }
-      attemptedFallback = true;
-      const fallback = document.createElement("script");
-      const base =
-        typeof import.meta !== "undefined" && import.meta && import.meta.env && import.meta.env.BASE_URL
-          ? import.meta.env.BASE_URL
-          : "/";
-      const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
-      fallback.src = `${normalizedBase}/vendor/three.min.js`;
-      fallback.async = true;
-      fallback.addEventListener("load", finish);
-      fallback.addEventListener("error", () =>
-        reject(new Error("Failed to load three.js from both CDN and packaged fallback."))
-      );
-      document.body.appendChild(fallback);
-    });
-
-    document.body.appendChild(script);
-  });
-
-  return threeLoaderPromise;
 }
