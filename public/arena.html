@@ -462,10 +462,16 @@
     <canvas id="arena"></canvas>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
     <script>
-      if (typeof window.THREE === "undefined") {
-        document.write('<script src="vendor/three.min.js"><\\/script>');
-      }
-    </script>
+        if (typeof window.THREE === "undefined") {
+          document.write('<script src="vendor/three.min.js"><\\/script>');
+        }
+      </script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.min.js" crossorigin="anonymous"></script>
+      <script>
+        if (typeof window.THREE === "undefined" || typeof window.THREE.OrbitControls === "undefined") {
+          document.write('<script src="vendor/OrbitControls.js"><\\/script>');
+        }
+      </script>
     <script>
     (() => {
       "use strict";
@@ -612,84 +618,61 @@
       let energyRing;
       let pulseRing;
       let particles;
-      let clock;
+        let clock;
+        let controls;
 
         const CAMERA_DEFAULT_POSITION = new THREE.Vector3(0, 2.8, 7.6);
         const CAMERA_DEFAULT_TARGET = new THREE.Vector3(0, 0.45, 0);
         const CAMERA_RADIUS_LIMITS = { min: 4.5, max: 12 };
         const CAMERA_PAN_LIMITS = { x: 4.5, y: 1.2, z: 4.5 };
-        const TWO_PI = Math.PI * 2;
-
-        const cameraState = {
-          target: CAMERA_DEFAULT_TARGET.clone(),
-          spherical: new THREE.Spherical(),
-          initialSpherical: new THREE.Spherical(),
-          fixedPhi: 0,
-          needsUpdate: false,
-          rotateSpeed: 0.0055,
-          panSpeed: 0.9,
-          zoomSpeed: 0.75,
-          wheelZoomSpeed: 0.003
-        };
-
-        const activePointers = new Map();
-        const multiTouchState = {
-          active: false,
-          lastDistance: 0,
-          lastMidpoint: new THREE.Vector2()
-        };
-
-        const cameraOffset = new THREE.Vector3();
-        const panOffset = new THREE.Vector3();
-        const panVector = new THREE.Vector3();
-        const scratchVec2A = new THREE.Vector2();
-        const scratchVec2B = new THREE.Vector2();
-        const scratchVec2C = new THREE.Vector2();
+        const CAMERA_POLAR_LIMITS = { min: THREE.MathUtils.degToRad(28), max: THREE.MathUtils.degToRad(82) };
+        const CAMERA_DAMPING = 0.12;
+        const CAMERA_ROTATE_SPEED = 0.65;
+        const CAMERA_ZOOM_SPEED = 0.85;
+        const CAMERA_PAN_SPEED = 0.85;
 
       const particleSpeeds = [];
       const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
 
-      function initThree() {
-        const canvas = document.getElementById("arena");
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050716);
-        scene.fog = new THREE.Fog(0x050716, 14, 36);
+        function initThree() {
+          const canvas = document.getElementById("arena");
+          scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x050716);
+          scene.fog = new THREE.Fog(0x050716, 14, 36);
 
-        camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.copy(CAMERA_DEFAULT_POSITION);
-        camera.lookAt(CAMERA_DEFAULT_TARGET);
+          camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 100);
+          camera.position.copy(CAMERA_DEFAULT_POSITION);
+          camera.lookAt(CAMERA_DEFAULT_TARGET);
 
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.domElement.style.touchAction = "none";
-        renderer.domElement.style.cursor = "grab";
+          renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.domElement.style.touchAction = "none";
+          renderer.domElement.style.cursor = "grab";
 
-        registerInteractionEvents(renderer.domElement);
+          setupOrbitControls();
 
-        clock = new THREE.Clock();
+          clock = new THREE.Clock();
 
-        addLights();
-        addStageElements();
-        addParticles();
+          addLights();
+          addStageElements();
+          addParticles();
 
-        initializeCameraState();
+          componentGroupA = buildComponent("resistor", 100, true);
+          componentGroupA.position.x = COMPONENT_POSITIONS.A;
+          energizeComponent(componentGroupA, 0.24);
+          scene.add(componentGroupA);
 
-        componentGroupA = buildComponent("resistor", 100, true);
-        componentGroupA.position.x = COMPONENT_POSITIONS.A;
-        energizeComponent(componentGroupA, 0.24);
-        scene.add(componentGroupA);
+          componentGroupB = buildComponent("resistor", 100, false);
+          componentGroupB.position.x = COMPONENT_POSITIONS.B;
+          componentGroupB.visible = false;
+          energizeComponent(componentGroupB, 0.24);
+          scene.add(componentGroupB);
 
-        componentGroupB = buildComponent("resistor", 100, false);
-        componentGroupB.position.x = COMPONENT_POSITIONS.B;
-        componentGroupB.visible = false;
-        energizeComponent(componentGroupB, 0.24);
-        scene.add(componentGroupB);
+          window.addEventListener("resize", handleResize);
 
-        window.addEventListener("resize", handleResize);
-
-        animate();
-      }
+          animate();
+        }
 
         function handleResize() {
           if (!camera || !renderer) {
@@ -698,8 +681,12 @@
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
           renderer.setSize(window.innerWidth, window.innerHeight);
-          cameraState.needsUpdate = true;
-          updateCamera(true);
+          if (controls) {
+            controls.update();
+            if (clampControlsTarget()) {
+              controls.update();
+            }
+          }
         }
 
       function addLights() {
@@ -819,265 +806,85 @@
         scene.add(particles);
       }
 
-        function initializeCameraState() {
-          cameraState.target.copy(CAMERA_DEFAULT_TARGET);
-          cameraOffset.copy(CAMERA_DEFAULT_POSITION).sub(cameraState.target);
-          cameraState.spherical.setFromVector3(cameraOffset);
-          cameraState.spherical.radius = THREE.MathUtils.clamp(
-            cameraState.spherical.radius,
-            CAMERA_RADIUS_LIMITS.min,
-            CAMERA_RADIUS_LIMITS.max
-          );
-          normalizeAzimuth();
-          cameraState.fixedPhi = cameraState.spherical.phi;
-          cameraState.initialSpherical.copy(cameraState.spherical);
-          cameraState.needsUpdate = true;
-          updateCamera(true);
-        }
-
-        function normalizeAzimuth() {
-          cameraState.spherical.theta = THREE.MathUtils.euclideanModulo(
-            cameraState.spherical.theta + Math.PI,
-            TWO_PI
-          ) - Math.PI;
-        }
-
-        function updateCamera(force = false) {
-          if (!camera) {
-            return;
-          }
-          if (!force && !cameraState.needsUpdate) {
-            return;
-          }
-
-          cameraState.spherical.radius = THREE.MathUtils.clamp(
-            cameraState.spherical.radius,
-            CAMERA_RADIUS_LIMITS.min,
-            CAMERA_RADIUS_LIMITS.max
-          );
-          cameraState.spherical.phi = cameraState.fixedPhi;
-
-          const offset = cameraOffset.setFromSpherical(cameraState.spherical);
-          camera.position.copy(cameraState.target).add(offset);
-          camera.lookAt(cameraState.target);
-          camera.updateMatrix();
-          camera.updateMatrixWorld(true);
-          cameraState.needsUpdate = false;
-        }
-
-        function resetCameraControl() {
-          cameraState.target.copy(CAMERA_DEFAULT_TARGET);
-          cameraState.spherical.copy(cameraState.initialSpherical);
-          cameraState.fixedPhi = cameraState.initialSpherical.phi;
-          normalizeAzimuth();
-          cameraState.needsUpdate = true;
-          activePointers.clear();
-          multiTouchState.active = false;
-          multiTouchState.lastDistance = 0;
-          multiTouchState.lastMidpoint.set(0, 0);
-          updateCamera(true);
-        }
-
-        function applyPan(deltaX, deltaY) {
+        function setupOrbitControls() {
           if (!camera || !renderer) {
             return;
           }
+
+          if (typeof THREE.OrbitControls !== "function") {
+            console.warn("OrbitControls unavailable. Camera interaction disabled.");
+            return;
+          }
+
+          controls = new THREE.OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = CAMERA_DAMPING;
+          controls.enablePan = true;
+          controls.enableZoom = true;
+          controls.enableRotate = true;
+          controls.rotateSpeed = CAMERA_ROTATE_SPEED;
+          controls.zoomSpeed = CAMERA_ZOOM_SPEED;
+          controls.panSpeed = CAMERA_PAN_SPEED;
+          controls.screenSpacePanning = false;
+          controls.minDistance = CAMERA_RADIUS_LIMITS.min;
+          controls.maxDistance = CAMERA_RADIUS_LIMITS.max;
+          controls.minPolarAngle = CAMERA_POLAR_LIMITS.min;
+          controls.maxPolarAngle = CAMERA_POLAR_LIMITS.max;
+          controls.target.copy(CAMERA_DEFAULT_TARGET);
+          controls.update();
+          clampControlsTarget();
+          controls.saveState();
+
           const element = renderer.domElement;
-          if (!element) {
-            return;
+          if (element) {
+            element.addEventListener("pointerdown", handleInteractionCursorActive);
+            element.addEventListener("pointerup", handleInteractionCursorIdle);
+            element.addEventListener("pointerleave", handleInteractionCursorIdle);
+            element.addEventListener("pointercancel", handleInteractionCursorIdle);
+          }
+        }
+
+        function handleInteractionCursorActive() {
+          if (renderer && renderer.domElement) {
+            renderer.domElement.style.cursor = "grabbing";
+          }
+        }
+
+        function handleInteractionCursorIdle() {
+          if (renderer && renderer.domElement) {
+            renderer.domElement.style.cursor = "grab";
+          }
+        }
+
+        function clampControlsTarget() {
+          if (!controls) {
+            return false;
           }
 
-          camera.updateMatrix();
-          cameraOffset.copy(camera.position).sub(cameraState.target);
-          let targetDistance = cameraOffset.length();
-          targetDistance *= Math.tan((camera.fov / 2) * (Math.PI / 180));
-
-          if (!Number.isFinite(targetDistance) || targetDistance <= 0) {
-            targetDistance = 0.01;
-          }
-
-          if (element.clientHeight === 0) {
-            return;
-          }
-
-          const moveX = (2 * deltaX * targetDistance) / element.clientHeight;
-          const moveY = (2 * deltaY * targetDistance) / element.clientHeight;
-
-          panOffset.set(0, 0, 0);
-
-          panVector.setFromMatrixColumn(camera.matrix, 0);
-          panVector.multiplyScalar(-moveX * cameraState.panSpeed);
-          panOffset.add(panVector);
-
-          panVector.setFromMatrixColumn(camera.matrix, 1);
-          panVector.multiplyScalar(moveY * cameraState.panSpeed);
-          panOffset.add(panVector);
-
-          cameraState.target.add(panOffset);
-          cameraState.target.y = THREE.MathUtils.clamp(
-            cameraState.target.y,
+          const target = controls.target;
+          const clampedX = THREE.MathUtils.clamp(target.x, -CAMERA_PAN_LIMITS.x, CAMERA_PAN_LIMITS.x);
+          const clampedY = THREE.MathUtils.clamp(
+            target.y,
             CAMERA_DEFAULT_TARGET.y - CAMERA_PAN_LIMITS.y,
             CAMERA_DEFAULT_TARGET.y + CAMERA_PAN_LIMITS.y
           );
-          cameraState.target.x = THREE.MathUtils.clamp(
-            cameraState.target.x,
-            -CAMERA_PAN_LIMITS.x,
-            CAMERA_PAN_LIMITS.x
-          );
-          cameraState.target.z = THREE.MathUtils.clamp(
-            cameraState.target.z,
-            -CAMERA_PAN_LIMITS.z,
-            CAMERA_PAN_LIMITS.z
-          );
+          const clampedZ = THREE.MathUtils.clamp(target.z, -CAMERA_PAN_LIMITS.z, CAMERA_PAN_LIMITS.z);
 
-          cameraState.needsUpdate = true;
-        }
-
-        function registerInteractionEvents(element) {
-          element.addEventListener("pointerdown", handlePointerDown, { passive: false });
-          element.addEventListener("pointermove", handlePointerMove, { passive: false });
-          element.addEventListener("pointerup", handlePointerUp, { passive: false });
-          element.addEventListener("pointercancel", handlePointerUp, { passive: false });
-          element.addEventListener("pointerleave", handlePointerUp, { passive: false });
-          element.addEventListener("wheel", handleWheel, { passive: false });
-        }
-
-        function getPrimaryPointers() {
-          return Array.from(activePointers.values())
-            .sort((a, b) => a.id - b.id)
-            .slice(0, 2);
-        }
-
-        function handlePointerDown(event) {
-          if (!renderer) {
-            return;
-          }
-          if (event.pointerType === "touch") {
-            event.preventDefault();
+          if (target.x === clampedX && target.y === clampedY && target.z === clampedZ) {
+            return false;
           }
 
-          const pointer = {
-            id: event.pointerId,
-            current: new THREE.Vector2(event.clientX, event.clientY),
-            last: new THREE.Vector2(event.clientX, event.clientY)
-          };
-
-          activePointers.set(event.pointerId, pointer);
-          renderer.domElement.setPointerCapture(event.pointerId);
-
-          if (event.pointerType !== "touch") {
-            renderer.domElement.style.cursor = "grabbing";
-          }
-
-          if (activePointers.size >= 2) {
-            const [first, second] = getPrimaryPointers();
-            multiTouchState.active = true;
-            multiTouchState.lastDistance = first.current.distanceTo(second.current);
-            scratchVec2C.copy(first.current).add(second.current).multiplyScalar(0.5);
-            multiTouchState.lastMidpoint.copy(scratchVec2C);
-          } else {
-            multiTouchState.active = false;
-            multiTouchState.lastDistance = 0;
-          }
-        }
-
-        function handlePointerMove(event) {
-          if (!activePointers.has(event.pointerId)) {
-            return;
-          }
-          if (event.pointerType === "touch") {
-            event.preventDefault();
-          }
-
-          const pointer = activePointers.get(event.pointerId);
-          pointer.last.copy(pointer.current);
-          pointer.current.set(event.clientX, event.clientY);
-
-          if (activePointers.size === 1) {
-            const deltaX = pointer.current.x - pointer.last.x;
-            if (deltaX !== 0) {
-              cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
-              normalizeAzimuth();
-              cameraState.needsUpdate = true;
-            }
-          } else if (activePointers.size >= 2) {
-            const [first, second] = getPrimaryPointers();
-            scratchVec2A.copy(first.current);
-            scratchVec2B.copy(second.current);
-            const midpoint = scratchVec2C.copy(scratchVec2A).add(scratchVec2B).multiplyScalar(0.5);
-
-            if (multiTouchState.active) {
-              const deltaMidX = midpoint.x - multiTouchState.lastMidpoint.x;
-              const deltaMidY = midpoint.y - multiTouchState.lastMidpoint.y;
-              if (deltaMidX !== 0 || deltaMidY !== 0) {
-                applyPan(deltaMidX, deltaMidY);
-              }
-
-              const distance = scratchVec2A.distanceTo(scratchVec2B);
-              const distanceDelta = distance - multiTouchState.lastDistance;
-              const element = renderer ? renderer.domElement : null;
-              if (element && Math.abs(distanceDelta) > 0.3) {
-                if (element.clientWidth !== 0) {
-                  const normalized = distanceDelta / element.clientWidth;
-                  const scale = THREE.MathUtils.clamp(
-                    1 - normalized * cameraState.zoomSpeed,
-                    0.7,
-                    1.3
-                  );
-                  if (!Number.isNaN(scale) && Number.isFinite(scale)) {
-                    cameraState.spherical.radius *= scale;
-                    cameraState.needsUpdate = true;
-                  }
-                }
-                multiTouchState.lastDistance = distance;
-              } else {
-                multiTouchState.lastDistance = distance;
-              }
-            } else {
-              multiTouchState.active = true;
-              multiTouchState.lastDistance = scratchVec2A.distanceTo(scratchVec2B);
-            }
-
-            multiTouchState.lastMidpoint.copy(midpoint);
-          }
-        }
-
-        function handlePointerUp(event) {
-          if (!renderer || !activePointers.has(event.pointerId)) {
-            return;
-          }
-          if (event.pointerType === "touch") {
-            event.preventDefault();
-          }
-
-          renderer.domElement.releasePointerCapture(event.pointerId);
-          activePointers.delete(event.pointerId);
-
-          if (activePointers.size === 0 && renderer.domElement) {
-            renderer.domElement.style.cursor = "grab";
-          }
-
-          if (activePointers.size < 2) {
-            multiTouchState.active = false;
-            multiTouchState.lastDistance = 0;
-            multiTouchState.lastMidpoint.set(0, 0);
-          }
-        }
-
-        function handleWheel(event) {
-          if (!camera) {
-            return;
-          }
-
-          event.preventDefault();
-          cameraState.spherical.radius += event.deltaY * cameraState.wheelZoomSpeed;
-          cameraState.needsUpdate = true;
+          target.set(clampedX, clampedY, clampedZ);
+          return true;
         }
 
         function resetCameraView() {
-          resetCameraControl();
-          if (renderer && renderer.domElement) {
-            renderer.domElement.style.cursor = "grab";
+          if (!controls) {
+            return;
+          }
+          controls.reset();
+          if (clampControlsTarget()) {
+            controls.update();
           }
         }
 
@@ -1396,9 +1203,17 @@
 
         function animate() {
           requestAnimationFrame(animate);
+
           if (!clock) {
-            updateCamera();
-            renderer.render(scene, camera);
+            if (controls) {
+              controls.update();
+              if (clampControlsTarget()) {
+                controls.update();
+              }
+            }
+            if (renderer && camera) {
+              renderer.render(scene, camera);
+            }
             return;
           }
 
@@ -1431,8 +1246,16 @@
 
           animateParticles(delta);
 
-          updateCamera();
-          renderer.render(scene, camera);
+          if (controls) {
+            controls.update();
+            if (clampControlsTarget()) {
+              controls.update();
+            }
+          }
+
+          if (renderer && camera) {
+            renderer.render(scene, camera);
+          }
         }
 
       function updateComponentAnimation(group, elapsed, delta) {
