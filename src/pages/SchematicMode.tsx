@@ -285,8 +285,236 @@ const MODE_TABS: { key: ViewMode; label: string }[] = [
   { key: "builder", label: "Custom Builder" },
 ];
 
+type SchematicRenderDrawerProps = {
+  open: boolean;
+  onClose: () => void;
+  onNavigate: (mode: ViewMode) => void;
+  onSelectProblem: (problemId: string) => void;
+  onSelectCatalog: (entry: CatalogEntry) => void;
+  selectedProblemId: string | null;
+  selectedCatalogId: string;
+  problems: PracticeProblem[];
+  catalog: CatalogEntry[];
+};
+
+function SchematicRenderDrawer({
+  open,
+  onClose,
+  onNavigate,
+  onSelectProblem,
+  onSelectCatalog,
+  selectedProblemId,
+  selectedCatalogId,
+  problems,
+  catalog,
+}: SchematicRenderDrawerProps) {
+  const [activeTab, setActiveTab] = useState<"scenes" | "components">("scenes");
+
+  useEffect(() => {
+    if (!open || typeof document === "undefined") {
+      return;
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  const groupedProblems = useMemo(() => groupProblems(problems), [problems]);
+
+  const truncate = useCallback((text: string, limit = 140) => {
+    if (text.length <= limit) {
+      return text;
+    }
+    return `${text.slice(0, limit - 1)}…`;
+  }, []);
+
+  const handleProblemClick = useCallback(
+    (problem: PracticeProblem) => {
+      onSelectProblem(problem.id);
+      onNavigate("practice");
+      onClose();
+    },
+    [onClose, onNavigate, onSelectProblem]
+  );
+
+  const handleCatalogClick = useCallback(
+    (entry: CatalogEntry) => {
+      onSelectCatalog(entry);
+      onNavigate("builder");
+      onClose();
+    },
+    [onClose, onNavigate, onSelectCatalog]
+  );
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="schematic-drawer-backdrop" role="presentation" onClick={onClose}>
+      <aside
+        className="schematic-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="schematic-drawer-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="schematic-drawer-header">
+          <div>
+            <h2 id="schematic-drawer-title">3D Render Catalog</h2>
+            <p>
+              Flip through every preset scene and component symbol without losing your place. Pick an item to jump
+              directly into the matching view.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="schematic-drawer-close"
+            aria-label="Close 3D render catalog"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </header>
+
+        <nav className="schematic-drawer-tabs" role="tablist" aria-label="Render catalog sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "scenes"}
+            className={activeTab === "scenes" ? "drawer-tab is-active" : "drawer-tab"}
+            onClick={() => setActiveTab("scenes")}
+          >
+            Practice Scenes
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "components"}
+            className={activeTab === "components" ? "drawer-tab is-active" : "drawer-tab"}
+            onClick={() => setActiveTab("components")}
+          >
+            Component Symbols
+          </button>
+        </nav>
+
+        <div className="schematic-drawer-body">
+          {activeTab === "scenes" ? (
+            problems.length ? (
+              TOPOLOGY_ORDER.map((topology) => {
+                const bucket = groupedProblems[topology];
+                if (!bucket || !bucket.length) {
+                  return null;
+                }
+                return (
+                  <section key={topology} className="drawer-section">
+                    <header className="drawer-section-header">
+                      <h3>{TOPOLOGY_LABEL[topology]}</h3>
+                      <span>{bucket.length} preset{bucket.length === 1 ? "" : "s"}</span>
+                    </header>
+                    <div className="drawer-card-list">
+                      {bucket.map((problem) => (
+                        <button
+                          key={problem.id}
+                          type="button"
+                          className={
+                            problem.id === selectedProblemId ? "drawer-card is-active" : "drawer-card"
+                          }
+                          onClick={() => handleProblemClick(problem)}
+                        >
+                          <span className="drawer-card-title">{problem.title}</span>
+                          <span className="drawer-card-meta">
+                            {DIFFICULTY_LABEL[problem.difficulty]} · {TOPOLOGY_LABEL[problem.topology]}
+                          </span>
+                          <p className="drawer-card-desc">{truncate(problem.prompt)}</p>
+                          {problem.conceptTags.length > 0 && (
+                            <ul className="drawer-card-tags">
+                              {problem.conceptTags.map((tag) => (
+                                <li key={tag}>{tag}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })
+            ) : (
+              <div className="drawer-empty">No practice presets available yet.</div>
+            )
+          ) : catalog.length ? (
+            <section className="drawer-section">
+              <header className="drawer-section-header">
+                <h3>Component Symbols</h3>
+                <span>{catalog.length} items</span>
+              </header>
+              <div className="drawer-component-grid">
+                {catalog.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={
+                      entry.id === selectedCatalogId ? "drawer-component is-active" : "drawer-component"
+                    }
+                    onClick={() => handleCatalogClick(entry)}
+                  >
+                    <span className="drawer-component-icon" aria-hidden="true">
+                      {entry.icon}
+                    </span>
+                    <span className="drawer-component-name">{entry.name}</span>
+                    <p className="drawer-component-desc">{entry.description}</p>
+                    {entry.tags?.length ? (
+                      <ul className="drawer-component-tags">
+                        {entry.tags.map((tag) => (
+                          <li key={tag}>{tag}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <div className="drawer-empty">Component catalog is empty.</div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 export default function SchematicMode() {
   const [viewMode, setViewMode] = useState<ViewMode>("practice");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(
+    practiceProblems[0]?.id ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null
+  );
+  const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
+
+  const handleProblemSelect = useCallback((problemId: string) => {
+    setSelectedProblemId(problemId);
+  }, []);
+
+  const handleCatalogSelect = useCallback((entry: CatalogEntry) => {
+    setSelectedCatalogId(entry.id);
+  }, []);
 
   return (
     <div className="schematic-shell">
@@ -308,19 +536,44 @@ export default function SchematicMode() {
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            className="schematic-drawer-trigger"
+            onClick={() => setDrawerOpen(true)}
+          >
+            Browse 3D Catalog
+          </button>
         </div>
       </header>
 
-      {viewMode === "practice" ? <PracticeModeView /> : <BuilderModeView />}
+      {viewMode === "practice" ? (
+        <PracticeModeView selectedProblemId={selectedProblemId} onSelectProblem={handleProblemSelect} />
+      ) : (
+        <BuilderModeView selectedCatalogId={selectedCatalogId} onSelectCatalog={handleCatalogSelect} />
+      )}
+
+      <SchematicRenderDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onNavigate={(mode) => setViewMode(mode)}
+        onSelectProblem={handleProblemSelect}
+        onSelectCatalog={handleCatalogSelect}
+        selectedProblemId={selectedProblemId}
+        selectedCatalogId={selectedCatalogId}
+        problems={practiceProblems}
+        catalog={COMPONENT_CATALOG}
+      />
     </div>
   );
 }
 
-function PracticeModeView() {
-  const grouped = useMemo(() => groupProblems(practiceProblems), []);
-  const fallbackProblemId = practiceProblems[0]?.id ?? null;
+type PracticeModeViewProps = {
+  selectedProblemId: string | null;
+  onSelectProblem: (problemId: string) => void;
+};
 
-  const [selectedProblemId, setSelectedProblemId] = useState<string | null>(fallbackProblemId);
+function PracticeModeView({ selectedProblemId, onSelectProblem }: PracticeModeViewProps) {
+  const grouped = useMemo(() => groupProblems(practiceProblems), []);
   const [tableRevealed, setTableRevealed] = useState(false);
   const [stepsVisible, setStepsVisible] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
@@ -482,7 +735,7 @@ function PracticeModeView() {
       (currentIndex >= 0 && bucket[(currentIndex + 1) % bucket.length]) || practiceProblems[0] || null;
 
     if (nextProblem) {
-      setSelectedProblemId(nextProblem.id);
+      onSelectProblem(nextProblem.id);
     }
   };
 
@@ -516,7 +769,7 @@ function PracticeModeView() {
                       type="button"
                       className="problem-button"
                       data-active={problem.id === selectedProblem.id ? "true" : undefined}
-                      onClick={() => setSelectedProblemId(problem.id)}
+                      onClick={() => onSelectProblem(problem.id)}
                     >
                       <strong>{problem.title}</strong>
                       <small>
@@ -657,8 +910,12 @@ function PracticeModeView() {
   );
 }
 
-function BuilderModeView() {
-  const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
+type BuilderModeViewProps = {
+  selectedCatalogId: string;
+  onSelectCatalog: (entry: CatalogEntry) => void;
+};
+
+function BuilderModeView({ selectedCatalogId, onSelectCatalog }: BuilderModeViewProps) {
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [draft, setDraft] = useState<PlacementDraft | null>(null);
@@ -689,12 +946,15 @@ function BuilderModeView() {
     return () => window.clearTimeout(timeout);
   }, [feedbackMessage]);
 
-  const handleCatalogSelect = useCallback((entry: CatalogEntry) => {
-    setSelectedCatalogId(entry.id);
-    setDraft(null);
-    setSelectedElementId(null);
-    setFeedbackMessage(`${entry.name} ready for placement.`);
-  }, []);
+  const handleCatalogSelect = useCallback(
+    (entry: CatalogEntry) => {
+      onSelectCatalog(entry);
+      setDraft(null);
+      setSelectedElementId(null);
+      setFeedbackMessage(`${entry.name} ready for placement.`);
+    },
+    [onSelectCatalog]
+  );
 
   const handleBoardHover = useCallback((point: Vec2 | null) => {
     if (!point) {
