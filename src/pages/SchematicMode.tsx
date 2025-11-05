@@ -1488,7 +1488,7 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
             disposeThreeObject(circuitGroup);
             circuitGroup = null;
           }
-          circuitGroup = buildCircuit(three, practiceProblem);
+          circuitGroup = buildCircuitElements(three, practiceProblem);
           scene.add(circuitGroup);
         };
 
@@ -1575,6 +1575,216 @@ const NODE_RADIUS = 0.14;
 const WIRE_HEIGHT = 0.18;
 const COMPONENT_HEIGHT = 0.22;
 const LABEL_HEIGHT = 0.55;
+
+function buildCircuitElements(three: any, problem: PracticeProblem) {
+  const group = new three.Group();
+  group.name = `circuit-${problem.id}`;
+
+  const elements: SchematicElement[] = [];
+  const nodeMap = new Map<string, Vec2>();
+
+  const clonePoint = (point: Vec2): Vec2 => ({ x: point.x, z: point.z });
+  const nextId = (() => {
+    let counter = 0;
+    return (prefix: string) => `${problem.id}-${prefix}-${counter++}`;
+  })();
+
+  const recordNode = (point: Vec2) => {
+    nodeMap.set(pointKey(point), clonePoint(point));
+  };
+
+  const addWire = (path: Vec2[]) => {
+    if (!path || path.length < 2) {
+      return;
+    }
+    const compressed: Vec2[] = [];
+    path.forEach((point, index) => {
+      if (index === 0) {
+        compressed.push(clonePoint(point));
+        return;
+      }
+      const previous = path[index - 1];
+      if (point.x === previous.x && point.z === previous.z) {
+        return;
+      }
+      compressed.push(clonePoint(point));
+    });
+    if (compressed.length < 2) {
+      return;
+    }
+    compressed.forEach(recordNode);
+    elements.push({
+      id: nextId("wire"),
+      kind: "wire",
+      path: compressed,
+    });
+  };
+
+  const addTwoTerminal = (kind: TwoTerminalElement["kind"], start: Vec2, end: Vec2, label: string) => {
+    const orientation: Orientation =
+      Math.abs(end.x - start.x) >= Math.abs(end.z - start.z) ? "horizontal" : "vertical";
+    recordNode(start);
+    recordNode(end);
+    elements.push({
+      id: nextId(kind),
+      kind,
+      label,
+      start: clonePoint(start),
+      end: clonePoint(end),
+      orientation,
+    });
+  };
+
+  const addBattery = (start: Vec2, end: Vec2, label: string) => addTwoTerminal("battery", start, end, label);
+  const addResistor = (start: Vec2, end: Vec2, label: string) => addTwoTerminal("resistor", start, end, label);
+
+  const sourceLabel = problem.source.label ?? "Source";
+  const componentLabels = new Map(problem.components.map((component) => [component.id, component.label ?? component.id]));
+  const labelFor = (id: string) => componentLabels.get(id) ?? id;
+
+  const buildSeries = () => {
+    const left = -4.4;
+    const right = 4.4;
+    const top = 2.7;
+    const bottom = -2.7;
+
+    const start: Vec2 = { x: left, z: bottom };
+    const batteryStart: Vec2 = { x: left, z: bottom + 0.9 };
+    const batteryEnd: Vec2 = { x: left, z: top - 0.9 };
+    const topLeft: Vec2 = { x: left, z: top };
+    const topRight: Vec2 = { x: right, z: top };
+    const bottomRight: Vec2 = { x: right, z: bottom };
+
+    addWire([start, batteryStart]);
+    addBattery(batteryStart, batteryEnd, sourceLabel);
+    addWire([batteryEnd, topLeft]);
+
+    const componentCount = Math.max(problem.components.length, 1);
+    const segmentWidth = (topRight.x - topLeft.x) / componentCount;
+    const margin = Math.min(segmentWidth * 0.2, 0.5);
+
+    let previousPoint: Vec2 = clonePoint(topLeft);
+    problem.components.forEach((component, index) => {
+      const startX = topLeft.x + index * segmentWidth + margin;
+      const endX = topLeft.x + (index + 1) * segmentWidth - margin;
+      const resistorStart: Vec2 = { x: startX, z: top };
+      const resistorEnd: Vec2 = { x: endX, z: top };
+      addWire([previousPoint, resistorStart]);
+      addResistor(resistorStart, resistorEnd, component.label ?? component.id);
+      previousPoint = resistorEnd;
+    });
+
+    addWire([previousPoint, topRight]);
+    addWire([topRight, bottomRight]);
+    addWire([bottomRight, start]);
+  };
+
+  const buildParallel = () => {
+    const left = -2.6;
+    const right = 3.8;
+    const top = 2.5;
+    const bottom = -2.5;
+
+    const leftBottom: Vec2 = { x: left, z: bottom };
+    const batteryStart: Vec2 = { x: left, z: bottom + 0.9 };
+    const batteryEnd: Vec2 = { x: left, z: top - 0.9 };
+    const leftTop: Vec2 = { x: left, z: top };
+    const rightTop: Vec2 = { x: right, z: top };
+    const rightBottom: Vec2 = { x: right, z: bottom };
+
+    addWire([leftBottom, batteryStart]);
+    addBattery(batteryStart, batteryEnd, sourceLabel);
+    addWire([batteryEnd, leftTop]);
+    addWire([leftTop, rightTop]);
+    addWire([leftBottom, rightBottom]);
+
+    const branchCount = Math.max(problem.components.length, 1);
+    const spacing = (right - left) / (branchCount + 1);
+    const branchSpan = Math.min(Math.abs(top - bottom) - 1, 4.2);
+    const offset = Math.max((Math.abs(top - bottom) - branchSpan) / 2, 0.6);
+
+    problem.components.forEach((component, index) => {
+      const x = left + spacing * (index + 1);
+      const topNode: Vec2 = { x, z: top };
+      const bottomNode: Vec2 = { x, z: bottom };
+      const resistorStart: Vec2 = { x, z: top - offset };
+      const resistorEnd: Vec2 = { x, z: bottom + offset };
+
+      addWire([topNode, resistorStart]);
+      addResistor(resistorStart, resistorEnd, component.label ?? component.id);
+      addWire([resistorEnd, bottomNode]);
+    });
+  };
+
+  const buildCombination = () => {
+    const start: Vec2 = { x: -4.2, z: -2.3 };
+    const batteryStart: Vec2 = { x: -4.2, z: -1.5 };
+    const batteryEnd: Vec2 = { x: -4.2, z: 1.5 };
+    const topLeft: Vec2 = { x: -4.2, z: 2.3 };
+    const topMid: Vec2 = { x: -1.2, z: 2.3 };
+    const seriesTop: Vec2 = { x: 0.4, z: 2.3 };
+    const branchTop: Vec2 = { x: 1.4, z: 2.3 };
+    const branchRightTop: Vec2 = { x: 3.2, z: 2.3 };
+    const branchBottom: Vec2 = { x: 1.4, z: -0.3 };
+    const branchRightBottom: Vec2 = { x: 3.2, z: -0.3 };
+    const dropNode: Vec2 = { x: 1.4, z: -2.3 };
+    const bottomLeft: Vec2 = { x: -2.0, z: -2.3 };
+
+    addWire([start, batteryStart]);
+    addBattery(batteryStart, batteryEnd, sourceLabel);
+    addWire([batteryEnd, topLeft]);
+    addWire([topLeft, topMid]);
+
+    addResistor(topMid, seriesTop, labelFor("R1"));
+    addWire([seriesTop, branchTop]);
+
+    addResistor(branchTop, branchBottom, labelFor("R2"));
+    addWire([branchTop, branchRightTop]);
+
+    addResistor(branchRightTop, branchRightBottom, labelFor("R3"));
+    addWire([branchRightBottom, branchBottom]);
+    addWire([branchBottom, dropNode]);
+
+    addResistor(dropNode, bottomLeft, labelFor("R4"));
+    addWire([bottomLeft, start]);
+  };
+
+  const presetKey = problem.presetHint ?? problem.topology;
+
+  switch (presetKey) {
+    case "parallel_basic":
+      buildParallel();
+      break;
+    case "mixed_circuit":
+      buildCombination();
+      break;
+    case "series_basic":
+    default:
+      if (problem.topology === "parallel") {
+        buildParallel();
+      } else if (problem.topology === "combination") {
+        buildCombination();
+      } else {
+        buildSeries();
+      }
+      break;
+  }
+
+  elements.forEach((element) => {
+    const { group: elementGroup, terminals } = buildElement(three, element, {});
+    group.add(elementGroup);
+    terminals.forEach((point) => {
+      recordNode(point);
+    });
+  });
+
+  nodeMap.forEach((point) => {
+    const mesh = buildNodeMesh(three, point, {});
+    group.add(mesh);
+  });
+
+  return group;
+}
 
 function buildCircuit(three: any, problem: PracticeProblem) {
   const group = new three.Group();
