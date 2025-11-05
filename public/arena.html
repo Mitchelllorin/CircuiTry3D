@@ -607,12 +607,14 @@
       let scene;
       let camera;
       let renderer;
-      let componentGroupA;
-      let componentGroupB;
-      let energyRing;
-      let pulseRing;
-      let particles;
-      let clock;
+        let componentGroupA;
+        let componentGroupB;
+        let energyRing;
+        let pulseRing;
+        let particles;
+        let clock;
+        let pointerCaptureSupported = false;
+        let pointerCaptureWarningLogged = false;
 
         const CAMERA_DEFAULT_POSITION = new THREE.Vector3(0, 2.8, 7.6);
         const CAMERA_DEFAULT_TARGET = new THREE.Vector3(0, 0.45, 0);
@@ -664,6 +666,10 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.domElement.style.touchAction = "none";
         renderer.domElement.style.cursor = "grab";
+
+        pointerCaptureSupported =
+          typeof renderer.domElement.setPointerCapture === "function" &&
+          typeof renderer.domElement.releasePointerCapture === "function";
 
         registerInteractionEvents(renderer.domElement);
 
@@ -963,7 +969,19 @@
           };
 
           activePointers.set(event.pointerId, pointer);
-          renderer.domElement.setPointerCapture(event.pointerId);
+          if (pointerCaptureSupported && renderer && renderer.domElement && typeof renderer.domElement.setPointerCapture === "function") {
+            try {
+              renderer.domElement.setPointerCapture(event.pointerId);
+            } catch (error) {
+              pointerCaptureSupported = false;
+              if (!pointerCaptureWarningLogged) {
+                console.warn("Arena: pointer capture not supported in this browser. Continuing without it.", error);
+                pointerCaptureWarningLogged = true;
+              }
+            }
+          } else {
+            pointerCaptureSupported = false;
+          }
 
           if (event.pointerType !== "touch") {
             renderer.domElement.style.cursor = "grabbing";
@@ -1050,7 +1068,17 @@
             event.preventDefault();
           }
 
-          renderer.domElement.releasePointerCapture(event.pointerId);
+          if (pointerCaptureSupported && renderer && renderer.domElement && typeof renderer.domElement.releasePointerCapture === "function") {
+            try {
+              renderer.domElement.releasePointerCapture(event.pointerId);
+            } catch (error) {
+              pointerCaptureSupported = false;
+              if (!pointerCaptureWarningLogged) {
+                console.warn("Arena: unable to release pointer capture; disabling pointer capture fallback.", error);
+                pointerCaptureWarningLogged = true;
+              }
+            }
+          }
           activePointers.delete(event.pointerId);
 
           if (activePointers.size === 0 && renderer.domElement) {
