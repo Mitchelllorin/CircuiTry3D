@@ -15,7 +15,7 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     id: "resistor",
     kind: "resistor",
     name: "Resistor",
-    description: "Zig-zag schematic resistor body with labelled leads.",
+    description: "Resistor body follows the selected ANSI/IEEE (zig-zag) or IEC (rectangle) standard with labelled leads.",
     placement: "two-point",
     icon: "R",
     defaultLabelPrefix: "R",

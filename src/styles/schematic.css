@@ -15,6 +15,14 @@
   justify-content: space-between;
 }
 
+.schematic-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .schematic-header h1 {
   font-size: 2.2rem;
   margin-bottom: 12px;
@@ -33,6 +41,47 @@
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.schematic-standard-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(90, 150, 255, 0.35);
+  background: rgba(14, 32, 68, 0.55);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: rgba(209, 230, 255, 0.82);
+}
+
+.schematic-standard-label {
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: rgba(203, 224, 255, 0.76);
+}
+
+.schematic-standard-select {
+  appearance: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 150, 255, 0.35);
+  background: rgba(8, 20, 40, 0.85);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.schematic-standard-select:hover,
+.schematic-standard-select:focus {
+  border-color: rgba(140, 210, 255, 0.6);
+  background: rgba(14, 38, 70, 0.85);
+  outline: none;
 }
 
 .schematic-toggle {
