@@ -14,6 +14,10 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
   - Model junction dots as small black hemispheres/spheres positioned just above the board plane.
   - No bloom or emissive glow—clarity comes from silhouette only.
 
+- **Standards Compliance**
+  - 3D extrusions trace the IEC 60617, IEEE Std 315, and ANSI/ASME Y32.2 glyph geometry using fixed lead clearances and stroke widths encoded in `schematic/standards.ts`.
+  - Component bodies reserve the same proportions regardless of placement span so the rendered silhouettes match their 2D references when viewed from above.
+
 - **Symbol Profiles**
   - **Battery:** Two flat plates (long/short) with optional `+` / `−` sprites positioned near the respective terminals.
   - **Resistor:** Six-peak zig-zag made from connected straight segments with the same thickness as the leads.
