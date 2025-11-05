@@ -1,11 +1,23 @@
 import { GroundElement, SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./types";
+import {
+  BATTERY_SPEC,
+  CAPACITOR_SPEC,
+  GROUND_SPEC,
+  INDUCTOR_SPEC,
+  LAMP_SPEC,
+  RESISTOR_SPEC,
+  SWITCH_SPEC,
+  SYMBOL_DIMENSIONS,
+  resolveAxialVec2,
+} from "./standards";
+import { axisCoordToVec2, computeAxisMetrics } from "./geometry";
 
-export const WIRE_RADIUS = 0.055;
-export const RESISTOR_RADIUS = 0.05;
-export const NODE_RADIUS = 0.12;
-export const WIRE_HEIGHT = 0.12;
-export const COMPONENT_HEIGHT = 0.16;
-export const LABEL_HEIGHT = 0.4;
+export const WIRE_RADIUS = SYMBOL_DIMENSIONS.wireRadius;
+export const RESISTOR_RADIUS = SYMBOL_DIMENSIONS.strokeRadius;
+export const NODE_RADIUS = SYMBOL_DIMENSIONS.nodeRadius;
+export const WIRE_HEIGHT = SYMBOL_DIMENSIONS.wireHeight;
+export const COMPONENT_HEIGHT = SYMBOL_DIMENSIONS.componentHeight;
+export const LABEL_HEIGHT = SYMBOL_DIMENSIONS.labelHeight;
 
 type BuildOptions = {
   preview?: boolean;
@@ -26,14 +38,35 @@ const COLOR_HELPERS = {
   dielectric: 0xededed,
   lampRing: 0x111111,
   lampFill: 0xffffff,
-  ground: 0x111111
+  ground: 0x111111,
 } as const;
 
 const LABEL_COLOR = "#111111";
 
 const SNAP_EPSILON = 1e-6;
 
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
 const toVec3 = (three: any, point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
+
+const positionOnAxis = (
+  mesh: any,
+  orientation: "horizontal" | "vertical",
+  axisCoord: number,
+  perpCoord: number,
+  height: number
+) => {
+  if (orientation === "horizontal") {
+    mesh.position.set(axisCoord, height, perpCoord);
+  } else {
+    mesh.position.set(perpCoord, height, axisCoord);
+  }
+};
+
+const createAxisAlignedBoxGeometry = (three: any, orientation: "horizontal" | "vertical", axisLength: number, height: number, perpLength: number) =>
+  orientation === "horizontal"
+    ? new three.BoxGeometry(axisLength, height, perpLength)
+    : new three.BoxGeometry(perpLength, height, axisLength);
 
 const styliseMaterial = (three: any, material: any, options: BuildOptions, baseColor: number) => {
   if (!material) {
@@ -145,31 +178,42 @@ const buildWireElement = (three: any, element: WireElement, options: BuildOption
 const buildResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `resistor-${element.id}`;
-  const resistorMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const wireMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
+
+  const axis = computeAxisMetrics(element.start, element.end, element.orientation, RESISTOR_SPEC.axis);
+  const resistorMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const wireMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const iecMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
   styliseMaterial(three, resistorMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, wireMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, iecMaterial, options, COLOR_HELPERS.stroke);
 
-  const zigCount = 6;
-  const amplitude = 0.35;
+  const amplitudeBase = axis.bodyLength * RESISTOR_SPEC.amplitudeRatio;
+  const amplitude = clamp(amplitudeBase, RESISTOR_SPEC.amplitudeMin, RESISTOR_SPEC.amplitudeMax);
   const points: Vec2[] = [];
 
-  for (let i = 0; i <= zigCount; i += 1) {
-    const t = i / zigCount;
+  for (let i = 0; i <= RESISTOR_SPEC.zigZagCount; i += 1) {
+    const t = i / RESISTOR_SPEC.zigZagCount;
+    const axisCoord = axis.bodyStartCoord + axis.direction * axis.bodyLength * t;
     if (element.orientation === "horizontal") {
-      const x = element.start.x + (element.end.x - element.start.x) * t;
-      const zOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? -amplitude : amplitude);
-      points.push({ x, z: element.start.z + zOffset });
+      const zOffset = i === 0 || i === RESISTOR_SPEC.zigZagCount ? 0 : i % 2 === 0 ? -amplitude : amplitude;
+      points.push({ x: axisCoord, z: axis.perpCoord + zOffset });
     } else {
-      const z = element.start.z + (element.end.z - element.start.z) * t;
-      const xOffset = i === 0 || i === zigCount ? 0 : (i % 2 === 0 ? amplitude : -amplitude);
-      points.push({ x: element.start.x + xOffset, z });
+      const xOffset = i === 0 || i === RESISTOR_SPEC.zigZagCount ? 0 : i % 2 === 0 ? amplitude : -amplitude;
+      points.push({ x: axis.perpCoord + xOffset, z: axisCoord });
     }
   }
+
+  const iecDepth = Math.max(RESISTOR_SPEC.iecBodyDepthMin, amplitude * 2 + RESISTOR_SPEC.iecBodyDepthPadding);
+  const iecGeometry = createAxisAlignedBoxGeometry(
+    three,
+    element.orientation,
+    axis.bodyLength,
+    RESISTOR_SPEC.iecBodyHeight,
+    iecDepth
+  );
+  const iecBody = new three.Mesh(iecGeometry, iecMaterial);
+  positionOnAxis(iecBody, element.orientation, axis.centerCoord, axis.perpCoord, COMPONENT_HEIGHT - 0.01);
+  group.add(iecBody);
 
   for (let i = 0; i < points.length - 1; i += 1) {
     const segStart = toVec3(three, points[i], COMPONENT_HEIGHT);
@@ -180,10 +224,22 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
     }
   }
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
-  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
-  const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
+  const bodyStartVec2 = axisCoordToVec2(element.orientation, axis.bodyStartCoord, axis.perpCoord);
+  const bodyEndVec2 = axisCoordToVec2(element.orientation, axis.bodyEndCoord, axis.perpCoord);
+  const leadStart = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStartVec2, COMPONENT_HEIGHT),
+    WIRE_RADIUS,
+    wireMaterial
+  );
+  const leadEnd = cylinderBetween(
+    three,
+    toVec3(three, bodyEndVec2, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    WIRE_RADIUS,
+    wireMaterial
+  );
   if (leadStart) {
     group.add(leadStart);
   }
@@ -194,9 +250,10 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label);
     if (labelSprite) {
-      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-      labelSprite.position.copy(midpoint);
-      labelSprite.position.y += LABEL_HEIGHT;
+      const labelAnchor = axisCoordToVec2(element.orientation, axis.centerCoord, axis.perpCoord);
+      const labelPosition = toVec3(three, labelAnchor, COMPONENT_HEIGHT);
+      labelPosition.y += LABEL_HEIGHT;
+      labelSprite.position.copy(labelPosition);
       group.add(labelSprite);
     }
   }
@@ -207,73 +264,67 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
 const buildBatteryElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `battery-${element.id}`;
-  const positiveMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const negativeMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
 
+  const axis = computeAxisMetrics(element.start, element.end, element.orientation, BATTERY_SPEC.axis);
+  const positiveMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const negativeMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
   styliseMaterial(three, positiveMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, negativeMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.05);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.05);
+  const ratioSum =
+    BATTERY_SPEC.sectionRatios.negative + BATTERY_SPEC.sectionRatios.gap + BATTERY_SPEC.sectionRatios.positive;
+  const ratioScale = ratioSum > 0 ? axis.bodyLength / ratioSum : axis.bodyLength;
+  const negativeLength = BATTERY_SPEC.sectionRatios.negative * ratioScale;
+  const positiveLength = BATTERY_SPEC.sectionRatios.positive * ratioScale;
 
-  if (element.orientation === "vertical") {
-    const centerZ = (element.start.z + element.end.z) / 2;
-    const x = element.start.x;
-    const longPlate = new three.Mesh(new three.BoxGeometry(1.0, 0.18, 0.9), positiveMaterial);
-    longPlate.position.set(x, COMPONENT_HEIGHT, centerZ + 0.4);
-    const shortPlate = new three.Mesh(new three.BoxGeometry(0.8, 0.18, 0.45), negativeMaterial);
-    shortPlate.position.set(x, COMPONENT_HEIGHT, centerZ - 0.4);
-    group.add(longPlate, shortPlate);
+  const positiveCenterCoord =
+    axis.direction === 1
+      ? axis.bodyEndCoord - positiveLength / 2
+      : axis.bodyStartCoord + positiveLength / 2;
+  const negativeCenterCoord =
+    axis.direction === 1
+      ? axis.bodyStartCoord + negativeLength / 2
+      : axis.bodyEndCoord - negativeLength / 2;
 
-    if (!options.preview) {
-      const plusLabel = createLabelSprite(three, "+", "#ffffff");
-      if (plusLabel) {
-        plusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ + 0.6);
-        plusLabel.scale.set(0.9, 0.9, 1);
-        group.add(plusLabel);
-      }
-      const minusLabel = createLabelSprite(three, "−", "#cdd6f4");
-      if (minusLabel) {
-        minusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ - 0.6);
-        minusLabel.scale.set(0.9, 0.9, 1);
-        group.add(minusLabel);
-      }
-    }
-  } else {
-    const centerX = (element.start.x + element.end.x) / 2;
-    const z = element.start.z;
-    const longPlate = new three.Mesh(new three.BoxGeometry(0.9, 0.18, 1.0), positiveMaterial);
-    longPlate.position.set(centerX + 0.4, COMPONENT_HEIGHT, z);
-    const shortPlate = new three.Mesh(new three.BoxGeometry(0.45, 0.18, 0.8), negativeMaterial);
-    shortPlate.position.set(centerX - 0.4, COMPONENT_HEIGHT, z);
-    group.add(longPlate, shortPlate);
+  const positiveGeometry = createAxisAlignedBoxGeometry(
+    three,
+    element.orientation,
+    positiveLength,
+    BATTERY_SPEC.plateHeight,
+    BATTERY_SPEC.plateDepth
+  );
+  const negativeGeometry = createAxisAlignedBoxGeometry(
+    three,
+    element.orientation,
+    negativeLength,
+    BATTERY_SPEC.plateHeight,
+    BATTERY_SPEC.plateDepth
+  );
 
-    if (!options.preview) {
-      const plusLabel = createLabelSprite(three, "+", "#ffffff");
-      if (plusLabel) {
-        plusLabel.position.set(centerX + 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
-        plusLabel.scale.set(0.9, 0.9, 1);
-        group.add(plusLabel);
-      }
-      const minusLabel = createLabelSprite(three, "−", "#cdd6f4");
-      if (minusLabel) {
-        minusLabel.position.set(centerX - 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
-        minusLabel.scale.set(0.9, 0.9, 1);
-        group.add(minusLabel);
-      }
-    }
-  }
+  const positivePlate = new three.Mesh(positiveGeometry, positiveMaterial);
+  const negativePlate = new three.Mesh(negativeGeometry, negativeMaterial);
+  positionOnAxis(positivePlate, element.orientation, positiveCenterCoord, axis.perpCoord, COMPONENT_HEIGHT);
+  positionOnAxis(negativePlate, element.orientation, negativeCenterCoord, axis.perpCoord, COMPONENT_HEIGHT);
+  group.add(positivePlate, negativePlate);
 
-  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, leadMaterial);
-  const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
+  const bodyStartVec2 = axisCoordToVec2(element.orientation, axis.bodyStartCoord, axis.perpCoord);
+  const bodyEndVec2 = axisCoordToVec2(element.orientation, axis.bodyEndCoord, axis.perpCoord);
+  const leadStart = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStartVec2, COMPONENT_HEIGHT - 0.05),
+    WIRE_RADIUS,
+    leadMaterial
+  );
+  const leadEnd = cylinderBetween(
+    three,
+    toVec3(three, bodyEndVec2, COMPONENT_HEIGHT - 0.05),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
   if (leadStart) {
     group.add(leadStart);
   }
@@ -284,10 +335,44 @@ const buildBatteryElement = (three: any, element: TwoTerminalElement, options: B
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "V");
     if (labelSprite) {
-      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-      labelSprite.position.copy(midpoint);
-      labelSprite.position.y += LABEL_HEIGHT;
+      const midpoint = axisCoordToVec2(element.orientation, axis.centerCoord, axis.perpCoord);
+      const midpointVec = toVec3(three, midpoint, COMPONENT_HEIGHT);
+      midpointVec.y += LABEL_HEIGHT;
+      labelSprite.position.copy(midpointVec);
       group.add(labelSprite);
+    }
+
+    const plusLabel = createLabelSprite(three, "+", "#ffffff");
+    const minusLabel = createLabelSprite(three, "−", "#cdd6f4");
+
+    if (plusLabel && minusLabel) {
+      const axialOffset = BATTERY_SPEC.labelOffset.axial * axis.direction;
+      if (element.orientation === "horizontal") {
+        plusLabel.position.set(
+          positiveCenterCoord + axialOffset,
+          COMPONENT_HEIGHT + BATTERY_SPEC.labelOffset.vertical,
+          axis.perpCoord + BATTERY_SPEC.labelOffset.lateral
+        );
+        minusLabel.position.set(
+          negativeCenterCoord - axialOffset,
+          COMPONENT_HEIGHT + BATTERY_SPEC.labelOffset.vertical,
+          axis.perpCoord + BATTERY_SPEC.labelOffset.lateral
+        );
+      } else {
+        plusLabel.position.set(
+          axis.perpCoord + BATTERY_SPEC.labelOffset.lateral,
+          COMPONENT_HEIGHT + BATTERY_SPEC.labelOffset.vertical,
+          positiveCenterCoord + axialOffset
+        );
+        minusLabel.position.set(
+          axis.perpCoord + BATTERY_SPEC.labelOffset.lateral,
+          COMPONENT_HEIGHT + BATTERY_SPEC.labelOffset.vertical,
+          negativeCenterCoord - axialOffset
+        );
+      }
+      plusLabel.scale.set(0.9, 0.9, 1);
+      minusLabel.scale.set(0.9, 0.9, 1);
+      group.add(plusLabel, minusLabel);
     }
   }
 
@@ -297,47 +382,63 @@ const buildBatteryElement = (three: any, element: TwoTerminalElement, options: B
 const buildCapacitorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `capacitor-${element.id}`;
-  const plateMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const dielectricMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.dielectric
-  });
-  const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
 
+  const axis = computeAxisMetrics(element.start, element.end, element.orientation, CAPACITOR_SPEC.axis);
+  const plateMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const dielectricMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.dielectric });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
   styliseMaterial(three, plateMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, dielectricMaterial, options, COLOR_HELPERS.dielectric);
   styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
-  const thickness = 0.08;
-  if (element.orientation === "horizontal") {
-    const centerX = (element.start.x + element.end.x) / 2;
-    const z = element.start.z;
-    const plateA = new three.Mesh(new three.BoxGeometry(thickness, 0.48, 1.2), plateMaterial);
-    plateA.position.set(centerX - 0.3, COMPONENT_HEIGHT, z);
-    const plateB = new three.Mesh(new three.BoxGeometry(thickness, 0.48, 1.2), plateMaterial);
-    plateB.position.set(centerX + 0.3, COMPONENT_HEIGHT, z);
-    const dielectric = new three.Mesh(new three.BoxGeometry(0.25, 0.38, 1.0), dielectricMaterial);
-    dielectric.position.set(centerX, COMPONENT_HEIGHT, z);
-    group.add(plateA, plateB, dielectric);
-  } else {
-    const x = element.start.x;
-    const centerZ = (element.start.z + element.end.z) / 2;
-    const plateA = new three.Mesh(new three.BoxGeometry(1.2, 0.48, thickness), plateMaterial);
-    plateA.position.set(x, COMPONENT_HEIGHT, centerZ - 0.3);
-    const plateB = new three.Mesh(new three.BoxGeometry(1.2, 0.48, thickness), plateMaterial);
-    plateB.position.set(x, COMPONENT_HEIGHT, centerZ + 0.3);
-    const dielectric = new three.Mesh(new three.BoxGeometry(1.0, 0.38, 0.25), dielectricMaterial);
-    dielectric.position.set(x, COMPONENT_HEIGHT, centerZ);
-    group.add(plateA, plateB, dielectric);
-  }
+  const ratioSum = CAPACITOR_SPEC.sectionRatios.gap + CAPACITOR_SPEC.sectionRatios.plate * 2;
+  const ratioScale = ratioSum > 0 ? axis.bodyLength / ratioSum : axis.bodyLength;
+  const plateThickness = CAPACITOR_SPEC.sectionRatios.plate * ratioScale;
+  const gapThickness = CAPACITOR_SPEC.sectionRatios.gap * ratioScale;
+  const plateOffset = gapThickness / 2 + plateThickness / 2;
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
-  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, leadMaterial);
-  const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
+  const plateACenter = axis.centerCoord - axis.direction * plateOffset;
+  const plateBCenter = axis.centerCoord + axis.direction * plateOffset;
+
+  const plateGeometry = createAxisAlignedBoxGeometry(
+    three,
+    element.orientation,
+    plateThickness,
+    CAPACITOR_SPEC.plateHeight,
+    CAPACITOR_SPEC.plateDepth
+  );
+  const dielectricGeometry = createAxisAlignedBoxGeometry(
+    three,
+    element.orientation,
+    gapThickness,
+    CAPACITOR_SPEC.dielectricHeight,
+    CAPACITOR_SPEC.dielectricDepth
+  );
+
+  const plateA = new three.Mesh(plateGeometry, plateMaterial);
+  const plateB = new three.Mesh(plateGeometry.clone(), plateMaterial);
+  const dielectric = new three.Mesh(dielectricGeometry, dielectricMaterial);
+  positionOnAxis(plateA, element.orientation, plateACenter, axis.perpCoord, COMPONENT_HEIGHT);
+  positionOnAxis(plateB, element.orientation, plateBCenter, axis.perpCoord, COMPONENT_HEIGHT);
+  positionOnAxis(dielectric, element.orientation, axis.centerCoord, axis.perpCoord, COMPONENT_HEIGHT);
+  group.add(plateA, plateB, dielectric);
+
+  const bodyStartVec2 = axisCoordToVec2(element.orientation, axis.bodyStartCoord, axis.perpCoord);
+  const bodyEndVec2 = axisCoordToVec2(element.orientation, axis.bodyEndCoord, axis.perpCoord);
+  const leadStart = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStartVec2, COMPONENT_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
+  const leadEnd = cylinderBetween(
+    three,
+    toVec3(three, bodyEndVec2, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
   if (leadStart) {
     group.add(leadStart);
   }
@@ -348,9 +449,10 @@ const buildCapacitorElement = (three: any, element: TwoTerminalElement, options:
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "C");
     if (labelSprite) {
-      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-      labelSprite.position.copy(midpoint);
-      labelSprite.position.y += LABEL_HEIGHT;
+      const anchor = axisCoordToVec2(element.orientation, axis.centerCoord, axis.perpCoord);
+      const labelPosition = toVec3(three, anchor, COMPONENT_HEIGHT);
+      labelPosition.y += LABEL_HEIGHT;
+      labelSprite.position.copy(labelPosition);
       group.add(labelSprite);
     }
   }
@@ -361,42 +463,48 @@ const buildCapacitorElement = (three: any, element: TwoTerminalElement, options:
 const buildInductorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `inductor-${element.id}`;
-  const coilMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
 
+  const axis = computeAxisMetrics(element.start, element.end, element.orientation, INDUCTOR_SPEC.axis);
+  const coilMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
   styliseMaterial(three, coilMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
-  const coilCount = 4;
-  const radius = 0.45;
+  const usableLength = Math.max(axis.bodyLength - INDUCTOR_SPEC.endClearance * 2, axis.bodyLength * 0.6);
+  const startOffset = (axis.bodyLength - usableLength) / 2;
+  const coilSpacing = usableLength / Math.max(1, INDUCTOR_SPEC.coilCount);
+  const coilTubeRadius = RESISTOR_RADIUS * INDUCTOR_SPEC.coilTubeRadiusScale;
 
-  for (let i = 0; i < coilCount; i += 1) {
-    const t = (i + 0.5) / coilCount;
+  for (let i = 0; i < INDUCTOR_SPEC.coilCount; i += 1) {
+    const centerOffset = startOffset + coilSpacing * (i + 0.5);
+    const centerCoord = axis.bodyStartCoord + axis.direction * centerOffset;
+    const torus = new three.TorusGeometry(INDUCTOR_SPEC.coilRadius, coilTubeRadius, 18, 48, INDUCTOR_SPEC.coilArc);
+    const mesh = new three.Mesh(torus, coilMaterial);
     if (element.orientation === "horizontal") {
-      const x = element.start.x + (element.end.x - element.start.x) * t;
-      const torus = new three.TorusGeometry(radius, RESISTOR_RADIUS * 0.9, 18, 48, Math.PI * 1.15);
-      const mesh = new three.Mesh(torus, coilMaterial);
       mesh.rotation.y = Math.PI / 2;
-      mesh.position.set(x, COMPONENT_HEIGHT, element.start.z);
-      group.add(mesh);
     } else {
-      const z = element.start.z + (element.end.z - element.start.z) * t;
-      const torus = new three.TorusGeometry(radius, RESISTOR_RADIUS * 0.9, 18, 48, Math.PI * 1.15);
-      const mesh = new three.Mesh(torus, coilMaterial);
       mesh.rotation.x = Math.PI / 2;
-      mesh.position.set(element.start.x, COMPONENT_HEIGHT, z);
-      group.add(mesh);
     }
+    positionOnAxis(mesh, element.orientation, centerCoord, axis.perpCoord, COMPONENT_HEIGHT);
+    group.add(mesh);
   }
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
-  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, leadMaterial);
-  const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
+  const bodyStartVec2 = axisCoordToVec2(element.orientation, axis.bodyStartCoord, axis.perpCoord);
+  const bodyEndVec2 = axisCoordToVec2(element.orientation, axis.bodyEndCoord, axis.perpCoord);
+  const leadStart = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStartVec2, COMPONENT_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
+  const leadEnd = cylinderBetween(
+    three,
+    toVec3(three, bodyEndVec2, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
   if (leadStart) {
     group.add(leadStart);
   }
@@ -407,9 +515,10 @@ const buildInductorElement = (three: any, element: TwoTerminalElement, options: 
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "L");
     if (labelSprite) {
-      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-      labelSprite.position.copy(midpoint);
-      labelSprite.position.y += LABEL_HEIGHT;
+      const anchor = axisCoordToVec2(element.orientation, axis.centerCoord, axis.perpCoord);
+      const labelPosition = toVec3(three, anchor, COMPONENT_HEIGHT);
+      labelPosition.y += LABEL_HEIGHT;
+      labelSprite.position.copy(labelPosition);
       group.add(labelSprite);
     }
   }
@@ -420,42 +529,55 @@ const buildInductorElement = (three: any, element: TwoTerminalElement, options: 
 const buildLampElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `lamp-${element.id}`;
+
+  const axis = computeAxisMetrics(element.start, element.end, element.orientation, LAMP_SPEC.axis);
   const ringMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampRing });
   const fillMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampFill });
   const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
-
   styliseMaterial(three, ringMaterial, options, COLOR_HELPERS.lampRing);
   styliseMaterial(three, fillMaterial, options, COLOR_HELPERS.lampFill);
   styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
-  const center = new three.Vector3(
-    (element.start.x + element.end.x) / 2,
-    COMPONENT_HEIGHT,
-    (element.start.z + element.end.z) / 2
+  const center2D = axisCoordToVec2(element.orientation, axis.centerCoord, axis.perpCoord);
+  const center3D = toVec3(three, center2D, COMPONENT_HEIGHT);
+  const disc = new three.Mesh(
+    new three.CylinderGeometry(LAMP_SPEC.discRadius, LAMP_SPEC.discRadius, LAMP_SPEC.discThickness, 32),
+    fillMaterial
   );
-  const disc = new three.Mesh(new three.CylinderGeometry(0.55, 0.55, 0.02, 32), fillMaterial);
-  disc.position.copy(center);
+  disc.position.copy(center3D);
   disc.rotation.x = Math.PI / 2;
   group.add(disc);
 
-  const ring = new three.Mesh(new three.TorusGeometry(0.55, 0.02, 16, 64), ringMaterial);
+  const ring = new three.Mesh(new three.TorusGeometry(LAMP_SPEC.ringRadius, LAMP_SPEC.ringTubeRadius, 16, 64), ringMaterial);
   ring.rotation.x = Math.PI / 2;
-  ring.position.copy(center);
+  ring.position.copy(center3D);
   group.add(ring);
 
-  const crossGeom = new three.BoxGeometry(1.0, 0.02, 0.02);
+  const crossGeom = new three.BoxGeometry(LAMP_SPEC.crossLength, LAMP_SPEC.crossThickness, LAMP_SPEC.crossThickness);
   const crossA = new three.Mesh(crossGeom, ringMaterial);
-  crossA.position.copy(center);
-  crossA.rotation.y = Math.PI / 4;
   const crossB = new three.Mesh(crossGeom, ringMaterial);
-  crossB.position.copy(center);
+  crossA.position.copy(center3D);
+  crossB.position.copy(center3D);
+  crossA.rotation.y = Math.PI / 4;
   crossB.rotation.y = -Math.PI / 4;
   group.add(crossA, crossB);
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.02);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.02);
-  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, leadMaterial);
-  const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
+  const bodyStartVec2 = axisCoordToVec2(element.orientation, axis.bodyStartCoord, axis.perpCoord);
+  const bodyEndVec2 = axisCoordToVec2(element.orientation, axis.bodyEndCoord, axis.perpCoord);
+  const leadStart = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStartVec2, COMPONENT_HEIGHT - 0.02),
+    WIRE_RADIUS,
+    leadMaterial
+  );
+  const leadEnd = cylinderBetween(
+    three,
+    toVec3(three, bodyEndVec2, COMPONENT_HEIGHT - 0.02),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
   if (leadStart) {
     group.add(leadStart);
   }
@@ -466,7 +588,9 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "LAMP");
     if (labelSprite) {
-      labelSprite.position.copy(bulbCenter.clone().setY(bulbCenter.y + 0.9));
+      const labelPosition = center3D.clone();
+      labelPosition.y += LABEL_HEIGHT + 0.48;
+      labelSprite.position.copy(labelPosition);
       group.add(labelSprite);
     }
   }
@@ -477,47 +601,68 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
 const buildSwitchElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `switch-${element.id}`;
-  const postMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const bladeMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
-  const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.stroke
-  });
 
+  const axis = computeAxisMetrics(element.start, element.end, element.orientation, SWITCH_SPEC.axis);
+  const postMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const bladeMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
   styliseMaterial(three, postMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, bladeMaterial, options, COLOR_HELPERS.stroke);
   styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.05);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.05);
+  const postOffset = Math.min(SWITCH_SPEC.postOffset, axis.bodyLength / 3);
+  const postACoord = axis.bodyStartCoord + axis.direction * postOffset;
+  const postBCoord = axis.bodyEndCoord - axis.direction * postOffset;
 
-  const postGeometry = new three.CylinderGeometry(0.18, 0.18, 0.6, 24);
+  const postGeometry = new three.CylinderGeometry(SWITCH_SPEC.postRadius, SWITCH_SPEC.postRadius, SWITCH_SPEC.postHeight, 24);
   const postA = new three.Mesh(postGeometry, postMaterial);
   const postB = new three.Mesh(postGeometry, postMaterial);
+  const postY = COMPONENT_HEIGHT + SWITCH_SPEC.postHeight / 2;
+
+  const postAPos2D = resolveAxialVec2(element.orientation, postACoord, axis.perpCoord);
+  const postBPos2D = resolveAxialVec2(element.orientation, postBCoord, axis.perpCoord);
+  postA.position.set(postAPos2D.x, postY, postAPos2D.z);
+  postB.position.set(postBPos2D.x, postY, postBPos2D.z);
+  group.add(postA, postB);
+
+  const bladeLengthRaw = axis.bodyLength - postOffset * 2;
+  const bladeLength = clamp(bladeLengthRaw, SWITCH_SPEC.bladeLength * 0.4, SWITCH_SPEC.bladeLength);
+  const bladeThickness = SWITCH_SPEC.bladeRadius * 2;
+  const bladeGeometry = new three.BoxGeometry(bladeLength, bladeThickness, bladeThickness);
+  const blade = new three.Mesh(bladeGeometry, bladeMaterial);
+  const bladePivot = new three.Object3D();
+  bladePivot.position.set(postAPos2D.x, postY + SWITCH_SPEC.postHeight / 2, postAPos2D.z);
 
   if (element.orientation === "horizontal") {
-    postA.position.set(element.start.x + 0.2, COMPONENT_HEIGHT + 0.15, element.start.z);
-    postB.position.set(element.end.x - 0.2, COMPONENT_HEIGHT + 0.15, element.end.z);
+    blade.position.x = bladeLength / 2;
+    const openAngle = (Math.PI / 180) * SWITCH_SPEC.bladeAngleDeg * -axis.direction;
+    blade.rotation.z = openAngle;
   } else {
-    postA.position.set(element.start.x, COMPONENT_HEIGHT + 0.15, element.start.z + 0.2);
-    postB.position.set(element.end.x, COMPONENT_HEIGHT + 0.15, element.end.z - 0.2);
+    blade.rotation.y = Math.PI / 2;
+    blade.position.z = bladeLength / 2;
+    const openAngle = (Math.PI / 180) * SWITCH_SPEC.bladeAngleDeg * axis.direction;
+    blade.rotation.x = openAngle;
   }
 
-  const blade = new three.Mesh(new three.CylinderGeometry(0.12, 0.12, 1.8, 24), bladeMaterial);
-  const bladePivot = new three.Object3D();
-  bladePivot.position.copy(postA.position);
-  blade.position.y = 0.9;
-  blade.rotation.z = element.orientation === "horizontal" ? -Math.PI / 6 : 0;
-  blade.rotation.x = element.orientation === "horizontal" ? 0 : Math.PI / 6;
   bladePivot.add(blade);
+  group.add(bladePivot);
 
-  group.add(postA, postB, bladePivot);
-
-  const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, leadMaterial);
-  const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
+  const bodyStartVec2 = axisCoordToVec2(element.orientation, axis.bodyStartCoord, axis.perpCoord);
+  const bodyEndVec2 = axisCoordToVec2(element.orientation, axis.bodyEndCoord, axis.perpCoord);
+  const leadStart = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStartVec2, COMPONENT_HEIGHT - 0.05),
+    WIRE_RADIUS,
+    leadMaterial
+  );
+  const leadEnd = cylinderBetween(
+    three,
+    toVec3(three, bodyEndVec2, COMPONENT_HEIGHT - 0.05),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    WIRE_RADIUS,
+    leadMaterial
+  );
   if (leadStart) {
     group.add(leadStart);
   }
@@ -528,9 +673,10 @@ const buildSwitchElement = (three: any, element: TwoTerminalElement, options: Bu
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label ?? "S");
     if (labelSprite) {
-      const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
-      labelSprite.position.copy(midpoint);
-      labelSprite.position.y += LABEL_HEIGHT;
+      const anchor = axisCoordToVec2(element.orientation, axis.centerCoord, axis.perpCoord);
+      const labelPosition = toVec3(three, anchor, COMPONENT_HEIGHT);
+      labelPosition.y += LABEL_HEIGHT;
+      labelSprite.position.copy(labelPosition);
       group.add(labelSprite);
     }
   }
@@ -541,24 +687,24 @@ const buildSwitchElement = (three: any, element: TwoTerminalElement, options: Bu
 const buildGroundElement = (three: any, element: GroundElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `ground-${element.id}`;
-  const lineMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.ground
-  });
+  const lineMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.ground });
   styliseMaterial(three, lineMaterial, options, COLOR_HELPERS.ground);
 
-  const widths = [1.2, 0.8, 0.4];
-  const heights = [0, -0.18, -0.34];
-
-  widths.forEach((width, index) => {
-    const geometry = element.orientation === "horizontal"
-      ? new three.BoxGeometry(width, 0.08, 0.12)
-      : new three.BoxGeometry(0.12, 0.08, width);
+  GROUND_SPEC.barWidths.forEach((width, index) => {
+    const geometry = createAxisAlignedBoxGeometry(
+      three,
+      element.orientation,
+      width,
+      GROUND_SPEC.barThickness,
+      GROUND_SPEC.barThickness
+    );
     const bar = new three.Mesh(geometry, lineMaterial);
-    if (element.orientation === "horizontal") {
-      bar.position.set(element.position.x, COMPONENT_HEIGHT + heights[index], element.position.z);
-    } else {
-      bar.position.set(element.position.x, COMPONENT_HEIGHT + heights[index], element.position.z);
-    }
+    const heightOffset = -GROUND_SPEC.barSpacing * index;
+    bar.position.set(
+      element.position.x,
+      COMPONENT_HEIGHT + heightOffset,
+      element.position.z
+    );
     group.add(bar);
   });
 
