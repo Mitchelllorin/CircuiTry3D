@@ -48,7 +48,10 @@ type BuilderMessage =
         sessionName?: string;
         testVariables?: Record<string, unknown>;
       };
-    };
+      }
+    | { type: "builder:edit-active-component" }
+    | { type: "builder:rotate-active-component" }
+    | { type: "builder:wire-active-component" };
 
 type ComponentAction = {
   id: string;
@@ -70,6 +73,132 @@ type LegacyModeState = {
   wireRoutingMode: string;
   showGrid: boolean;
   showLabels: boolean;
+};
+
+type LegacySelectionSnapshot = {
+  id: string | null;
+  type?: string | null;
+  label?: string | null;
+  componentNumber?: string | null;
+  position?: [number, number, number] | null;
+  rotation?: number | null;
+  metadata?: Record<string, unknown> | null;
+  properties?: Record<string, unknown> | null;
+};
+
+const truncate = (value: string, maxLength = 60): string => {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
+};
+
+const formatPropertyLabel = (key: string): string => {
+  const spaced = key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim();
+  if (!spaced) {
+    return "Property";
+  }
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
+
+const formatDisplayValue = (value: unknown): string => {
+  if (value === null || typeof value === "undefined") {
+    return "—";
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      return "—";
+    }
+    const abs = Math.abs(value);
+    const digits = abs >= 1000 ? 0 : abs >= 100 ? 1 : abs >= 10 ? 2 : 3;
+    return value.toFixed(digits);
+  }
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+  if (typeof value === "string") {
+    return truncate(value, 80);
+  }
+  if (Array.isArray(value)) {
+    return `${value.length} item${value.length === 1 ? "" : "s"}`;
+  }
+  try {
+    return truncate(JSON.stringify(value), 80);
+  } catch {
+    return "—";
+  }
+};
+
+const formatPosition = (position?: [number, number, number] | null): string => {
+  if (!position || position.length !== 3) {
+    return "-";
+  }
+  const [x, y, z] = position;
+  const formatAxis = (axis: number | undefined) => {
+    if (typeof axis !== "number" || Number.isNaN(axis)) {
+      return "0.00";
+    }
+    const digits = Math.abs(axis) >= 10 ? 1 : 2;
+    return axis.toFixed(digits);
+  };
+  return `${formatAxis(x)}, ${formatAxis(y)}, ${formatAxis(z)}`;
+};
+
+const formatRotation = (rotation?: number | null): string => {
+  if (typeof rotation !== "number" || Number.isNaN(rotation)) {
+    return "-";
+  }
+  const degrees = (rotation * 180) / Math.PI;
+  const normalized = ((degrees % 360) + 360) % 360;
+  return `${normalized.toFixed(1)}°`;
+};
+
+const formatComponentLabel = (snapshot: LegacySelectionSnapshot): string => {
+  const parts: string[] = [];
+  if (snapshot.label && snapshot.label.trim().length > 0) {
+    parts.push(snapshot.label.trim());
+  }
+  if (snapshot.componentNumber && snapshot.componentNumber.trim().length > 0) {
+    const token = snapshot.componentNumber.trim();
+    if (!parts.includes(token)) {
+      parts.push(token);
+    }
+  }
+  if (snapshot.type && snapshot.type.trim().length > 0) {
+    const normalized = snapshot.type.trim();
+    if (!parts.some((part) => part.toLowerCase() === normalized.toLowerCase())) {
+      parts.push(normalized);
+    }
+  }
+  if (snapshot.id && snapshot.id.trim().length > 0) {
+    const idToken = `#${snapshot.id.trim()}`;
+    if (!parts.includes(idToken)) {
+      parts.push(idToken);
+    }
+  }
+  if (!parts.length) {
+    return "Component";
+  }
+  return parts.slice(0, 3).join(" · ");
+};
+
+const summarizeMetadata = (metadata?: Record<string, unknown> | null): string => {
+  if (!metadata) {
+    return "No metadata";
+  }
+  if (typeof metadata.displayName === "string" && metadata.displayName.trim().length > 0) {
+    return metadata.displayName.trim();
+  }
+  const entries = Object.entries(metadata)
+    .filter(([key, value]) => key !== "displayName" && typeof value !== "object" && typeof value !== "undefined")
+    .map(([key, value]) => `${formatPropertyLabel(key)}: ${formatDisplayValue(value)}`);
+  if (!entries.length) {
+    return "No metadata";
+  }
+  return entries.slice(0, 2).join(" · ");
 };
 
 type QuickAction = {
@@ -153,13 +282,6 @@ const QUICK_ACTIONS: QuickAction[] = [
     kind: "action",
     action: "run-simulation",
   },
-];
-
-const PROPERTY_ITEMS = [
-  { id: "component", name: "Selected Component", value: "None" },
-  { id: "position", name: "Position", value: "-" },
-  { id: "rotation", name: "Rotation", value: "-" },
-  { id: "metadata", name: "Metadata", value: "Tap any element to inspect" },
 ];
 
 type PanelAction = {
@@ -1100,6 +1222,7 @@ export default function Builder() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
   const practiceProblemRef = useRef<string | null>(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
+  const [selectionSnapshot, setSelectionSnapshot] = useState<LegacySelectionSnapshot | null>(null);
   const appBasePath = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1117,7 +1240,16 @@ export default function Builder() {
         return;
       }
 
-      const { type, payload } = data as { type?: string; payload?: unknown };
+        const { type, payload } = data as { type?: string; payload?: unknown };
+
+        if (type === "legacy:selection") {
+          if (payload && typeof payload === "object") {
+            setSelectionSnapshot(payload as LegacySelectionSnapshot);
+          } else {
+            setSelectionSnapshot(null);
+          }
+          return;
+        }
 
       if (type === "legacy:ready") {
         setFrameReady(true);
@@ -1757,6 +1889,27 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
+  const handleEditSelection = useCallback(() => {
+    if (!selectionSnapshot) {
+      return;
+    }
+    postToBuilder({ type: "builder:edit-active-component" });
+  }, [postToBuilder, selectionSnapshot]);
+
+  const handleRotateSelection = useCallback(() => {
+    if (!selectionSnapshot) {
+      return;
+    }
+    postToBuilder({ type: "builder:rotate-active-component" });
+  }, [postToBuilder, selectionSnapshot]);
+
+  const handleWireSelection = useCallback(() => {
+    if (!selectionSnapshot) {
+      return;
+    }
+    postToBuilder({ type: "builder:wire-active-component" });
+  }, [postToBuilder, selectionSnapshot]);
+
   const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
@@ -1804,6 +1957,56 @@ export default function Builder() {
 
     return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
   }, [activePracticeProblemId, practiceWorksheetState]);
+
+  const propertyItems = useMemo(() => {
+    const baseItems = [
+      { id: "component", name: "Selected Component", value: "None" },
+      { id: "position", name: "Position", value: "-" },
+      { id: "rotation", name: "Rotation", value: "-" },
+      { id: "metadata", name: "Metadata", value: "Tap any element to inspect" }
+    ];
+
+    if (!selectionSnapshot) {
+      return baseItems;
+    }
+
+    const items = [...baseItems];
+    items[0] = { ...items[0], value: formatComponentLabel(selectionSnapshot) };
+    items[1] = { ...items[1], value: formatPosition(selectionSnapshot.position ?? null) };
+    items[2] = { ...items[2], value: formatRotation(selectionSnapshot.rotation) };
+    items[3] = { ...items[3], value: summarizeMetadata(selectionSnapshot.metadata) };
+
+    const extras: Array<{ id: string; name: string; value: string }> = [];
+
+    if (selectionSnapshot.properties) {
+      Object.entries(selectionSnapshot.properties).forEach(([key, value]) => {
+        extras.push({
+          id: `prop-${key}`,
+          name: formatPropertyLabel(key),
+          value: formatDisplayValue(value)
+        });
+      });
+    }
+
+    if (selectionSnapshot.metadata) {
+      Object.entries(selectionSnapshot.metadata).forEach(([key, value]) => {
+        if (key === "displayName" || typeof value === "object") {
+          return;
+        }
+        extras.push({
+          id: `meta-${key}`,
+          name: formatPropertyLabel(key),
+          value: formatDisplayValue(value)
+        });
+      });
+    }
+
+    const extrasLimited = extras.slice(0, 8);
+
+    return [...items, ...extrasLimited];
+  }, [selectionSnapshot]);
+
+  const hasSelection = Boolean(selectionSnapshot && selectionSnapshot.type !== "junction");
 
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
@@ -1994,18 +2197,71 @@ export default function Builder() {
           <span className="toggle-text">Controls</span>
         </button>
         <nav className="builder-menu builder-menu-right" role="complementary" aria-label="Mode and view controls">
-          <div className="builder-menu-scroll">
-            <div className="slider-section">
-              <span className="slider-heading">Properties</span>
-              <div className="property-stack">
-                {PROPERTY_ITEMS.map((item) => (
-                  <div key={item.id} className="property-item">
-                    <div className="property-name">{item.name}</div>
-                    <div className="property-value">{item.value}</div>
-                  </div>
-                ))}
+            <div className="builder-menu-scroll">
+              <div className="slider-section">
+                <span className="slider-heading">Properties</span>
+                <div className="property-stack">
+                  {propertyItems.map((item) => (
+                    <div key={item.id} className="property-item">
+                      <div className="property-name">{item.name}</div>
+                      <div className="property-value">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="slider-stack">
+                  <button
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={handleEditSelection}
+                    disabled={controlsDisabled || !hasSelection}
+                    aria-disabled={controlsDisabled || !hasSelection}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : hasSelection
+                        ? "Edit selected component values"
+                        : "Select a component to edit"
+                    }
+                  >
+                    <span className="slider-label">Edit Values</span>
+                    <span className="slider-description">Open component editor</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={handleRotateSelection}
+                    disabled={controlsDisabled || !hasSelection}
+                    aria-disabled={controlsDisabled || !hasSelection}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : hasSelection
+                        ? "Rotate the selected component"
+                        : "Select a component to rotate"
+                    }
+                  >
+                    <span className="slider-label">Rotate 90°</span>
+                    <span className="slider-description">Rotate selected component</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={handleWireSelection}
+                    disabled={controlsDisabled || !hasSelection}
+                    aria-disabled={controlsDisabled || !hasSelection}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : hasSelection
+                        ? "Start wiring from the selected component"
+                        : "Select a component to begin wiring"
+                    }
+                  >
+                    <span className="slider-label">Wire Mode</span>
+                    <span className="slider-description">Begin wiring from selection</span>
+                  </button>
+                </div>
               </div>
-            </div>
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
               <div className="slider-stack">

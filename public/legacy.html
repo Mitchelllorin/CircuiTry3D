@@ -3811,6 +3811,58 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function buildSelectionSnapshot(entity) {
+            if (!entity) {
+                return null;
+            }
+
+            const snapshot = {
+                id: typeof entity.id === 'string' ? entity.id : null,
+                type: entity.type || (entity.isJunction ? 'junction' : 'entity'),
+                label: typeof getComponentFriendlyName === 'function' ? getComponentFriendlyName(entity) : (entity.type || 'Component'),
+                componentNumber: typeof entity.componentNumber === 'string' ? entity.componentNumber : null,
+                metadata: entity.metadata && typeof entity.metadata === 'object' ? { ...entity.metadata } : null,
+                properties: entity.properties && typeof entity.properties === 'object' ? { ...entity.properties } : null,
+                rotation: typeof entity.rotation === 'number'
+                    ? Number(entity.rotation)
+                    : (entity.mesh && entity.mesh.rotation && typeof entity.mesh.rotation.y === 'number' ? Number(entity.mesh.rotation.y) : null),
+                position: entity.position && typeof entity.position.toArray === 'function'
+                    ? entity.position.toArray().map((value) => (Number.isFinite(value) ? Number(value) : 0))
+                    : (entity.mesh && entity.mesh.position
+                        ? [Number(entity.mesh.position.x) || 0, Number(entity.mesh.position.y) || 0, Number(entity.mesh.position.z) || 0]
+                        : null)
+            };
+
+            if (snapshot.metadata) {
+                const keys = Object.keys(snapshot.metadata);
+                if (!keys.length) {
+                    snapshot.metadata = null;
+                }
+            }
+
+            if (snapshot.properties) {
+                const keys = Object.keys(snapshot.properties);
+                if (!keys.length) {
+                    snapshot.properties = null;
+                }
+            }
+
+            return snapshot;
+        }
+
+        function notifyParentSelection(entity) {
+            if (!window.parent || window.parent === window) {
+                return;
+            }
+
+            try {
+                const payload = entity ? buildSelectionSnapshot(entity) : null;
+                window.parent.postMessage({ type: 'legacy:selection', payload }, '*');
+            } catch (error) {
+                console.warn('Builder bridge: unable to share selection state', error);
+            }
+        }
+
         function handleBuilderBridgeMessage(event) {
             const expectedSource = window.parent && window.parent !== window ? window.parent : null;
             if (expectedSource && event.source !== expectedSource) {
@@ -3969,6 +4021,32 @@ body.android-optimized.menu-visible .status {
                     }
                     break;
                 }
+                  case 'builder:edit-active-component': {
+                      if (selectedComponent && typeof showEditPopup === 'function') {
+                          showEditPopup(selectedComponent);
+                      }
+                      break;
+                  }
+                  case 'builder:rotate-active-component': {
+                      if (selectedComponent && typeof rotateComponent === 'function') {
+                          rotateComponent(selectedComponent, { animate: true, silent: false });
+                      }
+                      break;
+                  }
+                  case 'builder:wire-active-component': {
+                      if (selectedComponent) {
+                          if (typeof enableWireMode === 'function') {
+                              enableWireMode({ silent: true });
+                          }
+                          const point = Array.isArray(selectedComponent.connectionPoints) ? selectedComponent.connectionPoints[0] : null;
+                          if (point && point.userData && typeof handleConnectionPointClick === 'function') {
+                              handleConnectionPointClick(point.userData);
+                          } else if (typeof setStatus === 'function') {
+                              setStatus('?? WIRE MODE! Touch terminals to connect components');
+                          }
+                      }
+                      break;
+                  }
                 default:
                     break;
             }
@@ -4574,6 +4652,7 @@ body.android-optimized.menu-visible .status {
         let isLongPressing = false;
         let currentEditComponent = null;
         const LONG_PRESS_DURATION = 600; // Shorter for mobile
+        const LONG_PRESS_MOVE_TOLERANCE = 28; // pixels finger can drift before cancelling long press
         const COMPONENT_DRAG_THRESHOLD = 8;
         let componentContextMenu = null;
         let componentContextTarget = null;
@@ -5946,7 +6025,7 @@ body.android-optimized.menu-visible .status {
                 // Check if moved too far for long press
                 const totalDeltaX = Math.abs(touch.clientX - longPressStartPos.x);
                 const totalDeltaY = Math.abs(touch.clientY - longPressStartPos.y);
-                if ((totalDeltaX > 15 || totalDeltaY > 15) && longPressTimer) {
+                if ((totalDeltaX > LONG_PRESS_MOVE_TOLERANCE || totalDeltaY > LONG_PRESS_MOVE_TOLERANCE) && longPressTimer) {
                     cancelLongPress();
                 }
                 
@@ -6062,7 +6141,7 @@ body.android-optimized.menu-visible .status {
             // Check if moved too far for long press
             const deltaX = Math.abs(e.clientX - longPressStartPos.x);
             const deltaY = Math.abs(e.clientY - longPressStartPos.y);
-            if ((deltaX > 10 || deltaY > 10) && longPressTimer) {
+            if ((deltaX > LONG_PRESS_MOVE_TOLERANCE || deltaY > LONG_PRESS_MOVE_TOLERANCE) && longPressTimer) {
                 cancelLongPress();
             }
             
@@ -7441,6 +7520,7 @@ body.android-optimized.menu-visible .status {
             
             // Recalculate circuit
             analyzeCircuit();
+            notifyParentSelection(currentEditComponent);
             
             const componentType = currentEditComponent.type;
             setStatus(`? ${componentType.charAt(0).toUpperCase() + componentType.slice(1)} updated successfully!`);
@@ -7783,6 +7863,7 @@ body.android-optimized.menu-visible .status {
             }
 
             analyzeCircuit();
+            notifyParentSelection(component);
 
             if (!silent) {
                 const rotationDegrees = Math.round((nextRotation * 180) / Math.PI) % 360;
@@ -7803,6 +7884,7 @@ body.android-optimized.menu-visible .status {
                 const state = component.properties.isOn ? 'ON' : 'OFF';
                 setStatus(`?? Switch ${state} - circuit updated`);
                 analyzeCircuit();
+                notifyParentSelection(component);
             } else if (!isWireMode && !isDragging) {
                 selectComponent(component, { startDragging: false });
             }
@@ -7824,6 +7906,7 @@ body.android-optimized.menu-visible .status {
             const { startDragging = false, silent = false } = options;
             selectedComponent = component;
             isDragging = Boolean(startDragging);
+            notifyParentSelection(component);
 
             if (silent) {
                 return;
@@ -7845,6 +7928,7 @@ body.android-optimized.menu-visible .status {
             const { startDragging = false, silent = false } = options;
             selectedComponent = junction;
             isDragging = Boolean(startDragging);
+            notifyParentSelection(junction);
 
             if (silent) {
                 return;
@@ -7987,6 +8071,7 @@ body.android-optimized.menu-visible .status {
             }
             
             selectedComponent = null;
+            notifyParentSelection(null);
         }
 
         // Menu system functions
@@ -8615,6 +8700,8 @@ body.android-optimized.menu-visible .status {
             });
             
             selectedComponents.clear();
+            selectedComponent = null;
+            notifyParentSelection(null);
             updateCircuitInfo();
             setStatus('??? Selected objects deleted');
         }
@@ -11814,6 +11901,7 @@ Made with ? for visual learners everywhere!
             isDragging = false;
             selectedComponent = null;
             selectedComponents.clear();
+            notifyParentSelection(null);
             hideSnapIndicator();
             measureStartPoint = null;
             currentPracticeCircuit = null; // Reset practice circuit
