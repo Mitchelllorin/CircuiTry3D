@@ -1628,18 +1628,20 @@ function buildCircuit(three: any, problem: PracticeProblem) {
     group.add(mesh);
   };
 
-  const cylinderBetween = (startVec: any, endVec: any, radius: number, material: any) => {
+  const strokeBetween = (startVec: any, endVec: any, radius: number, material: any) => {
     const direction = new three.Vector3().subVectors(endVec, startVec);
     const length = direction.length();
     if (length <= 1e-6) {
       return null;
     }
-    const geometry = new three.CylinderGeometry(radius, radius, length, 24, 1, true);
+
+    const thickness = radius * 2;
+    const geometry = new three.BoxGeometry(length, thickness, thickness);
     const mesh = new three.Mesh(geometry, material);
     const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
     mesh.position.copy(midpoint);
     const quaternion = new three.Quaternion().setFromUnitVectors(
-      new three.Vector3(0, 1, 0),
+      new three.Vector3(1, 0, 0),
       direction.clone().normalize()
     );
     mesh.setRotationFromQuaternion(quaternion);
@@ -1649,7 +1651,7 @@ function buildCircuit(three: any, problem: PracticeProblem) {
   const addWireSegment = (start: Vec2, end: Vec2) => {
     const startVec = toVec3(start, WIRE_HEIGHT);
     const endVec = toVec3(end, WIRE_HEIGHT);
-    const mesh = cylinderBetween(startVec, endVec, WIRE_RADIUS, wireMaterial);
+    const mesh = strokeBetween(startVec, endVec, WIRE_RADIUS, wireMaterial);
     if (mesh) {
       group.add(mesh);
     }
@@ -1718,7 +1720,7 @@ function buildCircuit(three: any, problem: PracticeProblem) {
     for (let i = 0; i < points.length - 1; i += 1) {
       const segStart = toVec3(points[i], COMPONENT_HEIGHT);
       const segEnd = toVec3(points[i + 1], COMPONENT_HEIGHT);
-      const mesh = cylinderBetween(segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
+      const mesh = strokeBetween(segStart, segEnd, RESISTOR_RADIUS, resistorMaterial);
       if (mesh) {
         resistorGroup.add(mesh);
       }
@@ -1726,8 +1728,8 @@ function buildCircuit(three: any, problem: PracticeProblem) {
 
     const startVec = toVec3(start, COMPONENT_HEIGHT);
     const endVec = toVec3(end, COMPONENT_HEIGHT);
-    const leadStart = cylinderBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
-    const leadEnd = cylinderBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
+    const leadStart = strokeBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
+    const leadEnd = strokeBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
     if (leadStart) {
       resistorGroup.add(leadStart);
     }
@@ -1796,8 +1798,8 @@ function buildCircuit(three: any, problem: PracticeProblem) {
       }
     }
 
-    const leadStart = cylinderBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
-    const leadEnd = cylinderBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
+    const leadStart = strokeBetween(toVec3(start, WIRE_HEIGHT), startVec, WIRE_RADIUS, wireMaterial);
+    const leadEnd = strokeBetween(endVec, toVec3(end, WIRE_HEIGHT), WIRE_RADIUS, wireMaterial);
     if (leadStart) {
       batteryGroup.add(leadStart);
     }
