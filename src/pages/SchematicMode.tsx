@@ -686,7 +686,7 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
   );
 }
 
-function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStandard }) {
+export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStandard }) {
   const [selectedCatalogId, setSelectedCatalogId] = useState<string>(COMPONENT_CATALOG[0]?.id ?? "");
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -695,6 +695,7 @@ function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStandard })
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [labelCounters, setLabelCounters] = useState<Record<string, number>>({});
   const [singleNodeOrientation, setSingleNodeOrientation] = useState<Orientation>("horizontal");
+  const [isCatalogOpen, setCatalogOpen] = useState(true);
 
   const selectedCatalogEntry = useMemo(() => {
     const entry = COMPONENT_CATALOG.find((item) => item.id === selectedCatalogId);
@@ -948,98 +949,109 @@ function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStandard })
         </div>
       </section>
 
-      <aside className="schematic-sidebar">
-        <div className="schematic-catalog">
-          <h2>Component Catalog</h2>
-          <div className="catalog-grid" role="list">
-            {COMPONENT_CATALOG.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                role="listitem"
-                className={entry.id === selectedCatalogEntry.id ? "catalog-entry is-selected" : "catalog-entry"}
-                onClick={() => handleCatalogSelect(entry)}
-              >
-                <span className="catalog-icon">{entry.icon}</span>
-                <span className="catalog-name">{entry.name}</span>
-                <span className="catalog-desc">{entry.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="schematic-panel">
-          <div className="schematic-panel-section">
-            <h3>Board Controls</h3>
-            <div className="schematic-actions">
-              <button type="button" onClick={handleClearBoard} disabled={!elements.length}>
-                Clear Board
-              </button>
-              <button type="button" onClick={handleRemoveSelected} disabled={!selectedElementId}>
-                Remove Selected
-              </button>
-              <button type="button" onClick={toggleSingleNodeOrientation} className="schematic-secondary">
-                Rotate Ground ({singleNodeOrientation === "horizontal" ? "⇔" : "⇕"})
-              </button>
+      <aside className="schematic-sidebar" data-open={isCatalogOpen ? "true" : "false"}>
+        <button
+          type="button"
+          className="schematic-drawer-toggle"
+          onClick={() => setCatalogOpen((open) => !open)}
+          aria-expanded={isCatalogOpen}
+          aria-controls="schematic-drawer-panel"
+        >
+          {isCatalogOpen ? "Hide Library" : "Show Library"}
+        </button>
+        <div id="schematic-drawer-panel" className="schematic-drawer-body">
+          <div className="schematic-catalog">
+            <h2>Component Catalog</h2>
+            <div className="catalog-grid" role="list">
+              {COMPONENT_CATALOG.map((entry) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  role="listitem"
+                  className={entry.id === selectedCatalogEntry.id ? "catalog-entry is-selected" : "catalog-entry"}
+                  onClick={() => handleCatalogSelect(entry)}
+                >
+                  <span className="catalog-icon">{entry.icon}</span>
+                  <span className="catalog-name">{entry.name}</span>
+                  <span className="catalog-desc">{entry.description}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="schematic-panel-section">
-            <h3>Selection</h3>
-            {selectedElement ? (
-              <ul className="schematic-selection">
-                {selectedElement.kind === "ground" ? (
-                  <>
-                    <li>Kind: Ground</li>
-                    <li>Position: {formatPoint((selectedElement as GroundElement).position)}</li>
-                    <li>Orientation: {(selectedElement as GroundElement).orientation}</li>
-                  </>
-                ) : selectedElement.kind === "wire" ? (
-                  <>
-                    <li>Kind: Wire</li>
-                    <li>
-                      Path: {formatPoint((selectedElement as WireElement).path[0])} →
-                      {formatPoint(
-                        (selectedElement as WireElement).path[(selectedElement as WireElement).path.length - 1]
-                      )}
-                    </li>
-                  </>
-                ) : (
-                  <>
-                    <li>Label: {(selectedElement as TwoTerminalElement).label}</li>
-                    <li>
-                      Span: {formatPoint((selectedElement as TwoTerminalElement).start)} →
-                      {formatPoint((selectedElement as TwoTerminalElement).end)}
-                    </li>
-                    <li>Orientation: {(selectedElement as TwoTerminalElement).orientation}</li>
-                  </>
-                )}
-              </ul>
-            ) : (
-              <p className="schematic-empty">No component selected.</p>
-            )}
-          </div>
+          <div className="schematic-panel">
+            <div className="schematic-panel-section">
+              <h3>Board Controls</h3>
+              <div className="schematic-actions">
+                <button type="button" onClick={handleClearBoard} disabled={!elements.length}>
+                  Clear Board
+                </button>
+                <button type="button" onClick={handleRemoveSelected} disabled={!selectedElementId}>
+                  Remove Selected
+                </button>
+                <button type="button" onClick={toggleSingleNodeOrientation} className="schematic-secondary">
+                  Rotate Ground ({singleNodeOrientation === "horizontal" ? "⇔" : "⇕"})
+                </button>
+              </div>
+            </div>
 
-          <div className="schematic-panel-section">
-            <h3>Placed Components</h3>
-            {elements.length === 0 ? (
-              <p className="schematic-empty">Board is empty. Start by placing a component.</p>
-            ) : (
-              <ul className="schematic-element-list">
-                {elementSummaries.map((element) => (
-                  <li key={element.id}>
-                    <button
-                      type="button"
-                      className={element.id === selectedElementId ? "element-button is-selected" : "element-button"}
-                      onClick={() => setSelectedElementId(element.id)}
-                    >
-                      <span className="element-title">{element.title}</span>
-                      <span className="element-detail">{element.detail}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className="schematic-panel-section">
+              <h3>Selection</h3>
+              {selectedElement ? (
+                <ul className="schematic-selection">
+                  {selectedElement.kind === "ground" ? (
+                    <>
+                      <li>Kind: Ground</li>
+                      <li>Position: {formatPoint((selectedElement as GroundElement).position)}</li>
+                      <li>Orientation: {(selectedElement as GroundElement).orientation}</li>
+                    </>
+                  ) : selectedElement.kind === "wire" ? (
+                    <>
+                      <li>Kind: Wire</li>
+                      <li>
+                        Path: {formatPoint((selectedElement as WireElement).path[0])} →
+                        {formatPoint(
+                          (selectedElement as WireElement).path[(selectedElement as WireElement).path.length - 1]
+                        )}
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Label: {(selectedElement as TwoTerminalElement).label}</li>
+                      <li>
+                        Span: {formatPoint((selectedElement as TwoTerminalElement).start)} →
+                        {formatPoint((selectedElement as TwoTerminalElement).end)}
+                      </li>
+                      <li>Orientation: {(selectedElement as TwoTerminalElement).orientation}</li>
+                    </>
+                  )}
+                </ul>
+              ) : (
+                <p className="schematic-empty">No component selected.</p>
+              )}
+            </div>
+
+            <div className="schematic-panel-section">
+              <h3>Placed Components</h3>
+              {elements.length === 0 ? (
+                <p className="schematic-empty">Board is empty. Start by placing a component.</p>
+              ) : (
+                <ul className="schematic-element-list">
+                  {elementSummaries.map((element) => (
+                    <li key={element.id}>
+                      <button
+                        type="button"
+                        className={element.id === selectedElementId ? "element-button is-selected" : "element-button"}
+                        onClick={() => setSelectedElementId(element.id)}
+                      >
+                        <span className="element-title">{element.title}</span>
+                        <span className="element-detail">{element.detail}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       </aside>
@@ -1441,7 +1453,7 @@ type PracticeViewportProps = {
   symbolStandard: SymbolStandard;
 };
 
-function PracticeViewport({ problem, symbolStandard }: PracticeViewportProps) {
+export function PracticeViewport({ problem, symbolStandard }: PracticeViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1609,38 +1621,6 @@ function PracticeViewport({ problem, symbolStandard }: PracticeViewportProps) {
     </div>
   );
 }
-
-function buildCircuit(three: any, problem: PracticeProblem) {
-  return buildPracticeCircuit(three, problem, DEFAULT_SYMBOL_STANDARD);
-}
-
-function disposeThreeObject(root: any) {
-  const disposeMaterial = (material: any) => {
-    if (!material) {
-      return;
-    }
-    if (Array.isArray(material)) {
-      material.forEach((mat) => disposeMaterial(mat));
-      return;
-    }
-    if (material.dispose && typeof material.dispose === "function") {
-      material.dispose();
-    }
-  };
-
-  root.traverse((child: any) => {
-    if (child.geometry && typeof child.geometry.dispose === "function") {
-      child.geometry.dispose();
-    }
-    if (child.material) {
-      disposeMaterial(child.material);
-    }
-    if (child.userData && child.userData.texture && typeof child.userData.texture.dispose === "function") {
-      child.userData.texture.dispose();
-    }
-  });
-}
-
 function loadThree(): Promise<any> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("three.js can only be loaded in a browser environment"));
