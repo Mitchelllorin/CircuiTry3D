@@ -976,6 +976,42 @@ const WIRE_LEGEND: HelpLegendItem[] = [
   { id: "voltage", letter: "E", label: "Voltage" },
 ];
 
+type IconProps = {
+  className?: string;
+};
+
+const IconTrash = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M12.75 5.5h-5.5m-1.25 0h8m-1 0-.65 9.16a1.5 1.5 0 0 1-1.49 1.34h-2.32a1.5 1.5 0 0 1-1.49-1.34L6.5 5.5m3.5 3.25v4.75m-2-4.75v4.75m4-4.75v4.75"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconPlay = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="m8 6.25 6.25 3.75L8 13.75V6.25Z" />
+  </svg>
+);
+
 function subscribeToMediaQuery(query: MediaQueryList, listener: (event: MediaQueryListEvent) => void) {
   if (typeof query.addEventListener === "function") {
     query.addEventListener("change", listener);
@@ -1772,8 +1808,8 @@ export default function Builder() {
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const leftFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px) + var(--builder-menu-toggle-side-width) + 12px)";
-  const rightFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px) + var(--builder-menu-toggle-side-width) + 12px)";
+  const leftFloatingOffset = "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-left, 0px))";
+  const rightFloatingOffset = "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px))";
 
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
@@ -2280,9 +2316,10 @@ export default function Builder() {
           onClick={handleClearWorkspace}
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
+          aria-label="Clear workspace"
           title={controlsDisabled ? controlDisabledTitle : "Clear all components, wires, and analysis data"}
         >
-          Clear Workspace
+          <IconTrash className="builder-floating-icon" />
         </button>
       </div>
       <div
@@ -2297,9 +2334,10 @@ export default function Builder() {
           disabled={controlsDisabled}
           aria-disabled={controlsDisabled}
           data-pulse={isSimulatePulsing ? "true" : undefined}
+          aria-label="Run simulation"
           title={controlsDisabled ? controlDisabledTitle : "Run the current circuit simulation"}
         >
-          Run Simulation
+          <IconPlay className="builder-floating-icon" />
         </button>
       </div>
 
