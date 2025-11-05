@@ -3811,6 +3811,129 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+          let lastSelectionSignature = null;
+
+          function roundTo(value, precision = 2) {
+              if (!Number.isFinite(value)) {
+                  return 0;
+              }
+              const factor = 10 ** precision;
+              return Math.round(value * factor) / factor;
+          }
+
+          function serializeVector(vector) {
+              if (!vector || typeof vector !== 'object') {
+                  return null;
+              }
+
+              const rawX = Number.isFinite(vector.x) ? vector.x : 0;
+              const rawY = Number.isFinite(vector.y) ? vector.y : 0;
+              const rawZ = Number.isFinite(vector.z) ? vector.z : 0;
+
+              const position = {
+                  x: roundTo(rawX, 2),
+                  y: roundTo(rawY, 2),
+                  z: roundTo(rawZ, 2)
+              };
+
+              if (typeof GRID_SIZE === 'number' && Number.isFinite(GRID_SIZE) && Math.abs(GRID_SIZE) > 1e-9) {
+                  position.grid = {
+                      x: Math.round(rawX / GRID_SIZE),
+                      y: Math.round(rawY / GRID_SIZE),
+                      z: Math.round(rawZ / GRID_SIZE)
+                  };
+              }
+
+              return position;
+          }
+
+          function sanitizeRecord(record) {
+              if (!record || typeof record !== 'object') {
+                  return null;
+              }
+
+              const sanitized = {};
+              Object.entries(record).forEach(([key, value]) => {
+                  if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                      sanitized[key] = value;
+                  }
+              });
+
+              return Object.keys(sanitized).length ? sanitized : null;
+          }
+
+          function buildSelectionPayload(entity) {
+              if (!entity) {
+                  return null;
+              }
+
+              if (entity.type) {
+                  const radians = Number.isFinite(entity.rotation) ? entity.rotation : 0;
+                  const degrees = ((radians * (180 / Math.PI)) % 360 + 360) % 360;
+
+                  const payload = {
+                      kind: 'component',
+                      id: entity.id || null,
+                      type: entity.type,
+                      label: getComponentFriendlyName(entity),
+                      identifier: typeof entity.getComponentIdentifier === 'function'
+                          ? entity.getComponentIdentifier()
+                          : null,
+                      componentNumber: typeof entity.componentNumber === 'number' ? entity.componentNumber : null,
+                      rotation: {
+                          radians: roundTo(radians, 5),
+                          degrees: roundTo(degrees, 1)
+                      },
+                      position: serializeVector(entity.position),
+                      connections: Array.isArray(entity.connections) ? entity.connections.length : 0,
+                      properties: sanitizeRecord(entity.properties),
+                      metadata: sanitizeRecord(entity.metadata)
+                  };
+
+                  if (entity.type === 'switch' && typeof entity.properties?.isOn === 'boolean') {
+                      payload.state = entity.properties.isOn ? 'on' : 'off';
+                  }
+
+                  return payload;
+              }
+
+              if (entity.id && typeof entity.id === 'string' && entity.id.startsWith('junction')) {
+                  return {
+                      kind: 'junction',
+                      id: entity.id,
+                      label: getComponentFriendlyName(entity),
+                      position: serializeVector(entity.position),
+                      connections: Array.isArray(entity.connections) ? entity.connections.length : 0
+                  };
+              }
+
+              return null;
+          }
+
+          function buildMultiSelectionPayload(count) {
+              return {
+                  kind: 'multi',
+                  count: Math.max(0, Number(count) || 0)
+              };
+          }
+
+          function notifyParentSelection(payload) {
+              if (!window.parent || window.parent === window) {
+                  return;
+              }
+
+              try {
+                  const signature = payload ? JSON.stringify(payload) : 'null';
+                  if (signature === lastSelectionSignature) {
+                      return;
+                  }
+                  lastSelectionSignature = signature;
+                  window.parent.postMessage({ type: 'legacy:selection', payload }, '*');
+              } catch (error) {
+                  console.warn('Builder bridge: unable to share selection', error);
+              }
+          }
+
         function handleBuilderBridgeMessage(event) {
             const expectedSource = window.parent && window.parent !== window ? window.parent : null;
             if (expectedSource && event.source !== expectedSource) {
@@ -3961,6 +4084,24 @@ body.android-optimized.menu-visible .status {
                             case 'run-simulation':
                                 if (typeof runSimulation === 'function') runSimulation();
                                 break;
+                              case 'edit-selected-component':
+                                  if (selectedComponent && selectedComponent.type && typeof showEditPopup === 'function') {
+                                      showEditPopup(selectedComponent);
+                                  } else {
+                                      setStatus('? Select a component to edit');
+                                  }
+                                  break;
+                              case 'rotate-selected-component':
+                                  if (selectedComponent && selectedComponent.type && typeof rotateComponent === 'function') {
+                                      rotateComponent(selectedComponent, { animate: true, silent: false });
+                                  } else {
+                                      setStatus('? Select a component to rotate');
+                                  }
+                                  break;
+                              case 'clear-selection':
+                                  clearActiveSelection();
+                                  setStatus('?? Select mode active - tap components to inspect');
+                                  break;
                             default:
                                 break;
                         }
@@ -4739,6 +4880,12 @@ body.android-optimized.menu-visible .status {
                 if (index > -1) {
                     junctions.splice(index, 1);
                 }
+
+              if (selectedComponent === this) {
+                  clearActiveSelection();
+              } else {
+                  selectedComponents.delete(this);
+              }
             }
         }
 
@@ -5210,6 +5357,10 @@ body.android-optimized.menu-visible .status {
                 
                 // Update the labels with new values
                 this.updateLabels();
+
+              if (selectedComponent === this) {
+                  notifyParentSelection(buildSelectionPayload(this));
+              }
             }
 
             remove() {
@@ -5245,6 +5396,12 @@ body.android-optimized.menu-visible .status {
                 
                 // Reset component counter if this was the last one
                 this.updateComponentCounters();
+
+              if (selectedComponent === this) {
+                  clearActiveSelection();
+              } else {
+                  selectedComponents.delete(this);
+              }
             }
 
             updateComponentCounters() {
@@ -7788,6 +7945,10 @@ body.android-optimized.menu-visible .status {
                 const rotationDegrees = Math.round((nextRotation * 180) / Math.PI) % 360;
                 setStatus(`?? ${component.type.toUpperCase()} ROTATED 90?! Now at ${rotationDegrees}?`);
             }
+
+              if (selectedComponent === component) {
+                  notifyParentSelection(buildSelectionPayload(component));
+              }
         }
 
         function handleComponentClick(component) {
@@ -7816,6 +7977,25 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+          function clearActiveSelection(options = {}) {
+              const { notify = true } = options;
+              let changed = false;
+
+              if (selectedComponent) {
+                  selectedComponent = null;
+                  changed = true;
+              }
+
+              if (selectedComponents.size > 0) {
+                  selectedComponents.clear();
+                  changed = true;
+              }
+
+              if (notify && (changed || lastSelectionSignature !== 'null')) {
+                  notifyParentSelection(null);
+              }
+          }
+
         function selectComponent(component, options = {}) {
             if (!component) {
                 return;
@@ -7824,17 +8004,22 @@ body.android-optimized.menu-visible .status {
             const { startDragging = false, silent = false } = options;
             selectedComponent = component;
             isDragging = Boolean(startDragging);
+              selectedComponents.clear();
+              selectedComponents.add(component);
 
-            if (silent) {
-                return;
-            }
+              const selectionPayload = buildSelectionPayload(component);
+              notifyParentSelection(selectionPayload);
 
-            const label = getComponentFriendlyName(component);
-            if (isDragging) {
-                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
-            } else {
-                setStatus(`?? ${label} selected - drag to move or long-press for actions`);
-            }
+              if (silent) {
+                  return;
+              }
+
+              const label = getComponentFriendlyName(component);
+              if (isDragging) {
+                  setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+              } else {
+                  setStatus(`?? ${label} selected - drag to move or long-press for actions`);
+              }
         }
 
         function selectJunction(junction, options = {}) {
@@ -7845,17 +8030,22 @@ body.android-optimized.menu-visible .status {
             const { startDragging = false, silent = false } = options;
             selectedComponent = junction;
             isDragging = Boolean(startDragging);
+              selectedComponents.clear();
+              selectedComponents.add(junction);
 
-            if (silent) {
-                return;
-            }
+              const selectionPayload = buildSelectionPayload(junction);
+              notifyParentSelection(selectionPayload);
 
-            const label = getComponentFriendlyName(junction);
-            if (isDragging) {
-                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
-            } else {
-                setStatus(`?? ${label} selected - drag to move or long-press for options`);
-            }
+              if (silent) {
+                  return;
+              }
+
+              const label = getComponentFriendlyName(junction);
+              if (isDragging) {
+                  setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+              } else {
+                  setStatus(`?? ${label} selected - drag to move or long-press for options`);
+              }
         }
 
         function maybeStartDrag(clientX, clientY) {
@@ -7932,6 +8122,10 @@ body.android-optimized.menu-visible .status {
                         });
                     }
                 }
+                  else if (!isDragging && (selectedComponent || selectedComponents.size > 0)) {
+                      clearActiveSelection();
+                      setStatus('?? Select mode active - tap components to inspect');
+                  }
             }
         }
 
@@ -7965,28 +8159,31 @@ body.android-optimized.menu-visible .status {
         }
 
         function handleRelease() {
-            isDragging = false;
-            hideSnapIndicator();
-            
-            if (selectedComponent) {
-                // Final snap to grid
-                const snappedPos = snapToGrid(selectedComponent.position);
-                selectedComponent.position.copy(snappedPos);
-                if (selectedComponent.mesh) {
-                    selectedComponent.mesh.position.copy(snappedPos);
-                }
-                
-                // Update any connected wires
-                if (selectedComponent.connections) {
-                    selectedComponent.connections.forEach(conn => {
-                        if (conn.wire && conn.wire.updatePath) {
-                            conn.wire.updatePath();
-                        }
-                    });
-                }
-            }
-            
-            selectedComponent = null;
+              const wasDragging = isDragging;
+              isDragging = false;
+              hideSnapIndicator();
+
+              if (selectedComponent) {
+                  // Final snap to grid
+                  const snappedPos = snapToGrid(selectedComponent.position);
+                  selectedComponent.position.copy(snappedPos);
+                  if (selectedComponent.mesh) {
+                      selectedComponent.mesh.position.copy(snappedPos);
+                  }
+
+                  // Update any connected wires
+                  if (selectedComponent.connections) {
+                      selectedComponent.connections.forEach(conn => {
+                          if (conn.wire && conn.wire.updatePath) {
+                              conn.wire.updatePath();
+                          }
+                      });
+                  }
+
+                  if (wasDragging) {
+                      notifyParentSelection(buildSelectionPayload(selectedComponent));
+                  }
+              }
         }
 
         // Menu system functions
@@ -8528,11 +8725,13 @@ body.android-optimized.menu-visible .status {
 
         // Selection and clipboard functions
         function selectAll() {
-            selectedComponents.clear();
+              clearActiveSelection({ notify: false });
+              selectedComponents.clear();
             components.forEach(comp => selectedComponents.add(comp));
             junctions.forEach(junction => selectedComponents.add(junction));
             
             setStatus(`?? Selected ${selectedComponents.size} objects`);
+              notifyParentSelection(buildMultiSelectionPayload(selectedComponents.size));
         }
 
         function copySelected() {
@@ -8617,6 +8816,7 @@ body.android-optimized.menu-visible .status {
             selectedComponents.clear();
             updateCircuitInfo();
             setStatus('??? Selected objects deleted');
+              notifyParentSelection(null);
         }
 
         // View functions
@@ -9218,7 +9418,7 @@ Made with ? for visual learners everywhere!
             
             if (isDragging || selectedComponent) {
                 isDragging = false;
-                selectedComponent = null;
+                  clearActiveSelection({ notify: false });
                 hideSnapIndicator();
             }
             
@@ -9242,7 +9442,7 @@ Made with ? for visual learners everywhere!
             
             if (isDragging || selectedComponent) {
                 isDragging = false;
-                selectedComponent = null;
+                  clearActiveSelection({ notify: false });
                 hideSnapIndicator();
             }
             
@@ -11812,8 +12012,7 @@ Made with ? for visual learners everywhere!
 
             wireStart = null;
             isDragging = false;
-            selectedComponent = null;
-            selectedComponents.clear();
+              clearActiveSelection({ notify: false });
             hideSnapIndicator();
             measureStartPoint = null;
             currentPracticeCircuit = null; // Reset practice circuit
@@ -11884,6 +12083,7 @@ Made with ? for visual learners everywhere!
             updateCircuitInfo();
             closeAllSubmenus();
             setStatus('??? ALL CLEARED! Circuit builder reset with fresh component numbering');
+              notifyParentSelection(null);
         }
 
         function showPracticeModeHelp() {
