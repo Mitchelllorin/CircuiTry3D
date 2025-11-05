@@ -1191,11 +1191,11 @@ function BuilderViewport({
         const renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setClearColor(0x050c19, 1);
+        renderer.setClearColor(0xfdfdfd, 1);
         container.appendChild(renderer.domElement);
 
         const scene = new three.Scene();
-        scene.background = new three.Color(0x050c19);
+        scene.background = new three.Color(0xfdfdfd);
 
         const camera = new three.PerspectiveCamera(
           44,
@@ -1223,11 +1223,11 @@ function BuilderViewport({
 
         const boardGeometry = new three.PlaneGeometry(16, 12, 1, 1);
         const boardMaterial = new three.MeshStandardMaterial({
-          color: 0x0b1a33,
-          metalness: 0.25,
-          roughness: 0.75,
+          color: 0xf3f4f6,
+          metalness: 0,
+          roughness: 0.95,
           transparent: true,
-          opacity: 0.96,
+          opacity: 0.98,
           side: three.DoubleSide,
         });
         const board = new three.Mesh(boardGeometry, boardMaterial);
@@ -1237,7 +1237,7 @@ function BuilderViewport({
         board.userData.isBoard = true;
         scene.add(board);
 
-        const grid = new three.GridHelper(12, 12, 0x1d95ff, 0x144472);
+        const grid = new three.GridHelper(12, 12, 0xcbd5f5, 0xe2e8f0);
         grid.position.y = 0.02;
         if (grid.material) {
           grid.material.transparent = true;
@@ -1428,11 +1428,11 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
         const renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setClearColor(0x050c19, 1);
+        renderer.setClearColor(0xfdfdfd, 1);
         container.appendChild(renderer.domElement);
 
         const scene = new three.Scene();
-        scene.background = new three.Color(0x050c19);
+        scene.background = new three.Color(0xfdfdfd);
 
         const camera = new three.PerspectiveCamera(
           44,
@@ -1460,11 +1460,11 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
 
         const boardGeometry = new three.PlaneGeometry(16, 12, 1, 1);
         const boardMaterial = new three.MeshStandardMaterial({
-          color: 0x0b1a33,
-          metalness: 0.25,
-          roughness: 0.75,
+          color: 0xf3f4f6,
+          metalness: 0,
+          roughness: 0.95,
           transparent: true,
-          opacity: 0.96,
+          opacity: 0.98,
           side: three.DoubleSide,
         });
         const board = new three.Mesh(boardGeometry, boardMaterial);
@@ -1472,7 +1472,7 @@ function PracticeViewport({ problem }: PracticeViewportProps) {
         board.position.y = -0.05;
         scene.add(board);
 
-        const grid = new three.GridHelper(12, 12, 0x1d95ff, 0x144472);
+        const grid = new three.GridHelper(12, 12, 0xcbd5f5, 0xe2e8f0);
         grid.position.y = 0.02;
         if (grid.material) {
           grid.material.transparent = true;
@@ -1580,45 +1580,44 @@ function buildCircuit(three: any, problem: PracticeProblem) {
   const group = new three.Group();
   group.name = `circuit-${problem.id}`;
 
-  const wireMaterial = new three.MeshStandardMaterial({
-    color: 0x8ec9ff,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: 0x1d4ed8,
-    emissiveIntensity: 0.2,
-  });
+  const strokeColor = 0x111111;
+  const accentColor = 0x2563eb;
 
-  const resistorMaterial = new three.MeshStandardMaterial({
-    color: 0xffe4b5,
-    metalness: 0.38,
-    roughness: 0.4,
-    emissive: 0x7a431f,
-    emissiveIntensity: 0.12,
-  });
+  const applyMaterialStyle = (material: any, baseColor: number, preview = false, highlight = false) => {
+    const color = new three.Color(baseColor);
+    if (highlight) {
+      material.color = new three.Color(accentColor);
+    } else if (preview) {
+      material.color = color.clone().lerp(new three.Color(0x94a3b8), 0.45);
+      material.transparent = true;
+      material.opacity = 0.55;
+      material.depthWrite = false;
+    } else {
+      material.color = color;
+      material.transparent = false;
+      material.opacity = 1;
+      material.depthWrite = true;
+    }
+    material.metalness = 0;
+    material.roughness = 0.6;
+    material.emissive = new three.Color(0x000000);
+    material.emissiveIntensity = 0;
+  };
 
-  const nodeMaterial = new three.MeshStandardMaterial({
-    color: 0xffb3c6,
-    emissive: 0xff7aa7,
-    emissiveIntensity: 0.35,
-    metalness: 0.25,
-    roughness: 0.5,
-  });
+  const wireMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(wireMaterial, strokeColor);
 
-  const batteryPositiveMaterial = new three.MeshStandardMaterial({
-    color: 0x9be5ff,
-    emissive: 0x38bdf8,
-    emissiveIntensity: 0.55,
-    metalness: 0.65,
-    roughness: 0.28,
-  });
+  const resistorMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(resistorMaterial, strokeColor);
 
-  const batteryNegativeMaterial = new three.MeshStandardMaterial({
-    color: 0x3a4f6d,
-    emissive: 0x233547,
-    emissiveIntensity: 0.2,
-    metalness: 0.5,
-    roughness: 0.45,
-  });
+  const nodeMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(nodeMaterial, strokeColor);
+
+  const batteryPositiveMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(batteryPositiveMaterial, strokeColor);
+
+  const batteryNegativeMaterial = new three.MeshStandardMaterial({ color: strokeColor });
+  applyMaterialStyle(batteryNegativeMaterial, strokeColor);
 
   const toVec3 = (point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
 
@@ -1656,7 +1655,7 @@ function buildCircuit(three: any, problem: PracticeProblem) {
     }
   };
 
-  const createLabelSprite = (text: string, color = "#dbe9ff") => {
+  const createLabelSprite = (text: string, color = "#111111", preview = false) => {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 256;
@@ -1664,8 +1663,11 @@ function buildCircuit(three: any, problem: PracticeProblem) {
     if (!ctx) {
       return null;
     }
-    ctx.fillStyle = "rgba(6, 18, 42, 0.82)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!preview) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     ctx.fillStyle = color;
     ctx.font = "bold 150px 'Inter', 'Segoe UI', sans-serif";
     ctx.textAlign = "center";
@@ -1759,13 +1761,13 @@ function buildCircuit(three: any, problem: PracticeProblem) {
       shortPlate.position.set(x, COMPONENT_HEIGHT, centerZ - 0.4);
       batteryGroup.add(longPlate, shortPlate);
 
-      const plusLabel = createLabelSprite("+", "#ffffff");
+      const plusLabel = createLabelSprite("+", "#111111");
       if (plusLabel) {
         plusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ + 0.6);
         plusLabel.scale.set(0.9, 0.9, 1);
         batteryGroup.add(plusLabel);
       }
-      const minusLabel = createLabelSprite("−", "#cdd6f4");
+      const minusLabel = createLabelSprite("−", "#111111");
       if (minusLabel) {
         minusLabel.position.set(x + 0.8, COMPONENT_HEIGHT + 0.12, centerZ - 0.6);
         minusLabel.scale.set(0.9, 0.9, 1);
@@ -1780,13 +1782,13 @@ function buildCircuit(three: any, problem: PracticeProblem) {
       shortPlate.position.set(centerX - 0.4, COMPONENT_HEIGHT, z);
       batteryGroup.add(longPlate, shortPlate);
 
-      const plusLabel = createLabelSprite("+", "#ffffff");
+      const plusLabel = createLabelSprite("+", "#111111");
       if (plusLabel) {
         plusLabel.position.set(centerX + 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
         plusLabel.scale.set(0.9, 0.9, 1);
         batteryGroup.add(plusLabel);
       }
-      const minusLabel = createLabelSprite("−", "#cdd6f4");
+      const minusLabel = createLabelSprite("−", "#111111");
       if (minusLabel) {
         minusLabel.position.set(centerX - 0.6, COMPONENT_HEIGHT + 0.12, z + 0.8);
         minusLabel.scale.set(0.9, 0.9, 1);

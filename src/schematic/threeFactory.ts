@@ -1,11 +1,11 @@
 import { GroundElement, SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./types";
 
-export const WIRE_RADIUS = 0.08;
-export const RESISTOR_RADIUS = 0.085;
-export const NODE_RADIUS = 0.14;
-export const WIRE_HEIGHT = 0.18;
-export const COMPONENT_HEIGHT = 0.22;
-export const LABEL_HEIGHT = 0.55;
+export const WIRE_RADIUS = 0.055;
+export const RESISTOR_RADIUS = 0.05;
+export const NODE_RADIUS = 0.12;
+export const WIRE_HEIGHT = 0.12;
+export const COMPONENT_HEIGHT = 0.16;
+export const LABEL_HEIGHT = 0.4;
 
 type BuildOptions = {
   preview?: boolean;
@@ -18,50 +18,55 @@ type BuildResult = {
 };
 
 const COLOR_HELPERS = {
-  wire: 0x8ec9ff,
-  wireEmissive: 0x1d4ed8,
-  resistor: 0xffe4b5,
-  resistorEmissive: 0x7a431f,
-  node: 0xffb3c6,
-  nodeEmissive: 0xff7aa7,
-  batteryPositive: 0x9be5ff,
-  batteryPositiveEmissive: 0x38bdf8,
-  batteryNegative: 0x3a4f6d,
-  batteryNegativeEmissive: 0x233547,
-  capacitorPlate: 0xb9c9ff,
-  capacitorDielectric: 0x1a2747,
-  inductorBody: 0xffd29b,
-  inductorEmissive: 0xb87333,
-  lampGlass: 0xfdf5d3,
-  lampGlow: 0xf8c468,
-  switchMetal: 0xb5c9ff,
-  switchBlade: 0xe3ad7b,
-  groundLine: 0xaec4ff
+  stroke: 0x111111,
+  highlight: 0x2563eb,
+  preview: 0x94a3b8,
+  nodeFill: 0x111111,
+  plate: 0x111111,
+  dielectric: 0xededed,
+  lampRing: 0x111111,
+  lampFill: 0xffffff,
+  ground: 0x111111
 } as const;
 
-const LABEL_COLOR = "#dbe9ff";
+const LABEL_COLOR = "#111111";
 
 const SNAP_EPSILON = 1e-6;
 
 const toVec3 = (three: any, point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
 
-const styliseMaterial = (three: any, material: any, options: BuildOptions) => {
+const styliseMaterial = (three: any, material: any, options: BuildOptions, baseColor: number) => {
   if (!material) {
     return;
   }
-  if (options.preview) {
-    material.transparent = true;
-    material.opacity = 0.45;
-    material.depthWrite = false;
-    const previewTint = new three.Color(0xffffff);
-    material.color = material.color ? material.color.clone().lerp(previewTint, 0.25) : new three.Color(0xffffff);
-    if (material.emissiveIntensity) {
-      material.emissiveIntensity *= 0.4;
-    }
-  }
+
+  const base = new three.Color(baseColor);
   if (options.highlight) {
-    material.emissiveIntensity = (material.emissiveIntensity || 0) + 0.35;
+    material.color = new three.Color(COLOR_HELPERS.highlight);
+  } else if (options.preview) {
+    const preview = new three.Color(COLOR_HELPERS.preview);
+    material.color = base.clone().lerp(preview, 0.45);
+    material.transparent = true;
+    material.opacity = 0.55;
+    material.depthWrite = false;
+  } else {
+    material.color = base;
+    material.transparent = false;
+    material.opacity = 1;
+    material.depthWrite = true;
   }
+
+  if (material.emissive) {
+    material.emissive = new three.Color(0x000000);
+    material.emissiveIntensity = 0;
+  }
+  if (typeof material.metalness === "number") {
+    material.metalness = 0;
+  }
+  if (typeof material.roughness === "number") {
+    material.roughness = 0.6;
+  }
+
   material.needsUpdate = true;
 };
 
@@ -88,8 +93,11 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
   if (!ctx) {
     return null;
   }
-  ctx.fillStyle = options.preview ? "rgba(6, 18, 42, 0.35)" : "rgba(6, 18, 42, 0.82)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!options.preview) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
   ctx.fillStyle = color;
   ctx.font = "bold 150px 'Inter', 'Segoe UI', sans-serif";
   ctx.textAlign = "center";
@@ -113,14 +121,8 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
 const buildWireElement = (three: any, element: WireElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `wire-${element.id}`;
-  const material = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
-  });
-  styliseMaterial(three, material, options);
+  const material = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  styliseMaterial(three, material, options, COLOR_HELPERS.stroke);
 
   for (let i = 0; i < element.path.length - 1; i += 1) {
     const startVec = toVec3(three, element.path[i], WIRE_HEIGHT);
@@ -144,21 +146,13 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   const group = new three.Group();
   group.name = `resistor-${element.id}`;
   const resistorMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.resistor,
-    metalness: 0.38,
-    roughness: 0.4,
-    emissive: COLOR_HELPERS.resistorEmissive,
-    emissiveIntensity: 0.12
+    color: COLOR_HELPERS.stroke
   });
   const wireMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
+    color: COLOR_HELPERS.stroke
   });
-  styliseMaterial(three, resistorMaterial, options);
-  styliseMaterial(three, wireMaterial, options);
+  styliseMaterial(three, resistorMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, wireMaterial, options, COLOR_HELPERS.stroke);
 
   const zigCount = 6;
   const amplitude = 0.35;
@@ -214,30 +208,18 @@ const buildBatteryElement = (three: any, element: TwoTerminalElement, options: B
   const group = new three.Group();
   group.name = `battery-${element.id}`;
   const positiveMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.batteryPositive,
-    metalness: 0.65,
-    roughness: 0.28,
-    emissive: COLOR_HELPERS.batteryPositiveEmissive,
-    emissiveIntensity: 0.55
+    color: COLOR_HELPERS.stroke
   });
   const negativeMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.batteryNegative,
-    metalness: 0.5,
-    roughness: 0.45,
-    emissive: COLOR_HELPERS.batteryNegativeEmissive,
-    emissiveIntensity: 0.2
+    color: COLOR_HELPERS.stroke
   });
   const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
+    color: COLOR_HELPERS.stroke
   });
 
-  styliseMaterial(three, positiveMaterial, options);
-  styliseMaterial(three, negativeMaterial, options);
-  styliseMaterial(three, leadMaterial, options);
+  styliseMaterial(three, positiveMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, negativeMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
   const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.05);
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.05);
@@ -316,30 +298,18 @@ const buildCapacitorElement = (three: any, element: TwoTerminalElement, options:
   const group = new three.Group();
   group.name = `capacitor-${element.id}`;
   const plateMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.capacitorPlate,
-    metalness: 0.62,
-    roughness: 0.28,
-    emissive: 0x1e2f55,
-    emissiveIntensity: 0.28
+    color: COLOR_HELPERS.stroke
   });
   const dielectricMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.capacitorDielectric,
-    metalness: 0.35,
-    roughness: 0.55,
-    emissive: 0x101a2c,
-    emissiveIntensity: 0.18
+    color: COLOR_HELPERS.dielectric
   });
   const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
+    color: COLOR_HELPERS.stroke
   });
 
-  styliseMaterial(three, plateMaterial, options);
-  styliseMaterial(three, dielectricMaterial, options);
-  styliseMaterial(three, leadMaterial, options);
+  styliseMaterial(three, plateMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, dielectricMaterial, options, COLOR_HELPERS.dielectric);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
   const thickness = 0.08;
   if (element.orientation === "horizontal") {
@@ -392,22 +362,14 @@ const buildInductorElement = (three: any, element: TwoTerminalElement, options: 
   const group = new three.Group();
   group.name = `inductor-${element.id}`;
   const coilMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.inductorBody,
-    metalness: 0.58,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.inductorEmissive,
-    emissiveIntensity: 0.28
+    color: COLOR_HELPERS.stroke
   });
   const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
+    color: COLOR_HELPERS.stroke
   });
 
-  styliseMaterial(three, coilMaterial, options);
-  styliseMaterial(three, leadMaterial, options);
+  styliseMaterial(three, coilMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
   const coilCount = 4;
   const radius = 0.45;
@@ -458,48 +420,40 @@ const buildInductorElement = (three: any, element: TwoTerminalElement, options: 
 const buildLampElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `lamp-${element.id}`;
-  const glassMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.lampGlass,
-    metalness: 0.12,
-    roughness: 0.2,
-    emissive: COLOR_HELPERS.lampGlow,
-    emissiveIntensity: options.preview ? 0.15 : 0.45,
-    transparent: true,
-    opacity: options.preview ? 0.5 : 0.75
-  });
-  const filamentMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.lampGlow,
-    metalness: 0.3,
-    roughness: 0.25,
-    emissive: COLOR_HELPERS.lampGlow,
-    emissiveIntensity: options.preview ? 0.45 : 0.85
-  });
-  const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
-  });
+  const ringMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampRing });
+  const fillMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampFill });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
 
-  styliseMaterial(three, leadMaterial, options);
+  styliseMaterial(three, ringMaterial, options, COLOR_HELPERS.lampRing);
+  styliseMaterial(three, fillMaterial, options, COLOR_HELPERS.lampFill);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
-  const bulbCenter = new three.Vector3(
+  const center = new three.Vector3(
     (element.start.x + element.end.x) / 2,
-    COMPONENT_HEIGHT + 0.15,
+    COMPONENT_HEIGHT,
     (element.start.z + element.end.z) / 2
   );
-  const bulb = new three.Mesh(new three.SphereGeometry(0.65, 24, 16), glassMaterial);
-  bulb.position.copy(bulbCenter);
-  group.add(bulb);
+  const disc = new three.Mesh(new three.CylinderGeometry(0.55, 0.55, 0.02, 32), fillMaterial);
+  disc.position.copy(center);
+  disc.rotation.x = Math.PI / 2;
+  group.add(disc);
 
-  const filament = new three.Mesh(new three.TorusGeometry(0.28, 0.04, 16, 48), filamentMaterial);
-  filament.rotation.x = Math.PI / 2;
-  filament.position.copy(bulbCenter);
-  group.add(filament);
+  const ring = new three.Mesh(new three.TorusGeometry(0.55, 0.02, 16, 64), ringMaterial);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.copy(center);
+  group.add(ring);
 
-  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.1);
-  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.1);
+  const crossGeom = new three.BoxGeometry(1.0, 0.02, 0.02);
+  const crossA = new three.Mesh(crossGeom, ringMaterial);
+  crossA.position.copy(center);
+  crossA.rotation.y = Math.PI / 4;
+  const crossB = new three.Mesh(crossGeom, ringMaterial);
+  crossB.position.copy(center);
+  crossB.rotation.y = -Math.PI / 4;
+  group.add(crossA, crossB);
+
+  const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.02);
+  const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.02);
   const leadStart = cylinderBetween(three, toVec3(three, element.start, WIRE_HEIGHT), startVec, WIRE_RADIUS, leadMaterial);
   const leadEnd = cylinderBetween(three, endVec, toVec3(three, element.end, WIRE_HEIGHT), WIRE_RADIUS, leadMaterial);
   if (leadStart) {
@@ -524,30 +478,18 @@ const buildSwitchElement = (three: any, element: TwoTerminalElement, options: Bu
   const group = new three.Group();
   group.name = `switch-${element.id}`;
   const postMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.switchMetal,
-    metalness: 0.68,
-    roughness: 0.35,
-    emissive: 0x243a6b,
-    emissiveIntensity: 0.22
+    color: COLOR_HELPERS.stroke
   });
   const bladeMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.switchBlade,
-    metalness: 0.64,
-    roughness: 0.4,
-    emissive: 0x8b5a35,
-    emissiveIntensity: 0.25
+    color: COLOR_HELPERS.stroke
   });
   const leadMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.wire,
-    metalness: 0.55,
-    roughness: 0.32,
-    emissive: COLOR_HELPERS.wireEmissive,
-    emissiveIntensity: 0.22
+    color: COLOR_HELPERS.stroke
   });
 
-  styliseMaterial(three, postMaterial, options);
-  styliseMaterial(three, bladeMaterial, options);
-  styliseMaterial(three, leadMaterial, options);
+  styliseMaterial(three, postMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, bladeMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
   const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.05);
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT - 0.05);
@@ -600,13 +542,9 @@ const buildGroundElement = (three: any, element: GroundElement, options: BuildOp
   const group = new three.Group();
   group.name = `ground-${element.id}`;
   const lineMaterial = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.groundLine,
-    metalness: 0.42,
-    roughness: 0.45,
-    emissive: 0x1a2f57,
-    emissiveIntensity: 0.24
+    color: COLOR_HELPERS.ground
   });
-  styliseMaterial(three, lineMaterial, options);
+  styliseMaterial(three, lineMaterial, options, COLOR_HELPERS.ground);
 
   const widths = [1.2, 0.8, 0.4];
   const heights = [0, -0.18, -0.34];
@@ -658,13 +596,9 @@ export const buildElement = (three: any, element: SchematicElement, options: Bui
 
 export const buildNodeMesh = (three: any, point: Vec2, options: BuildOptions) => {
   const material = new three.MeshStandardMaterial({
-    color: COLOR_HELPERS.node,
-    emissive: COLOR_HELPERS.nodeEmissive,
-    emissiveIntensity: options.preview ? 0.18 : 0.35,
-    metalness: 0.25,
-    roughness: 0.5
+    color: COLOR_HELPERS.nodeFill
   });
-  styliseMaterial(three, material, options);
+  styliseMaterial(three, material, options, COLOR_HELPERS.nodeFill);
   const geometry = new three.SphereGeometry(NODE_RADIUS, 28, 20);
   const mesh = new three.Mesh(geometry, material);
   mesh.position.copy(toVec3(three, point, COMPONENT_HEIGHT + 0.08));
