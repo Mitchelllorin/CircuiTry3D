@@ -1772,14 +1772,6 @@ export default function Builder() {
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const floatingControlsBottom = useMemo(
-    () =>
-      isBottomMenuOpen
-        ? "calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width) + 44px + var(--builder-safe-area-bottom))"
-        : "calc(32px + var(--builder-safe-area-bottom) + var(--builder-menu-toggle-width))",
-    [isBottomMenuOpen]
-  );
-
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
   const builderFrameSrc = useMemo(() => {
@@ -2274,12 +2266,7 @@ export default function Builder() {
         />
       </div>
 
-      <div
-        className="builder-floating-controls"
-        style={{ bottom: floatingControlsBottom }}
-        role="group"
-        aria-label="Workspace actions"
-      >
+      <div className="builder-floating-controls" role="group" aria-label="Workspace actions">
         <button
           type="button"
           className="builder-floating-button"
