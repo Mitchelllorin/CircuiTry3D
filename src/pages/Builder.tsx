@@ -1772,12 +1772,9 @@ export default function Builder() {
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const floatingControlsBottom = useMemo(
-    () =>
-      isBottomMenuOpen
-        ? "calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width) + 44px + var(--builder-safe-area-bottom))"
-        : "calc(32px + var(--builder-safe-area-bottom) + var(--builder-menu-toggle-width))",
-    [isBottomMenuOpen]
+  const floatingControlsTop = useMemo(
+    () => "calc(84px + var(--builder-safe-area-top) + 12px)",
+    []
   );
 
   const controlsDisabled = !isFrameReady;
@@ -2276,7 +2273,9 @@ export default function Builder() {
 
       <div
         className="builder-floating-controls"
-        style={{ bottom: floatingControlsBottom }}
+        style={{ top: floatingControlsTop }}
+        data-left-open={isLeftMenuOpen ? "true" : undefined}
+        data-right-open={isRightMenuOpen ? "true" : undefined}
         role="group"
         aria-label="Workspace actions"
       >
