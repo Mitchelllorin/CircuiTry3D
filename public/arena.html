@@ -618,15 +618,18 @@
         const CAMERA_DEFAULT_TARGET = new THREE.Vector3(0, 0.45, 0);
         const CAMERA_RADIUS_LIMITS = { min: 4.5, max: 12 };
         const CAMERA_PAN_LIMITS = { x: 4.5, y: 1.2, z: 4.5 };
+        const CAMERA_PHI_LIMITS = { min: THREE.MathUtils.degToRad(18), max: THREE.MathUtils.degToRad(82) };
         const TWO_PI = Math.PI * 2;
+        const DOM_DELTA_LINE = typeof WheelEvent !== "undefined" ? WheelEvent.DOM_DELTA_LINE : 1;
 
         const cameraState = {
           target: CAMERA_DEFAULT_TARGET.clone(),
+          initialTarget: CAMERA_DEFAULT_TARGET.clone(),
           spherical: new THREE.Spherical(),
           initialSpherical: new THREE.Spherical(),
-          fixedPhi: 0,
           needsUpdate: false,
           rotateSpeed: 0.0055,
+          rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
           zoomSpeed: 0.75,
           wheelZoomSpeed: 0.003
@@ -821,6 +824,7 @@
 
         function initializeCameraState() {
           cameraState.target.copy(CAMERA_DEFAULT_TARGET);
+          cameraState.initialTarget.copy(cameraState.target);
           cameraOffset.copy(CAMERA_DEFAULT_POSITION).sub(cameraState.target);
           cameraState.spherical.setFromVector3(cameraOffset);
           cameraState.spherical.radius = THREE.MathUtils.clamp(
@@ -828,8 +832,12 @@
             CAMERA_RADIUS_LIMITS.min,
             CAMERA_RADIUS_LIMITS.max
           );
+          cameraState.spherical.phi = THREE.MathUtils.clamp(
+            cameraState.spherical.phi,
+            CAMERA_PHI_LIMITS.min,
+            CAMERA_PHI_LIMITS.max
+          );
           normalizeAzimuth();
-          cameraState.fixedPhi = cameraState.spherical.phi;
           cameraState.initialSpherical.copy(cameraState.spherical);
           cameraState.needsUpdate = true;
           updateCamera(true);
@@ -855,7 +863,27 @@
             CAMERA_RADIUS_LIMITS.min,
             CAMERA_RADIUS_LIMITS.max
           );
-          cameraState.spherical.phi = cameraState.fixedPhi;
+          cameraState.spherical.phi = THREE.MathUtils.clamp(
+            cameraState.spherical.phi,
+            CAMERA_PHI_LIMITS.min,
+            CAMERA_PHI_LIMITS.max
+          );
+
+          cameraState.target.y = THREE.MathUtils.clamp(
+            cameraState.target.y,
+            CAMERA_DEFAULT_TARGET.y - CAMERA_PAN_LIMITS.y,
+            CAMERA_DEFAULT_TARGET.y + CAMERA_PAN_LIMITS.y
+          );
+          cameraState.target.x = THREE.MathUtils.clamp(
+            cameraState.target.x,
+            -CAMERA_PAN_LIMITS.x,
+            CAMERA_PAN_LIMITS.x
+          );
+          cameraState.target.z = THREE.MathUtils.clamp(
+            cameraState.target.z,
+            -CAMERA_PAN_LIMITS.z,
+            CAMERA_PAN_LIMITS.z
+          );
 
           const offset = cameraOffset.setFromSpherical(cameraState.spherical);
           camera.position.copy(cameraState.target).add(offset);
@@ -866,9 +894,8 @@
         }
 
         function resetCameraControl() {
-          cameraState.target.copy(CAMERA_DEFAULT_TARGET);
+          cameraState.target.copy(cameraState.initialTarget);
           cameraState.spherical.copy(cameraState.initialSpherical);
-          cameraState.fixedPhi = cameraState.initialSpherical.phi;
           normalizeAzimuth();
           cameraState.needsUpdate = true;
           activePointers.clear();
@@ -940,6 +967,9 @@
           element.addEventListener("pointercancel", handlePointerUp, { passive: false });
           element.addEventListener("pointerleave", handlePointerUp, { passive: false });
           element.addEventListener("wheel", handleWheel, { passive: false });
+          element.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+          });
         }
 
         function getPrimaryPointers() {
@@ -963,7 +993,11 @@
           };
 
           activePointers.set(event.pointerId, pointer);
-          renderer.domElement.setPointerCapture(event.pointerId);
+          try {
+            renderer.domElement.setPointerCapture(event.pointerId);
+          } catch (error) {
+            // Some platforms (e.g., iPadOS Safari) do not support pointer capture on touch pointers.
+          }
 
           if (event.pointerType !== "touch") {
             renderer.domElement.style.cursor = "grabbing";
@@ -995,10 +1029,37 @@
 
           if (activePointers.size === 1) {
             const deltaX = pointer.current.x - pointer.last.x;
-            if (deltaX !== 0) {
-              cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
-              normalizeAzimuth();
-              cameraState.needsUpdate = true;
+            const deltaY = pointer.current.y - pointer.last.y;
+            const buttons = event.buttons;
+            const isTouch = event.pointerType === "touch";
+            const isPen = event.pointerType === "pen";
+            const leftButtonDown = (buttons & 1) !== 0;
+            const rightButtonDown = (buttons & 2) !== 0;
+            const middleButtonDown = (buttons & 4) !== 0;
+            const modifierPan = event.shiftKey || event.altKey || event.metaKey;
+            const panGesture = (!isTouch && !isPen && (rightButtonDown || middleButtonDown)) || modifierPan;
+            const rotateGesture = !panGesture && (isTouch || isPen || leftButtonDown);
+
+            if (panGesture) {
+              if (deltaX !== 0 || deltaY !== 0) {
+                applyPan(deltaX, deltaY);
+              }
+            } else if (rotateGesture) {
+              if (deltaX !== 0) {
+                cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
+                normalizeAzimuth();
+                cameraState.needsUpdate = true;
+              }
+              if (deltaY !== 0) {
+                const verticalSpeed = cameraState.rotateVerticalSpeed ?? cameraState.rotateSpeed;
+                cameraState.spherical.phi -= deltaY * verticalSpeed;
+                cameraState.spherical.phi = THREE.MathUtils.clamp(
+                  cameraState.spherical.phi,
+                  CAMERA_PHI_LIMITS.min,
+                  CAMERA_PHI_LIMITS.max
+                );
+                cameraState.needsUpdate = true;
+              }
             }
           } else if (activePointers.size >= 2) {
             const [first, second] = getPrimaryPointers();
@@ -1050,7 +1111,13 @@
             event.preventDefault();
           }
 
-          renderer.domElement.releasePointerCapture(event.pointerId);
+          if (renderer && typeof renderer.domElement.releasePointerCapture === "function") {
+            try {
+              renderer.domElement.releasePointerCapture(event.pointerId);
+            } catch (error) {
+              // Ignore release errors on platforms without pointer capture support.
+            }
+          }
           activePointers.delete(event.pointerId);
 
           if (activePointers.size === 0 && renderer.domElement) {
@@ -1070,8 +1137,20 @@
           }
 
           event.preventDefault();
-          cameraState.spherical.radius += event.deltaY * cameraState.wheelZoomSpeed;
-          cameraState.needsUpdate = true;
+          const isPinchGesture = event.ctrlKey || event.metaKey || event.deltaZ !== 0;
+          const isLineDelta = event.deltaMode === DOM_DELTA_LINE;
+
+          if (isPinchGesture || isLineDelta) {
+            const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 : cameraState.wheelZoomSpeed;
+            cameraState.spherical.radius += event.deltaY * zoomFactor;
+            cameraState.needsUpdate = true;
+            return;
+          }
+
+          const panScale = isLineDelta ? 40 : 1;
+          if (event.deltaX !== 0 || event.deltaY !== 0) {
+            applyPan(event.deltaX * panScale, event.deltaY * panScale);
+          }
         }
 
         function resetCameraView() {
