@@ -3630,6 +3630,7 @@
         let measureStartPoint = null;
         let isDragging = false, selectedComponent = null;
         let currentFlowParticles = [];
+        let lastSelectionJson = null;
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
 
@@ -3811,6 +3812,148 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function sanitizeSelectionValue(value) {
+            if (value === null) {
+                return null;
+            }
+
+            switch (typeof value) {
+                case 'number':
+                    return Number.isFinite(value) ? Number(value) : undefined;
+                case 'string':
+                    return value;
+                case 'boolean':
+                    return value;
+                default:
+                    return undefined;
+            }
+        }
+
+        function isPlainObject(value) {
+            if (!value || typeof value !== 'object') {
+                return false;
+            }
+            const proto = Object.getPrototypeOf(value);
+            return proto === Object.prototype || proto === null;
+        }
+
+        function sanitizeSelectionObject(source) {
+            if (!isPlainObject(source)) {
+                return undefined;
+            }
+
+            const result = {};
+            Object.keys(source).forEach((key) => {
+                const rawValue = source[key];
+
+                if (Array.isArray(rawValue)) {
+                    const sanitizedArray = rawValue
+                        .map((item) => sanitizeSelectionValue(item))
+                        .filter((item) => item !== undefined);
+                    if (sanitizedArray.length > 0) {
+                        result[key] = sanitizedArray;
+                    }
+                    return;
+                }
+
+                if (isPlainObject(rawValue)) {
+                    const nested = sanitizeSelectionObject(rawValue);
+                    if (nested && Object.keys(nested).length > 0) {
+                        result[key] = nested;
+                    }
+                    return;
+                }
+
+                const sanitized = sanitizeSelectionValue(rawValue);
+                if (sanitized !== undefined) {
+                    result[key] = sanitized;
+                }
+            });
+
+            return Object.keys(result).length > 0 ? result : undefined;
+        }
+
+        function buildSelectionPayload(entity) {
+            if (!entity) {
+                return { kind: 'none' };
+            }
+
+            if (entity.type) {
+                const rotationRadians = Number.isFinite(entity.rotation) ? Number(entity.rotation) : 0;
+                const rawDegrees = rotationRadians * (180 / Math.PI);
+                const rotationDegrees = Number.isFinite(rawDegrees) ? Math.round(rawDegrees) : 0;
+
+                const identifier = typeof entity.getComponentIdentifier === 'function'
+                    ? entity.getComponentIdentifier()
+                    : null;
+
+                const properties = sanitizeSelectionObject(entity.properties) || null;
+                const metadata = sanitizeSelectionObject(entity.metadata) || null;
+
+                const connections = Array.isArray(entity.connections)
+                    ? entity.connections.map((connection) => ({
+                        wireId: connection?.wire?.id || null,
+                        targetId: connection?.connectedTo?.id || null,
+                        side: connection?.side || null
+                    })).filter((connection) => connection.wireId || connection.targetId || connection.side)
+                    : [];
+
+                return {
+                    kind: 'component',
+                    id: entity.id || null,
+                    type: entity.type || null,
+                    label: identifier || (entity.type ? entity.type.toUpperCase() : null),
+                    identifier: identifier,
+                    rotation: {
+                        radians: rotationRadians,
+                        degrees: ((rotationDegrees % 360) + 360) % 360
+                    },
+                    position: {
+                        x: Number(entity.position?.x || 0),
+                        y: Number(entity.position?.y || 0),
+                        z: Number(entity.position?.z || 0)
+                    },
+                    properties,
+                    metadata,
+                    connections
+                };
+            }
+
+            if (entity.id && entity.id.startsWith('junction')) {
+                return {
+                    kind: 'junction',
+                    id: entity.id,
+                    label: entity.id,
+                    position: {
+                        x: Number(entity.position?.x || 0),
+                        y: Number(entity.position?.y || 0),
+                        z: Number(entity.position?.z || 0)
+                    },
+                    connectionCount: Array.isArray(entity.connections) ? entity.connections.length : 0
+                };
+            }
+
+            return { kind: 'none' };
+        }
+
+        function notifyParentSelection(entity) {
+            if (!window.parent || window.parent === window) {
+                return;
+            }
+
+            try {
+                const payload = buildSelectionPayload(entity);
+                const payloadJson = JSON.stringify(payload);
+                if (payloadJson === lastSelectionJson) {
+                    return;
+                }
+                lastSelectionJson = payloadJson;
+                window.parent.postMessage({ type: 'legacy:selection', payload }, '*');
+            } catch (error) {
+                console.warn('Builder bridge: unable to share selection', error);
+            }
+        }
+
         function handleBuilderBridgeMessage(event) {
             const expectedSource = window.parent && window.parent !== window ? window.parent : null;
             if (expectedSource && event.source !== expectedSource) {
@@ -3955,12 +4098,38 @@ body.android-optimized.menu-visible .status {
                             case 'open-arena':
                                 if (typeof openArena === 'function') openArena();
                                 break;
-                            case 'clear-workspace':
-                                if (typeof clearAll === 'function') clearAll();
-                                break;
-                            case 'run-simulation':
-                                if (typeof runSimulation === 'function') runSimulation();
-                                break;
+                              case 'clear-workspace':
+                                  if (typeof clearAll === 'function') clearAll();
+                                  break;
+                              case 'run-simulation':
+                                  if (typeof runSimulation === 'function') runSimulation();
+                                  break;
+                              case 'edit-selected-component':
+                                  if (selectedComponent && typeof showEditPopup === 'function') {
+                                      showEditPopup(selectedComponent);
+                                  } else {
+                                      setStatus('? Select a component to edit values');
+                                  }
+                                  break;
+                              case 'rotate-selected-component':
+                                  if (selectedComponent && selectedComponent.type && typeof rotateComponent === 'function') {
+                                      rotateComponent(selectedComponent, { animate: true, silent: false });
+                                  } else {
+                                      setStatus('? Select a component to rotate');
+                                  }
+                                  break;
+                              case 'open-wire-editor':
+                                  if (typeof data.wireId === 'string' && typeof showWireEditPopup === 'function') {
+                                      const targetWire = wires.find((wire) => wire?.id === data.wireId);
+                                      if (targetWire) {
+                                          const centerX = (typeof window !== 'undefined' ? window.innerWidth : 0) / 2;
+                                          const centerY = (typeof window !== 'undefined' ? window.innerHeight : 0) / 2;
+                                          showWireEditPopup(targetWire, centerX, centerY);
+                                      } else {
+                                          setStatus('? Wire not found - select a connected component terminal first');
+                                      }
+                                  }
+                                  break;
                             default:
                                 break;
                         }
@@ -7435,6 +7604,7 @@ body.android-optimized.menu-visible .status {
             
             // Update component properties
             currentEditComponent.updateProperties(newProperties);
+            notifyParentSelection(currentEditComponent);
             
             // Hide popup
             hideEditPopup();
@@ -7783,6 +7953,7 @@ body.android-optimized.menu-visible .status {
             }
 
             analyzeCircuit();
+            notifyParentSelection(component);
 
             if (!silent) {
                 const rotationDegrees = Math.round((nextRotation * 180) / Math.PI) % 360;
@@ -7800,6 +7971,7 @@ body.android-optimized.menu-visible .status {
                 saveState(); // Save for undo
                 component.properties.isOn = !component.properties.isOn;
                 component.updateProperties({ isOn: component.properties.isOn });
+                notifyParentSelection(component);
                 const state = component.properties.isOn ? 'ON' : 'OFF';
                 setStatus(`?? Switch ${state} - circuit updated`);
                 analyzeCircuit();
@@ -7824,6 +7996,7 @@ body.android-optimized.menu-visible .status {
             const { startDragging = false, silent = false } = options;
             selectedComponent = component;
             isDragging = Boolean(startDragging);
+            notifyParentSelection(component);
 
             if (silent) {
                 return;
@@ -7845,6 +8018,7 @@ body.android-optimized.menu-visible .status {
             const { startDragging = false, silent = false } = options;
             selectedComponent = junction;
             isDragging = Boolean(startDragging);
+            notifyParentSelection(junction);
 
             if (silent) {
                 return;
@@ -7987,6 +8161,7 @@ body.android-optimized.menu-visible .status {
             }
             
             selectedComponent = null;
+            notifyParentSelection(null);
         }
 
         // Menu system functions
@@ -8615,6 +8790,8 @@ body.android-optimized.menu-visible .status {
             });
             
             selectedComponents.clear();
+            selectedComponent = null;
+            notifyParentSelection(null);
             updateCircuitInfo();
             setStatus('??? Selected objects deleted');
         }
@@ -11817,6 +11994,7 @@ Made with ? for visual learners everywhere!
             hideSnapIndicator();
             measureStartPoint = null;
             currentPracticeCircuit = null; // Reset practice circuit
+            notifyParentSelection(null);
             // Note: Don't reset currentProblemIndex to allow "Clear" during practice sequence
             
             // Reset component counters

@@ -726,6 +726,104 @@ body.builder-body {
   color: var(--builder-green);
 }
 
+.property-value[data-multiline="true"] {
+  white-space: pre-line;
+  line-height: 1.4;
+}
+
+.property-value[data-muted="true"] {
+  color: var(--builder-muted);
+}
+
+.property-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.property-action-btn {
+  border: 1px solid rgba(136, 204, 255, 0.26);
+  background: rgba(34, 62, 108, 0.82);
+  color: var(--builder-text);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.property-action-btn[data-variant="rotate"] {
+  color: var(--builder-orange);
+  border-color: rgba(255, 136, 0, 0.35);
+}
+
+.property-action-btn:hover:not([disabled]),
+.property-action-btn:focus-visible:not([disabled]) {
+  border-color: var(--builder-border-strong);
+  background: rgba(46, 88, 148, 0.88);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.property-action-btn[disabled],
+.property-action-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.property-wire-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.property-wire-actions__label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(136, 204, 255, 0.6);
+}
+
+.property-wire-actions__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.property-wire-action-btn {
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  background: rgba(14, 30, 58, 0.78);
+  color: rgba(220, 236, 255, 0.92);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.property-wire-action-btn:hover:not([disabled]),
+.property-wire-action-btn:focus-visible:not([disabled]) {
+  border-color: rgba(136, 204, 255, 0.45);
+  background: rgba(24, 48, 88, 0.88);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.property-wire-action-btn[disabled],
+.property-wire-action-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
 .panel-header {
   padding: 18px 20px 14px;
   border-bottom: 1px solid rgba(0, 255, 136, 0.16);

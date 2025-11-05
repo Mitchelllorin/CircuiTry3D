@@ -32,7 +32,10 @@ type BuilderInvokeAction =
   | "open-arena"
   | "set-tool"
   | "clear-workspace"
-  | "run-simulation";
+  | "run-simulation"
+  | "edit-selected-component"
+  | "rotate-selected-component"
+  | "open-wire-editor";
 
 type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
@@ -71,6 +74,296 @@ type LegacyModeState = {
   showGrid: boolean;
   showLabels: boolean;
 };
+
+type LegacySelectionComponentPayload = {
+  kind: "component";
+  id: string | null;
+  type: string | null;
+  label?: string | null;
+  identifier?: string | null;
+  rotation?: { radians?: number; degrees?: number };
+  position?: { x?: number; y?: number; z?: number };
+  properties?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+  connections?: Array<{ wireId?: string | null; targetId?: string | null; side?: string | null }>;
+};
+
+type LegacySelectionJunctionPayload = {
+  kind: "junction";
+  id: string | null;
+  label?: string | null;
+  position?: { x?: number; y?: number; z?: number };
+  connectionCount?: number;
+};
+
+type LegacySelectionNonePayload = {
+  kind: "none";
+};
+
+type LegacySelectionPayload =
+  | LegacySelectionComponentPayload
+  | LegacySelectionJunctionPayload
+  | LegacySelectionNonePayload;
+
+type PropertyPanelItem = {
+  id: string;
+  name: string;
+  value: string;
+  multiline?: boolean;
+  isPlaceholder?: boolean;
+};
+
+const UNIT_MATCHERS: Array<{ test: RegExp; suffix: string }> = [
+  { test: /(volt|emf|voltage)/i, suffix: " V" },
+  { test: /(current|amp)/i, suffix: " A" },
+  { test: /(resist|ohm)/i, suffix: " Ohm" },
+  { test: /(power|watt)/i, suffix: " W" },
+  { test: /(frequency|hz)/i, suffix: " Hz" },
+  { test: /(temperature|temp)/i, suffix: " C" },
+  { test: /(capacitance|farad|capacitor)/i, suffix: " F" },
+  { test: /(inductance|henry)/i, suffix: " H" },
+  { test: /(energy|joule)/i, suffix: " J" },
+];
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+function toNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function toStringOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function toRecord(value: unknown): Record<string, unknown> | undefined {
+  return isPlainObject(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function normalizeSelectionPayload(raw: unknown): LegacySelectionPayload {
+  if (!raw || typeof raw !== "object") {
+    return { kind: "none" };
+  }
+
+  const record = raw as Record<string, unknown>;
+
+  if (record.kind === "component") {
+    const rotationRecord = toRecord(record.rotation);
+    const positionRecord = toRecord(record.position);
+    const connections = Array.isArray(record.connections)
+      ? record.connections
+          .map((entry) => {
+            if (!entry || typeof entry !== "object") {
+              return null;
+            }
+            const connectionRecord = entry as Record<string, unknown>;
+            return {
+              wireId: toStringOrNull(connectionRecord.wireId),
+              targetId: toStringOrNull(connectionRecord.targetId),
+              side: toStringOrNull(connectionRecord.side),
+            };
+          })
+          .filter(
+            (
+              entry,
+            ): entry is { wireId: string | null; targetId: string | null; side: string | null } => Boolean(entry),
+          )
+      : undefined;
+
+    return {
+      kind: "component",
+      id: toStringOrNull(record.id),
+      type: toStringOrNull(record.type),
+      label: toStringOrNull(record.label),
+      identifier: toStringOrNull(record.identifier),
+      rotation: rotationRecord
+        ? {
+            radians: toNumber(rotationRecord.radians),
+            degrees: toNumber(rotationRecord.degrees),
+          }
+        : undefined,
+      position: positionRecord
+        ? {
+            x: toNumber(positionRecord.x),
+            y: toNumber(positionRecord.y),
+            z: toNumber(positionRecord.z),
+          }
+        : undefined,
+      properties: isPlainObject(record.properties) ? (record.properties as Record<string, unknown>) : undefined,
+      metadata: isPlainObject(record.metadata) ? (record.metadata as Record<string, unknown>) : undefined,
+      connections,
+    };
+  }
+
+  if (record.kind === "junction") {
+    const positionRecord = toRecord(record.position);
+
+    return {
+      kind: "junction",
+      id: toStringOrNull(record.id),
+      label: toStringOrNull(record.label),
+      position: positionRecord
+        ? {
+            x: toNumber(positionRecord.x),
+            y: toNumber(positionRecord.y),
+            z: toNumber(positionRecord.z),
+          }
+        : undefined,
+      connectionCount: toNumber(record.connectionCount),
+    };
+  }
+
+  return { kind: "none" };
+}
+
+function formatKeyLabel(key: string): string {
+  return key
+    .replace(/[_\s]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatNumericValue(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "-";
+  }
+
+  const absValue = Math.abs(value);
+
+  if (absValue === 0) {
+    return "0";
+  }
+
+  if (absValue >= 100 || Number.isInteger(value)) {
+    return value.toString();
+  }
+
+  if (absValue >= 10) {
+    return value.toFixed(1);
+  }
+
+  if (absValue >= 1) {
+    return value.toFixed(2);
+  }
+
+  if (absValue >= 0.01) {
+    return value.toFixed(3);
+  }
+
+  return value.toExponential(2);
+}
+
+function formatPositionLabel(position?: { x?: number; y?: number; z?: number }): string {
+  if (!position) {
+    return "-";
+  }
+
+  const x = toNumber(position.x) ?? 0;
+  const y = toNumber(position.y) ?? 0;
+  const z = toNumber(position.z) ?? 0;
+
+  return `x: ${formatNumericValue(x)}, y: ${formatNumericValue(y)}, z: ${formatNumericValue(z)}`;
+}
+
+function formatRotationLabel(rotation?: { radians?: number; degrees?: number }): string {
+  if (!rotation) {
+    return "0°";
+  }
+
+  const degrees = typeof rotation.degrees === "number" && Number.isFinite(rotation.degrees)
+    ? rotation.degrees
+    : typeof rotation.radians === "number" && Number.isFinite(rotation.radians)
+      ? (rotation.radians * 180) / Math.PI
+      : 0;
+
+  const normalized = ((Math.round(degrees) % 360) + 360) % 360;
+  return `${normalized}°`;
+}
+
+function formatPropertyValueByKey(key: string, value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const label = formatKeyLabel(key);
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const matcher = UNIT_MATCHERS.find((entry) => entry.test.test(key));
+    const suffix = matcher ? matcher.suffix : "";
+    return `${label}: ${formatNumericValue(value)}${suffix}`;
+  }
+
+  if (typeof value === "boolean") {
+    const lowerKey = key.toLowerCase();
+    const isAffirmativePrefix = lowerKey.startsWith("is") || lowerKey.startsWith("has") || lowerKey.startsWith("can");
+    const boolValue = value ? (isAffirmativePrefix ? "Yes" : "On") : isAffirmativePrefix ? "No" : "Off";
+    return `${label}: ${boolValue}`;
+  }
+
+  if (typeof value === "string") {
+    return `${label}: ${value}`;
+  }
+
+  if (Array.isArray(value)) {
+    const printable = value
+      .map((item) => {
+        if (typeof item === "number" && Number.isFinite(item)) {
+          return formatNumericValue(item);
+        }
+        if (typeof item === "string") {
+          return item;
+        }
+        if (typeof item === "boolean") {
+          return item ? "Yes" : "No";
+        }
+        return null;
+      })
+      .filter((entry): entry is string => Boolean(entry));
+
+    if (printable.length === 0) {
+      return null;
+    }
+
+    return `${label}: ${printable.join(", ")}`;
+  }
+
+  if (isPlainObject(value)) {
+    const nestedEntries = extractKeyValuePairs(value as Record<string, unknown>);
+    if (nestedEntries.length === 0) {
+      return null;
+    }
+    return `${label}: ${nestedEntries.join(", ")}`;
+  }
+
+  return null;
+}
+
+function extractKeyValuePairs(
+  source: Record<string, unknown> | null | undefined,
+  options: { exclude?: string[] } = {},
+): string[] {
+  if (!source) {
+    return [];
+  }
+
+  const excludeSet = new Set((options.exclude ?? []).map((entry) => entry.toLowerCase()));
+
+  return Object.entries(source)
+    .filter(([key]) => !excludeSet.has(key.toLowerCase()))
+    .map(([key, value]) => formatPropertyValueByKey(key, value))
+    .filter((entry): entry is string => Boolean(entry));
+}
+
+function formatWireLabel(wireId: string, index: number): string {
+  const shortId = wireId.length > 8 ? wireId.slice(-6) : wireId;
+  return `Wire ${index + 1} (${shortId})`;
+}
 
 type QuickAction = {
   id: string;
@@ -157,9 +450,11 @@ const QUICK_ACTIONS: QuickAction[] = [
 
 const PROPERTY_ITEMS = [
   { id: "component", name: "Selected Component", value: "None" },
+  { id: "type", name: "Type", value: "-" },
   { id: "position", name: "Position", value: "-" },
   { id: "rotation", name: "Rotation", value: "-" },
-  { id: "metadata", name: "Metadata", value: "Tap any element to inspect" },
+  { id: "attributes", name: "Attributes", value: "Tap any element to inspect" },
+  { id: "connections", name: "Connections", value: "No wires attached" },
 ];
 
 type PanelAction = {
@@ -1057,6 +1352,7 @@ export default function Builder() {
     showGrid: true,
     showLabels: true,
   });
+  const [selectionState, setSelectionState] = useState<LegacySelectionPayload>({ kind: "none" });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [arenaExportStatus, setArenaExportStatus] = useState<ArenaExportStatus>("idle");
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
@@ -1141,52 +1437,57 @@ export default function Builder() {
         return;
       }
 
-      if (type === "legacy:mode-state") {
-        if (!payload || typeof payload !== "object") {
+        if (type === "legacy:mode-state") {
+          if (!payload || typeof payload !== "object") {
+            return;
+          }
+
+          const next = payload as Partial<LegacyModeState>;
+          setModeState((previous) => ({
+            ...previous,
+            isWireMode: typeof next.isWireMode === "boolean" ? next.isWireMode : previous.isWireMode,
+            isRotateMode: typeof next.isRotateMode === "boolean" ? next.isRotateMode : previous.isRotateMode,
+            isMeasureMode: typeof next.isMeasureMode === "boolean" ? next.isMeasureMode : previous.isMeasureMode,
+            currentFlowStyle:
+              typeof next.currentFlowStyle === "string" && next.currentFlowStyle.trim() !== ""
+                ? next.currentFlowStyle
+                : previous.currentFlowStyle,
+            showPolarityIndicators:
+              typeof next.showPolarityIndicators === "boolean"
+                ? next.showPolarityIndicators
+                : previous.showPolarityIndicators,
+            layoutMode:
+              typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
+                ? next.layoutMode
+                : previous.layoutMode,
+            wireRoutingMode:
+              typeof next.wireRoutingMode === "string" && next.wireRoutingMode.trim() !== ""
+                ? next.wireRoutingMode
+                : previous.wireRoutingMode,
+            showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
+            showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
+          }));
           return;
         }
 
-        const next = payload as Partial<LegacyModeState>;
-        setModeState((previous) => ({
-          ...previous,
-          isWireMode: typeof next.isWireMode === "boolean" ? next.isWireMode : previous.isWireMode,
-          isRotateMode: typeof next.isRotateMode === "boolean" ? next.isRotateMode : previous.isRotateMode,
-          isMeasureMode: typeof next.isMeasureMode === "boolean" ? next.isMeasureMode : previous.isMeasureMode,
-          currentFlowStyle:
-            typeof next.currentFlowStyle === "string" && next.currentFlowStyle.trim() !== ""
-              ? next.currentFlowStyle
-              : previous.currentFlowStyle,
-          showPolarityIndicators:
-            typeof next.showPolarityIndicators === "boolean"
-              ? next.showPolarityIndicators
-              : previous.showPolarityIndicators,
-          layoutMode:
-            typeof next.layoutMode === "string" && next.layoutMode.trim() !== ""
-              ? next.layoutMode
-              : previous.layoutMode,
-          wireRoutingMode:
-            typeof next.wireRoutingMode === "string" && next.wireRoutingMode.trim() !== ""
-              ? next.wireRoutingMode
-              : previous.wireRoutingMode,
-          showGrid: typeof next.showGrid === "boolean" ? next.showGrid : previous.showGrid,
-          showLabels: typeof next.showLabels === "boolean" ? next.showLabels : previous.showLabels,
-        }));
-        return;
-      }
-
-      if (type === "legacy:simulation") {
-        if (simulationPulseTimer.current !== null) {
-          window.clearTimeout(simulationPulseTimer.current);
+        if (type === "legacy:selection") {
+          setSelectionState(normalizeSelectionPayload(payload));
+          return;
         }
-        setSimulatePulsing(true);
-        simulationPulseTimer.current = window.setTimeout(() => {
-          setSimulatePulsing(false);
-          simulationPulseTimer.current = null;
-        }, 1400);
-        return;
-      }
 
-      if (type === "legacy:arena-export") {
+        if (type === "legacy:simulation") {
+          if (simulationPulseTimer.current !== null) {
+            window.clearTimeout(simulationPulseTimer.current);
+          }
+          setSimulatePulsing(true);
+          simulationPulseTimer.current = window.setTimeout(() => {
+            setSimulatePulsing(false);
+            simulationPulseTimer.current = null;
+          }, 1400);
+          return;
+        }
+
+        if (type === "legacy:arena-export") {
         const summary = (payload || {}) as ArenaExportSummary | undefined;
         if (summary && typeof summary.sessionId === "string") {
           setArenaExportStatus("ready");
@@ -1757,7 +2058,106 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
-  const arenaStatusMessage = useMemo(() => {
+  const handleEditSelectedComponent = useCallback(() => {
+    triggerBuilderAction("edit-selected-component");
+  }, [triggerBuilderAction]);
+
+  const handleRotateSelectedComponent = useCallback(() => {
+    triggerBuilderAction("rotate-selected-component");
+  }, [triggerBuilderAction]);
+
+  const handleOpenWireEditor = useCallback(
+    (wireId: string) => {
+      triggerBuilderAction("open-wire-editor", { wireId });
+    },
+    [triggerBuilderAction],
+  );
+
+  const connectionSummaries = useMemo(() => {
+      if (selectionState.kind !== "component" || !selectionState.connections || selectionState.connections.length === 0) {
+        return [] as Array<{ wireId: string; buttonLabel: string; lineLabel: string; tooltip: string }>;
+      }
+
+      const summaryMap = new Map<string, { side?: string | null; targetId?: string | null }>();
+
+      selectionState.connections.forEach((connection) => {
+        const wireId = typeof connection?.wireId === "string" ? connection.wireId : null;
+        if (!wireId) {
+          return;
+        }
+
+        if (!summaryMap.has(wireId)) {
+          summaryMap.set(wireId, {
+            side: typeof connection?.side === "string" ? connection.side : null,
+            targetId: typeof connection?.targetId === "string" ? connection.targetId : null,
+          });
+        }
+      });
+
+      return Array.from(summaryMap.entries()).map(([wireId, meta], index) => {
+        const buttonLabel = formatWireLabel(wireId, index);
+        const targetLabel = meta.targetId || "open";
+        const sideLabel = meta.side || "terminal";
+        const lineLabel = `${buttonLabel} • ${sideLabel} → ${targetLabel}`;
+        const tooltip = `${buttonLabel}: ${sideLabel} → ${targetLabel}`;
+        return { wireId, buttonLabel, lineLabel, tooltip };
+      });
+    }, [selectionState]);
+
+    const propertyItems = useMemo<PropertyPanelItem[]>(() => {
+      if (selectionState.kind === "component") {
+        const label = selectionState.label || selectionState.identifier || selectionState.type || selectionState.id || "Component";
+        const typeLabel = selectionState.type
+          ? selectionState.type.charAt(0).toUpperCase() + selectionState.type.slice(1)
+          : "Component";
+        const positionLabel = formatPositionLabel(selectionState.position);
+        const rotationLabel = formatRotationLabel(selectionState.rotation);
+        const propertyPairs = extractKeyValuePairs(selectionState.properties, { exclude: ["displayName"] });
+        const metadataPairs = extractKeyValuePairs(selectionState.metadata, { exclude: ["displayName", "identifier"] });
+        const combinedAttributes = [...propertyPairs, ...metadataPairs];
+        const attributesValue = combinedAttributes.length > 0 ? combinedAttributes.join("\n") : "No component attributes";
+        const connectionsValue = connectionSummaries.length > 0
+          ? connectionSummaries.map((summary) => summary.lineLabel).join("\n")
+          : "No wires attached";
+
+        return [
+          { id: "component", name: "Selected Component", value: label },
+          { id: "type", name: "Type", value: typeLabel },
+          { id: "position", name: "Position", value: positionLabel },
+          { id: "rotation", name: "Rotation", value: rotationLabel },
+          {
+            id: "attributes",
+            name: "Attributes",
+            value: attributesValue,
+            multiline: combinedAttributes.length > 1,
+            isPlaceholder: combinedAttributes.length === 0,
+          },
+          {
+            id: "connections",
+            name: "Connections",
+            value: connectionsValue,
+            multiline: connectionSummaries.length > 1,
+            isPlaceholder: connectionSummaries.length === 0,
+          },
+        ];
+      }
+
+      if (selectionState.kind === "junction") {
+        const label = selectionState.label || selectionState.id || "Junction";
+        const positionLabel = formatPositionLabel(selectionState.position);
+        const connectionCount = typeof selectionState.connectionCount === "number" ? selectionState.connectionCount : 0;
+
+        return [
+          { id: "component", name: "Selected Node", value: label },
+          { id: "position", name: "Position", value: positionLabel },
+          { id: "connections", name: "Connections", value: `${connectionCount}` },
+        ];
+      }
+
+      return PROPERTY_ITEMS.map((item) => ({ ...item, isPlaceholder: true }));
+    }, [connectionSummaries, selectionState]);
+
+    const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
         return "Exporting current build to Component Arena...";
@@ -1997,14 +2397,67 @@ export default function Builder() {
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Properties</span>
-              <div className="property-stack">
-                {PROPERTY_ITEMS.map((item) => (
-                  <div key={item.id} className="property-item">
-                    <div className="property-name">{item.name}</div>
-                    <div className="property-value">{item.value}</div>
-                  </div>
-                ))}
-              </div>
+                <div className="property-stack">
+                  {propertyItems.map((item) => (
+                    <div key={item.id} className="property-item">
+                      <div className="property-name">{item.name}</div>
+                      <div
+                        className="property-value"
+                        data-multiline={item.multiline ? "true" : undefined}
+                        data-muted={item.isPlaceholder ? "true" : undefined}
+                      >
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {selectionState.kind === "component" ? (
+                  <>
+                    <div className="property-actions">
+                      <button
+                        type="button"
+                        className="property-action-btn"
+                        onClick={handleEditSelectedComponent}
+                        disabled={controlsDisabled}
+                        aria-disabled={controlsDisabled}
+                        title={controlsDisabled ? controlDisabledTitle : "Edit component values"}
+                      >
+                        Edit Values
+                      </button>
+                      <button
+                        type="button"
+                        className="property-action-btn"
+                        data-variant="rotate"
+                        onClick={handleRotateSelectedComponent}
+                        disabled={controlsDisabled}
+                        aria-disabled={controlsDisabled}
+                        title={controlsDisabled ? controlDisabledTitle : "Rotate component 90°"}
+                      >
+                        Rotate 90°
+                      </button>
+                    </div>
+                    {connectionSummaries.length > 0 ? (
+                      <div className="property-wire-actions">
+                        <span className="property-wire-actions__label">Connected Wires</span>
+                        <div className="property-wire-actions__list">
+                          {connectionSummaries.map((summary) => (
+                            <button
+                              key={summary.wireId}
+                              type="button"
+                              className="property-wire-action-btn"
+                              onClick={() => handleOpenWireEditor(summary.wireId)}
+                              disabled={controlsDisabled}
+                              aria-disabled={controlsDisabled}
+                              title={controlsDisabled ? controlDisabledTitle : summary.tooltip}
+                            >
+                              {summary.buttonLabel}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
             </div>
             <div className="slider-section">
               <span className="slider-heading">Modes</span>
