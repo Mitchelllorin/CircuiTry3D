@@ -269,6 +269,11 @@ body.builder-body {
   max-height: 92vh;
 }
 
+.builder-panel-shell--schematic {
+  width: min(98vw, 1340px);
+  max-height: 92vh;
+}
+
 .builder-panel-close {
   position: absolute;
   top: 16px;
@@ -314,6 +319,12 @@ body.builder-body {
 .builder-panel-body--arena {
   overflow: hidden;
   background: rgba(8, 20, 44, 0.95);
+}
+
+.builder-panel-body--schematic {
+  overflow: auto;
+  padding: 16px;
+  background: rgba(8, 20, 44, 0.92);
 }
 
 .builder-panel-overlay--arena .arena-page {

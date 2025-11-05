@@ -126,6 +126,7 @@
   grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
   gap: 28px;
   align-items: start;
+  position: relative;
 }
 
 .schematic-sidebar {
@@ -353,6 +354,27 @@
   margin: 0 0 14px;
   color: rgba(209, 230, 255, 0.82);
   line-height: 1.6;
+}
+
+.schematic-component-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: rgba(210, 232, 255, 0.86);
+  font-size: 0.9rem;
+}
+
+.schematic-component-summary strong {
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(228, 244, 255, 0.94);
+}
+
+.schematic-component-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .schematic-card ul {
@@ -735,6 +757,192 @@
   color: rgba(192, 214, 244, 0.75);
 }
 
+.schematic-component-drawer {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.schematic-component-drawer.right {
+  left: auto;
+  right: 12px;
+  align-items: flex-end;
+}
+
+.component-drawer-toggle {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 168, 255, 0.4);
+  background: rgba(10, 28, 54, 0.82);
+  color: rgba(218, 236, 255, 0.94);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.component-drawer-toggle:hover,
+.component-drawer-toggle:focus {
+  transform: translateY(-1px);
+  border-color: rgba(144, 210, 255, 0.72);
+  background: rgba(18, 44, 78, 0.9);
+  outline: none;
+}
+
+.component-drawer-toggle .toggle-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.component-drawer-panel {
+  pointer-events: auto;
+  width: clamp(240px, 32vw, 320px);
+  max-height: min(70vh, 520px);
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, rgba(12, 26, 48, 0.95), rgba(8, 18, 36, 0.94));
+  border: 1px solid rgba(68, 126, 220, 0.3);
+  box-shadow: 0 18px 40px rgba(4, 12, 28, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transform: translateX(-20px);
+  opacity: 0;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+}
+
+.schematic-component-drawer.right .component-drawer-panel {
+  transform: translateX(20px);
+}
+
+.schematic-component-drawer[data-open="true"] .component-drawer-panel {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.component-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.component-drawer-header h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(138, 198, 255, 0.9);
+}
+
+.component-drawer-header p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(198, 220, 255, 0.76);
+}
+
+.component-drawer-close {
+  pointer-events: auto;
+  border: none;
+  background: rgba(10, 28, 54, 0.6);
+  color: rgba(218, 236, 255, 0.88);
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.component-drawer-close:hover,
+.component-drawer-close:focus {
+  background: rgba(24, 60, 92, 0.9);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.component-drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.component-drawer-entry {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(74, 128, 255, 0.24);
+  background: rgba(14, 30, 56, 0.6);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.component-drawer-entry:hover,
+.component-drawer-entry:focus {
+  transform: translateY(-1px);
+  border-color: rgba(118, 190, 255, 0.5);
+  background: rgba(22, 44, 78, 0.76);
+  outline: none;
+}
+
+.component-drawer-entry.is-selected {
+  border-color: rgba(0, 208, 255, 0.85);
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.2), rgba(60, 228, 200, 0.2));
+  box-shadow: 0 10px 24px rgba(0, 160, 255, 0.2);
+}
+
+.component-drawer-entry .entry-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(56, 128, 255, 0.18);
+  color: rgba(210, 234, 255, 0.92);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.component-drawer-entry .entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.component-drawer-entry .entry-name {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(218, 236, 255, 0.92);
+}
+
+.component-drawer-entry .entry-description {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(198, 218, 246, 0.75);
+}
+
 @media (max-width: 1280px) {
   .schematic-body {
     grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
@@ -803,5 +1011,21 @@
   .schematic-legend,
   .schematic-catalog {
     padding: 18px;
+  }
+
+  .schematic-component-drawer {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .schematic-component-drawer .component-drawer-panel {
+    width: min(92vw, 360px);
+    max-height: 60vh;
   }
 }

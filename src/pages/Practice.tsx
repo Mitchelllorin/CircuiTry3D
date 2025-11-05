@@ -19,6 +19,11 @@ import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import "../styles/practice.css";
+import "../styles/schematic.css";
+import PracticeViewport from "../components/schematic/PracticeViewport";
+import ComponentDrawer from "../components/schematic/ComponentDrawer";
+import { COMPONENT_CATALOG } from "../schematic/catalog";
+import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 
 const TOPOLOGY_ORDER: PracticeTopology[] = ["series", "parallel", "combination"];
 const TOPOLOGY_LABEL: Record<PracticeTopology, string> = {
@@ -228,8 +233,17 @@ export default function Practice({
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
   const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(null);
+  const [visualMode, setVisualMode] = useState<"diagram" | "schematic">("diagram");
+  const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
+  const [drawerSelection, setDrawerSelection] = useState<string | null>(null);
   const lastReportedProblemId = useRef<string | null>(null);
   const lastWorksheetReport = useRef<{ problemId: string; complete: boolean } | null>(null);
+
+  useEffect(() => {
+    if (visualMode === "schematic" && !drawerSelection) {
+      setDrawerSelection(COMPONENT_CATALOG[0]?.id ?? null);
+    }
+  }, [visualMode, drawerSelection]);
 
   useEffect(() => {
     if (selectedProblemId === undefined) {
@@ -247,6 +261,10 @@ export default function Practice({
 
   const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
   const tableRows = useMemo(() => buildTableRows(selectedProblem, solution), [selectedProblem, solution]);
+  const selectedCatalogEntry = useMemo(
+    () => COMPONENT_CATALOG.find((entry) => entry.id === drawerSelection) ?? null,
+    [drawerSelection]
+  );
   const stepPresentations = useMemo(
     () => buildStepPresentations(selectedProblem, solution),
     [selectedProblem, solution]
@@ -582,7 +600,82 @@ export default function Practice({
               </button>
             </div>
 
-            <CircuitDiagram problem={selectedProblem} />
+              <div className="practice-visualization">
+                <div className="practice-visual-toggle" role="tablist" aria-label="Visualization mode">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={visualMode === "diagram"}
+                    className={visualMode === "diagram" ? "practice-visual-button is-active" : "practice-visual-button"}
+                    onClick={() => setVisualMode("diagram")}
+                  >
+                    Diagram
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={visualMode === "schematic"}
+                    className={
+                      visualMode === "schematic" ? "practice-visual-button is-active" : "practice-visual-button"
+                    }
+                    onClick={() => setVisualMode("schematic")}
+                  >
+                    3D Schematic
+                  </button>
+                </div>
+
+                {visualMode === "schematic" ? (
+                  <div className="practice-schematic-container">
+                    <div className="practice-schematic-toolbar">
+                      <div
+                        className="schematic-standard-control"
+                        role="group"
+                        aria-label="Schematic symbol standard"
+                      >
+                        <span className="schematic-standard-label">Symbol Standard</span>
+                        <div className="schematic-standard-buttons">
+                          {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                            <button
+                              key={option.key}
+                              type="button"
+                              className={
+                                symbolStandard === option.key
+                                  ? "schematic-standard-button is-active"
+                                  : "schematic-standard-button"
+                              }
+                              onClick={() => setSymbolStandard(option.key)}
+                              title={option.description}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {selectedCatalogEntry ? (
+                        <div className="practice-catalog-note">
+                          <strong>{selectedCatalogEntry.name}</strong>
+                          <span>{selectedCatalogEntry.description}</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="practice-schematic-stage">
+                      <ComponentDrawer
+                        entries={COMPONENT_CATALOG}
+                        selectedId={drawerSelection}
+                        onSelect={(entry) => setDrawerSelection(entry.id)}
+                        placement="right"
+                        defaultOpen
+                      />
+                      <div className="schematic-stage">
+                        <PracticeViewport problem={selectedProblem} symbolStandard={symbolStandard} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <CircuitDiagram problem={selectedProblem} />
+                )}
+              </div>
 
             <div
               className="worksheet-status-banner"

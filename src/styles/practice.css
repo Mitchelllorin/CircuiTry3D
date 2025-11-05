@@ -917,6 +917,109 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.practice-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.practice-visual-toggle {
+  display: inline-flex;
+  gap: 8px;
+  background: rgba(12, 28, 52, 0.6);
+  border: 1px solid rgba(68, 126, 220, 0.25);
+  border-radius: 999px;
+  padding: 6px;
+  align-self: flex-start;
+}
+
+.practice-visual-button {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(208, 228, 255, 0.85);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.practice-visual-button:hover,
+.practice-visual-button:focus {
+  background: rgba(24, 52, 92, 0.6);
+  color: rgba(222, 238, 255, 0.95);
+  outline: none;
+}
+
+.practice-visual-button.is-active {
+  background: linear-gradient(135deg, rgba(0, 200, 255, 0.18), rgba(60, 228, 200, 0.18));
+  border-color: rgba(0, 208, 255, 0.6);
+  color: rgba(230, 245, 255, 0.96);
+}
+
+.practice-schematic-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(140deg, rgba(10, 24, 46, 0.82), rgba(4, 12, 28, 0.88));
+  border: 1px solid rgba(68, 126, 220, 0.22);
+}
+
+.practice-schematic-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.practice-catalog-note {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(12, 30, 58, 0.62);
+  border: 1px solid rgba(82, 148, 220, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: rgba(200, 222, 255, 0.85);
+}
+
+.practice-catalog-note strong {
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(220, 240, 255, 0.92);
+}
+
+.practice-catalog-note span {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.practice-schematic-stage {
+  position: relative;
+}
+
+.practice-schematic-stage .schematic-stage {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .practice-schematic-container {
+    padding: 12px;
+  }
+
+  .practice-catalog-note {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 1180px) {
   .practice-page {
     grid-template-columns: 100%;

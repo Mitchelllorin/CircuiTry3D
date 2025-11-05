@@ -1,7 +1,10 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/builder-ui.css";
+import "../styles/schematic.css";
 import ArenaView from "../components/arena/ArenaView";
 import Practice from "./Practice";
+import BuilderWorkspace from "../components/schematic/BuilderWorkspace";
+import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 import {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -1063,6 +1066,8 @@ export default function Builder() {
   const [lastArenaExport, setLastArenaExport] = useState<ArenaExportSummary | null>(null);
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
+  const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
+  const [schematicSymbolStandard, setSchematicSymbolStandard] = useState<SymbolStandard>(DEFAULT_SYMBOL_STANDARD);
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null
   );
@@ -1336,7 +1341,7 @@ export default function Builder() {
   }, [isHelpOpen]);
 
   useEffect(() => {
-    if (!isArenaPanelOpen && !isPracticePanelOpen) {
+    if (!isArenaPanelOpen && !isPracticePanelOpen && !isSchematicPanelOpen) {
       return;
     }
 
@@ -1348,12 +1353,15 @@ export default function Builder() {
         if (isPracticePanelOpen) {
           setPracticePanelOpen(false);
         }
+        if (isSchematicPanelOpen) {
+          setSchematicPanelOpen(false);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isArenaPanelOpen, isPracticePanelOpen]);
+  }, [isArenaPanelOpen, isPracticePanelOpen, isSchematicPanelOpen]);
 
   useEffect(() => {
     if (!isHelpOpen || helpView !== "overview" || !requestedHelpSection) {
@@ -1584,6 +1592,16 @@ export default function Builder() {
     practiceProblemRef.current = update.problem.id;
   }, []);
 
+  const openPracticePanel = useCallback(() => {
+    setSchematicPanelOpen(false);
+    setPracticePanelOpen(true);
+  }, []);
+
+  const openSchematicPanel = useCallback(() => {
+    setPracticePanelOpen(false);
+    setSchematicPanelOpen(true);
+  }, []);
+
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
@@ -1605,13 +1623,13 @@ export default function Builder() {
           if (randomProblem.presetHint) {
             triggerBuilderAction("load-preset", { preset: randomProblem.presetHint });
           }
-          setPracticePanelOpen(true);
+          openPracticePanel();
         }
         return;
       }
       triggerBuilderAction(action.action, action.data);
     },
-    [handleArenaSync, openHelpCenter, setArenaPanelOpen, triggerBuilderAction]
+    [handleArenaSync, openHelpCenter, triggerBuilderAction, openPracticePanel]
   );
 
   const openLastArenaSession = useCallback(() => {
@@ -2170,7 +2188,7 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => setPracticePanelOpen(true)}
+                  onClick={openPracticePanel}
                   title={practiceWorksheetMessage}
                   data-complete={
                     practiceWorksheetState &&
@@ -2182,6 +2200,20 @@ export default function Builder() {
                   }
                 >
                   <span className="slider-chip-label">Practice Worksheets</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={openSchematicPanel}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={
+                    controlsDisabled
+                      ? controlDisabledTitle
+                      : "Open the 3D schematic builder overlay"
+                  }
+                >
+                  <span className="slider-chip-label">3D Schematic Builder</span>
                 </button>
                 {PRACTICE_SCENARIOS.map((scenario) => (
                   <button
@@ -2198,7 +2230,7 @@ export default function Builder() {
                         setActivePracticeProblemId(problem.id);
                         setPracticeWorksheetState({ problemId: problem.id, complete: false });
                       }
-                      setPracticePanelOpen(true);
+                      openPracticePanel();
                     }}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -2486,6 +2518,55 @@ export default function Builder() {
             >
               Reset defaults
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--schematic${isSchematicPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isSchematicPanelOpen}
+        onClick={() => setSchematicPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--schematic"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setSchematicPanelOpen(false)}
+            aria-label="Close schematic builder"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--schematic">
+            <div
+              className="schematic-standard-control"
+              role="group"
+              aria-label="Schematic symbol standard"
+            >
+              <span className="schematic-standard-label">Symbol Standard</span>
+              <div className="schematic-standard-buttons">
+                {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className={
+                      schematicSymbolStandard === option.key
+                        ? "schematic-standard-button is-active"
+                        : "schematic-standard-button"
+                    }
+                    onClick={() => setSchematicSymbolStandard(option.key)}
+                    title={option.description}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <BuilderWorkspace symbolStandard={schematicSymbolStandard} />
           </div>
         </div>
       </div>
