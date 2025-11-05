@@ -1772,13 +1772,8 @@ export default function Builder() {
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const floatingControlsBottom = useMemo(
-    () =>
-      isBottomMenuOpen
-        ? "calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width) + 44px + var(--builder-safe-area-bottom))"
-        : "calc(32px + var(--builder-safe-area-bottom) + var(--builder-menu-toggle-width))",
-    [isBottomMenuOpen]
-  );
+  const leftFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-left, 0px) + var(--builder-menu-toggle-side-width) + 12px)";
+  const rightFloatingOffset = "calc(clamp(12px, 3vw, 32px) + env(safe-area-inset-right, 0px) + var(--builder-menu-toggle-side-width) + 12px)";
 
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled ? "Workspace is still loading" : undefined;
@@ -2275,10 +2270,8 @@ export default function Builder() {
       </div>
 
       <div
-        className="builder-floating-controls"
-        style={{ bottom: floatingControlsBottom }}
-        role="group"
-        aria-label="Workspace actions"
+        className="builder-floating-action builder-floating-action--left"
+        style={{ left: leftFloatingOffset }}
       >
         <button
           type="button"
@@ -2291,6 +2284,11 @@ export default function Builder() {
         >
           Clear Workspace
         </button>
+      </div>
+      <div
+        className="builder-floating-action builder-floating-action--right"
+        style={{ right: rightFloatingOffset }}
+      >
         <button
           type="button"
           className="builder-floating-button"
