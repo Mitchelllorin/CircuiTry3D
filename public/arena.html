@@ -624,12 +624,15 @@
           target: CAMERA_DEFAULT_TARGET.clone(),
           spherical: new THREE.Spherical(),
           initialSpherical: new THREE.Spherical(),
-          fixedPhi: 0,
           needsUpdate: false,
-          rotateSpeed: 0.0055,
+          rotateSpeed: 0.0052,
           panSpeed: 0.9,
           zoomSpeed: 0.75,
-          wheelZoomSpeed: 0.003
+          wheelZoomSpeed: 0.003,
+          polarLimits: {
+            min: THREE.MathUtils.degToRad(18),
+            max: THREE.MathUtils.degToRad(82)
+          }
         };
 
         const activePointers = new Map();
@@ -829,7 +832,7 @@
             CAMERA_RADIUS_LIMITS.max
           );
           normalizeAzimuth();
-          cameraState.fixedPhi = cameraState.spherical.phi;
+          clampPolarAngle();
           cameraState.initialSpherical.copy(cameraState.spherical);
           cameraState.needsUpdate = true;
           updateCamera(true);
@@ -842,6 +845,21 @@
           ) - Math.PI;
         }
 
+        function clampPolarAngle() {
+          cameraState.spherical.makeSafe();
+          if (!cameraState.polarLimits) {
+            return;
+          }
+          const { min, max } = cameraState.polarLimits;
+          if (Number.isFinite(min) && Number.isFinite(max) && min < max) {
+            cameraState.spherical.phi = THREE.MathUtils.clamp(
+              cameraState.spherical.phi,
+              min,
+              max
+            );
+          }
+        }
+
         function updateCamera(force = false) {
           if (!camera) {
             return;
@@ -850,12 +868,22 @@
             return;
           }
 
+          if (
+            !Number.isFinite(cameraState.spherical.theta) ||
+            !Number.isFinite(cameraState.spherical.phi) ||
+            !Number.isFinite(cameraState.spherical.radius)
+          ) {
+            cameraState.spherical.copy(cameraState.initialSpherical);
+            normalizeAzimuth();
+            clampPolarAngle();
+          }
+
           cameraState.spherical.radius = THREE.MathUtils.clamp(
             cameraState.spherical.radius,
             CAMERA_RADIUS_LIMITS.min,
             CAMERA_RADIUS_LIMITS.max
           );
-          cameraState.spherical.phi = cameraState.fixedPhi;
+          clampPolarAngle();
 
           const offset = cameraOffset.setFromSpherical(cameraState.spherical);
           camera.position.copy(cameraState.target).add(offset);
@@ -868,8 +896,8 @@
         function resetCameraControl() {
           cameraState.target.copy(CAMERA_DEFAULT_TARGET);
           cameraState.spherical.copy(cameraState.initialSpherical);
-          cameraState.fixedPhi = cameraState.initialSpherical.phi;
           normalizeAzimuth();
+          clampPolarAngle();
           cameraState.needsUpdate = true;
           activePointers.clear();
           multiTouchState.active = false;
@@ -995,9 +1023,16 @@
 
           if (activePointers.size === 1) {
             const deltaX = pointer.current.x - pointer.last.x;
-            if (deltaX !== 0) {
-              cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
-              normalizeAzimuth();
+            const deltaY = pointer.current.y - pointer.last.y;
+            if (deltaX !== 0 || deltaY !== 0) {
+              if (deltaX !== 0) {
+                cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
+                normalizeAzimuth();
+              }
+              if (deltaY !== 0) {
+                cameraState.spherical.phi += deltaY * cameraState.rotateSpeed;
+                clampPolarAngle();
+              }
               cameraState.needsUpdate = true;
             }
           } else if (activePointers.size >= 2) {
