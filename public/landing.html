@@ -157,13 +157,14 @@
           stroke-linejoin: round;
           filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
         }
-        .led-triangle {
-          stroke: #39ffb7;
-          stroke-width: 4;
-          fill: rgba(6,16,38,0.92);
-          stroke-linejoin: round;
-          filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
-        }
+          .led-triangle {
+            stroke: #39ffb7;
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 12px rgba(57,255,183,0.75));
+          }
         .led-bar {
           stroke: #39ffb7;
           stroke-width: 4;
@@ -272,72 +273,75 @@
                 </defs>
                 <rect class="panel-bg" x="52" y="60" width="456" height="240" rx="34" />
 
-                <g aria-hidden="true">
-                  <!-- Wiring framework -->
-                  <line class="wire" x1="180" y1="140" x2="210" y2="140" />
-                  <line class="wire" x1="330" y1="140" x2="380" y2="140" />
-                  <line class="wire" x1="380" y1="140" x2="380" y2="170" />
-                  <line class="wire" x1="380" y1="220" x2="380" y2="260" />
-                  <line class="wire" x1="294" y1="260" x2="380" y2="260" />
-                  <line class="wire" x1="180" y1="260" x2="210" y2="260" />
-                  <line class="wire" x1="180" y1="260" x2="180" y2="220" />
-                  <line class="wire" x1="180" y1="206" x2="180" y2="140" />
+                  <g aria-hidden="true">
+                    <!-- Wiring framework -->
+                    <line class="wire" x1="180" y1="140" x2="220" y2="140" />
+                    <line class="wire" x1="340" y1="140" x2="380" y2="140" />
+                    <line class="wire" x1="380" y1="140" x2="380" y2="176" />
+                    <line class="wire" x1="380" y1="224" x2="380" y2="260" />
+                    <line class="wire" x1="340" y1="260" x2="380" y2="260" />
+                    <line class="wire" x1="180" y1="260" x2="220" y2="260" />
+                    <line class="wire" x1="180" y1="140" x2="180" y2="188" />
+                    <line class="wire" x1="180" y1="212" x2="180" y2="260" />
 
-                  <!-- Resistor R1 on top side -->
-                  <g transform="translate(210 140)">
-                    <polyline class="resistor-zig" points="0,0 24,-18 48,18 72,-18 96,18 120,0" />
+                    <!-- Resistor R1 on top side -->
+                    <g transform="translate(220 140)">
+                      <polyline class="resistor-zig" points="0,0 30,-16 60,16 90,-16 120,0" />
+                    </g>
+
+                    <!-- Switch SW1 on right side -->
+                    <line class="switch-arm" x1="380" y1="176" x2="392" y2="204" />
+                    <line class="switch-base" x1="380" y1="224" x2="396" y2="224" />
+
+                    <!-- Battery B1 on left side -->
+                    <line class="battery-plate battery-positive" x1="156" y1="188" x2="204" y2="188" />
+                    <line class="battery-plate battery-negative" x1="164" y1="212" x2="196" y2="212" />
+
+                    <!-- LED1 on bottom side -->
+                    <g transform="translate(220 260)">
+                      <line class="wire" x1="0" y1="0" x2="18" y2="0" />
+                      <polyline class="led-triangle" points="18,-18 60,0 18,18" />
+                      <line class="led-bar" x1="60" y1="-18" x2="60" y2="18" />
+                      <line class="wire" x1="60" y1="0" x2="120" y2="0" />
+                      <line class="led-emission" x1="68" y1="-12" x2="92" y2="-30" />
+                      <line class="led-emission" x1="72" y1="2" x2="96" y2="-16" />
+                    </g>
+
+                    <!-- Nodes -->
+                    <circle class="node" cx="180" cy="140" r="4.2" />
+                    <circle class="node" cx="220" cy="140" r="4.2" />
+                    <circle class="node" cx="340" cy="140" r="4.2" />
+                    <circle class="node" cx="380" cy="140" r="4.2" />
+                    <circle class="node" cx="380" cy="176" r="4.2" />
+                    <circle class="node" cx="380" cy="224" r="4.2" />
+                    <circle class="node" cx="380" cy="260" r="4.2" />
+                    <circle class="node" cx="340" cy="260" r="4.2" />
+                    <circle class="node" cx="220" cy="260" r="4.2" />
+                    <circle class="node" cx="180" cy="260" r="4.2" />
+                    <circle class="node" cx="180" cy="188" r="4.2" />
+                    <circle class="node" cx="180" cy="212" r="4.2" />
                   </g>
 
-                  <!-- Switch SW1 on right side -->
-                  <line class="switch-arm" x1="380" y1="170" x2="394" y2="214" />
-                  <line class="switch-base" x1="380" y1="220" x2="404" y2="220" />
+                  <!-- Component labels -->
+                  <text class="component-tag" x="280" y="104" text-anchor="middle">
+                    <tspan class="tag-id">R1</tspan>
+                    <tspan class="tag-value" x="280" dy="16">220 Ω</tspan>
+                  </text>
+                  <text class="component-tag" x="468" y="204" text-anchor="end">
+                    <tspan class="tag-id">SW1</tspan>
+                    <tspan class="tag-value" x="468" dy="16">SPST · Open</tspan>
+                  </text>
+                  <text class="component-tag" x="112" y="204" text-anchor="start">
+                    <tspan class="tag-id">B1</tspan>
+                    <tspan class="tag-value" x="112" dy="16">9 V DC</tspan>
+                  </text>
+                  <text class="component-tag" x="280" y="280" text-anchor="middle">
+                    <tspan class="tag-id">LED1</tspan>
+                    <tspan class="tag-value" x="280" dy="16">2 V · 20 mA</tspan>
+                  </text>
 
-                  <!-- Battery B1 on left side -->
-                  <line class="battery-plate battery-positive" x1="164" y1="206" x2="196" y2="206" />
-                  <line class="battery-plate battery-negative" x1="170" y1="220" x2="190" y2="220" />
-
-                  <!-- LED1 on bottom side -->
-                  <g transform="translate(210 260)">
-                    <line class="wire" x1="0" y1="0" x2="12" y2="0" />
-                    <polygon class="led-triangle" points="12,-18 12,18 60,0" />
-                    <line class="led-bar" x1="60" y1="-18" x2="60" y2="18" />
-                    <line class="wire" x1="60" y1="0" x2="84" y2="0" />
-                    <line class="led-emission" x1="66" y1="-10" x2="92" y2="-30" />
-                    <line class="led-emission" x1="72" y1="4" x2="98" y2="-16" />
-                  </g>
-
-                  <!-- Nodes -->
-                  <circle class="node" cx="180" cy="140" r="4.2" />
-                  <circle class="node" cx="210" cy="140" r="4.2" />
-                  <circle class="node" cx="330" cy="140" r="4.2" />
-                  <circle class="node" cx="380" cy="140" r="4.2" />
-                  <circle class="node" cx="380" cy="220" r="4.2" />
-                  <circle class="node" cx="380" cy="260" r="4.2" />
-                  <circle class="node" cx="294" cy="260" r="4.2" />
-                  <circle class="node" cx="210" cy="260" r="4.2" />
-                  <circle class="node" cx="180" cy="260" r="4.2" />
-                </g>
-
-                <!-- Component labels -->
-                <text class="component-tag" x="270" y="108" text-anchor="middle">
-                  <tspan class="tag-id">R1</tspan>
-                  <tspan class="tag-value" x="270" dy="16">220 Ω</tspan>
-                </text>
-                <text class="component-tag" x="418" y="208" text-anchor="start">
-                  <tspan class="tag-id">SW1</tspan>
-                  <tspan class="tag-value" x="418" dy="16">SPST · Open</tspan>
-                </text>
-                <text class="component-tag" x="144" y="214" text-anchor="end">
-                  <tspan class="tag-id">B1</tspan>
-                  <tspan class="tag-value" x="144" dy="16">9 V DC</tspan>
-                </text>
-                <text class="component-tag" x="270" y="304" text-anchor="middle">
-                  <tspan class="tag-id">LED1</tspan>
-                  <tspan class="tag-value" x="270" dy="16">2 V · 20 mA</tspan>
-                </text>
-
-                <text class="polarity-mark" x="202" y="210" text-anchor="start">+</text>
-                <text class="polarity-mark" x="202" y="224" text-anchor="start">-</text>
+                  <text class="polarity-mark" x="192" y="182" text-anchor="start">+</text>
+                  <text class="polarity-mark" x="192" y="218" text-anchor="start">-</text>
               </svg>
       </div>
     <div class="status-wrapper">
