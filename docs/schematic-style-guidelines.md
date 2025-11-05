@@ -1,6 +1,6 @@
 ## Schematic Style Reference (3D Presentation)
 
-Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every component must read exactly like the textbook references when viewed from above, while still offering depth cues and hover interactions.
+Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every component must read exactly like the textbook references when viewed from above, while still offering depth cues and hover interactions. A global symbol standard selector (ANSI/IEEE or IEC) is available in the header; geometry must respect the active standard at all times.
 
 - **Board & Lighting**
   - Use a neutral, low-saturation board colour so black strokes are easy to read.
@@ -15,10 +15,10 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
   - No bloom or emissive glow—clarity comes from silhouette only.
 
 - **Symbol Profiles**
-  - **Battery:** Two flat plates (long/short) with optional `+` / `−` sprites positioned near the respective terminals.
-  - **Resistor:** Six-peak zig-zag made from connected straight segments with the same thickness as the leads.
-  - **Capacitor:** Two parallel plates separated by a neutral dielectric block; leads must stop at the plate faces.
-  - **Inductor:** Four semi-circular turns rendered as thin rings aligned to the wire axis.
+  - **Battery:** Two flat plates (long/short) with polarity sprites when the standard calls for them. Plate spacing follows the selected template; leads terminate on the outer faces.
+  - **Resistor:** ANSI/IEEE renders the six-peak zig-zag. IEC renders a rectangular body with proportional leads. Stroke thickness always matches the connected wires.
+  - **Capacitor:** Two parallel plates with a standard-compliant gap. No dielectric block is rendered; the void communicates separation. Polarised markers are only shown when a standard requires them.
+  - **Inductor:** Semi-circular turns aligned to the axis. Coil count, arc, and pitch adjust to the current standard profile.
   - **Lamp:** Circular disc with a thin ring and crossed conductors to match the standard lamp symbol.
   - **Switch:** Two posts with a single angled blade segment indicating the open switch gap.
   - **Ground:** Three progressively shorter bars stacked vertically beneath the node.
