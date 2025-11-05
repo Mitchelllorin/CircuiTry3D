@@ -1,14 +1,14 @@
-import { DEFAULT_SYMBOL_STANDARD, STANDARD_PROFILES, SymbolStandard } from "./standards";
+import { DEFAULT_SYMBOL_STANDARD, STANDARD_PROFILES, SYMBOL_DIMENSIONS, SymbolStandard } from "./standards";
 import { GroundElement, Orientation, SchematicElement, TwoTerminalElement, Vec2, WireElement } from "./types";
 
 const DEFAULT_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
 
-export const WIRE_RADIUS = DEFAULT_PROFILE.general.strokeRadius;
-export const RESISTOR_RADIUS = DEFAULT_PROFILE.general.strokeRadius;
-export const NODE_RADIUS = DEFAULT_PROFILE.general.nodeRadius;
-export const WIRE_HEIGHT = 0.12;
-export const COMPONENT_HEIGHT = 0.16;
-export const LABEL_HEIGHT = 0.4;
+export const WIRE_RADIUS = SYMBOL_DIMENSIONS.wireRadius;
+export const RESISTOR_RADIUS = SYMBOL_DIMENSIONS.strokeRadius;
+export const NODE_RADIUS = SYMBOL_DIMENSIONS.nodeRadius;
+export const WIRE_HEIGHT = SYMBOL_DIMENSIONS.wireHeight;
+export const COMPONENT_HEIGHT = SYMBOL_DIMENSIONS.componentHeight;
+export const LABEL_HEIGHT = SYMBOL_DIMENSIONS.labelHeight;
 
 type BuildOptions = {
   preview?: boolean;
