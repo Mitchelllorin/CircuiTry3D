@@ -582,6 +582,36 @@
   color: rgba(144, 190, 255, 0.84);
 }
 
+.schematic-panel-description,
+.schematic-panel-footnote {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: rgba(196, 216, 255, 0.78);
+}
+
+.schematic-panel-footnote {
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: rgba(172, 202, 255, 0.7);
+}
+
+.schematic-standard-select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(86, 140, 255, 0.32);
+  background: rgba(20, 36, 66, 0.78);
+  color: rgba(229, 240, 255, 0.94);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+}
+
+.schematic-standard-select:focus {
+  outline: 2px solid rgba(86, 140, 255, 0.65);
+  outline-offset: 2px;
+}
+
 .schematic-actions {
   display: flex;
   flex-wrap: wrap;
