@@ -72,7 +72,8 @@ type ComponentAction = {
   icon: string;
   label: string;
   action: "component" | "junction";
-  builderType?: "battery" | "resistor" | "led" | "switch";
+  builderType?: "battery" | "resistor" | "capacitor" | "inductor" | "lamp" | "diode" | "bjt" | "switch" | "ground";
+  description?: string;
 };
 
 type BuilderToolId = "select" | "wire" | "measure";
@@ -134,6 +135,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Battery",
     action: "component",
     builderType: "battery",
+    description: "DC power source with positive and negative terminals",
   },
   {
     id: "resistor",
@@ -141,13 +143,47 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Resistor",
     action: "component",
     builderType: "resistor",
+    description: "Limits current flow and drops voltage",
   },
   {
-    id: "led",
-    icon: "LED",
-    label: "LED",
+    id: "capacitor",
+    icon: "C",
+    label: "Capacitor",
     action: "component",
-    builderType: "led",
+    builderType: "capacitor",
+    description: "Stores electrical energy in an electric field",
+  },
+  {
+    id: "inductor",
+    icon: "L",
+    label: "Inductor",
+    action: "component",
+    builderType: "inductor",
+    description: "Coiled conductor that stores energy in a magnetic field",
+  },
+  {
+    id: "lamp",
+    icon: "LA",
+    label: "Lamp",
+    action: "component",
+    builderType: "lamp",
+    description: "Circular lamp indicator with filament glow",
+  },
+  {
+    id: "diode",
+    icon: "D",
+    label: "Diode",
+    action: "component",
+    builderType: "diode",
+    description: "Allows current flow in one direction only",
+  },
+  {
+    id: "bjt",
+    icon: "Q",
+    label: "BJT",
+    action: "component",
+    builderType: "bjt",
+    description: "Bipolar junction transistor for amplification and switching",
   },
   {
     id: "switch",
@@ -155,8 +191,23 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Switch",
     action: "component",
     builderType: "switch",
+    description: "Opens or closes circuit path",
   },
-  { id: "junction", icon: "J", label: "Junction", action: "junction" },
+  {
+    id: "ground",
+    icon: "GND",
+    label: "Ground",
+    action: "component",
+    builderType: "ground",
+    description: "Ground reference tri-line symbol",
+  },
+  { 
+    id: "junction", 
+    icon: "J", 
+    label: "Junction", 
+    action: "junction",
+    description: "Connection point for branching wires",
+  },
 ];
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -2152,25 +2203,30 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Parts</span>
+              <span className="slider-heading">Components Library</span>
               <div className="slider-stack">
                 {COMPONENT_ACTIONS.map((component) => (
                   <button
                     key={component.id}
                     type="button"
-                    className="slider-btn slider-btn-compact"
+                    className="slider-btn slider-btn-stacked"
                     onClick={() => handleComponentAction(component)}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
                     title={
-                      controlsDisabled ? controlDisabledTitle : component.label
+                      controlsDisabled ? controlDisabledTitle : component.description || component.label
                     }
                     data-component-action={component.action}
                   >
-                    <span className="slider-icon" aria-hidden="true">
-                      {component.icon}
+                    <span className="slider-icon-label">
+                      <span className="slider-icon" aria-hidden="true">
+                        {component.icon}
+                      </span>
+                      <span className="slider-label">{component.label}</span>
                     </span>
-                    <span className="slider-label">{component.label}</span>
+                    {component.description && (
+                      <span className="slider-description">{component.description}</span>
+                    )}
                   </button>
                 ))}
               </div>
