@@ -198,7 +198,7 @@
 .schematic-viewport {
   position: relative;
   width: 100%;
-  min-height: clamp(360px, 60vh, 640px);
+  height: clamp(360px, 60vh, 640px);
   border-radius: 20px;
   overflow: hidden;
   background:

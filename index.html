@@ -2,13 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
     <meta name="description" content="3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level - Illuminating Electricity" />
     <meta name="keywords" content="circuit builder, electronics, 3D visualization, Ohm's law, educational, interactive" />
     <meta name="author" content="CircuiTry3D" />
     <meta name="application-name" content="CircuiTry3D" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="theme-color" content="#0f172a" />
     <meta name="color-scheme" content="dark" />
@@ -30,6 +31,12 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      html {
+        touch-action: pan-x pan-y;
+        -webkit-text-size-adjust: 100%;
       }
       
       body {
@@ -40,11 +47,13 @@
         -moz-osx-font-smoothing: grayscale;
         background-color: #0f172a;
         color: #ffffff;
+        overscroll-behavior: none;
       }
       
       #root {
         width: 100%;
         height: 100vh;
+        overscroll-behavior: contain;
       }
     </style>
   </head>
