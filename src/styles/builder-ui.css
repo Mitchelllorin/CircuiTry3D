@@ -48,23 +48,7 @@ body.builder-body {
 }
 
 .builder-logo-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: linear-gradient(
-    180deg,
-    rgba(15, 27, 61, 0.92),
-    rgba(15, 27, 61, 0.25),
-    transparent
-  );
-  backdrop-filter: blur(14px);
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  display: none;
 }
 
 .builder-logo-text {

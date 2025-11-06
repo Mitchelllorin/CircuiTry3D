@@ -475,6 +475,8 @@
   border: 1px solid rgba(70, 124, 220, 0.22);
   border-radius: 26px;
   padding: 24px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
 }
 
 .schematic-drawer-toggle {
