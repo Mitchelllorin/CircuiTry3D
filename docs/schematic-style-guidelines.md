@@ -16,7 +16,7 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
 
 - **Symbol Profiles**
   - **Battery:** Two flat plates (long/short) with polarity sprites when the standard calls for them. Plate spacing follows the selected template; leads terminate on the outer faces.
-  - **Resistor:** ANSI/IEEE renders the six-peak zig-zag. IEC renders a rectangular body with proportional leads. Stroke thickness always matches the connected wires.
+  - **Resistor:** ANSI/IEEE renders the zig-zag with 4-5 complete peaks (oscillations) and tight spacing for clear visual recognition. IEC renders a rectangular body with proportional leads. Stroke thickness always matches the connected wires.
   - **Capacitor:** Two parallel plates with a standard-compliant gap. No dielectric block is rendered; the void communicates separation. Polarised markers are only shown when a standard requires them.
   - **Inductor:** Semi-circular turns aligned to the axis. Coil count, arc, and pitch adjust to the current standard profile.
   - **Lamp:** Circular disc with a thin ring and crossed conductors to match the standard lamp symbol.

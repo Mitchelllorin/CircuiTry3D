@@ -34,12 +34,12 @@ const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
 
 const drawBattery = (x: number, y: number) => (
   <g transform={`translate(${x}, ${y})`}>
-    <line x1={-6} y1={-20} x2={-6} y2={20} stroke={WIRE_COLOR} strokeWidth={3} strokeLinecap="round" />
-    <line x1={8} y1={-28} x2={8} y2={28} stroke={WIRE_COLOR} strokeWidth={5} strokeLinecap="round" />
-    <text x={-12} y={-24} fill={LABEL_COLOR} fontSize={12} textAnchor="end">
+    <line x1={-20} y1={-6} x2={20} y2={-6} stroke={WIRE_COLOR} strokeWidth={3} strokeLinecap="round" />
+    <line x1={-28} y1={8} x2={28} y2={8} stroke={WIRE_COLOR} strokeWidth={5} strokeLinecap="round" />
+    <text x={-24} y={-12} fill={LABEL_COLOR} fontSize={12} textAnchor="middle">
       -
     </text>
-    <text x={14} y={-24} fill={LABEL_COLOR} fontSize={12} textAnchor="start">
+    <text x={24} y={-12} fill={LABEL_COLOR} fontSize={12} textAnchor="middle">
       +
     </text>
   </g>
@@ -132,46 +132,34 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
     R1: getComponentLabel(problem, "R1"),
     R2: getComponentLabel(problem, "R2"),
     R3: getComponentLabel(problem, "R3"),
-    R4: getComponentLabel(problem, "R4"),
   };
 
-    const batteryX = 60;
-    const batteryY = 150;
-    const positiveX = batteryX + 8;
-    const negativeX = batteryX - 6;
-    const positiveTopY = batteryY - 34;
-    const negativeBottomY = batteryY + 32;
+    const batteryX = 180;
+    const batteryY = 220;
+    const batteryLeftX = batteryX - 34;
+    const batteryRightX = batteryX + 34;
 
-    const loopLeftX = positiveX + 54;
-    const loopRightX = 320;
+    const leftX = 80;
+    const rightX = 280;
     const topY = 70;
-    const bottomY = 208;
+    const bottomY = batteryY;
     const lead = 26;
 
-    const r1Start: Point = { x: loopLeftX + lead, y: topY };
-    const r1End: Point = { x: loopRightX - lead, y: topY };
-    const r2Start: Point = { x: loopRightX, y: topY + lead };
-    const r2End: Point = { x: loopRightX, y: bottomY - lead };
-    const r3Start: Point = { x: loopRightX - lead, y: bottomY };
-    const r3End: Point = { x: loopLeftX + lead, y: bottomY };
-    const r4Start: Point = { x: loopLeftX, y: bottomY - lead };
-    const r4End: Point = { x: loopLeftX, y: topY + lead };
+    const r1Start: Point = { x: leftX + lead, y: topY };
+    const r1End: Point = { x: rightX - lead, y: topY };
+    const r2Start: Point = { x: rightX, y: topY + lead };
+    const r2End: Point = { x: rightX, y: bottomY - lead };
+    const r3Start: Point = { x: rightX - lead, y: bottomY };
+    const r3End: Point = { x: batteryRightX + 6, y: bottomY };
 
-    const topLeft: Point = { x: loopLeftX, y: topY };
-    const topRight: Point = { x: loopRightX, y: topY };
-    const bottomRight: Point = { x: loopRightX, y: bottomY };
-    const bottomLeft: Point = { x: loopLeftX, y: bottomY };
+    const topLeft: Point = { x: leftX, y: topY };
+    const topRight: Point = { x: rightX, y: topY };
+    const bottomRight: Point = { x: rightX, y: bottomY };
 
     return (
       <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series circuit diagram">
-        {drawBattery(batteryX, batteryY)}
-        {/* Source leads */}
-        <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-
         {/* Top run */}
-        <line x1={positiveX} y1={topY} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={loopLeftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         {drawResistor({
           key: "series-R1",
           start: r1Start,
@@ -179,10 +167,10 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
           label: labels.R1,
           orientation: "horizontal",
         })}
-        <line x1={r1End.x} y1={topY} x2={loopRightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={r1End.x} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
         {/* Right run */}
-        <line x1={loopRightX} y1={topY} x2={loopRightX} y2={r2Start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={rightX} y1={topY} x2={rightX} y2={r2Start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         {drawResistor({
           key: "series-R2",
           start: r2Start,
@@ -191,10 +179,10 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
           orientation: "vertical",
           labelSide: "right",
         })}
-        <line x1={loopRightX} y1={r2End.y} x2={loopRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={rightX} y1={r2End.y} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-        {/* Bottom run */}
-        <line x1={loopRightX} y1={bottomY} x2={r3Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        {/* Bottom run with R3 and battery in series */}
+        <line x1={rightX} y1={bottomY} x2={r3Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         {drawResistor({
           key: "series-R3",
           start: r3Start,
@@ -203,27 +191,19 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
           orientation: "horizontal",
           labelOffset: 20,
         })}
-        <line x1={r3End.x} y1={bottomY} x2={loopLeftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        <line x1={loopLeftX} y1={bottomY} x2={negativeX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={r3End.x} y1={bottomY} x2={batteryRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        {drawBattery(batteryX, batteryY)}
+        <line x1={batteryLeftX} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-        {/* Left run */}
-        <line x1={loopLeftX} y1={bottomY} x2={loopLeftX} y2={r4Start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-        {drawResistor({
-          key: "series-R4",
-          start: r4Start,
-          end: r4End,
-          label: labels.R4,
-          orientation: "vertical",
-          labelSide: "left",
-        })}
-        <line x1={loopLeftX} y1={r4End.y} x2={loopLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        {/* Left return */}
+        <line x1={leftX} y1={bottomY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
         {drawNode(topLeft, "series-node-tl")}
         {drawNode(topRight, "series-node-tr")}
         {drawNode(bottomRight, "series-node-br")}
-        {drawNode(bottomLeft, "series-node-bl")}
+        {drawNode({ x: leftX, y: bottomY }, "series-node-bl")}
 
-        <text x={positiveX - 16} y={positiveTopY - 10} fill={LABEL_COLOR} fontSize={13} textAnchor="end">
+        <text x={batteryX} y={bottomY + 26} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
           {problem.source.label ?? "Source"}
         </text>
       </svg>
