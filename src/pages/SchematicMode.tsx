@@ -1086,6 +1086,15 @@ function BuilderViewport({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Camera control constants
+  const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
+  const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 4.5, max: 25 }), []);
+  const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 8, y: 3, z: 8 }), []);
+  const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.1, max: Math.PI * 0.45 }), []);
+  const TWO_PI = Math.PI * 2;
+  const DOM_DELTA_LINE = typeof WheelEvent !== "undefined" ? WheelEvent.DOM_DELTA_LINE : 1;
+
   const threeRef = useRef<any>(null);
   const rendererRef = useRef<any>(null);
   const sceneRef = useRef<any>(null);
@@ -1099,6 +1108,115 @@ function BuilderViewport({
   const raycasterRef = useRef<any>(null);
   const pointerRef = useRef<any>(null);
   const animationFrameRef = useRef<number>(0);
+
+  // Camera control state refs
+  const cameraStateRef = useRef<any>(null);
+  const activePointersRef = useRef<Map<number, any>>(new Map());
+  const multiTouchStateRef = useRef<any>({
+    active: false,
+    lastDistance: 0,
+    lastMidpoint: { x: 0, y: 0 }
+  });
+
+  // Camera control utility functions
+  const normalizeAzimuth = useCallback(() => {
+    const cameraState = cameraStateRef.current;
+    if (!cameraState) return;
+    cameraState.spherical.theta = ((cameraState.spherical.theta + Math.PI) % TWO_PI) - Math.PI;
+  }, []);
+
+  const updateCamera = useCallback((force = false, three?: any, camera?: any) => {
+    const threeInstance = three || threeRef.current;
+    const cameraInstance = camera || cameraRef.current;
+    const cameraState = cameraStateRef.current;
+    
+    if (!threeInstance || !cameraInstance || !cameraState) return;
+    if (!force && !cameraState.needsUpdate) return;
+
+    // Apply radius limits
+    cameraState.spherical.radius = Math.max(CAMERA_RADIUS_LIMITS.min, 
+      Math.min(CAMERA_RADIUS_LIMITS.max, cameraState.spherical.radius));
+    
+    // Apply phi (vertical angle) limits  
+    cameraState.spherical.phi = Math.max(CAMERA_PHI_LIMITS.min,
+      Math.min(CAMERA_PHI_LIMITS.max, cameraState.spherical.phi));
+
+    // Apply target limits
+    cameraState.target.x = Math.max(-CAMERA_PAN_LIMITS.x, 
+      Math.min(CAMERA_PAN_LIMITS.x, cameraState.target.x));
+    cameraState.target.y = Math.max(CAMERA_DEFAULT_TARGET.y - CAMERA_PAN_LIMITS.y,
+      Math.min(CAMERA_DEFAULT_TARGET.y + CAMERA_PAN_LIMITS.y, cameraState.target.y)); 
+    cameraState.target.z = Math.max(-CAMERA_PAN_LIMITS.z,
+      Math.min(CAMERA_PAN_LIMITS.z, cameraState.target.z));
+
+    // Update camera position from spherical coordinates
+    const offset = new threeInstance.Vector3().setFromSpherical(cameraState.spherical);
+    cameraInstance.position.copy(new threeInstance.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z)).add(offset);
+    cameraInstance.lookAt(new threeInstance.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    cameraInstance.updateMatrix();
+    cameraInstance.updateMatrixWorld(true);
+    cameraState.needsUpdate = false;
+  }, [CAMERA_RADIUS_LIMITS, CAMERA_PHI_LIMITS, CAMERA_PAN_LIMITS, CAMERA_DEFAULT_TARGET]);
+
+  const applyPan = useCallback((deltaX: number, deltaY: number, three?: any, camera?: any, renderer?: any) => {
+    const threeInstance = three || threeRef.current;
+    const cameraInstance = camera || cameraRef.current;
+    const rendererInstance = renderer || rendererRef.current;
+    const cameraState = cameraStateRef.current;
+    
+    if (!threeInstance || !cameraInstance || !rendererInstance || !cameraState) return;
+
+    const element = rendererInstance.domElement;
+    if (!element || element.clientHeight === 0) return;
+
+    cameraInstance.updateMatrix();
+    const offset = new threeInstance.Vector3().copy(cameraInstance.position).sub(new threeInstance.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    let targetDistance = offset.length();
+    targetDistance *= Math.tan((cameraInstance.fov / 2) * (Math.PI / 180));
+
+    if (!Number.isFinite(targetDistance) || targetDistance <= 0) {
+      targetDistance = 0.01;
+    }
+
+    const moveX = (2 * deltaX * targetDistance) / element.clientHeight;
+    const moveY = (2 * deltaY * targetDistance) / element.clientHeight;
+
+    const panOffset = new threeInstance.Vector3();
+    const panVector = new threeInstance.Vector3();
+
+    panVector.setFromMatrixColumn(cameraInstance.matrix, 0);
+    panVector.multiplyScalar(-moveX * cameraState.panSpeed);
+    panOffset.add(panVector);
+
+    panVector.setFromMatrixColumn(cameraInstance.matrix, 1);
+    panVector.multiplyScalar(moveY * cameraState.panSpeed);
+    panOffset.add(panVector);
+
+    cameraState.target.x += panOffset.x;
+    cameraState.target.y += panOffset.y;
+    cameraState.target.z += panOffset.z;
+    cameraState.needsUpdate = true;
+  }, []);
+
+  const resetCameraControl = useCallback(() => {
+    const three = threeRef.current;
+    const cameraState = cameraStateRef.current;
+    
+    if (!three || !cameraState) return;
+
+    cameraState.target = { ...CAMERA_DEFAULT_TARGET };
+    const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x, 
+                                   CAMERA_DEFAULT_POSITION.y - CAMERA_DEFAULT_TARGET.y,
+                                   CAMERA_DEFAULT_POSITION.z - CAMERA_DEFAULT_TARGET.z);
+    cameraState.spherical.setFromVector3(offset);
+    normalizeAzimuth();
+    cameraState.needsUpdate = true;
+    activePointersRef.current.clear();
+    multiTouchStateRef.current.active = false;
+    multiTouchStateRef.current.lastDistance = 0;
+    multiTouchStateRef.current.lastMidpoint = { x: 0, y: 0 };
+    updateCamera(true);
+  }, [CAMERA_DEFAULT_POSITION, CAMERA_DEFAULT_TARGET, normalizeAzimuth, updateCamera]);
 
   const rebuildSceneContent = useCallback(() => {
     const three = threeRef.current;
@@ -1308,6 +1426,220 @@ function BuilderViewport({
         raycasterRef.current = new three.Raycaster();
         pointerRef.current = new three.Vector2();
 
+        // Initialize camera state
+        cameraStateRef.current = {
+          target: { ...CAMERA_DEFAULT_TARGET },
+          spherical: new three.Spherical(),
+          needsUpdate: false,
+          rotateSpeed: 0.0055,
+          rotateVerticalSpeed: 0.0045, 
+          panSpeed: 0.9,
+          zoomSpeed: 0.75,
+          wheelZoomSpeed: 0.003
+        };
+
+        const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
+                                       CAMERA_DEFAULT_POSITION.y - CAMERA_DEFAULT_TARGET.y, 
+                                       CAMERA_DEFAULT_POSITION.z - CAMERA_DEFAULT_TARGET.z);
+        cameraStateRef.current.spherical.setFromVector3(offset);
+        normalizeAzimuth();
+        cameraStateRef.current.needsUpdate = true;
+        
+        // Set touch-action: none for proper touch handling
+        renderer.domElement.style.touchAction = "none";
+        renderer.domElement.style.cursor = "grab";
+
+        // Camera control helper functions
+        const getPrimaryPointers = () => {
+          return Array.from(activePointersRef.current.values())
+            .sort((a, b) => a.id - b.id)
+            .slice(0, 2);
+        };
+
+        // Camera control pointer event handlers
+        const handleCameraPointerDown = (event: PointerEvent) => {
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          const pointer = {
+            id: event.pointerId,
+            current: { x: event.clientX, y: event.clientY },
+            last: { x: event.clientX, y: event.clientY }
+          };
+
+          activePointersRef.current.set(event.pointerId, pointer);
+          
+          try {
+            renderer.domElement.setPointerCapture(event.pointerId);
+          } catch (error) {
+            // Some platforms do not support pointer capture
+          }
+
+          if (event.pointerType !== "touch") {
+            renderer.domElement.style.cursor = "grabbing";
+          }
+
+          if (activePointersRef.current.size >= 2) {
+            const [first, second] = getPrimaryPointers();
+            multiTouchStateRef.current.active = true;
+            multiTouchStateRef.current.lastDistance = Math.sqrt(
+              Math.pow(first.current.x - second.current.x, 2) + 
+              Math.pow(first.current.y - second.current.y, 2)
+            );
+            multiTouchStateRef.current.lastMidpoint = {
+              x: (first.current.x + second.current.x) * 0.5,
+              y: (first.current.y + second.current.y) * 0.5
+            };
+          } else {
+            multiTouchStateRef.current.active = false;
+            multiTouchStateRef.current.lastDistance = 0;
+          }
+        };
+
+        const handleCameraPointerMove = (event: PointerEvent) => {
+          if (!activePointersRef.current.has(event.pointerId)) {
+            return;
+          }
+          
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          const pointer = activePointersRef.current.get(event.pointerId);
+          pointer.last.x = pointer.current.x;
+          pointer.last.y = pointer.current.y;
+          pointer.current.x = event.clientX;
+          pointer.current.y = event.clientY;
+
+          const cameraState = cameraStateRef.current;
+          if (!cameraState) return;
+
+          if (activePointersRef.current.size === 1) {
+            const deltaX = pointer.current.x - pointer.last.x;
+            const deltaY = pointer.current.y - pointer.last.y;
+            const buttons = event.buttons;
+            const isTouch = event.pointerType === "touch";
+            const isPen = event.pointerType === "pen";
+            const leftButtonDown = (buttons & 1) !== 0;
+            const rightButtonDown = (buttons & 2) !== 0;
+            const middleButtonDown = (buttons & 4) !== 0;
+            const modifierPan = event.shiftKey || event.altKey || event.metaKey;
+            const panGesture = (!isTouch && !isPen && (rightButtonDown || middleButtonDown)) || modifierPan;
+            const rotateGesture = !panGesture && (isTouch || isPen || leftButtonDown);
+
+            if (panGesture) {
+              if (deltaX !== 0 || deltaY !== 0) {
+                applyPan(deltaX, deltaY, three, camera, renderer);
+              }
+            } else if (rotateGesture) {
+              if (deltaX !== 0) {
+                cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
+                normalizeAzimuth();
+                cameraState.needsUpdate = true;
+              }
+              if (deltaY !== 0) {
+                const verticalSpeed = cameraState.rotateVerticalSpeed ?? cameraState.rotateSpeed;
+                cameraState.spherical.phi -= deltaY * verticalSpeed;
+                cameraState.spherical.phi = Math.max(CAMERA_PHI_LIMITS.min,
+                  Math.min(CAMERA_PHI_LIMITS.max, cameraState.spherical.phi));
+                cameraState.needsUpdate = true;
+              }
+            }
+          } else if (activePointersRef.current.size >= 2) {
+            const [first, second] = getPrimaryPointers();
+            const midpoint = {
+              x: (first.current.x + second.current.x) * 0.5,
+              y: (first.current.y + second.current.y) * 0.5
+            };
+
+            if (multiTouchStateRef.current.active) {
+              const deltaMidX = midpoint.x - multiTouchStateRef.current.lastMidpoint.x;
+              const deltaMidY = midpoint.y - multiTouchStateRef.current.lastMidpoint.y;
+              if (deltaMidX !== 0 || deltaMidY !== 0) {
+                applyPan(deltaMidX, deltaMidY, three, camera, renderer);
+              }
+
+              const distance = Math.sqrt(
+                Math.pow(first.current.x - second.current.x, 2) + 
+                Math.pow(first.current.y - second.current.y, 2)
+              );
+              const distanceDelta = distance - multiTouchStateRef.current.lastDistance;
+              const element = renderer.domElement;
+              if (element && Math.abs(distanceDelta) > 0.3) {
+                if (element.clientWidth !== 0) {
+                  const normalized = distanceDelta / element.clientWidth;
+                  const scale = Math.max(0.7, Math.min(1.3, 1 - normalized * cameraState.zoomSpeed));
+                  if (!Number.isNaN(scale) && Number.isFinite(scale)) {
+                    cameraState.spherical.radius *= scale;
+                    cameraState.needsUpdate = true;
+                  }
+                }
+                multiTouchStateRef.current.lastDistance = distance;
+              } else {
+                multiTouchStateRef.current.lastDistance = distance;
+              }
+            } else {
+              multiTouchStateRef.current.active = true;
+              multiTouchStateRef.current.lastDistance = Math.sqrt(
+                Math.pow(first.current.x - second.current.x, 2) + 
+                Math.pow(first.current.y - second.current.y, 2)
+              );
+            }
+
+            multiTouchStateRef.current.lastMidpoint = midpoint;
+          }
+        };
+
+        const handleCameraPointerUp = (event: PointerEvent) => {
+          if (!activePointersRef.current.has(event.pointerId)) {
+            return;
+          }
+          
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          try {
+            renderer.domElement.releasePointerCapture(event.pointerId);
+          } catch (error) {
+            // Ignore release errors
+          }
+          
+          activePointersRef.current.delete(event.pointerId);
+
+          if (activePointersRef.current.size === 0) {
+            renderer.domElement.style.cursor = "grab";
+          }
+
+          if (activePointersRef.current.size < 2) {
+            multiTouchStateRef.current.active = false;
+            multiTouchStateRef.current.lastDistance = 0;
+            multiTouchStateRef.current.lastMidpoint = { x: 0, y: 0 };
+          }
+        };
+
+        const handleWheel = (event: WheelEvent) => {
+          const cameraState = cameraStateRef.current;
+          if (!cameraState) return;
+
+          event.preventDefault();
+          const isPinchGesture = event.ctrlKey || event.metaKey || (event as any).deltaZ !== 0;
+          const isLineDelta = event.deltaMode === DOM_DELTA_LINE;
+
+          if (isPinchGesture || isLineDelta) {
+            const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 : cameraState.wheelZoomSpeed;
+            cameraState.spherical.radius += event.deltaY * zoomFactor;
+            cameraState.needsUpdate = true;
+            return;
+          }
+
+          const panScale = isLineDelta ? 40 : 1;
+          if (event.deltaX !== 0 || event.deltaY !== 0) {
+            applyPan(event.deltaX * panScale, event.deltaY * panScale, three, camera, renderer);
+          }
+        };
+
         const handleResize = () => {
           if (!container) {
             return;
@@ -1355,43 +1687,78 @@ function BuilderViewport({
         };
 
         const handlePointerMove = (event: PointerEvent) => {
-          updateRaycasterFromEvent(event);
-          const boardHit = intersectBoard();
-          if (boardHit) {
-            onBoardPointMove({ x: boardHit.point.x, z: boardHit.point.z });
-          } else {
-            onBoardPointMove(null);
+          // First handle camera controls
+          handleCameraPointerMove(event);
+          
+          // Only handle board/component interaction if not actively doing camera controls
+          if (activePointersRef.current.size === 0) {
+            updateRaycasterFromEvent(event);
+            const boardHit = intersectBoard();
+            if (boardHit) {
+              onBoardPointMove({ x: boardHit.point.x, z: boardHit.point.z });
+            } else {
+              onBoardPointMove(null);
+            }
           }
         };
 
         const handlePointerDown = (event: PointerEvent) => {
-          if (event.button !== 0) {
-            return;
+          // Always handle camera controls first
+          handleCameraPointerDown(event);
+          
+          // Only handle component selection for left-clicks and if no camera interaction
+          if (event.button === 0 && activePointersRef.current.size <= 1) {
+            const isTouch = event.pointerType === "touch";
+            const isPen = event.pointerType === "pen";
+            const modifierPan = event.shiftKey || event.altKey || event.metaKey;
+            const rightButtonDown = (event.buttons & 2) !== 0;
+            const middleButtonDown = (event.buttons & 4) !== 0;
+            const panGesture = (!isTouch && !isPen && (rightButtonDown || middleButtonDown)) || modifierPan;
+            
+            // Only do component interaction if this is not a camera gesture
+            if (!panGesture) {
+              updateRaycasterFromEvent(event);
+              const elementId = pickComponent();
+              if (elementId) {
+                onElementClick(elementId, event);
+                return;
+              }
+              const boardHit = intersectBoard();
+              if (boardHit) {
+                onBoardPointClick({ x: boardHit.point.x, z: boardHit.point.z }, event);
+              }
+            }
           }
-          updateRaycasterFromEvent(event);
-          const elementId = pickComponent();
-          if (elementId) {
-            onElementClick(elementId, event);
-            return;
-          }
-          const boardHit = intersectBoard();
-          if (boardHit) {
-            onBoardPointClick({ x: boardHit.point.x, z: boardHit.point.z }, event);
-          }
+        };
+
+        const handlePointerUp = (event: PointerEvent) => {
+          handleCameraPointerUp(event);
         };
 
         const handlePointerLeave = () => {
+          // Clear all active pointers for camera controls
+          activePointersRef.current.clear();
+          multiTouchStateRef.current.active = false;
+          renderer.domElement.style.cursor = "grab";
           onBoardPointMove(null);
         };
 
-        renderer.domElement.addEventListener("pointermove", handlePointerMove);
-        renderer.domElement.addEventListener("pointerdown", handlePointerDown);
-        renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
+        // Register all pointer events including camera controls
+        renderer.domElement.addEventListener("pointermove", handlePointerMove, { passive: false });
+        renderer.domElement.addEventListener("pointerdown", handlePointerDown, { passive: false });
+        renderer.domElement.addEventListener("pointerup", handlePointerUp, { passive: false });
+        renderer.domElement.addEventListener("pointercancel", handlePointerUp, { passive: false });
+        renderer.domElement.addEventListener("pointerleave", handlePointerLeave, { passive: false });
+        renderer.domElement.addEventListener("wheel", handleWheel, { passive: false });
+        renderer.domElement.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+        });
 
         rebuildSceneContent();
 
         const animate = () => {
           animationFrameRef.current = window.requestAnimationFrame(animate);
+          updateCamera(false, three, camera);
           renderer.render(scene, camera);
         };
 
@@ -1404,7 +1771,11 @@ function BuilderViewport({
           window.removeEventListener("resize", handleResize);
           renderer.domElement.removeEventListener("pointermove", handlePointerMove);
           renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
+          renderer.domElement.removeEventListener("pointerup", handlePointerUp);
+          renderer.domElement.removeEventListener("pointercancel", handlePointerUp);
           renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
+          renderer.domElement.removeEventListener("wheel", handleWheel);
+          renderer.domElement.removeEventListener("contextmenu", () => {});
           if (container && renderer.domElement.parentNode === container) {
             container.removeChild(renderer.domElement);
           }
@@ -1458,6 +1829,24 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Camera control constants
+  const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
+  const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 4.5, max: 25 }), []);
+  const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 8, y: 3, z: 8 }), []);
+  const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.1, max: Math.PI * 0.45 }), []);
+  const TWO_PI = Math.PI * 2;
+  const DOM_DELTA_LINE = typeof WheelEvent !== "undefined" ? WheelEvent.DOM_DELTA_LINE : 1;
+
+  // Camera control state refs
+  const cameraStateRef = useRef<any>(null);
+  const activePointersRef = useRef<Map<number, any>>(new Map());
+  const multiTouchStateRef = useRef<any>({
+    active: false,
+    lastDistance: 0,
+    lastMidpoint: { x: 0, y: 0 }
+  });
+
   const problemRef = useRef<PracticeProblem>(problem);
   problemRef.current = problem;
 
@@ -1465,6 +1854,81 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
   standardRef.current = symbolStandard;
 
   const applyProblemRef = useRef<((nextProblem: PracticeProblem, activeStandard: SymbolStandard) => void) | null>(null);
+
+  // Camera control utility functions
+  const normalizeAzimuth = useCallback(() => {
+    const cameraState = cameraStateRef.current;
+    if (!cameraState) return;
+    cameraState.spherical.theta = ((cameraState.spherical.theta + Math.PI) % TWO_PI) - Math.PI;
+  }, []);
+
+  const updateCamera = useCallback((force = false, three?: any, camera?: any) => {
+    const cameraState = cameraStateRef.current;
+    
+    if (!three || !camera || !cameraState) return;
+    if (!force && !cameraState.needsUpdate) return;
+
+    // Apply radius limits
+    cameraState.spherical.radius = Math.max(CAMERA_RADIUS_LIMITS.min, 
+      Math.min(CAMERA_RADIUS_LIMITS.max, cameraState.spherical.radius));
+    
+    // Apply phi (vertical angle) limits  
+    cameraState.spherical.phi = Math.max(CAMERA_PHI_LIMITS.min,
+      Math.min(CAMERA_PHI_LIMITS.max, cameraState.spherical.phi));
+
+    // Apply target limits
+    cameraState.target.x = Math.max(-CAMERA_PAN_LIMITS.x, 
+      Math.min(CAMERA_PAN_LIMITS.x, cameraState.target.x));
+    cameraState.target.y = Math.max(CAMERA_DEFAULT_TARGET.y - CAMERA_PAN_LIMITS.y,
+      Math.min(CAMERA_DEFAULT_TARGET.y + CAMERA_PAN_LIMITS.y, cameraState.target.y)); 
+    cameraState.target.z = Math.max(-CAMERA_PAN_LIMITS.z,
+      Math.min(CAMERA_PAN_LIMITS.z, cameraState.target.z));
+
+    // Update camera position from spherical coordinates
+    const offset = new three.Vector3().setFromSpherical(cameraState.spherical);
+    camera.position.copy(new three.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z)).add(offset);
+    camera.lookAt(new three.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    camera.updateMatrix();
+    camera.updateMatrixWorld(true);
+    cameraState.needsUpdate = false;
+  }, [CAMERA_RADIUS_LIMITS, CAMERA_PHI_LIMITS, CAMERA_PAN_LIMITS, CAMERA_DEFAULT_TARGET]);
+
+  const applyPan = useCallback((deltaX: number, deltaY: number, three?: any, camera?: any, renderer?: any) => {
+    const cameraState = cameraStateRef.current;
+    
+    if (!three || !camera || !renderer || !cameraState) return;
+
+    const element = renderer.domElement;
+    if (!element || element.clientHeight === 0) return;
+
+    camera.updateMatrix();
+    const offset = new three.Vector3().copy(camera.position).sub(new three.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    let targetDistance = offset.length();
+    targetDistance *= Math.tan((camera.fov / 2) * (Math.PI / 180));
+
+    if (!Number.isFinite(targetDistance) || targetDistance <= 0) {
+      targetDistance = 0.01;
+    }
+
+    const moveX = (2 * deltaX * targetDistance) / element.clientHeight;
+    const moveY = (2 * deltaY * targetDistance) / element.clientHeight;
+
+    const panOffset = new three.Vector3();
+    const panVector = new three.Vector3();
+
+    panVector.setFromMatrixColumn(camera.matrix, 0);
+    panVector.multiplyScalar(-moveX * cameraState.panSpeed);
+    panOffset.add(panVector);
+
+    panVector.setFromMatrixColumn(camera.matrix, 1);
+    panVector.multiplyScalar(moveY * cameraState.panSpeed);
+    panOffset.add(panVector);
+
+    cameraState.target.x += panOffset.x;
+    cameraState.target.y += panOffset.y;
+    cameraState.target.z += panOffset.z;
+    cameraState.needsUpdate = true;
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1538,6 +2002,240 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         }
         scene.add(grid);
 
+        // Initialize camera state
+        cameraStateRef.current = {
+          target: { ...CAMERA_DEFAULT_TARGET },
+          spherical: new three.Spherical(),
+          needsUpdate: false,
+          rotateSpeed: 0.0055,
+          rotateVerticalSpeed: 0.0045, 
+          panSpeed: 0.9,
+          zoomSpeed: 0.75,
+          wheelZoomSpeed: 0.003
+        };
+
+        const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
+                                       CAMERA_DEFAULT_POSITION.y - CAMERA_DEFAULT_TARGET.y, 
+                                       CAMERA_DEFAULT_POSITION.z - CAMERA_DEFAULT_TARGET.z);
+        cameraStateRef.current.spherical.setFromVector3(offset);
+        normalizeAzimuth();
+        cameraStateRef.current.needsUpdate = true;
+        
+        // Set touch-action: none for proper touch handling
+        renderer.domElement.style.touchAction = "none";
+        renderer.domElement.style.cursor = "grab";
+
+        // Camera control helper functions
+        const getPrimaryPointers = () => {
+          return Array.from(activePointersRef.current.values())
+            .sort((a, b) => a.id - b.id)
+            .slice(0, 2);
+        };
+
+        // Camera control pointer event handlers
+        const handleCameraPointerDown = (event: PointerEvent) => {
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          const pointer = {
+            id: event.pointerId,
+            current: { x: event.clientX, y: event.clientY },
+            last: { x: event.clientX, y: event.clientY }
+          };
+
+          activePointersRef.current.set(event.pointerId, pointer);
+          
+          try {
+            renderer.domElement.setPointerCapture(event.pointerId);
+          } catch (error) {
+            // Some platforms do not support pointer capture
+          }
+
+          if (event.pointerType !== "touch") {
+            renderer.domElement.style.cursor = "grabbing";
+          }
+
+          if (activePointersRef.current.size >= 2) {
+            const [first, second] = getPrimaryPointers();
+            multiTouchStateRef.current.active = true;
+            multiTouchStateRef.current.lastDistance = Math.sqrt(
+              Math.pow(first.current.x - second.current.x, 2) + 
+              Math.pow(first.current.y - second.current.y, 2)
+            );
+            multiTouchStateRef.current.lastMidpoint = {
+              x: (first.current.x + second.current.x) * 0.5,
+              y: (first.current.y + second.current.y) * 0.5
+            };
+          } else {
+            multiTouchStateRef.current.active = false;
+            multiTouchStateRef.current.lastDistance = 0;
+          }
+        };
+
+        const handleCameraPointerMove = (event: PointerEvent) => {
+          if (!activePointersRef.current.has(event.pointerId)) {
+            return;
+          }
+          
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          const pointer = activePointersRef.current.get(event.pointerId);
+          pointer.last.x = pointer.current.x;
+          pointer.last.y = pointer.current.y;
+          pointer.current.x = event.clientX;
+          pointer.current.y = event.clientY;
+
+          const cameraState = cameraStateRef.current;
+          if (!cameraState) return;
+
+          if (activePointersRef.current.size === 1) {
+            const deltaX = pointer.current.x - pointer.last.x;
+            const deltaY = pointer.current.y - pointer.last.y;
+            const buttons = event.buttons;
+            const isTouch = event.pointerType === "touch";
+            const isPen = event.pointerType === "pen";
+            const leftButtonDown = (buttons & 1) !== 0;
+            const rightButtonDown = (buttons & 2) !== 0;
+            const middleButtonDown = (buttons & 4) !== 0;
+            const modifierPan = event.shiftKey || event.altKey || event.metaKey;
+            const panGesture = (!isTouch && !isPen && (rightButtonDown || middleButtonDown)) || modifierPan;
+            const rotateGesture = !panGesture && (isTouch || isPen || leftButtonDown);
+
+            if (panGesture) {
+              if (deltaX !== 0 || deltaY !== 0) {
+                applyPan(deltaX, deltaY, three, camera, renderer);
+              }
+            } else if (rotateGesture) {
+              if (deltaX !== 0) {
+                cameraState.spherical.theta -= deltaX * cameraState.rotateSpeed;
+                normalizeAzimuth();
+                cameraState.needsUpdate = true;
+              }
+              if (deltaY !== 0) {
+                const verticalSpeed = cameraState.rotateVerticalSpeed ?? cameraState.rotateSpeed;
+                cameraState.spherical.phi -= deltaY * verticalSpeed;
+                cameraState.spherical.phi = Math.max(CAMERA_PHI_LIMITS.min,
+                  Math.min(CAMERA_PHI_LIMITS.max, cameraState.spherical.phi));
+                cameraState.needsUpdate = true;
+              }
+            }
+          } else if (activePointersRef.current.size >= 2) {
+            const [first, second] = getPrimaryPointers();
+            const midpoint = {
+              x: (first.current.x + second.current.x) * 0.5,
+              y: (first.current.y + second.current.y) * 0.5
+            };
+
+            if (multiTouchStateRef.current.active) {
+              const deltaMidX = midpoint.x - multiTouchStateRef.current.lastMidpoint.x;
+              const deltaMidY = midpoint.y - multiTouchStateRef.current.lastMidpoint.y;
+              if (deltaMidX !== 0 || deltaMidY !== 0) {
+                applyPan(deltaMidX, deltaMidY, three, camera, renderer);
+              }
+
+              const distance = Math.sqrt(
+                Math.pow(first.current.x - second.current.x, 2) + 
+                Math.pow(first.current.y - second.current.y, 2)
+              );
+              const distanceDelta = distance - multiTouchStateRef.current.lastDistance;
+              const element = renderer.domElement;
+              if (element && Math.abs(distanceDelta) > 0.3) {
+                if (element.clientWidth !== 0) {
+                  const normalized = distanceDelta / element.clientWidth;
+                  const scale = Math.max(0.7, Math.min(1.3, 1 - normalized * cameraState.zoomSpeed));
+                  if (!Number.isNaN(scale) && Number.isFinite(scale)) {
+                    cameraState.spherical.radius *= scale;
+                    cameraState.needsUpdate = true;
+                  }
+                }
+                multiTouchStateRef.current.lastDistance = distance;
+              } else {
+                multiTouchStateRef.current.lastDistance = distance;
+              }
+            } else {
+              multiTouchStateRef.current.active = true;
+              multiTouchStateRef.current.lastDistance = Math.sqrt(
+                Math.pow(first.current.x - second.current.x, 2) + 
+                Math.pow(first.current.y - second.current.y, 2)
+              );
+            }
+
+            multiTouchStateRef.current.lastMidpoint = midpoint;
+          }
+        };
+
+        const handleCameraPointerUp = (event: PointerEvent) => {
+          if (!activePointersRef.current.has(event.pointerId)) {
+            return;
+          }
+          
+          if (event.pointerType === "touch") {
+            event.preventDefault();
+          }
+
+          try {
+            renderer.domElement.releasePointerCapture(event.pointerId);
+          } catch (error) {
+            // Ignore release errors
+          }
+          
+          activePointersRef.current.delete(event.pointerId);
+
+          if (activePointersRef.current.size === 0) {
+            renderer.domElement.style.cursor = "grab";
+          }
+
+          if (activePointersRef.current.size < 2) {
+            multiTouchStateRef.current.active = false;
+            multiTouchStateRef.current.lastDistance = 0;
+            multiTouchStateRef.current.lastMidpoint = { x: 0, y: 0 };
+          }
+        };
+
+        const handleWheel = (event: WheelEvent) => {
+          const cameraState = cameraStateRef.current;
+          if (!cameraState) return;
+
+          event.preventDefault();
+          const isPinchGesture = event.ctrlKey || event.metaKey || (event as any).deltaZ !== 0;
+          const isLineDelta = event.deltaMode === DOM_DELTA_LINE;
+
+          if (isPinchGesture || isLineDelta) {
+            const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 : cameraState.wheelZoomSpeed;
+            cameraState.spherical.radius += event.deltaY * zoomFactor;
+            cameraState.needsUpdate = true;
+            return;
+          }
+
+          const panScale = isLineDelta ? 40 : 1;
+          if (event.deltaX !== 0 || event.deltaY !== 0) {
+            applyPan(event.deltaX * panScale, event.deltaY * panScale, three, camera, renderer);
+          }
+        };
+
+        const handlePointerLeave = () => {
+          // Clear all active pointers for camera controls
+          activePointersRef.current.clear();
+          multiTouchStateRef.current.active = false;
+          multiTouchStateRef.current.lastDistance = 0;
+          multiTouchStateRef.current.lastMidpoint = { x: 0, y: 0 };
+          renderer.domElement.style.cursor = "grab";
+        };
+
+        // Register all pointer events including camera controls
+        renderer.domElement.addEventListener("pointermove", handleCameraPointerMove, { passive: false });
+        renderer.domElement.addEventListener("pointerdown", handleCameraPointerDown, { passive: false });
+        renderer.domElement.addEventListener("pointerup", handleCameraPointerUp, { passive: false });
+        renderer.domElement.addEventListener("pointercancel", handleCameraPointerUp, { passive: false });
+        renderer.domElement.addEventListener("pointerleave", handlePointerLeave, { passive: false });
+        renderer.domElement.addEventListener("wheel", handleWheel, { passive: false });
+        renderer.domElement.addEventListener("contextmenu", (event) => {
+          event.preventDefault();
+        });
+
         let circuitGroup: any = null;
 
           const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
@@ -1559,6 +2257,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const animate = () => {
           animationFrame = window.requestAnimationFrame(animate);
           const elapsed = clock.getElapsedTime();
+          updateCamera(false, three, camera);
           if (circuitGroup) {
             const wobble = Math.sin(elapsed * 0.35) * 0.12;
             circuitGroup.rotation.y = wobble;
@@ -1583,6 +2282,13 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         cleanup = () => {
           window.cancelAnimationFrame(animationFrame);
           window.removeEventListener("resize", handleResize);
+          renderer.domElement.removeEventListener("pointermove", handleCameraPointerMove);
+          renderer.domElement.removeEventListener("pointerdown", handleCameraPointerDown);
+          renderer.domElement.removeEventListener("pointerup", handleCameraPointerUp);
+          renderer.domElement.removeEventListener("pointercancel", handleCameraPointerUp);
+          renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
+          renderer.domElement.removeEventListener("wheel", handleWheel);
+          renderer.domElement.removeEventListener("contextmenu", () => {});
           if (container && renderer.domElement.parentNode === container) {
             container.removeChild(renderer.domElement);
           }
@@ -1605,7 +2311,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         cleanup();
       }
     };
-    }, []);
+    }, [CAMERA_DEFAULT_POSITION, CAMERA_DEFAULT_TARGET, CAMERA_RADIUS_LIMITS, CAMERA_PAN_LIMITS, CAMERA_PHI_LIMITS, normalizeAzimuth, updateCamera, applyPan]);
 
     useEffect(() => {
       if (applyProblemRef.current) {
