@@ -62,6 +62,26 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     tags: ["control"]
   },
   {
+    id: "diode",
+    kind: "diode",
+    name: "Diode",
+    description: "Semiconductor diode with anode and cathode markings.",
+    placement: "two-point",
+    icon: "D",
+    defaultLabelPrefix: "D",
+    tags: ["semiconductor", "rectifier"]
+  },
+  {
+    id: "bjt",
+    kind: "bjt",
+    name: "BJT Transistor",
+    description: "Bipolar junction transistor with collector, base, and emitter terminals.",
+    placement: "three-point",
+    icon: "Q",
+    defaultLabelPrefix: "Q",
+    tags: ["semiconductor", "amplifier", "switch"]
+  },
+  {
     id: "wire",
     kind: "wire",
     name: "Wire Segment",

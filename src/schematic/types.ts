@@ -12,6 +12,8 @@ export type ComponentKind =
   | "inductor"
   | "lamp"
   | "switch"
+  | "diode"
+  | "bjt"
   | "ground"
   | "wire";
 
@@ -21,7 +23,8 @@ export type TwoTerminalComponentKind =
   | "capacitor"
   | "inductor"
   | "lamp"
-  | "switch";
+  | "switch"
+  | "diode";
 
 export type SingleNodeComponentKind = "ground";
 
@@ -64,7 +67,17 @@ export type GroundElement = BaseElement & {
   orientation: Orientation;
 };
 
-export type SchematicElement = TwoTerminalElement | WireElement | GroundElement;
+export type ThreeTerminalElement = BaseElement & {
+  kind: "bjt";
+  label: string;
+  collector: Vec2;
+  base: Vec2;
+  emitter: Vec2;
+  orientation: Orientation;
+  transistorType: "npn" | "pnp";
+};
+
+export type SchematicElement = TwoTerminalElement | WireElement | GroundElement | ThreeTerminalElement;
 
 export type ElementTerminal = {
   elementId: string;
