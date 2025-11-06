@@ -17,13 +17,13 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/app" element={<Builder />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/arena" element={<Arena />} />
         <Route path="/wire-demo" element={<WireDemo />} />
         <Route path="/schematic" element={<SchematicMode />} />
-        <Route path="/pricing" element={<Pricing />} />
         <Route path="/practice" element={<Practice />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/account" element={<Account />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -44,8 +44,7 @@ function AppLayout() {
   const { currentUser } = useAuth();
   const location = useLocation();
   const isLanding = location.pathname === "/";
-
-  const buildNavClass = ({ isActive }: { isActive: boolean }) => (isActive ? "app-nav-link is-active" : "app-nav-link");
+  const isWorkspace = location.pathname === "/app";
 
   const initials = currentUser?.displayName
     ? currentUser.displayName
@@ -60,9 +59,11 @@ function AppLayout() {
   const shellClass = isLanding ? "app-shell is-landing" : "app-shell";
   const contentClass = isLanding ? "app-content is-landing" : "app-content";
 
+  const buildNavClass = ({ isActive }: { isActive: boolean }) => (isActive ? "app-nav-link is-active" : "app-nav-link");
+
   return (
     <div className={shellClass}>
-      {!isLanding && (
+      {!isLanding && !isWorkspace && (
         <header className="app-header">
           <Link to="/" className="app-brand">
             Circui<span>Try</span>3D
@@ -72,16 +73,7 @@ function AppLayout() {
               Home
             </NavLink>
             <NavLink to="/app" className={buildNavClass}>
-              Builder
-            </NavLink>
-            <NavLink to="/arena" className={buildNavClass}>
-              Arena
-            </NavLink>
-            <NavLink to="/schematic" className={buildNavClass}>
-              Schematic
-            </NavLink>
-            <NavLink to="/practice" className={buildNavClass}>
-              Practice
+              Workspace
             </NavLink>
             <NavLink to="/pricing" className={buildNavClass}>
               Pricing

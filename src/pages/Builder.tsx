@@ -78,6 +78,8 @@ type ComponentAction = {
 
 type BuilderToolId = "select" | "wire" | "measure";
 
+type WorkspaceMode = "build" | "practice" | "arena" | "learn";
+
 type LegacyModeState = {
   isWireMode: boolean;
   isRotateMode: boolean;
@@ -135,7 +137,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Battery",
     action: "component",
     builderType: "battery",
-    description: "DC power source with positive and negative terminals",
+    description: "Add power source - drives current through the circuit",
   },
   {
     id: "resistor",
@@ -143,7 +145,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Resistor",
     action: "component",
     builderType: "resistor",
-    description: "Limits current flow and drops voltage",
+    description: "Add resistor - controls current flow and voltage drop",
   },
   {
     id: "capacitor",
@@ -151,7 +153,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Capacitor",
     action: "component",
     builderType: "capacitor",
-    description: "Stores electrical energy in an electric field",
+    description: "Add capacitor - stores electrical energy temporarily",
   },
   {
     id: "inductor",
@@ -159,7 +161,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Inductor",
     action: "component",
     builderType: "inductor",
-    description: "Coiled conductor that stores energy in a magnetic field",
+    description: "Add inductor - stores energy in magnetic field",
   },
   {
     id: "lamp",
@@ -167,7 +169,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Lamp",
     action: "component",
     builderType: "lamp",
-    description: "Circular lamp indicator with filament glow",
+    description: "Add lamp - visual load indicator with glow effect",
   },
   {
     id: "diode",
@@ -175,7 +177,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Diode",
     action: "component",
     builderType: "diode",
-    description: "Allows current flow in one direction only",
+    description: "Add diode - one-way current flow control",
   },
   {
     id: "bjt",
@@ -183,7 +185,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "BJT",
     action: "component",
     builderType: "bjt",
-    description: "Bipolar junction transistor for amplification and switching",
+    description: "Add transistor - amplification and switching control",
   },
   {
     id: "switch",
@@ -191,7 +193,7 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Switch",
     action: "component",
     builderType: "switch",
-    description: "Opens or closes circuit path",
+    description: "Add switch - open/close circuit path on demand",
   },
   {
     id: "ground",
@@ -199,14 +201,14 @@ const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Ground",
     action: "component",
     builderType: "ground",
-    description: "Ground reference tri-line symbol",
+    description: "Add ground reference - circuit return path",
   },
   { 
     id: "junction", 
     icon: "J", 
     label: "Junction", 
     action: "junction",
-    description: "Connection point for branching wires",
+    description: "Add junction - branch wires for parallel paths",
   },
 ];
 
@@ -1198,6 +1200,7 @@ export default function Builder() {
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
   const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
   const [schematicStandard, setSchematicStandard] = useState<SymbolStandard>(
     DEFAULT_SYMBOL_STANDARD,
   );
@@ -2166,6 +2169,73 @@ export default function Builder() {
 
   return (
     <div className="builder-shell">
+      <div className="workspace-mode-bar">
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "build" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("build");
+            setPracticePanelOpen(false);
+            setArenaPanelOpen(false);
+            setSchematicPanelOpen(false);
+          }}
+          aria-label="Build mode"
+          title="Component builder and circuit designer"
+        >
+          <span className="mode-icon" aria-hidden="true">🔧</span>
+          <span className="mode-label">Build</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "practice" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("practice");
+            setPracticePanelOpen(true);
+            setArenaPanelOpen(false);
+            setSchematicPanelOpen(false);
+          }}
+          aria-label="Practice mode"
+          title="Guided worksheets and W.I.R.E. problems"
+        >
+          <span className="mode-icon" aria-hidden="true">📝</span>
+          <span className="mode-label">Practice</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "arena" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("arena");
+            setArenaPanelOpen(true);
+            setPracticePanelOpen(false);
+            setSchematicPanelOpen(false);
+            if (arenaExportStatus !== "ready") {
+              handleArenaSync({ openWindow: false });
+            }
+          }}
+          aria-label="Arena mode"
+          title="Component testing and advanced simulation"
+        >
+          <span className="mode-icon" aria-hidden="true">⚡</span>
+          <span className="mode-label">Arena</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "learn" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("learn");
+            openHelpCenter("tutorial");
+          }}
+          aria-label="Learn mode"
+          title="Tutorials, guides, and help resources"
+        >
+          <span className="mode-icon" aria-hidden="true">📚</span>
+          <span className="mode-label">Learn</span>
+        </button>
+      </div>
       <div className="builder-logo-header">
         <div className="builder-logo-text" aria-label="CircuiTry3D">
           <span className="builder-logo-circui">Circui</span>
@@ -2547,20 +2617,6 @@ export default function Builder() {
                     borderRadius: "10px",
                     border: "1px solid rgba(136, 204, 255, 0.22)",
                     background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {arenaStatusMessage}
-                </div>
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(200, 236, 255, 0.8)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(18, 36, 66, 0.48)",
                   }}
                 >
                   {practiceWorksheetMessage}
