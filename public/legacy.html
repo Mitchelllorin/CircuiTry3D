@@ -3064,7 +3064,7 @@
         <!-- W.I.R.E. Method Panel -->
         <div class="analysis-content" id="content-wire">
             <div class="wire-analysis">
-                <div class="wire-title">?? W.I.R.E. METHOD</div>
+                <div class="wire-title">⚡ W.I.R.E. METHOD</div>
                 <div class="wire-grid">
                     <div class="wire-item wire-w">
                         <div class="wire-letter">W</div>
@@ -3079,7 +3079,7 @@
                     <div class="wire-item wire-r">
                         <div class="wire-letter">R</div>
                         <div class="wire-label">Resistance (Ohms)</div>
-                        <div class="wire-value" id="resistance">??</div>
+                        <div class="wire-value" id="resistance">--</div>
                     </div>
                     <div class="wire-item wire-e">
                         <div class="wire-letter">E</div>
@@ -3088,12 +3088,12 @@
                     </div>
                 </div>
                 <div style="font-size: 12px; color: #888; margin-top: 12px; text-align: center;">
-                    <strong>?? Circuit Status:</strong><br>
+                    <strong>⚡ Circuit Status:</strong><br>
                     Components: <span id="count" style="color: #00ff88;">0</span> | 
                     Wires: <span id="wire-count" style="color: #ffaa88;">0</span> | 
                     Junctions: <span id="junction-count" style="color: #aa88ff;">0</span>
                     <br>
-                    <strong>?? Topology:</strong> <span id="topology-type" style="color: #88ccff;">Unknown</span>
+                    <strong>⚡ Topology:</strong> <span id="topology-type" style="color: #88ccff;">Unknown</span>
                 </div>
             </div>
         </div>
@@ -3110,7 +3110,7 @@
                     </div>
                 </div>
                 <div class="triangle-formula" id="eir-formula">
-                    E = I ? R | I = E ? R | R = E ? I
+                    E = I × R | I = E ÷ R | R = E ÷ I
                 </div>
                 <div style="color: #ccc; font-size: 12px; margin-top: 12px; text-align: center;">
                     Click E, I, or R to see the formula<br>
@@ -3121,11 +3121,11 @@
             <div class="circuit-diagram">
                 <div class="diagram-title">Circuit Schematic</div>
                 <div class="circuit-schematic" id="circuit-schematic">
-                    <div class="schematic-line">     +?????[R?]?????+</div>
-                    <div class="schematic-line">     ?              ?</div>
-                    <div class="schematic-line">   [BAT]          [R?]</div>
-                    <div class="schematic-line">     ?              ?</div>
-                    <div class="schematic-line">     +??????????????+</div>
+                    <div class="schematic-line">     +─────[R₁]─────+</div>
+                    <div class="schematic-line">     │              │</div>
+                    <div class="schematic-line">   [BAT]          [R₂]</div>
+                    <div class="schematic-line">     │              │</div>
+                    <div class="schematic-line">     +──────────────+</div>
                 </div>
             </div>
         </div>
@@ -3142,7 +3142,7 @@
                     </div>
                 </div>
                 <div class="triangle-formula" id="power-formula" style="color: #4488ff;">
-                    W = I ? E | I = W ? E | E = W ? I
+                    W = I × E | I = W ÷ E | E = W ÷ I
                 </div>
                 <div style="color: #ccc; font-size: 12px; margin-top: 12px; text-align: center;">
                     Click W, I, or E to see the power formula<br>
@@ -3151,11 +3151,11 @@
                 
                 <div style="background: rgba(68,136,255,0.1); padding: 12px; border-radius: 8px; margin-top: 12px; border: 1px solid rgba(68,136,255,0.3);">
                     <div style="color: #4488ff; font-weight: bold; text-align: center; margin-bottom: 8px;">
-                        ?? Additional Power Formulas
+                        ⚡ Additional Power Formulas
                     </div>
                     <div style="color: #ccc; font-size: 11px; text-align: center; line-height: 1.4;">
-                        W = I? ? R (Power = Current? ? Resistance)<br>
-                        W = E? ? R (Power = Voltage? ? Resistance)
+                        W = I² × R (Power = Current² × Resistance)<br>
+                        W = E² ÷ R (Power = Voltage² ÷ Resistance)
                     </div>
                 </div>
             </div>
@@ -3174,15 +3174,15 @@
                     <div class="calculation-step step-resistance">
                         <div>
                             <div class="step-label">Total Resistance</div>
-                            <div class="step-formula" id="resistance-formula">R_total = R? + R? + R?...</div>
+                            <div class="step-formula" id="resistance-formula">R_total = R₁ + R₂ + R₃...</div>
                         </div>
-                        <div class="step-value" id="calc-resistance">??</div>
+                        <div class="step-value" id="calc-resistance">--</div>
                     </div>
                     
                     <div class="calculation-step step-current">
                         <div>
                             <div class="step-label">Total Current</div>
-                            <div class="step-formula" id="current-formula">I = V ? R_total</div>
+                            <div class="step-formula" id="current-formula">I = V ÷ R_total</div>
                         </div>
                         <div class="step-value" id="calc-current">0A</div>
                     </div>
@@ -3198,7 +3198,7 @@
                     <div class="calculation-step step-power">
                         <div>
                             <div class="step-label">Total Power</div>
-                            <div class="step-formula" id="power-formula">P = V ? I</div>
+                            <div class="step-formula" id="power-formula">P = V × I</div>
                         </div>
                         <div class="step-value" id="calc-power">0W</div>
                     </div>
@@ -3209,7 +3209,7 @@
         <!-- Problem Solving Panel -->
         <div class="analysis-content" id="content-problem" style="display: none;">
             <div class="problem-mode">
-                <div class="problem-title">?? Solve for the Unknown</div>
+                <div class="problem-title">⚡ Solve for the Unknown</div>
                 <div style="color: #ccc; margin-bottom: 16px; text-align: center;">
                     Enter your calculated values below:
                 </div>
@@ -3228,8 +3228,8 @@
                 
                 <div class="unknown-input">
                     <label style="color: #44ff88; width: 120px;">Total Resistance:</label>
-                    <input type="number" id="student-resistance" step="0.1" placeholder="?">
-                    <span style="color: #44ff88;">?</span>
+                    <input type="number" id="student-resistance" step="0.1" placeholder="Ω">
+                    <span style="color: #44ff88;">Ω</span>
                 </div>
                 
                 <div class="unknown-input">
@@ -3240,7 +3240,7 @@
                 
                 <div style="text-align: center; margin-top: 16px;">
                     <button class="check-answer-btn" onclick="checkStudentAnswers()">
-                        ? Check My Answers
+                        ✓ Check My Answers
                     </button>
                 </div>
                 
@@ -3252,7 +3252,7 @@
         <div class="analysis-content" id="content-practice" style="display: none;">
             <div class="practice-problem-card" id="practice-problem-card" style="display: none;">
                 <div class="problem-question" id="practice-question">
-                    ?? Problem: Find the total resistance
+                    ⚡ Problem: Find the total resistance
                 </div>
                 <div class="problem-description" id="practice-description">
                     Calculate the total resistance of this series circuit
@@ -3994,11 +3994,11 @@ body.android-optimized.menu-visible .status {
         
         let practiceQuestions = {
             series_basic: {
-                question: "Series loop: solve for total current (I_T).",
+                question: "Series circuit: solve for total current (I_T).",
                 expectedAnswer: "current",
                 description: [
                     "<strong>W</strong>: Note the 24 V supply (power is unknown until the end).",
-                    "<strong>I</strong>: Target the single loop current I_T.",
+                    "<strong>I</strong>: Target the circuit current I_T.",
                     "<strong>R</strong>: Known resistors R1=120 ohm, R2=180 ohm, R3=220 ohm (pure series).",
                     "<strong>E</strong>: Use E = 24 V to select I = E / R_T from the Ohm's Law family.",
                     "Check Kirchhoff's Voltage Law by confirming the drops sum to 24 V."
@@ -4825,12 +4825,12 @@ body.android-optimized.menu-visible .status {
                         };
                     case 'resistor':
                         return {
-                            text: `${this.properties.resistance}?`,
+                            text: `${this.properties.resistance}Ω`,
                             color: WIRE_COLORS.R // Resistance - Green
                         };
                     case 'led':
                         return {
-                            text: `${this.properties.resistance}?`,
+                            text: `${this.properties.resistance}Ω`,
                             color: WIRE_COLORS.R // Resistance - Green
                         };
                     case 'switch':
@@ -5144,7 +5144,7 @@ body.android-optimized.menu-visible .status {
                     // Create - indicator for negative terminal
                     const negativeDiv = document.createElement('div');
                     negativeDiv.className = 'polarity-indicator polarity-negative';
-                    negativeDiv.textContent = '?';
+                    negativeDiv.textContent = '−';
                     negativeDiv.style.display = showPolarityIndicators ? 'block' : 'none';
                     document.body.appendChild(negativeDiv);
                     this.polarityDivs.push({ div: negativeDiv, side: 'negative' });
@@ -5471,7 +5471,7 @@ body.android-optimized.menu-visible .status {
         // Center circuit for optimal viewing
         function centerCircuit() {
             if (components.length === 0 && junctions.length === 0) {
-                setStatus('?? No components to center');
+                setStatus('⚡ No components to center');
                 return;
             }
             
@@ -5516,7 +5516,7 @@ body.android-optimized.menu-visible .status {
             cameraTarget.set(0, 0, 0);
             updateCameraPosition();
             
-            setStatus('?? Circuit centered and aligned to grid for professional schematic appearance');
+            setStatus('⚡ Circuit centered and aligned to grid for professional schematic appearance');
         }
 
         // Initialize the scene
@@ -5882,7 +5882,7 @@ body.android-optimized.menu-visible .status {
 
                         if (clearedMode) {
                             notifyParentToolState('select');
-                            setStatus('?? Select mode active - tap components to edit');
+                            setStatus('⚡ Select mode active - tap components to edit');
                         }
                         break;
                 }
@@ -6296,7 +6296,7 @@ body.android-optimized.menu-visible .status {
                 }
             });
             
-            setStatus(`?? Routing mode: ${nextMode.toUpperCase()} - Wires updated with new routing style`);
+            setStatus(`⚡ Routing mode: ${nextMode.toUpperCase()} - Wires updated with new routing style`);
             notifyParentModeState({ wireRoutingMode: nextMode });
         }
 
@@ -6721,7 +6721,7 @@ body.android-optimized.menu-visible .status {
             const otherComponents = components.filter(c => c.type !== 'battery');
             
             if (batteries.length === 0) {
-                setStatus('?? Add a battery first for schematic arrangement');
+                setStatus('⚡ Add a battery first for schematic arrangement');
                 return;
             }
             
@@ -6827,7 +6827,7 @@ body.android-optimized.menu-visible .status {
             // Center the view on the circuit
             fitToScreen();
             analyzeCircuit();
-            setStatus('?? Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
+            setStatus('⚡ Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
         }
         
         // Linear/Tree layout with battery at top
@@ -6841,7 +6841,7 @@ body.android-optimized.menu-visible .status {
             const otherComponents = components.filter(c => c.type !== 'battery');
             
             if (batteries.length === 0) {
-                setStatus('?? Add a battery first for linear arrangement');
+                setStatus('⚡ Add a battery first for linear arrangement');
                 return;
             }
             
@@ -6863,7 +6863,7 @@ body.android-optimized.menu-visible .status {
             battery.mesh.position.copy(battery.position);
             
             if (otherComponents.length === 0) {
-                setStatus('?? Add components to arrange');
+                setStatus('⚡ Add components to arrange');
                 return;
             }
             
@@ -6910,7 +6910,7 @@ body.android-optimized.menu-visible .status {
             // Center the view on the circuit
             fitToScreen();
             analyzeCircuit();
-            setStatus('?? Circuit arranged in linear tree layout with battery at top!');
+            setStatus('⚡ Circuit arranged in linear tree layout with battery at top!');
         }
         
         // Arrange circuit based on current layout mode
@@ -6939,7 +6939,7 @@ body.android-optimized.menu-visible .status {
                 });
                 
                 fitToScreen();
-                setStatus('?? Components arranged in free-form grid - wire as you like!');
+                setStatus('⚡ Components arranged in free-form grid - wire as you like!');
             }
         }
 
@@ -7056,7 +7056,7 @@ body.android-optimized.menu-visible .status {
                 const hitSphere = junctionHits[0].object;
                 if (hitSphere.userData?.junction) {
                     // Junctions don't have editable properties currently
-                    setStatus('? Junctions have no editable properties');
+                    setStatus('⚠ Junctions have no editable properties');
                     return;
                 }
             }
@@ -7174,7 +7174,7 @@ body.android-optimized.menu-visible .status {
             isLongPressing = false;
 
             const labelText = getComponentFriendlyName(component).toUpperCase();
-            setStatus(`?? ${labelText} actions - choose edit, wire edit, or rotate`);
+            setStatus(`⚡ ${labelText} actions - choose edit, wire edit, or rotate`);
 
             menu.dataset.visible = 'true';
             componentContextMenuCloseSuppressUntil = Date.now() + 350;
@@ -7235,7 +7235,7 @@ body.android-optimized.menu-visible .status {
                     if (connectionPoint?.data) {
                         handleConnectionPointClick(connectionPoint.data);
                     } else {
-                        setStatus('?? WIRE MODE! Touch terminals to connect components');
+                        setStatus('⚡ WIRE MODE! Touch terminals to connect components');
                     }
                     break;
                 default:
@@ -7255,7 +7255,7 @@ body.android-optimized.menu-visible .status {
             currentEditWire = wire;
             popup.style.display = 'block';
             
-            setStatus('?? Wire selected - Choose action');
+            setStatus('⚡ Wire selected - Choose action');
         }
         
         function createWireEditPopup() {
@@ -7295,7 +7295,7 @@ body.android-optimized.menu-visible .status {
                     wires.splice(index, 1);
                 }
                 analyzeCircuit();
-                setStatus('??? Wire deleted');
+                setStatus('✓ Wire deleted');
             }
             closeWireEditPopup();
         }
@@ -7306,7 +7306,7 @@ body.android-optimized.menu-visible .status {
                 // Cycle to next routing mode and update wire
                 cycleRoutingMode();
                 currentEditWire.updatePath();
-                setStatus('?? Wire routing updated');
+                setStatus('⚡ Wire routing updated');
             }
             closeWireEditPopup();
         }
@@ -7338,7 +7338,7 @@ body.android-optimized.menu-visible .status {
                 setTimeout(() => firstInput.focus(), 100);
             }
             
-            setStatus(`?? Editing ${component.type} - Long press to edit components!`);
+            setStatus(`⚡ Editing ${component.type} - Long press to edit components!`);
         }
 
         function createEditForm(component) {
@@ -7375,7 +7375,7 @@ body.android-optimized.menu-visible .status {
                 case 'switch':
                     formHTML = `
                         <div class="edit-row">
-                            <label>?? Switch State</label>
+                            <label>⚡ Switch State</label>
                             <select id="edit-switch-state">
                                 <option value="true" ${component.properties.isOn ? 'selected' : ''}>ON (Closed)</option>
                                 <option value="false" ${!component.properties.isOn ? 'selected' : ''}>OFF (Open)</option>
@@ -7448,7 +7448,7 @@ body.android-optimized.menu-visible .status {
 
         function cancelEdit() {
             hideEditPopup();
-            setStatus('? Edit cancelled');
+            setStatus('⚠ Edit cancelled');
         }
 
         function hideEditPopup() {
@@ -7614,7 +7614,7 @@ body.android-optimized.menu-visible .status {
             if (!isWireMode) {
                 const terminalInfo = getTerminalInfo(pointData);
                 const objectType = pointData.component ? pointData.component.type : 'junction';
-                setStatus(`?? ${objectType} ${terminalInfo} - Enable ?? Wire mode to connect!`);
+                setStatus(`⚡ ${objectType} ${terminalInfo} - Enable ⚡ Wire mode to connect!`);
                 return;
             }
             
@@ -7624,14 +7624,14 @@ body.android-optimized.menu-visible .status {
                 
                 const terminalInfo = getTerminalInfo(pointData);
                 const objectType = pointData.component ? pointData.component.type : 'junction';
-                setStatus(`?? FIRST: ${objectType} ${terminalInfo} - Click another terminal!`);
+                setStatus(`⚡ FIRST: ${objectType} ${terminalInfo} - Click another terminal!`);
                 
             } else {
                 const sameObject = (wireStart.component && pointData.component && wireStart.component === pointData.component) ||
                                   (wireStart.junction && pointData.junction && wireStart.junction === pointData.junction);
                 
                 if (sameObject) {
-                    setStatus('? Cannot connect terminal to itself!');
+                    setStatus('⚠ Cannot connect terminal to itself!');
                     return;
                 }
                 
@@ -7657,7 +7657,7 @@ body.android-optimized.menu-visible .status {
             );
             
             if (existingWire) {
-                setStatus('? Wire already exists between these terminals');
+                setStatus('⚠ Wire already exists between these terminals');
                 return;
             }
             
@@ -7668,13 +7668,13 @@ body.android-optimized.menu-visible .status {
                 
                 const startType = startObj.type || 'junction';
                 const endType = endObj.type || 'junction';
-                setStatus(`? Wire connected ${startType} ? ${endType}!`);
+                setStatus(`✓ Wire connected ${startType} → ${endType}!`);
                 
                 analyzeCircuit();
                 
             } catch (error) {
                 console.error('Wire creation error:', error);
-                setStatus('? Wire creation failed');
+                setStatus('✗ Wire creation failed');
             }
         }
 
@@ -7786,7 +7786,7 @@ body.android-optimized.menu-visible .status {
 
             if (!silent) {
                 const rotationDegrees = Math.round((nextRotation * 180) / Math.PI) % 360;
-                setStatus(`?? ${component.type.toUpperCase()} ROTATED 90?! Now at ${rotationDegrees}?`);
+                setStatus(`⚡ ${component.type.toUpperCase()} ROTATED 90°! Now at ${rotationDegrees}°`);
             }
         }
 
@@ -7801,7 +7801,7 @@ body.android-optimized.menu-visible .status {
                 component.properties.isOn = !component.properties.isOn;
                 component.updateProperties({ isOn: component.properties.isOn });
                 const state = component.properties.isOn ? 'ON' : 'OFF';
-                setStatus(`?? Switch ${state} - circuit updated`);
+                setStatus(`⚡  Switch ${state} - circuit updated`);
                 analyzeCircuit();
             } else if (!isWireMode && !isDragging) {
                 selectComponent(component, { startDragging: false });
@@ -7831,9 +7831,9 @@ body.android-optimized.menu-visible .status {
 
             const label = getComponentFriendlyName(component);
             if (isDragging) {
-                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+                setStatus(`⚡  Dragging ${label} - drag to position and tap to place`);
             } else {
-                setStatus(`?? ${label} selected - drag to move or long-press for actions`);
+                setStatus(`⚡  ${label} selected - drag to move or long-press for actions`);
             }
         }
 
@@ -7852,9 +7852,9 @@ body.android-optimized.menu-visible .status {
 
             const label = getComponentFriendlyName(junction);
             if (isDragging) {
-                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+                setStatus(`⚡  Dragging ${label} - drag to position and tap to place`);
             } else {
-                setStatus(`?? ${label} selected - drag to move or long-press for options`);
+                setStatus(`⚡  ${label} selected - drag to move or long-press for options`);
             }
         }
 
@@ -7880,10 +7880,10 @@ body.android-optimized.menu-visible .status {
 
             const label = getComponentFriendlyName(selectedComponent);
             if (wasRotateMode) {
-                setStatus(`?? Rotate mode paused - dragging ${label}. Tap Rotate again to resume.`);
+                setStatus(`⚡  Rotate mode paused - dragging ${label}. Tap Rotate again to resume.`);
                 notifyParentToolState('select');
             } else {
-                setStatus(`?? Dragging ${label} - drag to position and tap to place`);
+                setStatus(`⚡  Dragging ${label} - drag to position and tap to place`);
             }
         }
 
@@ -7922,7 +7922,7 @@ body.android-optimized.menu-visible .status {
                     handleRelease();
                     
                     const objType = placedComponent.type || 'junction';
-                    setStatus(`?? ${objType} placed at grid position!`);
+                    setStatus(`⚡  ${objType} placed at grid position!`);
                     
                     if (placedComponent.connections) {
                         placedComponent.connections.forEach(conn => {
@@ -8105,13 +8105,13 @@ body.android-optimized.menu-visible .status {
                     const message = `?? Component Arena export ready (${count} component${count === 1 ? '' : 's'})`;
                     setStatus(payloadStored ? message : `${message} (quick sync unavailable)`);
                 } else if (payloadStored) {
-                    setStatus('?? Component Arena opened with current build');
+                    setStatus('⚡ Component Arena opened with current build');
                 } else {
-                    setStatus('?? Unable to prepare arena export');
+                    setStatus('⚡ Unable to prepare arena export');
                 }
             } catch (error) {
                 console.error('Arena export error:', error);
-                setStatus('?? Unable to open Arena');
+                setStatus('⚡ Unable to open Arena');
             }
         }
 
@@ -8222,7 +8222,7 @@ body.android-optimized.menu-visible .status {
             if (!menuVisible) {
                 toggleMenuBar();
             }
-            setStatus('?? Sandbox ready - choose a component to begin building!');
+            setStatus('⚡ Sandbox ready - choose a component to begin building!');
         }
 
         function launchStripeComingSoon(sku) {
@@ -8253,9 +8253,9 @@ body.android-optimized.menu-visible .status {
             analysisVisible = !panel.classList.contains('collapsed');
             
             if (analysisVisible) {
-                setStatus('?? W.I.R.E. Analysis panel expanded');
+                setStatus('⚡ W.I.R.E. Analysis panel expanded');
             } else {
-                setStatus('?? W.I.R.E. Analysis panel collapsed');
+                setStatus('⚡ W.I.R.E. Analysis panel collapsed');
             }
 
             notifyParentAnalysisState();
@@ -8296,7 +8296,7 @@ body.android-optimized.menu-visible .status {
 
         function undo() {
             if (undoStack.length === 0) {
-                setStatus('? Nothing to undo');
+                setStatus('⚠ Nothing to undo');
                 return;
             }
             
@@ -8308,12 +8308,12 @@ body.android-optimized.menu-visible .status {
             restoreState(JSON.parse(previousState));
             
             updateUndoRedoButtons();
-            setStatus('? Undo completed');
+            setStatus('⚠ Undo completed');
         }
 
         function redo() {
             if (redoStack.length === 0) {
-                setStatus('? Nothing to redo');
+                setStatus('⚠ Nothing to redo');
                 return;
             }
             
@@ -8325,7 +8325,7 @@ body.android-optimized.menu-visible .status {
             restoreState(JSON.parse(redoState));
             
             updateUndoRedoButtons();
-            setStatus('? Redo completed');
+            setStatus('⚠ Redo completed');
         }
 
         function getCurrentStateString() {
@@ -8458,7 +8458,7 @@ body.android-optimized.menu-visible .status {
             link.download = `circuit_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
             link.click();
             
-            setStatus('?? Circuit saved with W.I.R.E. labels and component numbering!');
+            setStatus('⚡ Circuit saved with W.I.R.E. labels and component numbering!');
         }
 
         function loadCircuit() {
@@ -8475,10 +8475,10 @@ body.android-optimized.menu-visible .status {
                     try {
                         const state = JSON.parse(e.target.result);
                         restoreState(state);
-                        setStatus('?? Circuit loaded successfully with W.I.R.E. labels!');
+                        setStatus('⚡ Circuit loaded successfully with W.I.R.E. labels!');
                     } catch (error) {
                         console.error('Load error:', error);
-                        setStatus('? Failed to load circuit file');
+                        setStatus('⚠ Failed to load circuit file');
                     }
                 };
                 reader.readAsText(file);
@@ -8491,10 +8491,10 @@ body.android-optimized.menu-visible .status {
             if (components.length > 0 || wires.length > 0 || junctions.length > 0) {
                 if (confirm('Create new circuit? This will clear your current work.')) {
                     clearAll();
-                    setStatus('?? New circuit created');
+                    setStatus('⚡ New circuit created');
                 }
             } else {
-                setStatus('?? Circuit is already empty');
+                setStatus('⚡ Circuit is already empty');
             }
         }
 
@@ -8523,7 +8523,7 @@ body.android-optimized.menu-visible .status {
             wireAnalysis.style.display = 'block';
             menuToggle.style.display = 'flex';
             
-            setStatus('??? Circuit image exported!');
+            setStatus('✓ Circuit image exported!');
         }
 
         // Selection and clipboard functions
@@ -8532,12 +8532,12 @@ body.android-optimized.menu-visible .status {
             components.forEach(comp => selectedComponents.add(comp));
             junctions.forEach(junction => selectedComponents.add(junction));
             
-            setStatus(`?? Selected ${selectedComponents.size} objects`);
+            setStatus(`⚡  Selected ${selectedComponents.size} objects`);
         }
 
         function copySelected() {
             if (selectedComponents.size === 0) {
-                setStatus('? No objects selected to copy');
+                setStatus('⚠ No objects selected to copy');
                 return;
             }
             
@@ -8564,12 +8564,12 @@ body.android-optimized.menu-visible .status {
                 }
             });
             
-            setStatus(`?? Copied ${selectedComponents.size} objects`);
+            setStatus(`⚡  Copied ${selectedComponents.size} objects`);
         }
 
         function pasteSelected() {
             if (!clipboard || (clipboard.components.length === 0 && clipboard.junctions.length === 0)) {
-                setStatus('? Nothing to paste');
+                setStatus('⚠ Nothing to paste');
                 return;
             }
             
@@ -8597,12 +8597,12 @@ body.android-optimized.menu-visible .status {
             });
             
             updateCircuitInfo();
-            setStatus(`?? Pasted ${selectedComponents.size} objects`);
+            setStatus(`⚡  Pasted ${selectedComponents.size} objects`);
         }
 
         function deleteSelected() {
             if (selectedComponents.size === 0) {
-                setStatus('? No objects selected to delete');
+                setStatus('⚠ No objects selected to delete');
                 return;
             }
             
@@ -8616,7 +8616,7 @@ body.android-optimized.menu-visible .status {
             
             selectedComponents.clear();
             updateCircuitInfo();
-            setStatus('??? Selected objects deleted');
+            setStatus('✓ Selected objects deleted');
         }
 
         // View functions
@@ -8626,7 +8626,7 @@ body.android-optimized.menu-visible .status {
             cameraAngleY = 0.5;
             cameraTarget.set(0, 0, 0);
             updateCameraPosition();
-            setStatus('?? Camera view reset');
+            setStatus('⚡ Camera view reset');
         }
 
         function fitToScreen() {
@@ -8652,7 +8652,7 @@ body.android-optimized.menu-visible .status {
             cameraDistance = Math.max(10, maxDim * 2);
             updateCameraPosition();
             
-            setStatus('?? View fitted to circuit');
+            setStatus('⚡ View fitted to circuit');
         }
 
         function toggleGrid() {
@@ -8682,7 +8682,7 @@ body.android-optimized.menu-visible .status {
                 }
             });
             notifyParentModeState();
-            setStatus(`??? Component labels ${showLabels ? 'enabled' : 'disabled'}`);
+            setStatus(`⚡ ? Component labels ${showLabels ? 'enabled' : 'disabled'}`);
         }
         
         // Toggle current flow visualization style
@@ -8702,7 +8702,7 @@ body.android-optimized.menu-visible .status {
             
             notifyParentModeState();
 
-            setStatus(`?? Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Holes drift positive -> negative (opposite current)' : 'CURRENT FLOW - Charge travels negative -> positive through the loop'}`);
+            setStatus(`⚡  Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Holes drift positive -> negative (opposite current)' : 'CURRENT FLOW - Charge travels negative -> positive through the loop'}`);
         }
         
         // Toggle polarity indicators
@@ -8727,10 +8727,10 @@ body.android-optimized.menu-visible .status {
             if (brandingEl) {
                 if (brandingEl.style.display === 'none') {
                     brandingEl.style.display = 'block';
-                    setStatus('??? CircuiTry3D branding shown');
+                    setStatus('✓ CircuiTry3D branding shown');
                 } else {
                     brandingEl.style.display = 'none';
-                    setStatus('??? CircuiTry3D branding hidden');
+                    setStatus('✓ CircuiTry3D branding hidden');
                 }
             }
         }
@@ -8754,7 +8754,7 @@ body.android-optimized.menu-visible .status {
             
             notifyParentModeState();
 
-            setStatus(`?? Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
+            setStatus(`⚡  Layout mode: ${layoutMode.toUpperCase()} - ${getLayoutModeDescription(layoutMode)}`);
         }
         
         function getLayoutModeDescription(mode) {
@@ -9294,7 +9294,7 @@ Made with ? for visual learners everywhere!
             analyzeCircuit();
             updateCircuitInfo();
             
-            setStatus('?? Wire split with junction - now you can branch from this point!');
+            setStatus('⚡ Wire split with junction - now you can branch from this point!');
             return junction;
         }
 
@@ -9317,7 +9317,7 @@ Made with ? for visual learners everywhere!
             const { silent = false } = options;
             if (isWireMode) {
                 if (!silent) {
-                    setStatus('?? WIRE MODE! Touch terminals to connect components');
+                    setStatus('⚡ WIRE MODE! Touch terminals to connect components');
                 }
                 notifyParentToolState('wire');
                 notifyParentModeState();
@@ -9338,7 +9338,7 @@ Made with ? for visual learners everywhere!
             closeAllSubmenus();
 
             if (!silent) {
-                setStatus('?? WIRE MODE! Touch terminals to connect components');
+                setStatus('⚡ WIRE MODE! Touch terminals to connect components');
             }
 
             notifyParentToolState('wire');
@@ -9365,7 +9365,7 @@ Made with ? for visual learners everywhere!
             closeAllSubmenus();
 
             if (!silent) {
-                setStatus('?? Wire mode disabled');
+                setStatus('⚡ Wire mode disabled');
             }
 
             if (!skipNotify) {
@@ -9378,7 +9378,7 @@ Made with ? for visual learners everywhere!
             const { silent = false } = options;
             if (isRotateMode) {
                 if (!silent) {
-                    setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
+                    setStatus('⚡ ROTATE MODE! Touch any component to rotate it 90°');
                 }
                 notifyParentToolState('rotate');
                 notifyParentModeState();
@@ -9394,7 +9394,7 @@ Made with ? for visual learners everywhere!
             closeAllSubmenus();
 
             if (!silent) {
-                setStatus('?? ROTATE MODE! Touch any component to rotate it 90?');
+                setStatus('⚡ ROTATE MODE! Touch any component to rotate it 90?');
             }
 
             notifyParentToolState('rotate');
@@ -9418,7 +9418,7 @@ Made with ? for visual learners everywhere!
             }
 
             if (!silent) {
-                setStatus('?? Rotate mode disabled');
+                setStatus('⚡ Rotate mode disabled');
             }
 
             if (!skipNotify) {
@@ -9431,7 +9431,7 @@ Made with ? for visual learners everywhere!
             const { silent = false } = options;
             if (isMeasureMode) {
                 if (!silent) {
-                    setStatus('?? Measure mode active - select the next point to measure');
+                    setStatus('⚡ Measure mode active - select the next point to measure');
                 }
                 notifyParentToolState('measure');
                 notifyParentModeState();
@@ -9446,7 +9446,7 @@ Made with ? for visual learners everywhere!
             notifyParentModeState();
 
             if (!silent) {
-                setStatus('?? Measure mode active - pick two points to calculate distance');
+                setStatus('⚡ Measure mode active - pick two points to calculate distance');
             }
 
             notifyParentToolState('measure');
@@ -9463,7 +9463,7 @@ Made with ? for visual learners everywhere!
             notifyParentModeState();
 
             if (!silent) {
-                setStatus('?? Measure mode disabled');
+                setStatus('⚡ Measure mode disabled');
             }
 
             if (!skipNotify) {
@@ -9490,7 +9490,7 @@ Made with ? for visual learners everywhere!
                     disableWireMode({ silent: true, skipNotify: true });
                     disableRotateMode({ silent: true, skipNotify: true });
                     exitMeasureMode({ silent: true, skipNotify: true });
-                    setStatus('?? Select mode active - tap components to edit');
+                    setStatus('⚡ Select mode active - tap components to edit');
                     notifyParentToolState('select');
                     break;
             }
@@ -9507,14 +9507,14 @@ Made with ? for visual learners everywhere!
 
             if (!measureStartPoint) {
                 measureStartPoint = point.clone();
-                setStatus('?? Measurement started - choose a second point');
+                setStatus('⚡ Measurement started - choose a second point');
                 notifyParentMeasurement({ step: 'start', point: measureStartPoint.toArray() });
                 return;
             }
 
             const distance = point.distanceTo(measureStartPoint);
             const rounded = Number.isFinite(distance) ? distance.toFixed(2) : '0.00';
-            setStatus(`?? Distance measured: ${rounded} units`);
+            setStatus(`⚡  Distance measured: ${rounded} units`);
 
             notifyParentMeasurement({
                 step: 'complete',
@@ -9532,7 +9532,7 @@ Made with ? for visual learners everywhere!
                 notifyParentSimulation({ success: true, result: result || null });
             } catch (error) {
                 console.error('Simulation error:', error);
-                setStatus('? Simulation failed - see console for details');
+                setStatus('⚠ Simulation failed - see console for details');
                 notifyParentSimulation({ success: false, error: error ? String(error) : 'unknown' });
             }
         }
@@ -9576,7 +9576,7 @@ Made with ? for visual learners everywhere!
             if (batteries.length === 0) {
                 updateCircuitDisplay(0, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
-                setStatus('?? ADD A BATTERY to start W.I.R.E. analysis!');
+                setStatus('⚡ ADD A BATTERY to start W.I.R.E. analysis!');
                 return {
                     voltage: 0,
                     current: 0,
@@ -9591,7 +9591,7 @@ Made with ? for visual learners everywhere!
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
-                setStatus('?? ADD WIRES to complete the circuit for W.I.R.E. calculations!');
+                setStatus('⚡ ADD WIRES to complete the circuit for W.I.R.E. calculations!');
                 return {
                     voltage: totalVoltage,
                     current: 0,
@@ -9614,12 +9614,12 @@ Made with ? for visual learners everywhere!
                 if (flowMeta.reason === 'polarity') {
                     setStatus('POLARITY MISMATCH: Reverse components so current can travel negative -> positive.');
                 } else if (flowMeta.reason === 'short') {
-                    setStatus('?? SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
+                    setStatus('⚡ SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
                 } else if (flowMeta.reason === 'no-source') {
-                    setStatus('?? Add a battery to power the circuit and start current flow.');
+                    setStatus('⚡ Add a battery to power the circuit and start current flow.');
                 }
             } else if (flowMeta.warning === 'short') {
-                setStatus('?? SHORT CIRCUIT PATH: Current is racing from negative -> positive. Add resistance now!');
+                setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from negative -> positive. Add resistance now!');
             }
 
             return {
@@ -10784,7 +10784,7 @@ Made with ? for visual learners everywhere!
             if (voltageEl) voltageEl.textContent = voltage.toFixed(1) + 'V';
             if (currentEl) currentEl.textContent = current.toFixed(3) + 'A';
             if (resistanceEl) resistanceEl.textContent = 
-                resistance === Infinity ? '??' : resistance.toFixed(1) + '?';
+                resistance === Infinity ? '∞' : resistance.toFixed(1) + 'Ω';
             if (powerEl) powerEl.textContent = power.toFixed(2) + 'W';
             
             const countEl = document.getElementById('count');
@@ -10808,18 +10808,18 @@ Made with ? for visual learners everywhere!
             refreshWireWorksheetSolutions();
             
             if (current > 0 && resistance !== Infinity) {
-                setStatus(`?? W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}?, E=${voltage.toFixed(1)}V`);
+                setStatus(`⚡ W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}Ω, E=${voltage.toFixed(1)}V`);
             } else if (resistance === Infinity) {
                 const switches = components.filter(c => c.type === 'switch');
                 const openSwitch = switches.find(sw => !sw.properties.isOn);
                 
                 if (openSwitch) {
-                    setStatus(`?? OPEN CIRCUIT: Switch is OFF - touch it to complete W.I.R.E. analysis!`);
+                    setStatus(`⚡  OPEN CIRCUIT: Switch is OFF - touch it to complete W.I.R.E. analysis!`);
                 } else {
-                    setStatus(`?? INCOMPLETE CIRCUIT: Connect components to enable W.I.R.E. calculations`);
+                    setStatus(`⚡  INCOMPLETE CIRCUIT: Connect components to enable W.I.R.E. calculations`);
                 }
             } else {
-                setStatus('?? W.I.R.E. Circuit Builder - Learn with visual methodology!');
+                setStatus('⚡ W.I.R.E. Circuit Builder - Learn with visual methodology!');
             }
         }
 
@@ -10993,7 +10993,7 @@ Made with ? for visual learners everywhere!
                     break;
             }
             
-            setStatus(`?? Switched to ${tabName.toUpperCase()} analysis mode`);
+            setStatus(`⚡  Switched to ${tabName.toUpperCase()} analysis mode`);
         }
 
         function explainOhmsLaw(variable) {
@@ -11003,17 +11003,17 @@ Made with ? for visual learners everywhere!
                 case 'E':
                     formulaEl.textContent = 'E = I ? R (EMF/Voltage = Current ? Resistance)';
                     formulaEl.style.color = '#ff4444';
-                    setStatus('?? EMF/VOLTAGE: E = I ? R | Measured in Volts (V)');
+                    setStatus('⚡ EMF/VOLTAGE: E = I × R | Measured in Volts (V)');
                     break;
                 case 'I':
                     formulaEl.textContent = 'I = E ? R (Current = EMF/Voltage ? Resistance)';
                     formulaEl.style.color = '#ff8844';
-                    setStatus('?? CURRENT: I = E ? R | Measured in Amperes (A)');
+                    setStatus('⚡ CURRENT: I = E ÷ R | Measured in Amperes (A)');
                     break;
                 case 'R':
                     formulaEl.textContent = 'R = E ? I (Resistance = EMF/Voltage ? Current)';
                     formulaEl.style.color = '#44ff88';
-                    setStatus('?? RESISTANCE: R = E ? I | Measured in Ohms (?)');
+                    setStatus('⚡ RESISTANCE: R = E ÷ I | Measured in Ohms (Ω)');
                     break;
             }
             
@@ -11034,17 +11034,17 @@ Made with ? for visual learners everywhere!
                 case 'W':
                     formulaEl.textContent = 'W = I ? E (Power = Current ? EMF/Voltage)';
                     formulaEl.style.color = '#4488ff';
-                    setStatus('?? POWER: W = I ? E | Also W = I?R or W = E??R | Measured in Watts (W)');
+                    setStatus('⚡ POWER: W = I × E | Also W = I²R or W = E²÷R | Measured in Watts (W)');
                     break;
                 case 'I':
                     formulaEl.textContent = 'I = W ? E (Current = Power ? EMF/Voltage)';
                     formulaEl.style.color = '#ff8844';
-                    setStatus('?? CURRENT: I = W ? E | From power triangle | Measured in Amperes (A)');
+                    setStatus('⚡ CURRENT: I = W ÷ E | From power triangle | Measured in Amperes (A)');
                     break;
                 case 'E':
                     formulaEl.textContent = 'E = W ? I (EMF/Voltage = Power ? Current)';
                     formulaEl.style.color = '#ff4444';
-                    setStatus('?? EMF/VOLTAGE: E = W ? I | From power triangle | Measured in Volts (V)');
+                    setStatus('⚡ EMF/VOLTAGE: E = W ÷ I | From power triangle | Measured in Volts (V)');
                     break;
             }
             
@@ -11161,7 +11161,7 @@ Made with ? for visual learners everywhere!
 
             // Update calculated values in worksheet
             const calcElements = {
-                'calc-resistance': lastKnownValues.resistance === Infinity ? '??' : lastKnownValues.resistance.toFixed(1) + '?',
+                'calc-resistance': lastKnownValues.resistance === Infinity ? '∞' : lastKnownValues.resistance.toFixed(1) + 'Ω',
                 'calc-current': lastKnownValues.current.toFixed(3) + 'A',
                 'calc-voltage': lastKnownValues.voltage.toFixed(1) + 'V',
                 'calc-power': lastKnownValues.power.toFixed(2) + 'W'
@@ -11270,8 +11270,8 @@ Made with ? for visual learners everywhere!
                     Math.abs(studentResistance - lastKnownValues.resistance) / lastKnownValues.resistance < tolerance;
                 results.push({
                     label: 'Resistance',
-                    student: studentResistance.toFixed(1) + '?',
-                    correct: lastKnownValues.resistance === Infinity ? '??' : lastKnownValues.resistance.toFixed(1) + '?',
+                    student: studentResistance.toFixed(1) + 'Ω',
+                    correct: lastKnownValues.resistance === Infinity ? '∞' : lastKnownValues.resistance.toFixed(1) + 'Ω',
                     isCorrect: resistanceCorrect,
                     color: '#44ff88'
                 });
@@ -11689,7 +11689,7 @@ Made with ? for visual learners everywhere!
                 }
                 
                 analyzeCircuit();
-                setStatus('?? Circuit auto-wired for demonstration');
+                setStatus('⚡ Circuit auto-wired for demonstration');
             } catch (error) {
                 console.log('Auto-connect failed, students can wire manually');
             }
@@ -11726,23 +11726,23 @@ Made with ? for visual learners everywhere!
             
             updateCircuitInfo();
             updatePracticeStatus();
-            setStatus('?? Generated random practice problem with randomized values!');
+            setStatus('⚡ Generated random practice problem with randomized values!');
         }
 
         // Practice sequence navigation functions
         function startPracticeSequence() {
             currentProblemIndex = 0;
             loadPracticeSequenceProblem();
-            setStatus('?? Started practice sequence - Problem 1 of 4');
+            setStatus('⚡ Started practice sequence - Problem 1 of 4');
         }
 
         function nextProblem() {
             if (currentProblemIndex < practiceProblems.length - 1) {
                 currentProblemIndex++;
                 loadPracticeSequenceProblem();
-                setStatus(`?? Advanced to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
+                setStatus(`⚡  Advanced to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
             } else {
-                setStatus('?? Congratulations! You completed all practice problems!');
+                setStatus('⚡ Congratulations! You completed all practice problems!');
                 alert('?? Great job! You\'ve completed all practice problems.\n\nYou can:\n? Start over with "Start Practice Sequence"\n? Try "Random" for extra practice\n? Use individual problem buttons for review');
             }
         }
@@ -11751,9 +11751,9 @@ Made with ? for visual learners everywhere!
             if (currentProblemIndex > 0) {
                 currentProblemIndex--;
                 loadPracticeSequenceProblem();
-                setStatus(`?? Returned to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
+                setStatus(`⚡  Returned to problem ${currentProblemIndex + 1} of ${practiceProblems.length}`);
             } else {
-                setStatus('?? Already at the first problem');
+                setStatus('⚡ Already at the first problem');
             }
         }
 
@@ -11883,7 +11883,7 @@ Made with ? for visual learners everywhere!
             updateButtonStates();
             updateCircuitInfo();
             closeAllSubmenus();
-            setStatus('??? ALL CLEARED! Circuit builder reset with fresh component numbering');
+            setStatus('✓ ALL CLEARED! Circuit builder reset with fresh component numbering');
         }
 
         function showPracticeModeHelp() {

@@ -62,7 +62,7 @@ export const STANDARD_PROFILES: Record<SymbolStandard, SymbolStandardProfile> = 
     resistor: {
       bodyStyle: "zigzag",
       zigzagSegments: 6,
-      zigzagAmplitude: 0.35,
+      zigzagAmplitude: 0.30,
       leadFraction: 0.22,
       minBodyLength: 1.1,
       bodyThickness: 0.22,
@@ -116,7 +116,7 @@ export const STANDARD_PROFILES: Record<SymbolStandard, SymbolStandardProfile> = 
     resistor: {
       bodyStyle: "rectangle",
       zigzagSegments: 6,
-      zigzagAmplitude: 0.32,
+      zigzagAmplitude: 0.30,
       leadFraction: 0.25,
       minBodyLength: 0.9,
       bodyThickness: 0.24,

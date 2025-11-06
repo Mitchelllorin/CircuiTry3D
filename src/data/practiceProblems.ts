@@ -1,17 +1,17 @@
 import { formatMetricValue, formatNumber } from "../utils/electrical";
 import type { PracticeProblem } from "../model/practice";
 
-const SERIES_IDS = ["R1", "R2", "R3", "R4"] as const;
+const SERIES_IDS = ["R1", "R2", "R3"] as const;
 
 const practiceProblems: PracticeProblem[] = [
   {
     id: "series-square-01",
-    title: "Series Circuit · Loop Current",
+    title: "Series Circuit · Circuit Current",
     topology: "series",
     difficulty: "intro",
       prompt:
-        "A series circuit holds four resistors connected end to end and powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the loop current.",
-    targetQuestion: "What is the total current flowing through the series loop?",
+        "A series circuit holds three resistors connected end to end and powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the circuit current.",
+    targetQuestion: "What is the total current flowing through the series circuit?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
     diagram: "seriesRect",
@@ -27,29 +27,22 @@ const practiceProblems: PracticeProblem[] = [
         id: "R1",
         label: "R1",
         role: "load",
-        givens: { resistance: 120 },
-        values: { resistance: 120 },
+        givens: { resistance: 150 },
+        values: { resistance: 150 },
       },
       {
         id: "R2",
         label: "R2",
         role: "load",
-        givens: { resistance: 150 },
-        values: { resistance: 150 },
+        givens: { resistance: 200 },
+        values: { resistance: 200 },
       },
       {
         id: "R3",
         label: "R3",
         role: "load",
-        givens: { resistance: 180 },
-        values: { resistance: 180 },
-      },
-      {
-        id: "R4",
-        label: "R4",
-        role: "load",
-        givens: { resistance: 100 },
-        values: { resistance: 100 },
+        givens: { resistance: 250 },
+        values: { resistance: 250 },
       },
     ],
     network: {
@@ -65,11 +58,11 @@ const practiceProblems: PracticeProblem[] = [
         return {
           title: "Sum the series resistances",
           detail: `R_T = ${sumLine} = ${formatMetricValue(totals.resistance, "resistance")}`,
-          formula: "R_T = R_1 + R_2 + R_3 + R_4",
+          formula: "R_T = R_1 + R_2 + R_3",
         };
       },
       ({ totals }) => ({
-        title: "Solve for loop current",
+        title: "Solve for circuit current",
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
         formula: "I = E / R",
       }),
