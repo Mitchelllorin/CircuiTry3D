@@ -23,6 +23,8 @@ import {
   SYMBOL_STANDARD_OPTIONS,
   type SymbolStandard,
 } from "../schematic/standards";
+import { COMPONENT_CATALOG } from "../schematic/catalog";
+import type { CatalogEntry } from "../schematic/types";
 
 type BuilderInvokeAction =
   | "toggle-wire-mode"
@@ -1940,6 +1942,25 @@ export default function Builder() {
     [postToBuilder],
   );
 
+  const handleCatalogComponent = useCallback(
+    (entry: CatalogEntry) => {
+      if (!entry) {
+        return;
+      }
+
+      if (entry.kind === "ground") {
+        postToBuilder({ type: "builder:add-junction" });
+        return;
+      }
+
+      postToBuilder({
+        type: "builder:add-component",
+        payload: { componentType: entry.kind },
+      });
+    },
+    [postToBuilder],
+  );
+
   const handleQuickAction = useCallback(
     (quickAction: QuickAction) => {
       triggerBuilderAction(quickAction.action, quickAction.data);
@@ -2152,7 +2173,31 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Parts</span>
+              <span className="slider-heading">Components</span>
+              <div className="slider-stack">
+                {COMPONENT_CATALOG.filter((entry) => entry.kind !== "wire").map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className="slider-btn slider-btn-compact"
+                    onClick={() => handleCatalogComponent(entry)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={
+                      controlsDisabled ? controlDisabledTitle : entry.description
+                    }
+                    data-component-catalog={entry.kind}
+                  >
+                    <span className="slider-icon" aria-hidden="true">
+                      {entry.icon}
+                    </span>
+                    <span className="slider-label">{entry.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Legacy 3D Parts</span>
               <div className="slider-stack">
                 {COMPONENT_ACTIONS.map((component) => (
                   <button
@@ -2215,17 +2260,17 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Schematic Mode</span>
+              <span className="slider-heading">3D Schematic Workspace</span>
               <div className="slider-stack">
                 <button
                   type="button"
                   className="slider-btn slider-btn-stacked"
                   onClick={() => setSchematicPanelOpen(true)}
-                  title="Open the 3D schematic workspace"
+                  title="Open dedicated 3D schematic grid workspace with advanced placement tools"
                 >
-                  <span className="slider-label">Launch Builder</span>
+                  <span className="slider-label">Open Grid Workspace</span>
                   <span className="slider-description">
-                    Place ANSI/IEC symbols on the snap grid
+                    Snap-to-grid placement with IEEE/ANSI/IEC symbols
                   </span>
                 </button>
               </div>
@@ -2632,6 +2677,35 @@ export default function Builder() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Symbol Standard</span>
+              <div className="slider-stack">
+                <div className="schematic-standard-control" role="group" aria-label="Schematic symbol standard">
+                  <div className="schematic-standard-buttons">
+                    {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        className={
+                          schematicStandard === option.key
+                            ? "schematic-standard-button is-active"
+                            : "schematic-standard-button"
+                        }
+                        onClick={() => setSchematicStandard(option.key)}
+                        title={option.description}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.5rem", lineHeight: "1.4" }}>
+                  {schematicStandard === "ansi" 
+                    ? "IEEE/ANSI standard (North American textbooks and trades)"
+                    : "IEC standard (International/European convention)"}
+                </p>
               </div>
             </div>
             <div className="slider-section">

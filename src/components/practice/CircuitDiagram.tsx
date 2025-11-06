@@ -16,8 +16,12 @@ const NODE_FILL = "rgba(162, 212, 255, 0.95)";
 const NODE_STROKE = "rgba(12, 32, 64, 0.9)";
 const WIRE_STROKE_WIDTH = 4;
 const NODE_RADIUS = 4.2;
-const RESISTOR_SEGMENTS = 6;
-const RESISTOR_AMPLITUDE = 10;
+const IEEE_RESISTOR_SEGMENTS = 6;
+const IEEE_RESISTOR_AMPLITUDE = 12;
+const IEEE_RESISTOR_LEAD_FRACTION = 0.22;
+const IEEE_BATTERY_POSITIVE_WIDTH = 32;
+const IEEE_BATTERY_NEGATIVE_WIDTH = 18;
+const IEEE_BATTERY_GAP = 8;
 
 const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   if (componentId === "totals") {
@@ -32,18 +36,41 @@ const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   return match?.label ?? componentId;
 };
 
-const drawBattery = (x: number, y: number) => (
-  <g transform={`translate(${x}, ${y})`}>
-    <line x1={-6} y1={-20} x2={-6} y2={20} stroke={WIRE_COLOR} strokeWidth={3} strokeLinecap="round" />
-    <line x1={8} y1={-28} x2={8} y2={28} stroke={WIRE_COLOR} strokeWidth={5} strokeLinecap="round" />
-    <text x={-12} y={-24} fill={LABEL_COLOR} fontSize={12} textAnchor="end">
-      -
-    </text>
-    <text x={14} y={-24} fill={LABEL_COLOR} fontSize={12} textAnchor="start">
-      +
-    </text>
-  </g>
-);
+const drawBattery = (x: number, y: number) => {
+  const negativeHeight = IEEE_BATTERY_NEGATIVE_WIDTH;
+  const positiveHeight = IEEE_BATTERY_POSITIVE_WIDTH;
+  const negativeX = x - IEEE_BATTERY_GAP / 2;
+  const positiveX = x + IEEE_BATTERY_GAP / 2;
+  
+  return (
+    <g>
+      <line 
+        x1={negativeX} 
+        y1={y - negativeHeight / 2} 
+        x2={negativeX} 
+        y2={y + negativeHeight / 2} 
+        stroke={COMPONENT_STROKE} 
+        strokeWidth={2.5} 
+        strokeLinecap="square" 
+      />
+      <line 
+        x1={positiveX} 
+        y1={y - positiveHeight / 2} 
+        x2={positiveX} 
+        y2={y + positiveHeight / 2} 
+        stroke={COMPONENT_STROKE} 
+        strokeWidth={2.5} 
+        strokeLinecap="square" 
+      />
+      <text x={negativeX - 10} y={y - positiveHeight / 2 - 4} fill={LABEL_COLOR} fontSize={14} textAnchor="end" fontWeight={600}>
+        −
+      </text>
+      <text x={positiveX + 10} y={y - positiveHeight / 2 - 4} fill={LABEL_COLOR} fontSize={14} textAnchor="start" fontWeight={600}>
+        +
+      </text>
+    </g>
+  );
+};
 
 const drawNode = ({ x, y }: Point, key?: string) => (
   <circle
@@ -68,30 +95,53 @@ type ResistorSymbolOptions = {
 };
 
 const drawResistor = ({ start, end, orientation, label, key, labelOffset, labelSide }: ResistorSymbolOptions) => {
+  const totalLength = orientation === "horizontal" ? Math.abs(end.x - start.x) : Math.abs(end.y - start.y);
+  const leadLength = totalLength * IEEE_RESISTOR_LEAD_FRACTION;
+  const bodyLength = totalLength - 2 * leadLength;
+  
   const points: string[] = [];
+  const leadPoints: Point[] = [];
 
   if (orientation === "horizontal") {
-    const length = end.x - start.x;
-    const step = length / RESISTOR_SEGMENTS;
-    for (let i = 0; i <= RESISTOR_SEGMENTS; i += 1) {
-      const x = start.x + step * i;
+    const direction = end.x > start.x ? 1 : -1;
+    const bodyStartX = start.x + leadLength * direction;
+    const bodyEndX = start.x + (totalLength - leadLength) * direction;
+    
+    leadPoints.push({ x: start.x, y: start.y });
+    leadPoints.push({ x: bodyStartX, y: start.y });
+    
+    const step = bodyLength / IEEE_RESISTOR_SEGMENTS;
+    for (let i = 0; i <= IEEE_RESISTOR_SEGMENTS; i += 1) {
+      const x = bodyStartX + step * i * direction;
       let y = start.y;
-      if (i > 0 && i < RESISTOR_SEGMENTS) {
-        y += i % 2 === 0 ? -RESISTOR_AMPLITUDE : RESISTOR_AMPLITUDE;
+      if (i > 0 && i < IEEE_RESISTOR_SEGMENTS) {
+        y += (i % 2 === 0 ? -IEEE_RESISTOR_AMPLITUDE : IEEE_RESISTOR_AMPLITUDE);
       }
       points.push(`${x},${y}`);
     }
+    
+    leadPoints.push({ x: bodyEndX, y: start.y });
+    leadPoints.push({ x: end.x, y: end.y });
   } else {
-    const length = end.y - start.y;
-    const step = length / RESISTOR_SEGMENTS;
-    for (let i = 0; i <= RESISTOR_SEGMENTS; i += 1) {
-      const y = start.y + step * i;
+    const direction = end.y > start.y ? 1 : -1;
+    const bodyStartY = start.y + leadLength * direction;
+    const bodyEndY = start.y + (totalLength - leadLength) * direction;
+    
+    leadPoints.push({ x: start.x, y: start.y });
+    leadPoints.push({ x: start.x, y: bodyStartY });
+    
+    const step = bodyLength / IEEE_RESISTOR_SEGMENTS;
+    for (let i = 0; i <= IEEE_RESISTOR_SEGMENTS; i += 1) {
+      const y = bodyStartY + step * i * direction;
       let x = start.x;
-      if (i > 0 && i < RESISTOR_SEGMENTS) {
-        x += i % 2 === 0 ? RESISTOR_AMPLITUDE : -RESISTOR_AMPLITUDE;
+      if (i > 0 && i < IEEE_RESISTOR_SEGMENTS) {
+        x += (i % 2 === 0 ? IEEE_RESISTOR_AMPLITUDE : -IEEE_RESISTOR_AMPLITUDE);
       }
       points.push(`${x},${y}`);
     }
+    
+    leadPoints.push({ x: start.x, y: bodyEndY });
+    leadPoints.push({ x: end.x, y: end.y });
   }
 
   let labelX: number;
@@ -112,13 +162,31 @@ const drawResistor = ({ start, end, orientation, label, key, labelOffset, labelS
 
   return (
     <g key={key}>
+      <line 
+        x1={leadPoints[0].x} 
+        y1={leadPoints[0].y} 
+        x2={leadPoints[1].x} 
+        y2={leadPoints[1].y} 
+        stroke={COMPONENT_STROKE} 
+        strokeWidth={2.8} 
+        strokeLinecap="round" 
+      />
       <polyline
         points={points.join(" ")}
         stroke={COMPONENT_STROKE}
-        strokeWidth={3.2}
+        strokeWidth={2.8}
         fill="none"
         strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeLinejoin="miter"
+      />
+      <line 
+        x1={leadPoints[2].x} 
+        y1={leadPoints[2].y} 
+        x2={leadPoints[3].x} 
+        y2={leadPoints[3].y} 
+        stroke={COMPONENT_STROKE} 
+        strokeWidth={2.8} 
+        strokeLinecap="round" 
       />
       <text x={labelX} y={labelY} textAnchor={textAnchor} fill={LABEL_COLOR} fontSize={13} fontWeight={600}>
         {label}

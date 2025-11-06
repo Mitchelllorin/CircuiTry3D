@@ -546,7 +546,9 @@ body.builder-body {
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 2px;
+  scroll-behavior: smooth;
 }
 
 .builder-menu-scroll::-webkit-scrollbar {
@@ -554,7 +556,12 @@ body.builder-body {
 }
 
 .builder-menu-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.45);
+  border-radius: 999px;
+}
+
+.builder-menu-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 255, 136, 0.08);
   border-radius: 999px;
 }
 
@@ -2067,8 +2074,15 @@ body.builder-body {
 
   .builder-menu-stage-left .builder-menu {
     height: auto;
-    max-height: min(70vh, calc(100vh - 160px));
+    max-height: min(75vh, calc(100vh - 120px));
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .builder-menu-left .builder-menu-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .builder-menu-toggle-left {
