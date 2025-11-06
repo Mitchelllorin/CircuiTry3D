@@ -1,4 +1,4 @@
-import { Routes, Route, Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
 import Arena from "../pages/Arena";
@@ -8,7 +8,7 @@ import Practice from "../pages/Practice";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
-import { useAuth } from "../context/AuthContext";
+import UnifiedNav from "../components/UnifiedNav";
 import "../styles/layout.css";
 
 export default function App() {
@@ -41,68 +41,17 @@ function NotFound() {
 }
 
 function AppLayout() {
-  const { currentUser } = useAuth();
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
 
-  const initials = currentUser?.displayName
-    ? currentUser.displayName
-        .split(" ")
-        .map((segment) => segment.trim()[0])
-        .filter(Boolean)
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : null;
-
   const shellClass = isLanding ? "app-shell is-landing" : "app-shell";
   const contentClass = isLanding ? "app-content is-landing" : "app-content";
-
-  const buildNavClass = ({ isActive }: { isActive: boolean }) => (isActive ? "app-nav-link is-active" : "app-nav-link");
 
   return (
     <div className={shellClass}>
       {!isLanding && !isWorkspace && (
-        <header className="app-header">
-          <Link to="/" className="app-brand">
-            Circui<span>Try</span>3D
-          </Link>
-          <nav className="app-nav">
-            <NavLink end to="/" className={buildNavClass}>
-              Home
-            </NavLink>
-            <NavLink to="/app" className={buildNavClass}>
-              Workspace
-            </NavLink>
-            <NavLink to="/pricing" className={buildNavClass}>
-              Pricing
-            </NavLink>
-            <NavLink to="/community" className={buildNavClass}>
-              Community
-            </NavLink>
-          </nav>
-          <div className="app-account">
-            <Link to="/account" className={currentUser ? "account-link is-auth" : "account-link"}>
-              {currentUser ? (
-                <>
-                  <span
-                    className="account-avatar"
-                    aria-hidden="true"
-                    style={{ backgroundColor: currentUser.avatarColor }}
-                  >
-                    {initials ?? currentUser.displayName.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="account-label">{currentUser.displayName}</span>
-                </>
-              ) : (
-                <>
-                  <span className="account-label">Sign In</span>
-                </>
-              )}
-            </Link>
-          </div>
-        </header>
+        <UnifiedNav />
       )}
       <main className={contentClass}>
         <Outlet />

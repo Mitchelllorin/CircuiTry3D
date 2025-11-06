@@ -1,0 +1,113 @@
+.unified-nav {
+  height: 72px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(8, 11, 20, 0.85);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.unified-nav-brand {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.unified-nav-brand span {
+  color: #38bdf8;
+}
+
+.unified-nav-links {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.unified-nav-link {
+  color: rgba(226, 232, 240, 0.7);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.unified-nav-link:hover {
+  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.unified-nav-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: rgba(226, 232, 240, 0.8);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.unified-nav-account:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #f8fafc;
+}
+
+.unified-nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 0.85rem;
+}
+
+.unified-nav-account-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  .unified-nav {
+    height: auto;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .unified-nav-links {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .unified-nav-account-label {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .unified-nav {
+    padding: 12px;
+  }
+
+  .unified-nav-links {
+    gap: 8px;
+  }
+
+  .unified-nav-link {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+}

@@ -2,6 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
+  min-height: 100vh;
+  background: #0b1120;
+}
+
+.community-page > *:not(.unified-nav) {
+  padding: 0 32px;
 }
 
 .community-hero {
@@ -13,6 +19,7 @@
   border-radius: 20px;
   background: linear-gradient(135deg, rgba(13, 148, 136, 0.16), rgba(30, 64, 175, 0.12));
   border: 1px solid rgba(56, 189, 248, 0.25);
+  margin: 0 32px;
 }
 
 .community-eyebrow {
@@ -68,6 +75,7 @@
 .community-grid {
   display: grid;
   gap: 28px;
+  padding: 0 32px 32px 32px;
 }
 
 .community-panel {
@@ -367,10 +375,19 @@
 @media (max-width: 960px) {
   .community-hero {
     padding: 24px;
+    margin: 0 20px;
   }
 
   .community-panel {
     padding: 22px;
+  }
+
+  .community-grid {
+    padding: 0 20px 20px 20px;
+  }
+
+  .community-page > *:not(.unified-nav) {
+    padding: 0 20px;
   }
 }
 
