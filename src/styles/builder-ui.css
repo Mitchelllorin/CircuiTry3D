@@ -4,11 +4,12 @@
   --builder-navy-deep: #0a1028;
   --builder-overlay: rgba(10, 22, 48, 0.86);
   --builder-overlay-soft: rgba(14, 28, 52, 0.78);
-  --builder-border: rgba(0, 255, 136, 0.28);
-  --builder-border-strong: rgba(0, 255, 136, 0.45);
+  --builder-border: rgba(136, 204, 255, 0.28);
+  --builder-border-strong: rgba(136, 204, 255, 0.45);
   --builder-border-cyan: rgba(136, 204, 255, 0.28);
+  --builder-blue: #88ccff;
+  --builder-orange: #ff8844;
   --builder-green: #00ff88;
-  --builder-orange: #ff8800;
   --builder-cyan: #88ccff;
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
@@ -76,13 +77,13 @@ body.builder-body {
   align-items: baseline;
   gap: 0.2rem;
   text-shadow:
-    0 0 10px rgba(0, 255, 136, 0.28),
-    0 0 26px rgba(17, 80, 150, 0.45);
+    0 0 10px rgba(136, 204, 255, 0.28),
+    0 0 26px rgba(136, 204, 255, 0.45);
   animation: builderLogoPulse 3.2s ease-in-out infinite;
 }
 
 .builder-logo-circui {
-  color: var(--builder-green);
+  color: var(--builder-cyan);
 }
 
 .builder-logo-try {
@@ -97,11 +98,11 @@ body.builder-body {
 @keyframes builderLogoPulse {
   0%,
   100% {
-    filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.45))
+    filter: drop-shadow(0 0 6px rgba(136, 204, 255, 0.45))
       drop-shadow(0 0 16px rgba(136, 204, 255, 0.35));
   }
   50% {
-    filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.65))
+    filter: drop-shadow(0 0 12px rgba(136, 204, 255, 0.65))
       drop-shadow(0 0 24px rgba(255, 255, 255, 0.35));
   }
 }
@@ -139,16 +140,16 @@ body.builder-body {
 }
 
 .mode-tab:hover {
-  background: rgba(0, 255, 136, 0.08);
-  color: var(--builder-green);
-  border-color: rgba(0, 255, 136, 0.22);
+  background: rgba(136, 204, 255, 0.08);
+  color: var(--builder-cyan);
+  border-color: rgba(136, 204, 255, 0.22);
 }
 
 .mode-tab[data-active="true"] {
-  background: rgba(0, 255, 136, 0.18);
-  color: var(--builder-green);
+  background: rgba(136, 204, 255, 0.18);
+  color: var(--builder-cyan);
   border-color: var(--builder-border-strong);
-  box-shadow: 0 0 12px rgba(0, 255, 136, 0.32);
+  box-shadow: 0 0 12px rgba(136, 204, 255, 0.32);
 }
 
 .mode-icon {
@@ -390,6 +391,7 @@ body.builder-body {
   background: rgba(255, 136, 0, 0.95);
   color: #0a1a2f;
   font-size: 20px;
+  z-index: 10;
   font-weight: 600;
   line-height: 1;
   display: flex;
@@ -1531,13 +1533,16 @@ body.builder-body {
   will-change: transform;
 }
 
-.builder-floating-logo .builder-logo-circui,
-.builder-floating-logo .builder-logo-3d {
-  color: #02ff93;
+.builder-floating-logo .builder-logo-circui {
+  color: #88ccff;
 }
 
 .builder-floating-logo .builder-logo-try {
-  color: #ff9a3c;
+  color: #ff8844;
+}
+
+.builder-floating-logo .builder-logo-3d {
+  color: #00ff88;
 }
 
 .builder-logo-controls {
@@ -1887,6 +1892,7 @@ body.builder-body {
   color: #0a1a2f;
   font-size: 18px;
   cursor: pointer;
+  z-index: 10;
 }
 
 .help-back {
@@ -1902,6 +1908,7 @@ body.builder-body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
+  z-index: 10;
   transition:
     background 0.2s ease,
     transform 0.2s ease,
