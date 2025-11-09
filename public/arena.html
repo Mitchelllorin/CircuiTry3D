@@ -7,8 +7,79 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
-  <title>CircuiTry3D ? Component Arena</title>
+  <title>CircuiTry3D — Component Arena</title>
   <style>
+    .arena-header {
+      position: fixed;
+      top: calc(16px + var(--safe-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .arena-brand {
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      display: inline-flex;
+      gap: 4px;
+      filter: drop-shadow(0 0 18px rgba(40,255,190,0.4));
+      pointer-events: auto;
+    }
+
+    .arena-brand span {
+      display: inline-block;
+    }
+
+    .arena-brand-green {
+      color: #39ffb7;
+      text-shadow: 0 0 14px rgba(57,255,183,0.7), 0 0 26px rgba(5,214,172,0.5);
+    }
+
+    .arena-brand-orange {
+      color: #ff8b2b;
+      text-shadow: 0 0 12px rgba(255,167,65,0.65), 0 0 24px rgba(255,120,28,0.5);
+    }
+
+    .arena-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      pointer-events: auto;
+    }
+
+    .arena-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(57,255,183,0.32);
+      background: rgba(8,26,36,0.58);
+      color: #dbeafe;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 0.7rem;
+      font-weight: 700;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 12px 28px rgba(1, 19, 30, 0.5);
+      cursor: pointer;
+    }
+
+    .arena-nav-btn:hover {
+      border-color: rgba(57,255,183,0.65);
+      background: rgba(14,48,60,0.68);
+      color: #f8fafc;
+    }
+
     :root {
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-left: env(safe-area-inset-left, 0px);
@@ -65,7 +136,7 @@
 
     .hud {
       position: fixed;
-      top: calc(16px + var(--safe-top));
+      top: calc(100px + var(--safe-top));
       left: calc(16px + var(--safe-left));
       right: calc(16px + var(--safe-right));
       display: flex;
@@ -115,11 +186,11 @@
 
     .panel {
       position: fixed;
-      top: calc(80px + var(--safe-top));
+      top: calc(164px + var(--safe-top));
       left: calc(16px + var(--safe-left));
       width: 340px;
       max-width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
-      max-height: calc(100vh - 110px - var(--safe-top) - var(--safe-bottom));
+      max-height: calc(100vh - 194px - var(--safe-top) - var(--safe-bottom));
       background: rgba(10, 12, 28, 0.82);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(96, 165, 250, 0.35);
@@ -368,6 +439,21 @@
   </style>
 </head>
 <body>
+  <header class="arena-header">
+    <div class="arena-brand" aria-label="CircuiTry3D">
+      <span class="arena-brand-green">Circui</span>
+      <span class="arena-brand-orange">Try</span>
+      <span class="arena-brand-green">3D</span>
+    </div>
+    <nav class="arena-nav" aria-label="Main navigation">
+      <a class="arena-nav-btn" href="/" target="_top">Home</a>
+      <a class="arena-nav-btn" href="/app" target="_top">Builder</a>
+      <a class="arena-nav-btn" href="/practice" target="_top">Practice</a>
+      <a class="arena-nav-btn" href="/pricing" target="_top">Pricing</a>
+      <a class="arena-nav-btn" href="/community" target="_top">Community</a>
+      <a class="arena-nav-btn" href="/account" target="_top">Account</a>
+    </nav>
+  </header>
   <div class="hud">
     <button class="btn" id="btn-reset" data-command="reset">Reset</button>
     <button class="btn" id="btn-run" data-command="run-test">Run Test</button>

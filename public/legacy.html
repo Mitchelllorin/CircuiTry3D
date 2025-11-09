@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script>
+        // Immediately detect embedded mode and add class to prevent splash flash
+        (function() {
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var isEmbedded = urlParams.has("embed") || window.self !== window.top;
+                if (isEmbedded) {
+                    document.documentElement.classList.add("embedded");
+                }
+            } catch (e) {
+                // Fallback: just check URL params
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    if (params.has("embed")) {
+                        document.documentElement.classList.add("embedded");
+                    }
+                } catch (err) {}
+            }
+        })();
+    </script>
     <title>CircuiTry - Professional Circuit Design</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <meta name="application-name" content="CircuiTry3D">
@@ -38,7 +58,8 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        body.embedded {
+        body.embedded,
+        html.embedded body {
             overflow: hidden;
         }
 
@@ -51,11 +72,22 @@
         body.embedded #launch-btn,
         body.embedded #loading,
         body.embedded #loading-progress,
-        body.embedded #loading-text {
+        body.embedded #loading-text,
+        html.embedded #menu-bar,
+        html.embedded #menu-toggle,
+        html.embedded #wire-analysis,
+        html.embedded #status,
+        html.embedded #branding-overlay,
+        html.embedded #landing-page,
+        html.embedded #launch-btn,
+        html.embedded #loading,
+        html.embedded #loading-progress,
+        html.embedded #loading-text {
             display: none !important;
         }
 
-        body.embedded #canvas {
+        body.embedded #canvas,
+        html.embedded #canvas {
             display: block !important;
         }
         

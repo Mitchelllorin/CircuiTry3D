@@ -47,13 +47,17 @@
       filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
     }
     .wordmark span { display: inline-block; }
-    .wordmark .brand-green {
-      color: #39ffb7;
-      text-shadow: 0 0 18px rgba(57,255,183,0.7), 0 0 34px rgba(5,214,172,0.55);
+    .wordmark .brand-blue {
+      color: #88ccff;
+      text-shadow: 0 0 18px rgba(136, 204, 255, 0.7), 0 0 34px rgba(136, 204, 255, 0.55);
     }
     .wordmark .brand-orange {
-      color: #ff8b2b;
-      text-shadow: 0 0 16px rgba(255,167,65,0.65), 0 0 30px rgba(255,120,28,0.55);
+      color: #ff8844;
+      text-shadow: 0 0 16px rgba(255, 136, 68, 0.65), 0 0 30px rgba(255, 136, 68, 0.55);
+    }
+    .wordmark .brand-green {
+      color: #00ff88;
+      text-shadow: 0 0 18px rgba(0, 255, 136, 0.7), 0 0 34px rgba(0, 255, 136, 0.55);
     }
     .subtitle {
       color: #9db8ff;
@@ -184,69 +188,66 @@
         stroke-width: 1;
         filter: drop-shadow(0 0 12px rgba(221,244,255,0.9));
       }
-    .nav-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 14px;
-      width: min(440px, 90vw);
-    }
-    .nav-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 22px;
-      border-radius: 999px;
-      border: 1px solid rgba(57,255,183,0.32);
-      background: rgba(8,26,36,0.58);
-      color: #dbeafe;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 0.22em;
-      font-size: 0.78rem;
-      font-weight: 700;
-      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 16px 38px rgba(1, 19, 30, 0.6);
-    }
-    .nav-button:hover {
-      border-color: rgba(57,255,183,0.65);
-      background: rgba(14,48,60,0.68);
-      color: #f8fafc;
-    }
     .status-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
       align-items: center;
       width: min(420px, 90vw);
     }
     .status-bar {
       width: 100%;
-      height: 10px;
+      height: 6px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(136, 204, 255, 0.12);
       position: relative;
       overflow: hidden;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      border: 1px solid rgba(136, 204, 255, 0.18);
     }
     .status-bar::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, rgba(57,255,183,0.2) 0%, rgba(57,255,183,0.9) 45%, rgba(57,255,183,0.2) 100%);
+      background: linear-gradient(90deg, rgba(136, 204, 255, 0.3) 0%, rgba(136, 204, 255, 1) 50%, rgba(136, 204, 255, 0.3) 100%);
       transform: translateX(-100%);
-      animation: sweep 3.2s ease-in-out infinite;
+      animation: sweep-once 2.4s ease-out forwards;
     }
     .status-text {
-      font-size: 0.95rem;
-      letter-spacing: 0.18em;
+      font-size: 0.88rem;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: rgba(157,184,255,0.95);
+      color: rgba(136, 204, 255, 0.92);
+      font-weight: 600;
     }
-    @keyframes sweep {
+    .launch-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 48px;
+      border-radius: 999px;
+      border: 2px solid rgba(136, 204, 255, 0.42);
+      background: rgba(136, 204, 255, 0.15);
+      color: #f8fafc;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(136, 204, 255, 0.2), 0 0 40px rgba(136, 204, 255, 0.1);
+      margin-top: 8px;
+    }
+    .launch-button:hover {
+      border-color: rgba(136, 204, 255, 0.75);
+      background: rgba(136, 204, 255, 0.25);
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(136, 204, 255, 0.3), 0 0 60px rgba(136, 204, 255, 0.2);
+    }
+    @keyframes sweep-once {
       0% { transform: translateX(-100%); }
-      50% { transform: translateX(0%); }
       100% { transform: translateX(100%); }
     }
     @media (max-height: 640px) {
@@ -258,7 +259,7 @@
 <body>
   <div class="landing-page">
       <div class="wordmark">
-        <span class="brand-green">Circui</span>
+        <span class="brand-blue">Circui</span>
         <span class="brand-orange">Try</span>
         <span class="brand-green">3D</span>
       </div>
@@ -345,17 +346,10 @@
               </svg>
       </div>
     <div class="status-wrapper">
-      <div class="status-text">Circuit environment ready</div>
+      <div class="status-text">3D Circuit Environment Ready</div>
       <div class="status-bar"></div>
+      <a class="launch-button" href="/app" id="launch-btn">Launch</a>
     </div>
-    <nav class="nav-buttons" aria-label="Primary navigation">
-      <a class="nav-button" href="/app" target="_top">Builder</a>
-      <a class="nav-button" href="/arena" target="_top">Arena</a>
-      <a class="nav-button" href="/practice" target="_top">Practice</a>
-      <a class="nav-button" href="/pricing" target="_top">Pricing</a>
-      <a class="nav-button" href="/community" target="_top">Community</a>
-      <a class="nav-button" href="/account" target="_top">Account</a>
-    </nav>
   </div>
   <script>
     (function(){
@@ -415,10 +409,10 @@
         return false;
       };
 
-      const navButtons = Array.from(document.querySelectorAll('.nav-button'));
-      navButtons.forEach((button) => {
-        button.addEventListener('click', (event) => {
-          const href = button.getAttribute('href');
+      const launchButton = document.getElementById('launch-btn');
+      if (launchButton) {
+        launchButton.addEventListener('click', (event) => {
+          const href = launchButton.getAttribute('href');
           if (!href) {
             return;
           }
@@ -429,7 +423,7 @@
             event.preventDefault();
           }
         });
-      });
+      }
   })();
 </script>
 </body>

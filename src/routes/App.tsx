@@ -20,10 +20,6 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/community" element={<Community />} />
         <Route path="/account" element={<Account />} />
-        <Route path="/arena" element={<Arena />} />
-        <Route path="/wire-demo" element={<WireDemo />} />
-        <Route path="/schematic" element={<SchematicMode />} />
-        <Route path="/practice" element={<Practice />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -32,10 +28,10 @@ export default function App() {
 
 function NotFound() {
   return (
-    <div style={{ padding: 24, color: "#fff", background: "#0f172a", minHeight: "100vh" }}>
+    <div style={{ padding: 24, color: "var(--text-primary)", background: "var(--bg-darker)", minHeight: "100vh" }}>
       <h1>404</h1>
       <p>Page not found.</p>
-      <Link to="/">Go Home</Link>
+      <Link to="/" style={{ color: "var(--brand-primary)" }}>Go Home</Link>
     </div>
   );
 }

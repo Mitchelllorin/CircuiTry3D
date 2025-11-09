@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
-import UnifiedNav from "../components/UnifiedNav";
 import type { FormEvent } from "react";
 import "../styles/community.css";
 
@@ -116,7 +115,6 @@ export default function Community() {
 
   return (
     <div className="community-page">
-      <UnifiedNav />
       <header className="community-hero">
         <div>
           <span className="community-eyebrow">Community Hub</span>

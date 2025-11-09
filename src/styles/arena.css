@@ -6,8 +6,8 @@ body.builder-body .arena-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.08), transparent 55%),
-    radial-gradient(circle at 80% 10%, rgba(251, 191, 36, 0.06), transparent 50%),
+  background: radial-gradient(circle at 20% 20%, var(--brand-primary-dim), transparent 55%),
+    radial-gradient(circle at 80% 10%, transparent, transparent 50%),
     linear-gradient(180deg, #020617 0%, #0f172a 45%, #020617 100%);
   color: #e2e8f0;
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -170,7 +170,7 @@ body.builder-body .arena-page {
 }
 
 .metric-r {
-  border-color: rgba(34, 197, 94, 0.45);
+  border-color: var(--brand-primary-dim);
   background: linear-gradient(135deg, rgba(5, 122, 85, 0.38) 0%, rgba(5, 122, 85, 0.06) 100%);
 }
 
@@ -209,8 +209,8 @@ body.builder-body .arena-page {
 }
 
 .arena-import-card.drag-active {
-  border-color: rgba(56, 189, 248, 0.7);
-  box-shadow: 0 18px 42px rgba(56, 189, 248, 0.18);
+  border-color: rgba(0, 255, 136, 0.7);
+  box-shadow: 0 18px 42px var(--brand-primary-dim);
 }
 
 .arena-import-intro {
@@ -413,8 +413,8 @@ body.builder-body .arena-page {
 
 .arena-import-textlabel textarea:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.65);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+  border-color: rgba(0, 255, 136, 0.65);
+  box-shadow: 0 0 0 2px var(--brand-primary-dim);
 }
 
 .arena-import-submit {
@@ -702,8 +702,8 @@ body.builder-body .arena-page {
 
 .arena-showdown-select select:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.65);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+  border-color: rgba(0, 255, 136, 0.65);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.15);
 }
 
 .arena-showdown-competitors {
@@ -753,8 +753,8 @@ body.builder-body .arena-page {
 }
 
 .arena-avatar-resistor {
-  --arena-avatar-bg: linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(251, 191, 36, 0.22));
-  --arena-avatar-border: rgba(251, 191, 36, 0.55);
+  --arena-avatar-bg: linear-gradient(135deg, var(--brand-primary-dim), var(--brand-primary-dim));
+  --arena-avatar-border: var(--brand-primary-dim);
   --arena-avatar-fg: rgba(255, 248, 240, 0.95);
 }
 
@@ -765,14 +765,14 @@ body.builder-body .arena-page {
 }
 
 .arena-avatar-battery {
-  --arena-avatar-bg: linear-gradient(135deg, rgba(251, 191, 36, 0.32), rgba(34, 197, 94, 0.24));
+  --arena-avatar-bg: linear-gradient(135deg, var(--brand-primary-dim), var(--brand-primary-dim));
   --arena-avatar-border: rgba(234, 179, 8, 0.55);
   --arena-avatar-fg: rgba(255, 250, 235, 0.95);
 }
 
 .arena-avatar-capacitor {
-  --arena-avatar-bg: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(14, 165, 233, 0.22));
-  --arena-avatar-border: rgba(56, 189, 248, 0.55);
+  --arena-avatar-bg: linear-gradient(135deg, rgba(0, 255, 136, 0.35), rgba(14, 165, 233, 0.22));
+  --arena-avatar-border: rgba(0, 255, 136, 0.55);
   --arena-avatar-fg: rgba(224, 242, 254, 0.95);
 }
 
@@ -783,7 +783,7 @@ body.builder-body .arena-page {
 }
 
 .arena-avatar-switch {
-  --arena-avatar-bg: linear-gradient(135deg, rgba(45, 212, 191, 0.34), rgba(34, 197, 94, 0.22));
+  --arena-avatar-bg: linear-gradient(135deg, rgba(45, 212, 191, 0.34), var(--brand-primary-dim));
   --arena-avatar-border: rgba(45, 212, 191, 0.55);
   --arena-avatar-fg: rgba(236, 253, 245, 0.95);
 }
@@ -861,20 +861,20 @@ body.builder-body .arena-page {
 }
 
 .arena-glyph-resistor {
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.32), rgba(120, 53, 15, 0.45));
-  border-color: rgba(251, 191, 36, 0.55);
+  background: linear-gradient(135deg, var(--brand-primary-dim), transparent);
+  border-color: var(--brand-primary-dim);
   color: rgba(255, 237, 213, 0.95);
 }
 
 .arena-glyph-capacitor {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.32), rgba(15, 118, 110, 0.45));
-  border-color: rgba(56, 189, 248, 0.55);
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.32), rgba(15, 118, 110, 0.45));
+  border-color: rgba(0, 255, 136, 0.55);
   color: rgba(224, 242, 254, 0.96);
 }
 
 .arena-glyph-battery {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(21, 128, 61, 0.55));
-  border-color: rgba(34, 197, 94, 0.52);
+  background: linear-gradient(135deg, var(--brand-primary-dim), rgba(21, 128, 61, 0.55));
+  border-color: var(--brand-primary-dim);
   color: rgba(240, 253, 244, 0.95);
 }
 
@@ -1024,7 +1024,7 @@ body.builder-body .arena-page {
 }
 
 .arena-flow-lane[data-direction="right"] .arena-flow-current {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0) 0%, rgba(34, 197, 94, 0.9) 50%, rgba(34, 197, 94, 0) 100%);
+  background: linear-gradient(90deg, var(--brand-primary-dim) 0%, var(--brand-primary-dim) 50%, var(--brand-primary-dim) 100%);
   animation-direction: normal;
 }
 
@@ -1057,7 +1057,7 @@ body.builder-body .arena-page {
 }
 
 .arena-showdown-team.winner {
-  border-color: rgba(34, 197, 94, 0.65);
+  border-color: var(--brand-primary-dim);
   box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.4), 0 14px 36px rgba(16, 185, 129, 0.22);
 }
 
@@ -1112,7 +1112,7 @@ body.builder-body .arena-page {
 }
 
 .arena-showdown-stat.win {
-  border-color: rgba(34, 197, 94, 0.55);
+  border-color: var(--brand-primary-dim);
   box-shadow: 0 12px 28px rgba(16, 185, 129, 0.18);
 }
 
@@ -1154,8 +1154,8 @@ body.builder-body .arena-page {
   gap: 6px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.18);
-  border: 1px solid rgba(34, 197, 94, 0.5);
+  background: var(--brand-primary-dim);
+  border: 1px solid var(--brand-primary-dim);
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1208,7 +1208,7 @@ body.builder-body .arena-page {
 }
 
 .score-chip.team-b {
-  border-color: rgba(249, 115, 22, 0.45);
+  border-color: var(--brand-primary-dim);
 }
 
 .score-chip.leading {
@@ -1284,7 +1284,7 @@ body.builder-body .arena-page {
 }
 
 .score-round.win-right {
-  border-color: rgba(249, 115, 22, 0.5);
+  border-color: var(--brand-primary-dim);
 }
 
 .score-round.tie {
@@ -1392,7 +1392,7 @@ body.builder-body .arena-page {
 
 .arena-showdown-delta {
   font-size: 0.78rem;
-  color: rgba(56, 189, 248, 0.88);
+  color: rgba(0, 255, 136, 0.88);
 }
 
 @media (max-width: 960px) {
@@ -1602,7 +1602,7 @@ body.builder-body .arena-page {
 }
 
 .arena-btn.solid {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(16, 185, 129, 0.7));
+  background: linear-gradient(135deg, var(--brand-primary-dim), rgba(16, 185, 129, 0.7));
   border-color: rgba(16, 185, 129, 0.9);
   color: #042f2e;
 }
@@ -1613,7 +1613,7 @@ body.builder-body .arena-page {
 
 .arena-btn.outline {
   background: rgba(15, 23, 42, 0.65);
-  border-color: rgba(56, 189, 248, 0.5);
+  border-color: rgba(0, 255, 136, 0.5);
   color: rgba(203, 213, 225, 0.95);
 }
 

@@ -23,7 +23,7 @@
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.75rem;
-  color: #38bdf8;
+  color: var(--brand-primary);
   display: block;
   margin-bottom: 8px;
 }
@@ -43,7 +43,7 @@
   display: inline-flex;
   padding: 6px;
   border-radius: 999px;
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid var(--brand-secondary-glow);
   background: rgba(8, 47, 73, 0.6);
   gap: 6px;
 }
@@ -60,8 +60,8 @@
 }
 
 .tab-button.is-active {
-  background: rgba(56, 189, 248, 0.2);
-  color: #38bdf8;
+  background: var(--brand-secondary-dim);
+  color: var(--brand-primary);
 }
 
 .tab-button:disabled {
@@ -130,8 +130,8 @@
 .account-form input:focus,
 .account-form textarea:focus {
   outline: none;
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+  border-color: var(--brand-secondary-glow);
+  box-shadow: 0 0 0 4px var(--brand-secondary-dim);
 }
 
 .account-form textarea {
@@ -154,7 +154,7 @@
 }
 
 .account-primary {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.85), rgba(14, 165, 233, 0.9));
+  background: linear-gradient(135deg, var(--brand-secondary-glow), var(--brand-secondary-glow));
   color: #0b1120;
   font-weight: 600;
 }
@@ -167,7 +167,7 @@
 
 .account-primary:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px -12px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 12px 24px -12px var(--brand-secondary-glow);
 }
 
 .account-secondary {
@@ -188,7 +188,7 @@
 .account-hint button {
   background: none;
   border: none;
-  color: #38bdf8;
+  color: var(--brand-primary);
   cursor: pointer;
   padding: 0;
 }

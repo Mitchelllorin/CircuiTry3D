@@ -21,7 +21,7 @@
 }
 
 .unified-nav-brand span {
-  color: #38bdf8;
+  color: var(--brand-blue);
 }
 
 .unified-nav-links {
@@ -41,7 +41,7 @@
 
 .unified-nav-link:hover {
   color: #f8fafc;
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--brand-secondary-dim);
 }
 
 .unified-nav-account {
@@ -56,7 +56,7 @@
 }
 
 .unified-nav-account:hover {
-  border-color: rgba(56, 189, 248, 0.35);
+  border-color: var(--brand-secondary-glow);
   color: #f8fafc;
 }
 
