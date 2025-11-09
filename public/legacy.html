@@ -31,7 +31,7 @@
             color: white; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
-            touch-action: pan-x pan-y pinch-zoom;
+            touch-action: none;
             position: fixed;
             width: 100%;
             height: 100%;
@@ -981,7 +981,7 @@
             color: white; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
-            touch-action: pan-x pan-y pinch-zoom;
+            touch-action: none;
             position: fixed;
             width: 100%;
             height: 100%;
@@ -1858,7 +1858,7 @@
             width: 100vw;
             height: 100vh;
             display: block;
-            touch-action: pan-x pan-y pinch-zoom;
+            touch-action: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -4902,17 +4902,19 @@ body.android-optimized.menu-visible .status {
 
             createSelectionBox(group) {
                 const selectionGeometry = new THREE.BoxGeometry(
-                    isMobile ? 3.5 : 2.5, 
-                    isMobile ? 2.0 : 1.5, 
-                    isMobile ? 2.0 : 1.5
+                    isMobile ? 4.0 : 3.2, 
+                    isMobile ? 2.5 : 2.2, 
+                    isMobile ? 2.5 : 2.2
                 );
                 const selectionMaterial = new THREE.MeshBasicMaterial({ 
                     transparent: true,
-                    opacity: 0.0
+                    opacity: 0.0,
+                    depthTest: false
                 });
                 
                 const selectionBox = new THREE.Mesh(selectionGeometry, selectionMaterial);
                 selectionBox.userData = { component: this, isSelectionBox: true };
+                selectionBox.renderOrder = 1000; // Ensure high priority for raycasting
                 
                 group.add(selectionBox);
                 this.selectionBox = selectionBox;
@@ -5538,6 +5540,8 @@ body.android-optimized.menu-visible .status {
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 
                 raycaster = new THREE.Raycaster();
+                raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;
+                raycaster.params.Line.threshold = isMobile ? 0.5 : 0.3;
                 mouse = new THREE.Vector2();
                 
                 // Lighting - reduced for mobile performance
@@ -5907,11 +5911,15 @@ body.android-optimized.menu-visible .status {
                 isRotating = false;
                 isPanning = false;
                 
-                if (checkComponentHit(touch.clientX, touch.clientY)) {
-                    return;
+                // Check for component hit but don't block rotation setup
+                // This allows camera rotation to start if the user moves before long-press completes
+                const hitComponent = checkComponentHit(touch.clientX, touch.clientY);
+                
+                // Enable rotation for empty space touches
+                // For component touches, rotation will be enabled in touchmove if not dragging
+                if (!hitComponent) {
+                    isRotating = true;
                 }
-
-                isRotating = true;
                 
             } else if (e.touches.length === 2) {
                 // Two-finger gesture setup
@@ -5956,15 +5964,23 @@ body.android-optimized.menu-visible .status {
 
                 if (isDragging && selectedComponent) {
                     handleComponentDrag(touch.clientX, touch.clientY);
-                } else if (isRotating) {
-                    const deltaX = touch.clientX - lastTouchPos.x;
-                    const deltaY = touch.clientY - lastTouchPos.y;
+                } else {
+                    // Enable rotation if not dragging, even if we initially touched a component
+                    // This allows camera rotation when touching near components
+                    if (!isRotating && !isDragging) {
+                        isRotating = true;
+                    }
+                    
+                    if (isRotating) {
+                        const deltaX = touch.clientX - lastTouchPos.x;
+                        const deltaY = touch.clientY - lastTouchPos.y;
 
-                    if (!Number.isNaN(deltaX) && !Number.isNaN(deltaY)) {
-                        cameraAngleX += deltaX * TOUCH_ROTATE_SENSITIVITY_X;
-                        const proposedAngleY = cameraAngleY - deltaY * TOUCH_ROTATE_SENSITIVITY_Y;
-                        cameraAngleY = Math.max(TOUCH_ROTATE_Y_MIN, Math.min(TOUCH_ROTATE_Y_MAX, proposedAngleY));
-                        updateCameraPosition();
+                        if (!Number.isNaN(deltaX) && !Number.isNaN(deltaY)) {
+                            cameraAngleX += deltaX * TOUCH_ROTATE_SENSITIVITY_X;
+                            const proposedAngleY = cameraAngleY - deltaY * TOUCH_ROTATE_SENSITIVITY_Y;
+                            cameraAngleY = Math.max(TOUCH_ROTATE_Y_MIN, Math.min(TOUCH_ROTATE_Y_MAX, proposedAngleY));
+                            updateCameraPosition();
+                        }
                     }
                 }
                 
@@ -6051,7 +6067,15 @@ body.android-optimized.menu-visible .status {
                 } else {
                     cancelLongPress();
                 }
-                checkComponentHit(e.clientX, e.clientY);
+                
+                // Check if clicking on a component first
+                const hitComponent = checkComponentHit(e.clientX, e.clientY);
+                
+                // If no component hit and not dragging, enable camera rotation
+                if (!hitComponent && !isDragging) {
+                    isRotating = true;
+                    lastTouchPos = { x: e.clientX, y: e.clientY };
+                }
             } else if (e.button === 2) {
                 isRotating = true;
                 lastTouchPos = { x: e.clientX, y: e.clientY };
