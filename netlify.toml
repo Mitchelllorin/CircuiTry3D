@@ -5,6 +5,12 @@
 [build.environment]
   NODE_VERSION = "20.19"
 
+[dev]
+  command = "npm run dev"
+  targetPort = 3000
+  port = 8888
+  autoLaunch = false
+
 [[redirects]]
   from = "/"
   to = "/index.html"

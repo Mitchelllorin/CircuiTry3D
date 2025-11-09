@@ -12,14 +12,9 @@ import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
-import { ArenaPanel } from "../components/builder/panels/ArenaPanel";
-import { PracticePanel } from "../components/builder/panels/PracticePanel";
-import { SchematicPanel } from "../components/builder/panels/SchematicPanel";
-import { LeftToolbar } from "../components/builder/toolbars/LeftToolbar";
-import { RightToolbar } from "../components/builder/toolbars/RightToolbar";
-import { BottomToolbar } from "../components/builder/toolbars/BottomToolbar";
-import { HelpModal } from "../components/builder/modals/HelpModal";
-import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
+import ArenaView from "../components/arena/ArenaView";
+import Practice from "./Practice";
+import { BuilderModeView } from "./SchematicMode";
 import {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -61,7 +56,6 @@ import {
   PRACTICE_ACTIONS,
   WIRE_METRICS,
   WIRE_LEGEND,
-  HELP_ENTRIES,
 } from "../components/builder/constants";
 
 const HELP_SECTIONS: HelpSection[] = [
@@ -562,6 +556,57 @@ const HELP_VIEW_CONTENT: Record<
     sections: ABOUT_SECTIONS,
   },
 };
+
+const HELP_ENTRIES: HelpEntry[] = [
+  {
+    id: "practice",
+    label: "Table Method Worksheet",
+    description:
+      "Open the W.I.R.E. table method steps plus a printable worksheet.",
+    view: "practice",
+  },
+  {
+    id: "tutorial",
+    label: "Guided Tutorial",
+    description: "Step-by-step quick start for the onboarding flow.",
+    view: "tutorial",
+  },
+  {
+    id: "wire-guide",
+    label: "W.I.R.E. Guide",
+    description:
+      "Break down Watts, Current, Resistance, and Voltage in detail.",
+    view: "wire-guide",
+  },
+  {
+    id: "schematic",
+    label: "Schematic Standards",
+    description:
+      "Reference best practices for clean, recognisable circuit diagrams.",
+    view: "schematic",
+  },
+  {
+    id: "shortcuts",
+    label: "Keyboard Shortcuts",
+    description:
+      "Look up every keyboard, mouse, and touch shortcut in one place.",
+    view: "shortcuts",
+  },
+  {
+    id: "about",
+    label: "About CircuiTry3D",
+    description:
+      "Learn what is new in v2.5 and how the simulator supports teaching.",
+    view: "about",
+  },
+  {
+    id: "help-center",
+    label: "Help Center",
+    description:
+      "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
+    view: "overview",
+  },
+];
 
 type IconProps = {
   className?: string;
