@@ -2,12 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  // Use relative paths so assets load correctly inside Capacitor (app:// scheme)
-  // Without this, Android may appear stuck after the system splash because the
-  // WebView can't resolve absolute "/assets" URLs.
-  // NOTE: Vite recommends './' for truly relative asset URLs in file/protocol environments
-  base: './',
+export default defineConfig(({ mode }) => ({
+  // Use relative paths only for Capacitor builds (app:// scheme).
+  // For web deployments (dev, preview, production), use absolute paths.
+  // This prevents asset loading issues in both environments.
+  base: mode === 'capacitor' ? './' : '/',
   plugins: [react()],
   build: {
     outDir: 'dist',
@@ -28,4 +27,4 @@ export default defineConfig({
   preview: {
     port: 4173
   }
-});
+}));

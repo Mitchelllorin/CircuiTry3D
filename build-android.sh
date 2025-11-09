@@ -30,7 +30,7 @@ echo ""
 
 # Step 2: Build web app
 echo -e "${YELLOW}Step 2: Building web application...${NC}"
-npm run build
+npm run build -- --mode capacitor
 echo -e "${GREEN}✓ Web app built${NC}"
 echo ""
 
