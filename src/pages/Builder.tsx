@@ -15,6 +15,9 @@ import "../styles/schematic.css";
 import { ArenaPanel } from "../components/builder/panels/ArenaPanel";
 import { PracticePanel } from "../components/builder/panels/PracticePanel";
 import { SchematicPanel } from "../components/builder/panels/SchematicPanel";
+import Practice from "./Practice";
+import { BuilderModeView } from "./SchematicMode";
+import ArenaView from "../components/arena/ArenaView";
 import { LeftToolbar } from "../components/builder/toolbars/LeftToolbar";
 import { RightToolbar } from "../components/builder/toolbars/RightToolbar";
 import { BottomToolbar } from "../components/builder/toolbars/BottomToolbar";
@@ -1690,9 +1693,6 @@ export default function Builder() {
           title="CircuiTry3D Builder"
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
-          onLoad={() => {
-            setFrameReady(true);
-          }}
         />
       </div>
 
