@@ -1114,6 +1114,10 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     left: null,
     right: null
   });
+  const [battleState, setBattleState] = useState<"idle" | "battling" | "complete">("idle");
+  const [battleWinner, setBattleWinner] = useState<"left" | "right" | "tie" | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
+  const [rotationEnabled, setRotationEnabled] = useState(true);
 
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
@@ -1695,6 +1699,30 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     [sendArenaMessage]
   );
 
+  const handleBattle = useCallback(() => {
+    if (battleState === "battling") return;
+    
+    setBeforeMetrics({
+      left: componentATelemetry,
+      right: componentBTelemetry
+    });
+    setBattleState("battling");
+    setBattleWinner(null);
+    
+    setTimeout(() => {
+      if (showdownWinner) {
+        setBattleWinner(showdownWinner);
+      }
+      setBattleState("complete");
+    }, 3000);
+  }, [battleState, componentATelemetry, componentBTelemetry, showdownWinner]);
+
+  const handleResetBattle = useCallback(() => {
+    setBattleState("idle");
+    setBattleWinner(null);
+    setBeforeMetrics({left: null, right: null});
+  }, []);
+
   const renderBattlePanel = (
     side: "left" | "right",
     {
@@ -1723,85 +1751,36 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
 
     return (
       <div className={`arena-battle-panel arena-battle-panel-${side}`}>
-        <div className={`arena-showdown-team${isChampion ? " winner" : isTie ? " tie" : ""}`}>
-          {profile ? (
-            <div className={`arena-showdown-avatar arena-avatar-${typeClass}`}>
-              <span>{getComponentBadgeLabel(profile.type)}</span>
-            </div>
-          ) : (
-            <div className="arena-showdown-avatar arena-avatar-generic">
-              <span>{side === "left" ? "A" : "B"}</span>
-            </div>
-          )}
-          <div className="arena-battle-tagline">
-            <span className="arena-showdown-tag">{tag}</span>
-            {isChampion && <span className="arena-showdown-badge">Champion</span>}
-            {!isChampion && isTie && <span className="arena-showdown-badge neutral">Dead Heat</span>}
-          </div>
-          <h3>{profile?.name ?? "Select a component"}</h3>
-          <span className="arena-showdown-type">{profile?.type ?? "—"}</span>
-          {profile?.summary && <p>{profile.summary}</p>}
-          {record && <span className="arena-showdown-record">Record {record}</span>}
-          <div className="arena-component-visual">
-            <ComponentGlyph type={profile?.type} />
-            {warnings.length > 0 && (
-              <div className="arena-threshold-badges">
-                {warnings.slice(0, 3).map((warning) => (
-                  <span key={`${side}-warning-${warning.id}`} className={`arena-threshold-badge ${warning.severity}`}>
-                    {warning.icon} {warning.label}
-                  </span>
-                ))}
+        <div className="arena-component-info">
+          <div className={`arena-component-stage${rotationEnabled ? " rotating" : ""}${battleState === "battling" ? " battling" : ""}`}>
+            <div className="arena-component-dais">
+              <div className="arena-dais-platform">
+                <ComponentGlyph type={profile?.type} />
               </div>
-            )}
-            {telemetry.length > 0 && (
-              <div className="arena-telemetry-grid">
-                {telemetry.map((entry) => (
-                  <div
-                    key={`${side}-telemetry-${entry.id}`}
-                    className={`arena-telemetry-card${entry.severity !== "normal" ? ` ${entry.severity}` : ""}`}
-                  >
-                    <span className="telemetry-icon">{entry.icon}</span>
-                    <span className="telemetry-label">{entry.label}</span>
-                    <span className="telemetry-value">{entry.displayValue}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+              <div className="arena-dais-base" />
+            </div>
           </div>
-          {highlightMetrics.length > 0 && (
-            <ul className="arena-showdown-statlist">
-              {highlightMetrics.map((metric) => {
-                const counterpart = opponentMetricMap.get(metric.key);
-                const counterpartNumeric = counterpart?.numericValue ?? null;
-                const round = showdownRoundByKey.get(metric.key);
-                const hasNumeric = metric.numericValue !== null && counterpartNumeric !== null;
-                const deltaLabel = hasNumeric
-                  ? round?.deltaLabel ?? formatDeltaLabel(
-                      metric.label,
-                      metric.unit ?? counterpart?.unit ?? null,
-                      metric.numericValue,
-                      counterpartNumeric
-                    )
-                  : null;
-                let statusClass = "";
-                if (round) {
-                  if (round.winner === (side === "left" ? "left" : "right")) {
-                    statusClass = " win";
-                  } else if (round.winner === (side === "left" ? "right" : "left")) {
-                    statusClass = " loss";
-                  } else {
-                    statusClass = " tie";
-                  }
-                }
-                return (
-                  <li key={`${side}-${metric.key}`} className={`arena-showdown-stat${statusClass}`}>
-                    <span className="arena-stat-label">{metric.label}</span>
-                    <span className="arena-stat-value">{metric.displayValue}</span>
-                    {deltaLabel && <span className="arena-stat-delta">{deltaLabel}</span>}
-                  </li>
-                );
-              })}
-            </ul>
+          
+          <div style={{textAlign: 'center'}}>
+            <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.7)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px'}}>{tag}</div>
+            <h3 style={{margin: '0 0 4px', fontSize: '1.1rem', fontWeight: '600'}}>{profile?.name ?? "No component"}</h3>
+            <div style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)'}}>{profile?.type ?? "—"}</div>
+            {isChampion && <div style={{marginTop: '8px', padding: '4px 12px', background: 'var(--brand-primary-dim)', borderRadius: '999px', display: 'inline-block', fontSize: '0.7rem', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase'}}>CHAMPION</div>}
+          </div>
+
+          {telemetry.length > 0 && (
+            <div className="arena-telemetry-grid" style={{width: '100%'}}>
+              {telemetry.map((entry) => (
+                <div
+                  key={`${side}-telemetry-${entry.id}`}
+                  className={`arena-telemetry-card${entry.severity !== "normal" ? ` ${entry.severity}` : ""}`}
+                >
+                  <span className="telemetry-icon">{entry.icon}</span>
+                  <span className="telemetry-label">{entry.label}</span>
+                  <span className="telemetry-value">{entry.displayValue}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -1817,15 +1796,10 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
           </button>
           <div className="arena-title-group">
             <h1>Component Arena</h1>
-            <p>Lightning drills for your W.I.R.E. builds.</p>
+            <p>Test and compare components side-by-side</p>
           </div>
         </div>
         <div className="arena-header-right">
-          <div className="arena-sync-meta">
-            <span className="arena-sync-status">{importPending ? "Importing dataset..." : importPayload ? "Arena linked" : "Waiting for builder import"}</span>
-            {recentImportSource && <span className="arena-sync-source">{recentImportSource}</span>}
-            <span className="arena-sync-timestamp">{formatTimestamp(importPayload?.generatedAt)}</span>
-          </div>
           {showOpenBuilderButton ? (
             <button className="arena-btn outline" type="button" onClick={handleOpenBuilderClick}>
               Open Builder
@@ -1835,10 +1809,10 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       </header>
 
       <div className="arena-body">
-        <aside className="arena-rail">
-          <section className="arena-card">
+        <section className="arena-wire-section">
+          <div className="arena-card">
             <div className="arena-card-header">
-              <h2>W.I.R.E. Snapshot</h2>
+              <h2>W.I.R.E. Overall Metrics</h2>
               <button className="arena-btn link" type="button" onClick={handleSyncFromStorage}>
                 {importPayload ? "Refresh" : "Sync"}
               </button>
@@ -1852,369 +1826,183 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                 </div>
               ))}
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section
-            className={`arena-card arena-import-card${isDragActive ? " drag-active" : ""}`}
-            onDragEnter={handleDragOver}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
+        <section className="arena-import-section">
+          <div className="arena-card">
             <div className="arena-card-header">
-              <div>
-                <h2>Import Hub</h2>
-                <p className="arena-import-intro">Drop JSON files, paste data, or pull from the builder to prep for battle testing.</p>
-              </div>
-              <div className="arena-import-chips">
-                {recentImportSource && <span className="arena-import-chip">{recentImportSource}</span>}
-                {typeof importPayload?.summary?.totalComponents === "number" && (
-                  <span className="arena-import-chip">{importPayload.summary.totalComponents} components</span>
-                )}
-              </div>
+              <h2>Import Components</h2>
             </div>
-            <p className="arena-status-text">{bridgeStatus}</p>
-            {importError && <p className="arena-status-text arena-status-error">{importError}</p>}
-            <div className="arena-import-grid">
-              <div className="arena-import-column">
-                <div className="arena-import-actions">
-                  <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
-                    Pull Latest Builder State
-                  </button>
-                  {showOpenBuilderButton ? (
-                    <button className="arena-btn ghost" type="button" onClick={handleOpenBuilderClick}>
-                      Open Builder
-                    </button>
-                  ) : null}
-                  <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
-                    Import from Clipboard
-                  </button>
-                  <button className="arena-btn outline" type="button" onClick={() => handleCommand("export")}>Export Results</button>
-                </div>
-                <div className="arena-import-samples">
-                  <span className="arena-import-subheading">Quick Samples</span>
-                  <div className="arena-import-sample-buttons">
-                    {sampleImports.map((sample) => (
-                      <button
-                        key={sample.id}
-                        className="arena-sample-btn"
-                        type="button"
-                        onClick={() => handleSampleImport(sample.payload)}
-                        disabled={importPending}
-                      >
-                        <span className="sample-title">{sample.label}</span>
-                        <span className="sample-desc">{sample.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
+              <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
+                Pull from Builder
+              </button>
+              <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
+                Paste from Clipboard
+              </button>
+              {sampleImports.map((sample) => (
                 <button
-                  className="arena-btn link"
+                  key={sample.id}
+                  className="arena-btn ghost"
                   type="button"
-                  onClick={() => sampleImports[0] && handleSampleImport(sampleImports[0].payload)}
-                  disabled={!sampleImports.length || importPending}
+                  onClick={() => handleSampleImport(sample.payload)}
+                  disabled={importPending}
                 >
-                  Reload default sample library
+                  {sample.label}
                 </button>
-              </div>
-              <div className="arena-import-column">
-                <div
-                  className={`arena-import-dropzone${isDragActive ? " is-active" : ""}`}
-                  onDragEnter={handleDragOver}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    ref={fileInputRef}
-                    className="arena-import-file-input"
-                    type="file"
-                    accept="application/json"
-                    onChange={handleFileInputChange}
-                    disabled={importPending}
-                  />
-                  <div className="arena-import-dropcopy">
-                    <strong>Drag & Drop JSON</strong>
-                    <span>
-                      or
-                      <button className="arena-import-browse" type="button" onClick={() => fileInputRef.current?.click()} disabled={importPending}>
-                        Browse
-                      </button>
-                    </span>
-                    <span className="arena-import-hint">Supports builder exports, Arena exports, and custom component sets.</span>
-                  </div>
-                </div>
-                <label className="arena-import-textlabel">
-                  <span className="arena-import-textlabel-heading">Paste JSON</span>
-                  <textarea
-                    value={manualImportText}
-                    onChange={(event) => setManualImportText(event.target.value)}
-                    placeholder="Paste components JSON from the builder, lab equipment, or another arena."
-                    rows={6}
-                  />
-                </label>
-                <div className="arena-import-submit">
-                  <button
-                    className="arena-btn solid"
-                    type="button"
-                    onClick={handleManualImportSubmit}
-                    disabled={importPending || manualImportText.trim().length === 0}
-                  >
-                    Import Pasted JSON
-                  </button>
-                  <button
-                    className="arena-btn ghost"
-                    type="button"
-                    onClick={() => setManualImportText("")}
-                    disabled={manualImportText.trim().length === 0}
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
-          </section>
+            {importError && <p className="arena-status-text arena-status-error" style={{marginTop: '12px'}}>{importError}</p>}
+            {recentImportSource && (
+              <p style={{marginTop: '12px', fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.9)'}}>Loaded: {recentImportSource}</p>
+            )}
+          </div>
+        </section>
 
-          {circuitTotals.length > 0 && (
-            <section className="arena-card">
-              <div className="arena-card-header">
-                <h2>Session Totals</h2>
-              </div>
-              <div className="arena-total-grid">
-                {circuitTotals.map((item) => (
-                  <div key={item.label} className="arena-total">
-                    <span className="arena-total-label">{item.label}</span>
-                    <span className="arena-total-value">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </aside>
-
-        <main className="arena-stage" aria-busy={!frameReady}>
-          <section className="arena-card arena-showdown-card">
+        <section className="arena-selectors-section">
+          <div className="arena-card">
             <div className="arena-card-header">
-              <div>
-                <h2>Component Showdown</h2>
-                <p className="arena-showdown-intro">Pick two components from your import to compare their key metrics side by side.</p>
-              </div>
+              <h2>Select Components for Testing</h2>
             </div>
-
             {componentProfiles.length > 0 ? (
-              <>
-                <div className="arena-showdown-selects">
-                  <label className="arena-showdown-select">
-                    <span className="arena-showdown-select-label">Component A</span>
-                    <select
-                      aria-label="Component A selection"
-                      value={componentAProfile?.uid ?? showdownSelection.left ?? ""}
-                      onChange={(event) =>
-                        setShowdownSelection((prev) => ({
-                          left: event.target.value || null,
-                          right: prev.right
-                        }))
-                      }
-                    >
-                      <option value="" disabled>
-                        {componentProfiles.length ? "Select component" : "No components"}
+              <div className="arena-showdown-selects">
+                <label className="arena-showdown-select">
+                  <span className="arena-showdown-select-label">Component A</span>
+                  <select
+                    aria-label="Component A selection"
+                    value={componentAProfile?.uid ?? showdownSelection.left ?? ""}
+                    onChange={(event) =>
+                      setShowdownSelection((prev) => ({
+                        left: event.target.value || null,
+                        right: prev.right
+                      }))
+                    }
+                  >
+                    <option value="" disabled>
+                      {componentProfiles.length ? "Select component" : "No components"}
+                    </option>
+                    {componentOptions.map((option) => (
+                      <option key={option.uid} value={option.uid}>
+                        {option.label}
                       </option>
-                      {componentOptions.map((option) => (
-                        <option key={option.uid} value={option.uid}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="arena-showdown-select">
-                    <span className="arena-showdown-select-label">Component B</span>
-                    <select
-                      aria-label="Component B selection"
-                      value={showdownSelection.right ?? ""}
-                      onChange={(event) =>
-                        setShowdownSelection((prev) => ({
-                          left: prev.left,
-                          right: event.target.value || null
-                        }))
-                      }
-                    >
-                      <option value="">Select component</option>
-                      {componentOptions.map((option) => (
-                        <option key={option.uid} value={option.uid}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                  <div className="arena-battle-stage">
-                    {renderBattlePanel("left", {
-                      profile: componentAProfile,
-                      telemetry: componentATelemetry,
-                      warnings: componentAWarnings,
-                      highlightMetrics: leftHighlightMetrics,
-                      opponentMetricMap: componentBMetricMap,
-                      record: hasShowdown ? leftRecord : null,
-                      isChampion: teamAChampion,
-                      isTie: showdownTie,
-                      tag: "Component A"
-                    })}
-                    <div className="arena-battle-overlay">
-                      <div className="arena-battle-versus">
-                        <div className="arena-battle-vs">VS</div>
-                        <div className="arena-battle-flow">
-                          <div className="arena-flow-lane" data-direction={battleFlow.direction} style={flowStyles}>
-                            <div className="arena-flow-current" />
-                          </div>
-                          <span className="arena-flow-label">{battleFlow.label}</span>
-                        </div>
-                      </div>
-                      {hasShowdown ? (
-                        <div className="arena-showdown-scoreboard">
-                          <div className="arena-scoreboard-totals">
-                            <div className={`score-chip team-a${teamAChampion ? " leading" : ""}`}>
-                              <span className="score-name">{componentAProfile?.name ?? "Component A"}</span>
-                              <span className="score-value">{showdownScore.leftWins}</span>
-                              <span className="score-record">{leftRecord}</span>
-                            </div>
-                            <div className="score-divider">
-                              <span className="score-vs">VS</span>
-                              <span className="score-rounds">{showdownScore.totalRounds} rounds</span>
-                              {showdownScore.ties > 0 && <span className="score-ties">{showdownScore.ties} ties</span>}
-                              {showdownScore.dominantMetric && <span className="score-dominant">Highlight · {showdownScore.dominantMetric}</span>}
-                            </div>
-                            <div className={`score-chip team-b${teamBChampion ? " leading" : ""}`}>
-                              <span className="score-name">{componentBProfile?.name ?? "Component B"}</span>
-                              <span className="score-value">{showdownScore.rightWins}</span>
-                              <span className="score-record">{rightRecord}</span>
-                            </div>
-                          </div>
-                          {spotlightRounds.length > 0 && (
-                            <ul className="arena-score-rounds arena-battle-rounds">
-                              {spotlightRounds.map((round) => (
-                                <li
-                                  key={round.key}
-                                  className={`score-round ${round.winner === "left" ? "win-left" : round.winner === "right" ? "win-right" : "tie"}`}
-                                >
-                                  <span className="round-label">{round.label}</span>
-                                  <div className="round-values">
-                                    <span className="round-value round-value-a">{round.leftValue}</span>
-                                    <span className="round-delta">{round.deltaLabel ?? round.shortSummary}</span>
-                                    <span className="round-value round-value-b">{round.rightValue}</span>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="arena-empty">Select two components to kick off the battle.</p>
-                      )}
-                    </div>
-                    {renderBattlePanel("right", {
-                      profile: componentBProfile,
-                      telemetry: componentBTelemetry,
-                      warnings: componentBWarnings,
-                      highlightMetrics: rightHighlightMetrics,
-                      opponentMetricMap: componentAMetricMap,
-                      record: hasShowdown ? rightRecord : null,
-                      isChampion: teamBChampion,
-                      isTie: showdownTie,
-                      tag: "Component B"
-                    })}
-                  </div>
-
-                {componentProfiles.length < 2 && (
-                  <p className="arena-showdown-hint">Only one component available. Pull another build to compare head-to-head.</p>
-                )}
-
-                {comparisonRows.length > 0 ? (
-                  <ul className="arena-showdown-table">
-                    {comparisonRows.map((row) => (
-                      <li key={row.key}>
-                        <div className="arena-showdown-value value-a">{row.aValue}</div>
-                        <div className="arena-showdown-metric">
-                          <span className="metric-name">{row.label}</span>
-                          {row.deltaLabel && <span className="arena-showdown-delta">{row.deltaLabel}</span>}
-                        </div>
-                        <div className="arena-showdown-value value-b">{row.bValue}</div>
-                      </li>
                     ))}
-                  </ul>
-                ) : (
-                  <p className="arena-empty">No comparable metrics found for the selected components.</p>
-                )}
-              </>
-            ) : (
-              <p className="arena-empty">Sync a builder snapshot to start comparing components.</p>
-            )}
-          </section>
-
-          <div className="arena-toolbar">
-            <button className="arena-btn ghost" type="button" onClick={() => handleCommand("reset")}>
-              Reset Stage
-            </button>
-            <button className="arena-btn solid" type="button" onClick={() => handleCommand("run-test")}>
-              Run Quick Test
-            </button>
-            <button className="arena-btn outline" type="button" onClick={() => handleCommand("export")}>
-              Export Results
-            </button>
-          </div>
-          <div className="arena-frame-wrapper">
-            <iframe
-              ref={iframeRef}
-              className="arena-frame"
-              title="Component Arena"
-              src="arena.html"
-              sandbox="allow-scripts allow-same-origin allow-popups"
-              onLoad={() => {
-                setFrameReady(true);
-                if (importPayload) {
-                  sendArenaMessage({ type: "arena:import", payload: importPayload });
-                }
-              }}
-            />
-          </div>
-        </main>
-
-        <aside className="arena-details">
-          <section className="arena-card">
-            <div className="arena-card-header">
-              <h2>Component Roster</h2>
-            </div>
-            {roster.length > 0 ? (
-              <ul className="arena-roster">
-                {roster.map((item) => (
-                  <li key={item.id}>
-                    <span className="roster-name">{item.name}</span>
-                    <span className="roster-type">{item.type}</span>
-                    {item.details && <span className="roster-detail">{item.details}</span>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="arena-empty">No components imported yet.</p>
-            )}
-          </section>
-
-          {typeBreakdown.length > 0 && (
-            <section className="arena-card">
-              <div className="arena-card-header">
-                <h2>Type Breakdown</h2>
+                  </select>
+                </label>
+                <label className="arena-showdown-select">
+                  <span className="arena-showdown-select-label">Component B</span>
+                  <select
+                    aria-label="Component B selection"
+                    value={showdownSelection.right ?? ""}
+                    onChange={(event) =>
+                      setShowdownSelection((prev) => ({
+                        left: prev.left,
+                        right: event.target.value || null
+                      }))
+                    }
+                  >
+                    <option value="">Select component</option>
+                    {componentOptions.map((option) => (
+                      <option key={option.uid} value={option.uid}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              <ul className="arena-breakdown">
-                {typeBreakdown.map(([type, count]) => (
-                  <li key={type}>
-                    <span className="breakdown-type">{type}</span>
-                    <span className="breakdown-count">{count}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </aside>
+            ) : (
+              <p className="arena-empty">No components loaded. Use the import section above to load components.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="arena-battle-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>Before Metrics</h2>
+            </div>
+            {hasShowdown && (
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component A Record</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{leftRecord}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Total Rounds</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{showdownScore.totalRounds}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component B Record</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{rightRecord}</div>
+                </div>
+              </div>
+            )}
+            {!hasShowdown && <p className="arena-empty">Select two components above to see battle stats</p>}
+          </div>
+
+          <div className="arena-battle-stage">
+            {renderBattlePanel("left", {
+              profile: componentAProfile,
+              telemetry: componentATelemetry,
+              warnings: componentAWarnings,
+              highlightMetrics: leftHighlightMetrics,
+              opponentMetricMap: componentBMetricMap,
+              record: hasShowdown ? leftRecord : null,
+              isChampion: teamAChampion,
+              isTie: showdownTie,
+              tag: "Component A"
+            })}
+
+            <div className="arena-battle-overlay">
+              <button 
+                className={`arena-battle-btn${battleState === "battling" ? " battling" : ""}${battleState === "complete" ? " complete" : ""}`}
+                onClick={handleBattle}
+                disabled={battleState === "battling" || !componentAProfile || !componentBProfile}
+                type="button"
+              >
+                {battleState === "idle" ? "⚔️ BATTLE" : battleState === "battling" ? "TESTING..." : "BATTLE COMPLETE"}
+              </button>
+              
+              {battleState === "complete" && battleWinner && (
+                <div className="arena-winner-banner">
+                  <div className="winner-label">🏆 WINNER 🏆</div>
+                  <div className="winner-name">
+                    {battleWinner === "left" ? componentAProfile?.name : battleWinner === "right" ? componentBProfile?.name : "TIE"}
+                  </div>
+                  <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">Reset Battle</button>
+                </div>
+              )}
+            </div>
+
+            {renderBattlePanel("right", {
+              profile: componentBProfile,
+              telemetry: componentBTelemetry,
+              warnings: componentBWarnings,
+              highlightMetrics: rightHighlightMetrics,
+              opponentMetricMap: componentAMetricMap,
+              record: hasShowdown ? rightRecord : null,
+              isChampion: teamBChampion,
+              isTie: showdownTie,
+              tag: "Component B"
+            })}
+          </div>
+        </section>
+      </div>
+
+      <div className="arena-frame-wrapper" style={{display: 'none'}}>
+        <iframe
+          ref={iframeRef}
+          className="arena-frame"
+          title="Component Arena"
+          src="arena.html"
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          onLoad={() => {
+            setFrameReady(true);
+            if (importPayload) {
+              sendArenaMessage({ type: "arena:import", payload: importPayload });
+            }
+          }}
+        />
       </div>
     </div>
   );
