@@ -648,7 +648,7 @@ export default function Practice({
                     >
                       <strong>{problem.title}</strong>
                       <small>
-                        {TOPOLOGY_LABEL[problem.topology]} ?{" "}
+                        {TOPOLOGY_LABEL[problem.topology]} ·{" "}
                         {DIFFICULTY_LABEL[problem.difficulty]}
                       </small>
                     </button>
