@@ -10,7 +10,7 @@ const practiceProblems: PracticeProblem[] = [
     topology: "series",
     difficulty: "intro",
       prompt:
-        "A series circuit holds three resistors connected end to end and powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the circuit current.",
+        "A series circuit containing three resistors is powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the circuit current.",
     targetQuestion: "What is the total current flowing through the series circuit?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
