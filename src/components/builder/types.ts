@@ -46,7 +46,7 @@ export type ComponentAction = {
   icon: string;
   label: string;
   action: "component" | "junction";
-  builderType?: "battery" | "resistor" | "capacitor" | "inductor" | "lamp" | "diode" | "bjt" | "switch" | "ground";
+  builderType?: "battery" | "resistor" | "capacitor" | "inductor" | "lamp" | "diode" | "led" | "bjt" | "mosfet" | "switch" | "fuse" | "potentiometer" | "ground";
   description?: string;
 };
 

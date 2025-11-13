@@ -215,6 +215,12 @@ const COMPONENT_BADGE_LABELS: Record<string, string> = {
   sensor: "SNS",
   switch: "SW",
   transistor: "TRN",
+  bjt: "BJT",
+  mosfet: "MOS",
+  fuse: "FUS",
+  potentiometer: "POT",
+  lamp: "LMP",
+  ground: "GND",
   generic: "CMP"
 };
 
@@ -520,6 +526,15 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
             <path d="M62,18 C78,10 92,10 106,18" />
             <path d="M62,42 C78,50 92,50 106,42" />
             <line x1="18" y1="30" x2="30" y2="30" />
+          </g>
+        );
+      case "diode":
+        return (
+          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="10" y1="30" x2="40" y2="30" />
+            <polygon points="40,18 40,42 60,30" fill="currentColor" opacity="0.3" />
+            <line x1="60" y1="18" x2="60" y2="42" />
+            <line x1="60" y1="30" x2="110" y2="30" />
           </g>
         );
       case "motor":

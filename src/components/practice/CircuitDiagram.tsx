@@ -1,4 +1,5 @@
 import type { PracticeProblem } from "../../model/practice";
+import { ResistorSymbol, BatterySymbol } from "../circuit/SchematicSymbols";
 
 type DiagramProps = {
   problem: PracticeProblem;
@@ -16,8 +17,6 @@ const NODE_FILL = "rgba(162, 212, 255, 0.95)";
 const NODE_STROKE = "rgba(12, 32, 64, 0.9)";
 const WIRE_STROKE_WIDTH = 4;
 const NODE_RADIUS = 4.2;
-const RESISTOR_SEGMENTS = 6;
-const RESISTOR_AMPLITUDE = 10;
 
 const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   if (componentId === "totals") {
@@ -32,17 +31,17 @@ const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   return match?.label ?? componentId;
 };
 
-const drawBattery = (x: number, y: number) => (
-  <g transform={`translate(${x}, ${y})`}>
-    <line x1={-20} y1={-6} x2={20} y2={-6} stroke={WIRE_COLOR} strokeWidth={3} strokeLinecap="round" />
-    <line x1={-28} y1={8} x2={28} y2={8} stroke={WIRE_COLOR} strokeWidth={5} strokeLinecap="round" />
-    <text x={-24} y={-12} fill={LABEL_COLOR} fontSize={12} textAnchor="middle">
-      -
-    </text>
-    <text x={24} y={-12} fill={LABEL_COLOR} fontSize={12} textAnchor="middle">
-      +
-    </text>
-  </g>
+const drawBattery = (x: number, y: number, label?: string) => (
+  <BatterySymbol 
+    x={x} 
+    y={y} 
+    rotation={0}
+    scale={1}
+    label={label}
+    showLabel={false}
+    color={WIRE_COLOR}
+    strokeWidth={3}
+  />
 );
 
 const drawNode = ({ x, y }: Point, key?: string) => (
@@ -68,57 +67,55 @@ type ResistorSymbolOptions = {
 };
 
 const drawResistor = ({ start, end, orientation, label, key, labelOffset, labelSide }: ResistorSymbolOptions) => {
-  const points: string[] = [];
-
-  if (orientation === "horizontal") {
-    const length = end.x - start.x;
-    const step = length / RESISTOR_SEGMENTS;
-    for (let i = 0; i <= RESISTOR_SEGMENTS; i += 1) {
-      const x = start.x + step * i;
-      let y = start.y;
-      if (i > 0 && i < RESISTOR_SEGMENTS) {
-        y += i % 2 === 0 ? -RESISTOR_AMPLITUDE : RESISTOR_AMPLITUDE;
-      }
-      points.push(`${x},${y}`);
-    }
-  } else {
-    const length = end.y - start.y;
-    const step = length / RESISTOR_SEGMENTS;
-    for (let i = 0; i <= RESISTOR_SEGMENTS; i += 1) {
-      const y = start.y + step * i;
-      let x = start.x;
-      if (i > 0 && i < RESISTOR_SEGMENTS) {
-        x += i % 2 === 0 ? RESISTOR_AMPLITUDE : -RESISTOR_AMPLITUDE;
-      }
-      points.push(`${x},${y}`);
-    }
-  }
-
-  let labelX: number;
-  let labelY: number;
-  let textAnchor: "start" | "end" | "middle";
-
-  if (orientation === "horizontal") {
-    labelX = (start.x + end.x) / 2;
-    labelY = (start.y + end.y) / 2 + (labelOffset ?? -18);
-    textAnchor = "middle";
-  } else {
-    const horizontalOffset = 22;
-    const side = labelSide ?? "right";
-    labelX = (start.x + end.x) / 2 + (side === "left" ? -horizontalOffset : horizontalOffset);
-    labelY = (start.y + end.y) / 2 + (labelOffset ?? 0);
-    textAnchor = side === "left" ? "end" : "start";
-  }
+  const centerX = (start.x + end.x) / 2;
+  const centerY = (start.y + end.y) / 2;
+  const rotation = orientation === "horizontal" ? 0 : 90;
+  
+  const adjustedLabelOffset = orientation === "horizontal" 
+    ? (labelOffset ?? -18)
+    : 0;
+  
+  const labelX = orientation === "horizontal" 
+    ? centerX
+    : centerX + ((labelSide ?? "right") === "left" ? -22 : 22);
+  
+  const labelY = orientation === "horizontal" 
+    ? centerY + adjustedLabelOffset
+    : centerY + (labelOffset ?? 0);
+  
+  const textAnchor = orientation === "horizontal" 
+    ? "middle" as const
+    : ((labelSide ?? "right") === "left" ? "end" as const : "start" as const);
 
   return (
     <g key={key}>
-      <polyline
-        points={points.join(" ")}
-        stroke={COMPONENT_STROKE}
+      <line 
+        x1={start.x} 
+        y1={start.y} 
+        x2={orientation === "horizontal" ? centerX - 30 : centerX} 
+        y2={orientation === "horizontal" ? centerY : centerY - 30} 
+        stroke={WIRE_COLOR} 
+        strokeWidth={WIRE_STROKE_WIDTH} 
+        strokeLinecap="round" 
+      />
+      <ResistorSymbol 
+        x={centerX} 
+        y={centerY} 
+        rotation={rotation}
+        scale={1}
+        label=""
+        showLabel={false}
+        color={COMPONENT_STROKE}
         strokeWidth={3.2}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      />
+      <line 
+        x1={orientation === "horizontal" ? centerX + 30 : centerX} 
+        y1={orientation === "horizontal" ? centerY : centerY + 30} 
+        x2={end.x} 
+        y2={end.y} 
+        stroke={WIRE_COLOR} 
+        strokeWidth={WIRE_STROKE_WIDTH} 
+        strokeLinecap="round" 
       />
       <text x={labelX} y={labelY} textAnchor={textAnchor} fill={LABEL_COLOR} fontSize={13} fontWeight={600}>
         {label}
