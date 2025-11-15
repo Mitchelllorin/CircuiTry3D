@@ -77,11 +77,12 @@ body.builder-body .arena-page {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px 32px 40px;
+  padding: 24px 32px 60px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   overflow-y: auto;
+  padding-bottom: 80px;
 }
 
 .arena-wire-section {
@@ -528,14 +529,14 @@ body.builder-body .arena-page {
 .arena-battle-stage {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
   border-radius: 20px;
-  border: 1px solid rgba(59, 130, 246, 0.28);
-  background: rgba(15, 23, 42, 0.4);
-  overflow: hidden;
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  background: rgba(15, 23, 42, 0.5);
+  overflow: visible;
   box-shadow: 0 28px 60px rgba(2, 6, 23, 0.45);
-  min-height: 500px;
+  min-height: 600px;
 }
 
 
@@ -545,21 +546,29 @@ body.builder-body .arena-page {
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 1px;
-  background: rgba(148, 163, 184, 0.22);
-  z-index: 1;
+  width: 2px;
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    rgba(59, 130, 246, 0.6) 20%, 
+    var(--brand-primary-dim) 50%, 
+    rgba(59, 130, 246, 0.6) 80%, 
+    transparent 100%);
+  transform: translateX(-50%);
+  z-index: 3;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
 }
 
 .arena-battle-panel {
   position: relative;
-  padding: 32px 28px;
+  padding: 40px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
-  background: rgba(8, 14, 28, 0.95);
+  justify-content: flex-start;
+  gap: 24px;
+  background: linear-gradient(135deg, rgba(8, 14, 28, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
   z-index: 2;
+  overflow: visible;
 }
 
 
@@ -567,7 +576,7 @@ body.builder-body .arena-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   text-align: center;
   width: 100%;
 }
@@ -588,8 +597,9 @@ body.builder-body .arena-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   pointer-events: none;
+  padding: 20px;
 }
 
 .arena-battle-overlay > * {
@@ -679,12 +689,13 @@ body.builder-body .arena-page {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 20px 28px;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35));
-  border: 2px solid var(--brand-primary-dim);
+  padding: 24px 32px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.92));
+  border: 3px solid #10b981;
   border-radius: 20px;
-  box-shadow: 0 12px 36px rgba(16, 185, 129, 0.35), 0 0 60px var(--brand-primary-dim), inset 0 0 40px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 12px 36px rgba(16, 185, 129, 0.55), 0 0 60px var(--brand-primary-dim), inset 0 0 40px rgba(16, 185, 129, 0.25);
   animation: winner-reveal 0.6s ease-out, winner-glow 2s ease-in-out infinite 0.6s;
+  backdrop-filter: blur(8px);
 }
 
 .winner-label {
@@ -692,16 +703,15 @@ body.builder-body .arena-page {
   font-weight: 800;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(167, 243, 208, 0.95);
-  text-shadow: 0 0 20px var(--brand-primary-dim), 0 0 40px rgba(16, 185, 129, 0.5);
-  animation: winner-text-glow 1.5s ease-in-out infinite;
+  color: #042f2e;
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
 }
 
 .winner-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #f0fdf4;
-  text-shadow: 0 2px 8px rgba(2, 6, 23, 0.75);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #042f2e;
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.3);
 }
 
 @keyframes winner-reveal {
@@ -758,15 +768,6 @@ body.builder-body .arena-page {
     transform: scale(1.1);
     opacity: 0.85;
   }
-}
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  background: rgba(15, 23, 42, 0.8);
-  font-size: 0.82rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.85);
 }
 
 .arena-battle-flow {
@@ -954,13 +955,14 @@ body.builder-body .arena-page {
 
 
 .arena-component-stage {
-  perspective: 1000px;
+  perspective: 1200px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 240px;
   position: relative;
   width: 100%;
+  padding: 20px 0;
 }
 
 .arena-component-dais {
@@ -968,47 +970,53 @@ body.builder-body .arena-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 0;
   transform-style: preserve-3d;
   animation: gentle-float 4s ease-in-out infinite;
+  min-height: 220px;
 }
 
 .arena-component-stage.rotating .arena-component-dais {
-  animation: rotate-dais 8s linear infinite, gentle-float 4s ease-in-out infinite;
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+.arena-component-stage.rotating .arena-component-glyph {
+  animation: rotate-dais-3d 20s linear infinite;
 }
 
 .arena-component-stage.battling .arena-component-dais {
-  animation: battle-shake 0.5s ease-in-out infinite, rotate-fast 1s linear infinite;
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+.arena-component-stage.battling .arena-component-glyph {
+  animation: none;
 }
 
 .arena-dais-platform {
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(30, 64, 175, 0.22));
-  border: 2px solid rgba(59, 130, 246, 0.55);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(30, 64, 175, 0.28));
+  border: 3px solid rgba(59, 130, 246, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 
-    0 8px 24px rgba(2, 6, 23, 0.55),
-    0 0 40px rgba(59, 130, 246, 0.25),
-    inset 0 -10px 20px rgba(15, 23, 42, 0.45);
-  transform: rotateX(15deg);
-}
-
-.arena-dais-base {
-  width: 100px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(30, 64, 175, 0.45), rgba(15, 23, 42, 0.75));
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.65);
-  transform: translateZ(-15px) rotateX(-15deg);
+    0 12px 32px rgba(2, 6, 23, 0.65),
+    0 0 50px rgba(59, 130, 246, 0.35),
+    inset 0 -12px 24px rgba(15, 23, 42, 0.5);
+  transform-style: preserve-3d;
+  transform: rotateX(75deg);
 }
 
 @keyframes rotate-dais {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes rotate-dais-3d {
   0% { transform: rotateY(0deg); }
   100% { transform: rotateY(360deg); }
 }
@@ -1032,119 +1040,433 @@ body.builder-body .arena-page {
 
 .arena-component-glyph {
   position: relative;
-  border-radius: 14px;
   padding: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
+  min-height: 200px;
+  height: 200px;
+  width: 200px;
   background: transparent;
   border: none;
-  color: rgba(226, 232, 240, 0.94);
   overflow: visible;
+  transform-style: preserve-3d;
+  margin-bottom: 40px;
 }
 
-.arena-component-glyph::after {
-  display: none;
-}
-
-.arena-component-glyph svg {
+.component-3d {
   position: relative;
   width: 100%;
-  max-width: 100px;
-  height: auto;
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(59, 130, 246, 0.45));
+  height: 100%;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
 }
 
-.arena-glyph-resistor {
-  color: rgba(255, 237, 213, 0.95);
+.component-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
 }
 
-.arena-glyph-resistor svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px var(--brand-primary-dim));
+.component-3d-resistor .resistor-cylinder {
+  width: 60px;
+  height: 20px;
+  background: linear-gradient(135deg, #d4a574, #b8925f);
+  border-radius: 10px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 4px 12px rgba(2, 6, 23, 0.6),
+    inset 0 -2px 8px rgba(15, 23, 42, 0.5),
+    inset 0 2px 8px rgba(255, 255, 255, 0.15);
+  transform: rotateX(12deg) rotateY(-5deg);
+  transform-style: preserve-3d;
 }
 
-.arena-glyph-capacitor {
-  color: rgba(224, 242, 254, 0.96);
+.resistor-band {
+  position: absolute;
+  width: 4px;
+  height: 24px;
+  top: -2px;
+  border-radius: 1px;
 }
 
-.arena-glyph-capacitor svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(0, 255, 136, 0.55));
+.band-1 {
+  left: 15px;
+  background: linear-gradient(90deg, #dc2626, #991b1b);
 }
 
-.arena-glyph-battery {
-  color: rgba(240, 253, 244, 0.95);
+.band-2 {
+  left: 25px;
+  background: linear-gradient(90deg, #eab308, #ca8a04);
 }
 
-.arena-glyph-battery svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px var(--brand-primary-dim));
+.band-3 {
+  left: 35px;
+  background: linear-gradient(90deg, #16a34a, #15803d);
 }
 
-.arena-glyph-led {
-  color: rgba(255, 241, 246, 0.95);
+.resistor-lead {
+  position: absolute;
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, #94a3b8, #64748b);
+  top: 9px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
 }
 
-.arena-glyph-led svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(236, 72, 153, 0.52));
+.lead-left {
+  left: -18px;
 }
 
-.arena-glyph-inductor {
-  color: rgba(243, 232, 255, 0.96);
+.lead-right {
+  right: -18px;
 }
 
-.arena-glyph-inductor svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.55));
+.component-3d-capacitor .capacitor-cylinder {
+  width: 35px;
+  height: 50px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 18px 18px 8px 8px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 6px 16px rgba(2, 6, 23, 0.7),
+    inset 0 -4px 12px rgba(15, 23, 42, 0.6),
+    inset 0 4px 12px rgba(147, 197, 253, 0.25);
+  transform: rotateX(8deg) rotateY(-3deg);
+  transform-style: preserve-3d;
 }
 
-.arena-glyph-switch {
-  color: rgba(236, 253, 245, 0.95);
+.capacitor-top {
+  position: absolute;
+  width: 35px;
+  height: 8px;
+  background: linear-gradient(180deg, #60a5fa, #3b82f6);
+  border-radius: 50%;
+  top: -2px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
 }
 
-.arena-glyph-switch svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(45, 212, 191, 0.5));
+.capacitor-stripe {
+  position: absolute;
+  width: 100%;
+  height: 16px;
+  top: 10px;
+  background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.3), transparent);
+  border-top: 1px solid rgba(226, 232, 240, 0.4);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.4);
 }
 
-.arena-glyph-transistor {
-  color: rgba(224, 231, 255, 0.95);
+.capacitor-lead {
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  bottom: -15px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
 }
 
-.arena-glyph-transistor svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(96, 165, 250, 0.52));
+.capacitor-lead.lead-left {
+  left: 10px;
 }
 
-.arena-glyph-sensor {
-  color: rgba(224, 231, 255, 0.95);
+.capacitor-lead.lead-right {
+  right: 10px;
 }
 
-.arena-glyph-sensor svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(129, 140, 248, 0.5));
+.component-3d-led .led-dome {
+  width: 45px;
+  height: 45px;
+  background: radial-gradient(circle at 30% 30%, rgba(244, 114, 182, 0.95), rgba(219, 39, 119, 0.85));
+  border-radius: 50% 50% 45% 45%;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 6px 18px rgba(236, 72, 153, 0.6),
+    inset -4px -4px 12px rgba(15, 23, 42, 0.4),
+    inset 4px 4px 12px rgba(255, 255, 255, 0.3);
+  transform: rotateX(10deg) scale(1.1);
+  transform-style: preserve-3d;
 }
 
-.arena-glyph-motor {
-  color: rgba(255, 241, 242, 0.95);
+.led-glow {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  top: 5px;
+  left: 5px;
+  background: radial-gradient(circle, rgba(251, 207, 232, 0.8), transparent);
+  border-radius: 50%;
+  animation: led-pulse 2s ease-in-out infinite;
 }
 
-.arena-glyph-motor svg {
-  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.75)) drop-shadow(0 0 20px rgba(248, 113, 113, 0.55));
+@keyframes led-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.led-base {
+  position: absolute;
+  width: 25px;
+  height: 8px;
+  background: linear-gradient(135deg, #1e40af, #1e3a8a);
+  border-radius: 2px;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.led-lead {
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  bottom: -23px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
+}
+
+.led-lead.lead-anode {
+  left: 15px;
+}
+
+.led-lead.lead-cathode {
+  right: 12px;
+}
+
+.component-3d-diode .diode-body {
+  width: 50px;
+  height: 18px;
+  background: linear-gradient(135deg, #1e3a8a, #1e293b);
+  border-radius: 9px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 4px 12px rgba(2, 6, 23, 0.6),
+    inset 0 -2px 8px rgba(15, 23, 42, 0.5);
+}
+
+.diode-cathode-band {
+  position: absolute;
+  width: 6px;
+  height: 22px;
+  right: 8px;
+  top: -2px;
+  background: linear-gradient(90deg, #e2e8f0, #cbd5e1);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.4);
+}
+
+.diode-lead {
+  position: absolute;
+  width: 18px;
+  height: 2px;
+  background: linear-gradient(90deg, #94a3b8, #64748b);
+  top: 8px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
+}
+
+.diode-lead.lead-left {
+  left: -16px;
+}
+
+.diode-lead.lead-right {
+  right: -16px;
+}
+
+.component-3d-switch .switch-base {
+  width: 55px;
+  height: 25px;
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border-radius: 6px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 4px 14px rgba(2, 6, 23, 0.7),
+    inset 0 -2px 8px rgba(15, 23, 42, 0.6);
+}
+
+.switch-button {
+  position: absolute;
+  width: 20px;
+  height: 12px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 3px;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+}
+
+.switch-actuator {
+  position: absolute;
+  width: 8px;
+  height: 15px;
+  background: linear-gradient(135deg, #64748b, #475569);
+  border-radius: 2px;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.switch-terminal {
+  position: absolute;
+  width: 3px;
+  height: 12px;
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  bottom: -12px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
+}
+
+.term-1 {
+  left: 12px;
+}
+
+.term-2 {
+  right: 12px;
+}
+
+.component-3d-transistor .transistor-case {
+  width: 40px;
+  height: 35px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 6px 6px 2px 2px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 6px 16px rgba(2, 6, 23, 0.7),
+    inset 0 -3px 10px rgba(15, 23, 42, 0.6);
+}
+
+.transistor-tab {
+  position: absolute;
+  width: 45px;
+  height: 8px;
+  background: linear-gradient(135deg, #475569, #334155);
+  top: 10px;
+  left: -2.5px;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.5);
+}
+
+.transistor-lead {
+  position: absolute;
+  width: 2px;
+  height: 14px;
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  bottom: -14px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
+}
+
+.transistor-lead.lead-1 {
+  left: 8px;
+}
+
+.transistor-lead.lead-2 {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.transistor-lead.lead-3 {
+  right: 8px;
+}
+
+.component-3d-battery .battery-cylinder {
+  width: 30px;
+  height: 55px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  border-radius: 6px 6px 10px 10px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 6px 16px rgba(2, 6, 23, 0.7),
+    inset 0 -4px 12px rgba(15, 23, 42, 0.5),
+    inset 0 4px 12px rgba(134, 239, 172, 0.2);
+}
+
+.battery-positive {
+  position: absolute;
+  width: 16px;
+  height: 8px;
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  border-radius: 3px 3px 0 0;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.5);
+}
+
+.battery-label {
+  position: absolute;
+  width: 20px;
+  height: 3px;
+  background: rgba(226, 232, 240, 0.8);
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.battery-label::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 3px;
+  background: rgba(226, 232, 240, 0.8);
+  top: 6px;
+  left: 4px;
+  border-radius: 1px;
+}
+
+.component-3d-generic .generic-box {
+  width: 50px;
+  height: 35px;
+  background: linear-gradient(135deg, #475569, #334155);
+  border-radius: 6px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: 
+    0 6px 16px rgba(2, 6, 23, 0.7),
+    inset 0 -3px 10px rgba(15, 23, 42, 0.6);
+}
+
+.generic-pin {
+  position: absolute;
+  width: 3px;
+  height: 12px;
+  background: linear-gradient(180deg, #94a3b8, #64748b);
+  bottom: -12px;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.6);
+}
+
+.pin-1 {
+  left: 12px;
+}
+
+.pin-2 {
+  right: 12px;
 }
 
 .arena-telemetry-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
 }
 
 .arena-telemetry-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(5, 10, 22, 0.92);
-  border: 1px solid rgba(59, 130, 246, 0.28);
+  background: rgba(5, 10, 22, 0.95);
+  border: 1px solid rgba(59, 130, 246, 0.32);
   position: relative;
-  min-height: 72px;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.32);
+  min-height: 80px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.4), 0 4px 12px rgba(2, 6, 23, 0.3);
 }
 
 .arena-telemetry-card.warning {
@@ -1611,28 +1933,40 @@ body.builder-body .arena-page {
 
 @media (max-width: 960px) {
   .arena-battle-stage {
-    grid-template-columns: 1fr;
-    min-height: 0;
+    grid-template-columns: 1fr 1fr;
+    min-height: 500px;
   }
-
-  .arena-battle-stage::after {
-    display: none;
+  
+  .arena-battle-panel {
+    padding: 24px 16px;
+  }
+  
+  .arena-component-stage {
+    min-height: 180px;
+  }
+  
+  .arena-dais-platform {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .arena-telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .arena-telemetry-card {
+    min-height: 60px;
+    padding: 8px 10px;
   }
   
   .arena-battle-overlay {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    order: 1;
+    padding: 12px;
   }
   
-  .arena-battle-panel-left {
-    order: 0;
-  }
-  
-  .arena-battle-panel-right {
-    order: 2;
+  .arena-battle-btn {
+    padding: 12px 32px;
+    font-size: 1rem;
   }
 }
 
@@ -1770,6 +2104,42 @@ body.builder-body .arena-page {
   text-decoration: underline;
 }
 
+.arena-metric-selector {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.65);
+  color: rgba(203, 213, 225, 0.9);
+}
+
+.arena-metric-selector:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(0, 255, 136, 0.5);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.arena-metric-selector.selected {
+  border-color: var(--brand-primary-dim);
+  background: linear-gradient(135deg, var(--brand-primary-dim), rgba(16, 185, 129, 0.6));
+  color: #042f2e;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.arena-metric-selector:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (max-width: 768px) {
   .arena-header {
     flex-direction: column;
@@ -1791,15 +2161,63 @@ body.builder-body .arena-page {
   }
   
   .arena-battle-stage {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .arena-battle-stage::after {
-    display: none;
+    grid-template-columns: 1fr 1fr;
+    min-height: 450px;
+    gap: 0;
   }
   
   .arena-battle-panel {
-    padding: 24px 20px;
+    padding: 20px 12px;
+  }
+  
+  .arena-component-stage {
+    min-height: 140px;
+    padding: 10px 0;
+  }
+  
+  .arena-dais-platform {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .arena-telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  
+  .arena-telemetry-card {
+    min-height: 50px;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .telemetry-icon {
+    font-size: 0.85rem;
+  }
+  
+  .telemetry-label {
+    font-size: 0.65rem;
+  }
+  
+  .telemetry-value {
+    font-size: 0.82rem;
+  }
+  
+  .arena-battle-btn {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+  }
+  
+  .arena-battle-overlay {
+    padding: 10px;
+  }
+  
+  .winner-label {
+    font-size: 0.9rem;
+  }
+  
+  .winner-name {
+    font-size: 1.2rem;
   }
 }
