@@ -737,6 +737,25 @@ export default function Builder() {
   } = useResponsiveLayout();
 
   useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !isFrameReady) {
+      return;
+    }
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length > 1) {
+        event.preventDefault();
+      }
+    };
+
+    iframe.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+    return () => {
+      iframe.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [isFrameReady]);
+
+  useEffect(() => {
     document.body.classList.add("builder-body");
     return () => {
       document.body.classList.remove("builder-body");
