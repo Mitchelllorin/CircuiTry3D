@@ -3950,6 +3950,9 @@ body.android-optimized.menu-visible .status {
                             case 'cycle-layout':
                                 if (typeof cycleLayoutMode === 'function') cycleLayoutMode();
                                 break;
+                            case 'cycle-wire-routing':
+                                if (typeof cycleRoutingMode === 'function') cycleRoutingMode();
+                                break;
                             case 'toggle-grid':
                                 if (typeof toggleGrid === 'function') toggleGrid();
                                 break;

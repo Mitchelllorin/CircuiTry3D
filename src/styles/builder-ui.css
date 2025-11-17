@@ -2191,4 +2191,7 @@ body.builder-body {
   .slider-chip {
     min-height: 48px;
   }
+  .builder-menu-toggle .toggle-text {
+    display: inline;
+  }
 }

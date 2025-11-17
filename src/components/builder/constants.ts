@@ -196,6 +196,12 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     action: "toggle-wire-mode",
   },
   {
+    id: "cycle-routing",
+    label: "Cycle Wire Routing",
+    description: "Switch between freeform, schematic 90deg, simple, perimeter, and A* routing modes.",
+    action: "cycle-wire-routing",
+  },
+  {
     id: "rotate-mode",
     label: "Rotate Mode",
     description: "Rotate the active component to align with your build.",
