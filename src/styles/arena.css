@@ -959,7 +959,7 @@ body.builder-body .arena-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
+  min-height: 280px;
   position: relative;
   width: 100%;
   padding: 20px 0;
@@ -970,11 +970,11 @@ body.builder-body .arena-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0;
   transform-style: preserve-3d;
   animation: gentle-float 4s ease-in-out infinite;
-  min-height: 220px;
+  min-height: 260px;
 }
 
 .arena-component-stage.rotating .arena-component-dais {
@@ -994,9 +994,10 @@ body.builder-body .arena-page {
 }
 
 .arena-dais-platform {
-  position: relative;
-  width: 160px;
-  height: 160px;
+  position: absolute;
+  bottom: 0;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(30, 64, 175, 0.28));
   border: 3px solid rgba(59, 130, 246, 0.65);
@@ -1009,6 +1010,7 @@ body.builder-body .arena-page {
     inset 0 -12px 24px rgba(15, 23, 42, 0.5);
   transform-style: preserve-3d;
   transform: rotateX(75deg);
+  z-index: 1;
 }
 
 @keyframes rotate-dais {
@@ -1044,14 +1046,15 @@ body.builder-body .arena-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  height: 200px;
-  width: 200px;
+  min-height: 220px;
+  height: 220px;
+  width: 220px;
   background: transparent;
   border: none;
   overflow: visible;
   transform-style: preserve-3d;
-  margin-bottom: 40px;
+  z-index: 2;
+  margin-bottom: -20px;
 }
 
 .component-3d {
@@ -1942,12 +1945,18 @@ body.builder-body .arena-page {
   }
   
   .arena-component-stage {
-    min-height: 180px;
+    min-height: 220px;
   }
   
   .arena-dais-platform {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
+  }
+  
+  .arena-component-glyph {
+    height: 180px;
+    width: 180px;
+    min-height: 180px;
   }
   
   .arena-telemetry-grid {
@@ -2171,13 +2180,19 @@ body.builder-body .arena-page {
   }
   
   .arena-component-stage {
-    min-height: 140px;
+    min-height: 180px;
     padding: 10px 0;
   }
   
   .arena-dais-platform {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
+  }
+  
+  .arena-component-glyph {
+    height: 160px;
+    width: 160px;
+    min-height: 160px;
   }
   
   .arena-telemetry-grid {

@@ -524,7 +524,7 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 2, 5);
+    camera.position.set(0, 3, 6);
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -555,7 +555,8 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
       const buildResult = buildElement(THREE, componentElement, {});
       console.log("Arena ComponentGlyph - Build result:", buildResult);
       if (buildResult && buildResult.group) {
-        buildResult.group.scale.set(1.5, 1.5, 1.5);
+        buildResult.group.scale.set(2.5, 2.5, 2.5);
+        buildResult.group.position.set(0, 0, 0);
         componentGroup.add(buildResult.group);
         console.log("Arena ComponentGlyph - Added group with children:", buildResult.group.children.length);
       } else {
