@@ -71,15 +71,7 @@ export function HelpModal({
         className="builder-help-content"
         onClick={(event) => event.stopPropagation()}
       >
-        <button
-          type="button"
-          className="help-close"
-          onClick={onClose}
-          aria-label="Close help"
-        >
-          X
-        </button>
-        {helpView !== "overview" && (
+        {helpView !== "overview" ? (
           <button
             type="button"
             className="help-back"
@@ -87,6 +79,15 @@ export function HelpModal({
             aria-label="Back to CircuiTry3D help overview"
           >
             {"< Back"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="help-close"
+            onClick={onClose}
+            aria-label="Close help"
+          >
+            X
           </button>
         )}
         <h2 className="help-title">{activeHelpContent.title}</h2>

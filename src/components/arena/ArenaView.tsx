@@ -1933,7 +1933,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       <header className="arena-header">
         <div className="arena-header-left">
           <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
-            {isEmbedded ? "Close" : "← Back"}
+            ← Back
           </button>
           <div className="arena-title-group">
             <h1>Component Arena</h1>
