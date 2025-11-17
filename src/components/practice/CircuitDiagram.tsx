@@ -131,13 +131,13 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
     R3: getComponentLabel(problem, "R3"),
   };
 
-    const batteryX = 180;
-    const batteryY = 220;
+    const batteryX = 300;
+    const batteryY = 170;
     const batteryLeftX = batteryX - 34;
     const batteryRightX = batteryX + 34;
 
-    const leftX = 80;
-    const rightX = 280;
+    const leftX = 120;
+    const rightX = 480;
     const topY = 70;
     const bottomY = batteryY;
     const lead = 26;
@@ -154,7 +154,7 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
     const bottomRight: Point = { x: rightX, y: bottomY };
 
     return (
-      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Series circuit diagram">
+      <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Series circuit diagram" preserveAspectRatio="xMidYMid meet">
         {/* Top run */}
         <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         {drawResistor({
@@ -186,7 +186,7 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
           end: r3End,
           label: labels.R3,
           orientation: "horizontal",
-          labelOffset: 20,
+          labelOffset: 22,
         })}
         <line x1={r3End.x} y1={bottomY} x2={batteryRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         {drawBattery(batteryX, batteryY)}
@@ -200,7 +200,7 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         {drawNode(bottomRight, "series-node-br")}
         {drawNode({ x: leftX, y: bottomY }, "series-node-bl")}
 
-        <text x={batteryX} y={bottomY + 26} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
+        <text x={batteryX} y={bottomY + 32} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
           {problem.source.label ?? "Source"}
         </text>
       </svg>
@@ -215,25 +215,25 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
     R3: getComponentLabel(problem, "R3"),
   };
 
-    const batteryX = 60;
-    const batteryY = 150;
+    const batteryX = 140;
+    const batteryY = 120;
     const positiveX = batteryX + 8;
     const negativeX = batteryX - 6;
     const positiveTopY = batteryY - 34;
     const negativeBottomY = batteryY + 32;
-    const topY = 82;
-    const bottomY = 202;
-    const rightX = 320;
+    const topY = 60;
+    const bottomY = 180;
+    const rightX = 520;
 
     const branchStart = positiveX + 58;
-    const branchSpacing = 70;
+    const branchSpacing = 80;
     const branchXs = branchIds.map((_, index) => branchStart + index * branchSpacing);
 
     const branchResTop = topY + 26;
     const branchResBottom = bottomY - 26;
 
     return (
-      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Parallel circuit diagram">
+      <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Parallel circuit diagram" preserveAspectRatio="xMidYMid meet">
         {drawBattery(batteryX, batteryY)}
         <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         <line x1={positiveX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -282,23 +282,23 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
     R4: getComponentLabel(problem, "R4"),
   };
 
-    const batteryX = 60;
-    const batteryY = 150;
+    const batteryX = 140;
+    const batteryY = 120;
     const positiveX = batteryX + 8;
     const negativeX = batteryX - 6;
     const positiveTopY = batteryY - 34;
     const negativeBottomY = batteryY + 32;
-    const topY = 82;
-    const bottomY = 202;
-    const branchX = 270;
+    const topY = 60;
+    const bottomY = 180;
+    const branchX = 440;
 
     const r1Start: Point = { x: positiveX + 54, y: topY };
     const r1End: Point = { x: branchX - 20, y: topY };
 
     const branchOrder = ["R2", "R3"] as const;
     const branchOffsets: Record<(typeof branchOrder)[number], number> = {
-      R2: -32,
-      R3: 32,
+      R2: -36,
+      R3: 36,
     };
     const branchResTop = topY + 28;
     const branchResBottom = bottomY - 32;
@@ -307,7 +307,7 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
     const r4End: Point = { x: branchX - 18, y: bottomY };
 
     return (
-      <svg className="diagram-svg" viewBox="0 0 360 260" role="img" aria-label="Combination circuit diagram">
+      <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Combination circuit diagram" preserveAspectRatio="xMidYMid meet">
         {drawBattery(batteryX, batteryY)}
         <line x1={positiveX} y1={positiveTopY} x2={positiveX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         <line x1={positiveX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -352,7 +352,7 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
           end: r4End,
           label: labels.R4,
           orientation: "horizontal",
-          labelOffset: 20,
+          labelOffset: 22,
         })}
         <line x1={negativeX} y1={bottomY} x2={r4Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
         <line x1={negativeX} y1={bottomY} x2={negativeX} y2={negativeBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -389,13 +389,15 @@ export default function CircuitDiagram({ problem }: DiagramProps) {
   }
 
   return (
-    <div className="diagram-card" aria-label="Circuit schematic">
+    <>
       <div className="diagram-card-header">
         <strong>Worksheet Circuit</strong>
         <span>{problem.title}</span>
       </div>
-      {content}
-    </div>
+      <div className="diagram-card" aria-label="Circuit schematic">
+        {content}
+      </div>
+    </>
   );
 }
 

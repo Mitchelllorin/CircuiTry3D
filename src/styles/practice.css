@@ -360,14 +360,16 @@
   border: 1px solid rgba(124, 188, 255, 0.32);
   border-radius: 18px;
   padding: 20px 24px;
-  display: grid;
-  gap: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .diagram-card-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-bottom: 12px;
 }
 
 .diagram-card-header strong {
@@ -384,9 +386,11 @@
 
 .diagram-svg {
   width: 100%;
-  max-width: 440px;
+  max-width: 720px;
+  height: auto;
   margin: 0 auto;
   display: block;
+  overflow: visible;
 }
 
 .diagram-svg text {
@@ -397,6 +401,7 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  pointer-events: none;
 }
 
 .worksheet-status-banner {
@@ -1184,5 +1189,13 @@
   .ohms-wheel,
   .triangle-card {
     padding: 18px;
+  }
+
+  .diagram-card {
+    padding: 16px 12px;
+  }
+
+  .diagram-svg {
+    max-width: 100%;
   }
 }

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Splash Screens</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1e293b;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+        #preview {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%);
+            margin: 20px 0;
+            display: inline-block;
+        }
+        button {
+            background: #2dd4bf;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: #0f172a;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5eead4;
+        }
+        .info {
+            background: #334155;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>CircuiTry3D Splash Screen Generator</h1>
+    <div class="info">
+        <p>This generates the 3-resistor circuit diagram splash screen for Android.</p>
+        <p>Circuit: 9V battery with R1=3kΩ (top), R2=10kΩ (right), R3=5kΩ (bottom)</p>
+    </div>
+    
+    <div id="preview"></div>
+    <br>
+    <button onclick="downloadSplash('port', 480, 800, 'mdpi')">Download Port MDPI (480x800)</button>
+    <button onclick="downloadSplash('port', 720, 1280, 'hdpi')">Download Port HDPI (720x1280)</button>
+    <button onclick="downloadSplash('port', 1080, 1920, 'xhdpi')">Download Port XHDPI (1080x1920)</button>
+    <button onclick="downloadSplash('port', 1440, 2560, 'xxhdpi')">Download Port XXHDPI (1440x2560)</button>
+    <button onclick="downloadSplash('port', 1800, 3200, 'xxxhdpi')">Download Port XXXHDPI (1800x3200)</button>
+    <br>
+    <button onclick="downloadSplash('land', 800, 480, 'mdpi')">Download Land MDPI (800x480)</button>
+    <button onclick="downloadSplash('land', 1280, 720, 'hdpi')">Download Land HDPI (1280x720)</button>
+    <button onclick="downloadSplash('land', 1920, 1080, 'xhdpi')">Download Land XHDPI (1920x1080)</button>
+    <button onclick="downloadSplash('land', 2560, 1440, 'xxhdpi')">Download Land XXHDPI (2560x1440)</button>
+    <button onclick="downloadSplash('land', 3200, 1800, 'xxxhdpi')">Download Land XXXHDPI (3200x1800)</button>
+    <br>
+    <button onclick="downloadSplash('default', 2732, 2732, 'default')">Download Default (2732x2732)</button>
+
+    <script>
+        function createSplashSVG(width, height) {
+            // Calculate scaling and positioning
+            const scale = Math.min(width / 2732, height / 2732);
+            const circuitWidth = 600 * scale;
+            const circuitHeight = 450 * scale;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const offsetY = -50 * scale; // Slight offset upward
+            
+            const svg = `
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2dd4bf;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#14b8a6;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#2dd4bf;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#5eead4;stop-opacity:1" />
+        </linearGradient>
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="${3 * scale}" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    
+    <!-- Background -->
+    <rect width="${width}" height="${height}" fill="url(#bg)"/>
+    
+    <!-- CircuiTry3D text logo at top -->
+    <g transform="translate(${centerX}, ${centerY - circuitHeight/2 - 150 * scale})">
+        <text x="0" y="0" 
+              font-family="system-ui, -apple-system, sans-serif" 
+              font-size="${64 * scale}" 
+              font-weight="700" 
+              text-anchor="middle">
+            <tspan fill="#5eb4e5">Circui</tspan><tspan fill="#ff8c42">Try</tspan><tspan fill="#2dd4bf">3D</tspan>
+        </text>
+        <text x="0" y="${28 * scale}" 
+              font-family="system-ui, -apple-system, sans-serif" 
+              font-size="${14 * scale}" 
+              font-weight="400" 
+              fill="#94a3b8" 
+              text-anchor="middle" 
+              letter-spacing="3">PROFESSIONAL CIRCUIT DESIGN</text>
+    </g>
+    
+    <!-- Circuit diagram with rounded border box -->
+    <g transform="translate(${centerX}, ${centerY + offsetY})">
+        <!-- Rounded rectangle border (elongated horizontally) -->
+        <rect x="${-circuitWidth * 0.75}" 
+              y="${-circuitHeight * 0.6}" 
+              width="${circuitWidth * 1.5}" 
+              height="${circuitHeight * 1.2}" 
+              rx="${30 * scale}" 
+              ry="${30 * scale}" 
+              fill="none" 
+              stroke="url(#wireGradient)" 
+              stroke-width="${4 * scale}" 
+              filter="url(#glow)"/>
+        
+        <!-- Circuit diagram group (centered) -->
+        <g transform="translate(${-circuitWidth/2}, ${-circuitHeight/2})">
+            <!-- Scale the entire circuit -->
+            <g transform="scale(${circuitWidth/280})">
+            <!-- Wires and components -->
+            <g stroke="url(#wireGradient)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                
+                <!-- Top left wire -->
+                <line x1="70" y1="50" x2="100" y2="50" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- R1 - Top resistor (3kΩ) -->
+                <g transform="translate(140, 50)" stroke="url(#componentGradient)" stroke-width="3.5" filter="url(#glow)">
+                    <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+                </g>
+                
+                <!-- Top right wire -->
+                <line x1="170" y1="50" x2="210" y2="50" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- Right vertical wire top -->
+                <line x1="210" y1="50" x2="210" y2="80" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- R2 - Right resistor (10kΩ) -->
+                <g transform="translate(210, 120) rotate(90)" stroke="url(#componentGradient)" stroke-width="3.5" filter="url(#glow)">
+                    <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+                </g>
+                
+                <!-- Right vertical wire bottom -->
+                <line x1="210" y1="160" x2="210" y2="150" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- Bottom right wire -->
+                <line x1="210" y1="160" x2="170" y2="160" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- R3 - Bottom resistor (5kΩ) -->
+                <g transform="translate(140, 160)" stroke="url(#componentGradient)" stroke-width="3.5" filter="url(#glow)">
+                    <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+                </g>
+                
+                <!-- Bottom left wire -->
+                <line x1="110" y1="160" x2="70" y2="160" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- Left vertical wire bottom -->
+                <line x1="70" y1="160" x2="70" y2="136" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- Battery (9V) -->
+                <g transform="translate(70, 105)">
+                    <!-- Positive terminal (smaller line) -->
+                    <line x1="-10" y1="-8" x2="10" y2="-8" stroke="url(#componentGradient)" stroke-width="2.5" />
+                    <!-- Negative terminal (longer line) -->
+                    <line x1="-16" y1="4" x2="16" y2="4" stroke="url(#componentGradient)" stroke-width="4" />
+                    <!-- + symbol -->
+                    <text x="0" y="-20" font-size="12" fill="#2dd4bf" font-weight="bold" text-anchor="middle">+</text>
+                    <!-- - symbol -->
+                    <text x="0" y="24" font-size="12" fill="#2dd4bf" font-weight="bold" text-anchor="middle">−</text>
+                </g>
+                
+                <!-- Left vertical wire top -->
+                <line x1="70" y1="74" x2="70" y2="50" stroke="url(#wireGradient)" stroke-width="3.5" />
+                
+                <!-- Junction dots -->
+                <circle cx="70" cy="50" r="3.5" fill="#2dd4bf" stroke="#0d9488" stroke-width="1.2" />
+                <circle cx="210" cy="50" r="3.5" fill="#2dd4bf" stroke="#0d9488" stroke-width="1.2" />
+                <circle cx="210" cy="160" r="3.5" fill="#2dd4bf" stroke="#0d9488" stroke-width="1.2" />
+                <circle cx="70" cy="160" r="3.5" fill="#2dd4bf" stroke="#0d9488" stroke-width="1.2" />
+            </g>
+            
+            <!-- Component labels -->
+            <g font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#2dd4bf" text-anchor="middle">
+                <text x="140" y="35">R₁ = 3 kΩ</text>
+                <text x="232" y="120">R₂ = 10 kΩ</text>
+                <text x="140" y="180">R₃ = 5 kΩ</text>
+                <text x="42" y="108" font-size="9" text-anchor="end">B1</text>
+                <text x="42" y="118" font-size="8" text-anchor="end">9 V DC</text>
+            </g>
+            
+            <!-- Node labels -->
+            <g font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#5eead4" text-anchor="middle" font-weight="600">
+                <text x="70" y="40">1</text>
+                <text x="210" y="40">2</text>
+                <text x="210" y="175">3</text>
+                <text x="70" y="175">4</text>
+            </g>
+        </g>
+    </g>
+    
+    <!-- Bottom status text -->
+    <text x="${centerX}" y="${centerY + circuitHeight/2 + 180 * scale}" 
+          font-family="system-ui, -apple-system, sans-serif" 
+          font-size="${18 * scale}" 
+          font-weight="400" 
+          fill="#5eead4" 
+          text-anchor="middle" 
+          letter-spacing="3">3D CIRCUIT ENVIRONMENT READY</text>
+</svg>`;
+            return svg;
+        }
+
+        function showPreview() {
+            const previewDiv = document.getElementById('preview');
+            const svg = createSplashSVG(480, 800);
+            previewDiv.innerHTML = svg;
+        }
+
+        function downloadSplash(orientation, width, height, density) {
+            const svg = createSplashSVG(width, height);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            const svgBlob = new Blob([svg], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = `splash-${orientation}-${density}.png`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            };
+            
+            img.src = url;
+        }
+
+        // Show preview on load
+        showPreview();
+    </script>
+</body>
+</html>
