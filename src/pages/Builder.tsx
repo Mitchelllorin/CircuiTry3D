@@ -1257,6 +1257,7 @@ export default function Builder() {
                 {WIRE_TOOL_ACTIONS.map((action) => {
                   const isWireToggle = action.action === "toggle-wire-mode";
                   const isRotateToggle = action.action === "toggle-rotate-mode";
+                  const isCycleRouting = action.action === "cycle-wire-routing";
                   const isActionActive =
                     (isWireToggle && modeState.isWireMode) ||
                     (isRotateToggle && modeState.isRotateMode);
@@ -1270,6 +1271,9 @@ export default function Builder() {
                       return modeState.isRotateMode
                         ? "Rotate mode active"
                         : "Rotate the active component";
+                    }
+                    if (isCycleRouting) {
+                      return `Current routing: ${wireRoutingLabel}`;
                     }
                     return action.description;
                   })();
