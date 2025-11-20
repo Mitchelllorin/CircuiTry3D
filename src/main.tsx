@@ -32,15 +32,13 @@ if (!container) throw new Error("Root container not found");
 
 try {
   createRoot(container).render(
-    <React.StrictMode>
-      <HashRouter>
-        <AuthProvider>
-          <EngagementProvider>
-            <App />
-          </EngagementProvider>
-        </AuthProvider>
-      </HashRouter>
-    </React.StrictMode>
+    <HashRouter>
+      <AuthProvider>
+        <EngagementProvider>
+          <App />
+        </EngagementProvider>
+      </AuthProvider>
+    </HashRouter>
   );
   
   setTimeout(() => {

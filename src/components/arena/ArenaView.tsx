@@ -1724,12 +1724,14 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     setBattleState("battling");
     setBattleWinner(null);
     
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (showdownWinner) {
         setBattleWinner(showdownWinner);
       }
       setBattleState("complete");
     }, 3000);
+
+    return () => clearTimeout(timeoutId);
   }, [battleState, componentATelemetry, componentBTelemetry, showdownWinner]);
 
   const handleResetBattle = useCallback(() => {
