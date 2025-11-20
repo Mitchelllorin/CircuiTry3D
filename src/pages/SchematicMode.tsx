@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import "../styles/schematic.css";
 import "../styles/practice.css";
 import practiceProblems, {
@@ -404,16 +404,22 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
-    setWorksheetEntries(baselineWorksheet);
-    setWorksheetComplete(false);
-    setTableRevealed(false);
-    setStepsVisible(false);
-    setAnswerRevealed(false);
+    // Wrap worksheet and UI state resets in startTransition to prevent blocking the 3D viewport render
+    // This fixes flickering/glitching when switching to parallel circuits
+    startTransition(() => {
+      setWorksheetEntries(baselineWorksheet);
+      setWorksheetComplete(false);
+      setTableRevealed(false);
+      setStepsVisible(false);
+      setAnswerRevealed(false);
+    });
   }, [baselineWorksheet, selectedProblem.id]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
-      setAnswerRevealed(true);
+      startTransition(() => {
+        setAnswerRevealed(true);
+      });
     }
   }, [worksheetComplete, answerRevealed]);
 
@@ -2237,15 +2243,22 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         });
 
         let circuitGroup: any = null;
+        let isRebuilding = false;
 
           const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
+          isRebuilding = true;
           if (circuitGroup) {
             scene.remove(circuitGroup);
             disposeThreeObject(circuitGroup);
             circuitGroup = null;
           }
+
+          // Use requestAnimationFrame to ensure rebuild happens in sync with render cycle
+          window.requestAnimationFrame(() => {
             circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
-          scene.add(circuitGroup);
+            scene.add(circuitGroup);
+            isRebuilding = false;
+          });
         };
 
         applyProblemRef.current = setCircuit;
@@ -2258,7 +2271,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           animationFrame = window.requestAnimationFrame(animate);
           const elapsed = clock.getElapsedTime();
           updateCamera(false, three, camera);
-          if (circuitGroup) {
+          // Only animate circuit if it exists and we're not rebuilding
+          if (circuitGroup && !isRebuilding) {
             const wobble = Math.sin(elapsed * 0.35) * 0.12;
             circuitGroup.rotation.y = wobble;
             circuitGroup.position.y = Math.sin(elapsed * 0.45) * 0.04;
@@ -2314,9 +2328,14 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
     }, [CAMERA_DEFAULT_POSITION, CAMERA_DEFAULT_TARGET, CAMERA_RADIUS_LIMITS, CAMERA_PAN_LIMITS, CAMERA_PHI_LIMITS, normalizeAzimuth, updateCamera, applyPan]);
 
     useEffect(() => {
-      if (applyProblemRef.current) {
-        applyProblemRef.current(problem, symbolStandard);
-      }
+      // Debounce problem changes to prevent rapid-fire rebuilds
+      const debounceTimeout = setTimeout(() => {
+        if (applyProblemRef.current) {
+          applyProblemRef.current(problem, symbolStandard);
+        }
+      }, 50);
+
+      return () => clearTimeout(debounceTimeout);
     }, [problem, symbolStandard]);
 
   return (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import practiceProblems, {
@@ -389,13 +389,19 @@ export default function Practice({
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
-    setWorksheetEntries(baselineWorksheet);
-    setWorksheetComplete(false);
+    // Wrap worksheet reset in startTransition to prevent blocking the 3D viewport render
+    // This fixes flickering/glitching when switching to parallel circuits
+    startTransition(() => {
+      setWorksheetEntries(baselineWorksheet);
+      setWorksheetComplete(false);
+    });
   }, [baselineWorksheet, selectedProblem.id]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
-      setAnswerRevealed(true);
+      startTransition(() => {
+        setAnswerRevealed(true);
+      });
     }
   }, [worksheetComplete, answerRevealed]);
 

@@ -163,6 +163,7 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
   const sprite = new three.Sprite(material);
   sprite.scale.set(1.4, 0.7, 1);
   sprite.userData.texture = texture;
+  sprite.userData.material = material;
   return sprite;
 };
 
@@ -1046,6 +1047,9 @@ export const disposeThreeObject = (root: any) => {
       material.forEach((mat) => disposeMaterial(mat));
       return;
     }
+    if (material.map && typeof material.map.dispose === "function") {
+      material.map.dispose();
+    }
     if (material.dispose && typeof material.dispose === "function") {
       material.dispose();
     }
@@ -1060,6 +1064,9 @@ export const disposeThreeObject = (root: any) => {
     }
     if (child.userData && child.userData.texture && typeof child.userData.texture.dispose === "function") {
       child.userData.texture.dispose();
+    }
+    if (child.userData && child.userData.material && typeof child.userData.material.dispose === "function") {
+      disposeMaterial(child.userData.material);
     }
   });
 };

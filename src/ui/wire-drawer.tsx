@@ -506,27 +506,34 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       return;
     }
 
-    const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
-    const displayWidth = width;
-    const displayHeight = height;
-    const scaledWidth = Math.round(displayWidth * deviceRatio);
-    const scaledHeight = Math.round(displayHeight * deviceRatio);
+    let animationFrameId: number | null = null;
+    let isRendering = false;
 
-    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
-      canvas.width = scaledWidth;
-      canvas.height = scaledHeight;
-    }
+    const render = () => {
+      if (isRendering) return;
+      isRendering = true;
 
-    if (canvas.style.width !== `${displayWidth}px`) {
-      canvas.style.width = `${displayWidth}px`;
-    }
-    if (canvas.style.height !== `${displayHeight}px`) {
-      canvas.style.height = `${displayHeight}px`;
-    }
+      const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+      const displayWidth = width;
+      const displayHeight = height;
+      const scaledWidth = Math.round(displayWidth * deviceRatio);
+      const scaledHeight = Math.round(displayHeight * deviceRatio);
 
-    ctx.save();
-    ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
-    ctx.clearRect(0, 0, displayWidth, displayHeight);
+      if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+        canvas.width = scaledWidth;
+        canvas.height = scaledHeight;
+      }
+
+      if (canvas.style.width !== `${displayWidth}px`) {
+        canvas.style.width = `${displayWidth}px`;
+      }
+      if (canvas.style.height !== `${displayHeight}px`) {
+        canvas.style.height = `${displayHeight}px`;
+      }
+
+      ctx.save();
+      ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
 
     const tracePolyline = (points: Vec2[]) => {
       if (points.length < 2) {
@@ -794,20 +801,30 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.restore();
     };
 
-    drawBackground();
+      drawBackground();
 
-    for (const wire of wires) {
-      drawWire(wire, hoveredWireInfo?.wireId === wire.id);
-    }
+      for (const wire of wires) {
+        drawWire(wire, hoveredWireInfo?.wireId === wire.id);
+      }
 
-    for (const node of nodes) {
-      drawNode(node);
-    }
+      for (const node of nodes) {
+        drawNode(node);
+      }
 
-    drawActiveWire();
-    drawHoveredWireCue();
+      drawActiveWire();
+      drawHoveredWireCue();
 
-    ctx.restore();
+      ctx.restore();
+      isRendering = false;
+    };
+
+    animationFrameId = requestAnimationFrame(render);
+
+    return () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget]);
 
   return (
