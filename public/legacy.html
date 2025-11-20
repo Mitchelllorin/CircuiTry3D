@@ -5035,21 +5035,47 @@ body.android-optimized.menu-visible .status {
             }
 
             createSelectionBox(group) {
-                const selectionGeometry = new THREE.BoxGeometry(
-                    isMobile ? 4.0 : 3.2, 
-                    isMobile ? 2.5 : 2.2, 
-                    isMobile ? 2.5 : 2.2
-                );
-                const selectionMaterial = new THREE.MeshBasicMaterial({ 
+                // Adjust selection box size based on component type
+                let width, height, depth;
+
+                if (this.type === 'bjt' || this.type === 'mosfet') {
+                    // Transistors have 3 terminals below, need taller selection box
+                    width = isMobile ? 3.5 : 2.8;
+                    height = isMobile ? 3.0 : 2.6;
+                    depth = isMobile ? 2.5 : 2.2;
+                } else if (this.type === 'potentiometer') {
+                    // Potentiometer has a knob on top and 3 terminals below
+                    width = isMobile ? 3.5 : 2.8;
+                    height = isMobile ? 3.5 : 3.0;
+                    depth = isMobile ? 2.5 : 2.2;
+                } else if (this.type === 'ground') {
+                    // Ground symbol is smaller and vertical
+                    width = isMobile ? 2.5 : 2.0;
+                    height = isMobile ? 2.5 : 2.0;
+                    depth = isMobile ? 2.0 : 1.8;
+                } else if (this.type === 'lamp') {
+                    // Lamp has a bulb and base
+                    width = isMobile ? 3.0 : 2.5;
+                    height = isMobile ? 3.0 : 2.6;
+                    depth = isMobile ? 2.5 : 2.2;
+                } else {
+                    // Default size for 2-terminal components
+                    width = isMobile ? 4.0 : 3.2;
+                    height = isMobile ? 2.5 : 2.2;
+                    depth = isMobile ? 2.5 : 2.2;
+                }
+
+                const selectionGeometry = new THREE.BoxGeometry(width, height, depth);
+                const selectionMaterial = new THREE.MeshBasicMaterial({
                     transparent: true,
                     opacity: 0.0,
                     depthTest: false
                 });
-                
+
                 const selectionBox = new THREE.Mesh(selectionGeometry, selectionMaterial);
                 selectionBox.userData = { component: this, isSelectionBox: true };
                 selectionBox.renderOrder = 1000; // Ensure high priority for raycasting
-                
+
                 group.add(selectionBox);
                 this.selectionBox = selectionBox;
             }
@@ -5400,49 +5426,201 @@ body.android-optimized.menu-visible .status {
 
             createConnectionPoints() {
                 this.connectionPoints = [];
-                
+
                 const pointGeometry = new THREE.SphereGeometry(0.3, isMobile ? 16 : 20, isMobile ? 12 : 16);
                 const leftPos = new THREE.Vector3(-1.2, 0, 0);
                 const rightPos = new THREE.Vector3(1.2, 0, 0);
-                
+                const centerPos = new THREE.Vector3(0, 0, 0);
+
                 if (this.type === 'battery') {
                     // Red positive terminal
-                    const positiveMaterial = new THREE.MeshPhongMaterial({ 
+                    const positiveMaterial = new THREE.MeshPhongMaterial({
                         color: 0xff0000,
                         emissive: 0x330000,
                         shininess: 200
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
-                    positivePoint.userData = { 
-                        component: this, 
-                        isConnectionPoint: true, 
-                        side: 'positive', 
+                    positivePoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'positive',
                         polarity: 'positive'
                     };
                     this.mesh.add(positivePoint);
                     this.connectionPoints.push(positivePoint);
 
                     // Gray negative terminal
-                    const negativeMaterial = new THREE.MeshPhongMaterial({ 
+                    const negativeMaterial = new THREE.MeshPhongMaterial({
                         color: 0x333333,
                         emissive: 0x111111,
                         shininess: 200
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
-                    negativePoint.userData = { 
-                        component: this, 
-                        isConnectionPoint: true, 
-                        side: 'negative', 
+                    negativePoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'negative',
                         polarity: 'negative'
                     };
                     this.mesh.add(negativePoint);
                     this.connectionPoints.push(negativePoint);
-                    
+
+                } else if (this.type === 'bjt') {
+                    // BJT has 3 terminals: Collector (left), Base (center), Emitter (right)
+                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xffffff,
+                        emissive: 0x222222,
+                        shininess: 200
+                    });
+
+                    // Collector (left, -0.2 x offset matching lead positions)
+                    const collectorPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    collectorPoint.position.set(-0.2, -0.6, 0);
+                    collectorPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'collector',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(collectorPoint);
+                    this.connectionPoints.push(collectorPoint);
+
+                    // Base (center)
+                    const basePoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    basePoint.position.set(0, -0.6, 0);
+                    basePoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'base',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(basePoint);
+                    this.connectionPoints.push(basePoint);
+
+                    // Emitter (right)
+                    const emitterPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    emitterPoint.position.set(0.2, -0.6, 0);
+                    emitterPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'emitter',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(emitterPoint);
+                    this.connectionPoints.push(emitterPoint);
+
+                } else if (this.type === 'mosfet') {
+                    // MOSFET has 3 terminals: Gate (left), Drain (center), Source (right)
+                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xffffff,
+                        emissive: 0x222222,
+                        shininess: 200
+                    });
+
+                    // Gate (left)
+                    const gatePoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    gatePoint.position.set(-0.2, -0.7, 0);
+                    gatePoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'gate',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(gatePoint);
+                    this.connectionPoints.push(gatePoint);
+
+                    // Drain (center)
+                    const drainPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    drainPoint.position.set(0, -0.7, 0);
+                    drainPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'drain',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(drainPoint);
+                    this.connectionPoints.push(drainPoint);
+
+                    // Source (right)
+                    const sourcePoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    sourcePoint.position.set(0.2, -0.7, 0);
+                    sourcePoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'source',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(sourcePoint);
+                    this.connectionPoints.push(sourcePoint);
+
+                } else if (this.type === 'potentiometer') {
+                    // Potentiometer has 3 terminals: Terminal 1 (left), Wiper (center), Terminal 2 (right)
+                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xffffff,
+                        emissive: 0x222222,
+                        shininess: 200
+                    });
+
+                    // Terminal 1 (left)
+                    const terminal1Point = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    terminal1Point.position.set(-0.15, -0.7, 0);
+                    terminal1Point.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'terminal1',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(terminal1Point);
+                    this.connectionPoints.push(terminal1Point);
+
+                    // Wiper (center)
+                    const wiperPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    wiperPoint.position.set(0, -0.7, 0);
+                    wiperPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'wiper',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(wiperPoint);
+                    this.connectionPoints.push(wiperPoint);
+
+                    // Terminal 2 (right)
+                    const terminal2Point = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
+                    terminal2Point.position.set(0.15, -0.7, 0);
+                    terminal2Point.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'terminal2',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(terminal2Point);
+                    this.connectionPoints.push(terminal2Point);
+
+                } else if (this.type === 'ground') {
+                    // Ground has only 1 connection point at the top
+                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xffffff,
+                        emissive: 0x222222,
+                        shininess: 200
+                    });
+
+                    const groundPoint = new THREE.Mesh(pointGeometry, neutralMaterial);
+                    groundPoint.position.set(0, 0.45, 0); // At the top of the ground symbol
+                    groundPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'top',
+                        polarity: 'neutral'
+                    };
+                    this.mesh.add(groundPoint);
+                    this.connectionPoints.push(groundPoint);
+
                 } else {
-                    // White neutral terminals
-                    const neutralMaterial = new THREE.MeshPhongMaterial({ 
+                    // White neutral terminals for 2-terminal components
+                    const neutralMaterial = new THREE.MeshPhongMaterial({
                         color: 0xffffff,
                         emissive: 0x222222,
                         shininess: 200
@@ -5450,10 +5628,10 @@ body.android-optimized.menu-visible .status {
 
                     const leftPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
                     leftPoint.position.copy(leftPos);
-                    leftPoint.userData = { 
-                        component: this, 
-                        isConnectionPoint: true, 
-                        side: 'left', 
+                    leftPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'left',
                         polarity: 'neutral'
                     };
                     this.mesh.add(leftPoint);
@@ -5461,16 +5639,16 @@ body.android-optimized.menu-visible .status {
 
                     const rightPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
                     rightPoint.position.copy(rightPos);
-                    rightPoint.userData = { 
-                        component: this, 
-                        isConnectionPoint: true, 
-                        side: 'right', 
+                    rightPoint.userData = {
+                        component: this,
+                        isConnectionPoint: true,
+                        side: 'right',
                         polarity: 'neutral'
                     };
                     this.mesh.add(rightPoint);
                     this.connectionPoints.push(rightPoint);
                 }
-                
+
                 // Create polarity indicator labels
                 this.createPolarityIndicators();
             }
