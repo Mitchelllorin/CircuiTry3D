@@ -4643,7 +4643,16 @@ body.android-optimized.menu-visible .status {
             battery: 0,
             resistor: 0,
             led: 0,
-            switch: 0
+            switch: 0,
+            capacitor: 0,
+            inductor: 0,
+            diode: 0,
+            bjt: 0,
+            mosfet: 0,
+            fuse: 0,
+            potentiometer: 0,
+            lamp: 0,
+            ground: 0
         };
         
         // Camera controls
@@ -4813,6 +4822,15 @@ body.android-optimized.menu-visible .status {
                     case 'resistor': return { resistance: 100 };
                     case 'led': return { resistance: 10 };
                     case 'switch': return { resistance: 0.1, isOn: true };
+                    case 'capacitor': return { capacitance: 100 }; // μF
+                    case 'inductor': return { inductance: 10 }; // mH
+                    case 'diode': return { forwardVoltage: 0.7 };
+                    case 'bjt': return { gain: 100 };
+                    case 'mosfet': return { threshold: 2.5 };
+                    case 'fuse': return { current: 1 }; // A
+                    case 'potentiometer': return { resistance: 10, position: 50 }; // kΩ, %
+                    case 'lamp': return { resistance: 10 };
+                    case 'ground': return {};
                     default: return {};
                 }
             }
@@ -4847,6 +4865,15 @@ body.android-optimized.menu-visible .status {
                     case 'resistor': return `R${this.componentNumber}`;
                     case 'led': return `LED${this.componentNumber}`;
                     case 'switch': return `SW${this.componentNumber}`;
+                    case 'capacitor': return `C${this.componentNumber}`;
+                    case 'inductor': return `L${this.componentNumber}`;
+                    case 'diode': return `D${this.componentNumber}`;
+                    case 'bjt': return `Q${this.componentNumber}`;
+                    case 'mosfet': return `M${this.componentNumber}`;
+                    case 'fuse': return `F${this.componentNumber}`;
+                    case 'potentiometer': return `POT${this.componentNumber}`;
+                    case 'lamp': return `LA${this.componentNumber}`;
+                    case 'ground': return `GND${this.componentNumber}`;
                     default: return `C${this.componentNumber}`;
                 }
             }
@@ -4873,6 +4900,51 @@ body.android-optimized.menu-visible .status {
                         return {
                             text: state,
                             color: this.properties.isOn ? '#44ff44' : '#ff4444'
+                        };
+                    case 'capacitor':
+                        return {
+                            text: `${this.properties.capacitance}μF`,
+                            color: '#4488ff' // Blue
+                        };
+                    case 'inductor':
+                        return {
+                            text: `${this.properties.inductance}mH`,
+                            color: '#ff8844' // Orange
+                        };
+                    case 'diode':
+                        return {
+                            text: `${this.properties.forwardVoltage}V`,
+                            color: '#888888' // Gray
+                        };
+                    case 'bjt':
+                        return {
+                            text: `β=${this.properties.gain}`,
+                            color: '#ff44ff' // Magenta
+                        };
+                    case 'mosfet':
+                        return {
+                            text: `Vth=${this.properties.threshold}V`,
+                            color: '#44ffff' // Cyan
+                        };
+                    case 'fuse':
+                        return {
+                            text: `${this.properties.current}A`,
+                            color: '#ffff44' // Yellow
+                        };
+                    case 'potentiometer':
+                        return {
+                            text: `${this.properties.resistance}kΩ @${this.properties.position}%`,
+                            color: WIRE_COLORS.R // Green
+                        };
+                    case 'lamp':
+                        return {
+                            text: `${this.properties.resistance}Ω`,
+                            color: '#ffdd44' // Yellow-orange
+                        };
+                    case 'ground':
+                        return {
+                            text: 'GND',
+                            color: '#666666' // Dark gray
                         };
                     default:
                         return { text: '', color: '#ffffff' };
@@ -4911,7 +4983,7 @@ body.android-optimized.menu-visible .status {
 
             createMesh() {
                 const group = new THREE.Group();
-                
+
                 switch(this.type) {
                     case 'battery':
                         this.createBatteryMesh(group);
@@ -4925,11 +4997,38 @@ body.android-optimized.menu-visible .status {
                     case 'switch':
                         this.createSwitchMesh(group);
                         break;
+                    case 'capacitor':
+                        this.createCapacitorMesh(group);
+                        break;
+                    case 'inductor':
+                        this.createInductorMesh(group);
+                        break;
+                    case 'diode':
+                        this.createDiodeMesh(group);
+                        break;
+                    case 'bjt':
+                        this.createBJTMesh(group);
+                        break;
+                    case 'mosfet':
+                        this.createMOSFETMesh(group);
+                        break;
+                    case 'fuse':
+                        this.createFuseMesh(group);
+                        break;
+                    case 'potentiometer':
+                        this.createPotentiometerMesh(group);
+                        break;
+                    case 'lamp':
+                        this.createLampMesh(group);
+                        break;
+                    case 'ground':
+                        this.createGroundMesh(group);
+                        break;
                 }
-                
+
                 group.position.copy(this.position);
                 group.userData = { component: this };
-                
+
                 this.createSelectionBox(group);
                 this.mesh = group;
                 scene.add(group);
@@ -5075,7 +5174,7 @@ body.android-optimized.menu-visible .status {
                     const hBar = new THREE.Mesh(hBarGeometry, hBarMaterial);
                     hBar.position.copy(position);
                     group.add(hBar);
-                    
+
                     const vBarGeometry = new THREE.BoxGeometry(0.04, 0.2, 0.04);
                     const vBar = new THREE.Mesh(vBarGeometry, hBarMaterial);
                     vBar.position.copy(position);
@@ -5087,6 +5186,216 @@ body.android-optimized.menu-visible .status {
                     bar.position.copy(position);
                     group.add(bar);
                 }
+            }
+
+            createCapacitorMesh(group) {
+                const segments = isMobile ? 6 : 8;
+                // Capacitor body (cylinder)
+                const bodyGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.7, segments);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4488ff });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // Stripe (polarity indicator)
+                const stripeGeometry = new THREE.CylinderGeometry(0.26, 0.26, 0.08, segments);
+                const stripeMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+                stripe.rotation.z = Math.PI / 2;
+                stripe.position.x = 0.3;
+                group.add(stripe);
+
+                this.addLeads(group);
+            }
+
+            createInductorMesh(group) {
+                const segments = isMobile ? 6 : 8;
+                // Inductor coil (multiple rings)
+                for (let i = 0; i < 4; i++) {
+                    const coilGeometry = new THREE.TorusGeometry(0.15, 0.08, segments, segments);
+                    const coilMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                    const coil = new THREE.Mesh(coilGeometry, coilMaterial);
+                    coil.rotation.y = Math.PI / 2;
+                    coil.position.x = -0.25 + i * 0.15;
+                    group.add(coil);
+                }
+
+                this.addLeads(group);
+            }
+
+            createDiodeMesh(group) {
+                const segments = isMobile ? 6 : 8;
+                // Diode body
+                const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // Cathode band (silver stripe)
+                const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
+                const bandMaterial = new THREE.MeshLambertMaterial({ color: 0xc0c0c0 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.3;
+                group.add(band);
+
+                this.addLeads(group);
+            }
+
+            createBJTMesh(group) {
+                const segments = isMobile ? 6 : 8;
+                // BJT body (TO-92 package)
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.x = Math.PI / 2;
+                body.position.y = 0.2;
+                group.add(body);
+
+                // Three leads (Collector, Base, Emitter)
+                const leadGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4);
+                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+
+                for (let i = 0; i < 3; i++) {
+                    const lead = new THREE.Mesh(leadGeometry, leadMaterial);
+                    lead.position.set(-0.2 + i * 0.2, -0.3, 0);
+                    group.add(lead);
+                }
+            }
+
+            createMOSFETMesh(group) {
+                // MOSFET body (TO-220 package)
+                const bodyGeometry = new THREE.BoxGeometry(0.6, 0.5, 0.2);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.3;
+                group.add(body);
+
+                // Heat sink tab
+                const tabGeometry = new THREE.BoxGeometry(0.65, 0.2, 0.02);
+                const tabMaterial = new THREE.MeshLambertMaterial({ color: 0x8c8c8c });
+                const tab = new THREE.Mesh(tabGeometry, tabMaterial);
+                tab.position.set(0, 0.6, 0.11);
+                group.add(tab);
+
+                // Three leads (Gate, Drain, Source)
+                const leadGeometry = new THREE.BoxGeometry(0.05, 0.5, 0.05);
+                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+
+                for (let i = 0; i < 3; i++) {
+                    const lead = new THREE.Mesh(leadGeometry, leadMaterial);
+                    lead.position.set(-0.2 + i * 0.2, -0.2, 0);
+                    group.add(lead);
+                }
+            }
+
+            createFuseMesh(group) {
+                const segments = isMobile ? 6 : 8;
+                // Fuse glass body
+                const bodyGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.8, segments);
+                const bodyMaterial = new THREE.MeshLambertMaterial({
+                    color: 0xcccccc,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // End caps
+                const capGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.1, segments);
+                const capMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+
+                const leftCap = new THREE.Mesh(capGeometry, capMaterial);
+                leftCap.rotation.z = Math.PI / 2;
+                leftCap.position.x = -0.4;
+                group.add(leftCap);
+
+                const rightCap = new THREE.Mesh(capGeometry, capMaterial);
+                rightCap.rotation.z = Math.PI / 2;
+                rightCap.position.x = 0.4;
+                group.add(rightCap);
+
+                this.addLeads(group);
+            }
+
+            createPotentiometerMesh(group) {
+                const segments = isMobile ? 6 : 8;
+                // Potentiometer body
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, segments);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4444aa });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                group.add(body);
+
+                // Adjustment knob
+                const knobGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.15, segments);
+                const knobMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const knob = new THREE.Mesh(knobGeometry, knobMaterial);
+                knob.position.y = 0.25;
+                group.add(knob);
+
+                // Three terminals
+                const terminalGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.4, 4);
+                const terminalMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+
+                for (let i = 0; i < 3; i++) {
+                    const terminal = new THREE.Mesh(terminalGeometry, terminalMaterial);
+                    terminal.position.set(-0.15 + i * 0.15, -0.3, 0);
+                    group.add(terminal);
+                }
+            }
+
+            createLampMesh(group) {
+                const segments = isMobile ? 8 : 12;
+                // Lamp bulb (sphere)
+                const bulbGeometry = new THREE.SphereGeometry(0.3, segments, segments);
+                const bulbMaterial = new THREE.MeshLambertMaterial({
+                    color: 0xffdd44,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
+                bulb.position.y = 0.2;
+                group.add(bulb);
+
+                // Lamp base
+                const baseGeometry = new THREE.CylinderGeometry(0.2, 0.15, 0.3, segments);
+                const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                base.position.y = -0.15;
+                group.add(base);
+
+                this.addLeads(group);
+            }
+
+            createGroundMesh(group) {
+                // Ground symbol - three horizontal lines
+                const lineMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+
+                // Top line (longest)
+                const line1Geometry = new THREE.BoxGeometry(0.6, 0.05, 0.05);
+                const line1 = new THREE.Mesh(line1Geometry, lineMaterial);
+                line1.position.y = 0;
+                group.add(line1);
+
+                // Middle line
+                const line2Geometry = new THREE.BoxGeometry(0.4, 0.05, 0.05);
+                const line2 = new THREE.Mesh(line2Geometry, lineMaterial);
+                line2.position.y = -0.15;
+                group.add(line2);
+
+                // Bottom line (shortest)
+                const line3Geometry = new THREE.BoxGeometry(0.2, 0.05, 0.05);
+                const line3 = new THREE.Mesh(line3Geometry, lineMaterial);
+                line3.position.y = -0.3;
+                group.add(line3);
+
+                // Connection point at top
+                const connectionGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 6);
+                const connection = new THREE.Mesh(connectionGeometry, lineMaterial);
+                connection.position.y = 0.15;
+                group.add(connection);
             }
 
             createConnectionPoints() {
