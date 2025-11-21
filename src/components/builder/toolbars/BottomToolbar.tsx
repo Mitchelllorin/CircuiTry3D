@@ -85,7 +85,20 @@ export function BottomToolbar({
             <span className="slider-heading">Analysis</span>
             <div className="menu-track menu-track-metrics">
               {WIRE_METRICS.map((metric) => (
-                <div key={metric.id} className="slider-metric">
+                <div
+                  key={metric.id}
+                  className="slider-metric"
+                  title={`${metric.label}: ${metric.value} - Click to view calculation details`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onOpenHelpCenter("wire-guide")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onOpenHelpCenter("wire-guide");
+                    }
+                  }}
+                >
                   <span className="metric-letter">{metric.letter}</span>
                   <span className="metric-value">{metric.value}</span>
                   <span className="metric-label">{metric.label}</span>

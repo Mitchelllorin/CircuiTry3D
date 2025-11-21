@@ -135,6 +135,8 @@ type ComponentMetricEntry = {
   displayValue: string;
   numericValue: number | null;
   unit: string | null;
+  formula?: string;
+  derivedFrom?: string[];
 };
 
 type ComponentShowdownProfile = {
@@ -260,6 +262,105 @@ const TELEMETRY_PRESETS: TelemetryPreset[] = [
     icon: "🎯",
     thresholds: { warning: 0.6, critical: 0.4 },
     direction: "lower"
+  }
+];
+
+type ElectricalFormula = {
+  id: string;
+  category: "ohms-law" | "power" | "derived";
+  formula: string;
+  description: string;
+  variables: { symbol: string; name: string }[];
+};
+
+const ELECTRICAL_FORMULAS: ElectricalFormula[] = [
+  {
+    id: "ohms-v",
+    category: "ohms-law",
+    formula: "E = I × R",
+    description: "Voltage equals current times resistance",
+    variables: [
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "R", name: "Resistance (Ω)" }
+    ]
+  },
+  {
+    id: "ohms-i",
+    category: "ohms-law",
+    formula: "I = E / R",
+    description: "Current equals voltage divided by resistance",
+    variables: [
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "R", name: "Resistance (Ω)" }
+    ]
+  },
+  {
+    id: "ohms-r",
+    category: "ohms-law",
+    formula: "R = E / I",
+    description: "Resistance equals voltage divided by current",
+    variables: [
+      { symbol: "R", name: "Resistance (Ω)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" }
+    ]
+  },
+  {
+    id: "power-ei",
+    category: "power",
+    formula: "P = E × I",
+    description: "Power equals voltage times current",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" }
+    ]
+  },
+  {
+    id: "power-i2r",
+    category: "power",
+    formula: "P = I² × R",
+    description: "Power equals current squared times resistance",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "R", name: "Resistance (Ω)" }
+    ]
+  },
+  {
+    id: "power-e2r",
+    category: "power",
+    formula: "P = E² / R",
+    description: "Power equals voltage squared divided by resistance",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "R", name: "Resistance (Ω)" }
+    ]
+  },
+  {
+    id: "derived-i-from-p",
+    category: "derived",
+    formula: "I = √(P / R)",
+    description: "Current from power and resistance",
+    variables: [
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "R", name: "Resistance (Ω)" }
+    ]
+  },
+  {
+    id: "derived-e-from-p",
+    category: "derived",
+    formula: "E = √(P × R)",
+    description: "Voltage from power and resistance",
+    variables: [
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "R", name: "Resistance (Ω)" }
+    ]
   }
 ];
 
@@ -2000,6 +2101,56 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               isTie: showdownTie,
               tag: "Component B"
             })}
+          </div>
+        </section>
+
+        <section className="arena-formulas-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>W.I.R.E. Formula Reference</h2>
+              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', margin: '8px 0 0 0'}}>
+                Essential electrical calculations for circuit analysis
+              </p>
+            </div>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px'}}>
+              {ELECTRICAL_FORMULAS.slice(0, 6).map((formula) => (
+                <div
+                  key={formula.id}
+                  style={{
+                    padding: '16px',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(15, 23, 42, 0.4)'
+                  }}
+                >
+                  <div style={{
+                    fontFamily: 'monospace',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    marginBottom: '8px',
+                    color: 'rgba(136, 204, 255, 0.95)'
+                  }}>
+                    {formula.formula}
+                  </div>
+                  <div style={{
+                    fontSize: '0.85rem',
+                    color: 'rgba(148, 163, 184, 0.9)',
+                    marginBottom: '12px'
+                  }}>
+                    {formula.description}
+                  </div>
+                  <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.7)'}}>
+                    {formula.variables.map((v, idx) => (
+                      <div key={v.symbol} style={{marginBottom: idx < formula.variables.length - 1 ? '4px' : '0'}}>
+                        <span style={{fontWeight: '600', color: 'rgba(136, 204, 255, 0.85)'}}>{v.symbol}</span>
+                        {' = '}
+                        {v.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </div>

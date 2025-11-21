@@ -35,6 +35,19 @@ const COLOR_HELPERS = {
 
 const LABEL_COLOR = "#111111";
 
+const COMPONENT_TYPE_COLORS: Record<string, string> = {
+  battery: "#ef4444",    // Red for power source
+  resistor: "#f59e0b",   // Amber for resistance
+  capacitor: "#3b82f6",  // Blue for capacitance
+  inductor: "#8b5cf6",   // Purple for inductance
+  lamp: "#fbbf24",       // Yellow for light
+  switch: "#10b981",     // Green for switching
+  diode: "#ec4899",      // Pink for one-way flow
+  bjt: "#14b8a6",        // Teal for transistors
+  ground: "#6b7280",     // Gray for ground
+  wire: "#111111",       // Black for wires
+};
+
 const SNAP_EPSILON = 1e-6;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -133,7 +146,7 @@ const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number,
   return mesh;
 };
 
-const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, options: BuildOptions = {}) => {
+const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
   canvas.height = 256;
@@ -142,11 +155,17 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
     return null;
   }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Use component type color if available and not in preview mode
+  const effectiveColor = (!options.preview && componentKind && COMPONENT_TYPE_COLORS[componentKind])
+    ? COMPONENT_TYPE_COLORS[componentKind]
+    : color;
+
   if (!options.preview) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  ctx.fillStyle = color;
+  ctx.fillStyle = effectiveColor;
   ctx.font = "bold 150px 'Inter', 'Segoe UI', sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -163,6 +182,7 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
   const sprite = new three.Sprite(material);
   sprite.scale.set(1.4, 0.7, 1);
   sprite.userData.texture = texture;
+  sprite.userData.componentKind = componentKind;
   return sprite;
 };
 
@@ -299,7 +319,7 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label);
+    const labelSprite = createLabelSprite(three, element.label, LABEL_COLOR, options, "resistor");
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
       labelSprite.position.copy(midpoint);
@@ -413,7 +433,7 @@ const buildBatteryElement = (three: any, element: TwoTerminalElement, options: B
 
   if (!options.preview) {
     const labelText = element.label ?? "V";
-    const labelSprite = createLabelSprite(three, labelText);
+    const labelSprite = createLabelSprite(three, labelText, LABEL_COLOR, options, "battery");
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
       labelSprite.position.copy(midpoint);
@@ -496,7 +516,7 @@ const buildCapacitorElement = (three: any, element: TwoTerminalElement, options:
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label ?? "C");
+    const labelSprite = createLabelSprite(three, element.label ?? "C", LABEL_COLOR, options, "capacitor");
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
       labelSprite.position.copy(midpoint);
@@ -583,7 +603,7 @@ const buildInductorElement = (three: any, element: TwoTerminalElement, options: 
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label ?? "L");
+    const labelSprite = createLabelSprite(three, element.label ?? "L", LABEL_COLOR, options, "inductor");
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
       labelSprite.position.copy(midpoint);
@@ -659,7 +679,7 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   }
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label ?? "LAMP");
+    const labelSprite = createLabelSprite(three, element.label ?? "LAMP", LABEL_COLOR, options, "lamp");
     if (labelSprite) {
       labelSprite.position.copy(center.clone().setY(center.y + 0.9));
       group.add(labelSprite);
@@ -749,7 +769,7 @@ const buildSwitchElement = (three: any, element: TwoTerminalElement, options: Bu
   }
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label ?? "S");
+    const labelSprite = createLabelSprite(three, element.label ?? "S", LABEL_COLOR, options, "switch");
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(
         toVec3(three, element.start, COMPONENT_HEIGHT),
@@ -850,7 +870,7 @@ const buildDiodeElement = (three: any, element: TwoTerminalElement, options: Bui
   }
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label ?? "D");
+    const labelSprite = createLabelSprite(three, element.label ?? "D", LABEL_COLOR, options, "diode");
     if (labelSprite) {
       const midpoint = new three.Vector3().addVectors(
         toVec3(three, element.start, COMPONENT_HEIGHT),
@@ -949,7 +969,7 @@ const buildBJTElement = (three: any, element: ThreeTerminalElement, options: Bui
   group.add(arrow);
 
   if (!options.preview) {
-    const labelSprite = createLabelSprite(three, element.label ?? "Q");
+    const labelSprite = createLabelSprite(three, element.label ?? "Q", LABEL_COLOR, options, "bjt");
     if (labelSprite) {
       labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT, center.z);
       group.add(labelSprite);

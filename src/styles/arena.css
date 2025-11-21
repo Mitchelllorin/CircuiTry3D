@@ -1803,3 +1803,168 @@ body.builder-body .arena-page {
     padding: 24px 20px;
   }
 }
+
+/* Enhanced metric hover effects and tooltips */
+.arena-metric {
+  transition: all 0.2s ease;
+  cursor: help;
+}
+
+.arena-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(136, 204, 255, 0.15);
+  border-color: rgba(136, 204, 255, 0.5);
+}
+
+.arena-metric::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: rgba(15, 23, 42, 0.98);
+  color: #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.arena-metric:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Formula cards hover effects */
+.arena-formula-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.arena-formula-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(136, 204, 255, 0.4);
+  box-shadow: 0 8px 20px rgba(136, 204, 255, 0.12);
+}
+
+/* Enhanced telemetry cards */
+.arena-telemetry-card {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.arena-telemetry-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(136, 204, 255, 0.1);
+}
+
+.arena-telemetry-card.warning {
+  border-color: rgba(251, 146, 60, 0.5);
+  background: rgba(194, 65, 12, 0.15);
+}
+
+.arena-telemetry-card.critical {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(185, 28, 28, 0.2);
+  animation: pulse-critical 2s ease-in-out infinite;
+}
+
+@keyframes pulse-critical {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(248, 113, 113, 0);
+  }
+}
+
+/* Formulas section styling */
+.arena-formulas-section {
+  margin-top: 24px;
+}
+
+.arena-formula-card {
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+/* Builder toolbar metric enhancements */
+.slider-metric {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.slider-metric:hover {
+  background: rgba(136, 204, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.slider-metric:focus {
+  outline: 2px solid rgba(136, 204, 255, 0.4);
+  outline-offset: 2px;
+}
+
+.slider-metric:active {
+  transform: translateY(0);
+}
+
+/* Component glyph animations */
+.arena-component-glyph svg {
+  transition: all 0.3s ease;
+}
+
+.arena-component-glyph:hover svg {
+  transform: scale(1.05);
+}
+
+/* Enhanced battle animations */
+.arena-component-stage.battling {
+  animation: battle-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes battle-shake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  75% {
+    transform: translateX(3px) rotate(1deg);
+  }
+}
+
+/* Metric value change animations */
+@keyframes metric-flash {
+  0%, 100% {
+    background: rgba(136, 204, 255, 0.15);
+  }
+  50% {
+    background: rgba(136, 204, 255, 0.35);
+  }
+}
+
+.metric-value-changed {
+  animation: metric-flash 0.6s ease-in-out;
+}
+
+/* Educational transparency features */
+.arena-formula-highlight {
+  background: rgba(136, 204, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: rgba(136, 204, 255, 0.95);
+}
+
