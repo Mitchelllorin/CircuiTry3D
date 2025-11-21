@@ -18,7 +18,7 @@ export const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
   travelX: 70,
   travelY: 55,
   bounce: 28,
-  opacity: 100,
+  opacity: 15,
   isVisible: true,
 };
 
@@ -270,6 +270,13 @@ export const VIEW_CONTROL_ACTIONS: PanelAction[] = [
 ];
 
 export const SETTINGS_ITEMS: SettingsItem[] = [
+  {
+    id: "logo-motion",
+    label: "Logo Motion",
+    action: "open-logo-settings",
+    getDescription: () => "Configure floating logo animation",
+    isActive: () => false,
+  },
   {
     id: "flow-visualisation",
     label: "Flow Visualisation",
