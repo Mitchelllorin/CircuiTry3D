@@ -64,11 +64,11 @@
         function createSplashSVG(width, height) {
             // Calculate scaling and positioning
             const scale = Math.min(width / 2732, height / 2732);
-            const circuitWidth = 600 * scale;
+            const circuitWidth = 650 * scale;
             const circuitHeight = 450 * scale;
             const centerX = width / 2;
             const centerY = height / 2;
-            const offsetY = -50 * scale; // Slight offset upward
+            const offsetY = -40 * scale; // Offset upward to prevent R3 label from being cut off
             
             const svg = `
 <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -117,22 +117,22 @@
     
     <!-- Circuit diagram with rounded border box -->
     <g transform="translate(${centerX}, ${centerY + offsetY})">
-        <!-- Rounded rectangle border (elongated horizontally) -->
-        <rect x="${-circuitWidth * 0.75}" 
-              y="${-circuitHeight * 0.6}" 
-              width="${circuitWidth * 1.5}" 
-              height="${circuitHeight * 1.2}" 
-              rx="${30 * scale}" 
-              ry="${30 * scale}" 
-              fill="none" 
-              stroke="url(#wireGradient)" 
-              stroke-width="${4 * scale}" 
+        <!-- Rounded rectangle border (elongated horizontally toward R2) -->
+        <rect x="${-circuitWidth * 0.85}"
+              y="${-circuitHeight * 0.52}"
+              width="${circuitWidth * 1.7}"
+              height="${circuitHeight * 1.04}"
+              rx="${30 * scale}"
+              ry="${30 * scale}"
+              fill="none"
+              stroke="url(#wireGradient)"
+              stroke-width="${4 * scale}"
               filter="url(#glow)"/>
-        
-        <!-- Circuit diagram group (centered) -->
+
+        <!-- Circuit diagram group (centered horizontally and vertically within the box) -->
         <g transform="translate(${-circuitWidth/2}, ${-circuitHeight/2})">
-            <!-- Scale the entire circuit -->
-            <g transform="scale(${circuitWidth/280})">
+            <!-- Scale the circuit with horizontal elongation -->
+            <g transform="scale(${circuitWidth/170}, ${circuitHeight/360})">
             <!-- Wires and components -->
             <g stroke="url(#wireGradient)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 
