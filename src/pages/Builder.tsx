@@ -1696,9 +1696,13 @@ export default function Builder() {
                       key={setting.id}
                       type="button"
                       className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(setting.action, setting.data)
-                      }
+                      onClick={() => {
+                        if (setting.action === "open-logo-settings") {
+                          setLogoSettingsOpen(!isLogoSettingsOpen);
+                        } else {
+                          triggerBuilderAction(setting.action, setting.data);
+                        }
+                      }}
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
                       aria-pressed={setting.isActive ? isActive : undefined}
@@ -1824,180 +1828,6 @@ export default function Builder() {
         <span className="builder-logo-circui">Circui</span>
         <span className="builder-logo-try">Try</span>
         <span className="builder-logo-3d">3D</span>
-      </div>
-
-      <div
-        className={`builder-logo-controls${isLogoSettingsOpen ? " open" : ""}`}
-      >
-        <button
-          type="button"
-          className={`logo-controls-toggle${isLogoSettingsOpen ? " active" : ""}`}
-          onClick={() => setLogoSettingsOpen(!isLogoSettingsOpen)}
-          aria-expanded={isLogoSettingsOpen}
-          aria-controls="builder-logo-motion-panel"
-        >
-          Logo Motion
-        </button>
-        <div
-          id="builder-logo-motion-panel"
-          className="builder-logo-settings-panel"
-          aria-hidden={!isLogoSettingsOpen}
-        >
-          <h3>Logo Motion</h3>
-          <p className="builder-logo-settings-description">
-            Fine-tune how the logo drifts across the workspace.
-          </p>
-          <div className="builder-logo-setting">
-            <label
-              id="builder-logo-visible-label"
-              htmlFor="builder-logo-visible"
-            >
-              Display logo
-            </label>
-            <div className="setting-input">
-              <button
-                type="button"
-                id="builder-logo-visible"
-                className={`setting-switch${logoSettings.isVisible ? " on" : ""}`}
-                role="switch"
-                aria-checked={logoSettings.isVisible}
-                aria-labelledby="builder-logo-visible-label"
-                onClick={toggleLogoVisibility}
-                tabIndex={isLogoSettingsOpen ? 0 : -1}
-              >
-                <span className="setting-switch-handle" aria-hidden="true" />
-              </button>
-              <span className="setting-value">
-                {logoSettings.isVisible ? "On" : "Off"}
-              </span>
-            </div>
-          </div>
-          <div className="builder-logo-setting">
-            <label htmlFor="builder-logo-opacity">Opacity</label>
-            <div className="setting-input">
-              <input
-                id="builder-logo-opacity"
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={logoSettings.opacity}
-                onChange={(event) =>
-                  handleLogoSettingChange("opacity", Number(event.target.value))
-                }
-                disabled={prefersReducedMotion}
-                tabIndex={isLogoSettingsOpen ? 0 : -1}
-                aria-valuetext={`${Math.round(logoSettings.opacity)} percent opacity`}
-              />
-              <span className="setting-value">
-                {Math.round(logoSettings.opacity)}%
-              </span>
-            </div>
-          </div>
-          <div className="builder-logo-setting">
-            <label htmlFor="builder-logo-speed">Orbit duration</label>
-            <div className="setting-input">
-              <input
-                id="builder-logo-speed"
-                type="range"
-                min={6}
-                max={60}
-                step={1}
-                value={logoSettings.speed}
-                onChange={(event) =>
-                  handleLogoSettingChange("speed", Number(event.target.value))
-                }
-                disabled={prefersReducedMotion}
-                tabIndex={isLogoSettingsOpen ? 0 : -1}
-                aria-valuetext={`${Math.round(logoSettings.speed)} second cycle`}
-              />
-              <span className="setting-value">
-                {Math.round(logoSettings.speed)}s
-              </span>
-            </div>
-          </div>
-          <div className="builder-logo-setting">
-            <label htmlFor="builder-logo-travel-x">Horizontal travel</label>
-            <div className="setting-input">
-              <input
-                id="builder-logo-travel-x"
-                type="range"
-                min={10}
-                max={100}
-                step={1}
-                value={logoSettings.travelX}
-                onChange={(event) =>
-                  handleLogoSettingChange("travelX", Number(event.target.value))
-                }
-                disabled={prefersReducedMotion}
-                tabIndex={isLogoSettingsOpen ? 0 : -1}
-                aria-valuetext={`${Math.round(logoSettings.travelX)} percent width`}
-              />
-              <span className="setting-value">
-                {Math.round(logoSettings.travelX)}%
-              </span>
-            </div>
-          </div>
-          <div className="builder-logo-setting">
-            <label htmlFor="builder-logo-travel-y">Vertical travel</label>
-            <div className="setting-input">
-              <input
-                id="builder-logo-travel-y"
-                type="range"
-                min={10}
-                max={100}
-                step={1}
-                value={logoSettings.travelY}
-                onChange={(event) =>
-                  handleLogoSettingChange("travelY", Number(event.target.value))
-                }
-                disabled={prefersReducedMotion}
-                tabIndex={isLogoSettingsOpen ? 0 : -1}
-                aria-valuetext={`${Math.round(logoSettings.travelY)} percent height`}
-              />
-              <span className="setting-value">
-                {Math.round(logoSettings.travelY)}%
-              </span>
-            </div>
-          </div>
-          <div className="builder-logo-setting">
-            <label htmlFor="builder-logo-bounce">Bounce intensity</label>
-            <div className="setting-input">
-              <input
-                id="builder-logo-bounce"
-                type="range"
-                min={0}
-                max={120}
-                step={1}
-                value={logoSettings.bounce}
-                onChange={(event) =>
-                  handleLogoSettingChange("bounce", Number(event.target.value))
-                }
-                disabled={prefersReducedMotion}
-                tabIndex={isLogoSettingsOpen ? 0 : -1}
-                aria-valuetext={`${Math.round(logoSettings.bounce)} pixel bounce`}
-              />
-              <span className="setting-value">
-                {Math.round(logoSettings.bounce)}px
-              </span>
-            </div>
-          </div>
-          {prefersReducedMotion ? (
-            <p className="builder-logo-settings-note">
-              Motion is paused because your system prefers reduced motion.
-            </p>
-          ) : null}
-          <div className="builder-logo-settings-actions">
-            <button
-              type="button"
-              className="logo-settings-reset"
-              onClick={resetLogoSettings}
-              tabIndex={isLogoSettingsOpen ? 0 : -1}
-            >
-              Reset defaults
-            </button>
-          </div>
-        </div>
       </div>
 
       <div
@@ -2213,6 +2043,37 @@ export default function Builder() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isLogoSettingsOpen}
+        onClick={() => setLogoSettingsOpen(false)}
+      >
+        <div
+          className="builder-panel builder-panel--logo-settings"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setLogoSettingsOpen(false)}
+            aria-label="Close logo motion settings"
+          >
+            ×
+          </button>
+          <LogoSettingsModal
+            isOpen={isLogoSettingsOpen}
+            onToggle={() => setLogoSettingsOpen(!isLogoSettingsOpen)}
+            logoSettings={logoSettings}
+            prefersReducedMotion={prefersReducedMotion}
+            onLogoSettingChange={handleLogoSettingChange}
+            onToggleLogoVisibility={toggleLogoVisibility}
+            onResetLogoSettings={resetLogoSettings}
+          />
         </div>
       </div>
 
