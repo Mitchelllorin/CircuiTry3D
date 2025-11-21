@@ -1,0 +1,314 @@
+.compact-worksheet-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(10, 20, 35, 0.98);
+  border-top: 2px solid rgba(136, 204, 255, 0.3);
+  z-index: 100;
+  max-height: 60vh;
+  transition: transform 0.3s ease;
+  transform: translateY(calc(100% - 48px));
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.compact-worksheet-panel.open {
+  transform: translateY(0);
+}
+
+.compact-worksheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 48px;
+  background: rgba(20, 35, 55, 0.95);
+  border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+}
+
+.compact-worksheet-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.compact-worksheet-toggle:hover {
+  background: rgba(136, 204, 255, 0.1);
+  color: rgba(136, 204, 255, 1);
+}
+
+.compact-worksheet-toggle .toggle-icon {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.compact-worksheet-panel.open .compact-worksheet-toggle .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.compact-worksheet-unlock-btn {
+  background: linear-gradient(135deg, #90EE90 0%, #66BB66 100%);
+  border: none;
+  color: #0A1423;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(144, 238, 144, 0.3);
+}
+
+.compact-worksheet-unlock-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(144, 238, 144, 0.5);
+}
+
+.compact-worksheet-body {
+  padding: 20px;
+  max-height: calc(60vh - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.compact-worksheet-problem-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compact-worksheet-problem-info h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0;
+}
+
+.compact-worksheet-prompt {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.compact-worksheet-target {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: rgba(136, 204, 255, 0.08);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  border-radius: 8px;
+}
+
+.compact-worksheet-target strong {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.compact-worksheet-answer {
+  font-size: 16px;
+  font-weight: 700;
+  color: #90EE90;
+}
+
+.compact-worksheet-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+}
+
+.compact-worksheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(14, 25, 40, 0.6);
+  font-size: 13px;
+}
+
+.compact-worksheet-table thead {
+  background: rgba(20, 35, 55, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.compact-worksheet-table th {
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  border-bottom: 2px solid rgba(136, 204, 255, 0.3);
+  white-space: nowrap;
+}
+
+.compact-worksheet-table th:first-child {
+  text-align: left;
+  padding-left: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.compact-worksheet-table .metric-label-small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.compact-worksheet-table td {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.1);
+}
+
+.compact-worksheet-table td:first-child {
+  text-align: left;
+  padding-left: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.compact-worksheet-table tbody tr:hover {
+  background: rgba(136, 204, 255, 0.05);
+}
+
+.compact-worksheet-table .totals-row {
+  background: rgba(136, 204, 255, 0.08);
+  border-top: 2px solid rgba(136, 204, 255, 0.3);
+}
+
+.compact-worksheet-table .totals-row td {
+  font-weight: 700;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.worksheet-input {
+  width: 100%;
+  max-width: 90px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.worksheet-input:focus {
+  outline: none;
+  border-color: rgba(136, 204, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(136, 204, 255, 0.15);
+}
+
+.worksheet-input:disabled {
+  background: rgba(136, 204, 255, 0.15);
+  border-color: rgba(136, 204, 255, 0.4);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.worksheet-input.given {
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+}
+
+.worksheet-input.correct {
+  background: rgba(144, 238, 144, 0.15);
+  border-color: #90EE90;
+  color: #90EE90;
+  font-weight: 700;
+}
+
+.worksheet-input.incorrect {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: #FF6B6B;
+  color: #FF6B6B;
+}
+
+.worksheet-input.invalid {
+  background: rgba(255, 179, 71, 0.15);
+  border-color: #FFB347;
+  color: #FFB347;
+}
+
+.compact-worksheet-hint {
+  padding: 12px;
+  background: rgba(144, 238, 144, 0.08);
+  border: 1px solid rgba(144, 238, 144, 0.25);
+  border-radius: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+.compact-worksheet-hint strong {
+  color: #90EE90;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .compact-worksheet-panel {
+    max-height: 70vh;
+  }
+
+  .compact-worksheet-body {
+    padding: 16px;
+    max-height: calc(70vh - 48px);
+  }
+
+  .compact-worksheet-table {
+    font-size: 11px;
+  }
+
+  .compact-worksheet-table th,
+  .compact-worksheet-table td {
+    padding: 6px 4px;
+  }
+
+  .worksheet-input {
+    max-width: 70px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .compact-worksheet-problem-info h3 {
+    font-size: 14px;
+  }
+
+  .compact-worksheet-prompt {
+    font-size: 12px;
+  }
+}
+
+/* Scrollbar styling for worksheet body */
+.compact-worksheet-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.compact-worksheet-body::-webkit-scrollbar-track {
+  background: rgba(14, 25, 40, 0.5);
+  border-radius: 4px;
+}
+
+.compact-worksheet-body::-webkit-scrollbar-thumb {
+  background: rgba(136, 204, 255, 0.3);
+  border-radius: 4px;
+}
+
+.compact-worksheet-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(136, 204, 255, 0.5);
+}
