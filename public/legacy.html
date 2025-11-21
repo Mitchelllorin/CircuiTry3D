@@ -237,8 +237,9 @@
             display: none;
             flex-direction: column;
             gap: 6px;
-            min-width: 180px;
-            padding: 12px;
+            min-width: 200px;
+            max-width: 320px;
+            padding: 0;
             border-radius: 12px;
             background: rgba(10, 22, 44, 0.94);
             border: 1px solid rgba(136, 204, 255, 0.35);
@@ -249,6 +250,35 @@
 
         .component-context-menu[data-visible="true"] {
             display: flex;
+        }
+
+        .component-menu-header {
+            padding: 14px 14px 12px 14px;
+            border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+            background: rgba(20, 40, 80, 0.5);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .component-menu-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(136, 204, 255, 0.95);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .component-menu-description {
+            font-size: 12px;
+            line-height: 1.5;
+            color: rgba(180, 200, 220, 0.85);
+            font-weight: 400;
+        }
+
+        .component-menu-actions {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .component-context-menu button {
@@ -7509,9 +7539,15 @@ body.android-optimized.menu-visible .status {
             menu.className = 'component-context-menu';
             menu.setAttribute('role', 'menu');
             menu.innerHTML = `
-                <button type="button" data-action="edit" role="menuitem">Edit Values</button>
-                <button type="button" data-action="wire" role="menuitem">Wire Edit</button>
-                <button type="button" data-action="rotate" role="menuitem">Rotate Component</button>
+                <div class="component-menu-header">
+                    <div class="component-menu-title"></div>
+                    <div class="component-menu-description"></div>
+                </div>
+                <div class="component-menu-actions">
+                    <button type="button" data-action="edit" role="menuitem">Edit Values</button>
+                    <button type="button" data-action="wire" role="menuitem">Wire Edit</button>
+                    <button type="button" data-action="rotate" role="menuitem">Rotate Component</button>
+                </div>
             `;
 
             menu.addEventListener('click', (event) => {
@@ -7542,7 +7578,18 @@ body.android-optimized.menu-visible .status {
             isLongPressing = false;
 
             const labelText = getComponentFriendlyName(component).toUpperCase();
+            const description = getComponentDescription(component);
             setStatus(`⚡ ${labelText} actions - choose edit, wire edit, or rotate`);
+
+            // Update menu header with component info
+            const titleElement = menu.querySelector('.component-menu-title');
+            const descElement = menu.querySelector('.component-menu-description');
+            if (titleElement) {
+                titleElement.textContent = labelText;
+            }
+            if (descElement) {
+                descElement.textContent = description;
+            }
 
             menu.dataset.visible = 'true';
             componentContextMenuCloseSuppressUntil = Date.now() + 350;
@@ -8273,6 +8320,30 @@ body.android-optimized.menu-visible .status {
             }
 
             return 'component';
+        }
+
+        function getComponentDescription(entity) {
+            if (!entity || !entity.type) {
+                return '';
+            }
+
+            const descriptions = {
+                'battery': 'Provides voltage to power circuits. Energy source that pushes electrons through the circuit.',
+                'resistor': 'Limits current flow and reduces voltage. Creates heat to control electrical energy.',
+                'led': 'Light Emitting Diode that glows when current flows in the correct direction.',
+                'switch': 'Opens or closes the circuit path. Controls when current can flow through.',
+                'capacitor': 'Stores electrical energy temporarily. Charges and discharges in AC circuits.',
+                'inductor': 'Resists changes in current using magnetic fields. Stores energy magnetically.',
+                'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve.',
+                'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal.',
+                'mosfet': 'Metal-Oxide-Semiconductor transistor. Controls current with voltage, used in modern circuits.',
+                'fuse': 'Safety device that breaks circuit if current is too high. Protects against overload.',
+                'potentiometer': 'Variable resistor with adjustable resistance. Used for volume, brightness, and tuning.',
+                'lamp': 'Converts electrical energy to light and heat. Visual indicator or light source.',
+                'ground': 'Reference point for voltage. Completes the circuit and provides safety path.'
+            };
+
+            return descriptions[entity.type] || '';
         }
 
         function handleGroundClick(clientX, clientY) {
