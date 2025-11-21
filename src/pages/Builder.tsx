@@ -15,6 +15,7 @@ import "../styles/schematic.css";
 import { ArenaPanel } from "../components/builder/panels/ArenaPanel";
 import { PracticePanel } from "../components/builder/panels/PracticePanel";
 import { SchematicPanel } from "../components/builder/panels/SchematicPanel";
+import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import Practice from "./Practice";
 import { BuilderModeView } from "./SchematicMode";
 import ArenaView from "../components/arena/ArenaView";
@@ -637,6 +638,9 @@ export default function Builder() {
   >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
   const [practiceWorksheetState, setPracticeWorksheetState] =
     useState<PracticeWorksheetStatus | null>(null);
+  const [isCompactWorksheetOpen, setCompactWorksheetOpen] = useState(false);
+  const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
+  const [isCircuitLocked, setCircuitLocked] = useState(false);
 
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
@@ -832,6 +836,28 @@ export default function Builder() {
     },
     [],
   );
+
+  const handlePracticeWorkspaceProblemChange = useCallback(
+    (problemId: string) => {
+      const problem = findPracticeProblemById(problemId);
+      if (!problem) return;
+
+      setActivePracticeProblemId(problem.id);
+      setPracticeWorksheetState({
+        problemId: problem.id,
+        complete: false,
+      });
+      setCircuitLocked(true);
+      setCompactWorksheetOpen(true);
+
+      if (problem.presetHint) {
+        triggerBuilderAction("load-preset", { preset: problem.presetHint });
+      }
+      practiceProblemRef.current = problem.id;
+    },
+    [triggerBuilderAction],
+  );
+
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
@@ -1090,6 +1116,9 @@ export default function Builder() {
           data-active={workspaceMode === "build" ? "true" : undefined}
           onClick={() => {
             setWorkspaceMode("build");
+            setPracticeWorkspaceMode(false);
+            setCompactWorksheetOpen(false);
+            setCircuitLocked(false);
             setPracticePanelOpen(false);
             setArenaPanelOpen(false);
             setSchematicPanelOpen(false);
@@ -1106,9 +1135,18 @@ export default function Builder() {
           data-active={workspaceMode === "practice" ? "true" : undefined}
           onClick={() => {
             setWorkspaceMode("practice");
-            setPracticePanelOpen(true);
+            setPracticeWorkspaceMode(true);
+            setCompactWorksheetOpen(true);
+            setCircuitLocked(true);
+            setPracticePanelOpen(false);
             setArenaPanelOpen(false);
             setSchematicPanelOpen(false);
+
+            // Load the current practice problem into the workspace
+            const currentProblem = findPracticeProblemById(activePracticeProblemId);
+            if (currentProblem?.presetHint) {
+              triggerBuilderAction("load-preset", { preset: currentProblem.presetHint });
+            }
           }}
           aria-label="Practice mode"
           title="Guided worksheets and W.I.R.E. problems"
@@ -1587,21 +1625,26 @@ export default function Builder() {
                     type="button"
                     className="slider-chip"
                     onClick={() => {
-                      triggerBuilderAction("load-preset", {
-                        preset: scenario.preset,
-                      });
                       const problem = scenario.problemId
                         ? findPracticeProblemById(scenario.problemId)
                         : findPracticeProblemByPreset(scenario.preset);
-                      if (problem) {
-                        practiceProblemRef.current = problem.id;
-                        setActivePracticeProblemId(problem.id);
-                        setPracticeWorksheetState({
-                          problemId: problem.id,
-                          complete: false,
+
+                      if (isPracticeWorkspaceMode && problem) {
+                        handlePracticeWorkspaceProblemChange(problem.id);
+                      } else {
+                        triggerBuilderAction("load-preset", {
+                          preset: scenario.preset,
                         });
+                        if (problem) {
+                          practiceProblemRef.current = problem.id;
+                          setActivePracticeProblemId(problem.id);
+                          setPracticeWorksheetState({
+                            problemId: problem.id,
+                            complete: false,
+                          });
+                        }
+                        setPracticePanelOpen(true);
                       }
-                      setPracticePanelOpen(true);
                     }}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -2162,6 +2205,24 @@ export default function Builder() {
           )}
         </div>
       </div>
+
+      {isPracticeWorkspaceMode && activePracticeProblemId && (
+        <CompactWorksheetPanel
+          problem={findPracticeProblemById(activePracticeProblemId) || DEFAULT_PRACTICE_PROBLEM!}
+          isOpen={isCompactWorksheetOpen}
+          onToggle={() => setCompactWorksheetOpen(!isCompactWorksheetOpen)}
+          onComplete={(complete) => {
+            setPracticeWorksheetState({
+              problemId: activePracticeProblemId,
+              complete,
+            });
+          }}
+          onRequestUnlock={() => {
+            setCircuitLocked(false);
+            setCompactWorksheetOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
