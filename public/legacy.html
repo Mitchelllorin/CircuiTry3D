@@ -6239,12 +6239,20 @@ body.android-optimized.menu-visible .status {
 
         function handleTouchStart(e) {
             e.preventDefault();
-            
+
+            // Immediately clear any stale touch state
+            if (e.touches.length === 1 && (isPanning || lastPinchDistance > 0)) {
+                // Transitioning from multi-touch to single-touch - clear multi-touch state
+                isPanning = false;
+                lastPinchDistance = 0;
+                lastTwoFingerCenter = { x: 0, y: 0 };
+            }
+
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 lastTouchPos = { x: touch.clientX, y: touch.clientY };
                 longPressStartPos = { x: touch.clientX, y: touch.clientY };
-                
+
                 // Start long press timer when allowed
                 if (shouldAllowLongPress()) {
                     startLongPressTimer(touch.clientX, touch.clientY);
@@ -6254,54 +6262,59 @@ body.android-optimized.menu-visible .status {
 
                 isRotating = false;
                 isPanning = false;
-                
+
                 // Check for component hit but don't block rotation setup
                 // This allows camera rotation to start if the user moves before long-press completes
                 const hitComponent = checkComponentHit(touch.clientX, touch.clientY);
-                
+
                 // Enable rotation for empty space touches
                 // For component touches, rotation will be enabled in touchmove if not dragging
                 if (!hitComponent) {
                     isRotating = true;
                 }
-                
+
             } else if (e.touches.length === 2) {
-                // Two-finger gesture setup
+                // Two-finger gesture setup - immediately clear single-touch state
                 cancelLongPress();
-                
+                isRotating = false;
+
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
-                
+
                 // Calculate center point for panning
                 lastTwoFingerCenter = {
                     x: (touch1.clientX + touch2.clientX) / 2,
                     y: (touch1.clientY + touch2.clientY) / 2
                 };
-                
+
                 // Calculate distance for pinch-to-zoom
                 lastPinchDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) + 
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
                     Math.pow(touch2.clientY - touch1.clientY, 2)
                 );
-                
-                isRotating = false;
+
                 isPanning = true;
+            } else if (e.touches.length > 2) {
+                // Three or more fingers - cancel all gestures to avoid confusion
+                cancelLongPress();
+                isRotating = false;
+                isPanning = false;
             }
         }
 
         function handleTouchMove(e) {
             e.preventDefault();
-            
+
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
-                
-                // Check if moved too far for long press
+
+                // Check if moved too far for long press - reduced threshold for faster response
                 const totalDeltaX = Math.abs(touch.clientX - longPressStartPos.x);
                 const totalDeltaY = Math.abs(touch.clientY - longPressStartPos.y);
-                if ((totalDeltaX > 15 || totalDeltaY > 15) && longPressTimer) {
+                if ((totalDeltaX > 8 || totalDeltaY > 8) && longPressTimer) {
                     cancelLongPress();
                 }
-                
+
                 if (selectedComponent && !isDragging) {
                     maybeStartDrag(touch.clientX, touch.clientY);
                 }
@@ -6314,12 +6327,12 @@ body.android-optimized.menu-visible .status {
                     if (!isRotating && !isDragging) {
                         isRotating = true;
                     }
-                    
-                    if (isRotating) {
+
+                    if (isRotating && lastTouchPos.x !== 0 && lastTouchPos.y !== 0) {
                         const deltaX = touch.clientX - lastTouchPos.x;
                         const deltaY = touch.clientY - lastTouchPos.y;
 
-                        if (!Number.isNaN(deltaX) && !Number.isNaN(deltaY)) {
+                        if (!Number.isNaN(deltaX) && !Number.isNaN(deltaY) && Math.abs(deltaX) < 100 && Math.abs(deltaY) < 100) {
                             cameraAngleX += deltaX * TOUCH_ROTATE_SENSITIVITY_X;
                             const proposedAngleY = cameraAngleY - deltaY * TOUCH_ROTATE_SENSITIVITY_Y;
                             cameraAngleY = Math.max(TOUCH_ROTATE_Y_MIN, Math.min(TOUCH_ROTATE_Y_MAX, proposedAngleY));
@@ -6327,26 +6340,33 @@ body.android-optimized.menu-visible .status {
                         }
                     }
                 }
-                
+
                 lastTouchPos = { x: touch.clientX, y: touch.clientY };
-                
+
             } else if (e.touches.length === 2) {
+                // Ensure we're in panning mode for two-finger gestures
+                if (!isPanning) {
+                    isPanning = true;
+                    isRotating = false;
+                }
+
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
-                
+
                 // Calculate new center point
                 const newCenter = {
                     x: (touch1.clientX + touch2.clientX) / 2,
                     y: (touch1.clientY + touch2.clientY) / 2
                 };
-                
+
                 // Calculate new distance
                 const newDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) + 
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
                     Math.pow(touch2.clientY - touch1.clientY, 2)
                 );
 
-                if (isPanning) {
+                // Only pan if we have a valid previous center
+                if (isPanning && lastTwoFingerCenter.x !== 0 && lastTwoFingerCenter.y !== 0) {
                     const panDeltaX = newCenter.x - lastTwoFingerCenter.x;
                     const panDeltaY = newCenter.y - lastTwoFingerCenter.y;
 
@@ -6354,14 +6374,17 @@ body.android-optimized.menu-visible .status {
                         applyCameraPan(panDeltaX, panDeltaY, TWO_FINGER_PAN_MULTIPLIER);
                     }
                 }
-                
-                // Handle pinch-to-zoom
-                if (lastPinchDistance > 0) {
+
+                // Handle pinch-to-zoom only if we have a valid previous distance
+                if (lastPinchDistance > 0 && newDistance > 0) {
                     const pinchDelta = newDistance - lastPinchDistance;
-                    cameraDistance = Math.max(5, Math.min(50, cameraDistance - pinchDelta * ZOOM_SENSITIVITY_BASE));
-                    updateCameraPosition();
+                    // Add threshold to prevent jittery zoom from small movements
+                    if (Math.abs(pinchDelta) > 2) {
+                        cameraDistance = Math.max(5, Math.min(50, cameraDistance - pinchDelta * ZOOM_SENSITIVITY_BASE));
+                        updateCameraPosition();
+                    }
                 }
-                
+
                 // Update stored values
                 lastTwoFingerCenter = newCenter;
                 lastPinchDistance = newDistance;
@@ -6371,7 +6394,7 @@ body.android-optimized.menu-visible .status {
         function handleTouchEnd(e) {
             e.preventDefault();
             cancelLongPress();
-            
+
             if (isDragging) {
                 handleRelease();
             }
@@ -6379,28 +6402,46 @@ body.android-optimized.menu-visible .status {
             const remainingTouches = e.touches.length;
 
             if (remainingTouches === 1) {
+                // Transitioning from 2+ fingers to 1 finger
                 const touch = e.touches[0];
                 lastTouchPos = { x: touch.clientX, y: touch.clientY };
                 longPressStartPos = { x: touch.clientX, y: touch.clientY };
-                isRotating = true;
-                isPanning = false;
-            } else {
-                isRotating = false;
-                isPanning = remainingTouches >= 2;
-            }
 
-            if (remainingTouches < 2) {
+                // Clear multi-touch state completely
                 lastPinchDistance = 0;
                 lastTwoFingerCenter = { x: 0, y: 0 };
-            }
 
-            if (remainingTouches === 0) {
-                longPressStartPos = { x: 0, y: 0 };
-                lastTouchPos = { x: 0, y: 0 };
+                // Enable single-finger rotation
+                isRotating = true;
+                isPanning = false;
+
+            } else if (remainingTouches === 2) {
+                // Transitioning from 3+ fingers to 2 fingers - reinitialize two-finger gesture
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+
+                lastTwoFingerCenter = {
+                    x: (touch1.clientX + touch2.clientX) / 2,
+                    y: (touch1.clientY + touch2.clientY) / 2
+                };
+
+                lastPinchDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+
+                isRotating = false;
+                isPanning = true;
+
+            } else {
+                // All fingers lifted - completely reset touch state
                 isRotating = false;
                 isPanning = false;
+                lastPinchDistance = 0;
+                lastTwoFingerCenter = { x: 0, y: 0 };
+                longPressStartPos = { x: 0, y: 0 };
+                lastTouchPos = { x: 0, y: 0 };
             }
-
         }
 
         function handleMouseDown(e) {

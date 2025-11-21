@@ -752,10 +752,20 @@ export default function Builder() {
       }
     };
 
+    const handleTouchStart = (event: TouchEvent) => {
+      // Prevent iOS Safari bounce/rubber-banding effect on workspace
+      if (event.touches.length > 0) {
+        event.preventDefault();
+      }
+    };
+
+    // Use passive: false to allow preventDefault() for better touch control
     iframe.addEventListener("touchmove", handleTouchMove, { passive: false });
+    iframe.addEventListener("touchstart", handleTouchStart, { passive: false });
 
     return () => {
       iframe.removeEventListener("touchmove", handleTouchMove);
+      iframe.removeEventListener("touchstart", handleTouchStart);
     };
   }, [isFrameReady]);
 
