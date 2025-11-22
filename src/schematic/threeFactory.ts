@@ -139,6 +139,8 @@ const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number,
   }
   const geometry = new three.CylinderGeometry(radius, radius, length, 24, 1, true);
   const mesh = new three.Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
   mesh.position.copy(midpoint);
   const quaternion = new three.Quaternion().setFromUnitVectors(new three.Vector3(0, 1, 0), direction.clone().normalize());
@@ -210,6 +212,36 @@ const buildWireElement = (three: any, element: WireElement, options: BuildOption
   }
 
   return { group, terminals };
+};
+
+// Resistor color code helper for standard resistor values
+const getResistorColorBands = (label: string): number[] | null => {
+  // Extract resistance value from label (e.g., "R1", "100Ω", "1k")
+  const match = label.match(/(\d+\.?\d*)\s*(k|K|M|m)?/);
+  if (!match) return null;
+
+  const value = parseFloat(match[1]);
+  const multiplierChar = match[2];
+
+  let resistance = value;
+  if (multiplierChar === 'k' || multiplierChar === 'K') resistance *= 1000;
+  if (multiplierChar === 'M' || multiplierChar === 'm') resistance *= 1000000;
+
+  // Standard resistor color code: 0-9 = black, brown, red, orange, yellow, green, blue, violet, grey, white
+  const colorCode = [0x000000, 0x964b00, 0xff0000, 0xffa500, 0xffff00, 0x00ff00, 0x0000ff, 0x9400d3, 0x808080, 0xffffff];
+
+  // Get first two significant digits and multiplier
+  const str = resistance.toExponential().replace('.', '');
+  const digits = str.match(/(\d)(\d).*e\+?(-?\d+)/);
+  if (!digits) return null;
+
+  const d1 = parseInt(digits[1]);
+  const d2 = parseInt(digits[2]);
+  const exp = parseInt(digits[3]) - 1;
+
+  if (d1 > 9 || d2 > 9 || exp < 0 || exp > 9) return null;
+
+  return [colorCode[d1], colorCode[d2], colorCode[exp]];
 };
 
 const buildResistorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
@@ -317,6 +349,33 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
 
   const startVec = toVec3(three, element.start, COMPONENT_HEIGHT);
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
+
+  // Add color bands for IEC (rectangular body) resistors
+  if (!options.preview && profile.resistor.bodyStyle === "rectangular") {
+    const colorBands = getResistorColorBands(element.label);
+    if (colorBands && bodyLength > 0.4) {
+      const bandWidth = 0.06;
+      const bandHeight = profile.resistor.bodyThickness * 1.2;
+      const bandDepth = profile.resistor.bodyDepth * 1.2;
+      const spacing = bodyLength / 5;
+
+      colorBands.forEach((color, index) => {
+        const bandOffset = leadLength + spacing * (index + 1);
+        const bandPos = metrics.offsetPoint(bandOffset);
+        const bandGeometry = metrics.orientation === "horizontal"
+          ? new three.BoxGeometry(bandWidth, bandHeight, bandDepth)
+          : new three.BoxGeometry(bandDepth, bandHeight, bandWidth);
+        const bandMaterial = new three.MeshStandardMaterial({
+          color,
+          metalness: 0.1,
+          roughness: 0.4
+        });
+        const band = new three.Mesh(bandGeometry, bandMaterial);
+        band.position.copy(toVec3(three, bandPos, COMPONENT_HEIGHT + 0.01));
+        group.add(band);
+      });
+    }
+  }
 
   if (!options.preview) {
     const labelSprite = createLabelSprite(three, element.label, LABEL_COLOR, options, "resistor");
@@ -620,11 +679,19 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   group.name = `lamp-${element.id}`;
   const profile = resolveProfile(options.standard);
   const ringMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampRing });
-  const fillMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.lampFill });
+  const fillMaterial = new three.MeshStandardMaterial({
+    color: COLOR_HELPERS.lampFill,
+    emissive: options.preview ? 0x000000 : 0xffeb99,
+    emissiveIntensity: options.preview ? 0 : 0.6
+  });
   const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
 
   styliseMaterial(three, ringMaterial, options, COLOR_HELPERS.lampRing);
-  styliseMaterial(three, fillMaterial, options, COLOR_HELPERS.lampFill);
+  // Keep emissive properties for the fill material
+  if (!options.preview) {
+    fillMaterial.transparent = false;
+    fillMaterial.opacity = 1;
+  }
   styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
 
   const center = new three.Vector3(
@@ -653,6 +720,14 @@ const buildLampElement = (three: any, element: TwoTerminalElement, options: Buil
   crossB.position.copy(center);
   crossB.rotation.y = -Math.PI / 4;
   group.add(crossA, crossB);
+
+  // Add glow point light for lamps when not in preview mode
+  if (!options.preview) {
+    const glowLight = new three.PointLight(0xffeb99, 0.8, 2.5);
+    glowLight.position.copy(center);
+    glowLight.position.y += 0.1;
+    group.add(glowLight);
+  }
 
   const wireRadius = profile.general.strokeRadius;
   const startVec = toVec3(three, element.start, COMPONENT_HEIGHT - 0.02);

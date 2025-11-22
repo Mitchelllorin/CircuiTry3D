@@ -30,6 +30,7 @@ import {
 import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/threeFactory";
 import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 import { buildPracticeCircuit } from "../schematic/presets";
+import { CurrentFlowAnimationSystem } from "../schematic/currentFlowAnimation";
 
 declare global {
   interface Window {
@@ -1364,6 +1365,8 @@ function BuilderViewport({
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setClearColor(0xfdfdfd, 1);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = three.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
         const scene = new three.Scene();
@@ -1387,6 +1390,15 @@ function BuilderViewport({
 
         const key = new three.DirectionalLight(0x6bb7ff, 0.7);
         key.position.set(8, 12, 6);
+        key.castShadow = true;
+        key.shadow.mapSize.width = 1024;
+        key.shadow.mapSize.height = 1024;
+        key.shadow.camera.near = 0.5;
+        key.shadow.camera.far = 30;
+        key.shadow.camera.left = -10;
+        key.shadow.camera.right = 10;
+        key.shadow.camera.top = 10;
+        key.shadow.camera.bottom = -10;
         scene.add(key);
 
         const fill = new three.DirectionalLight(0xf4c163, 0.4);
@@ -1407,6 +1419,7 @@ function BuilderViewport({
         board.position.y = -0.05;
         board.name = "schematic-board";
         board.userData.isBoard = true;
+        board.receiveShadow = true;
         scene.add(board);
 
         const grid = new three.GridHelper(12, 12, 0xcbd5f5, 0xe2e8f0);
@@ -1951,6 +1964,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setClearColor(0xfdfdfd, 1);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = three.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
         const scene = new three.Scene();
@@ -1974,6 +1989,15 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
 
         const key = new three.DirectionalLight(0x6bb7ff, 0.7);
         key.position.set(8, 12, 6);
+        key.castShadow = true;
+        key.shadow.mapSize.width = 1024;
+        key.shadow.mapSize.height = 1024;
+        key.shadow.camera.near = 0.5;
+        key.shadow.camera.far = 30;
+        key.shadow.camera.left = -10;
+        key.shadow.camera.right = 10;
+        key.shadow.camera.top = 10;
+        key.shadow.camera.bottom = -10;
         scene.add(key);
 
         const fill = new three.DirectionalLight(0xf4c163, 0.4);
@@ -1992,6 +2016,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const board = new three.Mesh(boardGeometry, boardMaterial);
         board.rotation.x = -Math.PI / 2;
         board.position.y = -0.05;
+        board.receiveShadow = true;
         scene.add(board);
 
         const grid = new three.GridHelper(12, 12, 0xcbd5f5, 0xe2e8f0);
@@ -2237,6 +2262,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         });
 
         let circuitGroup: any = null;
+        let flowAnimationSystem: CurrentFlowAnimationSystem | null = null;
 
           const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
           if (circuitGroup) {
@@ -2244,8 +2270,26 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
             disposeThreeObject(circuitGroup);
             circuitGroup = null;
           }
+          if (flowAnimationSystem) {
+            flowAnimationSystem.dispose();
+            flowAnimationSystem = null;
+          }
             circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
           scene.add(circuitGroup);
+
+          // Initialize current flow animation
+          flowAnimationSystem = new CurrentFlowAnimationSystem(three, scene);
+
+          // Add flow paths for the circuit (simple example - can be enhanced based on topology)
+          if (practiceProblem.topology === "series") {
+            // For series circuits, add flow along the main path
+            const wireElements = practiceProblem.components.filter((c: any) => c.kind === "wire");
+            wireElements.forEach((wire: any) => {
+              if (wire.path && wire.path.length > 1) {
+                flowAnimationSystem?.addFlowPath(wire.path, 2, 0.3);
+              }
+            });
+          }
         };
 
         applyProblemRef.current = setCircuit;
@@ -2257,11 +2301,15 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const animate = () => {
           animationFrame = window.requestAnimationFrame(animate);
           const elapsed = clock.getElapsedTime();
+          const deltaTime = clock.getDelta();
           updateCamera(false, three, camera);
           if (circuitGroup) {
             const wobble = Math.sin(elapsed * 0.35) * 0.12;
             circuitGroup.rotation.y = wobble;
             circuitGroup.position.y = Math.sin(elapsed * 0.45) * 0.04;
+          }
+          if (flowAnimationSystem) {
+            flowAnimationSystem.update(deltaTime);
           }
           renderer.render(scene, camera);
         };
