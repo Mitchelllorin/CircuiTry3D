@@ -14,10 +14,8 @@ import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import { ArenaPanel } from "../components/builder/panels/ArenaPanel";
 import { PracticePanel } from "../components/builder/panels/PracticePanel";
-import { SchematicPanel } from "../components/builder/panels/SchematicPanel";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import Practice from "./Practice";
-import { BuilderModeView } from "./SchematicMode";
 import ArenaView from "../components/arena/ArenaView";
 import { LeftToolbar } from "../components/builder/toolbars/LeftToolbar";
 import { RightToolbar } from "../components/builder/toolbars/RightToolbar";
@@ -31,11 +29,6 @@ import {
   getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import type { PracticeProblem } from "../model/practice";
-import {
-  DEFAULT_SYMBOL_STANDARD,
-  SYMBOL_STANDARD_OPTIONS,
-  type SymbolStandard,
-} from "../schematic/standards";
 import type {
   BuilderInvokeAction,
   ComponentAction,
@@ -628,11 +621,7 @@ export default function Builder() {
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
-  const [isSchematicPanelOpen, setSchematicPanelOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
-  const [schematicStandard, setSchematicStandard] = useState<SymbolStandard>(
-    DEFAULT_SYMBOL_STANDARD,
-  );
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<
     string | null
   >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
@@ -777,7 +766,7 @@ export default function Builder() {
   }, []);
 
   useEffect(() => {
-    if (!isArenaPanelOpen && !isPracticePanelOpen && !isSchematicPanelOpen) {
+    if (!isArenaPanelOpen && !isPracticePanelOpen) {
       return;
     }
 
@@ -789,15 +778,12 @@ export default function Builder() {
         if (isPracticePanelOpen) {
           setPracticePanelOpen(false);
         }
-        if (isSchematicPanelOpen) {
-          setSchematicPanelOpen(false);
-        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isArenaPanelOpen, isPracticePanelOpen, isSchematicPanelOpen]);
+  }, [isArenaPanelOpen, isPracticePanelOpen]);
 
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
@@ -1027,13 +1013,6 @@ export default function Builder() {
     return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
   }, [activePracticeProblemId, practiceWorksheetState]);
 
-  const schematicStandardLabel = useMemo(
-    () =>
-      SYMBOL_STANDARD_OPTIONS.find((option) => option.key === schematicStandard)
-        ?.label ?? "ANSI/IEEE",
-    [schematicStandard],
-  );
-
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
@@ -1131,7 +1110,6 @@ export default function Builder() {
             setCircuitLocked(false);
             setPracticePanelOpen(false);
             setArenaPanelOpen(false);
-            setSchematicPanelOpen(false);
           }}
           aria-label="Build mode"
           title="Component builder and circuit designer"
@@ -1150,7 +1128,6 @@ export default function Builder() {
             setCircuitLocked(true);
             setPracticePanelOpen(false);
             setArenaPanelOpen(false);
-            setSchematicPanelOpen(false);
 
             // Load the current practice problem into the workspace
             const currentProblem = findPracticeProblemById(activePracticeProblemId);
@@ -1172,7 +1149,6 @@ export default function Builder() {
             setWorkspaceMode("arena");
             setArenaPanelOpen(true);
             setPracticePanelOpen(false);
-            setSchematicPanelOpen(false);
             if (arenaExportStatus !== "ready") {
               handleArenaSync({ openWindow: false });
             }
@@ -1300,22 +1276,6 @@ export default function Builder() {
                     </button>
                   );
                 })}
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Schematic Mode</span>
-              <div className="slider-stack">
-                <button
-                  type="button"
-                  className="slider-btn slider-btn-stacked"
-                  onClick={() => setSchematicPanelOpen(true)}
-                  title="Open the 3D schematic workspace"
-                >
-                  <span className="slider-label">Launch Builder</span>
-                  <span className="slider-description">
-                    Place ANSI/IEC symbols on the snap grid
-                  </span>
-                </button>
               </div>
             </div>
             <div className="slider-section">
@@ -1828,66 +1788,6 @@ export default function Builder() {
         <span className="builder-logo-circui">Circui</span>
         <span className="builder-logo-try">Try</span>
         <span className="builder-logo-3d">3D</span>
-      </div>
-
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--schematic${isSchematicPanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isSchematicPanelOpen}
-        onClick={() => setSchematicPanelOpen(false)}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--schematic"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setSchematicPanelOpen(false)}
-            aria-label="Close schematic builder"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--schematic">
-            <div className="schematic-overlay-header">
-              <div>
-                <h2>3D Schematic Builder</h2>
-                <p>
-                  Using {schematicStandardLabel} symbol profiles. Toggle
-                  standards to match your textbook layout.
-                </p>
-              </div>
-              <div
-                className="schematic-standard-control"
-                role="group"
-                aria-label="Schematic symbol standard"
-              >
-                <span className="schematic-standard-label">
-                  Symbol Standard
-                </span>
-                <div className="schematic-standard-buttons">
-                  {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      className={
-                        schematicStandard === option.key
-                          ? "schematic-standard-button is-active"
-                          : "schematic-standard-button"
-                      }
-                      onClick={() => setSchematicStandard(option.key)}
-                      title={option.description}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <BuilderModeView symbolStandard={schematicStandard} />
-          </div>
-        </div>
       </div>
 
       <div
