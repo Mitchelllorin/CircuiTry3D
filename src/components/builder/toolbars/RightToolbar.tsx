@@ -47,7 +47,7 @@ export function RightToolbar({
             : "Expand mode and view controls"
         }
       >
-        <span className="toggle-icon">{isOpen ? ">" : "<"}</span>
+        <span className="toggle-icon">{isOpen ? "▶" : "◀"}</span>
         <span className="toggle-text">Controls</span>
       </button>
       <nav

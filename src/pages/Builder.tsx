@@ -1225,7 +1225,7 @@ export default function Builder() {
               : "Expand component library"
           }
         >
-          <span className="toggle-icon">{isLeftMenuOpen ? "<" : ">"}</span>
+          <span className="toggle-icon">{isLeftMenuOpen ? "◀" : "▶"}</span>
           <span className="toggle-text">Library</span>
         </button>
         <nav
@@ -1397,7 +1397,7 @@ export default function Builder() {
               : "Expand mode and view controls"
           }
         >
-          <span className="toggle-icon">{isRightMenuOpen ? ">" : "<"}</span>
+          <span className="toggle-icon">{isRightMenuOpen ? "▶" : "◀"}</span>
           <span className="toggle-text">Controls</span>
         </button>
         <nav
@@ -1549,7 +1549,7 @@ export default function Builder() {
               : "Expand analysis and guidance"
           }
         >
-          <span className="toggle-icon">{isBottomMenuOpen ? "v" : "^"}</span>
+          <span className="toggle-icon">{isBottomMenuOpen ? "▼" : "▲"}</span>
           <span className="toggle-text">Insights</span>
         </button>
         <nav

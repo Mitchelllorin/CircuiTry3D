@@ -53,7 +53,7 @@ export function LeftToolbar({
           isOpen ? "Collapse component library" : "Expand component library"
         }
       >
-        <span className="toggle-icon">{isOpen ? "<" : ">"}</span>
+        <span className="toggle-icon">{isOpen ? "◀" : "▶"}</span>
         <span className="toggle-text">Library</span>
       </button>
       <nav
