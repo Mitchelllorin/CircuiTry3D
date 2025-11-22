@@ -1701,28 +1701,61 @@ export default function Builder() {
         </nav>
       </div>
 
-      <div className="builder-status-bar" role="status" aria-live="polite">
-        <span className="status-indicator" aria-hidden="true" />
-        <span className="status-message">
-          {isFrameReady
-            ? "Workspace ready: tap and drag to build."
-            : "Loading workspace..."}
-        </span>
-        <div className="status-pill-group" aria-label="Active modes">
-          <span
-            className="status-pill"
-            data-active={isWireToolActive ? "true" : undefined}
-            title={wireRoutingTitle}
-          >
-            Wire: {wireRoutingLabel}
-          </span>
-          <span
-            className="status-pill"
-            data-active={isCurrentFlowSolid ? "true" : undefined}
-            title={currentFlowTitle}
-          >
-            Flow: {currentFlowLabel}
-          </span>
+      <div className="builder-ticker-feed" role="status" aria-live="polite">
+        <div className="ticker-wrapper">
+          <div className="ticker-content">
+            <span className="ticker-item">
+              {isFrameReady
+                ? "Workspace ready: tap and drag to build"
+                : "Loading workspace..."}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              Wire: {wireRoutingLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              Flow: {currentFlowLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              Layout: {layoutModeLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              {modeState.showGrid ? "Grid visible" : "Grid hidden"}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              {modeState.showLabels ? "Labels shown" : "Labels hidden"}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              {isFrameReady
+                ? "Workspace ready: tap and drag to build"
+                : "Loading workspace..."}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              Wire: {wireRoutingLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              Flow: {currentFlowLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              Layout: {layoutModeLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              {modeState.showGrid ? "Grid visible" : "Grid hidden"}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item">
+              {modeState.showLabels ? "Labels shown" : "Labels hidden"}
+            </span>
+          </div>
         </div>
       </div>
 
