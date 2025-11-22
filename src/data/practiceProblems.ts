@@ -10,8 +10,8 @@ const practiceProblems: PracticeProblem[] = [
     topology: "series",
     difficulty: "intro",
       prompt:
-        "A series circuit containing three resistors is powered by a 24 V battery. Complete the W.I.R.E. table, including the circuit totals, and determine the circuit current.",
-    targetQuestion: "What is the total current flowing through the series circuit?",
+        "A series circuit consists of three resistors (R1 = 150 Ω, R2 = 200 Ω, R3 = 250 Ω) connected to a 24 V battery. Complete the W.I.R.E. table including all component values and circuit totals.",
+    targetQuestion: "What is the total current flowing through this series circuit?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
     diagram: "seriesRect",
@@ -99,7 +99,7 @@ const practiceProblems: PracticeProblem[] = [
     topology: "parallel",
     difficulty: "standard",
       prompt:
-        "A parallel circuit places three resistors across the same 18 V source. Complete the W.I.R.E. worksheet, solve the circuit totals, and find each branch current along with the equivalent resistance.",
+        "A parallel circuit has three resistors (R1 = 180 Ω, R2 = 90 Ω, R3 = 270 Ω) connected across an 18 V DC power supply. Complete the W.I.R.E. worksheet to solve for all component values and circuit totals.",
     targetQuestion: "What is the total equivalent resistance of the three parallel branches?",
     targetMetric: { componentId: "totals", key: "resistance" },
     conceptTags: ["parallel", "kirchhoff", "ohms-law"],
@@ -184,8 +184,8 @@ const practiceProblems: PracticeProblem[] = [
     topology: "combination",
     difficulty: "challenge",
       prompt:
-        "A ladder-style combination circuit features R1 in series with a parallel branch (R2 || R3) followed by R4 returning to the source. The supply provides 30 V. Use the table method to solve every component, fill in the circuit totals, and report the current through R2.",
-    targetQuestion: "What current flows through branch R2?",
+        "A combination circuit is powered by a 30 V source and consists of R1 = 100 Ω in series with a parallel branch (R2 = 150 Ω parallel to R3 = 300 Ω), followed by R4 = 75 Ω returning to the source. Use the W.I.R.E. table method to solve for all component values and circuit totals.",
+    targetQuestion: "What current flows through resistor R2?",
     targetMetric: { componentId: "R2", key: "current" },
     conceptTags: ["combination", "series", "parallel", "ohms-law", "kirchhoff"],
     diagram: "comboRect",
