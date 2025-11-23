@@ -180,13 +180,6 @@ export const QUICK_ACTIONS: QuickAction[] = [
   },
 ];
 
-export const PROPERTY_ITEMS = [
-  { id: "component", name: "Selected Component", value: "None" },
-  { id: "position", name: "Position", value: "-" },
-  { id: "rotation", name: "Rotation", value: "-" },
-  { id: "metadata", name: "Metadata", value: "Tap any element to inspect" },
-];
-
 export const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "wire-mode",

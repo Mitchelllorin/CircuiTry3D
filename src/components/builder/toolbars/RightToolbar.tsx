@@ -1,6 +1,5 @@
 import type { LegacyModeState } from "../types";
 import {
-  PROPERTY_ITEMS,
   CURRENT_MODE_ACTIONS,
   VIEW_CONTROL_ACTIONS,
 } from "../constants";
@@ -56,17 +55,6 @@ export function RightToolbar({
         aria-label="Mode and view controls"
       >
         <div className="builder-menu-scroll">
-          <div className="slider-section">
-            <span className="slider-heading">Properties</span>
-            <div className="property-stack">
-              {PROPERTY_ITEMS.map((item) => (
-                <div key={item.id} className="property-item">
-                  <div className="property-name">{item.name}</div>
-                  <div className="property-value">{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
           <div className="slider-section">
             <span className="slider-heading">Modes</span>
             <div className="slider-stack">
