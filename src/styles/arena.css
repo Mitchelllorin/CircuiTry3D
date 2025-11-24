@@ -102,6 +102,265 @@ body.builder-body .arena-page {
   gap: 16px;
 }
 
+.arena-metrics-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-metric-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.arena-metric-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.6);
+  color: rgba(203, 213, 225, 0.9);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.arena-metric-toggle:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(0, 255, 136, 0.5);
+  background: rgba(16, 185, 129, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.2);
+}
+
+.arena-metric-toggle.active {
+  border-color: var(--brand-primary-dim);
+  background: linear-gradient(135deg, var(--brand-primary-dim), rgba(16, 185, 129, 0.7));
+  color: #042f2e;
+  box-shadow: 0 4px 16px var(--brand-primary-dim);
+}
+
+.arena-metric-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arena-metric-toggle .toggle-icon {
+  font-size: 1.2rem;
+}
+
+.arena-metric-toggle .toggle-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* Environmental Scenario Selector */
+.arena-scenario-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.arena-scenario-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+}
+
+.arena-scenario-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 255, 136, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.15);
+}
+
+.arena-scenario-card.active {
+  border-color: var(--brand-primary-dim);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(15, 23, 42, 0.7));
+  box-shadow: 0 8px 24px var(--brand-primary-dim);
+}
+
+.arena-scenario-card.active::before {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-primary);
+  color: #042f2e;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.scenario-icon {
+  font-size: 2.5rem;
+  margin-bottom: 4px;
+}
+
+.scenario-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.95);
+  margin-bottom: 4px;
+}
+
+.scenario-description {
+  font-size: 0.8rem;
+  color: rgba(148, 163, 184, 0.85);
+  line-height: 1.4;
+  margin-bottom: 8px;
+  min-height: 2.8em;
+}
+
+.scenario-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.condition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(71, 85, 105, 0.4);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(203, 213, 225, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.arena-scenario-active-notice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.6));
+  border: 1px solid var(--brand-primary-dim);
+  animation: scenarioNoticePulse 2s ease-in-out infinite;
+}
+
+@keyframes scenarioNoticePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+.notice-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.notice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notice-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  letter-spacing: 0.02em;
+}
+
+.notice-description {
+  font-size: 0.85rem;
+  color: rgba(203, 213, 225, 0.85);
+  line-height: 1.4;
+}
+
+.arena-metrics-section {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(8, 14, 28, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.arena-metrics-section.arena-metrics-before {
+  border-color: rgba(251, 146, 60, 0.4);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(8, 14, 28, 0.85));
+}
+
+.arena-metrics-section.arena-metrics-after {
+  border-color: var(--brand-primary-dim);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(8, 14, 28, 0.85));
+}
+
+.arena-metrics-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.8);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.arena-metrics-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.arena-metric-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 0.8rem;
+}
+
+.arena-metric-compact .metric-compact-icon {
+  font-size: 1rem;
+}
+
+.arena-metric-compact .metric-compact-value {
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+
 .arena-battle-section {
   display: flex;
   flex-direction: column;
@@ -529,13 +788,16 @@ body.builder-body .arena-page {
   position: relative;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-  border-radius: 20px;
-  border: 1px solid rgba(59, 130, 246, 0.28);
-  background: rgba(15, 23, 42, 0.4);
+  gap: 0;
+  border-radius: 24px;
+  border: 2px solid rgba(0, 255, 136, 0.35);
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
   overflow: hidden;
-  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.45);
-  min-height: 500px;
+  box-shadow:
+    0 32px 72px rgba(2, 6, 23, 0.65),
+    0 0 80px rgba(0, 255, 136, 0.15),
+    inset 0 0 100px rgba(0, 255, 136, 0.05);
+  min-height: 600px;
 }
 
 
@@ -545,9 +807,16 @@ body.builder-body .arena-page {
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 1px;
-  background: rgba(148, 163, 184, 0.22);
+  width: 2px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(0, 255, 136, 0.4) 20%,
+    rgba(0, 255, 136, 0.6) 50%,
+    rgba(0, 255, 136, 0.4) 80%,
+    transparent 100%
+  );
   z-index: 1;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
 }
 
 .arena-battle-panel {
@@ -954,13 +1223,14 @@ body.builder-body .arena-page {
 
 
 .arena-component-stage {
-  perspective: 1000px;
+  perspective: 1200px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 220px;
   position: relative;
   width: 100%;
+  margin: 24px 0;
 }
 
 .arena-component-dais {
@@ -968,44 +1238,79 @@ body.builder-body .arena-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   transform-style: preserve-3d;
   animation: gentle-float 4s ease-in-out infinite;
 }
 
 .arena-component-stage.rotating .arena-component-dais {
-  animation: rotate-dais 8s linear infinite, gentle-float 4s ease-in-out infinite;
+  animation: rotate-dais 12s linear infinite, gentle-float 4s ease-in-out infinite;
 }
 
 .arena-component-stage.battling .arena-component-dais {
-  animation: battle-shake 0.5s ease-in-out infinite, rotate-fast 1s linear infinite;
+  animation: battle-shake 0.3s ease-in-out infinite, rotate-fast 2s linear infinite;
 }
 
 .arena-dais-platform {
   position: relative;
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(30, 64, 175, 0.22));
-  border: 2px solid rgba(59, 130, 246, 0.55);
+  /* Removed bubble-like radial gradient and glass effects */
+  background: transparent;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
-    0 8px 24px rgba(2, 6, 23, 0.55),
-    0 0 40px rgba(59, 130, 246, 0.25),
-    inset 0 -10px 20px rgba(15, 23, 42, 0.45);
+  /* Component hovers above the platform, so no heavy shadows here */
   transform: rotateX(15deg);
 }
 
+@keyframes platform-pulse {
+  0%, 100% {
+    box-shadow:
+      0 12px 32px rgba(2, 6, 23, 0.75),
+      0 0 60px rgba(0, 255, 136, 0.35),
+      inset 0 -15px 30px rgba(15, 23, 42, 0.6),
+      inset 0 5px 20px rgba(0, 255, 136, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 16px 40px rgba(2, 6, 23, 0.85),
+      0 0 80px rgba(0, 255, 136, 0.5),
+      inset 0 -20px 40px rgba(15, 23, 42, 0.7),
+      inset 0 8px 30px rgba(0, 255, 136, 0.25);
+  }
+}
+
+.arena-dais-platform.arena-3d-platform {
+  width: 200px;
+  height: 200px;
+  overflow: visible; /* Changed from hidden to visible */
+  background: transparent;
+}
+
+.arena-dais-platform.arena-3d-platform canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .arena-dais-base {
-  width: 100px;
-  height: 20px;
+  width: 140px;
+  height: 28px;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(30, 64, 175, 0.45), rgba(15, 23, 42, 0.75));
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.65);
-  transform: translateZ(-15px) rotateX(-15deg);
+  background: linear-gradient(180deg,
+    rgba(16, 185, 129, 0.45),
+    rgba(5, 150, 105, 0.35) 40%,
+    rgba(15, 23, 42, 0.85)
+  );
+  border: 2px solid rgba(0, 255, 136, 0.6);
+  box-shadow:
+    0 16px 40px rgba(2, 6, 23, 0.85),
+    0 0 50px rgba(0, 255, 136, 0.4),
+    inset 0 -8px 16px rgba(5, 150, 105, 0.3);
+  transform: translateZ(-20px) rotateX(-15deg);
+  animation: platform-pulse 3s ease-in-out infinite;
 }
 
 @keyframes rotate-dais {
@@ -1016,6 +1321,32 @@ body.builder-body .arena-page {
 @keyframes rotate-fast {
   0% { transform: rotateY(0deg); }
   100% { transform: rotateY(360deg); }
+}
+
+.arena-component-stage.battling .arena-dais-platform {
+  /* During battle, keep platform transparent - no bubble effect */
+  animation: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.arena-component-stage.battling .arena-dais-base {
+  /* Make the base platform more energetic during battle */
+  border-color: rgba(251, 146, 60, 0.8);
+  box-shadow:
+    0 20px 50px rgba(251, 146, 60, 0.7),
+    0 0 70px rgba(251, 146, 60, 0.6),
+    inset 0 -12px 24px rgba(251, 146, 60, 0.4);
+  animation: platform-battle-pulse 0.4s ease-in-out infinite;
+}
+
+@keyframes platform-battle-pulse {
+  0%, 100% {
+    transform: rotateX(15deg) scale(1);
+  }
+  50% {
+    transform: rotateX(15deg) scale(1.05);
+  }
 }
 
 @keyframes gentle-float {
@@ -1618,21 +1949,44 @@ body.builder-body .arena-page {
   .arena-battle-stage::after {
     display: none;
   }
-  
+
   .arena-battle-overlay {
     position: relative;
     top: auto;
     left: auto;
     transform: none;
     order: 1;
+    margin: 20px 0;
   }
-  
+
   .arena-battle-panel-left {
     order: 0;
   }
-  
+
   .arena-battle-panel-right {
     order: 2;
+  }
+
+  .arena-metric-toggles {
+    flex-direction: column;
+  }
+
+  .arena-metric-toggle {
+    width: 100%;
+  }
+
+  .arena-dais-platform.arena-3d-platform {
+    width: 160px;
+    height: 160px;
+  }
+
+  .arena-metrics-compact {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .arena-metric-compact {
+    justify-content: space-between;
   }
 }
 
@@ -1789,7 +2143,7 @@ body.builder-body .arena-page {
   .arena-metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .arena-battle-stage {
     grid-template-columns: 1fr;
     min-height: 0;
@@ -1798,9 +2152,27 @@ body.builder-body .arena-page {
   .arena-battle-stage::after {
     display: none;
   }
-  
+
   .arena-battle-panel {
     padding: 24px 20px;
+  }
+
+  .arena-scenario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-scenario-card {
+    padding: 16px 12px;
+  }
+
+  .scenario-icon {
+    font-size: 2rem;
+  }
+
+  .arena-scenario-active-notice {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 
