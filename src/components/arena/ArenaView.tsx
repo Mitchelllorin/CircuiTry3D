@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, CSSProperties } from "react";
 import "../../styles/arena.css";
+import { Component3DViewer } from "./Component3DViewer";
 
 type ArenaViewProps = {
   variant?: "page" | "embedded";
@@ -262,6 +263,210 @@ const TELEMETRY_PRESETS: TelemetryPreset[] = [
     icon: "🎯",
     thresholds: { warning: 0.6, critical: 0.4 },
     direction: "lower"
+  }
+];
+
+type EnvironmentalScenario = {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  conditions: {
+    temperature?: number;
+    humidity?: number;
+    voltage?: number;
+    load?: number;
+  };
+  modifiers: {
+    power?: number;
+    current?: number;
+    voltage?: number;
+    temperature?: number;
+    efficiency?: number;
+    resistance?: number;
+  };
+};
+
+const ENVIRONMENTAL_SCENARIOS: EnvironmentalScenario[] = [
+  {
+    id: "standard",
+    name: "Standard Conditions",
+    description: "Room temperature, nominal voltage, standard load",
+    icon: "🌡️",
+    conditions: {
+      temperature: 25,
+      humidity: 50,
+      voltage: 100,
+      load: 100
+    },
+    modifiers: {
+      power: 1.0,
+      current: 1.0,
+      voltage: 1.0,
+      temperature: 1.0,
+      efficiency: 1.0,
+      resistance: 1.0
+    }
+  },
+  {
+    id: "high-temp",
+    name: "High Temperature",
+    description: "Elevated ambient temperature (50°C), increased thermal stress",
+    icon: "🔥",
+    conditions: {
+      temperature: 50,
+      humidity: 40,
+      voltage: 100,
+      load: 100
+    },
+    modifiers: {
+      power: 0.92,
+      current: 1.05,
+      voltage: 0.98,
+      temperature: 1.65,
+      efficiency: 0.88,
+      resistance: 1.08
+    }
+  },
+  {
+    id: "low-temp",
+    name: "Cold Environment",
+    description: "Below freezing conditions (-10°C), reduced efficiency",
+    icon: "❄️",
+    conditions: {
+      temperature: -10,
+      humidity: 30,
+      voltage: 100,
+      load: 100
+    },
+    modifiers: {
+      power: 0.85,
+      current: 0.90,
+      voltage: 0.95,
+      temperature: 0.50,
+      efficiency: 0.80,
+      resistance: 1.15
+    }
+  },
+  {
+    id: "overvoltage",
+    name: "Overvoltage Stress",
+    description: "120% nominal voltage, stress testing conditions",
+    icon: "⚡",
+    conditions: {
+      temperature: 25,
+      humidity: 50,
+      voltage: 120,
+      load: 100
+    },
+    modifiers: {
+      power: 1.44,
+      current: 1.20,
+      voltage: 1.20,
+      temperature: 1.30,
+      efficiency: 0.92,
+      resistance: 1.0
+    }
+  },
+  {
+    id: "undervoltage",
+    name: "Undervoltage",
+    description: "80% nominal voltage, brownout conditions",
+    icon: "🔋",
+    conditions: {
+      temperature: 25,
+      humidity: 50,
+      voltage: 80,
+      load: 100
+    },
+    modifiers: {
+      power: 0.64,
+      current: 0.80,
+      voltage: 0.80,
+      temperature: 0.85,
+      efficiency: 0.85,
+      resistance: 1.0
+    }
+  },
+  {
+    id: "heavy-load",
+    name: "Heavy Load",
+    description: "150% load capacity, maximum performance demand",
+    icon: "💪",
+    conditions: {
+      temperature: 25,
+      humidity: 50,
+      voltage: 100,
+      load: 150
+    },
+    modifiers: {
+      power: 1.50,
+      current: 1.50,
+      voltage: 0.95,
+      temperature: 1.85,
+      efficiency: 0.75,
+      resistance: 1.0
+    }
+  },
+  {
+    id: "light-load",
+    name: "Light Load",
+    description: "25% load capacity, minimal power consumption",
+    icon: "🪶",
+    conditions: {
+      temperature: 25,
+      humidity: 50,
+      voltage: 100,
+      load: 25
+    },
+    modifiers: {
+      power: 0.25,
+      current: 0.25,
+      voltage: 1.02,
+      temperature: 0.60,
+      efficiency: 0.95,
+      resistance: 1.0
+    }
+  },
+  {
+    id: "humid",
+    name: "High Humidity",
+    description: "90% humidity, moisture stress conditions",
+    icon: "💧",
+    conditions: {
+      temperature: 30,
+      humidity: 90,
+      voltage: 100,
+      load: 100
+    },
+    modifiers: {
+      power: 0.94,
+      current: 0.97,
+      voltage: 0.98,
+      temperature: 1.15,
+      efficiency: 0.90,
+      resistance: 1.12
+    }
+  },
+  {
+    id: "extreme",
+    name: "Extreme Conditions",
+    description: "Combined stress: high temp, overvoltage, heavy load",
+    icon: "⚠️",
+    conditions: {
+      temperature: 60,
+      humidity: 80,
+      voltage: 125,
+      load: 180
+    },
+    modifiers: {
+      power: 1.85,
+      current: 1.75,
+      voltage: 1.10,
+      temperature: 2.40,
+      efficiency: 0.60,
+      resistance: 1.25
+    }
   }
 ];
 
@@ -1234,6 +1439,9 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const [battleWinner, setBattleWinner] = useState<"left" | "right" | "tie" | null>(null);
   const [beforeMetrics, setBeforeMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
   const [rotationEnabled, setRotationEnabled] = useState(true);
+  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(new Set(['all']));
+  const [afterMetrics, setAfterMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
+  const [selectedScenario, setSelectedScenario] = useState<string>('standard');
 
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
@@ -1815,29 +2023,108 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     [sendArenaMessage]
   );
 
+  const applyScenarioModifiers = useCallback((telemetry: ComponentTelemetryEntry[], scenarioId: string): ComponentTelemetryEntry[] => {
+    const scenario = ENVIRONMENTAL_SCENARIOS.find(s => s.id === scenarioId);
+    if (!scenario || scenarioId === 'standard') {
+      return telemetry;
+    }
+
+    return telemetry.map(entry => {
+      if (!entry.metric?.numericValue) {
+        return entry;
+      }
+
+      const modifierKey = entry.id as keyof typeof scenario.modifiers;
+      const modifier = scenario.modifiers[modifierKey] ?? 1.0;
+      const modifiedValue = entry.metric.numericValue * modifier;
+      const formattedValue = formatNumericForProperty(entry.id, modifiedValue);
+
+      return {
+        ...entry,
+        displayValue: formattedValue.display,
+        metric: entry.metric ? {
+          ...entry.metric,
+          numericValue: modifiedValue,
+          displayValue: formattedValue.display
+        } : null
+      };
+    });
+  }, []);
+
   const handleBattle = useCallback(() => {
     if (battleState === "battling") return;
-    
+
     setBeforeMetrics({
       left: componentATelemetry,
       right: componentBTelemetry
     });
     setBattleState("battling");
     setBattleWinner(null);
-    
+    setAfterMetrics({left: null, right: null});
+
     setTimeout(() => {
+      // Apply scenario modifiers to simulate environmental effects
+      const modifiedLeftTelemetry = applyScenarioModifiers(componentATelemetry, selectedScenario);
+      const modifiedRightTelemetry = applyScenarioModifiers(componentBTelemetry, selectedScenario);
+
+      // Add some randomization to simulate real-world variance (±5%)
+      const addVariance = (telemetry: ComponentTelemetryEntry[]) => {
+        return telemetry.map(entry => ({
+          ...entry,
+          displayValue: entry.metric?.numericValue
+            ? formatNumericForProperty(entry.id, entry.metric.numericValue * (0.95 + Math.random() * 0.10)).display
+            : entry.displayValue
+        }));
+      };
+
+      setAfterMetrics({
+        left: addVariance(modifiedLeftTelemetry),
+        right: addVariance(modifiedRightTelemetry)
+      });
+
       if (showdownWinner) {
         setBattleWinner(showdownWinner);
       }
       setBattleState("complete");
     }, 3000);
-  }, [battleState, componentATelemetry, componentBTelemetry, showdownWinner]);
+  }, [battleState, componentATelemetry, componentBTelemetry, showdownWinner, applyScenarioModifiers, selectedScenario]);
 
   const handleResetBattle = useCallback(() => {
     setBattleState("idle");
     setBattleWinner(null);
     setBeforeMetrics({left: null, right: null});
+    setAfterMetrics({left: null, right: null});
   }, []);
+
+  const handleMetricToggle = useCallback((metricId: string) => {
+    setSelectedMetrics(prev => {
+      const next = new Set(prev);
+      if (metricId === 'all') {
+        return new Set(['all']);
+      }
+      next.delete('all');
+      if (next.has(metricId)) {
+        next.delete(metricId);
+      } else {
+        next.add(metricId);
+      }
+      if (next.size === 0) {
+        return new Set(['all']);
+      }
+      return next;
+    });
+  }, []);
+
+  const getFilteredTelemetry = useCallback((telemetry: ComponentTelemetryEntry[]) => {
+    if (selectedMetrics.has('all')) {
+      return telemetry;
+    }
+    return telemetry.filter(entry => selectedMetrics.has(entry.id));
+  }, [selectedMetrics]);
+
+  const currentScenario = useMemo(() => {
+    return ENVIRONMENTAL_SCENARIOS.find(s => s.id === selectedScenario) ?? ENVIRONMENTAL_SCENARIOS[0];
+  }, [selectedScenario]);
 
   const renderBattlePanel = (
     side: "left" | "right",
@@ -1864,29 +2151,71 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     }
   ) => {
     const typeClass = normaliseTypeForClass(profile?.type);
+    const beforeData = side === "left" ? beforeMetrics.left : beforeMetrics.right;
+    const afterData = side === "left" ? afterMetrics.left : afterMetrics.right;
+    const filteredTelemetry = getFilteredTelemetry(telemetry);
+    const showBefore = battleState !== "idle" && beforeData;
+    const showAfter = battleState === "complete" && afterData;
 
     return (
       <div className={`arena-battle-panel arena-battle-panel-${side}`}>
         <div className="arena-component-info">
+          {/* Before Metrics - Above Component */}
+          {showBefore && (
+            <div className="arena-metrics-section arena-metrics-before">
+              <div className="arena-metrics-label">📊 BEFORE</div>
+              <div className="arena-metrics-compact">
+                {getFilteredTelemetry(beforeData).map((entry) => (
+                  <div key={`before-${side}-${entry.id}`} className="arena-metric-compact">
+                    <span className="metric-compact-icon">{entry.icon}</span>
+                    <span className="metric-compact-value">{entry.displayValue}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3D Component on Rotating Platform */}
           <div className={`arena-component-stage${rotationEnabled ? " rotating" : ""}${battleState === "battling" ? " battling" : ""}`}>
             <div className="arena-component-dais">
-              <div className="arena-dais-platform">
-                <ComponentGlyph type={profile?.type} />
+              <div className="arena-dais-platform arena-3d-platform">
+                <Component3DViewer
+                  componentType={profile?.type || 'generic'}
+                  isRotating={rotationEnabled && battleState !== "battling"}
+                  isBattling={battleState === "battling"}
+                />
               </div>
               <div className="arena-dais-base" />
             </div>
           </div>
-          
-          <div style={{textAlign: 'center'}}>
+
+          {/* Component Info */}
+          <div style={{textAlign: 'center', margin: '16px 0'}}>
             <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.7)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px'}}>{tag}</div>
             <h3 style={{margin: '0 0 4px', fontSize: '1.1rem', fontWeight: '600'}}>{profile?.name ?? "No component"}</h3>
             <div style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)'}}>{profile?.type ?? "—"}</div>
-            {isChampion && <div style={{marginTop: '8px', padding: '4px 12px', background: 'var(--brand-primary-dim)', borderRadius: '999px', display: 'inline-block', fontSize: '0.7rem', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase'}}>CHAMPION</div>}
+            {isChampion && <div style={{marginTop: '8px', padding: '4px 12px', background: 'var(--brand-primary-dim)', borderRadius: '999px', display: 'inline-block', fontSize: '0.7rem', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase'}}>🏆 CHAMPION</div>}
           </div>
 
-          {telemetry.length > 0 && (
-            <div className="arena-telemetry-grid" style={{width: '100%'}}>
-              {telemetry.map((entry) => (
+          {/* After Metrics - Below Component */}
+          {showAfter && (
+            <div className="arena-metrics-section arena-metrics-after">
+              <div className="arena-metrics-label">📈 AFTER</div>
+              <div className="arena-metrics-compact">
+                {getFilteredTelemetry(afterData).map((entry) => (
+                  <div key={`after-${side}-${entry.id}`} className="arena-metric-compact">
+                    <span className="metric-compact-icon">{entry.icon}</span>
+                    <span className="metric-compact-value">{entry.displayValue}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Current Telemetry (when not in battle) */}
+          {battleState === "idle" && filteredTelemetry.length > 0 && (
+            <div className="arena-telemetry-grid" style={{width: '100%', marginTop: '16px'}}>
+              {filteredTelemetry.map((entry) => (
                 <div
                   key={`${side}-telemetry-${entry.id}`}
                   className={`arena-telemetry-card${entry.severity !== "normal" ? ` ${entry.severity}` : ""}`}
@@ -2028,6 +2357,84 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               </div>
             ) : (
               <p className="arena-empty">No components loaded. Use the import section above to load components.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="arena-metrics-selector-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>⚔️ Battle Metrics Selection</h2>
+              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', margin: '8px 0 0 0'}}>
+                Choose which metrics to test in battle
+              </p>
+            </div>
+            <div className="arena-metric-toggles">
+              <button
+                className={`arena-metric-toggle${selectedMetrics.has('all') ? ' active' : ''}`}
+                onClick={() => handleMetricToggle('all')}
+                type="button"
+              >
+                <span className="toggle-icon">✨</span>
+                <span className="toggle-label">ALL METRICS</span>
+              </button>
+              {TELEMETRY_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  className={`arena-metric-toggle${selectedMetrics.has(preset.id) ? ' active' : ''}`}
+                  onClick={() => handleMetricToggle(preset.id)}
+                  type="button"
+                  disabled={selectedMetrics.has('all')}
+                >
+                  <span className="toggle-icon">{preset.icon}</span>
+                  <span className="toggle-label">{preset.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="arena-scenario-selector-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>🌍 Environmental Test Scenario</h2>
+              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', margin: '8px 0 0 0'}}>
+                Select environmental conditions to test components under different operating scenarios
+              </p>
+            </div>
+            <div className="arena-scenario-grid">
+              {ENVIRONMENTAL_SCENARIOS.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  className={`arena-scenario-card${selectedScenario === scenario.id ? ' active' : ''}`}
+                  onClick={() => setSelectedScenario(scenario.id)}
+                  type="button"
+                >
+                  <div className="scenario-icon">{scenario.icon}</div>
+                  <div className="scenario-name">{scenario.name}</div>
+                  <div className="scenario-description">{scenario.description}</div>
+                  <div className="scenario-conditions">
+                    {scenario.conditions.temperature !== undefined && (
+                      <span className="condition-badge">🌡️ {scenario.conditions.temperature}°C</span>
+                    )}
+                    {scenario.conditions.voltage !== undefined && (
+                      <span className="condition-badge">⚡ {scenario.conditions.voltage}%</span>
+                    )}
+                    {scenario.conditions.load !== undefined && (
+                      <span className="condition-badge">💪 {scenario.conditions.load}%</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            {selectedScenario !== 'standard' && (
+              <div className="arena-scenario-active-notice">
+                <div className="notice-icon">{currentScenario.icon}</div>
+                <div className="notice-content">
+                  <div className="notice-title">Active Scenario: {currentScenario.name}</div>
+                  <div className="notice-description">{currentScenario.description}</div>
+                </div>
+              </div>
             )}
           </div>
         </section>
