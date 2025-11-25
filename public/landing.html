@@ -265,7 +265,7 @@
       </div>
       <div class="subtitle">Professional Circuit Design</div>
         <div class="circuit-wrapper">
-              <svg viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
+              <svg viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="landing-circuit-title">
                 <title id="landing-circuit-title">Series circuit with three resistors in series</title>
                 <defs>
                   <filter id="glow">
@@ -276,73 +276,77 @@
                     </feMerge>
                   </filter>
                 </defs>
-                <rect class="panel-bg" x="92" y="40" width="456" height="240" rx="34" />
+                <rect class="panel-bg" x="30" y="20" width="540" height="240" rx="28" />
 
                   <g aria-hidden="true">
-                    <!-- Top horizontal wire left -->
-                    <line class="wire" x1="240" y1="120" x2="268" y2="120" />
-                    
-                    <!-- R1 - Top resistor (3kΩ) horizontal centered -->
-                    <polyline class="resistor-zig" points="268,120 278,120 286,108 302,132 318,108 334,132 342,120 352,120" />
-                    
-                    <!-- Top horizontal wire right -->
-                    <line class="wire" x1="352" y1="120" x2="400" y2="120" />
-                    
-                    <!-- Right vertical wire top -->
-                    <line class="wire" x1="400" y1="120" x2="400" y2="148" />
-                    
-                    <!-- R2 - Right resistor (10kΩ) vertical centered -->
-                    <polyline class="resistor-zig" points="400,148 400,158 412,166 388,182 412,198 388,214 400,222 400,232" />
-                    
-                    <!-- Right vertical wire bottom -->
-                    <line class="wire" x1="400" y1="232" x2="400" y2="240" />
-                    
-                    <!-- Bottom horizontal wire right -->
-                    <line class="wire" x1="400" y1="240" x2="352" y2="240" />
-                    
-                    <!-- R3 - Bottom resistor (5kΩ) horizontal centered -->
-                    <polyline class="resistor-zig" points="352,240 342,240 334,252 318,228 302,252 286,228 278,240 268,240" />
-                    
-                    <!-- Bottom horizontal wire left -->
-                    <line class="wire" x1="268" y1="240" x2="240" y2="240" />
-                    
-                    <!-- Left vertical wire bottom -->
-                    <line class="wire" x1="240" y1="240" x2="240" y2="204" />
-                    
-                    <!-- Battery B1 on left side -->
-                    <line class="battery-plate battery-positive" x1="216" y1="186" x2="264" y2="186" />
-                    <line class="battery-plate battery-negative" x1="224" y1="198" x2="256" y2="198" />
-                    
-                    <!-- Left vertical wire top -->
-                    <line class="wire" x1="240" y1="174" x2="240" y2="120" />
+                    <!-- Circuit loop: Battery on LEFT, R1 on TOP, R2 on RIGHT, R3 on BOTTOM -->
+                    <!-- Corners: TL(100,60) TR(500,60) BR(500,220) BL(100,220) -->
 
-                    <!-- Junction nodes -->
-                    <circle class="node" cx="240" cy="120" r="4.2" />
-                    <circle class="node" cx="400" cy="120" r="4.2" />
-                    <circle class="node" cx="400" cy="240" r="4.2" />
-                    <circle class="node" cx="240" cy="240" r="4.2" />
+                    <!-- LEFT SIDE - Battery B1 (vertical orientation between corners) -->
+                    <!-- Wire from top-left corner down to battery -->
+                    <line class="wire" x1="100" y1="60" x2="100" y2="120" />
+                    <!-- Battery plates at center of left side (y=140) -->
+                    <line class="battery-plate battery-positive" x1="88" y1="130" x2="112" y2="130" />
+                    <line class="battery-plate battery-negative" x1="92" y1="150" x2="108" y2="150" />
+                    <!-- Wire from battery down to bottom-left corner -->
+                    <line class="wire" x1="100" y1="160" x2="100" y2="220" />
+
+                    <!-- TOP SIDE - R1 (horizontal, centered on top edge) -->
+                    <!-- Wire from top-left corner to R1 -->
+                    <line class="wire" x1="100" y1="60" x2="240" y2="60" />
+                    <!-- R1 resistor (3kΩ) horizontal, 3 zig-zag pattern centered at x=300 -->
+                    <polyline class="resistor-zig" points="240,60 250,60 260,48 276,72 292,48 308,72 324,48 340,72 350,60 360,60" />
+                    <!-- Wire from R1 to top-right corner -->
+                    <line class="wire" x1="360" y1="60" x2="500" y2="60" />
+
+                    <!-- RIGHT SIDE - R2 (vertical, centered on right edge) -->
+                    <!-- Wire from top-right corner down to R2 -->
+                    <line class="wire" x1="500" y1="60" x2="500" y2="100" />
+                    <!-- R2 resistor (10kΩ) vertical, 3 zig-zag pattern centered at y=140 -->
+                    <polyline class="resistor-zig" points="500,100 500,108 488,118 512,132 488,146 512,160 488,174 512,188 500,198 500,206" />
+                    <!-- Wire from R2 down to bottom-right corner -->
+                    <line class="wire" x1="500" y1="206" x2="500" y2="220" />
+
+                    <!-- BOTTOM SIDE - R3 (horizontal, centered on bottom edge) -->
+                    <!-- Wire from bottom-right corner to R3 -->
+                    <line class="wire" x1="500" y1="220" x2="360" y2="220" />
+                    <!-- R3 resistor (5kΩ) horizontal, 3 zig-zag pattern centered at x=300 -->
+                    <polyline class="resistor-zig" points="360,220 350,220 340,232 324,208 308,232 292,208 276,232 260,208 250,220 240,220" />
+                    <!-- Wire from R3 to bottom-left corner -->
+                    <line class="wire" x1="240" y1="220" x2="100" y2="220" />
+
+                    <!-- Junction nodes at corners -->
+                    <circle class="node" cx="100" cy="60" r="4.2" />
+                    <circle class="node" cx="500" cy="60" r="4.2" />
+                    <circle class="node" cx="500" cy="220" r="4.2" />
+                    <circle class="node" cx="100" cy="220" r="4.2" />
                   </g>
 
-                  <!-- Component labels -->
-                  <text class="component-tag" x="310" y="94" text-anchor="middle">
-                    <tspan class="tag-id">R1</tspan>
-                    <tspan class="tag-value" x="310" dy="16">3 kΩ</tspan>
-                  </text>
-                  <text class="component-tag" x="460" y="180" text-anchor="start">
-                    <tspan class="tag-id">R2</tspan>
-                    <tspan class="tag-value" x="460" dy="16">10 kΩ</tspan>
-                  </text>
-                  <text class="component-tag" x="310" y="268" text-anchor="middle">
-                    <tspan class="tag-id">R3</tspan>
-                    <tspan class="tag-value" x="310" dy="16">5 kΩ</tspan>
-                  </text>
-                  <text class="component-tag" x="160" y="180" text-anchor="end">
+                  <!-- Component labels - positioned inside the circuit loop -->
+                  <!-- B1 label - inside loop, to the right of battery -->
+                  <text class="component-tag" x="135" y="145" text-anchor="start">
                     <tspan class="tag-id">B1</tspan>
-                    <tspan class="tag-value" x="160" dy="16">9 V DC</tspan>
+                    <tspan class="tag-value" dx="4">9V</tspan>
+                  </text>
+                  <!-- R1 label - inside loop, below the top resistor -->
+                  <text class="component-tag" x="292" y="88" text-anchor="middle">
+                    <tspan class="tag-id">R1</tspan>
+                    <tspan class="tag-value" dx="4">3kΩ</tspan>
+                  </text>
+                  <!-- R2 label - inside loop, to the left of right resistor -->
+                  <text class="component-tag" x="455" y="156" text-anchor="end">
+                    <tspan class="tag-id">R2</tspan>
+                    <tspan class="tag-value" dx="4">10kΩ</tspan>
+                  </text>
+                  <!-- R3 label - inside loop, above the bottom resistor -->
+                  <text class="component-tag" x="308" y="200" text-anchor="middle">
+                    <tspan class="tag-id">R3</tspan>
+                    <tspan class="tag-value" dx="4">5kΩ</tspan>
                   </text>
 
-                  <text class="polarity-mark" x="252" y="180" text-anchor="start">+</text>
-                  <text class="polarity-mark" x="252" y="204" text-anchor="start">-</text>
+                  <!-- Battery polarity marks - positioned outside the circuit (left of battery) -->
+                  <text class="polarity-mark" x="75" y="135" text-anchor="end">+</text>
+                  <text class="polarity-mark" x="75" y="157" text-anchor="end">−</text>
               </svg>
       </div>
     <div class="status-wrapper">
