@@ -515,16 +515,13 @@
 }
 
 .practice-table {
-  --worksheet-metric-width: 160px;
-  --worksheet-column-min: 180px;
+  --worksheet-metric-label-width: 120px;
+  --worksheet-component-min: 120px;
   border-radius: 18px;
   border: 1px solid rgba(90, 148, 230, 0.3);
   overflow: hidden;
   backdrop-filter: blur(10px);
   background: rgba(8, 18, 36, 0.82);
-  min-width: calc(
-    var(--worksheet-metric-width, 160px) + var(--worksheet-column-min, 180px)
-  );
 }
 
 .practice-table-header,
@@ -570,7 +567,50 @@
   color: #a3d0ff;
 }
 
-.metric-heading {
+/* Transposed layout: Component column heading (first column header) */
+.component-column-heading {
+  align-items: flex-start;
+}
+
+.component-heading-title {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Transposed layout: Metric column headings (W, I, R, E as columns) */
+.metric-column-heading {
+  gap: 6px;
+  text-align: center;
+  align-items: center;
+}
+
+.metric-column-heading .column-letter {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(156, 206, 255, 0.7);
+  text-transform: uppercase;
+}
+
+/* Transposed layout: Component row labels (left side row headers) */
+.component-label {
+  gap: 6px;
+  background: rgba(24, 52, 102, 0.36);
+  border-right: 1px solid rgba(60, 110, 184, 0.3);
+}
+
+.component-row:nth-child(even) .component-label {
+  background: rgba(18, 40, 82, 0.42);
+}
+
+.component-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #e2f4ff;
+}
+
+/* W.I.R.E. layout: Metric label heading (first column header) */
+.metric-label-heading {
   align-items: flex-start;
 }
 
@@ -579,8 +619,19 @@
   opacity: 0.8;
 }
 
+/* W.I.R.E. layout: Component column headings (R1, R2, Battery, Totals as columns) */
 .component-heading {
   gap: 6px;
+  text-align: center;
+  align-items: center;
+}
+
+.component-heading .column-letter {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(156, 206, 255, 0.7);
+  text-transform: uppercase;
 }
 
 .column-letter {
@@ -591,18 +642,13 @@
   text-transform: uppercase;
 }
 
-.component-label {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #e2f4ff;
-}
-
 .component-caption {
   font-size: 0.72rem;
   opacity: 0.7;
   letter-spacing: 0.04em;
 }
 
+/* W.I.R.E. layout: Metric row labels (W, I, R, E as rows) */
 .metric-label {
   gap: 6px;
   background: rgba(24, 52, 102, 0.36);
@@ -1158,8 +1204,8 @@
   }
 
   .practice-table {
-    --worksheet-metric-width: 140px;
-    --worksheet-column-min: 160px;
+    --worksheet-metric-label-width: 100px;
+    --worksheet-component-min: 110px;
   }
 }
 
@@ -1175,8 +1221,8 @@
   }
 
   .practice-table {
-    --worksheet-metric-width: 120px;
-    --worksheet-column-min: 140px;
+    --worksheet-metric-label-width: 90px;
+    --worksheet-component-min: 100px;
   }
 
   .worksheet-input {

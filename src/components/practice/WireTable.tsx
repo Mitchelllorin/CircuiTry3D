@@ -55,8 +55,10 @@ export type WireTableProps = {
 
 const formatWorksheetNumber = (value: number, key: WireMetricKey) => formatNumber(value, METRIC_PRECISION[key]);
 
-const buildGridTemplate = (columnCount: number) =>
-  `var(--worksheet-metric-width, 140px) repeat(${columnCount}, minmax(var(--worksheet-column-min, 180px), 1fr))`;
+// W.I.R.E. layout: Metrics (W, I, R, E) as rows, Components as columns
+// First column is for metric labels, then one column per component + Totals
+const buildGridTemplate = (numComponents: number) =>
+  `var(--worksheet-metric-label-width, 120px) repeat(${numComponents}, minmax(var(--worksheet-component-min, 120px), 1fr))`;
 
 type CellStatus = WorksheetEntryStatus | "revealed";
 
@@ -68,8 +70,8 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
     id: string;
     metric: WireMetricKey;
     rowId: string;
-    columnIndex: number;
-    metricIndex: number;
+    metricIndex: number;   // Which metric row (0=W, 1=I, 2=R, 3=E)
+    componentIndex: number; // Which component column (0 = first component)
   };
 
   const editableCells = useMemo<EditableCell[]>(() => {
@@ -79,8 +81,9 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
 
     const result: EditableCell[] = [];
 
+    // Iterate metrics (rows) first, then components (columns)
     METRIC_ORDER.forEach((metric, metricIndex) => {
-      rows.forEach((row, columnIndex) => {
+      rows.forEach((row, componentIndex) => {
         const entry = entries[row.id]?.[metric];
         const givenFromRow = typeof row.givens?.[metric] === "number" && Number.isFinite(row.givens[metric]);
         const isGiven = entry?.given ?? givenFromRow;
@@ -89,8 +92,8 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
             id: `${row.id}:${metric}`,
             metric,
             rowId: row.id,
-            columnIndex,
             metricIndex,
+            componentIndex,
           });
         }
       });
@@ -138,15 +141,16 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
         return null;
       }
 
+      // W.I.R.E. layout: left/right moves between component columns, up/down moves between metric rows
       const horizontal = direction === "left" || direction === "right";
       const sameLine = editableCells
         .filter((cell) =>
           horizontal
-            ? cell.metricIndex === current.metricIndex
-            : cell.columnIndex === current.columnIndex
+            ? cell.metricIndex === current.metricIndex   // Same metric row
+            : cell.componentIndex === current.componentIndex // Same component column
         )
         .sort((a, b) =>
-          horizontal ? a.columnIndex - b.columnIndex : a.metricIndex - b.metricIndex
+          horizontal ? a.componentIndex - b.componentIndex : a.metricIndex - b.metricIndex
         );
 
       if (!sameLine.length) {
@@ -157,13 +161,13 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
         const iterator = direction === "right" ? sameLine : [...sameLine].reverse();
         const candidate = iterator.find((cell) =>
           direction === "right"
-            ? cell.columnIndex > current.columnIndex
-            : cell.columnIndex < current.columnIndex
+            ? cell.componentIndex > current.componentIndex
+            : cell.componentIndex < current.componentIndex
         );
         return candidate ?? iterator[0] ?? null;
       }
 
-      // vertical
+      // vertical - moves between metric rows
       const iterator = direction === "down" ? sameLine : [...sameLine].reverse();
       const candidate = iterator.find((cell) =>
         direction === "down"
@@ -244,7 +248,7 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
     row: WireTableRow,
     key: WireMetricKey,
     metricIndex: number,
-    columnIndex: number
+    componentIndex: number
   ) => {
     const entry = entries[row.id]?.[key];
     const expected = row.metrics[key];
@@ -286,16 +290,16 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
 
     return (
       <div
-        key={key}
-        className={`practice-table-cell worksheet-cell status-${cellStatus} role-${row.role} ${
+        key={row.id}
+        className={`practice-table-cell worksheet-cell status-${cellStatus} role-${row.role} metric-${key} ${
           highlightActive ? "highlight" : ""
         }`}
         data-given={isGiven ? "true" : undefined}
         data-reveal={revealAll ? "true" : undefined}
         data-active={isActive ? "true" : undefined}
         role="gridcell"
-        data-column={columnIndex}
-        data-metric-index={metricIndex}
+        data-metric-row={metricIndex}
+        data-component-col={componentIndex}
       >
         {showInput ? (
           <div className="worksheet-input-wrapper">
@@ -333,34 +337,36 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
     );
   };
 
+  // W.I.R.E. layout: Metrics as rows (top to bottom), Components as columns (left to right)
   return (
-    <div className="practice-table" role="grid" aria-label="W.I.R.E. worksheet">
+    <div className="practice-table wire-rows" role="grid" aria-label="W.I.R.E. worksheet">
+      {/* Header row: Metric label column + Component columns */}
       <div className="practice-table-header" role="row" style={{ gridTemplateColumns }}>
-        <div className="practice-table-cell heading metric-heading" role="columnheader">
-          <span className="metric-heading-title">Metric</span>
-          <span className="metric-caption">W · I · R · E</span>
+        <div className="practice-table-cell heading metric-label-heading" role="columnheader">
+          <span className="metric-heading-title">W.I.R.E.</span>
         </div>
-        {rows.map((row, columnIndex) => (
+        {rows.map((row, componentIndex) => (
           <div
             key={row.id}
             className={`practice-table-cell heading component-heading role-${row.role}`}
             role="columnheader"
           >
             <span className="column-letter" aria-hidden="true">
-              {getColumnLetter(columnIndex)}
+              {getColumnLetter(componentIndex)}
             </span>
-            <span className="component-label">{row.label}</span>
+            <span className="component-name">{row.label}</span>
             <span className="component-caption">
               {row.role === "source" ? "Source" : row.role === "total" ? "Circuit Totals" : "Component"}
             </span>
           </div>
         ))}
       </div>
+      {/* Body: One row per metric (W, I, R, E) */}
       <div className="practice-table-body">
         {METRIC_ORDER.map((metric, metricIndex) => (
           <div
             key={metric}
-            className="practice-table-row metric-row"
+            className={`practice-table-row metric-row metric-${metric}`}
             role="row"
             style={{ gridTemplateColumns }}
             data-metric={metric}
@@ -372,7 +378,7 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
               <span className={`metric-pill metric-${metric}`}>{METRIC_HEADERS[metric].label}</span>
               <span className="metric-caption">{METRIC_HEADERS[metric].description}</span>
             </div>
-            {rows.map((row, columnIndex) => renderCell(row, metric, metricIndex, columnIndex))}
+            {rows.map((row, componentIndex) => renderCell(row, metric, metricIndex, componentIndex))}
           </div>
         ))}
       </div>

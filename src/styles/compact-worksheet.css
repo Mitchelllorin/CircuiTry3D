@@ -182,6 +182,60 @@
   background: rgba(136, 204, 255, 0.05);
 }
 
+/* W.I.R.E. rows layout - metrics as rows, components as columns */
+.compact-worksheet-table.wire-rows-layout .metric-label-header {
+  text-align: left;
+  padding-left: 12px;
+  color: rgba(136, 204, 255, 0.85);
+  font-size: 11px;
+}
+
+.compact-worksheet-table.wire-rows-layout .component-column,
+.compact-worksheet-table.wire-rows-layout .totals-column {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.compact-worksheet-table.wire-rows-layout .totals-column {
+  background: rgba(136, 204, 255, 0.08);
+  border-left: 2px solid rgba(136, 204, 255, 0.3);
+}
+
+.compact-worksheet-table.wire-rows-layout .metric-row {
+  background: rgba(14, 25, 40, 0.6);
+}
+
+.compact-worksheet-table.wire-rows-layout .metric-row:nth-child(even) {
+  background: rgba(18, 32, 48, 0.6);
+}
+
+.compact-worksheet-table.wire-rows-layout .metric-label-cell {
+  text-align: left;
+  padding-left: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.compact-worksheet-table.wire-rows-layout .metric-label-cell .metric-letter {
+  font-size: 16px;
+  font-weight: 700;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.compact-worksheet-table.wire-rows-layout .metric-label-cell .metric-label-small {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.compact-worksheet-table.wire-rows-layout .totals-cell {
+  background: rgba(136, 204, 255, 0.05);
+  border-left: 2px solid rgba(136, 204, 255, 0.3);
+}
+
+/* Legacy layout - components as rows, metrics as columns (deprecated) */
 .compact-worksheet-table .totals-row {
   background: rgba(136, 204, 255, 0.08);
   border-top: 2px solid rgba(136, 204, 255, 0.3);
