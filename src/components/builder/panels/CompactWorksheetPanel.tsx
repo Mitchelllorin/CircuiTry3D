@@ -233,23 +233,26 @@ export function CompactWorksheetPanel({
           </div>
 
           <div className="compact-worksheet-table-wrapper">
-            <table className="compact-worksheet-table">
+            {/* W.I.R.E. layout: Metrics as rows (W, I, R, E from top to bottom), Components as columns */}
+            <table className="compact-worksheet-table wire-rows-layout">
               <thead>
                 <tr>
-                  <th>Component</th>
-                  {METRIC_ORDER.map((key) => (
-                    <th key={key} style={{ color: metricLabels[key].color }}>
-                      {metricLabels[key].letter}
-                      <span className="metric-label-small">{metricLabels[key].label}</span>
+                  <th className="metric-label-header">W.I.R.E.</th>
+                  {allRows.map((row) => (
+                    <th key={row.id} className={row.id === "totals" ? "totals-column" : "component-column"}>
+                      {row.label}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {allRows.map((row) => (
-                  <tr key={row.id} className={row.id === "totals" ? "totals-row" : ""}>
-                    <td><strong>{row.label}</strong></td>
-                    {METRIC_ORDER.map((key) => {
+                {METRIC_ORDER.map((key) => (
+                  <tr key={key} className={`metric-row metric-${key}`}>
+                    <td className="metric-label-cell" style={{ color: metricLabels[key].color }}>
+                      <span className="metric-letter">{metricLabels[key].letter}</span>
+                      <span className="metric-label-small">{metricLabels[key].label}</span>
+                    </td>
+                    {allRows.map((row) => {
                       const entry = worksheetEntries[row.id]?.[key] ?? {
                         raw: "",
                         value: null,
@@ -257,7 +260,7 @@ export function CompactWorksheetPanel({
                         given: false,
                       };
                       return (
-                        <td key={key} data-status={entry.status}>
+                        <td key={row.id} data-status={entry.status} className={row.id === "totals" ? "totals-cell" : ""}>
                           <input
                             type="text"
                             value={entry.raw}
