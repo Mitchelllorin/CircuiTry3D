@@ -35,6 +35,12 @@ const withinTolerance = (expected: number, actual: number, tolerance = 0.01): bo
   return absoluteDiff / absoluteExpected <= tolerance;
 };
 
+const shouldIncludeSource = (problem: PracticeProblem): boolean => {
+  const { componentId } = problem.targetMetric;
+  // Include source column only if the problem targets the source specifically
+  return componentId === "source" || componentId === problem.source.id;
+};
+
 const formatSeedValue = (value: number, key: WireMetricKey) =>
   formatNumber(value, METRIC_PRECISION[key]);
 
@@ -49,14 +55,17 @@ export function CompactWorksheetPanel({
 
   const expectedValues = useMemo(() => {
     const map: Record<string, Record<WireMetricKey, number>> = {};
+    const includeSource = shouldIncludeSource(problem);
 
-    // Build expected values from solution
-    map[problem.source.id] = {
-      watts: solution.source.watts,
-      current: solution.source.current,
-      resistance: solution.source.resistance,
-      voltage: solution.source.voltage,
-    };
+    // Build expected values from solution - only include source if needed
+    if (includeSource) {
+      map[problem.source.id] = {
+        watts: solution.source.watts,
+        current: solution.source.current,
+        resistance: solution.source.resistance,
+        voltage: solution.source.voltage,
+      };
+    }
 
     problem.components.forEach((component) => {
       map[component.id] = {
@@ -79,8 +88,9 @@ export function CompactWorksheetPanel({
 
   const baselineWorksheet = useMemo(() => {
     const baseline: WorksheetState = {};
+    const includeSource = shouldIncludeSource(problem);
     const allRows = [
-      { id: problem.source.id, givens: problem.source.givens },
+      ...(includeSource ? [{ id: problem.source.id, givens: problem.source.givens }] : []),
       ...problem.components.map(c => ({ id: c.id, givens: c.givens })),
       { id: "totals", givens: problem.totalsGivens },
     ];
@@ -106,8 +116,9 @@ export function CompactWorksheetPanel({
   const [worksheetComplete, setWorksheetComplete] = useState(false);
 
   const computeWorksheetComplete = useCallback((state: WorksheetState) => {
+    const includeSource = shouldIncludeSource(problem);
     const allRows = [
-      { id: problem.source.id },
+      ...(includeSource ? [{ id: problem.source.id }] : []),
       ...problem.components.map(c => ({ id: c.id })),
       { id: "totals" },
     ];
@@ -186,11 +197,14 @@ export function CompactWorksheetPanel({
     voltage: { letter: "E", label: "Voltage", color: "#FF6B6B" },
   };
 
-  const allRows = useMemo(() => [
-    { id: problem.source.id, label: problem.source.label },
-    ...problem.components.map(c => ({ id: c.id, label: c.label })),
-    { id: "totals", label: "Totals" },
-  ], [problem]);
+  const allRows = useMemo(() => {
+    const includeSource = shouldIncludeSource(problem);
+    return [
+      ...(includeSource ? [{ id: problem.source.id, label: problem.source.label }] : []),
+      ...problem.components.map(c => ({ id: c.id, label: c.label })),
+      { id: "totals", label: "Totals" },
+    ];
+  }, [problem]);
 
   return (
     <div className={`compact-worksheet-panel${isOpen ? " open" : ""}`}>

@@ -23,6 +23,7 @@ import WireTable, {
 import SolutionSteps from "../components/practice/SolutionSteps";
 import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
+import KirchhoffLaws from "../components/practice/KirchhoffLaws";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import { PracticeViewport } from "./SchematicMode";
 import {
@@ -87,6 +88,12 @@ const resolveTarget = (problem: PracticeProblem, solution: SolveResult) => {
   return solution.components[componentId]?.[key];
 };
 
+const shouldIncludeSource = (problem: PracticeProblem): boolean => {
+  const { componentId } = problem.targetMetric;
+  // Include source column only if the problem targets the source specifically
+  return componentId === "source" || componentId === problem.source.id;
+};
+
 const buildTableRows = (
   problem: PracticeProblem,
   solution: SolveResult,
@@ -99,23 +106,31 @@ const buildTableRows = (
     metrics: solution.components[component.id],
   }));
 
-  return [
-    {
+  const includeSource = shouldIncludeSource(problem);
+
+  const rows: WireTableRow[] = [];
+
+  if (includeSource) {
+    rows.push({
       id: problem.source.id,
       label: problem.source.label,
       role: "source" as const,
       givens: problem.source.givens,
       metrics: solution.source,
-    },
-    ...componentRows,
-    {
-      id: "totals",
-      label: "Circuit Totals",
-      role: "total" as const,
-      givens: problem.totalsGivens,
-      metrics: solution.totals,
-    },
-  ];
+    });
+  }
+
+  rows.push(...componentRows);
+
+  rows.push({
+    id: "totals",
+    label: "Circuit Totals",
+    role: "total" as const,
+    givens: problem.totalsGivens,
+    metrics: solution.totals,
+  });
+
+  return rows;
 };
 
 const buildStepPresentations = (
@@ -866,6 +881,7 @@ export default function Practice({
           </section>
 
           <section className="practice-supplement">
+            <KirchhoffLaws />
             <TriangleDeck />
             <OhmsLawWheel />
           </section>
