@@ -34,6 +34,83 @@ import {
 import "../styles/practice.css";
 import "../styles/schematic.css";
 
+type ElectricalFormula = {
+  id: string;
+  category: "ohms-law" | "power" | "derived";
+  formula: string;
+  description: string;
+  variables: { symbol: string; name: string }[];
+};
+
+const ELECTRICAL_FORMULAS: ElectricalFormula[] = [
+  {
+    id: "ohms-v",
+    category: "ohms-law",
+    formula: "E = I × R",
+    description: "Voltage equals current times resistance",
+    variables: [
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "ohms-i",
+    category: "ohms-law",
+    formula: "I = E / R",
+    description: "Current equals voltage divided by resistance",
+    variables: [
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "ohms-r",
+    category: "ohms-law",
+    formula: "R = E / I",
+    description: "Resistance equals voltage divided by current",
+    variables: [
+      { symbol: "R", name: "Resistance (Ω)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+    ],
+  },
+  {
+    id: "power-ei",
+    category: "power",
+    formula: "P = E × I",
+    description: "Power equals voltage times current",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "I", name: "Current (A)" },
+    ],
+  },
+  {
+    id: "power-i2r",
+    category: "power",
+    formula: "P = I² × R",
+    description: "Power equals current squared times resistance",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "I", name: "Current (A)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+  {
+    id: "power-e2r",
+    category: "power",
+    formula: "P = E² / R",
+    description: "Power equals voltage squared divided by resistance",
+    variables: [
+      { symbol: "P", name: "Power (W)" },
+      { symbol: "E", name: "Voltage (V)" },
+      { symbol: "R", name: "Resistance (Ω)" },
+    ],
+  },
+];
+
 const TOPOLOGY_ORDER: PracticeTopology[] = [
   "series",
   "parallel",
@@ -875,6 +952,84 @@ export default function Practice({
                 entries={worksheetEntries}
                 onChange={handleWorksheetChange}
               />
+            </div>
+
+            <div className="practice-wire-metrics">
+              <div className="practice-wire-metrics-header">
+                <h3>W.I.R.E. Overall Metrics</h3>
+                <p>Circuit totals based on your current problem</p>
+              </div>
+              <div className="practice-wire-metrics-grid">
+                <div className="practice-wire-metric metric-w">
+                  <div className="wire-metric-letter">W</div>
+                  <div className="wire-metric-value">
+                    {answerRevealed || tableRevealed
+                      ? formatMetricValue(solution.totals.watts, "watts")
+                      : "—"}
+                  </div>
+                  <div className="wire-metric-label">Watts</div>
+                </div>
+                <div className="practice-wire-metric metric-i">
+                  <div className="wire-metric-letter">I</div>
+                  <div className="wire-metric-value">
+                    {answerRevealed || tableRevealed
+                      ? formatMetricValue(solution.totals.current, "current")
+                      : "—"}
+                  </div>
+                  <div className="wire-metric-label">Current</div>
+                </div>
+                <div className="practice-wire-metric metric-r">
+                  <div className="wire-metric-letter">R</div>
+                  <div className="wire-metric-value">
+                    {answerRevealed || tableRevealed
+                      ? formatMetricValue(solution.totals.resistance, "resistance")
+                      : "—"}
+                  </div>
+                  <div className="wire-metric-label">Resistance</div>
+                </div>
+                <div className="practice-wire-metric metric-e">
+                  <div className="wire-metric-letter">E</div>
+                  <div className="wire-metric-value">
+                    {answerRevealed || tableRevealed
+                      ? formatMetricValue(solution.totals.voltage, "voltage")
+                      : "—"}
+                  </div>
+                  <div className="wire-metric-label">Voltage</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="practice-formula-reference">
+              <div className="practice-formula-reference-header">
+                <h3>W.I.R.E. Formula Reference</h3>
+                <p>Essential electrical calculations for circuit analysis</p>
+              </div>
+              <div className="practice-formula-reference-grid">
+                {ELECTRICAL_FORMULAS.map((formula) => (
+                  <div key={formula.id} className="practice-formula-card">
+                    <div className="formula-expression">{formula.formula}</div>
+                    <div className="formula-description">
+                      {formula.description}
+                    </div>
+                    <div className="formula-variables">
+                      {formula.variables.map((v, idx) => (
+                        <div
+                          key={v.symbol}
+                          className={
+                            idx < formula.variables.length - 1
+                              ? "formula-variable"
+                              : "formula-variable formula-variable-last"
+                          }
+                        >
+                          <span className="variable-symbol">{v.symbol}</span>
+                          {" = "}
+                          {v.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <SolutionSteps steps={stepPresentations} visible={stepsVisible} />

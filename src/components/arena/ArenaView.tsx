@@ -2236,9 +2236,11 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     <div className="arena-page">
       <header className="arena-header">
         <div className="arena-header-left">
-          <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
-            {isEmbedded ? "Close" : "← Back"}
-          </button>
+          {!isEmbedded && (
+            <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
+              ← Back
+            </button>
+          )}
           <div className="arena-title-group">
             <h1>Component Arena</h1>
             <p>Test and compare components side-by-side</p>
@@ -2254,25 +2256,6 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       </header>
 
       <div className="arena-body">
-        <section className="arena-wire-section">
-          <div className="arena-card">
-            <div className="arena-card-header">
-              <h2>W.I.R.E. Overall Metrics</h2>
-              <button className="arena-btn link" type="button" onClick={handleSyncFromStorage}>
-                {importPayload ? "Refresh" : "Sync"}
-              </button>
-            </div>
-            <div className="arena-metric-grid">
-              {metrics.map((metric) => (
-                <div key={metric.id} className={`arena-metric metric-${metric.letter.toLowerCase()}`}>
-                  <div className="metric-letter">{metric.letter}</div>
-                  <div className="metric-value">{metric.value}</div>
-                  <div className="metric-label">{metric.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         <section className="arena-import-section">
           <div className="arena-card">
@@ -2442,7 +2425,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         <section className="arena-battle-section">
           <div className="arena-card">
             <div className="arena-card-header">
-              <h2>Before Metrics</h2>
+              <h2>Battle Stats</h2>
             </div>
             {hasShowdown && (
               <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
@@ -2508,56 +2491,6 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               isTie: showdownTie,
               tag: "Component B"
             })}
-          </div>
-        </section>
-
-        <section className="arena-formulas-section">
-          <div className="arena-card">
-            <div className="arena-card-header">
-              <h2>W.I.R.E. Formula Reference</h2>
-              <p style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)', margin: '8px 0 0 0'}}>
-                Essential electrical calculations for circuit analysis
-              </p>
-            </div>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px'}}>
-              {ELECTRICAL_FORMULAS.slice(0, 6).map((formula) => (
-                <div
-                  key={formula.id}
-                  style={{
-                    padding: '16px',
-                    border: '1px solid rgba(148, 163, 184, 0.2)',
-                    borderRadius: '8px',
-                    background: 'rgba(15, 23, 42, 0.4)'
-                  }}
-                >
-                  <div style={{
-                    fontFamily: 'monospace',
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    marginBottom: '8px',
-                    color: 'rgba(136, 204, 255, 0.95)'
-                  }}>
-                    {formula.formula}
-                  </div>
-                  <div style={{
-                    fontSize: '0.85rem',
-                    color: 'rgba(148, 163, 184, 0.9)',
-                    marginBottom: '12px'
-                  }}>
-                    {formula.description}
-                  </div>
-                  <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.7)'}}>
-                    {formula.variables.map((v, idx) => (
-                      <div key={v.symbol} style={{marginBottom: idx < formula.variables.length - 1 ? '4px' : '0'}}>
-                        <span style={{fontWeight: '600', color: 'rgba(136, 204, 255, 0.85)'}}>{v.symbol}</span>
-                        {' = '}
-                        {v.name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
       </div>
