@@ -787,48 +787,88 @@ body.builder-body .arena-page {
 .arena-battle-stage {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 0;
-  border-radius: 24px;
-  border: 2px solid rgba(0, 255, 136, 0.35);
-  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+  border-radius: 0;
+  border: none;
+  background: #020617;
   overflow: hidden;
-  box-shadow:
-    0 32px 72px rgba(2, 6, 23, 0.65),
-    0 0 80px rgba(0, 255, 136, 0.15),
-    inset 0 0 100px rgba(0, 255, 136, 0.05);
-  min-height: 600px;
+  box-shadow: none;
+  min-height: 70vh;
+  width: 100%;
 }
 
-
-.arena-battle-stage::after {
+/* Vertical center divider - the split line */
+.arena-battle-stage::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 2px;
+  width: 4px;
+  transform: translateX(-50%);
   background: linear-gradient(180deg,
-    transparent 0%,
-    rgba(0, 255, 136, 0.4) 20%,
-    rgba(0, 255, 136, 0.6) 50%,
-    rgba(0, 255, 136, 0.4) 80%,
-    transparent 100%
+    rgba(0, 255, 136, 0.3) 0%,
+    rgba(0, 255, 136, 0.8) 30%,
+    rgba(0, 255, 136, 1) 50%,
+    rgba(0, 255, 136, 0.8) 70%,
+    rgba(0, 255, 136, 0.3) 100%
   );
-  z-index: 1;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  z-index: 10;
+  box-shadow:
+    0 0 30px rgba(0, 255, 136, 0.8),
+    0 0 60px rgba(0, 255, 136, 0.4);
+  animation: split-line-pulse 2s ease-in-out infinite;
+}
+
+@keyframes split-line-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 30px rgba(0, 255, 136, 0.8),
+      0 0 60px rgba(0, 255, 136, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(0, 255, 136, 1),
+      0 0 80px rgba(0, 255, 136, 0.6);
+  }
 }
 
 .arena-battle-panel {
   position: relative;
-  padding: 32px 28px;
+  padding: 40px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
-  background: rgba(8, 14, 28, 0.95);
+  justify-content: flex-start;
+  gap: 16px;
+  background: linear-gradient(180deg,
+    rgba(8, 14, 28, 0.98) 0%,
+    rgba(15, 23, 42, 0.95) 50%,
+    rgba(8, 14, 28, 0.98) 100%
+  );
   z-index: 2;
+  min-height: 100%;
+}
+
+/* Left panel - Player 1 style */
+.arena-battle-panel-left {
+  border-right: 2px solid rgba(0, 255, 136, 0.15);
+  background: linear-gradient(135deg,
+    rgba(30, 64, 175, 0.08) 0%,
+    rgba(8, 14, 28, 0.95) 50%,
+    rgba(8, 14, 28, 0.98) 100%
+  );
+}
+
+/* Right panel - Player 2 style */
+.arena-battle-panel-right {
+  border-left: 2px solid rgba(0, 255, 136, 0.15);
+  background: linear-gradient(225deg,
+    rgba(16, 185, 129, 0.08) 0%,
+    rgba(8, 14, 28, 0.95) 50%,
+    rgba(8, 14, 28, 0.98) 100%
+  );
 }
 
 
@@ -1941,30 +1981,18 @@ body.builder-body .arena-page {
 }
 
 @media (max-width: 960px) {
+  /* KEEP vertical split on tablets - this is a split-screen experience */
   .arena-battle-stage {
-    grid-template-columns: 1fr;
-    min-height: 0;
+    grid-template-columns: 1fr 1fr;
+    min-height: 60vh;
   }
 
-  .arena-battle-stage::after {
-    display: none;
+  .arena-battle-panel {
+    padding: 24px 16px;
   }
 
   .arena-battle-overlay {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    order: 1;
-    margin: 20px 0;
-  }
-
-  .arena-battle-panel-left {
-    order: 0;
-  }
-
-  .arena-battle-panel-right {
-    order: 2;
+    /* Smaller battle button on tablets */
   }
 
   .arena-metric-toggles {
@@ -1976,8 +2004,8 @@ body.builder-body .arena-page {
   }
 
   .arena-dais-platform.arena-3d-platform {
-    width: 160px;
-    height: 160px;
+    width: 140px;
+    height: 140px;
   }
 
   .arena-metrics-compact {
@@ -1986,6 +2014,51 @@ body.builder-body .arena-page {
   }
 
   .arena-metric-compact {
+    justify-content: space-between;
+  }
+
+  .arena-component-stage {
+    min-height: 160px;
+  }
+}
+
+/* Narrow screens - still keep vertical split but more compact */
+@media (max-width: 600px) {
+  .arena-battle-stage {
+    grid-template-columns: 1fr 1fr;
+    min-height: 50vh;
+  }
+
+  .arena-battle-panel {
+    padding: 16px 8px;
+    gap: 10px;
+  }
+
+  .arena-dais-platform.arena-3d-platform {
+    width: 100px;
+    height: 100px;
+  }
+
+  .arena-component-stage {
+    min-height: 120px;
+    margin: 8px 0;
+  }
+
+  .arena-battle-btn {
+    padding: 12px 24px;
+    font-size: 0.9rem;
+  }
+
+  .arena-telemetry-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .arena-telemetry-card {
+    padding: 6px 8px;
+    min-height: 50px;
+    flex-direction: row;
+    align-items: center;
     justify-content: space-between;
   }
 }
@@ -2144,17 +2217,14 @@ body.builder-body .arena-page {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Keep vertical split - just reduce panel padding */
   .arena-battle-stage {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .arena-battle-stage::after {
-    display: none;
+    grid-template-columns: 1fr 1fr;
+    min-height: 55vh;
   }
 
   .arena-battle-panel {
-    padding: 24px 20px;
+    padding: 20px 12px;
   }
 
   .arena-scenario-grid {

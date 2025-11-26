@@ -16,16 +16,27 @@ export function Component3DViewer({
   const sceneRef = useRef<any>(null);
   const rendererRef = useRef<any>(null);
   const animationIdRef = useRef<number | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const handleResizeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current || typeof window === 'undefined') {
       return;
     }
 
+    // Track if component is still mounted when async operations complete
+    let isMounted = true;
+    const canvas = canvasRef.current;
+
     // Dynamically import Three.js
     import('three').then((THREE) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+      // Exit early if component unmounted during import
+      if (!isMounted || !canvas) return;
+
+      // Get initial dimensions with fallback to prevent 0-size initialization
+      const width = canvas.clientWidth || 200;
+      const height = canvas.clientHeight || 200;
 
       // Setup scene
       const scene = new THREE.Scene();
@@ -35,7 +46,7 @@ export function Component3DViewer({
       // Setup camera - positioned to view component hovering above platform
       const camera = new THREE.PerspectiveCamera(
         50,
-        canvas.clientWidth / canvas.clientHeight,
+        width / height,
         0.1,
         100
       );
@@ -49,7 +60,7 @@ export function Component3DViewer({
         alpha: true
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+      renderer.setSize(width, height);
       rendererRef.current = renderer;
 
       // Add lights
@@ -182,6 +193,9 @@ export function Component3DViewer({
       // Animation loop
       let animationTime = 0;
       const animate = () => {
+        // Check if still mounted before continuing animation
+        if (!isMounted) return;
+
         animationIdRef.current = requestAnimationFrame(animate);
         animationTime += 0.016;
 
@@ -210,26 +224,77 @@ export function Component3DViewer({
 
       // Handle resize
       const handleResize = () => {
-        if (!canvas || !camera || !renderer) return;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
+        if (!isMounted || !canvas || !camera || !renderer) return;
+        const newWidth = canvas.clientWidth || 200;
+        const newHeight = canvas.clientHeight || 200;
+        if (newWidth > 0 && newHeight > 0) {
+          camera.aspect = newWidth / newHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(newWidth, newHeight);
+        }
       };
 
+      handleResizeRef.current = handleResize;
       window.addEventListener('resize', handleResize);
 
-      // Cleanup
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        if (animationIdRef.current !== null) {
-          cancelAnimationFrame(animationIdRef.current);
+      // Trigger initial resize after a short delay to ensure proper dimensions
+      // This handles cases where the canvas is in a flexbox container that hasn't fully laid out
+      timeoutRef.current = setTimeout(() => {
+        if (isMounted) {
+          handleResize();
         }
-        if (renderer) {
-          renderer.dispose();
-        }
-        scene.traverse((object: any) => {
+      }, 100);
+
+      // Use ResizeObserver for more reliable sizing in flex/grid containers
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserverRef.current = new ResizeObserver(() => {
+          if (isMounted) {
+            handleResize();
+          }
+        });
+        resizeObserverRef.current.observe(canvas);
+      }
+    }).catch((error) => {
+      console.error('Failed to load Three.js:', error);
+    });
+
+    // Cleanup function - called synchronously when effect re-runs or component unmounts
+    return () => {
+      isMounted = false;
+
+      // Clear timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      // Remove resize listener
+      if (handleResizeRef.current) {
+        window.removeEventListener('resize', handleResizeRef.current);
+        handleResizeRef.current = null;
+      }
+
+      // Disconnect ResizeObserver
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+
+      // Cancel animation frame
+      if (animationIdRef.current !== null) {
+        cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
+      }
+
+      // Dispose renderer
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+        rendererRef.current = null;
+      }
+
+      // Dispose scene objects
+      if (sceneRef.current) {
+        sceneRef.current.traverse((object: any) => {
           if (object.geometry) {
             object.geometry.dispose();
           }
@@ -241,10 +306,9 @@ export function Component3DViewer({
             }
           }
         });
-      };
-    }).catch((error) => {
-      console.error('Failed to load Three.js:', error);
-    });
+        sceneRef.current = null;
+      }
+    };
   }, [componentType, isRotating, isBattling]);
 
   return (
