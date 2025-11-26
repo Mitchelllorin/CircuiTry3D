@@ -16,6 +16,8 @@
     sans-serif;
   min-width: 0;
   overflow-x: hidden;
+  height: 100vh;
+  max-height: 100vh;
 }
 
 .practice-sidebar {
@@ -29,6 +31,8 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  overflow-y: auto;
+  max-height: 100vh;
 }
 
 .practice-sidebar h2 {
@@ -110,7 +114,9 @@
   flex-direction: column;
   gap: 32px;
   overflow-x: hidden;
+  overflow-y: auto;
   min-width: 0;
+  max-height: 100vh;
 }
 
 .worksheet-controls {
@@ -1170,13 +1176,320 @@
 .practice-supplement {
   display: grid;
   gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+/* Kirchhoff's Laws Styles */
+.kirchhoff-laws {
+  background: rgba(12, 32, 58, 0.74);
+  border: 1px solid rgba(116, 186, 255, 0.32);
+  border-radius: 18px;
+  padding: 24px 28px;
+}
+
+.kirchhoff-laws h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  color: #9fdcff;
+}
+
+.kirchhoff-intro {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: rgba(212, 236, 255, 0.78);
+}
+
+.kirchhoff-cards {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.kirchhoff-card {
+  background: rgba(10, 24, 48, 0.72);
+  border: 1px solid rgba(96, 168, 255, 0.28);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.kirchhoff-card[data-law="kcl"] {
+  border-left: 3px solid #ffcf6e;
+}
+
+.kirchhoff-card[data-law="kvl"] {
+  border-left: 3px solid #ff867d;
+}
+
+.kirchhoff-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.kirchhoff-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(80, 160, 255, 0.18);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #a8dcff;
+}
+
+.kirchhoff-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e2f4ff;
+}
+
+.kirchhoff-subtitle {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(180, 214, 255, 0.7);
+  margin-top: 2px;
+}
+
+.kirchhoff-statement {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #d6ecff;
+}
+
+.kirchhoff-formula {
+  display: inline-block;
+  background: rgba(22, 52, 96, 0.8);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #bce9ff;
+  margin-bottom: 14px;
+  font-family: "Fira Code", "Monaco", monospace;
+}
+
+.kirchhoff-examples {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  color: rgba(208, 232, 255, 0.85);
+  line-height: 1.6;
+}
+
+.kirchhoff-examples li {
+  margin-bottom: 6px;
+}
+
+.kirchhoff-tip {
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(16, 40, 80, 0.6);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: rgba(200, 228, 255, 0.85);
+  line-height: 1.5;
+}
+
+.kirchhoff-tip strong {
+  color: #9fd8ff;
+}
+
+/* Enhanced Triangle Deck Styles */
+.triangle-deck {
+  background: rgba(12, 34, 60, 0.72);
+  border: 1px solid rgba(108, 180, 255, 0.28);
+  border-radius: 18px;
+  padding: 24px 28px;
+  display: grid;
+  gap: 20px;
+}
+
+.triangle-deck-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #9fdcff;
+}
+
+.triangle-deck-intro {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(212, 236, 255, 0.78);
+}
+
+.triangle-card {
+  background: rgba(10, 24, 48, 0.72);
+  border: 1px solid rgba(96, 168, 255, 0.24);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.triangle-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.triangle-card-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e2f4ff;
+}
+
+.triangle-description {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: rgba(200, 228, 255, 0.72);
+}
+
+.triangle-divider {
+  stroke: rgba(120, 188, 255, 0.35);
+  stroke-width: 1.5;
+  stroke-dasharray: 4, 4;
+}
+
+.triangle-formulae {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.triangle-formulae li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.formula-solve {
+  font-size: 0.72rem;
+  color: rgba(180, 214, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 60px;
+}
+
+.formula-expr {
+  font-family: "Fira Code", "Monaco", monospace;
+  color: #d8f0ff;
+  font-weight: 500;
+}
+
+/* Enhanced Ohm's Law Wheel Styles */
+.ohms-wheel-intro {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  color: rgba(212, 236, 255, 0.78);
+  line-height: 1.5;
+}
+
+.ohms-wheel-legend {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(100, 168, 255, 0.2);
+}
+
+.ohms-wheel-legend h4 {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(160, 214, 255, 0.72);
+}
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-variable {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: "Fira Code", "Monaco", monospace;
+}
+
+.legend-label {
+  font-size: 0.78rem;
+  color: rgba(200, 228, 255, 0.72);
+}
+
+.ohms-wheel-breakdown {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(100, 168, 255, 0.2);
+}
+
+.ohms-wheel-breakdown h4 {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(160, 214, 255, 0.72);
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.breakdown-item {
+  background: rgba(10, 24, 48, 0.6);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.breakdown-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid;
+}
+
+.breakdown-var {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: "Fira Code", "Monaco", monospace;
+}
+
+.breakdown-label {
+  font-size: 0.72rem;
+  color: rgba(200, 228, 255, 0.65);
+}
+
+.breakdown-formulas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #d4ebff;
+  font-family: "Fira Code", "Monaco", monospace;
 }
 
 @media (max-width: 1180px) {
   .practice-page {
     grid-template-columns: 100%;
     min-width: 0;
+    height: auto;
+    max-height: none;
   }
 
   .practice-sidebar {
@@ -1186,8 +1499,11 @@
     flex-direction: row;
     gap: 16px;
     overflow-x: auto;
+    overflow-y: hidden;
     border-right: none;
     border-bottom: 1px solid rgba(80, 120, 180, 0.24);
+    max-height: none;
+    padding: 16px 20px;
   }
 
   .practice-sidebar h2 {
@@ -1201,11 +1517,17 @@
   .practice-main {
     padding: 28px 20px 40px;
     min-width: 0;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .practice-table {
     --worksheet-metric-label-width: 100px;
     --worksheet-component-min: 110px;
+  }
+
+  .legend-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
