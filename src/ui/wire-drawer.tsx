@@ -387,6 +387,13 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       workingNodes.push(endNode);
     }
 
+    // Ensure wire endpoints are precisely aligned to node positions
+    // This eliminates small gaps that could prevent circuit completion detection
+    if (newWire.points.length > 0) {
+      newWire.points[0] = { ...startNode.pos };
+      newWire.points[newWire.points.length - 1] = { ...endNode.pos };
+    }
+
     const junctionKeys = new Set<string>();
 
     const registerPoint = (point: Vec2) => `${Math.round(point.x * 10) / 10},${Math.round(point.y * 10) / 10}`;

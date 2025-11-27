@@ -4784,12 +4784,14 @@ body.android-optimized.menu-visible .status {
             }
 
             getWorldConnectionPoint() {
+                // Return exact junction position WITHOUT grid snapping to prevent gaps.
+                // Wires must connect precisely to junction centers.
                 if (this.connectionPoint) {
                     const worldPosition = new THREE.Vector3();
                     this.connectionPoint.getWorldPosition(worldPosition);
-                    return snapToGrid(worldPosition);
+                    return worldPosition;
                 }
-                return snapToGrid(this.position.clone());
+                return this.position.clone();
             }
 
             addConnection(wire) {
@@ -5737,22 +5739,24 @@ body.android-optimized.menu-visible .status {
             }
 
             getWorldConnectionPoint(side) {
-                const targetPoint = this.connectionPoints?.find(point => 
+                // Return exact terminal positions WITHOUT grid snapping to prevent gaps.
+                // Wires must connect precisely to component terminals.
+                const targetPoint = this.connectionPoints?.find(point =>
                     point.userData?.side === side
                 );
-                
+
                 if (targetPoint) {
                     const worldPosition = new THREE.Vector3();
                     targetPoint.getWorldPosition(worldPosition);
-                    return snapToGrid(worldPosition);
+                    return worldPosition;
                 }
-                
+
                 const offset = (side === 'positive' || side === 'right') ? 1.2 : -1.2;
-                return snapToGrid(new THREE.Vector3(
+                return new THREE.Vector3(
                     this.position.x + offset,
                     this.position.y,
                     this.position.z
-                ));
+                );
             }
 
             updateProperties(newProperties) {
@@ -5887,31 +5891,21 @@ body.android-optimized.menu-visible .status {
             }
 
             getStartPosition() {
+                // Always use exact terminal positions to prevent gaps between wires and components.
+                // Wire endpoints must connect precisely to terminals in all routing modes.
                 if (this.startObj.getWorldConnectionPoint) {
-                    const connectionPoint = this.startObj.getWorldConnectionPoint(this.startSide);
-                    // In freeform routing mode, don't snap wire endpoints to grid
-                    // This ensures wires connect exactly to component terminals
-                    const routerMode = getRouterMode();
-                    if (routerMode === 'freeform' || routerMode === 'simple') {
-                        return connectionPoint;
-                    }
-                    return snapToGrid(connectionPoint);
+                    return this.startObj.getWorldConnectionPoint(this.startSide);
                 }
-                return snapToGrid(this.startObj.position.clone());
+                return this.startObj.position.clone();
             }
 
             getEndPosition() {
+                // Always use exact terminal positions to prevent gaps between wires and components.
+                // Wire endpoints must connect precisely to terminals in all routing modes.
                 if (this.endObj.getWorldConnectionPoint) {
-                    const connectionPoint = this.endObj.getWorldConnectionPoint(this.endSide);
-                    // In freeform routing mode, don't snap wire endpoints to grid
-                    // This ensures wires connect exactly to component terminals
-                    const routerMode = getRouterMode();
-                    if (routerMode === 'freeform' || routerMode === 'simple') {
-                        return connectionPoint;
-                    }
-                    return snapToGrid(connectionPoint);
+                    return this.endObj.getWorldConnectionPoint(this.endSide);
                 }
-                return snapToGrid(this.endObj.position.clone());
+                return this.endObj.position.clone();
             }
 
             createCurve() {
@@ -7300,16 +7294,12 @@ body.android-optimized.menu-visible .status {
 
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
             const mode = getRouterMode();
-            
-            // In freeform and simple modes, don't snap endpoints to preserve exact connections
-            let A, B;
-            if (mode === 'freeform' || mode === 'simple') {
-                A = startPos.clone();
-                B = endPos.clone();
-            } else {
-                A = snapToGrid(startPos.clone());
-                B = snapToGrid(endPos.clone());
-            }
+
+            // ALWAYS use exact terminal positions for wire endpoints to prevent gaps.
+            // Only intermediate waypoints are snapped for visual alignment.
+            // This ensures wires connect precisely to component terminals in all routing modes.
+            const A = startPos.clone();
+            const B = endPos.clone();
             
             // Support free-form routing
             if (mode === 'freeform') {
