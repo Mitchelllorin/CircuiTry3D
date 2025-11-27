@@ -12,9 +12,13 @@ import { handleWireDraw } from '../src/WireManager';
 const SNAP_RADIUS = 12; // px - snap endpoint to nearest pin/junction
 const INTERSECT_TOLERANCE = 4; // px - detect crossing intersections
 const MERGE_RADIUS = 6; // px - merge nodes when within this distance
-const WIRE_HIT_RADIUS = 10; // px - detect clicks on existing wire segments
+const WIRE_HIT_RADIUS_MOUSE = 16; // px - detect clicks on existing wire segments (mouse)
+const WIRE_HIT_RADIUS_TOUCH = 24; // px - detect touches on existing wire segments (larger for fingers)
 const ROUTING_GRID_SIZE = 24; // px - grid cell size for routing mode
 const MIN_WIRE_LENGTH = 1; // px - ignore jitter-sized wires
+
+// Detect if device supports touch
+const isTouchDevice = () => typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
 const CANVAS_COLORS = {
   backgroundTop: "#040d20",
@@ -100,7 +104,36 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   const [snapTarget, setSnapTarget] = useState<Node | null>(null);
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [hoveredWireInfo, setHoveredWireInfo] = useState<{ wireId: string; point: Vec2 } | null>(null);
+  const [pulsePhase, setPulsePhase] = useState(0);
   const startNodeRef = useRef<Node | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Animate the pulse effect when hovering over a wire
+  useEffect(() => {
+    if (hoveredWireInfo) {
+      const animate = () => {
+        setPulsePhase(prev => (prev + 0.08) % (Math.PI * 2));
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+      animationFrameRef.current = requestAnimationFrame(animate);
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      setPulsePhase(0);
+    }
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [hoveredWireInfo]);
+
+  // Get the appropriate wire hit radius based on input type
+  const getWireHitRadius = useCallback(() => {
+    return isTouchDevice() ? WIRE_HIT_RADIUS_TOUCH : WIRE_HIT_RADIUS_MOUSE;
+  }, []);
 
   const cloneWire = useCallback((wire: Wire): Wire => ({
     ...wire,
@@ -206,6 +239,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   }, [mode, buildRoutingGrid, toGridPoint, fromGridPoint, nodes]);
 
   const findWireHit = useCallback((pos: Vec2) => {
+    const hitRadius = getWireHitRadius();
     let best:
       | { wireIndex: number; point: Vec2; segIndex: number; distance: number; wire: Wire }
       | null = null;
@@ -214,7 +248,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       const closest = findClosestPointOnWire(pos, wire);
       if (!closest) return;
 
-      if (closest.distance <= WIRE_HIT_RADIUS) {
+      if (closest.distance <= hitRadius) {
         if (!best || closest.distance < best.distance) {
           best = {
             wireIndex,
@@ -228,7 +262,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     });
 
     return best;
-  }, [wires]);
+  }, [wires, getWireHitRadius]);
 
   const computePathLength = useCallback((path: Vec2[]) => {
     if (path.length < 2) {
@@ -248,11 +282,26 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   const getMousePos = useCallback((e: React.MouseEvent<HTMLCanvasElement>): Vec2 => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
-    
+
     const rect = canvas.getBoundingClientRect();
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
+    };
+  }, []);
+
+  /**
+   * Get touch position relative to canvas
+   */
+  const getTouchPos = useCallback((e: React.TouchEvent<HTMLCanvasElement>): Vec2 => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
     };
   }, []);
 
@@ -485,6 +534,235 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     findSnapTarget,
     mode,
     buildWirePath,
+    wires,
+    cloneWire,
+    nodes,
+    onWiresChange,
+    onNodesChange
+  ]);
+
+  /**
+   * Handle touch start - start drawing wire (mobile support)
+   */
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Prevent scrolling while drawing
+    const pos = getTouchPos(e);
+    let snapNode = findSnapTarget(pos);
+
+    if (!snapNode) {
+      const wireHit = findWireHit(pos);
+      if (wireHit) {
+        const updatedWire = cloneWire(wireHit.wire);
+        const ensured = ensurePointOnWire(updatedWire, wireHit.point, 1);
+        if (ensured.index !== -1 && ensured.point) {
+          const existingNode = findClosestNode(ensured.point, nodes, MERGE_RADIUS / 2);
+          const junctionNode = existingNode ?? createNode('junction', ensured.point);
+          junctionNode.pos = { ...ensured.point };
+
+          const updatedWires = [
+            ...wires.slice(0, wireHit.wireIndex),
+            updatedWire,
+            ...wires.slice(wireHit.wireIndex + 1)
+          ];
+          const updatedNodes = existingNode ? nodes : [...nodes, junctionNode];
+
+          rebuildAdjacencyForWires(updatedWires, updatedNodes);
+
+          onWiresChange(updatedWires);
+          onNodesChange(updatedNodes);
+
+          snapNode = junctionNode;
+        }
+      }
+    }
+
+    const startPos = snapNode ? snapNode.pos : pos;
+    startNodeRef.current = snapNode;
+    setCurrentWire([startPos]);
+    setIsDrawing(true);
+    setSnapTarget(null);
+    setHoveredNode(snapNode);
+    setHoveredWireInfo(null);
+  }, [getTouchPos, findSnapTarget, nodes, wires, findWireHit, cloneWire, onNodesChange, onWiresChange]);
+
+  /**
+   * Handle touch move - update wire preview (mobile support)
+   */
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const pos = getTouchPos(e);
+    const snapNode = findSnapTarget(pos);
+
+    setHoveredNode(snapNode);
+
+    if (!isDrawing) {
+      if (!snapNode) {
+        const hit = findWireHit(pos);
+        setHoveredWireInfo(hit ? { wireId: hit.wire.id, point: hit.point } : null);
+      } else {
+        setHoveredWireInfo(null);
+      }
+      return;
+    }
+
+    setHoveredWireInfo(null);
+
+    if (currentWire.length === 0) {
+      return;
+    }
+
+    const endPos = snapNode ? snapNode.pos : pos;
+    const startPoint = currentWire[0];
+    const path = buildWirePath(startPoint, endPos);
+    setCurrentWire(path);
+    setSnapTarget(snapNode);
+  }, [getTouchPos, findSnapTarget, isDrawing, currentWire, findWireHit, buildWirePath]);
+
+  /**
+   * Handle touch end - complete wire drawing (mobile support)
+   */
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || currentWire.length === 0) {
+      setIsDrawing(false);
+      setCurrentWire([]);
+      setSnapTarget(null);
+      startNodeRef.current = null;
+      return;
+    }
+
+    const pos = getTouchPos(e);
+    const endSnapNode = findSnapTarget(pos);
+    const endPos = endSnapNode ? endSnapNode.pos : pos;
+    const startPos = currentWire[0];
+
+    const finalPath = buildWirePath(startPos, endPos);
+    const pathLength = computePathLength(finalPath);
+
+    if (finalPath.length < 2 || pathLength < MIN_WIRE_LENGTH) {
+      setIsDrawing(false);
+      setCurrentWire([]);
+      setSnapTarget(null);
+      setHoveredNode(null);
+      setHoveredWireInfo(null);
+      startNodeRef.current = null;
+      return;
+    }
+
+    const newWire = createWire(finalPath);
+
+    const workingWires = wires.map((wire) => cloneWire(wire));
+    const workingNodes: Node[] = [...nodes];
+
+    let startNode = startNodeRef.current ?? findClosestNode(startPos, workingNodes, MERGE_RADIUS / 2);
+    if (!startNode) {
+      startNode = createNode('wireAnchor', startPos);
+      workingNodes.push(startNode);
+    }
+
+    let endNode = endSnapNode ?? findClosestNode(endPos, workingNodes, MERGE_RADIUS / 2);
+    if (!endNode) {
+      endNode = createNode('wireAnchor', endPos);
+      workingNodes.push(endNode);
+    }
+
+    const junctionKeys = new Set<string>();
+
+    const registerPoint = (point: Vec2) => `${Math.round(point.x * 10) / 10},${Math.round(point.y * 10) / 10}`;
+
+    const skipEndpoints = (point: Vec2) =>
+      distance(point, startNode!.pos) <= MERGE_RADIUS || distance(point, endNode!.pos) <= MERGE_RADIUS;
+
+    for (let w = 0; w < workingWires.length; w++) {
+      const wire = workingWires[w];
+
+      for (let i = 0; i < wire.points.length - 1; i++) {
+        const A = wire.points[i];
+        const B = wire.points[i + 1];
+
+        for (let j = 0; j < newWire.points.length - 1; j++) {
+          const C = newWire.points[j];
+          const D = newWire.points[j + 1];
+
+          const intersection = segmentIntersect(A, B, C, D);
+          if (!intersection) continue;
+
+          const distToSegmentStart = distance(intersection, C);
+          const distToSegmentEnd = distance(intersection, D);
+          if (distToSegmentStart <= INTERSECT_TOLERANCE || distToSegmentEnd <= INTERSECT_TOLERANCE) {
+            continue;
+          }
+
+          if (skipEndpoints(intersection)) {
+            continue;
+          }
+
+          const ensuredExisting = ensurePointOnWire(wire, intersection, 1);
+          if (ensuredExisting.index === -1 || !ensuredExisting.point) {
+            continue;
+          }
+
+          const actualPoint = ensuredExisting.point;
+          const ensureNew = ensurePointOnWire(newWire, actualPoint, 1);
+          if (ensureNew.index === -1 || !ensureNew.point) {
+            continue;
+          }
+
+          const key = registerPoint(actualPoint);
+          if (junctionKeys.has(key)) {
+            continue;
+          }
+
+          const existingNode = findClosestNode(actualPoint, workingNodes, MERGE_RADIUS / 2);
+          if (existingNode) {
+            junctionKeys.add(key);
+            continue;
+          }
+
+          const junctionNode = createNode('junction', actualPoint);
+          workingNodes.push(junctionNode);
+          junctionKeys.add(key);
+        }
+      }
+    }
+
+    const nodesToMerge: [Node, Node][] = [];
+    for (let i = 0; i < workingNodes.length; i++) {
+      for (let j = i + 1; j < workingNodes.length; j++) {
+        if (shouldMergeNodes(workingNodes[i], workingNodes[j], MERGE_RADIUS)) {
+          nodesToMerge.push([workingNodes[i], workingNodes[j]]);
+        }
+      }
+    }
+
+    const mergedNodeIds = new Set<string>();
+    for (const [nodeA, nodeB] of nodesToMerge) {
+      if (!mergedNodeIds.has(nodeB.id)) {
+        mergeNodes(nodeA, nodeB);
+        mergedNodeIds.add(nodeB.id);
+      }
+    }
+
+    const finalNodes = workingNodes.filter((n) => !mergedNodeIds.has(n.id));
+    const finalWires = [...workingWires, newWire];
+
+    rebuildAdjacencyForWires(finalWires, finalNodes);
+
+    onWiresChange(finalWires);
+    onNodesChange(finalNodes);
+
+    setIsDrawing(false);
+    setCurrentWire([]);
+    setSnapTarget(null);
+    setHoveredNode(null);
+    setHoveredWireInfo(null);
+    startNodeRef.current = null;
+  }, [
+    isDrawing,
+    currentWire,
+    getTouchPos,
+    findSnapTarget,
+    buildWirePath,
+    computePathLength,
     wires,
     cloneWire,
     nodes,
@@ -775,21 +1053,65 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
 
       const { point } = hoveredWireInfo;
 
+      // Animated pulse effect - grows and fades
+      const pulseScale = 1 + Math.sin(pulsePhase) * 0.25;
+      const pulseAlpha = 0.5 + Math.sin(pulsePhase) * 0.3;
+      const outerRingScale = 1.5 + Math.sin(pulsePhase * 0.7) * 0.4;
+      const outerRingAlpha = 0.3 - Math.sin(pulsePhase * 0.7) * 0.15;
+
+      // Outer expanding ring (like a ripple)
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = CANVAS_COLORS.hoveredWirePulse;
-      ctx.shadowColor = CANVAS_COLORS.hoveredWirePulse;
-      ctx.shadowBlur = 26;
+      ctx.strokeStyle = `rgba(60, 255, 220, ${Math.max(0, outerRingAlpha)})`;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, 14 * outerRingScale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Main glowing circle
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(60, 255, 220, ${pulseAlpha * 0.6})`;
+      ctx.shadowColor = CANVAS_COLORS.hoveredWirePulse;
+      ctx.shadowBlur = 28 * pulseScale;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 11 * pulseScale, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
+      // Inner bright circle
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.lineWidth = 1.4;
+      ctx.fillStyle = `rgba(200, 255, 240, ${0.7 + pulseAlpha * 0.2})`;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, 7 * pulseScale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // White ring around circle
+      ctx.save();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 + pulseAlpha * 0.2})`;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 11 * pulseScale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw "+" icon in the center to indicate "add junction here"
+      ctx.save();
+      ctx.strokeStyle = `rgba(40, 80, 70, ${0.85 + pulseAlpha * 0.1})`;
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      const plusSize = 4 * pulseScale;
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(point.x - plusSize, point.y);
+      ctx.lineTo(point.x + plusSize, point.y);
+      ctx.stroke();
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y - plusSize);
+      ctx.lineTo(point.x, point.y + plusSize);
       ctx.stroke();
       ctx.restore();
     };
@@ -808,7 +1130,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     drawHoveredWireCue();
 
     ctx.restore();
-  }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget]);
+  }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget, pulsePhase]);
 
   return (
     <canvas
@@ -818,8 +1140,12 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{
         cursor: isDrawing ? 'crosshair' : hoveredNode || hoveredWireInfo ? 'pointer' : 'default',
+        touchAction: 'none', // Prevent default touch behaviors like scrolling
         borderRadius: '18px',
         border: '1px solid rgba(136, 204, 255, 0.28)',
         boxShadow: '0 24px 48px rgba(6, 16, 36, 0.45)',
