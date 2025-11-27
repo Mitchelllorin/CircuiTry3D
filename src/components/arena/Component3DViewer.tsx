@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { getComponent3D } from '../circuit/Component3DLibrary';
+import {
+  getMobileRendererOptions,
+  getMobilePixelRatio,
+  getGeometrySegments,
+  getTargetFrameRate
+} from '../../utils/mobilePerformance';
 
 interface Component3DViewerProps {
   componentType: string;
@@ -53,15 +59,21 @@ export function Component3DViewer({
       camera.position.set(0, 2, 4);
       camera.lookAt(0, 0.5, 0);
 
-      // Setup renderer
+      // Setup renderer with mobile-optimized settings
+      const rendererOptions = getMobileRendererOptions();
       const renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true,
-        alpha: true
+        antialias: rendererOptions.antialias,
+        alpha: rendererOptions.alpha,
+        powerPreference: rendererOptions.powerPreference,
+        precision: rendererOptions.precision
       });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(getMobilePixelRatio());
       renderer.setSize(width, height);
       rendererRef.current = renderer;
+
+      // Get geometry detail level for mobile
+      const segments = getGeometrySegments(32);
 
       // Add lights
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -97,29 +109,29 @@ export function Component3DViewer({
                 shapeDef.scale?.[0] || 0.5,
                 shapeDef.scale?.[0] || 0.5,
                 shapeDef.scale?.[1] || 1,
-                32
+                segments
               );
               break;
             case 'sphere':
               geometry = new THREE.SphereGeometry(
                 shapeDef.scale?.[0] || 0.5,
-                32,
-                32
+                segments,
+                segments
               );
               break;
             case 'cone':
               geometry = new THREE.ConeGeometry(
                 shapeDef.scale?.[0] || 0.5,
                 shapeDef.scale?.[1] || 1,
-                32
+                segments
               );
               break;
             case 'torus':
               geometry = new THREE.TorusGeometry(
                 shapeDef.scale?.[0] || 0.5,
                 shapeDef.scale?.[1] || 0.2,
-                16,
-                100
+                Math.max(8, segments / 2),
+                segments * 3
               );
               break;
           }
@@ -158,7 +170,7 @@ export function Component3DViewer({
             leadDef.radius,
             leadDef.radius,
             leadDef.length,
-            16
+            Math.max(8, segments / 2)
           );
 
           const material = new THREE.MeshStandardMaterial({
@@ -190,14 +202,25 @@ export function Component3DViewer({
 
       scene.add(componentGroup);
 
-      // Animation loop
+      // Animation loop with mobile frame rate throttling
       let animationTime = 0;
-      const animate = () => {
+      let lastFrameTime = 0;
+      const targetFps = getTargetFrameRate();
+      const frameInterval = 1000 / targetFps;
+
+      const animate = (currentTime: number) => {
         // Check if still mounted before continuing animation
         if (!isMounted) return;
 
         animationIdRef.current = requestAnimationFrame(animate);
-        animationTime += 0.016;
+
+        // Throttle frame rate on mobile for battery savings
+        const elapsed = currentTime - lastFrameTime;
+        if (elapsed < frameInterval) return;
+        lastFrameTime = currentTime - (elapsed % frameInterval);
+
+        const deltaTime = elapsed / 1000; // Convert to seconds
+        animationTime += deltaTime;
 
         if (isRotating && !isBattling) {
           // Slow rotation: 12 seconds per revolution like a car in a showroom
@@ -220,7 +243,7 @@ export function Component3DViewer({
         renderer.render(scene, camera);
       };
 
-      animate();
+      animate(0);
 
       // Handle resize
       const handleResize = () => {

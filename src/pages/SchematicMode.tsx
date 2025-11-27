@@ -2280,16 +2280,99 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           // Initialize current flow animation
           flowAnimationSystem = new CurrentFlowAnimationSystem(three, scene);
 
-          // Add flow paths for the circuit (simple example - can be enhanced based on topology)
-          if (practiceProblem.topology === "series") {
-            // For series circuits, add flow along the main path
-            const wireElements = practiceProblem.components.filter((c: any) => c.kind === "wire");
-            wireElements.forEach((wire: any) => {
-              if (wire.path && wire.path.length > 1) {
-                flowAnimationSystem?.addFlowPath(wire.path, 2, 0.3);
-              }
-            });
+          // Solve the circuit to get current values
+          const solution = solvePracticeProblem(practiceProblem);
+
+          // Set the circuit as closed (practice problems are complete circuits)
+          flowAnimationSystem.setCircuitClosed(true);
+
+          // Set current intensity based on solved circuit current
+          if (solution.totals.current !== undefined) {
+            flowAnimationSystem.setCurrentIntensity(solution.totals.current);
           }
+
+          // Build flow paths based on circuit topology
+          // These paths represent the complete circuit loop for animation
+          const flowPaths = buildFlowPathsForTopology(practiceProblem);
+          flowPaths.forEach(path => {
+            flowAnimationSystem?.addFlowPath({
+              path,
+              particleCount: 3,
+              baseSpeed: 0.35,
+              currentAmps: solution.totals.current
+            });
+          });
+        };
+
+        // Helper function to build flow paths based on topology
+        const buildFlowPathsForTopology = (problem: PracticeProblem): Vec2[][] => {
+          const paths: Vec2[][] = [];
+
+          // Define standard circuit layouts matching presets.ts
+          if (problem.topology === "series") {
+            // Series: single loop path from battery negative through components back to positive
+            const left = -4.4;
+            const right = 4.4;
+            const top = 2.7;
+            const bottom = -2.7;
+
+            // Complete loop: battery (-) -> bottom left -> bottom right -> top right -> top left -> battery (+)
+            // This is the electron flow direction (negative to positive)
+            paths.push([
+              { x: left, z: bottom },           // Start at battery negative
+              { x: right, z: bottom },          // Bottom right
+              { x: right, z: top },             // Top right
+              { x: left, z: top },              // Top left
+              { x: left, z: bottom + 0.9 }      // Back to battery positive terminal area
+            ]);
+          } else if (problem.topology === "parallel") {
+            // Parallel: main loop with branch points
+            const left = -2.6;
+            const right = 3.8;
+            const top = 2.5;
+            const bottom = -2.5;
+
+            // Main path along the sides
+            paths.push([
+              { x: left, z: bottom },
+              { x: right, z: bottom },
+              { x: right, z: top },
+              { x: left, z: top },
+              { x: left, z: bottom + 0.9 }
+            ]);
+
+            // Add paths for parallel branches if there are components
+            const branchCount = Math.max(problem.components.length, 1);
+            const spacing = (right - left) / (branchCount + 1);
+
+            for (let i = 0; i < branchCount; i++) {
+              const x = left + spacing * (i + 1);
+              paths.push([
+                { x, z: top },
+                { x, z: bottom }
+              ]);
+            }
+          } else if (problem.topology === "combination") {
+            // Combination: main series path with parallel section
+            paths.push([
+              { x: -4.2, z: -2.3 },   // Start
+              { x: -4.2, z: 2.3 },    // Top left
+              { x: 1.4, z: 2.3 },     // Branch top
+              { x: 1.4, z: -2.3 },    // Drop node
+              { x: -2.0, z: -2.3 },   // Bottom left
+              { x: -4.2, z: -2.3 }    // Back to start
+            ]);
+
+            // Parallel branch path
+            paths.push([
+              { x: 1.4, z: 2.3 },
+              { x: 3.2, z: 2.3 },
+              { x: 3.2, z: -0.3 },
+              { x: 1.4, z: -0.3 }
+            ]);
+          }
+
+          return paths;
         };
 
         applyProblemRef.current = setCircuit;

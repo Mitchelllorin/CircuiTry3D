@@ -4,6 +4,7 @@ import { HashRouter } from "react-router-dom";
 import App from "./routes/App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
+import { initializeAndroid, registerServiceWorker, isCapacitor } from "./hooks/capacitor/useAndroidInit";
 
 window.addEventListener('error', (event) => {
   document.body.style.background = '#1a0000';
@@ -31,6 +32,28 @@ const container = document.getElementById("root");
 if (!container) throw new Error("Root container not found");
 
 try {
+  // Register service worker for PWA (web only)
+  registerServiceWorker();
+
+  // Initialize Android/Capacitor features
+  initializeAndroid({
+    onBackButton: () => {
+      // Return false to use default back navigation
+      // Return true to prevent default and handle custom behavior
+      return false;
+    },
+    onResume: () => {
+      console.log('[App] Resumed from background');
+      // Re-sync data or refresh state if needed
+    },
+    onPause: () => {
+      console.log('[App] Going to background');
+      // Save state or pause animations if needed
+    }
+  }).catch((error) => {
+    console.warn('[App] Android initialization failed:', error);
+  });
+
   createRoot(container).render(
     <React.StrictMode>
       <HashRouter>
