@@ -1,11 +1,14 @@
 body.builder-body .arena-page {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
 }
 
 .arena-page {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: radial-gradient(circle at 20% 20%, var(--brand-primary-dim), transparent 55%),
     radial-gradient(circle at 80% 10%, transparent, transparent 50%),
     linear-gradient(180deg, #020617 0%, #0f172a 45%, #020617 100%);
@@ -74,6 +77,7 @@ body.builder-body .arena-page {
 
 .arena-body {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -82,6 +86,7 @@ body.builder-body .arena-page {
   margin: 0 auto;
   width: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .arena-wire-section {
@@ -2326,18 +2331,6 @@ body.builder-body .arena-page {
   }
 }
 
-/* Formulas section styling */
-.arena-formulas-section {
-  margin-top: 24px;
-}
-
-.arena-formula-card {
-  padding: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.4);
-}
-
 /* Builder toolbar metric enhancements */
 .slider-metric {
   transition: all 0.2s ease;
@@ -2399,14 +2392,5 @@ body.builder-body .arena-page {
 
 .metric-value-changed {
   animation: metric-flash 0.6s ease-in-out;
-}
-
-/* Educational transparency features */
-.arena-formula-highlight {
-  background: rgba(136, 204, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-  color: rgba(136, 204, 255, 0.95);
 }
 
