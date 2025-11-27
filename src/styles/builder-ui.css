@@ -372,6 +372,19 @@ body.builder-body {
   max-height: 92vh;
 }
 
+.builder-panel-shell--environment {
+  width: min(94vw, 720px);
+  max-height: 90vh;
+}
+
+.builder-panel-body--environment {
+  overflow: auto;
+  padding: 0;
+  background: transparent;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .builder-panel-close {
   position: absolute;
   top: 16px;
@@ -883,6 +896,18 @@ body.builder-body {
 .slider-chip[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.slider-chip[data-active="true"] {
+  border-color: rgba(0, 255, 136, 0.65);
+  background: rgba(0, 255, 136, 0.12);
+  color: #c8f8e8;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+}
+
+.slider-chip[data-active="true"]:hover:not([disabled]) {
+  border-color: rgba(0, 255, 136, 0.75);
+  background: rgba(0, 255, 136, 0.18);
 }
 
 .slider-chip-label {
