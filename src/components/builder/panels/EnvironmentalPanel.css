@@ -1,0 +1,473 @@
+/**
+ * Environmental Panel Styles
+ * Professional styling for the environmental conditions panel in the Builder workspace.
+ * Follows the CircuiTry3D design system with navy backgrounds, cyan/green accents,
+ * and educational W.I.R.E. color coding.
+ */
+
+.env-panel {
+  background: rgba(10, 24, 48, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(3, 12, 32, 0.45);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.env-panel--compact {
+  border-radius: 14px;
+}
+
+/* Header */
+.env-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 40, 72, 0.65),
+    rgba(14, 32, 60, 0.45)
+  );
+  border-bottom: 1px solid rgba(136, 204, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.env-panel__title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.env-panel__icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.env-panel__title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.env-panel__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(200, 228, 255, 0.88);
+}
+
+.env-panel__scenario-name {
+  font-size: 11px;
+  color: rgba(136, 204, 255, 0.72);
+  font-weight: 500;
+}
+
+.env-panel__toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.28);
+  background: rgba(14, 30, 58, 0.75);
+  color: rgba(200, 228, 255, 0.88);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.env-panel__toggle:hover {
+  background: rgba(20, 40, 72, 0.85);
+  border-color: rgba(136, 204, 255, 0.42);
+}
+
+/* Body */
+.env-panel__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Section */
+.env-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.env-panel__section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(136, 204, 255, 0.65);
+}
+
+.env-panel__section-hint {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(180, 210, 240, 0.55);
+  line-height: 1.4;
+}
+
+/* Scenarios Grid */
+.env-panel__scenarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.env-panel__scenario-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  background: rgba(14, 30, 58, 0.65);
+  color: rgba(200, 228, 255, 0.82);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.env-panel__scenario-btn:hover {
+  background: rgba(20, 40, 72, 0.75);
+  border-color: rgba(136, 204, 255, 0.38);
+  transform: translateY(-1px);
+}
+
+.env-panel__scenario-btn--active {
+  background: rgba(0, 255, 136, 0.12);
+  border-color: rgba(0, 255, 136, 0.55);
+  color: #c8f8e8;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.18);
+}
+
+.env-panel__scenario-btn--active:hover {
+  background: rgba(0, 255, 136, 0.18);
+  border-color: rgba(0, 255, 136, 0.65);
+}
+
+.env-panel__scenario-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.env-panel__scenario-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Conditions Display */
+.env-panel__conditions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.env-panel__condition {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(14, 30, 58, 0.55);
+  border: 1px solid rgba(136, 204, 255, 0.15);
+}
+
+.env-panel__condition-icon {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.env-panel__condition-label {
+  font-size: 11px;
+  color: rgba(180, 210, 240, 0.65);
+  flex: 1;
+}
+
+.env-panel__condition-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Metrics Display */
+.env-panel__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.env-panel__metric {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(14, 30, 58, 0.65);
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  transition: all 0.2s ease;
+}
+
+.env-panel__metric--normal {
+  border-color: rgba(136, 204, 255, 0.22);
+}
+
+.env-panel__metric--warning {
+  border-color: rgba(255, 170, 60, 0.45);
+  background: rgba(255, 170, 60, 0.08);
+}
+
+.env-panel__metric--critical {
+  border-color: rgba(255, 80, 80, 0.55);
+  background: rgba(255, 80, 80, 0.1);
+}
+
+.env-panel__metric-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.env-panel__metric-letter {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* W.I.R.E. Color Coding */
+.env-panel__metric-letter--watts {
+  background: rgba(0, 136, 255, 0.25);
+  color: #88ccff;
+  border: 1px solid rgba(0, 136, 255, 0.4);
+}
+
+.env-panel__metric-letter--current {
+  background: rgba(255, 136, 68, 0.25);
+  color: #ffaa55;
+  border: 1px solid rgba(255, 136, 68, 0.4);
+}
+
+.env-panel__metric-letter--resistance {
+  background: rgba(0, 255, 136, 0.2);
+  color: #66ffaa;
+  border: 1px solid rgba(0, 255, 136, 0.4);
+}
+
+.env-panel__metric-letter--voltage {
+  background: rgba(255, 68, 68, 0.25);
+  color: #ff8888;
+  border: 1px solid rgba(255, 68, 68, 0.4);
+}
+
+.env-panel__metric-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.88);
+  flex: 1;
+}
+
+.env-panel__metric-modifier {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.env-panel__metric-modifier--up {
+  background: rgba(255, 136, 68, 0.2);
+  color: #ffaa66;
+}
+
+.env-panel__metric-modifier--down {
+  background: rgba(0, 255, 136, 0.15);
+  color: #66ffaa;
+}
+
+.env-panel__metric-values {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.env-panel__metric-base,
+.env-panel__metric-adjusted {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.env-panel__metric-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(180, 210, 240, 0.55);
+}
+
+.env-panel__metric-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(200, 228, 255, 0.78);
+  font-variant-numeric: tabular-nums;
+}
+
+.env-panel__metric-value--primary {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.95);
+}
+
+.env-panel__metric-arrow {
+  font-size: 14px;
+  color: rgba(136, 204, 255, 0.45);
+  flex-shrink: 0;
+}
+
+/* Performance Indicators */
+.env-panel__performance {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.env-panel__indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: rgba(14, 30, 58, 0.55);
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  transition: all 0.2s ease;
+}
+
+.env-panel__indicator--normal {
+  border-color: rgba(0, 255, 136, 0.35);
+}
+
+.env-panel__indicator--warning {
+  border-color: rgba(255, 170, 60, 0.45);
+  background: rgba(255, 170, 60, 0.08);
+}
+
+.env-panel__indicator--critical {
+  border-color: rgba(255, 80, 80, 0.55);
+  background: rgba(255, 80, 80, 0.1);
+}
+
+.env-panel__indicator-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(180, 210, 240, 0.65);
+}
+
+.env-panel__indicator-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(200, 228, 255, 0.95);
+  font-variant-numeric: tabular-nums;
+}
+
+.env-panel__indicator--normal .env-panel__indicator-value {
+  color: #66ffaa;
+}
+
+.env-panel__indicator--warning .env-panel__indicator-value {
+  color: #ffaa66;
+}
+
+.env-panel__indicator--critical .env-panel__indicator-value {
+  color: #ff8888;
+}
+
+/* Footer */
+.env-panel__footer {
+  padding-top: 12px;
+  border-top: 1px solid rgba(136, 204, 255, 0.12);
+}
+
+.env-panel__description {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(180, 210, 240, 0.6);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .env-panel__scenarios {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .env-panel__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .env-panel__conditions {
+    grid-template-columns: 1fr;
+  }
+
+  .env-panel__performance {
+    grid-template-columns: 1fr;
+  }
+
+  .env-panel__body {
+    padding: 12px;
+    gap: 14px;
+  }
+
+  .env-panel__scenario-btn {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .env-panel__scenario-icon {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .env-panel__scenarios {
+    grid-template-columns: 1fr;
+  }
+
+  .env-panel__header {
+    padding: 12px 14px;
+  }
+
+  .env-panel__title {
+    font-size: 12px;
+  }
+
+  .env-panel__icon {
+    font-size: 20px;
+  }
+}

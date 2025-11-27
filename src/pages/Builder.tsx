@@ -15,6 +15,11 @@ import "../styles/schematic.css";
 import { ArenaPanel } from "../components/builder/panels/ArenaPanel";
 import { PracticePanel } from "../components/builder/panels/PracticePanel";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
+import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
+import {
+  type EnvironmentalScenario,
+  getDefaultScenario,
+} from "../data/environmentalScenarios";
 import Practice from "./Practice";
 import ArenaView from "../components/arena/ArenaView";
 import { LeftToolbar } from "../components/builder/toolbars/LeftToolbar";
@@ -629,6 +634,16 @@ export default function Builder() {
   const [isCompactWorksheetOpen, setCompactWorksheetOpen] = useState(false);
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
   const [isCircuitLocked, setCircuitLocked] = useState(false);
+  const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
+  const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
+    getDefaultScenario()
+  );
+  const [circuitBaseMetrics, setCircuitBaseMetrics] = useState({
+    watts: 0,
+    current: 0,
+    resistance: 0,
+    voltage: 0,
+  });
 
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
@@ -895,6 +910,10 @@ export default function Builder() {
     }
     setArenaPanelOpen(true);
   }, [lastArenaExport, setArenaPanelOpen]);
+
+  const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
+    setActiveEnvironment(scenario);
+  }, []);
 
   const resetLogoSettings = useCallback(() => {
     // Reset to defaults by setting each property
@@ -1519,6 +1538,39 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
+              <span className="slider-heading">Environmental Conditions</span>
+              <div className="menu-track menu-track-chips">
+                <div
+                  role="status"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(136, 204, 255, 0.78)",
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(136, 204, 255, 0.22)",
+                    background: "rgba(14, 30, 58, 0.48)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>{activeEnvironment.icon}</span>
+                  <span>Active: {activeEnvironment.name}</span>
+                </div>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => setEnvironmentalPanelOpen(true)}
+                  title="Open Environmental Conditions panel to simulate different operating environments"
+                  data-active={activeEnvironment.id !== "standard" ? "true" : undefined}
+                >
+                  <span className="slider-chip-label">Configure Environment</span>
+                </button>
+              </div>
+            </div>
+            <div className="slider-section">
               <span className="slider-heading">Practice</span>
               <div className="menu-track menu-track-chips">
                 <div
@@ -2015,6 +2067,34 @@ export default function Builder() {
           }}
         />
       )}
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--environment${isEnvironmentalPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isEnvironmentalPanelOpen}
+        onClick={() => setEnvironmentalPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--environment"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setEnvironmentalPanelOpen(false)}
+            aria-label="Close environmental conditions"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--environment">
+            <EnvironmentalPanel
+              baseMetrics={circuitBaseMetrics}
+              onScenarioChange={handleEnvironmentChange}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
