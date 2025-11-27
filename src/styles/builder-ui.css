@@ -413,8 +413,61 @@ body.builder-body {
 
 .builder-panel-body--practice {
   overflow: auto;
-  padding: 16px;
+  padding: 0;
   background: rgba(8, 20, 44, 0.9);
+}
+
+.builder-panel-body--practice .practice-page {
+  display: flex;
+  flex-direction: column;
+  min-height: auto;
+  overflow: visible;
+}
+
+.builder-panel-body--practice .practice-sidebar {
+  position: relative;
+  top: auto;
+  z-index: auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  overflow-x: auto;
+  border-right: none;
+  border-bottom: 1px solid rgba(80, 120, 180, 0.24);
+  padding: 16px;
+}
+
+.builder-panel-body--practice .practice-sidebar h2 {
+  display: none;
+}
+
+.builder-panel-body--practice .problem-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.builder-panel-body--practice .practice-main {
+  padding: 24px 20px;
+  overflow: visible;
+}
+
+/* Scrollbar styling for practice panel */
+.builder-panel-body--practice::-webkit-scrollbar {
+  width: 8px;
+}
+
+.builder-panel-body--practice::-webkit-scrollbar-track {
+  background: rgba(14, 25, 40, 0.5);
+  border-radius: 4px;
+}
+
+.builder-panel-body--practice::-webkit-scrollbar-thumb {
+  background: rgba(136, 204, 255, 0.3);
+  border-radius: 4px;
+}
+
+.builder-panel-body--practice::-webkit-scrollbar-thumb:hover {
+  background: rgba(136, 204, 255, 0.5);
 }
 
 .builder-panel-body--arena {

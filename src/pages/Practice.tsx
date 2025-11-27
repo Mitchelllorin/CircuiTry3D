@@ -23,6 +23,7 @@ import WireTable, {
 import SolutionSteps from "../components/practice/SolutionSteps";
 import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
+import PracticeReferenceCards from "../components/practice/PracticeReferenceCards";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import { PracticeViewport } from "./SchematicMode";
 import {
@@ -866,8 +867,10 @@ export default function Practice({
           </section>
 
           <section className="practice-supplement">
-            <TriangleDeck />
-            <OhmsLawWheel />
+            <div className="practice-reference-section">
+              <h2 className="practice-reference-title">Reference Materials</h2>
+              <PracticeReferenceCards />
+            </div>
           </section>
         </main>
       </div>

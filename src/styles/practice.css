@@ -1170,7 +1170,200 @@
 .practice-supplement {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
+}
+
+.practice-reference-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.practice-reference-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+}
+
+/* Practice Reference Cards in Practice Page */
+.practice-page .practice-reference-cards {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .practice-page .practice-reference-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.practice-page .reference-card {
+  background: rgba(12, 34, 60, 0.72);
+  border: 1px solid rgba(108, 180, 255, 0.28);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.practice-page .reference-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0 0 4px 0;
+}
+
+.practice-page .reference-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 12px 0;
+}
+
+.practice-page .reference-formula-primary {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  color: #88CCFF;
+  padding: 12px;
+  background: rgba(20, 50, 90, 0.5);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.practice-page .reference-formula-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.practice-page .reference-formula-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(14, 30, 50, 0.6);
+  border-radius: 6px;
+  border-left: 3px solid rgba(136, 204, 255, 0.4);
+}
+
+.practice-page .formula-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4ebff;
+  font-family: 'Courier New', monospace;
+}
+
+.practice-page .formula-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Kirchhoff's Laws Card in Practice Page */
+.practice-page .kirchhoffs-laws-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.practice-page .kirchhoffs-law-item {
+  padding: 12px;
+  background: rgba(14, 30, 50, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 179, 71, 0.5);
+}
+
+.practice-page .kirchhoffs-law-item h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFB347;
+  margin: 0 0 2px 0;
+}
+
+.practice-page .law-subtitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.practice-page .law-principle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.practice-page .law-formula {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFB347;
+  text-align: center;
+  padding: 8px;
+  background: rgba(255, 179, 71, 0.1);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', monospace;
+}
+
+.practice-page .law-example {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-style: italic;
+}
+
+/* Compact Triangle Deck in Practice Page */
+.practice-page .compact-triangle-deck .triangle-deck {
+  gap: 12px;
+}
+
+.practice-page .compact-triangle-deck .triangle-card {
+  padding: 12px;
+  background: transparent;
+  border: none;
+}
+
+.practice-page .compact-triangle-deck .triangle-card h3 {
+  font-size: 13px;
+  margin: 0;
+}
+
+.practice-page .compact-triangle-deck .triangle-card svg {
+  height: 120px;
+  margin: 8px 0;
+}
+
+.practice-page .compact-triangle-deck .triangle-card ul {
+  font-size: 12px;
+  gap: 4px;
+}
+
+/* Compact Ohm's Wheel in Practice Page */
+.practice-page .compact-ohms-wheel {
+  padding: 12px !important;
+}
+
+.practice-page .compact-ohms-wheel .ohms-wheel {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.practice-page .compact-ohms-wheel .ohms-wheel h3 {
+  font-size: 13px;
+  margin: 0 0 8px 0;
+}
+
+.practice-page .compact-ohms-wheel .ohms-wheel svg {
+  max-height: 240px;
 }
 
 @media (max-width: 1180px) {

@@ -6,7 +6,7 @@
   background: rgba(10, 20, 35, 0.98);
   border-top: 2px solid rgba(136, 204, 255, 0.3);
   z-index: 100;
-  max-height: 60vh;
+  max-height: 85vh;
   transition: transform 0.3s ease;
   transform: translateY(calc(100% - 48px));
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
@@ -75,7 +75,7 @@
 
 .compact-worksheet-body {
   padding: 20px;
-  max-height: calc(60vh - 48px);
+  max-height: calc(85vh - 48px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -313,15 +313,226 @@
   color: #90EE90;
 }
 
-/* Mobile responsive adjustments */
+/* Scrollbar styling for worksheet body */
+.compact-worksheet-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.compact-worksheet-body::-webkit-scrollbar-track {
+  background: rgba(14, 25, 40, 0.5);
+  border-radius: 4px;
+}
+
+.compact-worksheet-body::-webkit-scrollbar-thumb {
+  background: rgba(136, 204, 255, 0.3);
+  border-radius: 4px;
+}
+
+.compact-worksheet-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(136, 204, 255, 0.5);
+}
+
+/* Reference Section */
+.compact-worksheet-reference-section {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(136, 204, 255, 0.2);
+}
+
+.compact-worksheet-reference-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Practice Reference Cards */
+.practice-reference-cards {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .practice-reference-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.reference-card {
+  background: rgba(12, 34, 60, 0.72);
+  border: 1px solid rgba(108, 180, 255, 0.28);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.reference-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(136, 204, 255, 0.95);
+  margin: 0 0 4px 0;
+}
+
+.reference-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 12px 0;
+}
+
+.reference-formula-primary {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  color: #88CCFF;
+  padding: 12px;
+  background: rgba(20, 50, 90, 0.5);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.reference-formula-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.reference-formula-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(14, 30, 50, 0.6);
+  border-radius: 6px;
+  border-left: 3px solid rgba(136, 204, 255, 0.4);
+}
+
+.formula-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #d4ebff;
+  font-family: 'Courier New', monospace;
+}
+
+.formula-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Kirchhoff's Laws Card */
+.kirchhoffs-laws-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.kirchhoffs-law-item {
+  padding: 12px;
+  background: rgba(14, 30, 50, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 179, 71, 0.5);
+}
+
+.kirchhoffs-law-item h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFB347;
+  margin: 0 0 2px 0;
+}
+
+.law-subtitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.law-principle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.law-formula {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFB347;
+  text-align: center;
+  padding: 8px;
+  background: rgba(255, 179, 71, 0.1);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', monospace;
+}
+
+.law-example {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-style: italic;
+}
+
+/* Compact Triangle Deck */
+.compact-triangle-deck .triangle-deck {
+  gap: 12px;
+}
+
+.compact-triangle-deck .triangle-card {
+  padding: 12px;
+  background: transparent;
+  border: none;
+}
+
+.compact-triangle-deck .triangle-card h3 {
+  font-size: 13px;
+  margin: 0;
+}
+
+.compact-triangle-deck .triangle-card svg {
+  height: 120px;
+  margin: 8px 0;
+}
+
+.compact-triangle-deck .triangle-card ul {
+  font-size: 12px;
+  gap: 4px;
+}
+
+/* Compact Ohm's Wheel */
+.compact-ohms-wheel {
+  padding: 12px !important;
+}
+
+.compact-ohms-wheel .ohms-wheel {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.compact-ohms-wheel .ohms-wheel h3 {
+  font-size: 13px;
+  margin: 0 0 8px 0;
+}
+
+.compact-ohms-wheel .ohms-wheel svg {
+  max-height: 240px;
+}
+
+/* Mobile responsive adjustments for reference */
 @media (max-width: 768px) {
   .compact-worksheet-panel {
-    max-height: 70vh;
+    max-height: 90vh;
   }
 
   .compact-worksheet-body {
     padding: 16px;
-    max-height: calc(70vh - 48px);
+    max-height: calc(90vh - 48px);
   }
 
   .compact-worksheet-table {
@@ -346,23 +557,29 @@
   .compact-worksheet-prompt {
     font-size: 12px;
   }
-}
 
-/* Scrollbar styling for worksheet body */
-.compact-worksheet-body::-webkit-scrollbar {
-  width: 8px;
-}
+  .practice-reference-cards {
+    grid-template-columns: 1fr;
+  }
 
-.compact-worksheet-body::-webkit-scrollbar-track {
-  background: rgba(14, 25, 40, 0.5);
-  border-radius: 4px;
-}
+  .reference-card {
+    padding: 12px;
+  }
 
-.compact-worksheet-body::-webkit-scrollbar-thumb {
-  background: rgba(136, 204, 255, 0.3);
-  border-radius: 4px;
-}
+  .reference-card h3 {
+    font-size: 14px;
+  }
 
-.compact-worksheet-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(136, 204, 255, 0.5);
+  .reference-formula-primary {
+    font-size: 18px;
+    padding: 10px;
+  }
+
+  .compact-ohms-wheel .ohms-wheel svg {
+    max-height: 200px;
+  }
+
+  .compact-triangle-deck .triangle-card svg {
+    height: 100px;
+  }
 }

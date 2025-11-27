@@ -4,6 +4,7 @@ import type { WireMetricKey } from "../../../utils/electrical";
 import { formatMetricValue, formatNumber } from "../../../utils/electrical";
 import { solvePracticeProblem, type SolveResult } from "../../../utils/practiceSolver";
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
+import PracticeReferenceCards from "../../../components/practice/PracticeReferenceCards";
 import "../../../styles/compact-worksheet.css";
 
 type CompactWorksheetPanelProps = {
@@ -283,6 +284,11 @@ export function CompactWorksheetPanel({
               <strong>Tip:</strong> Fill each blank cell using the circuit in the workspace above.
               Green cells are correct. Complete all cells to unlock editing.
             </p>
+          </div>
+
+          <div className="compact-worksheet-reference-section">
+            <h4 className="compact-worksheet-reference-title">Reference Materials</h4>
+            <PracticeReferenceCards />
           </div>
         </div>
       )}

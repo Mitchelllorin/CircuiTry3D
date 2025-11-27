@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, CSSProperties } from "react";
 import "../../styles/arena.css";
 import { Component3DViewer } from "./Component3DViewer";
+import practiceProblems, { DEFAULT_PRACTICE_PROBLEM, findPracticeProblemById } from "../../data/practiceProblems";
+import type { PracticeProblem } from "../../model/practice";
+import type { WireMetricKey } from "../../utils/electrical";
+import { formatMetricValue, formatNumber } from "../../utils/electrical";
+import { solvePracticeProblem, type SolveResult } from "../../utils/practiceSolver";
+import CircuitDiagram from "../practice/CircuitDiagram";
+import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../practice/WireTable";
 
 type ArenaViewProps = {
   variant?: "page" | "embedded";
@@ -1443,6 +1450,175 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const [afterMetrics, setAfterMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
   const [selectedScenario, setSelectedScenario] = useState<string>('standard');
 
+  // Practice Problem State
+  type WorksheetState = Record<string, Record<WireMetricKey, WorksheetEntry>>;
+  const [activePracticeProblem, setActivePracticeProblem] = useState<PracticeProblem | null>(DEFAULT_PRACTICE_PROBLEM);
+  const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
+  const [worksheetComplete, setWorksheetComplete] = useState(false);
+  const [practiceDrawerOpen, setPracticeDrawerOpen] = useState(true);
+
+  // Practice Problem Solution
+  const practiceSolution = useMemo(() => {
+    if (!activePracticeProblem) return null;
+    return solvePracticeProblem(activePracticeProblem);
+  }, [activePracticeProblem]);
+
+  const practiceExpectedValues = useMemo(() => {
+    if (!activePracticeProblem || !practiceSolution) return {};
+    const map: Record<string, Record<WireMetricKey, number>> = {};
+
+    map[activePracticeProblem.source.id] = {
+      watts: practiceSolution.source.watts,
+      current: practiceSolution.source.current,
+      resistance: practiceSolution.source.resistance,
+      voltage: practiceSolution.source.voltage,
+    };
+
+    activePracticeProblem.components.forEach((component) => {
+      map[component.id] = {
+        watts: practiceSolution.components[component.id].watts,
+        current: practiceSolution.components[component.id].current,
+        resistance: practiceSolution.components[component.id].resistance,
+        voltage: practiceSolution.components[component.id].voltage,
+      };
+    });
+
+    map["totals"] = {
+      watts: practiceSolution.totals.watts,
+      current: practiceSolution.totals.current,
+      resistance: practiceSolution.totals.resistance,
+      voltage: practiceSolution.totals.voltage,
+    };
+
+    return map;
+  }, [activePracticeProblem, practiceSolution]);
+
+  const practiceTableRows = useMemo(() => {
+    if (!activePracticeProblem) return [];
+    return [
+      { id: activePracticeProblem.source.id, label: activePracticeProblem.source.label, givens: activePracticeProblem.source.givens },
+      ...activePracticeProblem.components.map(c => ({ id: c.id, label: c.label, givens: c.givens })),
+      { id: "totals", label: "Totals", givens: activePracticeProblem.totalsGivens },
+    ];
+  }, [activePracticeProblem]);
+
+  // Initialize worksheet when practice problem changes
+  useEffect(() => {
+    if (!activePracticeProblem) return;
+
+    const baseline: WorksheetState = {};
+    practiceTableRows.forEach((row) => {
+      baseline[row.id] = {} as Record<WireMetricKey, WorksheetEntry>;
+      METRIC_ORDER.forEach((key) => {
+        const given = typeof row.givens?.[key] === "number" && Number.isFinite(row.givens[key]);
+        const expected = practiceExpectedValues[row.id]?.[key];
+        baseline[row.id][key] = {
+          raw: given && Number.isFinite(expected) ? formatNumber(expected!, METRIC_PRECISION[key]) : "",
+          value: given && Number.isFinite(expected) ? expected! : null,
+          status: given ? "given" : "blank",
+          given,
+        };
+      });
+    });
+
+    setWorksheetEntries(baseline);
+    setWorksheetComplete(false);
+  }, [activePracticeProblem, practiceTableRows, practiceExpectedValues]);
+
+  const parseMetricInput = (raw: string): number | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const numericMatch = trimmed.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/);
+    if (numericMatch) {
+      const candidate = Number(numericMatch[0]);
+      if (Number.isFinite(candidate)) return candidate;
+    }
+    const fallback = Number(trimmed);
+    return Number.isFinite(fallback) ? fallback : null;
+  };
+
+  const withinTolerance = (expected: number, actual: number, tolerance = 0.01): boolean => {
+    const absoluteExpected = Math.abs(expected);
+    const absoluteDiff = Math.abs(expected - actual);
+    if (absoluteExpected < 1e-4) return absoluteDiff <= 1e-3;
+    return absoluteDiff / absoluteExpected <= tolerance;
+  };
+
+  const computeWorksheetComplete = useCallback((state: WorksheetState) => {
+    return practiceTableRows.every((row) =>
+      METRIC_ORDER.every((metric) => {
+        const cell = state[row.id]?.[metric];
+        if (!cell || cell.given) return true;
+        return cell.status === "correct";
+      })
+    );
+  }, [practiceTableRows]);
+
+  const handlePracticeWorksheetChange = useCallback((
+    rowId: string,
+    key: WireMetricKey,
+    raw: string,
+  ) => {
+    setWorksheetEntries((prev) => {
+      const next: WorksheetState = { ...prev };
+      const previousRow = prev[rowId] ?? {};
+      const row: Record<WireMetricKey, WorksheetEntry> = { ...previousRow } as Record<WireMetricKey, WorksheetEntry>;
+
+      const baseCell: WorksheetEntry = row[key] ?? {
+        raw: "",
+        value: null,
+        status: "blank",
+        given: false,
+      };
+
+      if (baseCell.given) return prev;
+
+      const parsed = parseMetricInput(raw);
+      const expected = practiceExpectedValues[rowId]?.[key];
+
+      let status: WorksheetEntryStatus = "blank";
+      let value: number | null = null;
+
+      if (!raw.trim()) {
+        status = "blank";
+      } else if (parsed === null) {
+        status = "invalid";
+      } else if (expected === undefined) {
+        status = "incorrect";
+        value = parsed;
+      } else if (withinTolerance(expected, parsed)) {
+        status = "correct";
+        value = parsed;
+      } else {
+        status = "incorrect";
+        value = parsed;
+      }
+
+      row[key] = { raw, value, status, given: baseCell.given };
+      next[rowId] = row;
+
+      const complete = computeWorksheetComplete(next);
+      setWorksheetComplete(complete);
+
+      return next;
+    });
+  }, [practiceExpectedValues, computeWorksheetComplete]);
+
+  const practiceTargetValue = useMemo(() => {
+    if (!activePracticeProblem || !practiceSolution) return null;
+    const { componentId, key } = activePracticeProblem.targetMetric;
+    if (componentId === "totals") return practiceSolution.totals[key];
+    if (componentId === "source" || componentId === activePracticeProblem.source.id) return practiceSolution.source[key];
+    return practiceSolution.components[componentId]?.[key];
+  }, [activePracticeProblem, practiceSolution]);
+
+  const practiceMetricLabels: Record<WireMetricKey, { letter: string; label: string; color: string }> = {
+    watts: { letter: "W", label: "Watts", color: "#88CCFF" },
+    current: { letter: "I", label: "Current", color: "#FFB347" },
+    resistance: { letter: "R", label: "Resistance", color: "#90EE90" },
+    voltage: { letter: "E", label: "Voltage", color: "#FF6B6B" },
+  };
+
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
     if (!frameWindow) {
@@ -1955,6 +2131,15 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const hasShowdown = showdownScore.totalRounds > 0;
 
   const metrics = useMemo(() => {
+    // Prioritize practice problem values over import payload
+    if (practiceSolution) {
+      return [
+        { id: "power", letter: "W", label: "Watts", value: formatMetric(practiceSolution.totals.watts, "W") },
+        { id: "current", letter: "I", label: "Current", value: formatMetric(practiceSolution.totals.current, "A") },
+        { id: "resistance", letter: "R", label: "Resistance", value: formatMetric(practiceSolution.totals.resistance, "Ω") },
+        { id: "voltage", letter: "E", label: "Voltage", value: formatMetric(practiceSolution.totals.voltage, "V") }
+      ];
+    }
     const base = importPayload?.metrics ?? {};
     return [
       { id: "power", letter: "W", label: "Watts", value: formatMetric(base.power ?? null, "W") },
@@ -1962,7 +2147,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       { id: "resistance", letter: "R", label: "Resistance", value: formatMetric(base.resistance ?? null, "Ω") },
       { id: "voltage", letter: "E", label: "Voltage", value: formatMetric(base.voltage ?? null, "V") }
     ];
-  }, [importPayload]);
+  }, [importPayload, practiceSolution]);
 
   const typeBreakdown = useMemo(() => {
     const byType = importPayload?.summary?.byType ?? {};
@@ -2273,6 +2458,332 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             </div>
           </div>
         </section>
+
+        {/* Practice Problem Section with W.I.R.E. Worksheet and 2D Diagram */}
+        {activePracticeProblem && (
+          <section className="arena-practice-section">
+            <div className="arena-card">
+              <div className="arena-card-header">
+                <h2>📝 Practice Problem Worksheet</h2>
+                <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
+                  <select
+                    value={activePracticeProblem.id}
+                    onChange={(e) => setActivePracticeProblem(findPracticeProblemById(e.target.value))}
+                    className="arena-practice-select"
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      color: '#e2e8f0',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    {practiceProblems.map((problem) => (
+                      <option key={problem.id} value={problem.id}>
+                        {problem.title}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="arena-btn ghost"
+                    onClick={() => setPracticeDrawerOpen(!practiceDrawerOpen)}
+                  >
+                    {practiceDrawerOpen ? "Hide Details" : "Show Details"}
+                  </button>
+                </div>
+              </div>
+
+              {practiceDrawerOpen && (
+                <div className="arena-practice-content">
+                  {/* Problem Info */}
+                  <div className="arena-practice-info" style={{marginBottom: '20px'}}>
+                    <h3 style={{margin: '0 0 8px', fontSize: '1.1rem', color: '#e2e8f0'}}>{activePracticeProblem.title}</h3>
+                    <p style={{margin: '0 0 12px', fontSize: '0.9rem', color: 'rgba(148, 163, 184, 0.9)', lineHeight: '1.5'}}>
+                      {activePracticeProblem.prompt}
+                    </p>
+                    <div style={{
+                      padding: '12px 16px',
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: '10px',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{fontSize: '0.8rem', color: 'rgba(136, 204, 255, 0.9)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Target Question</div>
+                      <div style={{fontSize: '0.95rem', fontWeight: '600', color: '#e2e8f0'}}>{activePracticeProblem.targetQuestion}</div>
+                      {worksheetComplete && practiceTargetValue !== null && (
+                        <div style={{marginTop: '8px', fontSize: '1.1rem', fontWeight: '700', color: 'var(--brand-primary)'}}>
+                          Answer: {formatMetricValue(practiceTargetValue as number, activePracticeProblem.targetMetric.key)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2D Circuit Diagram */}
+                  <div className="arena-practice-diagram" style={{marginBottom: '24px'}}>
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: 'rgba(148, 163, 184, 0.8)',
+                      marginBottom: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em'
+                    }}>
+                      2D Circuit Diagram
+                    </div>
+                    <div style={{
+                      background: 'rgba(8, 18, 36, 0.8)',
+                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                      borderRadius: '12px',
+                      padding: '20px',
+                      display: 'flex',
+                      justifyContent: 'center'
+                    }}>
+                      <CircuitDiagram problem={activePracticeProblem} />
+                    </div>
+                  </div>
+
+                  {/* 3D Circuit Preview */}
+                  <div className="arena-practice-3d" style={{marginBottom: '24px'}}>
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: 'rgba(148, 163, 184, 0.8)',
+                      marginBottom: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em'
+                    }}>
+                      3D Circuit Components
+                    </div>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '16px'
+                    }}>
+                      {/* Source Component */}
+                      <div style={{
+                        background: 'rgba(8, 18, 36, 0.8)',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center'
+                      }}>
+                        <div style={{width: '100%', height: '120px', marginBottom: '12px'}}>
+                          <Component3DViewer componentType="battery" isRotating={true} />
+                        </div>
+                        <div style={{textAlign: 'center'}}>
+                          <div style={{fontWeight: '600', color: '#e2e8f0', marginBottom: '4px'}}>{activePracticeProblem.source.label}</div>
+                          <div style={{fontSize: '0.85rem', color: 'var(--brand-primary)'}}>
+                            {formatMetricValue(practiceSolution?.source.voltage ?? 0, 'voltage')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Practice Problem Components */}
+                      {activePracticeProblem.components.map((component) => (
+                        <div key={component.id} style={{
+                          background: 'rgba(8, 18, 36, 0.8)',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center'
+                        }}>
+                          <div style={{width: '100%', height: '120px', marginBottom: '12px'}}>
+                            <Component3DViewer componentType="resistor" isRotating={true} />
+                          </div>
+                          <div style={{textAlign: 'center'}}>
+                            <div style={{fontWeight: '600', color: '#e2e8f0', marginBottom: '4px'}}>{component.label}</div>
+                            <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center'}}>
+                              <span style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                background: 'rgba(16, 185, 129, 0.2)',
+                                color: '#90EE90'
+                              }}>
+                                R: {formatMetricValue(practiceSolution?.components[component.id]?.resistance ?? 0, 'resistance')}
+                              </span>
+                              <span style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                background: 'rgba(248, 113, 113, 0.2)',
+                                color: '#FF6B6B'
+                              }}>
+                                E: {formatMetricValue(practiceSolution?.components[component.id]?.voltage ?? 0, 'voltage')}
+                              </span>
+                              <span style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                background: 'rgba(251, 146, 60, 0.2)',
+                                color: '#FFB347'
+                              }}>
+                                I: {formatMetricValue(practiceSolution?.components[component.id]?.current ?? 0, 'current')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* W.I.R.E. Worksheet Table */}
+                  <div className="arena-practice-worksheet">
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: 'rgba(148, 163, 184, 0.8)',
+                      marginBottom: '12px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <span>W.I.R.E. Worksheet</span>
+                      {worksheetComplete && (
+                        <span style={{
+                          padding: '4px 12px',
+                          background: 'var(--brand-primary-dim)',
+                          borderRadius: '999px',
+                          fontSize: '0.7rem',
+                          fontWeight: '700',
+                          color: '#042f2e'
+                        }}>
+                          ✓ COMPLETE
+                        </span>
+                      )}
+                    </div>
+                    <div style={{overflowX: 'auto'}}>
+                      <table className="arena-wire-table" style={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        background: 'rgba(8, 18, 36, 0.7)',
+                        borderRadius: '12px',
+                        overflow: 'hidden'
+                      }}>
+                        <thead>
+                          <tr>
+                            <th style={{
+                              padding: '12px 16px',
+                              textAlign: 'left',
+                              background: 'rgba(30, 64, 175, 0.35)',
+                              borderBottom: '1px solid rgba(59, 130, 246, 0.3)',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              color: 'rgba(136, 204, 255, 0.9)',
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase'
+                            }}>
+                              W.I.R.E.
+                            </th>
+                            {practiceTableRows.map((row) => (
+                              <th key={row.id} style={{
+                                padding: '12px 16px',
+                                textAlign: 'center',
+                                background: row.id === "totals" ? 'rgba(16, 185, 129, 0.2)' : 'rgba(30, 64, 175, 0.35)',
+                                borderBottom: '1px solid rgba(59, 130, 246, 0.3)',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                color: '#e2e8f0'
+                              }}>
+                                {row.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {METRIC_ORDER.map((key) => (
+                            <tr key={key}>
+                              <td style={{
+                                padding: '12px 16px',
+                                background: 'rgba(24, 52, 102, 0.36)',
+                                borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                                borderRight: '1px solid rgba(59, 130, 246, 0.2)'
+                              }}>
+                                <span style={{
+                                  display: 'inline-block',
+                                  padding: '4px 10px',
+                                  borderRadius: '999px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '700',
+                                  background: key === 'watts' ? 'rgba(59, 130, 246, 0.3)' :
+                                             key === 'current' ? 'rgba(251, 146, 60, 0.3)' :
+                                             key === 'resistance' ? 'rgba(16, 185, 129, 0.3)' :
+                                             'rgba(248, 113, 113, 0.3)',
+                                  color: practiceMetricLabels[key].color
+                                }}>
+                                  {practiceMetricLabels[key].letter}
+                                </span>
+                                <span style={{marginLeft: '8px', fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.85)'}}>
+                                  {practiceMetricLabels[key].label}
+                                </span>
+                              </td>
+                              {practiceTableRows.map((row) => {
+                                const entry = worksheetEntries[row.id]?.[key] ?? {
+                                  raw: "",
+                                  value: null,
+                                  status: "blank",
+                                  given: false,
+                                };
+                                return (
+                                  <td key={row.id} style={{
+                                    padding: '8px 12px',
+                                    textAlign: 'center',
+                                    borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                                    background: entry.status === 'correct' ? 'rgba(16, 185, 129, 0.2)' :
+                                               entry.status === 'incorrect' ? 'rgba(248, 113, 113, 0.2)' :
+                                               entry.status === 'given' ? 'rgba(59, 130, 246, 0.15)' :
+                                               'transparent'
+                                  }}>
+                                    <input
+                                      type="text"
+                                      value={entry.raw}
+                                      onChange={(e) => handlePracticeWorksheetChange(row.id, key, e.target.value)}
+                                      disabled={entry.given}
+                                      placeholder="?"
+                                      style={{
+                                        width: '80px',
+                                        padding: '8px 10px',
+                                        borderRadius: '6px',
+                                        border: `1px solid ${
+                                          entry.status === 'correct' ? 'var(--brand-primary-dim)' :
+                                          entry.status === 'incorrect' ? 'rgba(248, 113, 113, 0.5)' :
+                                          entry.status === 'given' ? 'rgba(59, 130, 246, 0.4)' :
+                                          'rgba(148, 163, 184, 0.3)'
+                                        }`,
+                                        background: entry.given ? 'rgba(59, 130, 246, 0.1)' : 'rgba(15, 23, 42, 0.8)',
+                                        color: entry.given ? 'rgba(136, 204, 255, 0.9)' : '#e2e8f0',
+                                        textAlign: 'center',
+                                        fontSize: '0.9rem',
+                                        fontWeight: entry.given ? '600' : '400'
+                                      }}
+                                    />
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p style={{
+                      marginTop: '12px',
+                      fontSize: '0.8rem',
+                      color: 'rgba(148, 163, 184, 0.7)',
+                      fontStyle: 'italic'
+                    }}>
+                      Fill in the blank cells to solve the circuit. Green cells indicate correct answers.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="arena-import-section">
           <div className="arena-card">
