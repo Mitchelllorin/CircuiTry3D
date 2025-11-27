@@ -270,40 +270,6 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
     getDescription: () => "Configure floating logo animation",
     isActive: () => false,
   },
-  {
-    id: "flow-visualisation",
-    label: "Flow Visualisation",
-    action: "toggle-current-flow",
-    getDescription: (_state, { currentFlowLabel }) =>
-      `${currentFlowLabel} visualisation active`,
-    isActive: (state) => state.currentFlowStyle === "solid",
-  },
-  {
-    id: "polarity-markers",
-    label: "Polarity Markers",
-    action: "toggle-polarity",
-    getDescription: (state) =>
-      state.showPolarityIndicators
-        ? "Polarity markers visible"
-        : "Polarity markers hidden",
-    isActive: (state) => state.showPolarityIndicators,
-  },
-  {
-    id: "design-grid",
-    label: "Design Grid",
-    action: "toggle-grid",
-    getDescription: (state) =>
-      state.showGrid ? "Grid visible" : "Grid hidden",
-    isActive: (state) => state.showGrid,
-  },
-  {
-    id: "component-labels",
-    label: "Component Labels",
-    action: "toggle-labels",
-    getDescription: (state) =>
-      state.showLabels ? "Labels shown" : "Labels hidden",
-    isActive: (state) => state.showLabels,
-  },
 ];
 
 export const PRACTICE_SCENARIOS: PracticeScenario[] = [

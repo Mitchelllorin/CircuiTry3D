@@ -1,4 +1,4 @@
-import type { LegacyModeState, PanelAction, SettingsItem, HelpModalView, PracticeWorksheetStatus } from "../types";
+import type { LegacyModeState, PanelAction, HelpModalView, PracticeWorksheetStatus } from "../types";
 import {
   WIRE_METRICS,
   PRACTICE_ACTIONS,
@@ -14,7 +14,6 @@ interface BottomToolbarProps {
   onBuilderAction: (action: string, data?: unknown) => void;
   onPracticeAction: (action: PanelAction) => void;
   onOpenHelpCenter: (view: HelpModalView) => void;
-  onSchematicPanelOpen: () => void;
   onPracticePanelOpen: () => void;
   onOpenLastArenaSession: () => void;
   modeState: LegacyModeState;

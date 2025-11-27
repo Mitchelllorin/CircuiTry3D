@@ -8,7 +8,7 @@
   --brand-orange-glow: rgba(255, 136, 68, 0.42);
   --brand-green-dim: rgba(0, 255, 136, 0.18);
   --brand-green-glow: rgba(0, 255, 136, 0.38);
-  
+
   --brand-primary: #88ccff;
   --brand-secondary: #ff8844;
   --brand-accent: #00ff88;
@@ -16,16 +16,16 @@
   --brand-primary-glow: rgba(136, 204, 255, 0.42);
   --brand-secondary-dim: rgba(255, 136, 68, 0.18);
   --brand-secondary-glow: rgba(255, 136, 68, 0.42);
-  
+
   --bg-dark: #04070c;
   --bg-darker: #0b1120;
   --bg-surface: rgba(14, 30, 58, 0.78);
   --bg-overlay: rgba(12, 26, 48, 0.76);
-  
+
   --text-primary: #f3f8ff;
   --text-secondary: #e2e8f0;
   --text-muted: rgba(226, 232, 240, 0.7);
-  
+
   --border-subtle: rgba(136, 204, 255, 0.22);
   --border-emphasis: rgba(136, 204, 255, 0.56);
 }
@@ -42,99 +42,6 @@ body {
   display: flex;
   flex-direction: column;
   background: radial-gradient(circle at top, var(--brand-primary-dim), transparent 55%), var(--bg-darker);
-}
-
-.app-header {
-  height: 72px;
-  padding: 0 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(8, 11, 20, 0.85);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  backdrop-filter: blur(12px);
-  position: sticky;
-  top: 0;
-  z-index: 20;
-}
-
-.app-brand {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #f8fafc;
-  text-decoration: none;
-  letter-spacing: 0.02em;
-}
-
-.app-brand span {
-  color: var(--brand-blue);
-}
-
-.app-nav {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.app-nav-link {
-  color: rgba(226, 232, 240, 0.7);
-  text-decoration: none;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 0.95rem;
-  transition: color 0.2s ease, background 0.2s ease;
-}
-
-.app-nav-link:hover {
-  color: #f8fafc;
-}
-
-.app-nav-link.is-active {
-  background: var(--brand-secondary-dim);
-  color: var(--brand-secondary);
-}
-
-.app-account {
-  display: flex;
-  align-items: center;
-}
-
-.account-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  color: rgba(226, 232, 240, 0.8);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.account-link:hover {
-  border-color: var(--brand-secondary-glow);
-  color: #f8fafc;
-}
-
-.account-link.is-auth {
-  background: rgba(15, 23, 42, 0.72);
-}
-
-.account-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #0f172a;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.account-label {
-  white-space: nowrap;
 }
 
 .app-content {
@@ -179,19 +86,6 @@ body {
 }
 
 @media (max-width: 960px) {
-  .app-header {
-    height: auto;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-    align-items: flex-start;
-  }
-
-  .app-nav {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
   .app-content > * {
     padding: 20px;
   }

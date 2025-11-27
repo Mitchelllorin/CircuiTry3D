@@ -15,7 +15,6 @@ interface LeftToolbarProps {
   onToggle: () => void;
   onComponentAction: (component: ComponentAction) => void;
   onQuickAction: (action: QuickAction) => void;
-  onSchematicPanelOpen: () => void;
   onBuilderAction: (action: string, data?: unknown) => void;
   activeQuickTool: BuilderToolId | null;
   isSimulatePulsing: boolean;
@@ -29,7 +28,6 @@ export function LeftToolbar({
   onToggle,
   onComponentAction,
   onQuickAction,
-  onSchematicPanelOpen,
   onBuilderAction,
   activeQuickTool,
   isSimulatePulsing,
@@ -130,22 +128,6 @@ export function LeftToolbar({
                   </button>
                 );
               })}
-            </div>
-          </div>
-          <div className="slider-section">
-            <span className="slider-heading">Schematic Mode</span>
-            <div className="slider-stack">
-              <button
-                type="button"
-                className="slider-btn slider-btn-stacked"
-                onClick={onSchematicPanelOpen}
-                title="Open the 3D schematic workspace"
-              >
-                <span className="slider-label">Launch Builder</span>
-                <span className="slider-description">
-                  Place ANSI/IEC symbols on the snap grid
-                </span>
-              </button>
             </div>
           </div>
           <div className="slider-section">
