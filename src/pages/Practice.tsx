@@ -25,6 +25,7 @@ import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
 import KirchhoffLaws from "../components/practice/KirchhoffLaws";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
+import ResistorColorCode from "../components/practice/ResistorColorCode";
 import { PracticeViewport } from "./SchematicMode";
 import {
   DEFAULT_SYMBOL_STANDARD,
@@ -1033,12 +1034,79 @@ export default function Practice({
             </div>
 
             <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
+
+            {/* Learning Objectives, Hints, Tips & Facts */}
+            {(selectedProblem.learningObjective || selectedProblem.hints?.length || selectedProblem.tips?.length || selectedProblem.facts?.length) && (
+              <section className="practice-learning">
+                <div className="practice-learning-header">
+                  <div className="practice-learning-icon" aria-hidden="true">
+                    <span role="img" aria-label="lightbulb">&#128161;</span>
+                  </div>
+                  <h3>Learning Guide</h3>
+                </div>
+
+                {selectedProblem.learningObjective && (
+                  <p className="learning-objective">
+                    <strong>Objective:</strong> {selectedProblem.learningObjective}
+                  </p>
+                )}
+
+                {selectedProblem.hints && selectedProblem.hints.length > 0 && (
+                  <ul className="practice-hints-list">
+                    {selectedProblem.hints.map((hint, index) => (
+                      <li key={index} className="practice-hint-item">
+                        <span className="hint-number">{index + 1}</span>
+                        <div className="hint-content">
+                          <p className="hint-text">{hint.text}</p>
+                          {hint.formula && (
+                            <code className="hint-formula">{hint.formula}</code>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {(selectedProblem.tips?.length || selectedProblem.facts?.length) && (
+                  <div className="practice-tips-facts">
+                    {selectedProblem.tips && selectedProblem.tips.length > 0 && (
+                      <div className="practice-tips">
+                        <h4>Quick Tips</h4>
+                        <ul>
+                          {selectedProblem.tips.map((tip, index) => (
+                            <li key={index}>{tip}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {selectedProblem.facts && selectedProblem.facts.length > 0 && (
+                      <div className="practice-facts">
+                        <h4>Did You Know?</h4>
+                        <ul>
+                          {selectedProblem.facts.map((fact, index) => (
+                            <li key={index}>{fact}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedProblem.realWorldExample && (
+                  <div className="practice-real-world">
+                    <h4>Real-World Application</h4>
+                    <p>{selectedProblem.realWorldExample}</p>
+                  </div>
+                )}
+              </section>
+            )}
           </section>
 
           <section className="practice-supplement">
             <KirchhoffLaws />
             <TriangleDeck />
             <OhmsLawWheel />
+            <ResistorColorCode />
           </section>
         </main>
       </div>

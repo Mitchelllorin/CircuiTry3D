@@ -5,6 +5,21 @@ import { Orientation, SchematicElement, TwoTerminalElement, Vec2 } from "./types
 
 const pointKey = (point: Vec2) => `${point.x.toFixed(3)}|${point.z.toFixed(3)}`;
 
+// Format resistance value for display (e.g., "150 Ω", "1.5 kΩ")
+const formatResistance = (value: number): string => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)} MΩ`;
+  } else if (value >= 1000) {
+    return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)} kΩ`;
+  }
+  return `${value} Ω`;
+};
+
+// Format voltage value for display (e.g., "24V")
+const formatVoltage = (value: number): string => {
+  return `${value}V`;
+};
+
 export function buildPracticeCircuit(three: any, problem: PracticeProblem, standard: SymbolStandard) {
   const group = new three.Group();
   group.name = `circuit-${problem.id}`;
@@ -43,8 +58,20 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
   const pushBattery = (start: Vec2, end: Vec2, label: string) => pushComponent("battery", label, start, end);
   const pushResistor = (label: string, start: Vec2, end: Vec2) => pushComponent("resistor", label, start, end);
 
-  const sourceLabel = problem.source.label ?? "Source";
-  const componentLabels = new Map(problem.components.map((component) => [component.id, component.label ?? component.id]));
+  // Create labels with actual problem values for mirroring the 2D schematic
+  const sourceVoltage = problem.source.givens?.voltage ?? problem.source.values?.voltage;
+  const sourceLabel = sourceVoltage ? formatVoltage(sourceVoltage) : (problem.source.label ?? "Source");
+
+  // Map component IDs to labels with their resistance values
+  const componentLabels = new Map(
+    problem.components.map((component) => {
+      const resistance = component.givens?.resistance ?? component.values?.resistance;
+      if (resistance) {
+        return [component.id, `${component.id} = ${formatResistance(resistance)}`];
+      }
+      return [component.id, component.label ?? component.id];
+    })
+  );
   const labelFor = (id: string) => componentLabels.get(id) ?? id;
 
   const buildSeries = () => {
@@ -75,7 +102,7 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
       const resistorStart = point(startX, top);
       const resistorEnd = point(endX, top);
       pushWire(previous, resistorStart);
-      pushResistor(component.label ?? component.id, resistorStart, resistorEnd);
+      pushResistor(labelFor(component.id), resistorStart, resistorEnd);
       previous = resistorEnd;
     });
 
@@ -116,7 +143,7 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
       const resistorEnd = point(x, bottom + offset);
 
       pushWire(topNode, resistorStart);
-      pushResistor(component.label ?? component.id, resistorStart, resistorEnd);
+      pushResistor(labelFor(component.id), resistorStart, resistorEnd);
       pushWire(resistorEnd, bottomNode);
     });
   };

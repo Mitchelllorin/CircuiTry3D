@@ -2287,8 +2287,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
             circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
           scene.add(circuitGroup);
 
-          // Initialize current flow animation
-          flowAnimationSystem = new CurrentFlowAnimationSystem(three, scene);
+          // Initialize current flow animation - add particles to circuitGroup so they move with the circuit
+          flowAnimationSystem = new CurrentFlowAnimationSystem(three, circuitGroup);
 
           // Solve the circuit to get current values
           const solution = solvePracticeProblem(practiceProblem);

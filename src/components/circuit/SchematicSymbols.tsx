@@ -28,11 +28,15 @@ export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = 3.2,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
+      {/* Lead wires */}
+      <line x1="-30" y1="0" x2="-20" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="20" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* 3 tight zigzag body */}
       <polyline
-        points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0"
+        points="-20,0 -16,-8 -10,8 -4,-8 2,8 8,-8 14,8 20,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
@@ -291,21 +295,27 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = 3,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
-      <line x1="-20" y1="-6" x2="20" y2="-6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-28" y1="8" x2="28" y2="8" stroke={color} strokeWidth={strokeWidth + 2} strokeLinecap="round" />
-      <text x={-24} y={-12} fill={LABEL_COLOR} fontSize={12} textAnchor="middle">
+      {/* Lead wires - horizontal */}
+      <line x1="-30" y1="0" x2="-7" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="7" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Negative plate (shorter vertical line on left) */}
+      <line x1="-7" y1="-10" x2="-7" y2="10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Positive plate (longer, thicker vertical line on right) */}
+      <line x1="7" y1="-18" x2="7" y2="18" stroke={color} strokeWidth={strokeWidth + 2} strokeLinecap="round" />
+      {/* Polarity markings */}
+      <text x={-14} y={4} fill={LABEL_COLOR} fontSize={11} textAnchor="middle" fontWeight="bold">
         -
       </text>
-      <text x={24} y={-12} fill={LABEL_COLOR} fontSize={12} textAnchor="middle">
+      <text x={18} y={4} fill={LABEL_COLOR} fontSize={11} textAnchor="middle" fontWeight="bold">
         +
       </text>
       {showLabel && label && (
         <text
           x={0}
-          y={labelOffset - 8}
+          y={labelOffset - 10}
           textAnchor="middle"
           fill={LABEL_COLOR}
           fontSize={13}
@@ -453,25 +463,29 @@ export const PotentiometerSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = 3.2,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
+      {/* Lead wires */}
+      <line x1="-30" y1="0" x2="-20" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="20" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* 3 tight zigzag body */}
       <polyline
-        points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0"
+        points="-20,0 -16,-8 -10,8 -4,-8 2,8 8,-8 14,8 20,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      
+
       <line x1="0" y1="-18" x2="0" y2="-5" stroke={color} strokeWidth={strokeWidth * 0.8} strokeLinecap="round" />
       <polygon
         points="0,-5 -4,-10 4,-10"
         fill={color}
         stroke={color}
       />
-      
+
       {showLabel && label && (
         <text
           x={0}

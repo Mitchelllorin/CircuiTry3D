@@ -4,6 +4,7 @@ import type { WireMetricKey } from "../../../utils/electrical";
 import { formatMetricValue, formatNumber } from "../../../utils/electrical";
 import { solvePracticeProblem, type SolveResult } from "../../../utils/practiceSolver";
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
+import CircuitDiagram from "../../../components/practice/CircuitDiagram";
 import "../../../styles/compact-worksheet.css";
 
 type CompactWorksheetPanelProps = {
@@ -206,6 +207,51 @@ export function CompactWorksheetPanel({
     ];
   }, [problem]);
 
+  const [activeTab, setActiveTab] = useState<"worksheet" | "schematic" | "hints" | "formulas">("worksheet");
+
+  // Extract givens from problem for display
+  const givensDisplay = useMemo(() => {
+    const givens: Array<{ label: string; value: string; metric: string }> = [];
+
+    // Source givens
+    if (problem.source.givens) {
+      Object.entries(problem.source.givens).forEach(([key, value]) => {
+        if (typeof value === "number") {
+          givens.push({
+            label: problem.source.label || "Source",
+            value: formatMetricValue(value, key as WireMetricKey),
+            metric: key,
+          });
+        }
+      });
+    }
+
+    // Component givens
+    problem.components.forEach((comp) => {
+      if (comp.givens) {
+        Object.entries(comp.givens).forEach(([key, value]) => {
+          if (typeof value === "number") {
+            givens.push({
+              label: comp.label,
+              value: formatMetricValue(value, key as WireMetricKey),
+              metric: key,
+            });
+          }
+        });
+      }
+    });
+
+    return givens;
+  }, [problem]);
+
+  // W.I.R.E. wheel data for mini wheel display
+  const wireFormulas = {
+    W: { color: "#88CCFF", formulas: ["P = E × I", "P = I² × R", "P = E² / R"] },
+    I: { color: "#FFB347", formulas: ["I = E / R", "I = P / E", "I = √(P/R)"] },
+    R: { color: "#90EE90", formulas: ["R = E / I", "R = P / I²", "R = E² / P"] },
+    E: { color: "#FF6B6B", formulas: ["E = I × R", "E = P / I", "E = √(P×R)"] },
+  };
+
   return (
     <div className={`compact-worksheet-panel${isOpen ? " open" : ""}`}>
       <div className="compact-worksheet-header">
@@ -215,7 +261,7 @@ export function CompactWorksheetPanel({
           onClick={onToggle}
           aria-expanded={isOpen}
         >
-          <span className="toggle-icon">{isOpen ? "v" : "^"}</span>
+          <span className="toggle-icon">{isOpen ? "▼" : "▲"}</span>
           <span className="toggle-label">
             {worksheetComplete ? "✓ Worksheet Complete" : "Practice Worksheet"}
           </span>
@@ -233,9 +279,32 @@ export function CompactWorksheetPanel({
 
       {isOpen && (
         <div className="compact-worksheet-body">
+          {/* Problem Header with Learning Objective */}
           <div className="compact-worksheet-problem-info">
-            <h3>{problem.title}</h3>
+            <div className="problem-header-row">
+              <h3>{problem.title}</h3>
+              <span className="problem-difficulty" data-difficulty={problem.difficulty}>
+                {problem.difficulty}
+              </span>
+            </div>
+            {problem.learningObjective && (
+              <p className="learning-objective">{problem.learningObjective}</p>
+            )}
             <p className="compact-worksheet-prompt">{problem.prompt}</p>
+
+            {/* Givens Display */}
+            {givensDisplay.length > 0 && (
+              <div className="givens-display">
+                <span className="givens-label">Given:</span>
+                {givensDisplay.map((given, index) => (
+                  <span key={index} className="given-item">
+                    {given.label} {given.metric} = {given.value}
+                    {index < givensDisplay.length - 1 && ", "}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="compact-worksheet-target">
               <strong>{problem.targetQuestion}</strong>
               <span className="compact-worksheet-answer">
@@ -246,55 +315,196 @@ export function CompactWorksheetPanel({
             </div>
           </div>
 
-          <div className="compact-worksheet-table-wrapper">
-            {/* W.I.R.E. layout: Metrics as rows (W, I, R, E from top to bottom), Components as columns */}
-            <table className="compact-worksheet-table wire-rows-layout">
-              <thead>
-                <tr>
-                  <th className="metric-label-header">W.I.R.E.</th>
-                  {allRows.map((row) => (
-                    <th key={row.id} className={row.id === "totals" ? "totals-column" : "component-column"}>
-                      {row.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {METRIC_ORDER.map((key) => (
-                  <tr key={key} className={`metric-row metric-${key}`}>
-                    <td className="metric-label-cell" style={{ color: metricLabels[key].color }}>
-                      <span className="metric-letter">{metricLabels[key].letter}</span>
-                      <span className="metric-label-small">{metricLabels[key].label}</span>
-                    </td>
-                    {allRows.map((row) => {
-                      const entry = worksheetEntries[row.id]?.[key] ?? {
-                        raw: "",
-                        value: null,
-                        status: "blank",
-                        given: false,
-                      };
-                      return (
-                        <td key={row.id} data-status={entry.status} className={row.id === "totals" ? "totals-cell" : ""}>
-                          <input
-                            type="text"
-                            value={entry.raw}
-                            onChange={(e) => handleWorksheetChange(row.id, key, e.target.value)}
-                            disabled={entry.given}
-                            placeholder="?"
-                            className={`worksheet-input ${entry.status}`}
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Tab Navigation */}
+          <div className="worksheet-tabs">
+            <button
+              type="button"
+              className={`worksheet-tab${activeTab === "worksheet" ? " active" : ""}`}
+              onClick={() => setActiveTab("worksheet")}
+            >
+              W.I.R.E. Table
+            </button>
+            <button
+              type="button"
+              className={`worksheet-tab${activeTab === "schematic" ? " active" : ""}`}
+              onClick={() => setActiveTab("schematic")}
+            >
+              Schematic
+            </button>
+            <button
+              type="button"
+              className={`worksheet-tab${activeTab === "hints" ? " active" : ""}`}
+              onClick={() => setActiveTab("hints")}
+            >
+              Hints & Tips
+            </button>
+            <button
+              type="button"
+              className={`worksheet-tab${activeTab === "formulas" ? " active" : ""}`}
+              onClick={() => setActiveTab("formulas")}
+            >
+              W.I.R.E. Wheel
+            </button>
           </div>
 
+          {/* Tab Content */}
+          <div className="worksheet-tab-content">
+            {/* Worksheet Tab */}
+            {activeTab === "worksheet" && (
+              <div className="compact-worksheet-table-wrapper">
+                <table className="compact-worksheet-table wire-rows-layout">
+                  <thead>
+                    <tr>
+                      <th className="metric-label-header">W.I.R.E.</th>
+                      {allRows.map((row) => (
+                        <th key={row.id} className={row.id === "totals" ? "totals-column" : "component-column"}>
+                          {row.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {METRIC_ORDER.map((key) => (
+                      <tr key={key} className={`metric-row metric-${key}`}>
+                        <td className="metric-label-cell" style={{ color: metricLabels[key].color }}>
+                          <span className="metric-letter">{metricLabels[key].letter}</span>
+                          <span className="metric-label-small">{metricLabels[key].label}</span>
+                        </td>
+                        {allRows.map((row) => {
+                          const entry = worksheetEntries[row.id]?.[key] ?? {
+                            raw: "",
+                            value: null,
+                            status: "blank",
+                            given: false,
+                          };
+                          return (
+                            <td key={row.id} data-status={entry.status} className={row.id === "totals" ? "totals-cell" : ""}>
+                              <input
+                                type="text"
+                                value={entry.raw}
+                                onChange={(e) => handleWorksheetChange(row.id, key, e.target.value)}
+                                disabled={entry.given}
+                                placeholder="?"
+                                className={`worksheet-input ${entry.status}`}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Schematic Tab */}
+            {activeTab === "schematic" && (
+              <div className="schematic-tab-content">
+                <CircuitDiagram problem={problem} />
+                {problem.realWorldExample && (
+                  <div className="real-world-example">
+                    <strong>Real-World Application:</strong>
+                    <p>{problem.realWorldExample}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Hints Tab */}
+            {activeTab === "hints" && (
+              <div className="hints-tab-content">
+                {problem.hints && problem.hints.length > 0 && (
+                  <div className="hints-section">
+                    <h4>Hints</h4>
+                    <ul className="hints-list">
+                      {problem.hints.map((hint, index) => (
+                        <li key={index} className="hint-item">
+                          <span className="hint-text">{hint.text}</span>
+                          {hint.formula && (
+                            <code className="hint-formula">{hint.formula}</code>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {problem.tips && problem.tips.length > 0 && (
+                  <div className="tips-section">
+                    <h4>Tips</h4>
+                    <ul className="tips-list">
+                      {problem.tips.map((tip, index) => (
+                        <li key={index} className="tip-item">{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {problem.facts && problem.facts.length > 0 && (
+                  <div className="facts-section">
+                    <h4>Did You Know?</h4>
+                    <ul className="facts-list">
+                      {problem.facts.map((fact, index) => (
+                        <li key={index} className="fact-item">{fact}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* W.I.R.E. Wheel Tab */}
+            {activeTab === "formulas" && (
+              <div className="formulas-tab-content">
+                <div className="mini-wire-wheel">
+                  <h4>W.I.R.E. Formula Wheel</h4>
+                  <p className="wheel-intro">
+                    Find the variable you need, then use a formula with values you know.
+                  </p>
+                  <div className="wire-wheel-grid">
+                    {Object.entries(wireFormulas).map(([letter, data]) => (
+                      <div key={letter} className="wire-quadrant" style={{ borderColor: data.color }}>
+                        <span className="quadrant-letter" style={{ color: data.color }}>{letter}</span>
+                        <ul className="quadrant-formulas">
+                          {data.formulas.map((formula, index) => (
+                            <li key={index} style={{ color: data.color }}>{formula}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="key-laws">
+                  <div className="law-card">
+                    <h5>Ohm's Law</h5>
+                    <code>E = I × R</code>
+                    <p>Voltage equals current times resistance</p>
+                  </div>
+                  <div className="law-card">
+                    <h5>Power Formula</h5>
+                    <code>P = E × I</code>
+                    <p>Power equals voltage times current</p>
+                  </div>
+                  <div className="law-card">
+                    <h5>Series Resistance</h5>
+                    <code>R_T = R₁ + R₂ + R₃...</code>
+                    <p>Total resistance is the sum of all resistors</p>
+                  </div>
+                  <div className="law-card">
+                    <h5>Parallel Resistance</h5>
+                    <code>1/R_T = 1/R₁ + 1/R₂...</code>
+                    <p>Reciprocal sum for parallel circuits</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Always visible hint */}
           <div className="compact-worksheet-hint">
             <p>
-              <strong>Tip:</strong> Fill each blank cell using the circuit in the workspace above.
+              <strong>Tip:</strong> Compare your answers to the 3D circuit above.
               Green cells are correct. Complete all cells to unlock editing.
             </p>
           </div>

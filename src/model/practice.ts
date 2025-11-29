@@ -41,6 +41,11 @@ export type PracticeStepPresentation = {
 
 export type PracticeStepDefinition = (context: PracticeStepContext) => PracticeStepPresentation;
 
+export type PracticeHint = {
+  text: string;
+  formula?: string;
+};
+
 export type PracticeProblem = {
   id: string;
   title: string;
@@ -57,5 +62,15 @@ export type PracticeProblem = {
   steps: PracticeStepDefinition[];
   presetHint?: string;
   diagram?: PracticeDiagramId;
+  /** Curriculum-aligned learning objective */
+  learningObjective?: string;
+  /** Helpful hints for solving the problem */
+  hints?: PracticeHint[];
+  /** Quick tips for this problem type */
+  tips?: string[];
+  /** Interesting facts related to the concepts */
+  facts?: string[];
+  /** Real-world application examples */
+  realWorldExample?: string;
 };
 
