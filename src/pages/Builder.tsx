@@ -153,7 +153,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
   },
   {
-    title: "Controls",
+    title: "Settings",
     paragraphs: [
       "Use mouse, keyboard, or touch controls depending on your device.",
     ],
@@ -164,7 +164,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
   },
   {
-    title: "View Controls & Tips",
+    title: "View Settings & Tips",
     paragraphs: ["Keep the scene readable while you iterate on designs."],
     bullets: [
       "Reset View recentres the camera; Fit to Screen frames the active circuit.",
@@ -1366,22 +1366,22 @@ export default function Builder() {
           aria-expanded={isRightMenuOpen}
           aria-label={
             isRightMenuOpen
-              ? "Collapse mode and view controls"
-              : "Expand mode and view controls"
+              ? "Collapse settings"
+              : "Expand settings"
           }
           title={
             isRightMenuOpen
-              ? "Collapse mode and view controls"
-              : "Expand mode and view controls"
+              ? "Collapse settings"
+              : "Expand settings"
           }
         >
           <span className="toggle-icon">{isRightMenuOpen ? "▶" : "◀"}</span>
-          <span className="toggle-text">Controls</span>
+          <span className="toggle-text">Settings</span>
         </button>
         <nav
           className="builder-menu builder-menu-right"
           role="complementary"
-          aria-label="Mode and view controls"
+          aria-label="Settings"
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
@@ -1487,6 +1487,44 @@ export default function Builder() {
                       }
                     >
                       <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Settings</span>
+              <div className="slider-stack">
+                {SETTINGS_ITEMS.map((setting) => {
+                  const description = setting.getDescription(modeState, {
+                    currentFlowLabel,
+                  });
+                  const isActive = setting.isActive?.(modeState) ?? false;
+                  return (
+                    <button
+                      key={setting.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() => {
+                        if (setting.action === "open-logo-settings") {
+                          setLogoSettingsOpen(!isLogoSettingsOpen);
+                        } else {
+                          triggerBuilderAction(setting.action, setting.data);
+                        }
+                      }}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      aria-pressed={setting.isActive ? isActive : undefined}
+                      data-active={
+                        setting.isActive && isActive ? "true" : undefined
+                      }
+                      title={
+                        controlsDisabled ? controlDisabledTitle : description
+                      }
+                      data-intent="settings"
+                    >
+                      <span className="slider-label">{setting.label}</span>
                       <span className="slider-description">{description}</span>
                     </button>
                   );
@@ -1681,44 +1719,6 @@ export default function Builder() {
                 >
                   <span className="slider-chip-label">Open Last Arena Run</span>
                 </button>
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Settings</span>
-              <div className="slider-stack">
-                {SETTINGS_ITEMS.map((setting) => {
-                  const description = setting.getDescription(modeState, {
-                    currentFlowLabel,
-                  });
-                  const isActive = setting.isActive?.(modeState) ?? false;
-                  return (
-                    <button
-                      key={setting.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => {
-                        if (setting.action === "open-logo-settings") {
-                          setLogoSettingsOpen(!isLogoSettingsOpen);
-                        } else {
-                          triggerBuilderAction(setting.action, setting.data);
-                        }
-                      }}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      aria-pressed={setting.isActive ? isActive : undefined}
-                      data-active={
-                        setting.isActive && isActive ? "true" : undefined
-                      }
-                      title={
-                        controlsDisabled ? controlDisabledTitle : description
-                      }
-                      data-intent="settings"
-                    >
-                      <span className="slider-label">{setting.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
               </div>
             </div>
             <div className="slider-section">

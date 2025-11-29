@@ -1,7 +1,8 @@
-import type { LegacyModeState } from "../types";
+import type { LegacyModeState, SettingsItem } from "../types";
 import {
   CURRENT_MODE_ACTIONS,
   VIEW_CONTROL_ACTIONS,
+  SETTINGS_ITEMS,
 } from "../constants";
 
 interface RightToolbarProps {
@@ -14,6 +15,8 @@ interface RightToolbarProps {
   layoutModeLabel: string;
   wireRoutingLabel: string;
   currentFlowLabel: string;
+  onOpenLogoSettings?: () => void;
+  isLogoSettingsOpen?: boolean;
 }
 
 export function RightToolbar({
@@ -25,6 +28,8 @@ export function RightToolbar({
   controlDisabledTitle,
   layoutModeLabel,
   currentFlowLabel,
+  onOpenLogoSettings,
+  isLogoSettingsOpen,
 }: RightToolbarProps) {
   return (
     <div
@@ -37,22 +42,22 @@ export function RightToolbar({
         aria-expanded={isOpen}
         aria-label={
           isOpen
-            ? "Collapse mode and view controls"
-            : "Expand mode and view controls"
+            ? "Collapse settings"
+            : "Expand settings"
         }
         title={
           isOpen
-            ? "Collapse mode and view controls"
-            : "Expand mode and view controls"
+            ? "Collapse settings"
+            : "Expand settings"
         }
       >
         <span className="toggle-icon">{isOpen ? "▶" : "◀"}</span>
-        <span className="toggle-text">Controls</span>
+        <span className="toggle-text">Settings</span>
       </button>
       <nav
         className="builder-menu builder-menu-right"
         role="complementary"
-        aria-label="Mode and view controls"
+        aria-label="Settings"
       >
         <div className="builder-menu-scroll">
           <div className="slider-section">
@@ -150,6 +155,44 @@ export function RightToolbar({
                     }
                   >
                     <span className="slider-label">{action.label}</span>
+                    <span className="slider-description">{description}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="slider-section">
+            <span className="slider-heading">Settings</span>
+            <div className="slider-stack">
+              {SETTINGS_ITEMS.map((setting) => {
+                const description = setting.getDescription(modeState, {
+                  currentFlowLabel,
+                });
+                const isActive = setting.isActive?.(modeState) ?? false;
+                return (
+                  <button
+                    key={setting.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => {
+                      if (setting.action === "open-logo-settings" && onOpenLogoSettings) {
+                        onOpenLogoSettings();
+                      } else {
+                        onBuilderAction(setting.action, setting.data);
+                      }
+                    }}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    aria-pressed={setting.isActive ? isActive : undefined}
+                    data-active={
+                      setting.isActive && isActive ? "true" : undefined
+                    }
+                    title={
+                      controlsDisabled ? controlDisabledTitle : description
+                    }
+                    data-intent="settings"
+                  >
+                    <span className="slider-label">{setting.label}</span>
                     <span className="slider-description">{description}</span>
                   </button>
                 );
