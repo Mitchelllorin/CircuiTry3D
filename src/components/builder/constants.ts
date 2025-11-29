@@ -127,10 +127,10 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     builderType: "ground",
     description: "Add ground reference - circuit return path",
   },
-  { 
-    id: "junction", 
-    icon: "J", 
-    label: "Junction", 
+  {
+    id: "junction",
+    icon: "J",
+    label: "Junction",
     action: "junction",
     description: "Add junction - branch wires for parallel paths",
   },
