@@ -1,55 +1,30 @@
-import type { LegacyModeState, PanelAction, HelpModalView, PracticeWorksheetStatus } from "../types";
+import type { LegacyModeState, HelpModalView } from "../types";
 import {
   WIRE_METRICS,
-  PRACTICE_ACTIONS,
-  PRACTICE_SCENARIOS,
   SETTINGS_ITEMS,
   HELP_ENTRIES,
 } from "../constants";
-import { findPracticeProblemById, findPracticeProblemByPreset } from "../../../data/practiceProblems";
 
 interface BottomToolbarProps {
   isOpen: boolean;
   onToggle: () => void;
   onBuilderAction: (action: string, data?: unknown) => void;
-  onPracticeAction: (action: PanelAction) => void;
   onOpenHelpCenter: (view: HelpModalView) => void;
-  onPracticePanelOpen: () => void;
-  onOpenLastArenaSession: () => void;
   modeState: LegacyModeState;
   controlsDisabled: boolean;
   controlDisabledTitle?: string;
   currentFlowLabel: string;
-  practiceWorksheetMessage: string;
-  practiceWorksheetState: PracticeWorksheetStatus | null;
-  activePracticeProblemId: string | null;
-  isArenaSyncing: boolean;
-  canOpenLastArena: boolean;
-  practiceProblemRef: React.MutableRefObject<string | null>;
-  setActivePracticeProblemId: (id: string) => void;
-  setPracticeWorksheetState: React.Dispatch<React.SetStateAction<PracticeWorksheetStatus | null>>;
 }
 
 export function BottomToolbar({
   isOpen,
   onToggle,
   onBuilderAction,
-  onPracticeAction,
   onOpenHelpCenter,
-  onPracticePanelOpen,
-  onOpenLastArenaSession,
   modeState,
   controlsDisabled,
   controlDisabledTitle,
   currentFlowLabel,
-  practiceWorksheetMessage,
-  practiceWorksheetState,
-  activePracticeProblemId,
-  isArenaSyncing,
-  canOpenLastArena,
-  practiceProblemRef,
-  setActivePracticeProblemId,
-  setPracticeWorksheetState,
 }: BottomToolbarProps) {
   return (
     <div
@@ -103,109 +78,6 @@ export function BottomToolbar({
                   <span className="metric-label">{metric.label}</span>
                 </div>
               ))}
-            </div>
-          </div>
-          <div className="slider-section">
-            <span className="slider-heading">Practice</span>
-            <div className="menu-track menu-track-chips">
-              <div
-                role="status"
-                style={{
-                  fontSize: "11px",
-                  color: "rgba(136, 204, 255, 0.78)",
-                  textAlign: "center",
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(136, 204, 255, 0.22)",
-                  background: "rgba(14, 30, 58, 0.48)",
-                }}
-              >
-                {practiceWorksheetMessage}
-              </div>
-              {PRACTICE_ACTIONS.map((action) => (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => onPracticeAction(action)}
-                  disabled={
-                    controlsDisabled ||
-                    (action.action === "open-arena" && isArenaSyncing)
-                  }
-                  aria-disabled={
-                    controlsDisabled ||
-                    (action.action === "open-arena" && isArenaSyncing)
-                  }
-                  title={
-                    controlsDisabled
-                      ? controlDisabledTitle
-                      : action.action === "open-arena" && isArenaSyncing
-                        ? "Preparing Component Arena export?"
-                        : action.description
-                  }
-                >
-                  <span className="slider-chip-label">{action.label}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                className="slider-chip"
-                onClick={onPracticePanelOpen}
-                title={practiceWorksheetMessage}
-                data-complete={
-                  practiceWorksheetState &&
-                  activePracticeProblemId &&
-                  practiceWorksheetState.problemId === activePracticeProblemId &&
-                  practiceWorksheetState.complete
-                    ? "true"
-                    : undefined
-                }
-              >
-                <span className="slider-chip-label">Practice Worksheets</span>
-              </button>
-              {PRACTICE_SCENARIOS.map((scenario) => (
-                <button
-                  key={scenario.id}
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    onBuilderAction("load-preset", {
-                      preset: scenario.preset,
-                    });
-                    const problem = scenario.problemId
-                      ? findPracticeProblemById(scenario.problemId)
-                      : findPracticeProblemByPreset(scenario.preset);
-                    if (problem) {
-                      practiceProblemRef.current = problem.id;
-                      setActivePracticeProblemId(problem.id);
-                      setPracticeWorksheetState({
-                        problemId: problem.id,
-                        complete: false,
-                      });
-                    }
-                    onPracticePanelOpen();
-                  }}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={controlsDisabled ? controlDisabledTitle : scenario.question}
-                >
-                  <span className="slider-chip-label">{scenario.label}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                className="slider-chip"
-                onClick={onOpenLastArenaSession}
-                disabled={!canOpenLastArena}
-                aria-disabled={!canOpenLastArena}
-                title={
-                  canOpenLastArena
-                    ? "Open the most recent Component Arena export"
-                    : "Run a Component Arena export first"
-                }
-              >
-                <span className="slider-chip-label">Open Last Arena Run</span>
-              </button>
             </div>
           </div>
           <div className="slider-section">

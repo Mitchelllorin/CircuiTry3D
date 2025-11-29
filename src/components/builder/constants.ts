@@ -127,10 +127,10 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     builderType: "ground",
     description: "Add ground reference - circuit return path",
   },
-  { 
-    id: "junction", 
-    icon: "J", 
-    label: "Junction", 
+  {
+    id: "junction",
+    icon: "J",
+    label: "Junction",
     action: "junction",
     description: "Add junction - branch wires for parallel paths",
   },
@@ -270,6 +270,40 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
     getDescription: () => "Configure floating logo animation",
     isActive: () => false,
   },
+  {
+    id: "flow-visualisation",
+    label: "Flow Visualisation",
+    action: "toggle-current-flow",
+    getDescription: (_state, { currentFlowLabel }) =>
+      `${currentFlowLabel} visualisation active`,
+    isActive: (state) => state.currentFlowStyle === "solid",
+  },
+  {
+    id: "polarity-markers",
+    label: "Polarity Markers",
+    action: "toggle-polarity",
+    getDescription: (state) =>
+      state.showPolarityIndicators
+        ? "Polarity markers visible"
+        : "Polarity markers hidden",
+    isActive: (state) => state.showPolarityIndicators,
+  },
+  {
+    id: "design-grid",
+    label: "Design Grid",
+    action: "toggle-grid",
+    getDescription: (state) =>
+      state.showGrid ? "Grid visible" : "Grid hidden",
+    isActive: (state) => state.showGrid,
+  },
+  {
+    id: "component-labels",
+    label: "Component Labels",
+    action: "toggle-labels",
+    getDescription: (state) =>
+      state.showLabels ? "Labels shown" : "Labels hidden",
+    isActive: (state) => state.showLabels,
+  },
 ];
 
 export const PRACTICE_SCENARIOS: PracticeScenario[] = [
@@ -349,31 +383,11 @@ export const WIRE_LEGEND: HelpLegendItem[] = [
 
 export const HELP_ENTRIES: HelpEntry[] = [
   {
-    id: "practice",
-    label: "Table Method Worksheet",
-    description:
-      "Open the W.I.R.E. table method steps plus a printable worksheet.",
-    view: "practice",
-  },
-  {
-    id: "tutorial",
-    label: "Guided Tutorial",
-    description: "Step-by-step quick start for the onboarding flow.",
-    view: "tutorial",
-  },
-  {
     id: "wire-guide",
     label: "W.I.R.E. Guide",
     description:
       "Break down Watts, Current, Resistance, and Voltage in detail.",
     view: "wire-guide",
-  },
-  {
-    id: "schematic",
-    label: "Schematic Standards",
-    description:
-      "Reference best practices for clean, recognisable circuit diagrams.",
-    view: "schematic",
   },
   {
     id: "shortcuts",
