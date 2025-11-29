@@ -19,6 +19,13 @@ export interface AdjacencyGraph {
   edges: Edge[];
 }
 
+// Connection tolerance for detecting wire-to-node connections.
+// This should be generous enough to account for minor positioning differences
+// between wire endpoints and node positions after snapping operations.
+// The UI snap radius is 12px, so we use a tolerance that ensures connections
+// are detected even with small gaps from floating-point precision or rendering.
+const CONNECTION_TOLERANCE = 8;
+
 /**
  * Rebuild the adjacency graph from wires and nodes
  * This should be called whenever the topology changes
@@ -28,13 +35,13 @@ export function rebuildAdjacencyForWires(wires: Wire[], nodes: Node[]): Adjacenc
     nodes: new Map(),
     edges: []
   };
-  
+
   // Initialize all nodes in the graph
   for (const node of nodes) {
     graph.nodes.set(node.id, new Set());
     node.attachedWireIds.clear();
   }
-  
+
   // Process each wire
   for (const wire of wires) {
     if (wire.points.length < 2) continue;
@@ -44,7 +51,7 @@ export function rebuildAdjacencyForWires(wires: Wire[], nodes: Node[]): Adjacenc
     const nodesOnWire: Node[] = [];
 
     for (const point of wire.points) {
-      const node = findNodeAtPosition(point, nodes, 0.75);
+      const node = findNodeAtPosition(point, nodes, CONNECTION_TOLERANCE);
       if (node) {
         // Avoid duplicates when multiple consecutive points map to same node
         if (!nodesOnWire.some((existing) => existing.id === node.id)) {
