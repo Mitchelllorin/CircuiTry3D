@@ -10733,6 +10733,50 @@ Made with ? for visual learners everywhere!
                 const flowState = computeFlowState(batteries, components, wires, junctions);
 
                 if (!flowState.hasPath) {
+                    // Even if directed path finding fails, check if there's a physical closed circuit.
+                    // If so, provide flow animation along all wires to give visual feedback.
+                    const hasPhysicalLoop = hasClosedCircuitPath(batteries[0], wires, components);
+
+                    if (hasPhysicalLoop && wires.length > 0) {
+                        // There's a closed loop but directed path finding failed (e.g., polarity issue).
+                        // Still show flow animation to indicate circuit completion.
+                        // Calculate approximate current assuming simple series circuit.
+                        let approxResistance = 0.01;
+                        resistors.forEach(r => {
+                            approxResistance += r.properties?.resistance || 100;
+                        });
+                        switches.forEach(sw => {
+                            if (sw.properties?.isOn) {
+                                approxResistance += sw.properties?.resistance || 0.1;
+                            }
+                        });
+                        const approxCurrent = totalVoltage / Math.max(approxResistance, 0.01);
+
+                        updateTopologyDisplay(flowState.reason === 'polarity' ? 'Polarity' : topology?.type || 'simple');
+                        const flowResult = {
+                            ...flowState,
+                            hasFlow: true,
+                            currentValue: approxCurrent,
+                            wireSegments: wires.map(wire => ({
+                                wire,
+                                direction: 1,
+                                speedFactor: 1
+                            })),
+                            totalVoltage,
+                            shortCircuit: false
+                        };
+                        currentFlowState = flowResult;
+                        return {
+                            voltage: totalVoltage,
+                            current: approxCurrent,
+                            resistance: approxResistance,
+                            power: totalVoltage * approxCurrent,
+                            isComplete: true,
+                            topology: topology?.type || 'simple',
+                            flow: sanitizeFlowState(flowResult)
+                        };
+                    }
+
                     updateTopologyDisplay('Polarity');
                     const flowResult = {
                         ...flowState,
@@ -11507,8 +11551,12 @@ Made with ? for visual learners everywhere!
                     return;
                 }
 
-                if (!wire.curve) {
+                // Always recreate the curve to ensure it uses current terminal positions.
+                // This is necessary because terminal positions may have changed since the wire was created.
+                try {
                     wire.createCurve();
+                } catch (e) {
+                    console.warn('Could not create wire curve:', e);
                 }
                 if (!wire.curve) {
                     return;
