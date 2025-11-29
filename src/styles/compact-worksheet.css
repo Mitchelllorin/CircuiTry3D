@@ -4,12 +4,13 @@
   left: 0;
   right: 0;
   background: rgba(10, 20, 35, 0.98);
-  border-top: 2px solid rgba(136, 204, 255, 0.3);
+  border-top: 2px solid rgba(136, 204, 255, 0.4);
   z-index: 100;
-  max-height: 60vh;
-  transition: transform 0.3s ease;
+  max-height: 70vh;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   transform: translateY(calc(100% - 48px));
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
 }
 
 .compact-worksheet-panel.open {
@@ -301,11 +302,11 @@
 
 .compact-worksheet-hint {
   padding: 12px;
-  background: rgba(144, 238, 144, 0.08);
-  border: 1px solid rgba(144, 238, 144, 0.25);
+  background: rgba(20, 45, 30, 0.95);
+  border: 1px solid rgba(144, 238, 144, 0.35);
   border-radius: 8px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.5;
 }
 
@@ -365,4 +366,407 @@
 
 .compact-worksheet-body::-webkit-scrollbar-thumb:hover {
   background: rgba(136, 204, 255, 0.5);
+}
+
+/* Problem Header Row */
+.problem-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.problem-difficulty {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+.problem-difficulty[data-difficulty="intro"] {
+  background: rgba(144, 238, 144, 0.2);
+  color: #90EE90;
+  border: 1px solid rgba(144, 238, 144, 0.4);
+}
+
+.problem-difficulty[data-difficulty="standard"] {
+  background: rgba(255, 179, 71, 0.2);
+  color: #FFB347;
+  border: 1px solid rgba(255, 179, 71, 0.4);
+}
+
+.problem-difficulty[data-difficulty="challenge"] {
+  background: rgba(255, 107, 107, 0.2);
+  color: #FF6B6B;
+  border: 1px solid rgba(255, 107, 107, 0.4);
+}
+
+.learning-objective {
+  font-size: 12px;
+  color: rgba(136, 204, 255, 0.85);
+  font-style: italic;
+  margin: 4px 0 8px 0;
+  padding: 8px 12px;
+  background: rgba(136, 204, 255, 0.08);
+  border-left: 3px solid rgba(136, 204, 255, 0.5);
+  border-radius: 0 6px 6px 0;
+}
+
+.givens-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(144, 238, 144, 0.1);
+  border: 1px solid rgba(144, 238, 144, 0.3);
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.givens-label {
+  font-weight: 700;
+  color: #90EE90;
+  font-size: 12px;
+}
+
+.given-item {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Fira Code', Monaco, monospace;
+}
+
+/* Tab Navigation */
+.worksheet-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+  background: rgba(14, 25, 40, 0.6);
+  border-radius: 10px;
+  margin: 12px 0;
+}
+
+.worksheet-tab {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: rgba(136, 204, 255, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.worksheet-tab:hover {
+  background: rgba(136, 204, 255, 0.1);
+  color: rgba(136, 204, 255, 0.95);
+}
+
+.worksheet-tab.active {
+  background: rgba(136, 204, 255, 0.2);
+  color: rgba(136, 204, 255, 1);
+  box-shadow: 0 2px 8px rgba(136, 204, 255, 0.2);
+}
+
+.worksheet-tab-content {
+  min-height: 200px;
+}
+
+/* Schematic Tab */
+.schematic-tab-content {
+  padding: 8px;
+}
+
+.schematic-tab-content .diagram-card {
+  background: rgba(14, 25, 40, 0.6);
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.schematic-tab-content .diagram-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.15);
+}
+
+.schematic-tab-content .diagram-card-header strong {
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 14px;
+}
+
+.schematic-tab-content .diagram-card-header span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.schematic-tab-content .diagram-svg {
+  width: 100%;
+  max-height: 200px;
+}
+
+.real-world-example {
+  background: rgba(255, 179, 71, 0.1);
+  border: 1px solid rgba(255, 179, 71, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.real-world-example strong {
+  color: #FFB347;
+  font-size: 12px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.real-world-example p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Hints Tab */
+.hints-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+.hints-section,
+.tips-section,
+.facts-section {
+  background: rgba(14, 25, 40, 0.6);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.hints-section {
+  border-left: 3px solid #88CCFF;
+}
+
+.tips-section {
+  border-left: 3px solid #90EE90;
+}
+
+.facts-section {
+  border-left: 3px solid #FFB347;
+}
+
+.hints-section h4,
+.tips-section h4,
+.facts-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hints-section h4 {
+  color: #88CCFF;
+}
+
+.tips-section h4 {
+  color: #90EE90;
+}
+
+.facts-section h4 {
+  color: #FFB347;
+}
+
+.hints-list,
+.tips-list,
+.facts-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+}
+
+.hint-item,
+.tip-item,
+.fact-item {
+  position: relative;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 8px;
+  line-height: 1.5;
+  padding-left: 12px;
+}
+
+.hint-item::before,
+.tip-item::before,
+.fact-item::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: rgba(136, 204, 255, 0.6);
+}
+
+.hint-text {
+  display: block;
+}
+
+.hint-formula {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(136, 204, 255, 0.15);
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  border-radius: 4px;
+  font-family: 'Fira Code', Monaco, monospace;
+  font-size: 11px;
+  color: #88CCFF;
+}
+
+/* W.I.R.E. Wheel Tab */
+.formulas-tab-content {
+  padding: 8px;
+}
+
+.mini-wire-wheel {
+  background: rgba(14, 25, 40, 0.6);
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.mini-wire-wheel h4 {
+  margin: 0 0 8px 0;
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 14px;
+  text-align: center;
+}
+
+.wheel-intro {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin: 0 0 16px 0;
+}
+
+.wire-wheel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.wire-quadrant {
+  background: rgba(10, 20, 35, 0.8);
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.quadrant-letter {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-family: 'Fira Code', Monaco, monospace;
+}
+
+.quadrant-formulas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.quadrant-formulas li {
+  font-size: 11px;
+  font-family: 'Fira Code', Monaco, monospace;
+  margin: 4px 0;
+  opacity: 0.9;
+}
+
+.key-laws {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.law-card {
+  background: rgba(14, 25, 40, 0.6);
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.law-card h5 {
+  margin: 0 0 6px 0;
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.law-card code {
+  display: block;
+  font-family: 'Fira Code', Monaco, monospace;
+  font-size: 13px;
+  color: #90EE90;
+  background: rgba(144, 238, 144, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.law-card p {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+}
+
+/* Mobile adjustments for new features */
+@media (max-width: 768px) {
+  .worksheet-tabs {
+    flex-wrap: wrap;
+  }
+
+  .worksheet-tab {
+    flex: 1 1 45%;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .wire-wheel-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .quadrant-letter {
+    font-size: 20px;
+  }
+
+  .quadrant-formulas li {
+    font-size: 10px;
+  }
+
+  .key-laws {
+    grid-template-columns: 1fr;
+  }
+
+  .hints-section,
+  .tips-section,
+  .facts-section {
+    padding: 10px 12px;
+  }
+
+  .problem-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }

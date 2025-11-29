@@ -16,6 +16,22 @@ const practiceProblems: PracticeProblem[] = [
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "wire-table"],
     diagram: "seriesRect",
+    learningObjective: "Apply Ohm's Law to calculate current in a series circuit by first finding total resistance.",
+    hints: [
+      { text: "In a series circuit, current is the same through all components", formula: "I_T = I_1 = I_2 = I_3" },
+      { text: "First find total resistance by adding all resistors", formula: "R_T = R_1 + R_2 + R_3" },
+      { text: "Then use Ohm's Law with the source voltage", formula: "I = E / R" },
+    ],
+    tips: [
+      "Always start by calculating total resistance in series circuits",
+      "The current you find is the same everywhere in the circuit",
+      "Voltage drops across components should sum to the source voltage",
+    ],
+    facts: [
+      "Christmas lights were traditionally wired in series - when one bulb burned out, the whole string went dark!",
+      "Series circuits are used in voltage dividers, a fundamental building block in electronics",
+    ],
+    realWorldExample: "A flashlight uses batteries in series to increase voltage. Two 1.5V AA batteries in series provide 3V.",
     source: {
       id: "battery",
       label: "Battery",
@@ -105,6 +121,22 @@ const practiceProblems: PracticeProblem[] = [
     targetMetric: { componentId: "R1", key: "voltage" },
     conceptTags: ["series", "voltage-divider", "kvl"],
     diagram: "seriesRect",
+    learningObjective: "Use Kirchhoff's Voltage Law to find voltage drops across individual resistors in a series circuit.",
+    hints: [
+      { text: "Voltage divides proportionally based on resistance values", formula: "E_x = I × R_x" },
+      { text: "The larger resistor gets the larger voltage drop" },
+      { text: "All voltage drops must equal the source voltage (KVL)", formula: "E_T = E_1 + E_2" },
+    ],
+    tips: [
+      "Larger resistance = larger voltage drop in series",
+      "Use the voltage divider formula for quick calculations",
+      "KVL: Sum of voltage drops equals source voltage",
+    ],
+    facts: [
+      "Voltage dividers are used in volume controls, dimmer switches, and sensor circuits",
+      "The concept of voltage division is crucial in designing transistor biasing circuits",
+    ],
+    realWorldExample: "A potentiometer (volume knob) works as an adjustable voltage divider to control audio levels.",
     source: {
       id: "supply",
       label: "Supply",
@@ -354,6 +386,22 @@ const practiceProblems: PracticeProblem[] = [
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["parallel", "kcl", "ohms-law"],
     diagram: "parallelRect",
+    learningObjective: "Apply Kirchhoff's Current Law to calculate total current in a parallel circuit.",
+    hints: [
+      { text: "In parallel, voltage is the same across all branches" },
+      { text: "Calculate each branch current using Ohm's Law", formula: "I = E / R" },
+      { text: "Total current equals the sum of all branch currents", formula: "I_T = I_1 + I_2" },
+    ],
+    tips: [
+      "Parallel circuits: voltage same, currents add",
+      "Lower resistance = higher current (more current takes the 'easier' path)",
+      "Total resistance is always less than the smallest branch resistance",
+    ],
+    facts: [
+      "Household electrical outlets are wired in parallel - each device gets full voltage",
+      "Parallel circuits provide redundancy: if one branch fails, others continue working",
+    ],
+    realWorldExample: "Your home's electrical outlets are in parallel. A 100W bulb and a 60W bulb can both operate at full brightness simultaneously.",
     source: {
       id: "supply",
       label: "Supply",

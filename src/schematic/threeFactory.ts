@@ -150,8 +150,10 @@ const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number,
 
 const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 256;
+  // Use larger canvas for longer text to maintain quality
+  const isLongText = text.length > 4;
+  canvas.width = isLongText ? 512 : 256;
+  canvas.height = isLongText ? 256 : 256;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     return null;
@@ -168,10 +170,21 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   ctx.fillStyle = effectiveColor;
-  ctx.font = "bold 150px 'Inter', 'Segoe UI', sans-serif";
+
+  // Dynamically adjust font size based on text length to fit canvas
+  let fontSize = 150;
+  if (text.length > 12) {
+    fontSize = 60;
+  } else if (text.length > 8) {
+    fontSize = 80;
+  } else if (text.length > 4) {
+    fontSize = 100;
+  }
+
+  ctx.font = `bold ${fontSize}px 'Inter', 'Segoe UI', sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 12);
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
   const texture = new three.CanvasTexture(canvas);
   texture.anisotropy = 4;
   const material = new three.SpriteMaterial({
@@ -182,7 +195,10 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
     opacity: options.preview ? 0.6 : 1
   });
   const sprite = new three.Sprite(material);
-  sprite.scale.set(1.4, 0.7, 1);
+  // Adjust sprite scale based on canvas aspect ratio and text length
+  const scaleX = isLongText ? 2.8 : 1.4;
+  const scaleY = isLongText ? 1.4 : 0.7;
+  sprite.scale.set(scaleX, scaleY, 1);
   sprite.userData.texture = texture;
   sprite.userData.componentKind = componentKind;
   return sprite;

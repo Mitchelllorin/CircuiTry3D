@@ -4064,7 +4064,7 @@ body.android-optimized.menu-visible .status {
                 description: [
                     "<strong>W</strong>: Note the 24 V supply (power is unknown until the end).",
                     "<strong>I</strong>: Target the circuit current I_T.",
-                    "<strong>R</strong>: Known resistors R1=120 ohm, R2=180 ohm, R3=220 ohm (pure series).",
+                    "<strong>R</strong>: Known resistors R1=150 Ω, R2=200 Ω, R3=250 Ω (pure series).",
                     "<strong>E</strong>: Use E = 24 V to select I = E / R_T from the Ohm's Law family.",
                     "Check Kirchhoff's Voltage Law by confirming the drops sum to 24 V."
                 ].join("<br>")
@@ -11975,15 +11975,15 @@ Made with ? for visual learners everywhere!
                 description: "24 V source feeding three series resistors arranged as a square.",
                 objectives: [
                     "Map a textbook square schematic into 3D space with battery, top, side, and bottom legs.",
-                    "Log known values with W.I.R.E. (R1=120 ohm, R2=180 ohm, R3=220 ohm, E=24 V) and identify I_T.",
+                    "Log known values with W.I.R.E. (R1=150 Ω, R2=200 Ω, R3=250 Ω, E=24 V) and identify I_T.",
                     "Select the correct Ohm's Law identity I = E / R_T, then compute voltage drops and power.",
                     "Confirm the solution using Kirchhoff's Voltage Law and the power identity W = I * E."
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
-                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 120 } },
-                    { id: 'R2', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
-                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 220 } }
+                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 150 } },
+                    { id: 'R2', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 200 } },
+                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 250 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },

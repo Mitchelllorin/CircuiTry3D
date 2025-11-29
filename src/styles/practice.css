@@ -1732,3 +1732,410 @@
     max-width: 100%;
   }
 }
+
+/* =====================================================
+   Floating Worksheet Modal
+   ===================================================== */
+.worksheet-modal {
+  position: fixed;
+  z-index: 2100;
+  min-width: 320px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: rgba(8, 18, 36, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(120, 200, 255, 0.35);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 48px rgba(4, 12, 28, 0.6),
+    0 0 32px rgba(80, 160, 255, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.worksheet-modal--minimized {
+  max-height: auto;
+}
+
+.worksheet-modal--dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.worksheet-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(20, 44, 80, 0.6);
+  border-bottom: 1px solid rgba(100, 180, 255, 0.2);
+  cursor: grab;
+}
+
+.worksheet-modal--dragging .worksheet-modal-header {
+  cursor: grabbing;
+}
+
+.worksheet-modal-drag-handle {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 0;
+}
+
+.worksheet-modal-drag-handle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(180, 220, 255, 0.4);
+  border-radius: 1px;
+}
+
+.worksheet-modal-header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #c8e8ff;
+}
+
+.worksheet-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.worksheet-modal-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 200, 255, 0.3);
+  background: rgba(12, 32, 64, 0.8);
+  color: #b4e0ff;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.worksheet-modal-btn:hover,
+.worksheet-modal-btn:focus {
+  background: rgba(40, 80, 140, 0.9);
+  border-color: rgba(160, 220, 255, 0.6);
+  outline: none;
+}
+
+.worksheet-modal-close:hover {
+  background: rgba(140, 40, 40, 0.8);
+  border-color: rgba(255, 120, 120, 0.6);
+  color: #ffb4b4;
+}
+
+.worksheet-modal-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* =====================================================
+   Resistor Color Code Component
+   ===================================================== */
+.resistor-color-code {
+  background: rgba(12, 32, 58, 0.74);
+  border: 1px solid rgba(116, 186, 255, 0.32);
+  border-radius: 18px;
+  padding: 24px 28px;
+}
+
+.resistor-color-code h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  color: #9fdcff;
+}
+
+.resistor-color-intro {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: rgba(212, 236, 255, 0.78);
+  line-height: 1.5;
+}
+
+.resistor-example {
+  background: rgba(10, 24, 48, 0.7);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.resistor-example svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.resistor-example-label {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  color: rgba(200, 228, 255, 0.85);
+}
+
+.color-code-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.color-code-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.color-code-table th,
+.color-code-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(100, 168, 255, 0.2);
+}
+
+.color-code-table th {
+  background: rgba(20, 44, 80, 0.5);
+  color: #a8dcff;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.color-code-table td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 24px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.color-name {
+  color: #e2f4ff;
+}
+
+.color-code-mnemonic {
+  background: rgba(16, 40, 80, 0.5);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.color-code-mnemonic h4 {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ccaff;
+}
+
+.mnemonic-text {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e8f6ff;
+  font-style: italic;
+}
+
+.mnemonic-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(180, 214, 255, 0.7);
+}
+
+.color-code-tips {
+  background: rgba(10, 28, 54, 0.6);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.color-code-tips h4 {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ccaff;
+}
+
+.color-code-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.88rem;
+  color: rgba(208, 232, 255, 0.85);
+  line-height: 1.6;
+}
+
+.color-code-tips li {
+  margin-bottom: 6px;
+}
+
+/* =====================================================
+   Learning Objective & Hints Section
+   ===================================================== */
+.practice-learning {
+  background: rgba(10, 28, 54, 0.78);
+  border: 1px solid rgba(100, 180, 255, 0.28);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.practice-learning-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.practice-learning-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(80, 160, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.practice-learning-header h3 {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #a8dcff;
+}
+
+.learning-objective {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  color: #d8f0ff;
+  line-height: 1.5;
+}
+
+.practice-hints-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.practice-hint-item {
+  background: rgba(16, 40, 80, 0.5);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.hint-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(80, 160, 255, 0.3);
+  color: #b4e0ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hint-content {
+  flex: 1;
+}
+
+.hint-text {
+  font-size: 0.88rem;
+  color: #d4ebff;
+  margin: 0 0 4px;
+}
+
+.hint-formula {
+  font-family: "Fira Code", Monaco, monospace;
+  font-size: 0.82rem;
+  color: #8ccaff;
+  background: rgba(30, 60, 100, 0.5);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Tips & Facts Section */
+.practice-tips-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.practice-tips,
+.practice-facts {
+  background: rgba(12, 30, 58, 0.6);
+  border: 1px solid rgba(100, 180, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.practice-tips h4,
+.practice-facts h4 {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ccaff;
+}
+
+.practice-tips ul,
+.practice-facts ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  color: rgba(208, 232, 255, 0.85);
+  line-height: 1.5;
+}
+
+.practice-tips li,
+.practice-facts li {
+  margin-bottom: 6px;
+}
+
+.practice-real-world {
+  background: linear-gradient(135deg, rgba(20, 50, 90, 0.6), rgba(10, 30, 60, 0.6));
+  border: 1px solid rgba(100, 200, 180, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 16px;
+}
+
+.practice-real-world h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6ee4c8;
+}
+
+.practice-real-world p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(200, 240, 230, 0.9);
+  line-height: 1.5;
+}
+
