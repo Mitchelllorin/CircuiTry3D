@@ -1090,9 +1090,9 @@ function BuilderViewport({
   // Camera control constants
   const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
   const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
-  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 4.5, max: 25 }), []);
-  const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 8, y: 3, z: 8 }), []);
-  const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.1, max: Math.PI * 0.45 }), []);
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 2.5, max: 50 }), []);
+  const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 12, y: 5, z: 12 }), []);
+  const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.05, max: Math.PI * 0.48 }), []);
   const TWO_PI = Math.PI * 2;
   const DOM_DELTA_LINE = typeof WheelEvent !== "undefined" ? WheelEvent.DOM_DELTA_LINE : 1;
 
@@ -1445,10 +1445,10 @@ function BuilderViewport({
           spherical: new three.Spherical(),
           needsUpdate: false,
           rotateSpeed: 0.0055,
-          rotateVerticalSpeed: 0.0045, 
+          rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
-          zoomSpeed: 0.75,
-          wheelZoomSpeed: 0.003
+          zoomSpeed: 1.5,
+          wheelZoomSpeed: 0.008
         };
 
         const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
@@ -1639,18 +1639,23 @@ function BuilderViewport({
           event.preventDefault();
           const isPinchGesture = event.ctrlKey || event.metaKey || (event as any).deltaZ !== 0;
           const isLineDelta = event.deltaMode === DOM_DELTA_LINE;
+          const isPanModifier = event.shiftKey;
 
-          if (isPinchGesture || isLineDelta) {
-            const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 : cameraState.wheelZoomSpeed;
-            cameraState.spherical.radius += event.deltaY * zoomFactor;
-            cameraState.needsUpdate = true;
+          // Shift+scroll to pan, otherwise scroll to zoom
+          if (isPanModifier) {
+            const panScale = isLineDelta ? 40 : 1;
+            if (event.deltaX !== 0 || event.deltaY !== 0) {
+              applyPan(event.deltaX * panScale, event.deltaY * panScale, three, camera, renderer);
+            }
             return;
           }
 
-          const panScale = isLineDelta ? 40 : 1;
-          if (event.deltaX !== 0 || event.deltaY !== 0) {
-            applyPan(event.deltaX * panScale, event.deltaY * panScale, three, camera, renderer);
-          }
+          // Default: scroll wheel zooms
+          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
+                            isPinchGesture ? cameraState.wheelZoomSpeed :
+                            cameraState.wheelZoomSpeed * 12;
+          cameraState.spherical.radius += event.deltaY * zoomFactor;
+          cameraState.needsUpdate = true;
         };
 
         const handleResize = () => {
@@ -1845,9 +1850,9 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
   // Camera control constants
   const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
   const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
-  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 4.5, max: 25 }), []);
-  const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 8, y: 3, z: 8 }), []);
-  const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.1, max: Math.PI * 0.45 }), []);
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 2.5, max: 50 }), []);
+  const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 12, y: 5, z: 12 }), []);
+  const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.05, max: Math.PI * 0.48 }), []);
   const TWO_PI = Math.PI * 2;
   const DOM_DELTA_LINE = typeof WheelEvent !== "undefined" ? WheelEvent.DOM_DELTA_LINE : 1;
 
@@ -2033,10 +2038,10 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           spherical: new three.Spherical(),
           needsUpdate: false,
           rotateSpeed: 0.0055,
-          rotateVerticalSpeed: 0.0045, 
+          rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
-          zoomSpeed: 0.75,
-          wheelZoomSpeed: 0.003
+          zoomSpeed: 1.5,
+          wheelZoomSpeed: 0.008
         };
 
         const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
@@ -2227,18 +2232,23 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           event.preventDefault();
           const isPinchGesture = event.ctrlKey || event.metaKey || (event as any).deltaZ !== 0;
           const isLineDelta = event.deltaMode === DOM_DELTA_LINE;
+          const isPanModifier = event.shiftKey;
 
-          if (isPinchGesture || isLineDelta) {
-            const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 : cameraState.wheelZoomSpeed;
-            cameraState.spherical.radius += event.deltaY * zoomFactor;
-            cameraState.needsUpdate = true;
+          // Shift+scroll to pan, otherwise scroll to zoom
+          if (isPanModifier) {
+            const panScale = isLineDelta ? 40 : 1;
+            if (event.deltaX !== 0 || event.deltaY !== 0) {
+              applyPan(event.deltaX * panScale, event.deltaY * panScale, three, camera, renderer);
+            }
             return;
           }
 
-          const panScale = isLineDelta ? 40 : 1;
-          if (event.deltaX !== 0 || event.deltaY !== 0) {
-            applyPan(event.deltaX * panScale, event.deltaY * panScale, three, camera, renderer);
-          }
+          // Default: scroll wheel zooms
+          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
+                            isPinchGesture ? cameraState.wheelZoomSpeed :
+                            cameraState.wheelZoomSpeed * 12;
+          cameraState.spherical.radius += event.deltaY * zoomFactor;
+          cameraState.needsUpdate = true;
         };
 
         const handlePointerLeave = () => {
