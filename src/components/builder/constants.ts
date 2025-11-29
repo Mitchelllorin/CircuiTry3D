@@ -383,31 +383,11 @@ export const WIRE_LEGEND: HelpLegendItem[] = [
 
 export const HELP_ENTRIES: HelpEntry[] = [
   {
-    id: "practice",
-    label: "Table Method Worksheet",
-    description:
-      "Open the W.I.R.E. table method steps plus a printable worksheet.",
-    view: "practice",
-  },
-  {
-    id: "tutorial",
-    label: "Guided Tutorial",
-    description: "Step-by-step quick start for the onboarding flow.",
-    view: "tutorial",
-  },
-  {
     id: "wire-guide",
     label: "W.I.R.E. Guide",
     description:
       "Break down Watts, Current, Resistance, and Voltage in detail.",
     view: "wire-guide",
-  },
-  {
-    id: "schematic",
-    label: "Schematic Standards",
-    description:
-      "Reference best practices for clean, recognisable circuit diagrams.",
-    view: "schematic",
   },
   {
     id: "shortcuts",

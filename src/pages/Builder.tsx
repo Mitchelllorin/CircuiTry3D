@@ -877,7 +877,7 @@ export default function Builder() {
         return;
       }
       if (action.action === "practice-help") {
-        openHelpCenter("practice");
+        openHelpCenter("overview");
         return;
       }
       if (action.action === "generate-practice") {
@@ -1183,7 +1183,7 @@ export default function Builder() {
           data-active={workspaceMode === "learn" ? "true" : undefined}
           onClick={() => {
             setWorkspaceMode("learn");
-            openHelpCenter("tutorial");
+            openHelpCenter("overview");
           }}
           aria-label="Learn mode"
           title="Tutorials, guides, and help resources"
@@ -1567,119 +1567,6 @@ export default function Builder() {
                   data-active={activeEnvironment.id !== "standard" ? "true" : undefined}
                 >
                   <span className="slider-chip-label">Configure Environment</span>
-                </button>
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Practice</span>
-              <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {practiceWorksheetMessage}
-                </div>
-                {PRACTICE_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => handlePracticeAction(action)}
-                    disabled={
-                      controlsDisabled ||
-                      (action.action === "open-arena" && isArenaSyncing)
-                    }
-                    aria-disabled={
-                      controlsDisabled ||
-                      (action.action === "open-arena" && isArenaSyncing)
-                    }
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : action.action === "open-arena" && isArenaSyncing
-                          ? "Preparing Component Arena export?"
-                          : action.description
-                    }
-                  >
-                    <span className="slider-chip-label">{action.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => setPracticePanelOpen(true)}
-                  title={practiceWorksheetMessage}
-                  data-complete={
-                    practiceWorksheetState &&
-                    activePracticeProblemId &&
-                    practiceWorksheetState.problemId ===
-                      activePracticeProblemId &&
-                    practiceWorksheetState.complete
-                      ? "true"
-                      : undefined
-                  }
-                >
-                  <span className="slider-chip-label">Practice Worksheets</span>
-                </button>
-                {PRACTICE_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => {
-                      const problem = scenario.problemId
-                        ? findPracticeProblemById(scenario.problemId)
-                        : findPracticeProblemByPreset(scenario.preset);
-
-                      if (isPracticeWorkspaceMode && problem) {
-                        handlePracticeWorkspaceProblemChange(problem.id);
-                      } else {
-                        triggerBuilderAction("load-preset", {
-                          preset: scenario.preset,
-                        });
-                        if (problem) {
-                          practiceProblemRef.current = problem.id;
-                          setActivePracticeProblemId(problem.id);
-                          setPracticeWorksheetState({
-                            problemId: problem.id,
-                            complete: false,
-                          });
-                        }
-                        setPracticePanelOpen(true);
-                      }
-                    }}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={
-                      controlsDisabled
-                        ? controlDisabledTitle
-                        : scenario.question
-                    }
-                  >
-                    <span className="slider-chip-label">{scenario.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openLastArenaSession}
-                  disabled={!canOpenLastArena}
-                  aria-disabled={!canOpenLastArena}
-                  title={
-                    canOpenLastArena
-                      ? "Open the most recent Component Arena export"
-                      : "Run a Component Arena export first"
-                  }
-                >
-                  <span className="slider-chip-label">Open Last Arena Run</span>
                 </button>
               </div>
             </div>
