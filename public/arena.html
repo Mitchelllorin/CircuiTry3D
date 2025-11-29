@@ -702,9 +702,9 @@
 
         const CAMERA_DEFAULT_POSITION = new THREE.Vector3(0, 2.8, 7.6);
         const CAMERA_DEFAULT_TARGET = new THREE.Vector3(0, 0.45, 0);
-        const CAMERA_RADIUS_LIMITS = { min: 4.5, max: 12 };
-        const CAMERA_PAN_LIMITS = { x: 4.5, y: 1.2, z: 4.5 };
-        const CAMERA_PHI_LIMITS = { min: THREE.MathUtils.degToRad(18), max: THREE.MathUtils.degToRad(82) };
+        const CAMERA_RADIUS_LIMITS = { min: 2.5, max: 20 };
+        const CAMERA_PAN_LIMITS = { x: 6, y: 2, z: 6 };
+        const CAMERA_PHI_LIMITS = { min: THREE.MathUtils.degToRad(12), max: THREE.MathUtils.degToRad(85) };
         const TWO_PI = Math.PI * 2;
         const DOM_DELTA_LINE = typeof WheelEvent !== "undefined" ? WheelEvent.DOM_DELTA_LINE : 1;
 
@@ -717,8 +717,8 @@
           rotateSpeed: 0.0055,
           rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
-          zoomSpeed: 0.75,
-          wheelZoomSpeed: 0.003
+          zoomSpeed: 1.5,
+          wheelZoomSpeed: 0.008
         };
 
         const activePointers = new Map();
@@ -1225,18 +1225,23 @@
           event.preventDefault();
           const isPinchGesture = event.ctrlKey || event.metaKey || event.deltaZ !== 0;
           const isLineDelta = event.deltaMode === DOM_DELTA_LINE;
+          const isPanModifier = event.shiftKey;
 
-          if (isPinchGesture || isLineDelta) {
-            const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 : cameraState.wheelZoomSpeed;
-            cameraState.spherical.radius += event.deltaY * zoomFactor;
-            cameraState.needsUpdate = true;
+          // Shift+scroll to pan, otherwise scroll to zoom
+          if (isPanModifier) {
+            const panScale = isLineDelta ? 40 : 1;
+            if (event.deltaX !== 0 || event.deltaY !== 0) {
+              applyPan(event.deltaX * panScale, event.deltaY * panScale);
+            }
             return;
           }
 
-          const panScale = isLineDelta ? 40 : 1;
-          if (event.deltaX !== 0 || event.deltaY !== 0) {
-            applyPan(event.deltaX * panScale, event.deltaY * panScale);
-          }
+          // Default: scroll wheel zooms
+          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
+                            isPinchGesture ? cameraState.wheelZoomSpeed :
+                            cameraState.wheelZoomSpeed * 12;
+          cameraState.spherical.radius += event.deltaY * zoomFactor;
+          cameraState.needsUpdate = true;
         }
 
         function resetCameraView() {

@@ -82,7 +82,7 @@ const HELP_SECTIONS: HelpSection[] = [
   {
     title: "Workspace Navigation",
     paragraphs: [
-      "Orbit with left-click drag, pan with right-click or two fingers, and scroll or pinch to zoom.",
+      "Orbit with left-click drag, pan with Shift+scroll or right-click, and scroll or pinch to zoom.",
       "Toggle panels closed when you need the full canvas; only the slim toggles remain visible.",
     ],
     bullets: [
@@ -423,7 +423,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
     bullets: [
       "Hold Shift while dragging to temporarily disable grid snapping.",
       "Use arrow keys for fine component positioning.",
-      "Ctrl+scroll to speed up zooming.",
+      "Scroll wheel zooms by default; hold Shift+scroll to pan.",
       "Double-click (or double-tap) for quick edits, then Space to reveal menus again.",
       "Try the quick workflow: B (battery), R (resistor), W (wire), connect, Space to review.",
     ],
