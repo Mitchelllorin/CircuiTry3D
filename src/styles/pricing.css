@@ -6,6 +6,8 @@
   --pricing-highlight: #ff8800;
   --pricing-text: #e8f6ff;
   --pricing-muted: rgba(200, 220, 255, 0.72);
+  --pricing-free: #00ff88;
+  --pricing-pro: #ff8800;
   background:
     radial-gradient(circle at 25% -10%, rgba(0, 255, 136, 0.12), transparent 55%),
     radial-gradient(circle at 80% 10%, rgba(255, 136, 0, 0.1), transparent 60%),
@@ -92,6 +94,42 @@
   color: var(--pricing-muted);
 }
 
+/* Audience Tabs */
+.audience-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.audience-tab {
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  background: rgba(12, 24, 48, 0.7);
+  color: var(--pricing-muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.2s ease, border-color 0.25s ease;
+}
+
+.audience-tab:hover {
+  border-color: rgba(0, 255, 136, 0.45);
+  color: var(--pricing-text);
+}
+
+.audience-tab.active {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.25), rgba(136, 204, 255, 0.2));
+  color: var(--pricing-text);
+  border-color: rgba(0, 255, 136, 0.5);
+}
+
+.audience-tab:focus-visible {
+  outline: 2px solid var(--pricing-accent);
+  outline-offset: 2px;
+}
+
 .plan-grid {
   display: grid;
   gap: 1.5rem;
@@ -108,6 +146,36 @@
   gap: 1.25rem;
   box-shadow: 0 28px 60px rgba(3, 12, 32, 0.45);
   backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.plan-card.plan-popular {
+  border-color: var(--pricing-highlight);
+  box-shadow: 0 28px 60px rgba(255, 136, 0, 0.25);
+}
+
+.plan-card.plan-free {
+  border-color: var(--pricing-free);
+}
+
+.plan-badge {
+  position: absolute;
+  top: -0.75rem;
+  right: 1.25rem;
+  background: linear-gradient(135deg, var(--pricing-highlight), #ff5500);
+  color: #0f172a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(255, 136, 0, 0.4);
+}
+
+.plan-badge.plan-badge-free {
+  background: linear-gradient(135deg, var(--pricing-free), #00cc66);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.35);
 }
 
 .plan-header h2 {
@@ -290,6 +358,218 @@
 
 .addon-price-unit,
 .addon-price-cycle {
+  font-size: 0.85rem;
+  color: var(--pricing-muted);
+}
+
+/* Manufacturer Partnerships Section */
+.manufacturer-section {
+  width: min(100%, 76rem);
+  background: linear-gradient(135deg, rgba(136, 102, 255, 0.08), rgba(255, 136, 0, 0.08));
+  border: 1px solid rgba(136, 102, 255, 0.24);
+  border-radius: 2rem;
+  padding: clamp(2rem, 5vw, 3rem);
+  display: grid;
+  gap: clamp(2rem, 4vw, 2.5rem);
+  box-shadow: 0 28px 60px rgba(3, 12, 32, 0.5);
+}
+
+.manufacturer-hero {
+  text-align: center;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.manufacturer-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #b794f6;
+  background: rgba(136, 102, 255, 0.15);
+  border: 1px solid rgba(136, 102, 255, 0.35);
+  border-radius: 999px;
+  padding: 0.35rem 0.95rem;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.manufacturer-hero h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+}
+
+.manufacturer-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--pricing-text);
+  font-weight: 500;
+}
+
+.manufacturer-description {
+  margin: 0;
+  color: var(--pricing-muted);
+  line-height: 1.6;
+}
+
+.manufacturer-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.manufacturer-card {
+  background: rgba(18, 36, 68, 0.75);
+  border: 1px solid rgba(136, 102, 255, 0.2);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  position: relative;
+}
+
+.manufacturer-card.manufacturer-popular {
+  border-color: rgba(136, 102, 255, 0.5);
+  box-shadow: 0 16px 40px rgba(136, 102, 255, 0.2);
+}
+
+.manufacturer-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.manufacturer-tagline {
+  margin: 0.25rem 0 0 0;
+  color: var(--pricing-muted);
+  font-size: 0.9rem;
+}
+
+.manufacturer-price {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.manufacturer-price-range {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #b794f6;
+}
+
+.manufacturer-price-period {
+  font-size: 0.85rem;
+  color: var(--pricing-muted);
+}
+
+.manufacturer-contact-sales {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #b794f6;
+  background: linear-gradient(135deg, rgba(136, 102, 255, 0.15), rgba(255, 136, 0, 0.1));
+  border: 1px solid rgba(136, 102, 255, 0.3);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  text-align: center;
+}
+
+.manufacturer-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.manufacturer-features li {
+  position: relative;
+  padding-left: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.manufacturer-features li::before {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.55rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b794f6, var(--pricing-highlight));
+  box-shadow: 0 0 0 2px rgba(136, 102, 255, 0.18);
+}
+
+.manufacturer-factors {
+  background: rgba(12, 24, 48, 0.6);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.manufacturer-factors h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.manufacturer-factors-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.manufacturer-factor {
+  padding: 0.75rem 1rem;
+  background: rgba(18, 36, 68, 0.5);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(136, 102, 255, 0.15);
+}
+
+.manufacturer-factor h4 {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.95rem;
+  color: #b794f6;
+}
+
+.manufacturer-factor p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--pricing-muted);
+  line-height: 1.5;
+}
+
+.manufacturer-cta-wrapper {
+  text-align: center;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.manufacturer-cta {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.85rem 2rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #b794f6, var(--pricing-highlight));
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(136, 102, 255, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.manufacturer-cta:hover,
+.manufacturer-cta:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(136, 102, 255, 0.4);
+}
+
+.manufacturer-cta-note {
+  margin: 0;
   font-size: 0.85rem;
   color: var(--pricing-muted);
 }
@@ -627,6 +907,11 @@
   background: linear-gradient(135deg, rgba(136, 204, 255, 0.85), rgba(0, 255, 136, 0.7));
 }
 
+.subscription-cta-button.subscription-cta-partnership {
+  background: linear-gradient(135deg, rgba(136, 102, 255, 0.85), rgba(255, 136, 0, 0.75));
+  border-color: rgba(136, 102, 255, 0.35);
+}
+
 .subscription-cta-button:hover,
 .subscription-cta-button:focus-visible {
   transform: translateY(-1px);
@@ -645,11 +930,23 @@
   .subscription-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .manufacturer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manufacturer-factors-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 960px) {
   .plan-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .plan-grid[data-plan-count="5"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .addon-grid {
@@ -663,11 +960,29 @@
   .subscription-faq-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .manufacturer-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .manufacturer-factors-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
   .pricing-section {
     padding-inline: 1.1rem;
+  }
+
+  .audience-tabs {
+    width: 100%;
+  }
+
+  .audience-tab {
+    flex: 1;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.75rem;
   }
 
   .billing-toggle {
@@ -685,6 +1000,14 @@
 
   .pricing-cta {
     font-size: 0.95rem;
+  }
+
+  .manufacturer-section {
+    padding: 1.5rem;
+  }
+
+  .manufacturer-card {
+    padding: 1.25rem;
   }
 
   .subscription-section {

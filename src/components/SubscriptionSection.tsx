@@ -35,87 +35,102 @@ const subscriptionMeta = pricingSource as SubscriptionMeta;
 
 const SUPPORT_CARDS: SupportCard[] = [
   {
-    id: "program-planning",
-    badge: "Program Planning",
-    title: "District & Campus Rollouts",
-    summary: "Partner with our team to scope the right subscription footprint for your program.",
+    id: "students-makers",
+    badge: "Students & Makers",
+    title: "Free to Learn, Free to Build",
+    summary: "No barriers to entry. Students and hobbyists get full access to build, learn, and explore circuits.",
     bullets: [
-      "Discovery session with admin & lead teachers",
-      "Seat provisioning and roster import guidance",
-      "Dedicated rollout timeline template",
+      "Unlimited circuit creation and saving",
+      "Full component library access",
+      "W.I.R.E. analysis and instant feedback",
+      "Community resources and shared circuits",
     ],
   },
   {
-    id: "teacher-success",
-    badge: "Teacher Enablement",
-    title: "Teacher Success Accelerator",
-    summary: "Ensure every educator is confident launching CircuiTry3D on day one.",
+    id: "educator-support",
+    badge: "Educator Support",
+    title: "Tools Built for Teaching",
+    summary: "Free tier for getting started, premium tools for classrooms that need more.",
     bullets: [
-      "Live or recorded onboarding workshops",
-      "Lesson launch kits with pacing guides",
-      "Priority support channel for classroom questions",
+      "Free tier includes lesson templates & progress tracking",
+      "Pro tier adds unlimited circuits & analytics",
+      "Curriculum alignment guides for standards",
+      "Priority support when you need it",
     ],
   },
   {
-    id: "student-experience",
-    badge: "Student Experience",
-    title: "Student Engagement Toolkit",
-    summary: "Keep learners motivated with ready-to-run activities and analytics.",
+    id: "school-rollout",
+    badge: "Schools & Districts",
+    title: "Campus-Wide Deployment",
+    summary: "Partner with our team to deploy CircuiTry3D across your entire program.",
     bullets: [
-      "Circuit templates aligned to NGSS & CTE standards",
-      "Auto-saved progress and classroom monitoring",
-      "W.I.R.E. analytics exports for reflections",
+      "SSO and SIS integration support",
+      "Admin dashboard for oversight",
+      "Dedicated onboarding and training",
+      "Volume pricing for larger deployments",
     ],
   },
 ];
 
 const IMPLEMENTATION_STEPS: ImplementationStep[] = [
   {
-    id: "discovery",
-    title: "Discovery & Goal Setting",
-    description: "Share your outcomes, roster counts, and timelines so we can scope the subscription tier that fits best.",
+    id: "start-free",
+    title: "Start Free",
+    description: "Students and educators can jump straight in—no credit card, no trial period. Just create an account and start building circuits.",
   },
   {
-    id: "pilot",
-    title: "Pilot With Lead Classrooms",
-    description: "Launch a focused pilot with a small teacher cohort and capture quick feedback on access, pacing, and support needs.",
+    id: "explore",
+    title: "Explore the Platform",
+    description: "Use the full component library, W.I.R.E. analysis, and save your work. See what CircuiTry3D can do for your learning or teaching.",
   },
   {
-    id: "launch",
-    title: "Campus-Wide Launch",
-    description: "Provision remaining seats, finalize billing, and host an all-staff enablement session to kick off the program.",
+    id: "upgrade-if-needed",
+    title: "Upgrade When Ready",
+    description: "Educators who need advanced analytics, unlimited circuits, or curriculum tools can upgrade to Pro. Schools can request a campus license.",
   },
   {
-    id: "measure",
-    title: "Measure & Expand",
-    description: "Review usage analytics, celebrate wins, and plan the next phase—additional campuses, certifications, or advanced bundles.",
+    id: "grow",
+    title: "Grow With Us",
+    description: "As your program expands, we scale with you. Add seats, request custom training, or explore certification bundles.",
   },
 ];
 
 const FAQ_ITEMS: FaqItem[] = [
   {
-    id: "seats",
-    question: "How do we purchase educator seats?",
+    id: "truly-free",
+    question: "Is CircuiTry3D really free for students?",
     answer:
-      "Start with a discovery call so we can confirm seat counts and billing cadence. Stripe checkout links roll out soon; until then we issue invoices or purchase orders.",
+      "Yes. Students get unlimited circuit building, full component access, and W.I.R.E. analysis at no cost. No credit card required, no trial expiration. We believe learning should be accessible.",
   },
   {
-    id: "billing",
-    question: "Can we mix monthly and annual billing?",
+    id: "educator-free-vs-pro",
+    question: "What's the difference between Educator Free and Pro?",
     answer:
-      "Educator plans can mix terms. Many districts choose annual licensing for core staff plus monthly add-ons during summer academies.",
+      "Educator Free includes 5 classroom circuits, basic templates, and student progress viewing. Pro unlocks unlimited circuits, advanced analytics, full lesson library, and priority support.",
   },
   {
-    id: "po-support",
-    question: "Do you support purchase orders or vendor onboarding?",
+    id: "school-license",
+    question: "How do school or district licenses work?",
     answer:
-      "Yes. We provide W-9, vendor packets, and Net 30 invoicing. Our team coordinates with your procurement office to simplify onboarding.",
+      "School licenses cover unlimited educator seats and all student accounts on a campus. We handle SSO integration, provide admin dashboards, and offer dedicated onboarding. Contact us for custom pricing.",
   },
   {
-    id: "privacy",
-    question: "How is student data handled?",
+    id: "manufacturer-partnership",
+    question: "Can my company partner with CircuiTry3D?",
     answer:
-      "CircuiTry3D stores minimal student data, encrypts it in transit and at rest, and supports district SSO. Review our privacy policy or request a data-sharing agreement.",
+      "Yes! We offer manufacturer partnerships ranging from component listings ($500–$2,000/year) to title sponsorships ($50,000+/year). Partners get their products in front of students, educators, and makers. See the Partnerships section on this page or contact us.",
+  },
+  {
+    id: "payment-methods",
+    question: "What payment methods do you accept?",
+    answer:
+      "We're launching Stripe checkout soon for credit card payments. We also support purchase orders, invoicing (Net 30), and can work with your procurement process.",
+  },
+  {
+    id: "cancel-anytime",
+    question: "Can I cancel my subscription?",
+    answer:
+      "Yes. Educator Pro subscriptions can be cancelled anytime. Your access continues through the end of your billing period. There are no cancellation fees.",
   },
 ];
 
@@ -125,16 +140,15 @@ export default function SubscriptionSection() {
   return (
     <section className="subscription-section" aria-labelledby="subscription-title">
       <div className="subscription-hero">
-        <span className="subscription-kicker">Subscription Success</span>
-        <h2 id="subscription-title">Launch CircuiTry3D across your program</h2>
+        <span className="subscription-kicker">How It Works</span>
+        <h2 id="subscription-title">Access for Everyone</h2>
         <p>
-          Planning a classroom, campus, or district rollout? This playbook highlights the support included in every
-          subscription tier so your team can move from pilot to full adoption with confidence.
+          CircuiTry3D is designed to be accessible. Students and makers use it free. Educators get free tools to start, with premium options for those who need more power.
         </p>
-        {stripe && (
+        {stripe && stripe.status !== "active" && (
           <div className="subscription-status" data-subscription-status={stripe.status}>
-            <span className="subscription-status-label">Billing status</span>
-            <span className="subscription-status-value">{stripe.status}</span>
+            <span className="subscription-status-label">Payments</span>
+            <span className="subscription-status-value">Coming Soon</span>
             {stripe.note && <span className="subscription-status-note">{stripe.note}</span>}
           </div>
         )}
@@ -156,7 +170,7 @@ export default function SubscriptionSection() {
       </div>
 
       <div className="subscription-steps">
-        <h3>Rollout playbook</h3>
+        <h3>Getting Started</h3>
         <ol className="subscription-step-list">
           {IMPLEMENTATION_STEPS.map((step, index) => (
             <li key={step.id} className="subscription-step">
@@ -171,7 +185,7 @@ export default function SubscriptionSection() {
       </div>
 
       <div className="subscription-faq">
-        <h3>Common questions</h3>
+        <h3>Frequently Asked Questions</h3>
         <div className="subscription-faq-grid">
           {FAQ_ITEMS.map((faq) => (
             <details key={faq.id} className="subscription-faq-item">
@@ -184,22 +198,28 @@ export default function SubscriptionSection() {
 
       <div className="subscription-cta" role="presentation">
         <div className="subscription-cta-text">
-          <h3>Ready to activate your subscription?</h3>
+          <h3>Ready to get started?</h3>
           <p>
-            Start in the sandbox today or schedule a planning call to customize your rollout, invoicing, and training
-            needs.
+            Jump into the sandbox for free, or reach out if you need help choosing the right plan for your classroom or organization.
           </p>
         </div>
         <div className="subscription-cta-actions">
           <Link className="subscription-cta-button" to="/app" data-cta-type="internal">
-            Start free sandbox
+            Start Free
           </Link>
           <a
             className="subscription-cta-button"
-            href="mailto:hello@circuitry3d.com?subject=CircuiTry3D%20Subscription%20Planning"
+            href="mailto:info@circuitry3d.net?subject=Pricing%20Question"
             data-cta-type="external"
           >
-            Book a planning call
+            Ask a Question
+          </a>
+          <a
+            className="subscription-cta-button subscription-cta-partnership"
+            href="#partnerships"
+            data-cta-type="internal"
+          >
+            Manufacturer Partnerships
           </a>
         </div>
       </div>
