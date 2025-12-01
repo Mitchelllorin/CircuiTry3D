@@ -226,13 +226,13 @@ export function findConnectedComponents(graph: AdjacencyGraph): Set<string>[] {
 export function getReachableNodes(startNodeId: string, graph: AdjacencyGraph): Set<string> {
   const visited = new Set<string>();
   const queue = [startNodeId];
-  
+
   while (queue.length > 0) {
     const current = queue.shift()!;
     if (visited.has(current)) continue;
-    
+
     visited.add(current);
-    
+
     const neighbors = graph.nodes.get(current);
     if (neighbors) {
       for (const neighbor of neighbors) {
@@ -242,6 +242,176 @@ export function getReachableNodes(startNodeId: string, graph: AdjacencyGraph): S
       }
     }
   }
-  
+
   return visited;
+}
+
+/**
+ * Circuit completion status
+ */
+export interface CircuitStatus {
+  isClosed: boolean;
+  hasLoop: boolean;
+  powerSourceConnected: boolean;
+  componentCount: number;
+  openEndpoints: string[];
+  message: string;
+}
+
+/**
+ * Check if the circuit forms a complete closed loop
+ * A circuit is considered closed if:
+ * 1. There is at least one power source (battery)
+ * 2. The power source terminals are connected through a path
+ * 3. There are no dangling/open wire endpoints in the main circuit
+ *
+ * @param wires - Array of wires in the circuit
+ * @param nodes - Array of nodes (pins, junctions, anchors)
+ * @param powerSourceNodeIds - Optional array of node IDs representing power source terminals
+ *                            (if provided, checks if positive and negative are connected)
+ */
+export function checkCircuitCompletion(
+  wires: Wire[],
+  nodes: Node[],
+  powerSourceNodeIds?: { positive: string; negative: string }[]
+): CircuitStatus {
+  if (wires.length === 0 || nodes.length < 2) {
+    return {
+      isClosed: false,
+      hasLoop: false,
+      powerSourceConnected: false,
+      componentCount: 0,
+      openEndpoints: [],
+      message: "No circuit elements present"
+    };
+  }
+
+  // Build the adjacency graph
+  const graph = rebuildAdjacencyForWires(wires, nodes);
+
+  // Find connected components
+  const components = findConnectedComponents(graph);
+
+  // Count nodes that are only connected to one other node (potential open endpoints)
+  const openEndpoints: string[] = [];
+  for (const [nodeId, neighbors] of graph.nodes.entries()) {
+    // A node with only one connection in a circuit is an open endpoint
+    // (unless it's specifically a component terminal that's intentionally the end)
+    if (neighbors.size === 1) {
+      const node = nodes.find(n => n.id === nodeId);
+      // wireAnchor nodes with only one connection are open wire ends
+      if (node && node.type === 'wireAnchor') {
+        openEndpoints.push(nodeId);
+      }
+    }
+  }
+
+  // Check if power sources are properly connected (both terminals in same component)
+  let powerSourceConnected = false;
+  if (powerSourceNodeIds && powerSourceNodeIds.length > 0) {
+    // Check if any power source has both terminals connected
+    for (const source of powerSourceNodeIds) {
+      const positiveReachable = getReachableNodes(source.positive, graph);
+      if (positiveReachable.has(source.negative)) {
+        powerSourceConnected = true;
+        break;
+      }
+    }
+  } else {
+    // If no power source specified, assume connected if there's at least one component
+    powerSourceConnected = components.length > 0 && components.some(c => c.size >= 2);
+  }
+
+  // Check for loops using cycle detection
+  const hasLoop = detectCycle(graph);
+
+  // A circuit is closed if:
+  // - Power source terminals are connected (or we have valid components)
+  // - There's a loop in the circuit
+  // - No dangling wire anchors (open endpoints are okay if they're component pins)
+  const isClosed = powerSourceConnected && hasLoop && openEndpoints.length === 0;
+
+  let message: string;
+  if (isClosed) {
+    message = "Circuit is complete and closed";
+  } else if (!powerSourceConnected) {
+    message = "Power source terminals not connected";
+  } else if (!hasLoop) {
+    message = "No closed loop detected in circuit";
+  } else if (openEndpoints.length > 0) {
+    message = `Open circuit: ${openEndpoints.length} unconnected wire endpoint(s)`;
+  } else {
+    message = "Circuit is incomplete";
+  }
+
+  return {
+    isClosed,
+    hasLoop,
+    powerSourceConnected,
+    componentCount: nodes.filter(n => n.type === 'componentPin').length,
+    openEndpoints,
+    message
+  };
+}
+
+/**
+ * Detect if the graph contains at least one cycle (closed loop)
+ * Uses DFS-based cycle detection
+ */
+function detectCycle(graph: AdjacencyGraph): boolean {
+  const visited = new Set<string>();
+  const nodeIds = Array.from(graph.nodes.keys());
+
+  if (nodeIds.length === 0) return false;
+
+  // DFS from each unvisited node
+  for (const startNode of nodeIds) {
+    if (visited.has(startNode)) continue;
+
+    const stack: Array<{ nodeId: string; parent: string | null }> = [
+      { nodeId: startNode, parent: null }
+    ];
+
+    while (stack.length > 0) {
+      const { nodeId, parent } = stack.pop()!;
+
+      if (visited.has(nodeId)) {
+        // Found a cycle - we've visited this node before from a different path
+        return true;
+      }
+
+      visited.add(nodeId);
+
+      const neighbors = graph.nodes.get(nodeId);
+      if (neighbors) {
+        for (const neighbor of neighbors) {
+          // Skip the parent node (the one we came from) to avoid false positives
+          if (neighbor !== parent) {
+            if (visited.has(neighbor)) {
+              // Found a back edge - this means there's a cycle
+              return true;
+            }
+            stack.push({ nodeId: neighbor, parent: nodeId });
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check if two specific nodes are connected through a path
+ * Useful for checking if battery terminals are connected through the circuit
+ */
+export function areNodesConnected(
+  nodeIdA: string,
+  nodeIdB: string,
+  wires: Wire[],
+  nodes: Node[]
+): boolean {
+  const graph = rebuildAdjacencyForWires(wires, nodes);
+  const reachable = getReachableNodes(nodeIdA, graph);
+  return reachable.has(nodeIdB);
 }
