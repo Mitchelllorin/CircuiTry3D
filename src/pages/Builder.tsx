@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
@@ -601,6 +602,7 @@ const IconPlay = ({ className }: IconProps) => (
 );
 
 export default function Builder() {
+  const navigate = useNavigate();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -1190,6 +1192,18 @@ export default function Builder() {
         >
           <span className="mode-icon" aria-hidden="true">📚</span>
           <span className="mode-label">Learn</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          onClick={() => {
+            navigate("/pricing");
+          }}
+          aria-label="Pricing"
+          title="View pricing plans and subscriptions"
+        >
+          <span className="mode-icon" aria-hidden="true">💰</span>
+          <span className="mode-label">Pricing</span>
         </button>
       </div>
       <div className="builder-logo-header">

@@ -4,82 +4,140 @@
     {
       "id": "monthly",
       "label": "Monthly",
-      "note": "Pay-as-you-go"
+      "note": "Flexible billing"
     },
     {
       "id": "annual",
       "label": "Annual",
-      "note": "Save 15%"
+      "note": "Save 20%"
     }
   ],
   "plans": [
     {
-      "id": "free",
-      "name": "Free Sandbox",
-      "tagline": "Explore core circuit tools",
+      "id": "student",
+      "name": "Student",
+      "tagline": "Free forever for learners",
+      "audience": "students",
+      "price": {
+        "monthly": 0,
+        "annual": 0
+      },
+      "unit": "per student",
+      "features": [
+        "Unlimited circuit builds",
+        "Full component library access",
+        "W.I.R.E. analysis & feedback",
+        "Save & share circuits",
+        "Community resources",
+        "No credit card required"
+      ],
+      "cta": {
+        "label": "Start Learning Free",
+        "type": "link",
+        "href": "/app"
+      }
+    },
+    {
+      "id": "educator-free",
+      "name": "Educator Free",
+      "tagline": "Essential tools for teaching",
+      "audience": "educators",
       "price": {
         "monthly": 0,
         "annual": 0
       },
       "unit": "per educator",
       "features": [
-        "3 active circuits",
-        "Core component library",
-        "W.I.R.E. analysis preview",
-        "Community resource hub"
+        "Everything in Student tier",
+        "5 classroom circuits",
+        "Basic lesson templates",
+        "Student progress view",
+        "Community support"
       ],
       "cta": {
-        "label": "Start Free",
+        "label": "Start Teaching Free",
         "type": "link",
         "href": "/app"
       }
     },
     {
-      "id": "educator",
-      "name": "Educator License",
-      "tagline": "Full toolkit for classroom instruction",
+      "id": "educator-pro",
+      "name": "Educator Pro",
+      "tagline": "Full toolkit for serious instruction",
+      "audience": "educators",
+      "popular": true,
       "price": {
-        "monthly": 2900,
-        "annual": 29900
+        "monthly": 999,
+        "annual": 7900
       },
       "unit": "per educator",
       "features": [
-        "Unlimited saved circuits",
-        "Advanced W.I.R.E. coaching",
-        "Lesson templates & assessments",
-        "Priority email support"
+        "Everything in Educator Free",
+        "Unlimited classroom circuits",
+        "Advanced W.I.R.E. coaching tools",
+        "Full lesson & assessment library",
+        "Student analytics dashboard",
+        "Priority email support",
+        "Curriculum alignment guides"
       ],
-      "renewal": "Auto-renews, cancel anytime",
+      "renewal": "Cancel anytime",
       "cta": {
-        "label": "Subscribe",
+        "label": "Upgrade to Pro",
         "type": "stripeCheckout",
-        "sku": "educator-license"
+        "sku": "educator-pro"
       }
     },
     {
-      "id": "institutional",
-      "name": "Institutional License",
+      "id": "school",
+      "name": "School License",
       "tagline": "Campus-wide access with admin controls",
+      "audience": "institutions",
       "price": {
         "monthly": null,
         "annual": null
       },
-      "unit": "per site",
+      "unit": "per campus",
       "features": [
-        "Bulk educator seats",
+        "Unlimited educator seats",
+        "All student accounts included",
+        "SSO & SIS integration",
         "Dedicated onboarding",
-        "SIS integrations & SSO",
-        "Curriculum alignment toolkit"
+        "Admin dashboard & reporting",
+        "Curriculum alignment toolkit",
+        "Phone & email support"
       ],
-      "renewal": "Custom agreements with annual review",
+      "renewal": "Annual agreement",
       "cta": {
-        "label": "Contact Us",
+        "label": "Contact Sales",
         "type": "link",
-        "href": "mailto:hello@circuitry3d.com?subject=Institutional%20Pricing"
+        "href": "mailto:partnerships@circuitry3d.net?subject=School%20License%20Inquiry"
       },
       "bulk": {
         "minimumSeats": 10,
-        "notes": "Volume discounts start at 25 seats"
+        "notes": "Volume pricing available"
+      }
+    },
+    {
+      "id": "maker",
+      "name": "Maker",
+      "tagline": "For DIY learners & hobbyists",
+      "audience": "general",
+      "price": {
+        "monthly": 0,
+        "annual": 0
+      },
+      "unit": "per user",
+      "features": [
+        "Unlimited circuit builds",
+        "Full component library",
+        "W.I.R.E. analysis",
+        "Community access",
+        "Save & export circuits"
+      ],
+      "cta": {
+        "label": "Start Building Free",
+        "type": "link",
+        "href": "/app"
       }
     }
   ],
@@ -87,27 +145,130 @@
     {
       "id": "certification-bundle",
       "name": "Certification Bundle",
-      "tagline": "Upcoming: Educator certification & PD hours",
+      "tagline": "Professional development & accreditation",
       "price": {
         "monthly": null,
-        "annual": 9900
+        "annual": 4900
       },
       "unit": "per educator",
-      "availability": "Launching soon",
+      "availability": "Coming Soon",
       "features": [
         "Guided certification pathway",
-        "Accredited PD modules",
-        "Printable achievement badges"
+        "Accredited PD hours",
+        "Printable achievement badges",
+        "STEM.org aligned modules"
       ],
       "cta": {
-        "label": "Learn More",
+        "label": "Join Waitlist",
         "type": "link",
-        "href": "mailto:hello@circuitry3d.com?subject=Certification%20Bundle%20Interest"
+        "href": "mailto:certifications@circuitry3d.net?subject=Certification%20Bundle%20Waitlist"
       }
     }
   ],
+  "manufacturerPartnerships": {
+    "title": "Manufacturer Partnerships",
+    "subtitle": "Put your products in the hands of the next generation",
+    "description": "Partner with CircuiTry3D to feature your components, tools, and educational kits in our simulator. Reach students, educators, and makers as they learn.",
+    "tiers": [
+      {
+        "id": "component-listing",
+        "name": "Component Listing",
+        "tagline": "Get your components into the simulator",
+        "priceRange": {
+          "min": 500,
+          "max": 2000
+        },
+        "period": "per year",
+        "features": [
+          "3D model of your component in library",
+          "Brand name & logo on component",
+          "Link to product page",
+          "Basic usage analytics"
+        ]
+      },
+      {
+        "id": "featured-partner",
+        "name": "Featured Partner",
+        "tagline": "Premium visibility & co-marketing",
+        "priceRange": {
+          "min": 2500,
+          "max": 10000
+        },
+        "period": "per year",
+        "features": [
+          "Everything in Component Listing",
+          "Featured placement in component browser",
+          "Co-branded lesson templates",
+          "Logo in partner showcase",
+          "Quarterly performance reports",
+          "Social media mentions"
+        ],
+        "popular": true
+      },
+      {
+        "id": "educational-sponsor",
+        "name": "Educational Sponsor",
+        "tagline": "Sponsor classroom experiences",
+        "priceRange": {
+          "min": 10000,
+          "max": 50000
+        },
+        "period": "per year",
+        "features": [
+          "Everything in Featured Partner",
+          "Sponsored lesson series with your products",
+          "Exclusive component category placement",
+          "Logo on learning materials",
+          "Direct educator outreach",
+          "Custom integration support",
+          "Booth at partner events"
+        ]
+      },
+      {
+        "id": "title-sponsor",
+        "name": "Title Sponsor",
+        "tagline": "Be the face of circuit education",
+        "priceRange": {
+          "min": 50000,
+          "max": null
+        },
+        "period": "per year",
+        "features": [
+          "Everything in Educational Sponsor",
+          "Title sponsorship of platform areas",
+          "Co-developed curriculum modules",
+          "Dedicated partnership manager",
+          "Priority product integration",
+          "Speaking opportunities at events",
+          "Custom analytics dashboard"
+        ]
+      }
+    ],
+    "cta": {
+      "label": "Discuss Partnership",
+      "href": "mailto:partnerships@circuitry3d.net?subject=Manufacturer%20Partnership%20Inquiry"
+    },
+    "factors": [
+      {
+        "title": "Audience Reach",
+        "description": "Pricing scales with your target exposure: single component vs. category-wide presence"
+      },
+      {
+        "title": "Integration Depth",
+        "description": "Basic 3D model listing costs less than full interactive simulations with specs"
+      },
+      {
+        "title": "Exclusivity",
+        "description": "Non-exclusive listings start lower; category exclusivity commands premium"
+      },
+      {
+        "title": "Duration",
+        "description": "Annual contracts standard; multi-year partnerships receive discounts"
+      }
+    ]
+  },
   "stripe": {
     "status": "pending",
-    "note": "Stripe checkout links will populate sku-based buttons"
+    "note": "Payment links coming soon"
   }
 }
