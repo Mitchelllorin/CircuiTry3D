@@ -142,6 +142,12 @@ export class CurrentFlowAnimationSystem {
 
   /**
    * Add a flow path with configuration options
+   *
+   * Path direction convention:
+   * - Paths should be defined in the CONVENTIONAL current direction (positive to negative)
+   * - The flow mode determines animation direction:
+   *   - "conventional": particles move forward along path (progress increases)
+   *   - "electron": particles move backward along path (progress decreases)
    */
   public addFlowPath(
     pathOrConfig: Vec2[] | FlowPathConfig,
@@ -166,19 +172,24 @@ export class CurrentFlowAnimationSystem {
 
     if (path.length < 2) return;
 
-    // Determine if path should be reversed based on flow mode
-    // Electron flow: negative to positive (reversed from conventional)
-    // Conventional: positive to negative (standard direction)
+    // Determine flow direction based on mode
+    // Electron flow: reversed = true (particles move backward along path)
+    // Conventional flow: reversed = false (particles move forward along path)
     const isReversed = this.flowMode === "electron";
-    const effectivePath = isReversed ? [...path].reverse() : [...path];
 
     for (let i = 0; i < count; i++) {
+      // For electron flow, start at the end of the path (since we'll move backward)
+      // For conventional flow, start at the beginning
+      const startPosition = isReversed ? path[path.length - 1] : path[0];
+      // Distribute particles evenly along the path
+      const initialProgress = isReversed ? 1 - (i / count) : i / count;
+
       const particle: CurrentFlowParticle = {
         id: `particle-${this.nextParticleId++}`,
-        position: { ...effectivePath[0] },
-        progress: i / count,
+        position: { ...startPosition },
+        progress: initialProgress,
         speed: speed + Math.random() * 0.2,
-        path: effectivePath,
+        path: path, // Use the path as-is, direction is handled in update()
         intensity,
         reversed: isReversed
       };
@@ -261,11 +272,21 @@ export class CurrentFlowAnimationSystem {
 
     this.particles.forEach(particle => {
       // Update particle progress along path
-      particle.progress += particle.speed * deltaTime;
-
-      // Loop back to start
-      if (particle.progress >= 1) {
-        particle.progress = 0;
+      // Direction is determined by the reversed flag:
+      // - reversed=false (conventional): progress increases (positive to negative direction)
+      // - reversed=true (electron): progress decreases (negative to positive direction)
+      if (particle.reversed) {
+        particle.progress -= particle.speed * deltaTime;
+        // Loop back when reaching the start
+        if (particle.progress <= 0) {
+          particle.progress = 1;
+        }
+      } else {
+        particle.progress += particle.speed * deltaTime;
+        // Loop back when reaching the end
+        if (particle.progress >= 1) {
+          particle.progress = 0;
+        }
       }
 
       // Calculate position along path

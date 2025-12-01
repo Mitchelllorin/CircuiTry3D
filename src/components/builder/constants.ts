@@ -191,7 +191,7 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "cycle-routing",
     label: "Cycle Wire Routing",
-    description: "Switch between freeform, schematic 90deg, simple, perimeter, and A* routing modes.",
+    description: "Switch between freeform, schematic 90deg, star, and A* routing modes.",
     action: "cycle-wire-routing",
   },
   {
