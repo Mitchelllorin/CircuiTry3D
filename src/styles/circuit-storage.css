@@ -1,0 +1,541 @@
+/**
+ * Circuit Storage UI Styles
+ * Styles for save/load modals and recovery banner.
+ */
+
+/* Modal Overlay */
+.circuit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Modal Content */
+.circuit-modal-content {
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.circuit-load-modal {
+  max-width: 600px;
+}
+
+/* Modal Close Button */
+.circuit-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #999;
+  font-size: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.circuit-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Modal Title */
+.circuit-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  padding: 1.5rem 1.5rem 1rem;
+}
+
+/* Modal Error */
+.circuit-modal-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  margin: 0 1.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+/* Modal Actions */
+.circuit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+.circuit-load-modal .circuit-modal-actions {
+  justify-content: space-between;
+}
+
+.action-group-left,
+.action-group-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Buttons */
+.circuit-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.circuit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.circuit-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.circuit-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c7ffa, #a78bfa);
+  transform: translateY(-1px);
+}
+
+.circuit-btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+.circuit-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.circuit-btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ccc;
+}
+
+.circuit-btn-outline:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+/* Save Modal */
+.circuit-save-summary {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0 1.5rem 1rem;
+  color: #888;
+  font-size: 0.875rem;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-icon {
+  color: #6366f1;
+}
+
+.circuit-save-form {
+  padding: 0 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #999;
+}
+
+.form-field input,
+.form-field textarea {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: #555;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Load Modal */
+.circuit-load-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 1.5rem 1rem;
+}
+
+.circuit-load-empty {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-hint {
+  font-size: 0.875rem;
+  color: #555;
+  margin-top: 0.5rem;
+}
+
+/* Circuit List */
+.circuit-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1rem;
+  margin: 0 0.5rem 1rem;
+  max-height: 300px;
+}
+
+.circuit-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.circuit-list-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.circuit-list-item.selected {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.circuit-list-item.current {
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.circuit-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.circuit-item-name {
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.current-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  background: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.circuit-item-meta {
+  font-size: 0.8125rem;
+  color: #666;
+}
+
+.circuit-item-date {
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.circuit-rename-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  padding: 0.375rem 0.5rem;
+  color: #fff;
+  font-size: 0.9375rem;
+  width: 100%;
+}
+
+/* Circuit Item Actions */
+.circuit-item-actions {
+  display: flex;
+  gap: 0.375rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.circuit-list-item:hover .circuit-item-actions {
+  opacity: 1;
+}
+
+.circuit-action-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #999;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.circuit-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.circuit-action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.circuit-action-btn.danger.confirm {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  animation: pulse 0.5s infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+/* Recovery Banner */
+.circuit-recovery-banner {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #1a1a2e, #252547);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  max-width: 90vw;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.recovery-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.recovery-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.recovery-title {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.recovery-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+.recovery-name {
+  color: #a5b4fc;
+  font-weight: 500;
+}
+
+.recovery-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.recovery-dismiss {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.recovery-restore {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+/* Unsaved Indicator */
+.circuit-unsaved-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.unsaved-dot {
+  width: 6px;
+  height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Storage Warning */
+.circuit-storage-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 8px;
+  color: #fbbf24;
+  font-size: 0.8125rem;
+  margin: 0 1.5rem 1rem;
+}
+
+.storage-warning-icon {
+  flex-shrink: 0;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .circuit-modal-content {
+    max-height: 90vh;
+    border-radius: 12px 12px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .circuit-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .circuit-modal-title {
+    font-size: 1.25rem;
+  }
+
+  .circuit-load-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .circuit-recovery-banner {
+    top: auto;
+    bottom: 80px;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .recovery-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .circuit-item-actions {
+    opacity: 1;
+  }
+}
