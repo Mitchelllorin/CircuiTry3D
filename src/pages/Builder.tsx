@@ -27,6 +27,11 @@ import { RightToolbar } from "../components/builder/toolbars/RightToolbar";
 import { BottomToolbar } from "../components/builder/toolbars/BottomToolbar";
 import { HelpModal } from "../components/builder/modals/HelpModal";
 import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
+import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
+import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
+import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
+import { useCircuitStorage } from "../context/CircuitStorageContext";
+import "../styles/circuit-storage.css";
 import {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -743,6 +748,19 @@ export default function Builder() {
     setBottomMenuOpen,
   } = useResponsiveLayout();
 
+  // Circuit storage for save/load functionality
+  const circuitStorage = useCircuitStorage();
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+
+  // Create a mock circuit state for demo (in production, extract from iframe)
+  const currentCircuitState = useMemo(() => ({
+    nodes: [],
+    wires: [],
+    components: [],
+    junctions: [],
+  }), []);
+
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe || !isFrameReady) {
@@ -778,6 +796,53 @@ export default function Builder() {
       document.body.classList.remove("builder-body");
     };
   }, []);
+
+  // Global keyboard shortcuts for save/load
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      // Ignore if in input field
+      const target = event.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        return;
+      }
+
+      // Ctrl+S or Cmd+S for Save
+      if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+        event.preventDefault();
+        if (circuitStorage.currentCircuit) {
+          // Quick save if circuit already exists
+          circuitStorage.updateCurrentCircuit(currentCircuitState);
+        } else {
+          setIsSaveModalOpen(true);
+        }
+        return;
+      }
+
+      // Ctrl+O or Cmd+O for Open/Load
+      if ((event.ctrlKey || event.metaKey) && event.key === "o") {
+        event.preventDefault();
+        setIsLoadModalOpen(true);
+        return;
+      }
+
+      // Ctrl+N or Cmd+N for New
+      if ((event.ctrlKey || event.metaKey) && event.key === "n") {
+        event.preventDefault();
+        if (circuitStorage.hasUnsavedChanges) {
+          const proceed = window.confirm(
+            "You have unsaved changes. Create a new circuit anyway?"
+          );
+          if (!proceed) return;
+        }
+        circuitStorage.clearCurrentCircuit();
+        triggerBuilderAction("clear-workspace");
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
 
   useEffect(() => {
     if (!isArenaPanelOpen && !isPracticePanelOpen) {
@@ -1191,6 +1256,32 @@ export default function Builder() {
           <span className="mode-icon" aria-hidden="true">📚</span>
           <span className="mode-label">Learn</span>
         </button>
+        <div className="mode-bar-spacer" />
+        <div className="mode-bar-actions">
+          <button
+            type="button"
+            className="mode-action-btn"
+            onClick={() => setIsLoadModalOpen(true)}
+            aria-label="Open circuit"
+            title="Open saved circuit (Ctrl+O)"
+          >
+            <span className="mode-action-icon" aria-hidden="true">📂</span>
+            <span className="mode-action-label">Open</span>
+          </button>
+          <button
+            type="button"
+            className="mode-action-btn"
+            onClick={() => setIsSaveModalOpen(true)}
+            aria-label="Save circuit"
+            title="Save circuit (Ctrl+S)"
+          >
+            <span className="mode-action-icon" aria-hidden="true">💾</span>
+            <span className="mode-action-label">Save</span>
+            {circuitStorage.hasUnsavedChanges && (
+              <span className="unsaved-dot" aria-label="Unsaved changes" />
+            )}
+          </button>
+        </div>
       </div>
       <div className="builder-logo-header">
         <div className="builder-logo-text" aria-label="CircuiTry3D">
@@ -1982,6 +2073,48 @@ export default function Builder() {
           </div>
         </div>
       </div>
+
+      {/* Circuit Save Modal */}
+      <CircuitSaveModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        onSave={(name, description, tags) => {
+          return circuitStorage.saveCurrentCircuit(name, currentCircuitState, {
+            description,
+            tags,
+          });
+        }}
+        currentCircuit={circuitStorage.currentCircuit}
+        circuitState={currentCircuitState}
+      />
+
+      {/* Circuit Load Modal */}
+      <CircuitLoadModal
+        isOpen={isLoadModalOpen}
+        onClose={() => setIsLoadModalOpen(false)}
+        onLoad={(id) => circuitStorage.loadCircuitById(id)}
+        onDelete={(id) => circuitStorage.deleteCircuitById(id)}
+        onDuplicate={(id) => circuitStorage.duplicateCircuitById(id)}
+        onRename={(id, newName) => circuitStorage.renameCircuitById(id, newName)}
+        onExport={(format) => circuitStorage.exportCurrentCircuit(format)}
+        onImport={(file) => circuitStorage.importCircuitFile(file)}
+        onNewCircuit={() => {
+          circuitStorage.clearCurrentCircuit();
+          triggerBuilderAction("clear-workspace");
+        }}
+        savedCircuits={circuitStorage.savedCircuits}
+        currentCircuitId={circuitStorage.currentCircuit?.metadata.id}
+        hasUnsavedChanges={circuitStorage.hasUnsavedChanges}
+      />
+
+      {/* Recovery Banner */}
+      {circuitStorage.recoveryData && (
+        <CircuitRecoveryBanner
+          recoveryData={circuitStorage.recoveryData}
+          onRecover={() => circuitStorage.recoverCircuit()}
+          onDismiss={() => circuitStorage.dismissRecovery()}
+        />
+      )}
     </div>
   );
 }

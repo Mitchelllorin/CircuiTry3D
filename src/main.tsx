@@ -4,6 +4,7 @@ import { HashRouter } from "react-router-dom";
 import App from "./routes/App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
+import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { initializeAndroid, registerServiceWorker, isCapacitor } from "./hooks/capacitor/useAndroidInit";
 
 window.addEventListener('error', (event) => {
@@ -59,7 +60,9 @@ try {
       <HashRouter>
         <AuthProvider>
           <EngagementProvider>
-            <App />
+            <CircuitStorageProvider>
+              <App />
+            </CircuitStorageProvider>
           </EngagementProvider>
         </AuthProvider>
       </HashRouter>
