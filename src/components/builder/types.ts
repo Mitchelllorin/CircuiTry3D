@@ -20,6 +20,8 @@ export type BuilderInvokeAction =
   | "show-about"
   | "open-arena"
   | "set-tool"
+  | "undo"
+  | "redo"
   | "clear-workspace"
   | "run-simulation";
 

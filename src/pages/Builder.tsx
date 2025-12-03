@@ -1268,7 +1268,31 @@ export default function Builder() {
           <span className="mode-label">Learn</span>
         </button>
         <div className="mode-bar-spacer" />
-        <div className="mode-bar-actions">
+        <div className="mode-bar-actions" aria-label="Workspace actions">
+          <button
+            type="button"
+            className="mode-action-btn"
+            onClick={() => triggerBuilderAction("undo")}
+            disabled={controlsDisabled}
+            aria-disabled={controlsDisabled}
+            aria-label="Undo last change"
+            title="Undo (Ctrl+Z)"
+          >
+            <span className="mode-action-icon" aria-hidden="true">↺</span>
+            <span className="mode-action-label">Undo</span>
+          </button>
+          <button
+            type="button"
+            className="mode-action-btn"
+            onClick={() => triggerBuilderAction("redo")}
+            disabled={controlsDisabled}
+            aria-disabled={controlsDisabled}
+            aria-label="Redo previous change"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <span className="mode-action-icon" aria-hidden="true">↻</span>
+            <span className="mode-action-label">Redo</span>
+          </button>
           <button
             type="button"
             className="mode-action-btn"

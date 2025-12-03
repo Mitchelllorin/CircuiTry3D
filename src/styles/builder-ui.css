@@ -114,19 +114,38 @@ body.builder-body {
   transform: translateX(-50%);
   z-index: 950;
   display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
   gap: 6px;
   background: rgba(10, 24, 48, 0.88);
   border: 1px solid var(--builder-border);
   border-radius: 16px;
   padding: 6px;
+  max-width: min(1200px, calc(100vw - 24px));
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(136, 204, 255, 0.35) transparent;
   backdrop-filter: blur(18px);
   box-shadow: 0 8px 24px rgba(3, 12, 32, 0.65);
+}
+
+.workspace-mode-bar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.workspace-mode-bar::-webkit-scrollbar-thumb {
+  background: rgba(136, 204, 255, 0.35);
+  border-radius: 999px;
 }
 
 .mode-tab {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
   padding: 10px 16px;
   background: transparent;
   border: 1px solid transparent;
@@ -173,12 +192,14 @@ body.builder-body {
   margin-left: 8px;
   padding-left: 12px;
   border-left: 1px solid var(--builder-border);
+  flex: 0 0 auto;
 }
 
 .mode-action-btn {
   display: flex;
   align-items: center;
   gap: 5px;
+  flex: 0 0 auto;
   padding: 8px 12px;
   background: transparent;
   border: 1px solid transparent;
@@ -226,11 +247,11 @@ body.builder-body {
 @media (max-width: 640px) {
   .workspace-mode-bar {
     top: 8px;
-    left: 8px;
-    right: 8px;
-    transform: none;
-    flex-wrap: wrap;
-    justify-content: center;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
   }
 
   .mode-tab {
@@ -242,19 +263,13 @@ body.builder-body {
     font-size: 16px;
   }
 
-  .mode-bar-spacer {
-    display: none;
-  }
-
   .mode-bar-actions {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-    margin-top: 6px;
-    padding-left: 0;
-    padding-top: 8px;
-    border-left: none;
-    border-top: 1px solid var(--builder-border);
+    margin-left: 6px;
+    margin-top: 0;
+    padding-left: 8px;
+    padding-top: 0;
+    border-left: 1px solid var(--builder-border);
+    border-top: none;
   }
 
   .mode-action-btn {
