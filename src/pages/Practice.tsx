@@ -375,6 +375,9 @@ export default function Practice({
   const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
     DEFAULT_SYMBOL_STANDARD,
   );
+  const lastControlledProblemId = useRef<string | null | undefined>(
+    selectedProblemId,
+  );
   const lastReportedProblemId = useRef<string | null>(null);
   const lastWorksheetReport = useRef<{
     problemId: string;
@@ -383,12 +386,23 @@ export default function Practice({
 
   useEffect(() => {
     if (selectedProblemId === undefined) {
+      lastControlledProblemId.current = undefined;
       return;
     }
+
+    if (lastControlledProblemId.current === selectedProblemId) {
+      return;
+    }
+
+    lastControlledProblemId.current = selectedProblemId;
 
     const resolved = findProblem(selectedProblemId);
     if (resolved.id !== internalProblemId) {
       setInternalProblemId(resolved.id);
+      setTableRevealed(false);
+      setStepsVisible(false);
+      setAnswerRevealed(false);
+      setActiveHint(null);
     }
   }, [internalProblemId, selectedProblemId]);
 
