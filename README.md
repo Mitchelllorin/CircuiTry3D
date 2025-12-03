@@ -92,6 +92,12 @@ CircuiTry3D/
 - **Routing:** React Router DOM
 - **Deployment:** Netlify (web), Google Play Store (Android)
 
+## 🎯 Adaptive Practice Paths
+
+- The Practice workspace now tracks your recent W.I.R.E. misses and highlights the concepts and metrics that need reinforcement.
+- An adaptive queue surfaces the next three problems that best target those gaps, and helper shortcuts jump directly to the circuit diagram or Ohm's Law wheel you need most.
+- Recommendations update automatically as you solve worksheets, so progressing through the curated list keeps the challenge aligned with your current understanding.
+
 ## 📄 License
 
 ISC

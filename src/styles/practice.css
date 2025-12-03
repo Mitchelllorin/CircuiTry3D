@@ -247,6 +247,215 @@
   color: #c7ecff;
 }
 
+.adaptive-card {
+  background: rgba(9, 24, 46, 0.82);
+  border: 1px solid rgba(108, 182, 255, 0.28);
+  border-radius: 18px;
+  padding: 20px 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.adaptive-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adaptive-card-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.adaptive-card-header p {
+  margin: 0;
+  color: rgba(206, 232, 255, 0.78);
+  font-size: 0.9rem;
+}
+
+.adaptive-pill {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 200, 255, 0.4);
+  background: rgba(32, 68, 120, 0.6);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b8e2ff;
+}
+
+.adaptive-card-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.adaptive-stat {
+  background: rgba(14, 34, 64, 0.7);
+  border: 1px solid rgba(108, 180, 255, 0.25);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.adaptive-stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(168, 212, 255, 0.72);
+}
+
+.adaptive-stat strong {
+  font-size: 1rem;
+  color: #e2f4ff;
+}
+
+.adaptive-stat small {
+  font-size: 0.82rem;
+  color: rgba(204, 228, 255, 0.7);
+}
+
+.adaptive-helpers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.adaptive-helpers-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(168, 212, 255, 0.72);
+}
+
+.adaptive-helper-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adaptive-helper-buttons button {
+  background: rgba(12, 32, 62, 0.8);
+  border: 1px solid rgba(120, 188, 255, 0.38);
+  border-radius: 999px;
+  padding: 8px 16px;
+  color: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.adaptive-helper-buttons button:hover,
+.adaptive-helper-buttons button:focus-visible {
+  border-color: rgba(168, 220, 255, 0.75);
+  background: rgba(34, 72, 128, 0.85);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.adaptive-queue {
+  background: rgba(6, 18, 36, 0.7);
+  border: 1px solid rgba(90, 160, 250, 0.2);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.adaptive-queue-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.adaptive-queue-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9fdcff;
+}
+
+.adaptive-queue-header span {
+  font-size: 0.78rem;
+  color: rgba(200, 224, 255, 0.66);
+}
+
+.adaptive-queue-list {
+  display: grid;
+  gap: 10px;
+}
+
+.adaptive-queue-item {
+  width: 100%;
+  border: 1px solid rgba(90, 150, 220, 0.32);
+  border-radius: 14px;
+  background: rgba(12, 28, 52, 0.74);
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+  text-align: left;
+}
+
+.adaptive-queue-item:hover,
+.adaptive-queue-item:focus-visible {
+  border-color: rgba(140, 200, 255, 0.8);
+  background: rgba(24, 52, 96, 0.85);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.adaptive-queue-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.adaptive-queue-copy strong {
+  font-size: 0.92rem;
+}
+
+.adaptive-queue-copy small {
+  font-size: 0.8rem;
+  color: rgba(198, 228, 255, 0.76);
+}
+
+.adaptive-queue-meta {
+  font-size: 0.78rem;
+  color: rgba(226, 238, 255, 0.7);
+}
+
+.adaptive-queue-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(200, 228, 255, 0.78);
+}
+
+.practice-helper-anchor {
+  scroll-margin-top: 48px;
+}
+
+.practice-helper-anchor > * {
+  width: 100%;
+}
+
 .practice-hint-backdrop {
   position: fixed;
   inset: 0;
@@ -1730,6 +1939,19 @@
 
   .diagram-svg {
     max-width: 100%;
+  }
+
+  .adaptive-card-header {
+    flex-direction: column;
+  }
+
+  .adaptive-queue-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adaptive-queue-meta {
+    margin-top: 4px;
   }
 }
 
