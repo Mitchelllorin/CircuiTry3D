@@ -1,0 +1,491 @@
+/**
+ * AC Frequency Panel Styles
+ * Professional styling for the AC circuit analysis panel in the Builder workspace.
+ * Follows the CircuiTry3D design system with navy backgrounds, cyan/green accents,
+ * and educational color coding for electrical concepts.
+ */
+
+.ac-panel {
+  background: rgba(10, 24, 48, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(3, 12, 32, 0.45);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.ac-panel--compact {
+  border-radius: 14px;
+}
+
+/* Header */
+.ac-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 40, 72, 0.65),
+    rgba(14, 32, 60, 0.45)
+  );
+  border-bottom: 1px solid rgba(136, 204, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.ac-panel__title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ac-panel__icon {
+  font-size: 24px;
+  line-height: 1;
+  color: #88ccff;
+}
+
+.ac-panel__title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ac-panel__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(200, 228, 255, 0.88);
+}
+
+.ac-panel__frequency {
+  font-size: 11px;
+  color: rgba(136, 204, 255, 0.72);
+  font-weight: 500;
+}
+
+.ac-panel__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ac-panel__mode-toggle {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(136, 204, 255, 0.28);
+  background: rgba(14, 30, 58, 0.75);
+  color: rgba(200, 228, 255, 0.88);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ac-panel__mode-toggle:hover {
+  background: rgba(20, 40, 72, 0.85);
+  border-color: rgba(136, 204, 255, 0.42);
+}
+
+.ac-panel__mode-toggle--ac {
+  background: rgba(136, 204, 255, 0.2);
+  border-color: rgba(136, 204, 255, 0.5);
+  color: #88ccff;
+}
+
+.ac-panel__toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.28);
+  background: rgba(14, 30, 58, 0.75);
+  color: rgba(200, 228, 255, 0.88);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ac-panel__toggle:hover {
+  background: rgba(20, 40, 72, 0.85);
+  border-color: rgba(136, 204, 255, 0.42);
+}
+
+/* Body */
+.ac-panel__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Mode Indicator */
+.ac-panel__mode-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.ac-panel__mode-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ac-panel__mode-badge--dc {
+  background: rgba(100, 100, 100, 0.3);
+  color: rgba(200, 200, 200, 0.8);
+  border: 1px solid rgba(150, 150, 150, 0.3);
+}
+
+.ac-panel__mode-badge--ac {
+  background: rgba(136, 204, 255, 0.15);
+  color: #88ccff;
+  border: 1px solid rgba(136, 204, 255, 0.4);
+}
+
+.ac-panel__mode-hint {
+  font-size: 11px;
+  color: rgba(200, 228, 255, 0.5);
+  text-align: center;
+  margin: 0;
+}
+
+/* Section */
+.ac-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ac-panel__section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(136, 204, 255, 0.6);
+}
+
+/* Frequency Presets */
+.ac-panel__frequency-presets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.ac-panel__preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  background: rgba(14, 30, 58, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ac-panel__preset-btn:hover {
+  background: rgba(20, 40, 72, 0.8);
+  border-color: rgba(136, 204, 255, 0.35);
+}
+
+.ac-panel__preset-btn--active {
+  background: rgba(136, 204, 255, 0.15);
+  border-color: rgba(136, 204, 255, 0.5);
+}
+
+.ac-panel__preset-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.9);
+}
+
+.ac-panel__preset-region {
+  font-size: 9px;
+  color: rgba(136, 204, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Custom Frequency */
+.ac-panel__custom-frequency {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ac-panel__frequency-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  background: rgba(14, 30, 58, 0.7);
+  color: rgba(200, 228, 255, 0.9);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ac-panel__frequency-input::placeholder {
+  color: rgba(136, 204, 255, 0.4);
+}
+
+.ac-panel__frequency-input:focus {
+  border-color: rgba(136, 204, 255, 0.5);
+}
+
+.ac-panel__apply-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(100, 200, 150, 0.4);
+  background: rgba(100, 200, 150, 0.15);
+  color: rgba(100, 200, 150, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ac-panel__apply-btn:hover:not(:disabled) {
+  background: rgba(100, 200, 150, 0.25);
+  border-color: rgba(100, 200, 150, 0.6);
+}
+
+.ac-panel__apply-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Reactance Grid */
+.ac-panel__reactance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.ac-panel__reactance-item {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(14, 30, 58, 0.6);
+  border: 1px solid rgba(136, 204, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ac-panel__reactance-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ac-panel__reactance-symbol {
+  font-size: 16px;
+  font-weight: 700;
+  color: #88ccff;
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.ac-panel__reactance-label {
+  font-size: 10px;
+  color: rgba(200, 228, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ac-panel__reactance-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.95);
+  font-variant-numeric: tabular-nums;
+}
+
+.ac-panel__reactance-formula {
+  font-size: 10px;
+  color: rgba(136, 204, 255, 0.5);
+  font-family: "Courier New", monospace;
+}
+
+/* Phase Display */
+.ac-panel__phase-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(14, 30, 58, 0.6);
+  border: 1px solid rgba(136, 204, 255, 0.15);
+}
+
+.ac-panel__phase-angle {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.ac-panel__phase-symbol {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffcc66;
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.ac-panel__phase-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.95);
+}
+
+.ac-panel__phase-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.ac-panel__phase-characteristic {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(200, 228, 255, 0.8);
+}
+
+.ac-panel__power-factor {
+  font-size: 11px;
+  color: rgba(136, 204, 255, 0.6);
+}
+
+/* Power Grid */
+.ac-panel__power-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ac-panel__power-item {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(14, 30, 58, 0.6);
+  border: 1px solid rgba(136, 204, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.ac-panel__power-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.ac-panel__power-symbol {
+  font-size: 14px;
+  font-weight: 700;
+  color: #66cc99;
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.ac-panel__power-label {
+  font-size: 9px;
+  color: rgba(200, 228, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ac-panel__power-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(200, 228, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Actions */
+.ac-panel__actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.ac-panel__recalc-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(136, 204, 255, 0.1);
+  color: rgba(200, 228, 255, 0.9);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ac-panel__recalc-btn:hover {
+  background: rgba(136, 204, 255, 0.2);
+  border-color: rgba(136, 204, 255, 0.5);
+}
+
+/* Error */
+.ac-panel__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 100, 100, 0.1);
+  border: 1px solid rgba(255, 100, 100, 0.3);
+}
+
+.ac-panel__error-icon {
+  font-size: 14px;
+}
+
+.ac-panel__error-text {
+  font-size: 12px;
+  color: rgba(255, 150, 150, 0.9);
+}
+
+/* Footer */
+.ac-panel__footer {
+  padding-top: 12px;
+  border-top: 1px solid rgba(136, 204, 255, 0.1);
+}
+
+.ac-panel__description {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(200, 228, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .ac-panel__frequency-presets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ac-panel__reactance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ac-panel__power-grid {
+    grid-template-columns: 1fr;
+  }
+}
