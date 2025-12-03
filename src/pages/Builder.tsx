@@ -1104,6 +1104,17 @@ export default function Builder() {
   const rightFloatingOffset =
     "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px))";
 
+  const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
+  const isOverlayActive =
+    isPracticePanelOpen ||
+    isArenaPanelOpen ||
+    isEnvironmentalPanelOpen ||
+    isHelpOpen ||
+    isLogoSettingsOpen ||
+    isSaveModalOpen ||
+    isLoadModalOpen;
+  const shouldShowFloatingActions = !isWorksheetVisible && !isOverlayActive;
+
   const controlsDisabled = !isFrameReady;
   const controlDisabledTitle = controlsDisabled
     ? "Workspace is still loading"
@@ -1787,49 +1798,53 @@ export default function Builder() {
         />
       </div>
 
-      <div
-        className="builder-floating-action builder-floating-action--left"
-        style={{ left: leftFloatingOffset }}
-      >
-        <button
-          type="button"
-          className="builder-floating-button"
-          data-variant="clear"
-          onClick={handleClearWorkspace}
-          disabled={controlsDisabled}
-          aria-disabled={controlsDisabled}
-          aria-label="Clear workspace"
-          title={
-            controlsDisabled
-              ? controlDisabledTitle
-              : "Clear all components, wires, and analysis data"
-          }
-        >
-          <IconTrash className="builder-floating-icon" />
-        </button>
-      </div>
-      <div
-        className="builder-floating-action builder-floating-action--right"
-        style={{ right: rightFloatingOffset }}
-      >
-        <button
-          type="button"
-          className="builder-floating-button"
-          data-variant="simulate"
-          onClick={handleRunSimulationClick}
-          disabled={controlsDisabled}
-          aria-disabled={controlsDisabled}
-          data-pulse={isSimulatePulsing ? "true" : undefined}
-          aria-label="Run simulation"
-          title={
-            controlsDisabled
-              ? controlDisabledTitle
-              : "Run the current circuit simulation"
-          }
-        >
-          <IconPlay className="builder-floating-icon" />
-        </button>
-      </div>
+      {shouldShowFloatingActions && (
+        <Fragment>
+          <div
+            className="builder-floating-action builder-floating-action--left"
+            style={{ left: leftFloatingOffset }}
+          >
+            <button
+              type="button"
+              className="builder-floating-button"
+              data-variant="clear"
+              onClick={handleClearWorkspace}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Clear workspace"
+              title={
+                controlsDisabled
+                  ? controlDisabledTitle
+                  : "Clear all components, wires, and analysis data"
+              }
+            >
+              <IconTrash className="builder-floating-icon" />
+            </button>
+          </div>
+          <div
+            className="builder-floating-action builder-floating-action--right"
+            style={{ right: rightFloatingOffset }}
+          >
+            <button
+              type="button"
+              className="builder-floating-button"
+              data-variant="simulate"
+              onClick={handleRunSimulationClick}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              data-pulse={isSimulatePulsing ? "true" : undefined}
+              aria-label="Run simulation"
+              title={
+                controlsDisabled
+                  ? controlDisabledTitle
+                  : "Run the current circuit simulation"
+              }
+            >
+              <IconPlay className="builder-floating-icon" />
+            </button>
+          </div>
+        </Fragment>
+      )}
 
       <div
         ref={floatingLogoRef}
