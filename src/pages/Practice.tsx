@@ -27,6 +27,7 @@ import KirchhoffLaws from "../components/practice/KirchhoffLaws";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import ResistorColorCode from "../components/practice/ResistorColorCode";
 import { PracticeViewport } from "./SchematicMode";
+import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
 import {
   DEFAULT_SYMBOL_STANDARD,
   SYMBOL_STANDARD_OPTIONS,
@@ -383,6 +384,8 @@ export default function Practice({
     problemId: string;
     complete: boolean;
   } | null>(null);
+  const diagramAnchorRef = useRef<HTMLDivElement | null>(null);
+  const ohmsWheelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (selectedProblemId === undefined) {
@@ -424,6 +427,53 @@ export default function Practice({
     () => buildStepPresentations(selectedProblem, solution),
     [selectedProblem, solution],
   );
+
+  const {
+    recordAttempt: registerAdaptiveAttempt,
+    insights: adaptiveInsights,
+    recommendations: adaptiveRecommendations,
+    helperTargets: adaptiveHelperTargets,
+  } = useAdaptivePractice({
+    problems: practiceProblems,
+    selectedProblem,
+    worksheetComplete,
+  });
+
+  const scrollToDiagram = useCallback(() => {
+    setVisualMode("diagram");
+    diagramAnchorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [setVisualMode]);
+
+  const scrollToOhmsWheel = useCallback(() => {
+    ohmsWheelRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
+  const formatAdaptiveValue = useCallback((value: number) => {
+    if (!Number.isFinite(value) || value <= 0) {
+      return "—";
+    }
+    const rounded = value >= 1 ? value.toFixed(1) : value.toFixed(2);
+    return rounded.replace(/\.0$/, "");
+  }, []);
+
+  const toConceptLabel = useCallback((tag?: string) => {
+    if (!tag) {
+      return undefined;
+    }
+    return tag
+      .split(/[-_]/g)
+      .map((segment) =>
+        segment ? segment[0]?.toUpperCase() + segment.slice(1) : segment,
+      )
+      .join(" ")
+      .trim();
+  }, []);
 
   const toggleHint = useCallback((hint: "target" | "worksheet") => {
     setActiveHint((previous) => (previous === hint ? null : hint));
@@ -632,6 +682,14 @@ export default function Practice({
         value = parsed;
       }
 
+      if (status !== baseCell.status) {
+        registerAdaptiveAttempt({
+          metric: key,
+          status,
+          previousStatus: baseCell.status,
+        });
+      }
+
       row[key] = {
         raw,
         value,
@@ -816,6 +874,98 @@ export default function Practice({
             </div>
           </section>
 
+          <section className="adaptive-card" aria-live="polite">
+            <div className="adaptive-card-header">
+              <div>
+                <h2>Adaptive Practice Path</h2>
+                <p>
+                  {adaptiveInsights.hasMistakes
+                    ? "We’re queuing challenges that reinforce the concepts you’ve missed recently."
+                    : "Solve a few worksheet cells and we’ll personalize the next wave of circuits."}
+                </p>
+              </div>
+              <span className="adaptive-pill">
+                {adaptiveInsights.hasMistakes ? "Focus Mode" : "Warm-Up"}
+              </span>
+            </div>
+            <div className="adaptive-card-stats">
+              <div className="adaptive-stat">
+                <span className="adaptive-stat-label">Concept focus</span>
+                <strong>
+                  {adaptiveInsights.focusConceptLabel ??
+                    toConceptLabel(selectedProblem.conceptTags[0]) ??
+                    "Dialing in concepts"}
+                </strong>
+                <small>
+                  {adaptiveInsights.focusConceptCount > 0
+                    ? `${formatAdaptiveValue(adaptiveInsights.focusConceptCount)} recent misses`
+                    : "Tracking your first entries"}
+                </small>
+              </div>
+              <div className="adaptive-stat">
+                <span className="adaptive-stat-label">Metric focus</span>
+                <strong>
+                  {adaptiveInsights.focusMetricLabel ?? "W.I.R.E. overview"}
+                </strong>
+                <small>
+                  {adaptiveInsights.focusMetricCount > 0
+                    ? `${formatAdaptiveValue(adaptiveInsights.focusMetricCount)} misses`
+                    : "Watching watts, amps, ohms, volts"}
+                </small>
+              </div>
+            </div>
+            {adaptiveHelperTargets.length ? (
+              <div className="adaptive-helpers">
+                <span className="adaptive-helpers-label">Jump to helper</span>
+                <div className="adaptive-helper-buttons">
+                  {adaptiveHelperTargets.map((target) => (
+                    <button
+                      key={target}
+                      type="button"
+                      onClick={target === "diagram" ? scrollToDiagram : scrollToOhmsWheel}
+                    >
+                      {target === "diagram"
+                        ? "View Circuit Diagram"
+                        : "Open Ohm's Law Wheel"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="adaptive-queue">
+              <div className="adaptive-queue-header">
+                <h3>Next up</h3>
+                <span>Prioritized by recent performance</span>
+              </div>
+              {adaptiveRecommendations.length ? (
+                <div className="adaptive-queue-list">
+                  {adaptiveRecommendations.map((item) => (
+                    <button
+                      key={item.problem.id}
+                      type="button"
+                      className="adaptive-queue-item"
+                      onClick={() => selectProblemById(item.problem.id)}
+                    >
+                      <div className="adaptive-queue-copy">
+                        <strong>{item.problem.title}</strong>
+                        <small>{item.reason}</small>
+                      </div>
+                      <span className="adaptive-queue-meta">
+                        {`${TOPOLOGY_LABEL[item.problem.topology]} · ${
+                          DIFFICULTY_LABEL[item.problem.difficulty]
+                        }`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="adaptive-queue-empty">
+                  Complete a W.I.R.E. table to unlock personalized sequencing.
+                </p>
+              )}
+            </div>
+          </section>
+
           <section className="practice-grid">
             <div className="worksheet-controls">
               <button
@@ -846,7 +996,7 @@ export default function Practice({
               </button>
             </div>
 
-            <div className="practice-visual-wrapper">
+            <div className="practice-visual-wrapper" ref={diagramAnchorRef}>
               <div className="practice-visual-toolbar">
                 <div
                   className="practice-visual-toggle"
@@ -1119,7 +1269,9 @@ export default function Practice({
           <section className="practice-supplement">
             <KirchhoffLaws />
             <TriangleDeck />
-            <OhmsLawWheel />
+            <div ref={ohmsWheelRef} id="practice-ohms-wheel" className="practice-helper-anchor">
+              <OhmsLawWheel />
+            </div>
             <ResistorColorCode />
           </section>
         </main>
