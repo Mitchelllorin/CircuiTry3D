@@ -1,6 +1,6 @@
 # CircuiTry3D
 
-3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level - creating a new way to understand the abstract concepts - Illuminating Electricity
+3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level - creating a new way to understand the abstract concepts - Illuminating Electricity. CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
 
 ## 🚀 Available Platforms
 
@@ -84,6 +84,12 @@ CircuiTry3D/
 └── docs/                 # Documentation
 ```
 
+## 👤 Founder
+
+- **Founder & Lead Developer:** Mitchell Lorin McKnight  
+- **Mission:** Replace abstract circuit lectures with immersive, feedback-rich practice spaces.  
+- **Dev Story:** Mitchell began CircuiTry3D after seeing students struggle to connect textbook schematics to physical behavior. The project focuses on letting learners inspect atomic-level current flow and reinforce W.I.R.E. habits inside a safe 3D sandbox.
+
 ## 🔧 Technology Stack
 
 - **Frontend:** React 19 + TypeScript
@@ -116,5 +122,5 @@ ISC
 ## 📞 Support
 
 - GitHub Issues: https://github.com/Mitchelllorin/CircuiTry3D/issues
-- Email: support@circuitry3d.app (placeholder)
+- Email: Mitchell Lorin McKnight — support@circuitry3d.app
 

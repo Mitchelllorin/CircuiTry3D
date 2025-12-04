@@ -198,6 +198,7 @@ Users can request data deletion by:
 ## Contact Information
 
 **Data Protection Officer:**  
+Mitchell Lorin McKnight  
 Email: privacy@circuitry3d.app  
 Website: https://circuitry3d.app/privacy  
 

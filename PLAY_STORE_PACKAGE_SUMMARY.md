@@ -4,6 +4,9 @@
 
 This repository now contains everything needed to submit CircuiTry3D to the Google Play Store.
 
+**Founder:** Mitchell Lorin McKnight  
+**Role:** Product vision, engineering, and publishing lead for CircuiTry3D
+
 ---
 
 ## 📂 Directory Structure
@@ -239,7 +242,7 @@ All data is encrypted in transit and at rest. Users can request deletion.
 
 ### Contact
 - **GitHub:** https://github.com/Mitchelllorin/CircuiTry3D
-- **Email:** support@circuitry3d.app (placeholder - update with real email)
+- **Email:** Mitchell Lorin McKnight — support@circuitry3d.app
 
 ---
 

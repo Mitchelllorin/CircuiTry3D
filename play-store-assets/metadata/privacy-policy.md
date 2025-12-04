@@ -4,7 +4,7 @@
 
 ## Introduction
 
-CircuiTry3D ("we," "our," or "the app") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
+CircuiTry3D, founded and operated by **Mitchell Lorin McKnight** ("we," "our," or "the app"), is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.
 
 ## Information We Collect
 
@@ -84,7 +84,7 @@ We may update this Privacy Policy from time to time. We will notify you of any s
 
 ## Contact Us
 
-If you have questions about this Privacy Policy, please contact us at:
+If you have questions about this Privacy Policy, please contact founder and data controller **Mitchell Lorin McKnight** at:
 
 **Email:** privacy@circuitry3d.app  
 **Website:** https://circuitry3d.app/privacy  

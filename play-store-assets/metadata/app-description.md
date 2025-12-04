@@ -10,7 +10,7 @@ CircuiTry3D
 
 **Illuminate Electricity with CircuiTry3D**
 
-CircuiTry3D is a revolutionary 3D, interactive electric circuit builder that brings electrical concepts to life. Using advanced visualization and Ohm's law calculations, CircuiTry3D helps students, educators, and electronics enthusiasts understand current flow and circuit behavior down to the atomic level.
+CircuiTry3D is a revolutionary 3D, interactive electric circuit builder that brings electrical concepts to life. Created by founder **Mitchell Lorin McKnight**, the experience combines advanced visualization and Ohm's law calculations to help students, educators, and electronics enthusiasts understand current flow and circuit behavior down to the atomic level.
 
 **Key Features:**
 
@@ -47,7 +47,7 @@ CircuiTry3D is a revolutionary 3D, interactive electric circuit builder that bri
 
 **Why CircuiTry3D?**
 
-Traditional circuit learning can be abstract and difficult to visualize. CircuiTry3D makes electrical concepts tangible by providing a safe, interactive environment where you can experiment, learn, and understand electricity like never before. No need for physical components or expensive equipment – everything you need is right in your pocket!
+Traditional circuit learning can be abstract and difficult to visualize. CircuiTry3D makes electrical concepts tangible by providing a safe, interactive environment where you can experiment, learn, and understand electricity like never before. No need for physical components or expensive equipment – everything you need is right in your pocket! Mitchell built the app so visual thinkers could finally see atomic-level current flow while they tinker.
 
 **Keywords:** circuit builder, electrical engineering, electronics learning, Ohm's law, 3D simulation, interactive learning, circuit design, electrical circuits, physics education, STEM education, electronics simulator, circuit simulator, voltage, current, resistance, educational app
 
