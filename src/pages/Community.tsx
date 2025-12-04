@@ -1,8 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
 import type { FormEvent } from "react";
 import "../styles/community.css";
+
+const PROFILE_COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f97316", "#22d3ee", "#14b8a6", "#facc15", "#4ade80"];
+const DEFAULT_AVATAR_COLOR = PROFILE_COLORS[0];
+
+const getInitials = (name?: string | null) => {
+  if (!name) {
+    return "";
+  }
+  return name
+    .split(" ")
+    .map((segment) => segment.trim()[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+};
 
 const formatRelativeTime = (timestamp: number) => {
   const delta = Date.now() - timestamp;
@@ -31,7 +48,7 @@ const formatRelativeTime = (timestamp: number) => {
 };
 
 export default function Community() {
-  const { currentUser, getUserById } = useAuth();
+  const { currentUser, users, getUserById, updateProfile } = useAuth();
   const {
     messages,
     circuits,
@@ -54,6 +71,29 @@ export default function Community() {
   const [isSubmittingMessage, setIsSubmittingMessage] = useState(false);
   const [isSubmittingCircuit, setIsSubmittingCircuit] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    displayName: currentUser?.displayName ?? "",
+    bio: currentUser?.bio ?? "",
+    avatarColor: currentUser?.avatarColor ?? DEFAULT_AVATAR_COLOR,
+  });
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfileForm({
+        displayName: currentUser.displayName,
+        bio: currentUser.bio ?? "",
+        avatarColor: currentUser.avatarColor,
+      });
+    } else {
+      setProfileForm({
+        displayName: "",
+        bio: "",
+        avatarColor: DEFAULT_AVATAR_COLOR,
+      });
+    }
+  }, [currentUser]);
 
   const averageRatingLabel = useMemo(() => {
     if (!stats.averageRating) {
@@ -61,6 +101,62 @@ export default function Community() {
     }
     return `${stats.averageRating.toFixed(1)} / 5`;
   }, [stats.averageRating]);
+
+  const memberDirectory = useMemo(() => {
+    if (users.length === 0) {
+      return [];
+    }
+
+    const contributions = new Map<
+      string,
+      { messages: number; circuits: number; reviews: number; lastActivity: number }
+    >();
+
+    users.forEach((user) => {
+      contributions.set(user.id, {
+        messages: 0,
+        circuits: 0,
+        reviews: 0,
+        lastActivity: user.createdAt,
+      });
+    });
+
+    messages.forEach((message) => {
+      const entry = contributions.get(message.userId);
+      if (entry) {
+        entry.messages += 1;
+        entry.lastActivity = Math.max(entry.lastActivity, message.createdAt);
+      }
+    });
+
+    circuits.forEach((circuit) => {
+      const entry = contributions.get(circuit.userId);
+      if (entry) {
+        entry.circuits += 1;
+        entry.lastActivity = Math.max(entry.lastActivity, circuit.createdAt);
+      }
+    });
+
+    reviews.forEach((review) => {
+      const entry = contributions.get(review.userId);
+      if (entry) {
+        entry.reviews += 1;
+        entry.lastActivity = Math.max(entry.lastActivity, review.createdAt);
+      }
+    });
+
+    return users
+      .map((user) => {
+        const summary = contributions.get(user.id)!;
+        const total = summary.messages + summary.circuits + summary.reviews;
+        return {
+          user,
+          ...summary,
+          total,
+        };
+      })
+      .sort((a, b) => b.lastActivity - a.lastActivity);
+  }, [users, messages, circuits, reviews]);
 
   const handlePostMessage = async (event: FormEvent) => {
     event.preventDefault();
@@ -113,6 +209,32 @@ export default function Community() {
     setIsSubmittingReview(false);
   };
 
+  const handleSaveProfile = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!currentUser) {
+      setProfileStatus("Sign in to save your profile.");
+      return;
+    }
+    const displayName = profileForm.displayName.trim();
+    if (!displayName) {
+      setProfileStatus("Display name is required.");
+      return;
+    }
+    setProfileStatus(null);
+    setIsSavingProfile(true);
+    const result = await updateProfile({
+      displayName,
+      bio: profileForm.bio,
+      avatarColor: profileForm.avatarColor,
+    });
+    if (result.ok) {
+      setProfileStatus("Profile saved.");
+    } else {
+      setProfileStatus(result.message);
+    }
+    setIsSavingProfile(false);
+  };
+
   return (
     <div className="community-page">
       <header className="community-hero">
@@ -153,13 +275,7 @@ export default function Community() {
           <div className="community-feed" role="list">
             {messages.map((message) => {
               const author = getUserById(message.userId);
-              const initials = author?.displayName
-                .split(" ")
-                .map((segment) => segment.trim()[0])
-                .filter(Boolean)
-                .slice(0, 2)
-                .join("")
-                .toUpperCase();
+              const initials = getInitials(author?.displayName);
               return (
                 <div key={message.id} className="feed-item" role="listitem">
                   <div className="feed-avatar" style={{ backgroundColor: author?.avatarColor ?? "#334155" }} aria-hidden="true">
@@ -361,6 +477,107 @@ export default function Community() {
               </button>
             </div>
           </form>
+        </article>
+
+        <article className="community-panel profile-panel">
+          <header className="panel-header">
+            <div>
+              <h2>Member Profiles</h2>
+              <p>Capture what you're building and browse active lab partners.</p>
+            </div>
+            {!currentUser && <p className="panel-cta">Create a profile to unlock chat and sharing.</p>}
+          </header>
+
+          {currentUser ? (
+            <form className="community-form profile-form" onSubmit={handleSaveProfile}>
+              <input
+                type="text"
+                placeholder="Display name"
+                value={profileForm.displayName}
+                onChange={(event) => setProfileForm({ ...profileForm, displayName: event.target.value })}
+                required
+                disabled={isSavingProfile}
+              />
+              <textarea
+                rows={3}
+                placeholder="Add a short note about your build style or goals"
+                value={profileForm.bio}
+                onChange={(event) => setProfileForm({ ...profileForm, bio: event.target.value })}
+                disabled={isSavingProfile}
+              />
+              <div className="profile-color-picker">
+                <span>Accent color</span>
+                <div className="color-grid" role="radiogroup" aria-label="Profile accent color">
+                  {PROFILE_COLORS.map((color) => (
+                    <button
+                      type="button"
+                      key={color}
+                      className={profileForm.avatarColor === color ? "color-swatch is-active" : "color-swatch"}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setProfileForm((previous) => ({ ...previous, avatarColor: color }))}
+                      aria-pressed={profileForm.avatarColor === color}
+                    >
+                      <span className="visually-hidden">Select color {color}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-actions">
+                <span className="form-status">{profileStatus}</span>
+                <button type="submit" className="form-primary" disabled={isSavingProfile}>
+                  {isSavingProfile ? "Saving…" : "Save Profile"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="profile-cta-card">
+              <p>Create a profile to post in chat, share circuits, and collect feedback.</p>
+              <Link className="profile-link" to="/account">
+                Create profile
+              </Link>
+            </div>
+          )}
+
+          {memberDirectory.length === 0 ? (
+            <p className="member-empty">No profiles yet. Be the first to create one!</p>
+          ) : (
+            <div className="member-directory" role="list">
+              {memberDirectory.map((member) => (
+                <div key={member.user.id} className="member-card" role="listitem">
+                  <div className="member-avatar" style={{ backgroundColor: member.user.avatarColor }} aria-hidden="true">
+                    {getInitials(member.user.displayName) || "?"}
+                  </div>
+                  <div className="member-details">
+                    <div className="member-meta">
+                      <strong>{member.user.displayName}</strong>
+                      <span>Joined {new Date(member.user.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {member.user.bio ? <p>{member.user.bio}</p> : <p className="member-placeholder">No bio yet.</p>}
+                    <div className="member-activity">
+                      <span>Last active {formatRelativeTime(member.lastActivity)}</span>
+                      <span>
+                        {member.total} contribution{member.total === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <div className="member-stats">
+                      <div className="member-stat">
+                        <span>Chats</span>
+                        <strong>{member.messages}</strong>
+                      </div>
+                      <div className="member-stat">
+                        <span>Circuits</span>
+                        <strong>{member.circuits}</strong>
+                      </div>
+                      <div className="member-stat">
+                        <span>Reviews</span>
+                        <strong>{member.reviews}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </article>
       </section>
     </div>

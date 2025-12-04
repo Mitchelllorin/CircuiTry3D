@@ -111,6 +111,13 @@ CircuiTry3D/
 - Achievement tiers such as Series Specialist, Challenge Conqueror, and Streak Legend unlock extra XP and provide clear learning milestones for students.
 - Progress is stored locally, so learners can leave and return without losing their mastery path.
 
+## 🧪 Community Hub
+
+- Visit `/community` to swap quick lab notes, post Arena exports, and capture product feedback from other builders.
+- The Circuit Gallery and Lab Chat panels persist locally, so you can keep iterating on ideas even when you're offline.
+- Member profiles now live alongside the feed—sign in via `/account`, set a bio + accent color, and your contributions (chats, circuit shares, reviews) automatically roll up into your profile card.
+- Community stats highlight active members, shared circuits, and the real-time rating pulled from the Feedback Wall.
+
 ## 📄 License
 
 ISC
