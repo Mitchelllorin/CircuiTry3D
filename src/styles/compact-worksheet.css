@@ -26,6 +26,8 @@
   height: 48px;
   background: rgba(20, 35, 55, 0.95);
   border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .compact-worksheet-toggle {
@@ -73,6 +75,31 @@
 .compact-worksheet-unlock-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(144, 238, 144, 0.5);
+}
+
+.compact-worksheet-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.compact-worksheet-next-btn {
+  background: linear-gradient(135deg, rgba(136, 204, 255, 1) 0%, rgba(88, 142, 255, 0.95) 100%);
+  border: none;
+  color: #051223;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(88, 142, 255, 0.35);
+}
+
+.compact-worksheet-next-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(88, 142, 255, 0.45);
 }
 
 .compact-worksheet-body {

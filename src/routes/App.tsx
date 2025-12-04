@@ -4,7 +4,6 @@ import Builder from "../pages/Builder";
 import Arena from "../pages/Arena";
 import WireDemo from "../pages/WireDemo";
 import Pricing from "../pages/Pricing";
-import Practice from "../pages/Practice";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";

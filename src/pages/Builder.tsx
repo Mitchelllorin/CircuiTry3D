@@ -12,15 +12,12 @@ import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
-import { ArenaPanel } from "../components/builder/panels/ArenaPanel";
-import { PracticePanel } from "../components/builder/panels/PracticePanel";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
 } from "../data/environmentalScenarios";
-import Practice from "./Practice";
 import ArenaView from "../components/arena/ArenaView";
 import { LeftToolbar } from "../components/builder/toolbars/LeftToolbar";
 import { RightToolbar } from "../components/builder/toolbars/RightToolbar";
@@ -32,7 +29,7 @@ import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal"
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
-import {
+import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
   findPracticeProblemByPreset,
@@ -118,6 +115,36 @@ const HELP_SECTIONS: HelpSection[] = [
     ],
   },
 ];
+
+const getNextPracticeProblem = (currentId: string | null) => {
+  if (!practiceProblems.length) {
+    return null;
+  }
+
+  const current = currentId ? findPracticeProblemById(currentId) : null;
+  const currentTopology = current?.topology;
+
+  const bucket =
+    currentTopology != null
+      ? practiceProblems.filter((problem) => problem.topology === currentTopology)
+      : practiceProblems;
+
+  const pool = bucket.length ? bucket : practiceProblems;
+  if (!pool.length) {
+    return null;
+  }
+
+  if (!current) {
+    return pool[0] ?? null;
+  }
+
+  const index = pool.findIndex((problem) => problem.id === current.id);
+  if (index === -1) {
+    return pool[0] ?? null;
+  }
+
+  return pool[(index + 1) % pool.length] ?? null;
+};
 const TUTORIAL_SECTIONS: HelpSection[] = [
   {
     title: "Getting Started",
@@ -629,7 +656,6 @@ export default function Builder() {
   });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
-  const [isPracticePanelOpen, setPracticePanelOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<
     string | null
@@ -845,24 +871,19 @@ export default function Builder() {
   }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
 
   useEffect(() => {
-    if (!isArenaPanelOpen && !isPracticePanelOpen) {
+    if (!isArenaPanelOpen) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (isArenaPanelOpen) {
-          setArenaPanelOpen(false);
-        }
-        if (isPracticePanelOpen) {
-          setPracticePanelOpen(false);
-        }
+      if (event.key === "Escape" && isArenaPanelOpen) {
+        setArenaPanelOpen(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isArenaPanelOpen, isPracticePanelOpen]);
+  }, [isArenaPanelOpen]);
 
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
@@ -883,56 +904,6 @@ export default function Builder() {
     [openHelpWithSection, openHelpWithView],
   );
 
-  const handlePracticeProblemChange = useCallback(
-    (problem: PracticeProblem) => {
-      setActivePracticeProblemId(problem.id);
-      setPracticeWorksheetState((previous) =>
-        previous?.problemId === problem.id
-          ? previous
-          : { problemId: problem.id, complete: false },
-      );
-
-      const previousId = practiceProblemRef.current;
-      if (problem.presetHint && previousId !== problem.id) {
-        triggerBuilderAction("load-preset", { preset: problem.presetHint });
-      }
-      practiceProblemRef.current = problem.id;
-    },
-    [triggerBuilderAction],
-  );
-
-  const handlePracticeWorksheetStatusChange = useCallback(
-    (update: { problem: PracticeProblem; complete: boolean }) => {
-      setPracticeWorksheetState({
-        problemId: update.problem.id,
-        complete: update.complete,
-      });
-      practiceProblemRef.current = update.problem.id;
-    },
-    [],
-  );
-
-  const handlePracticeWorkspaceProblemChange = useCallback(
-    (problemId: string) => {
-      const problem = findPracticeProblemById(problemId);
-      if (!problem) return;
-
-      setActivePracticeProblemId(problem.id);
-      setPracticeWorksheetState({
-        problemId: problem.id,
-        complete: false,
-      });
-      setCircuitLocked(true);
-      setCompactWorksheetOpen(true);
-
-      if (problem.presetHint) {
-        triggerBuilderAction("load-preset", { preset: problem.presetHint });
-      }
-      practiceProblemRef.current = problem.id;
-    },
-    [triggerBuilderAction],
-  );
-
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
@@ -949,24 +920,19 @@ export default function Builder() {
         triggerBuilderAction(action.action, action.data);
         const randomProblem = getRandomPracticeProblem();
         if (randomProblem) {
-          practiceProblemRef.current = randomProblem.id;
-          setActivePracticeProblemId(randomProblem.id);
-          setPracticeWorksheetState({
-            problemId: randomProblem.id,
-            complete: false,
-          });
-          if (randomProblem.presetHint) {
-            triggerBuilderAction("load-preset", {
-              preset: randomProblem.presetHint,
-            });
-          }
-          setPracticePanelOpen(true);
+          openPracticeWorkspace(randomProblem);
         }
         return;
       }
       triggerBuilderAction(action.action, action.data);
     },
-    [handleArenaSync, openHelpCenter, setArenaPanelOpen, triggerBuilderAction],
+    [
+      handleArenaSync,
+      openHelpCenter,
+      openPracticeWorkspace,
+      setArenaPanelOpen,
+      triggerBuilderAction,
+    ],
   );
 
   const openLastArenaSession = useCallback(() => {
@@ -1027,6 +993,63 @@ export default function Builder() {
     },
     [triggerBuilderAction, triggerSimulationPulse],
   );
+
+  const assignPracticeProblem = useCallback(
+    (problem: PracticeProblem, presetOverride?: string) => {
+      setActivePracticeProblemId(problem.id);
+      setPracticeWorksheetState({
+        problemId: problem.id,
+        complete: false,
+      });
+      practiceProblemRef.current = problem.id;
+
+      const presetKey = presetOverride ?? problem.presetHint;
+      if (presetKey) {
+        triggerBuilderAction("load-preset", { preset: presetKey });
+      }
+    },
+    [triggerBuilderAction],
+  );
+
+  const openPracticeWorkspace = useCallback(
+    (problemOverride?: PracticeProblem | null, presetOverride?: string) => {
+      const nextProblem =
+        problemOverride ??
+        findPracticeProblemById(activePracticeProblemId) ??
+        DEFAULT_PRACTICE_PROBLEM ??
+        practiceProblems[0] ??
+        null;
+
+      if (!nextProblem) {
+        return;
+      }
+
+      assignPracticeProblem(nextProblem, presetOverride);
+      setWorkspaceMode("practice");
+      setPracticeWorkspaceMode(true);
+      setCompactWorksheetOpen(true);
+      setCircuitLocked(true);
+      setArenaPanelOpen(false);
+    },
+    [
+      activePracticeProblemId,
+      assignPracticeProblem,
+      setArenaPanelOpen,
+    ],
+  );
+
+  const handleAdvancePracticeProblem = useCallback(() => {
+    const currentId =
+      practiceProblemRef.current ??
+      activePracticeProblemId ??
+      DEFAULT_PRACTICE_PROBLEM?.id ??
+      null;
+    const nextProblem = getNextPracticeProblem(currentId);
+    if (!nextProblem) {
+      return;
+    }
+    openPracticeWorkspace(nextProblem);
+  }, [activePracticeProblemId, openPracticeWorkspace]);
 
   const handleClearWorkspace = useCallback(() => {
     triggerBuilderAction("clear-workspace");
@@ -1112,7 +1135,6 @@ export default function Builder() {
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isOverlayActive =
-    isPracticePanelOpen ||
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
@@ -1208,7 +1230,6 @@ export default function Builder() {
             setPracticeWorkspaceMode(false);
             setCompactWorksheetOpen(false);
             setCircuitLocked(false);
-            setPracticePanelOpen(false);
             setArenaPanelOpen(false);
           }}
           aria-label="Build mode"
@@ -1222,18 +1243,11 @@ export default function Builder() {
           className="mode-tab"
           data-active={workspaceMode === "practice" ? "true" : undefined}
           onClick={() => {
-            setWorkspaceMode("practice");
-            setPracticeWorkspaceMode(true);
-            setCompactWorksheetOpen(true);
-            setCircuitLocked(true);
-            setPracticePanelOpen(false);
-            setArenaPanelOpen(false);
-
-            // Load the current practice problem into the workspace
-            const currentProblem = findPracticeProblemById(activePracticeProblemId);
-            if (currentProblem?.presetHint) {
-              triggerBuilderAction("load-preset", { preset: currentProblem.presetHint });
+            if (workspaceMode === "practice") {
+              setCompactWorksheetOpen(true);
+              return;
             }
+            openPracticeWorkspace();
           }}
           aria-label="Practice mode"
           title="Guided worksheets and W.I.R.E. problems"
@@ -1248,7 +1262,6 @@ export default function Builder() {
           onClick={() => {
             setWorkspaceMode("arena");
             setArenaPanelOpen(true);
-            setPracticePanelOpen(false);
             if (arenaExportStatus !== "ready") {
               handleArenaSync({ openWindow: false });
             }
@@ -1713,7 +1726,7 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => setPracticePanelOpen(true)}
+                  onClick={() => openPracticeWorkspace()}
                   title={practiceWorksheetMessage}
                   data-complete={isPracticeWorksheetComplete ? "true" : undefined}
                 >
@@ -1725,21 +1738,10 @@ export default function Builder() {
                     type="button"
                     className="slider-chip"
                     onClick={() => {
-                      triggerBuilderAction("load-preset", {
-                        preset: scenario.preset,
-                      });
                       const problem = scenario.problemId
                         ? findPracticeProblemById(scenario.problemId)
                         : findPracticeProblemByPreset(scenario.preset);
-                      if (problem) {
-                        practiceProblemRef.current = problem.id;
-                        setActivePracticeProblemId(problem.id);
-                        setPracticeWorksheetState({
-                          problemId: problem.id,
-                          complete: false,
-                        });
-                      }
-                      setPracticePanelOpen(true);
+                      openPracticeWorkspace(problem, scenario.preset);
                     }}
                     disabled={controlsDisabled}
                     aria-disabled={controlsDisabled}
@@ -1923,6 +1925,21 @@ export default function Builder() {
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
         />
+        {isPracticeWorkspaceMode && isCircuitLocked && (
+          <div className="builder-workspace-lock" role="status" aria-live="polite">
+            <div className="builder-workspace-lock-card">
+              <strong>Practice circuit locked</strong>
+              <p>Complete the W.I.R.E. worksheet to unlock editing or advance to the next problem.</p>
+              <button
+                type="button"
+                className="builder-workspace-lock-btn"
+                onClick={() => setCompactWorksheetOpen(true)}
+              >
+                Open Worksheet
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {shouldShowFloatingActions && (
@@ -1981,35 +1998,6 @@ export default function Builder() {
         <span className="builder-logo-circui">Circui</span>
         <span className="builder-logo-try">Try</span>
         <span className="builder-logo-3d">3D</span>
-      </div>
-
-      <div
-        className={`builder-panel-overlay${isPracticePanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isPracticePanelOpen}
-        onClick={() => setPracticePanelOpen(false)}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--practice"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setPracticePanelOpen(false)}
-            aria-label="Close practice worksheets"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--practice">
-            <Practice
-              selectedProblemId={activePracticeProblemId}
-              onProblemChange={handlePracticeProblemChange}
-              onWorksheetStatusChange={handlePracticeWorksheetStatusChange}
-            />
-          </div>
-        </div>
       </div>
 
       <div
@@ -2180,11 +2168,15 @@ export default function Builder() {
               problemId: activePracticeProblemId,
               complete,
             });
+            if (!complete) {
+              setCircuitLocked(true);
+            }
           }}
           onRequestUnlock={() => {
             setCircuitLocked(false);
             setCompactWorksheetOpen(false);
           }}
+          onAdvance={handleAdvancePracticeProblem}
         />
       )}
 
