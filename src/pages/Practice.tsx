@@ -26,6 +26,8 @@ import OhmsLawWheel from "../components/practice/OhmsLawWheel";
 import KirchhoffLaws from "../components/practice/KirchhoffLaws";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import ResistorColorCode from "../components/practice/ResistorColorCode";
+import ChallengeTrackCard from "../components/practice/ChallengeTrackCard";
+import { useChallengeProgress } from "../context/ChallengeProgressContext";
 import { PracticeViewport } from "./SchematicMode";
 import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
 import {
@@ -376,11 +378,16 @@ export default function Practice({
   const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
     DEFAULT_SYMBOL_STANDARD,
   );
+  const { recordPracticeCompletion } = useChallengeProgress();
   const lastControlledProblemId = useRef<string | null | undefined>(
     selectedProblemId,
   );
   const lastReportedProblemId = useRef<string | null>(null);
   const lastWorksheetReport = useRef<{
+    problemId: string;
+    complete: boolean;
+  } | null>(null);
+  const lastChallengeReport = useRef<{
     problemId: string;
     complete: boolean;
   } | null>(null);
@@ -549,6 +556,31 @@ export default function Practice({
     setWorksheetEntries(baselineWorksheet);
     setWorksheetComplete(false);
   }, [baselineWorksheet, selectedProblem.id]);
+
+  useEffect(() => {
+    const currentProblemId = selectedProblem.id;
+    const previous = lastChallengeReport.current;
+
+    if (!worksheetComplete) {
+      if (!previous || previous.problemId !== currentProblemId || previous.complete) {
+        lastChallengeReport.current = {
+          problemId: currentProblemId,
+          complete: false,
+        };
+      }
+      return;
+    }
+
+    if (previous && previous.problemId === currentProblemId && previous.complete) {
+      return;
+    }
+
+    recordPracticeCompletion(selectedProblem);
+    lastChallengeReport.current = {
+      problemId: currentProblemId,
+      complete: true,
+    };
+  }, [recordPracticeCompletion, selectedProblem, worksheetComplete]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
@@ -842,6 +874,8 @@ export default function Practice({
             <strong>Practice Prompt</strong>
             <p>{selectedProblem.prompt}</p>
           </section>
+
+          <ChallengeTrackCard />
 
           <section className="target-card" aria-live="polite">
             <div className="target-icon-wrapper">

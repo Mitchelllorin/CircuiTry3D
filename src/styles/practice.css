@@ -256,6 +256,220 @@
   gap: 18px;
 }
 
+.challenge-card {
+  background: rgba(6, 18, 36, 0.86);
+  border: 1px solid rgba(102, 160, 240, 0.28);
+  border-radius: 20px;
+  padding: 22px 24px;
+  display: grid;
+  gap: 16px;
+  box-shadow: 0 18px 40px rgba(2, 8, 20, 0.4);
+}
+
+.challenge-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.challenge-card-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: #9fdcff;
+}
+
+.challenge-card-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(200, 228, 255, 0.78);
+}
+
+.challenge-level {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(108, 182, 255, 0.4);
+  background: rgba(20, 44, 90, 0.7);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cfe8ff;
+}
+
+.challenge-level-bar {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(12, 30, 60, 0.72);
+  border: 1px solid rgba(108, 182, 255, 0.2);
+  overflow: hidden;
+}
+
+.challenge-level-bar-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 195, 255, 0.5), rgba(88, 240, 200, 0.6));
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.challenge-level-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: rgba(235, 248, 255, 0.9);
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.challenge-reward-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: rgba(10, 48, 80, 0.6);
+  border: 1px solid rgba(88, 228, 200, 0.35);
+  border-radius: 14px;
+  padding: 10px 16px;
+  color: #aef9eb;
+}
+
+.challenge-reward-banner span {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.challenge-reward-banner small {
+  font-size: 0.8rem;
+  color: rgba(192, 244, 232, 0.8);
+}
+
+.challenge-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.challenge-stat {
+  background: rgba(8, 20, 42, 0.78);
+  border: 1px solid rgba(102, 160, 240, 0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.challenge-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(176, 210, 255, 0.72);
+}
+
+.challenge-stat-value {
+  font-size: 1.2rem;
+  color: #f1fbff;
+  letter-spacing: 0.04em;
+}
+
+.challenge-badge-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.challenge-badge {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: rgba(12, 30, 58, 0.7);
+  border: 1px dashed rgba(120, 180, 255, 0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.challenge-badge.is-unlocked {
+  border-style: solid;
+  border-color: rgba(90, 220, 190, 0.5);
+  background: rgba(24, 60, 92, 0.8);
+  box-shadow: 0 0 24px rgba(80, 220, 200, 0.18);
+}
+
+.challenge-badge-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(12, 40, 78, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.challenge-badge strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #e4f2ff;
+}
+
+.challenge-badge small {
+  font-size: 0.78rem;
+  color: rgba(190, 216, 255, 0.75);
+}
+
+.challenge-next {
+  border-radius: 16px;
+  border: 1px solid rgba(90, 220, 190, 0.38);
+  background: rgba(8, 30, 44, 0.78);
+  padding: 16px 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.challenge-next-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.challenge-next-header strong {
+  font-size: 0.95rem;
+  color: #b4ffee;
+}
+
+.challenge-next-header span {
+  font-size: 0.85rem;
+  color: rgba(188, 236, 224, 0.9);
+}
+
+.challenge-next p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(204, 236, 255, 0.82);
+}
+
+.challenge-next-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(24, 64, 88, 0.7);
+  overflow: hidden;
+}
+
+.challenge-next-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0, 220, 190, 0.6), rgba(0, 190, 255, 0.8));
+  transition: width 0.3s ease;
+}
+
 .adaptive-card-header {
   display: flex;
   flex-wrap: wrap;
