@@ -35,6 +35,7 @@ import {
   SYMBOL_STANDARD_OPTIONS,
   type SymbolStandard,
 } from "../schematic/standards";
+import WireLibrary from "../components/practice/WireLibrary";
 import "../styles/practice.css";
 import "../styles/schematic.css";
 
@@ -1230,6 +1231,8 @@ export default function Practice({
                 ))}
               </div>
             </div>
+
+            <WireLibrary />
 
             <SolutionSteps steps={stepPresentations} visible={stepsVisible} />
 

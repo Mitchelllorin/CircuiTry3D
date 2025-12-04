@@ -2066,6 +2066,205 @@
   color: rgba(136, 204, 255, 0.85);
 }
 
+/* Wire Library Reference */
+.practice-wire-library {
+  background: rgba(6, 14, 28, 0.92);
+  border: 1px solid rgba(79, 140, 220, 0.35);
+  border-radius: 18px;
+  padding: 24px;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wire-library-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.wire-library-header h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: #a8dcff;
+}
+
+.wire-library-header p {
+  margin: 0;
+  max-width: 640px;
+  font-size: 0.9rem;
+  color: rgba(199, 226, 255, 0.78);
+}
+
+.wire-library-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, auto));
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(12, 23, 46, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.wire-library-summary .summary-label {
+  display: block;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.wire-library-summary .summary-value {
+  font-size: 1rem;
+  color: #e0f2ff;
+}
+
+.wire-library-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.wire-library-controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  color: rgba(203, 213, 225, 0.85);
+  gap: 6px;
+}
+
+.wire-library-controls select,
+.wire-library-controls input[type="search"] {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.ampacity-filter input[type="range"] {
+  width: 100%;
+}
+
+.ampacity-filter .ampacity-value {
+  font-size: 0.8rem;
+  color: rgba(148, 226, 255, 0.85);
+  text-align: right;
+}
+
+.wire-library-search input {
+  width: 100%;
+}
+
+.wire-library-reset {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: transparent;
+  color: #cbd5f5;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.wire-library-reset:not(:disabled):hover {
+  background: rgba(77, 124, 255, 0.2);
+  color: #ffffff;
+}
+
+.wire-library-reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wire-library-empty {
+  padding: 32px;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 12px;
+  text-align: center;
+  color: rgba(203, 213, 225, 0.85);
+  font-size: 0.95rem;
+}
+
+.wire-library-table-wrapper {
+  overflow-x: auto;
+}
+
+.wire-library-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.wire-library-table th,
+.wire-library-table td {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.wire-library-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.wire-library-table tbody th {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.wire-gauge-label {
+  font-weight: 600;
+}
+
+.wire-gauge-meta,
+.wire-material-meta,
+.wire-notes {
+  font-size: 0.78rem;
+  color: rgba(148, 163, 184, 0.8);
+  margin-top: 4px;
+}
+
+.wire-material-label {
+  font-weight: 600;
+  color: #e0f2ff;
+}
+
+.wire-uses {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 6px;
+}
+
+.wire-uses li {
+  background: rgba(59, 130, 246, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 960px) {
+  .wire-library-summary {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .wire-library-table th,
+  .wire-library-table td {
+    padding: 10px 8px;
+  }
+}
+
 @media (max-width: 720px) {
   .practice-formula-reference-grid {
     grid-template-columns: 1fr;
