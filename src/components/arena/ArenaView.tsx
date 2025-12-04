@@ -2083,8 +2083,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               <div className="arena-dais-platform arena-3d-platform">
                 <Component3DViewer
                   componentType={profile?.type || 'generic'}
-                  isRotating={rotationEnabled && battleState !== "battling"}
-                  isBattling={battleState === "battling"}
+                  isRotating={rotationEnabled}
                 />
               </div>
               <div className="arena-dais-base" />

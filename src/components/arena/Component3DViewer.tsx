@@ -10,13 +10,11 @@ import {
 interface Component3DViewerProps {
   componentType: string;
   isRotating?: boolean;
-  isBattling?: boolean;
 }
 
 export function Component3DViewer({
   componentType,
-  isRotating = true,
-  isBattling = false
+  isRotating = true
 }: Component3DViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<any>(null);
@@ -222,23 +220,13 @@ export function Component3DViewer({
         const deltaTime = elapsed / 1000; // Convert to seconds
         animationTime += deltaTime;
 
-        if (isRotating && !isBattling) {
-          // Slow rotation: 12 seconds per revolution like a car in a showroom
-          // 2 * PI radians per 12 seconds = PI/6 radians per second
-          // At 60fps (0.016s per frame): 0.016 * PI/6 ≈ 0.0084 radians per frame
+        if (isRotating) {
+          // Slow rotation: 12 seconds per revolution like a car in a showroom.
           componentGroup.rotation.y = animationTime * (Math.PI / 6);
         }
 
-        if (isBattling) {
-          // Fast rotation during battle: 2 seconds per revolution
-          componentGroup.rotation.y = animationTime * Math.PI;
-          componentGroup.rotation.x = Math.sin(animationTime * 3) * 0.2;
-          const scale = 1 + Math.sin(animationTime * 4) * 0.1;
-          componentGroup.scale.set(scale, scale, scale);
-        } else {
-          componentGroup.scale.set(1, 1, 1);
-          componentGroup.rotation.x = 0;
-        }
+        componentGroup.scale.set(1, 1, 1);
+        componentGroup.rotation.x = 0;
 
         renderer.render(scene, camera);
       };
@@ -332,7 +320,7 @@ export function Component3DViewer({
         sceneRef.current = null;
       }
     };
-  }, [componentType, isRotating, isBattling]);
+  }, [componentType, isRotating]);
 
   return (
     <canvas
