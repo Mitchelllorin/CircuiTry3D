@@ -112,6 +112,13 @@ CircuiTry3D/
 - Component unlocks (Precision Op-Amp, Sensor Pack, Power Lab, etc.) now track against your cumulative XP, so builders see exactly what they'll earn next.
 - All progress is persisted to `localStorage`, keeping classroom and home sessions in sync without an account requirement.
 
+## 🎓 Teacher Dashboard / Classroom Mode
+
+- Visit `/classroom` to create cohorts, invite students with shareable join codes, and schedule practice assignments sourced from the existing problem library.
+- The new **ClassroomContext** talks to Netlify Blobs via a serverless function (`/.netlify/functions/classroom`) so class rosters, assignments, and analytics persist beyond the browser.
+- Teachers can monitor completion rates, average time-on-task, and the most common misconception tags per class, plus log quick progress updates for formative assessments.
+- Local development gracefully falls back to seeded demo data to showcase the workflow without requiring a deployed backend.
+
 ## 📄 License
 
 ISC
