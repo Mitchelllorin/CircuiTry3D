@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PracticeProblem } from "../../../model/practice";
 import type { WireMetricKey } from "../../../utils/electrical";
 import { formatMetricValue, formatNumber } from "../../../utils/electrical";
@@ -13,6 +13,7 @@ type CompactWorksheetPanelProps = {
   onToggle: () => void;
   onComplete: (complete: boolean) => void;
   onRequestUnlock: () => void;
+  onAdvance?: () => void;
 };
 
 type WorksheetState = Record<string, Record<WireMetricKey, WorksheetEntry>>;
@@ -51,6 +52,7 @@ export function CompactWorksheetPanel({
   onToggle,
   onComplete,
   onRequestUnlock,
+  onAdvance,
 }: CompactWorksheetPanelProps) {
   const solution = useMemo(() => solvePracticeProblem(problem), [problem]);
 
@@ -115,6 +117,11 @@ export function CompactWorksheetPanel({
 
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>(baselineWorksheet);
   const [worksheetComplete, setWorksheetComplete] = useState(false);
+
+  useEffect(() => {
+    setWorksheetEntries(baselineWorksheet);
+    setWorksheetComplete(false);
+  }, [baselineWorksheet, problem.id]);
 
   const computeWorksheetComplete = useCallback((state: WorksheetState) => {
     const includeSource = shouldIncludeSource(problem);
@@ -267,13 +274,24 @@ export function CompactWorksheetPanel({
           </span>
         </button>
         {worksheetComplete && (
-          <button
-            type="button"
-            className="compact-worksheet-unlock-btn"
-            onClick={onRequestUnlock}
-          >
-            Unlock & Edit Circuit
-          </button>
+          <div className="compact-worksheet-actions">
+            <button
+              type="button"
+              className="compact-worksheet-unlock-btn"
+              onClick={onRequestUnlock}
+            >
+              Unlock & Edit Circuit
+            </button>
+            {onAdvance && (
+              <button
+                type="button"
+                className="compact-worksheet-next-btn"
+                onClick={onAdvance}
+              >
+                Next Problem
+              </button>
+            )}
+          </div>
         )}
       </div>
 

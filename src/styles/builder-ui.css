@@ -1565,6 +1565,64 @@ body.builder-body {
   touch-action: pan-x pan-y pinch-zoom;
 }
 
+.builder-workspace-lock {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 12, 30, 0.92), rgba(7, 16, 32, 0.86)),
+    radial-gradient(circle at 30% 20%, rgba(136, 204, 255, 0.22), transparent 55%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 48px);
+  pointer-events: auto;
+  z-index: 120;
+}
+
+.builder-workspace-lock-card {
+  background: rgba(6, 14, 30, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.45);
+  border-radius: 20px;
+  padding: clamp(20px, 5vw, 40px);
+  max-width: 440px;
+  text-align: center;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.55),
+    0 0 30px rgba(136, 204, 255, 0.25);
+}
+
+.builder-workspace-lock-card strong {
+  display: block;
+  font-size: 20px;
+  color: rgba(136, 204, 255, 0.95);
+  margin-bottom: 12px;
+}
+
+.builder-workspace-lock-card p {
+  margin: 0 0 18px;
+  color: rgba(228, 241, 255, 0.85);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.builder-workspace-lock-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #041225;
+  background: linear-gradient(135deg, rgba(136, 204, 255, 1), rgba(0, 255, 176, 0.85));
+  box-shadow: 0 12px 24px rgba(0, 255, 176, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.builder-workspace-lock-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(0, 255, 176, 0.35);
+}
+
 .builder-floating-action {
   position: fixed;
   top: auto;
