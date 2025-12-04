@@ -1095,7 +1095,13 @@ export default function Builder() {
 
     return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
   }, [activePracticeProblemId, practiceWorksheetState]);
-
+  const isPracticeWorksheetComplete =
+    Boolean(
+      practiceWorksheetState &&
+        activePracticeProblemId &&
+        practiceWorksheetState.problemId === activePracticeProblemId &&
+        practiceWorksheetState.complete,
+    );
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
@@ -1661,6 +1667,103 @@ export default function Builder() {
                     <span className="metric-label">{metric.label}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Practice</span>
+              <div className="menu-track menu-track-chips">
+                <div
+                  role="status"
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(136, 204, 255, 0.78)",
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(136, 204, 255, 0.22)",
+                    background: "rgba(14, 30, 58, 0.48)",
+                  }}
+                >
+                  {practiceWorksheetMessage}
+                </div>
+                {PRACTICE_ACTIONS.map((action) => {
+                  const isOpenArenaAction = action.action === "open-arena";
+                  const actionDisabled =
+                    controlsDisabled ||
+                    (isOpenArenaAction && isArenaSyncing);
+                  const actionTitle = controlsDisabled
+                    ? controlDisabledTitle
+                    : isOpenArenaAction && isArenaSyncing
+                      ? "Preparing Component Arena export…"
+                      : action.description;
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-chip"
+                      onClick={() => handlePracticeAction(action)}
+                      disabled={actionDisabled}
+                      aria-disabled={actionDisabled}
+                      title={actionTitle}
+                    >
+                      <span className="slider-chip-label">{action.label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => setPracticePanelOpen(true)}
+                  title={practiceWorksheetMessage}
+                  data-complete={isPracticeWorksheetComplete ? "true" : undefined}
+                >
+                  <span className="slider-chip-label">Practice Worksheets</span>
+                </button>
+                {PRACTICE_SCENARIOS.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    className="slider-chip"
+                    onClick={() => {
+                      triggerBuilderAction("load-preset", {
+                        preset: scenario.preset,
+                      });
+                      const problem = scenario.problemId
+                        ? findPracticeProblemById(scenario.problemId)
+                        : findPracticeProblemByPreset(scenario.preset);
+                      if (problem) {
+                        practiceProblemRef.current = problem.id;
+                        setActivePracticeProblemId(problem.id);
+                        setPracticeWorksheetState({
+                          problemId: problem.id,
+                          complete: false,
+                        });
+                      }
+                      setPracticePanelOpen(true);
+                    }}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={
+                      controlsDisabled ? controlDisabledTitle : scenario.question
+                    }
+                  >
+                    <span className="slider-chip-label">{scenario.label}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={openLastArenaSession}
+                  disabled={!canOpenLastArena}
+                  aria-disabled={!canOpenLastArena}
+                  title={
+                    canOpenLastArena
+                      ? "Open the most recent Component Arena export"
+                      : "Run a Component Arena export first"
+                  }
+                >
+                  <span className="slider-chip-label">Open Last Arena Run</span>
+                </button>
               </div>
             </div>
             <div className="slider-section">
