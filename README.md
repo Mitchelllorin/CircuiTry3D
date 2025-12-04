@@ -98,6 +98,13 @@ CircuiTry3D/
 - An adaptive queue surfaces the next three problems that best target those gaps, and helper shortcuts jump directly to the circuit diagram or Ohm's Law wheel you need most.
 - Recommendations update automatically as you solve worksheets, so progressing through the curated list keeps the challenge aligned with your current understanding.
 
+## 🏅 Challenge Mode Gamification
+
+- Every completed worksheet now awards XP based on difficulty, with bonuses for first-time clears and daily streaks.
+- A new Challenge Mode card inside the Practice workspace tracks your level, streak, unique clears, and recently unlocked badges.
+- Achievement tiers such as Series Specialist, Challenge Conqueror, and Streak Legend unlock extra XP and provide clear learning milestones for students.
+- Progress is stored locally, so learners can leave and return without losing their mastery path.
+
 ## 📄 License
 
 ISC
