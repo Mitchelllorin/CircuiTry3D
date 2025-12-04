@@ -230,7 +230,7 @@ CircuiTry3D
 
 8. **App Category and Contact Details:**
    - Category: `Education`
-   - Email: `support@circuitry3d.app` (update with your email)
+   - Email: `support@circuitry3d.app` (Mitchell Lorin McKnight)
    - Phone: (Optional)
    - Website: `https://circuitry3d.app` (update with your website)
    
@@ -503,7 +503,7 @@ After launch, track these metrics in Play Console:
 - [Data Safety Guide](https://support.google.com/googleplay/android-developer/answer/10787469)
 
 ### CircuiTry3D Support
-- Email: support@circuitry3d.app
+- Email: Mitchell Lorin McKnight — support@circuitry3d.app
 - GitHub: https://github.com/Mitchelllorin/CircuiTry3D
 
 ### Google Play Support
@@ -551,4 +551,4 @@ Remember:
 
 **Document Version:** 1.0  
 **Last Updated:** October 25, 2025  
-**Author:** CircuiTry3D Development Team
+**Author:** Mitchell Lorin McKnight
