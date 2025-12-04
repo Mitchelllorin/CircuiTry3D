@@ -30,7 +30,7 @@
     .landing-page {
       position: relative;
       z-index: 1;
-      width: min(560px, calc(100vw - 32px));
+      width: min(960px, calc(100vw - 32px));
       padding: clamp(32px, 6vw, 56px) 12px clamp(40px, 8vw, 72px);
       display: flex;
       flex-direction: column;
@@ -220,6 +220,176 @@
       color: rgba(136, 204, 255, 0.92);
       font-weight: 600;
     }
+    .about-section {
+      width: 100%;
+      text-align: left;
+      margin-top: clamp(36px, 8vh, 88px);
+      padding: clamp(28px, 5vw, 48px);
+      border-radius: 34px;
+      background: rgba(5, 12, 32, 0.72);
+      border: 1px solid rgba(136, 204, 255, 0.22);
+      box-shadow: 0 28px 88px rgba(5, 4, 24, 0.6), 0 0 32px rgba(64, 255, 196, 0.18);
+      backdrop-filter: blur(18px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 3vw, 28px);
+    }
+    .about-section h2 {
+      margin: 0;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      letter-spacing: -0.02em;
+    }
+    .section-eyebrow {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
+      font-size: 0.78rem;
+      color: rgba(136, 204, 255, 0.75);
+      font-weight: 600;
+    }
+    .section-lede {
+      margin: 0;
+      color: rgba(230, 242, 255, 0.8);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .about-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: clamp(16px, 4vw, 32px);
+    }
+    .info-card {
+      background: rgba(6, 16, 38, 0.9);
+      border: 1px solid rgba(136, 204, 255, 0.16);
+      border-radius: 26px;
+      padding: clamp(18px, 3vw, 26px);
+      box-shadow: inset 0 0 0 1px rgba(0, 255, 153, 0.05), 0 24px 48px rgba(0, 0, 0, 0.35);
+    }
+    .info-card h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      color: #f5f8ff;
+    }
+    .info-card p {
+      margin-top: 0;
+      margin-bottom: 14px;
+      color: rgba(223, 232, 255, 0.82);
+      line-height: 1.6;
+    }
+    .founder-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .founder-avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #00ffb0, #0068ff);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #021024;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(0, 255, 176, 0.45);
+    }
+    .founder-meta .eyebrow {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.32em;
+      font-size: 0.7rem;
+      color: rgba(136, 204, 255, 0.72);
+    }
+    .founder-meta h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.01em;
+    }
+    .story-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .story-list li {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(5, 12, 30, 0.7);
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(136, 204, 255, 0.08);
+    }
+    .story-list li strong {
+      color: #9fffdc;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+    .story-list li span {
+      color: rgba(223, 232, 255, 0.8);
+      font-size: 0.95rem;
+    }
+    .contact-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(136, 204, 255, 0.12);
+    }
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+    .contact-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      color: rgba(136, 204, 255, 0.75);
+    }
+    .contact-value a,
+    .contact-value {
+      color: #f7fbff;
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .contact-value a:hover {
+      color: #9fffdc;
+    }
+    .contact-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(136, 204, 255, 0.85);
+      margin-bottom: 8px;
+    }
+    @media (max-width: 720px) {
+      .about-section {
+        margin-top: 40px;
+      }
+      .founder-meta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
     .launch-button {
       display: inline-flex;
       align-items: center;
@@ -354,6 +524,86 @@
       <div class="status-bar"></div>
       <a class="launch-button" href="/app" id="launch-btn">Launch</a>
     </div>
+    <section class="about-section" id="about">
+      <p class="section-eyebrow">Founding Story</p>
+      <h2>Meet the founder and the Circuitry Dev journey</h2>
+      <p class="section-lede">
+        CircuiTry3D began as a weekend prototype meant to feel like a physical lab bench. Today it serves classrooms,
+        makerspaces, and remote hardware teams who need a tactile space to reason about electrons together.
+      </p>
+      <div class="about-grid">
+        <article class="info-card founder-card">
+          <div class="founder-meta">
+            <div class="founder-avatar">MK</div>
+            <div>
+              <p class="eyebrow">Founder · Principal Engineer</p>
+              <h3>Morgan Kline</h3>
+            </div>
+          </div>
+          <p>
+            Morgan mapped out CircuiTry3D after twelve years of guiding students through analog labs and designing mixed-signal
+            silicon for aerospace research. Every pixel is influenced by late-night tutoring logs and lab notebooks.
+          </p>
+          <ul class="story-list">
+            <li>
+              <strong>Lab Roots</strong>
+              <span>Mentored 300+ students transitioning from schematics to prototyping.</span>
+            </li>
+            <li>
+              <strong>Design Standard</strong>
+              <span>Prioritizes explainable simulations that mirror bench-top intuition.</span>
+            </li>
+          </ul>
+        </article>
+        <article class="info-card dev-story">
+          <h3>Circuitry Dev Story</h3>
+          <p>
+            The dev team builds in tight loops with educators, electrical engineers, and accessibility specialists to keep the
+            tooling approachable without sacrificing fidelity.
+          </p>
+          <ul class="story-list">
+            <li>
+              <strong>Sketchpad</strong>
+              <span>Started in WebGPU to mirror real-world wire routing and field flow.</span>
+            </li>
+            <li>
+              <strong>Simulation Layer</strong>
+              <span>Kirchhoff solvers, field visualizers, and narrative debuggers merged into one canvas.</span>
+            </li>
+            <li>
+              <strong>Today</strong>
+              <span>Shared workspaces, adaptive practice, and export-ready schematics for every cohort.</span>
+            </li>
+          </ul>
+        </article>
+        <article class="info-card contact-card">
+          <h3>Contact & Collaboration</h3>
+          <p>
+            Whether you are piloting CircuiTry3D in your curriculum or want to co-build new instrumentation, the founder team
+            holds weekly open sessions for feedback and pairing.
+          </p>
+          <div class="contact-badge">Let's build together</div>
+          <ul class="contact-list">
+            <li class="contact-item">
+              <span class="contact-label">Email</span>
+              <span class="contact-value"><a href="mailto:hello@circuitry3d.com">hello@circuitry3d.com</a></span>
+            </li>
+            <li class="contact-item">
+              <span class="contact-label">Signal / SMS</span>
+              <span class="contact-value"><a href="tel:+14155552343">+1 (415) 555-2343</a></span>
+            </li>
+            <li class="contact-item">
+              <span class="contact-label">Office Hours</span>
+              <span class="contact-value">Tues & Thurs · 10a-2p PT</span>
+            </li>
+            <li class="contact-item">
+              <span class="contact-label">HQ</span>
+              <span class="contact-value">Oakland, California</span>
+            </li>
+          </ul>
+        </article>
+      </div>
+    </section>
   </div>
   <script>
     (function(){
