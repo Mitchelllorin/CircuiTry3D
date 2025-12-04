@@ -5,7 +5,7 @@ import App from "./routes/App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { CircuitStorageProvider } from "./context/CircuitStorageContext";
-import { ChallengeProgressProvider } from "./context/ChallengeProgressContext";
+import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker, isCapacitor } from "./hooks/capacitor/useAndroidInit";
 
 window.addEventListener('error', (event) => {
@@ -62,9 +62,9 @@ try {
         <AuthProvider>
           <EngagementProvider>
             <CircuitStorageProvider>
-              <ChallengeProgressProvider>
+              <GamificationProvider>
                 <App />
-              </ChallengeProgressProvider>
+              </GamificationProvider>
             </CircuitStorageProvider>
           </EngagementProvider>
         </AuthProvider>

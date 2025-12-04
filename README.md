@@ -106,10 +106,11 @@ CircuiTry3D/
 
 ## 🏅 Challenge Mode Gamification
 
-- Every completed worksheet now awards XP based on difficulty, with bonuses for first-time clears and daily streaks.
-- A new Challenge Mode card inside the Practice workspace tracks your level, streak, unique clears, and recently unlocked badges.
-- Achievement tiers such as Series Specialist, Challenge Conqueror, and Streak Legend unlock extra XP and provide clear learning milestones for students.
-- Progress is stored locally, so learners can leave and return without losing their mastery path.
+- Each worksheet completion feeds the new **GamificationContext**, awarding base XP, first-clear bonuses, streak boosts, and badge rewards.
+- The refreshed **Challenge Mode dashboard** inside Practice surfaces XP progress, unique clears, recent rewards, and a live leaderboard seeded with mentor totals.
+- Badges such as Series Savant, Challenge Champion, and Concept Curator unlock automatically once their topology/difficulty goals are met.
+- Component unlocks (Precision Op-Amp, Sensor Pack, Power Lab, etc.) now track against your cumulative XP, so builders see exactly what they'll earn next.
+- All progress is persisted to `localStorage`, keeping classroom and home sessions in sync without an account requirement.
 
 ## 📄 License
 

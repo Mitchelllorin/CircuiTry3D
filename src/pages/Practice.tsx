@@ -26,8 +26,8 @@ import OhmsLawWheel from "../components/practice/OhmsLawWheel";
 import KirchhoffLaws from "../components/practice/KirchhoffLaws";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import ResistorColorCode from "../components/practice/ResistorColorCode";
-import ChallengeTrackCard from "../components/practice/ChallengeTrackCard";
-import { useChallengeProgress } from "../context/ChallengeProgressContext";
+import { ProgressDashboard } from "../components/gamification/ProgressDashboard";
+import { useGamification } from "../context/GamificationContext";
 import { PracticeViewport } from "./SchematicMode";
 import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
 import {
@@ -378,7 +378,7 @@ export default function Practice({
   const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
     DEFAULT_SYMBOL_STANDARD,
   );
-  const { recordPracticeCompletion } = useChallengeProgress();
+  const { recordCompletion } = useGamification();
   const lastControlledProblemId = useRef<string | null | undefined>(
     selectedProblemId,
   );
@@ -575,7 +575,7 @@ export default function Practice({
       return;
     }
 
-    recordPracticeCompletion(selectedProblem);
+    recordCompletion(selectedProblem);
     lastChallengeReport.current = {
       problemId: currentProblemId,
       complete: true,
@@ -874,8 +874,7 @@ export default function Practice({
             <strong>Practice Prompt</strong>
             <p>{selectedProblem.prompt}</p>
           </section>
-
-          <ChallengeTrackCard />
+          <ProgressDashboard />
 
           <section className="target-card" aria-live="polite">
             <div className="target-icon-wrapper">
