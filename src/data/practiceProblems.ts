@@ -1,10 +1,11 @@
 import { formatMetricValue, formatNumber } from "../utils/electrical";
 import type { PracticeProblem } from "../model/practice";
+import { XP_REWARD_BY_DIFFICULTY } from "./gamification";
 
 const SERIES_IDS = ["R1", "R2", "R3"] as const;
 const SERIES_IDS_2 = ["R1", "R2"] as const;
 
-const practiceProblems: PracticeProblem[] = [
+const practiceProblemSeeds: PracticeProblem[] = [
   {
     id: "series-square-01",
     title: "Series Circuit · Circuit Current",
@@ -861,6 +862,18 @@ const practiceProblems: PracticeProblem[] = [
     ],
   },
 ];
+
+const practiceProblems: PracticeProblem[] = practiceProblemSeeds.map((problem) => ({
+  ...problem,
+  gamification: {
+    xpReward: problem.gamification?.xpReward ?? XP_REWARD_BY_DIFFICULTY[problem.difficulty],
+    masteryTags: Array.from(
+      new Set(problem.gamification?.masteryTags ?? problem.conceptTags ?? []),
+    ),
+    featuredBadgeId: problem.gamification?.featuredBadgeId,
+    unlocks: problem.gamification?.unlocks ?? [],
+  },
+}));
 
 const practiceProblemById = new Map<string, PracticeProblem>(
   practiceProblems.map((problem) => [problem.id, problem])

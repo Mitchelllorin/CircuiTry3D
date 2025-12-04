@@ -5,8 +5,9 @@ import App from "./routes/App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { CircuitStorageProvider } from "./context/CircuitStorageContext";
-import { ChallengeProgressProvider } from "./context/ChallengeProgressContext";
+import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker, isCapacitor } from "./hooks/capacitor/useAndroidInit";
+import { ClassroomProvider } from "./context/ClassroomContext";
 
 window.addEventListener('error', (event) => {
   document.body.style.background = '#1a0000';
@@ -62,9 +63,11 @@ try {
         <AuthProvider>
           <EngagementProvider>
             <CircuitStorageProvider>
-              <ChallengeProgressProvider>
-                <App />
-              </ChallengeProgressProvider>
+              <GamificationProvider>
+                <ClassroomProvider>
+                  <App />
+                </ClassroomProvider>
+              </GamificationProvider>
             </CircuitStorageProvider>
           </EngagementProvider>
         </AuthProvider>

@@ -7,6 +7,7 @@ import Pricing from "../pages/Pricing";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
+import Classroom from "../pages/Classroom";
 import UnifiedNav from "../components/UnifiedNav";
 import "../styles/layout.css";
 
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/community" element={<Community />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/classroom" element={<Classroom />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

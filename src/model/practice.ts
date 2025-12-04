@@ -46,6 +46,17 @@ export type PracticeHint = {
   formula?: string;
 };
 
+export type PracticeProblemGamification = {
+  /** Base XP earned when this problem is completed */
+  xpReward: number;
+  /** Tags that contribute to mastery/achievement progress */
+  masteryTags: string[];
+  /** Optional badge highlighted within the UI for this problem */
+  featuredBadgeId?: string;
+  /** Components unlocked by mastering this problem */
+  unlocks?: string[];
+};
+
 export type PracticeProblem = {
   id: string;
   title: string;
@@ -72,5 +83,7 @@ export type PracticeProblem = {
   facts?: string[];
   /** Real-world application examples */
   realWorldExample?: string;
+  /** Gamification metadata (XP rewards, mastery tags, unlock hooks) */
+  gamification?: PracticeProblemGamification;
 };
 
