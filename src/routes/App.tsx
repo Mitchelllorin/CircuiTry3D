@@ -8,6 +8,7 @@ import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
+import About from "../pages/About";
 import UnifiedNav from "../components/UnifiedNav";
 import "../styles/layout.css";
 
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/app" element={<Builder />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/about" element={<About />} />
         <Route path="/community" element={<Community />} />
         <Route path="/account" element={<Account />} />
         <Route path="/classroom" element={<Classroom />} />
