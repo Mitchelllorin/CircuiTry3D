@@ -32,6 +32,7 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/ui": "^4.0.4",
+    "playwright": "^1.56.1",
     "vite": "^7.1.10",
     "vitest": "^4.0.4"
   },
@@ -44,7 +45,6 @@
     "@capacitor/status-bar": "^7.0.3",
     "@netlify/blobs": "^6.4.0",
     "@netlify/functions": "^2.8.1",
-    "playwright": "^1.56.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4",
