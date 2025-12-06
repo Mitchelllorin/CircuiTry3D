@@ -904,6 +904,50 @@ export default function Builder() {
     [openHelpWithSection, openHelpWithView],
   );
 
+  const assignPracticeProblem = useCallback(
+    (problem: PracticeProblem, presetOverride?: string) => {
+      setActivePracticeProblemId(problem.id);
+      setPracticeWorksheetState({
+        problemId: problem.id,
+        complete: false,
+      });
+      practiceProblemRef.current = problem.id;
+
+      const presetKey = presetOverride ?? problem.presetHint;
+      if (presetKey) {
+        triggerBuilderAction("load-preset", { preset: presetKey });
+      }
+    },
+    [triggerBuilderAction],
+  );
+
+  const openPracticeWorkspace = useCallback(
+    (problemOverride?: PracticeProblem | null, presetOverride?: string) => {
+      const nextProblem =
+        problemOverride ??
+        findPracticeProblemById(activePracticeProblemId) ??
+        DEFAULT_PRACTICE_PROBLEM ??
+        practiceProblems[0] ??
+        null;
+
+      if (!nextProblem) {
+        return;
+      }
+
+      assignPracticeProblem(nextProblem, presetOverride);
+      setWorkspaceMode("practice");
+      setPracticeWorkspaceMode(true);
+      setCompactWorksheetOpen(true);
+      setCircuitLocked(true);
+      setArenaPanelOpen(false);
+    },
+    [
+      activePracticeProblemId,
+      assignPracticeProblem,
+      setArenaPanelOpen,
+    ],
+  );
+
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
@@ -992,50 +1036,6 @@ export default function Builder() {
       }
     },
     [triggerBuilderAction, triggerSimulationPulse],
-  );
-
-  const assignPracticeProblem = useCallback(
-    (problem: PracticeProblem, presetOverride?: string) => {
-      setActivePracticeProblemId(problem.id);
-      setPracticeWorksheetState({
-        problemId: problem.id,
-        complete: false,
-      });
-      practiceProblemRef.current = problem.id;
-
-      const presetKey = presetOverride ?? problem.presetHint;
-      if (presetKey) {
-        triggerBuilderAction("load-preset", { preset: presetKey });
-      }
-    },
-    [triggerBuilderAction],
-  );
-
-  const openPracticeWorkspace = useCallback(
-    (problemOverride?: PracticeProblem | null, presetOverride?: string) => {
-      const nextProblem =
-        problemOverride ??
-        findPracticeProblemById(activePracticeProblemId) ??
-        DEFAULT_PRACTICE_PROBLEM ??
-        practiceProblems[0] ??
-        null;
-
-      if (!nextProblem) {
-        return;
-      }
-
-      assignPracticeProblem(nextProblem, presetOverride);
-      setWorkspaceMode("practice");
-      setPracticeWorkspaceMode(true);
-      setCompactWorksheetOpen(true);
-      setCircuitLocked(true);
-      setArenaPanelOpen(false);
-    },
-    [
-      activePracticeProblemId,
-      assignPracticeProblem,
-      setArenaPanelOpen,
-    ],
   );
 
   const handleAdvancePracticeProblem = useCallback(() => {
