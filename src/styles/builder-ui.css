@@ -1,18 +1,18 @@
 :root {
-  --builder-navy: #0f1b3d;
-  --builder-navy-alt: #16213e;
-  --builder-navy-deep: #0a1028;
-  --builder-overlay: rgba(10, 22, 48, 0.86);
-  --builder-overlay-soft: rgba(14, 28, 52, 0.78);
-  --builder-border: rgba(136, 204, 255, 0.28);
-  --builder-border-strong: rgba(136, 204, 255, 0.45);
-  --builder-border-cyan: rgba(136, 204, 255, 0.28);
-  --builder-blue: #88ccff;
-  --builder-orange: #ff8844;
-  --builder-green: #00ff88;
-  --builder-cyan: #88ccff;
-  --builder-text: #e8f6ff;
-  --builder-muted: rgba(200, 220, 255, 0.72);
+  --builder-navy: var(--bg-dark);
+  --builder-navy-alt: var(--bg-darker);
+  --builder-navy-deep: var(--bg-deepest);
+  --builder-overlay: var(--bg-overlay);
+  --builder-overlay-soft: var(--bg-surface);
+  --builder-border: var(--border-subtle);
+  --builder-border-strong: var(--border-emphasis);
+  --builder-border-cyan: var(--border-subtle);
+  --builder-blue: var(--brand-blue);
+  --builder-orange: var(--brand-orange);
+  --builder-green: var(--brand-green);
+  --builder-cyan: var(--brand-blue);
+  --builder-text: var(--text-primary);
+  --builder-muted: var(--text-muted);
   --builder-shadow: rgba(3, 12, 32, 0.55);
   --builder-menu-toggle-width: 44px;
   --builder-menu-left-width: 208px;
@@ -25,19 +25,9 @@
 
 body.builder-body {
   margin: 0;
-  background: linear-gradient(
-    135deg,
-    var(--builder-navy),
-    var(--builder-navy-alt) 48%,
-    var(--builder-navy-deep)
-  );
+  background: var(--bg-gradient-primary);
   color: var(--builder-text);
-  font-family:
-    "Inter",
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: var(--font-family);
   overflow: hidden;
 }
 

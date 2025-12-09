@@ -3,8 +3,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(10, 20, 35, 0.98);
-  border-top: 2px solid rgba(136, 204, 255, 0.4);
+  background: var(--bg-panel);
+  border-top: 2px solid var(--border-emphasis);
   z-index: 100;
   max-height: 70vh;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -24,8 +24,8 @@
   justify-content: space-between;
   padding: 0 16px;
   height: 48px;
-  background: rgba(20, 35, 55, 0.95);
-  border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -36,7 +36,7 @@
   gap: 8px;
   background: none;
   border: none;
-  color: rgba(136, 204, 255, 0.95);
+  color: var(--brand-primary);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -46,8 +46,8 @@
 }
 
 .compact-worksheet-toggle:hover {
-  background: rgba(136, 204, 255, 0.1);
-  color: rgba(136, 204, 255, 1);
+  background: var(--brand-primary-dim);
+  color: var(--brand-primary);
 }
 
 .compact-worksheet-toggle .toggle-icon {
@@ -60,21 +60,21 @@
 }
 
 .compact-worksheet-unlock-btn {
-  background: linear-gradient(135deg, #90EE90 0%, #66BB66 100%);
+  background: linear-gradient(135deg, var(--brand-accent) 0%, var(--circuit-node) 100%);
   border: none;
-  color: #0A1423;
+  color: var(--bg-dark);
   font-size: 13px;
   font-weight: 700;
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(144, 238, 144, 0.3);
+  box-shadow: 0 2px 8px var(--brand-accent-glow);
 }
 
 .compact-worksheet-unlock-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(144, 238, 144, 0.5);
+  box-shadow: 0 4px 12px var(--brand-accent-glow);
 }
 
 .compact-worksheet-actions {
@@ -85,16 +85,16 @@
 }
 
 .compact-worksheet-next-btn {
-  background: linear-gradient(135deg, rgba(136, 204, 255, 1) 0%, rgba(88, 142, 255, 0.95) 100%);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, rgba(88, 142, 255, 0.95) 100%);
   border: none;
-  color: #051223;
+  color: var(--bg-dark);
   font-size: 13px;
   font-weight: 700;
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(88, 142, 255, 0.35);
+  box-shadow: 0 2px 8px var(--brand-primary-glow);
 }
 
 .compact-worksheet-next-btn:hover {
@@ -150,7 +150,7 @@
 .compact-worksheet-answer {
   font-size: 16px;
   font-weight: 700;
-  color: #90EE90;
+  color: var(--brand-accent);
 }
 
 .compact-worksheet-table-wrapper {
@@ -311,9 +311,9 @@
 }
 
 .worksheet-input.correct {
-  background: rgba(144, 238, 144, 0.15);
-  border-color: #90EE90;
-  color: #90EE90;
+  background: var(--brand-accent-dim);
+  border-color: var(--brand-accent);
+  color: var(--brand-accent);
   font-weight: 700;
 }
 
@@ -324,15 +324,15 @@
 }
 
 .worksheet-input.invalid {
-  background: rgba(255, 179, 71, 0.15);
-  border-color: #FFB347;
-  color: #FFB347;
+  background: var(--brand-secondary-dim);
+  border-color: var(--brand-secondary);
+  color: var(--brand-secondary);
 }
 
 .compact-worksheet-hint {
   padding: 12px;
-  background: rgba(20, 45, 30, 0.95);
-  border: 1px solid rgba(144, 238, 144, 0.35);
+  background: var(--brand-accent-dim);
+  border: 1px solid var(--brand-accent-glow);
   border-radius: 8px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
@@ -340,7 +340,7 @@
 }
 
 .compact-worksheet-hint strong {
-  color: #90EE90;
+  color: var(--brand-accent);
 }
 
 /* Mobile responsive adjustments */
@@ -416,15 +416,15 @@
 }
 
 .problem-difficulty[data-difficulty="intro"] {
-  background: rgba(144, 238, 144, 0.2);
-  color: #90EE90;
-  border: 1px solid rgba(144, 238, 144, 0.4);
+  background: var(--brand-accent-dim);
+  color: var(--brand-accent);
+  border: 1px solid var(--brand-accent-glow);
 }
 
 .problem-difficulty[data-difficulty="standard"] {
-  background: rgba(255, 179, 71, 0.2);
-  color: #FFB347;
-  border: 1px solid rgba(255, 179, 71, 0.4);
+  background: var(--brand-secondary-dim);
+  color: var(--brand-secondary);
+  border: 1px solid var(--brand-secondary-glow);
 }
 
 .problem-difficulty[data-difficulty="challenge"] {
@@ -450,15 +450,15 @@
   gap: 6px;
   align-items: center;
   padding: 10px 12px;
-  background: rgba(144, 238, 144, 0.1);
-  border: 1px solid rgba(144, 238, 144, 0.3);
+  background: var(--brand-accent-dim);
+  border: 1px solid var(--brand-accent-glow);
   border-radius: 8px;
   margin: 8px 0;
 }
 
 .givens-label {
   font-weight: 700;
-  color: #90EE90;
+  color: var(--brand-accent);
   font-size: 12px;
 }
 
@@ -582,15 +582,15 @@
 }
 
 .hints-section {
-  border-left: 3px solid #88CCFF;
+  border-left: 3px solid var(--brand-primary);
 }
 
 .tips-section {
-  border-left: 3px solid #90EE90;
+  border-left: 3px solid var(--brand-accent);
 }
 
 .facts-section {
-  border-left: 3px solid #FFB347;
+  border-left: 3px solid var(--brand-secondary);
 }
 
 .hints-section h4,
@@ -602,15 +602,15 @@
 }
 
 .hints-section h4 {
-  color: #88CCFF;
+  color: var(--brand-primary);
 }
 
 .tips-section h4 {
-  color: #90EE90;
+  color: var(--brand-accent);
 }
 
 .facts-section h4 {
-  color: #FFB347;
+  color: var(--brand-secondary);
 }
 
 .hints-list,
@@ -649,12 +649,12 @@
   display: inline-block;
   margin-top: 4px;
   padding: 4px 8px;
-  background: rgba(136, 204, 255, 0.15);
-  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: var(--brand-primary-dim);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   font-family: 'Fira Code', Monaco, monospace;
   font-size: 11px;
-  color: #88CCFF;
+  color: var(--brand-primary);
 }
 
 /* W.I.R.E. Wheel Tab */

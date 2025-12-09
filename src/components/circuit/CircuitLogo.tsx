@@ -5,19 +5,26 @@ type CircuitLogoProps = SVGProps<SVGSVGElement> & {
   className?: string;
 };
 
-export const CircuitLogo: FC<CircuitLogoProps> = ({ 
-  size = 240, 
+export const CircuitLogo: FC<CircuitLogoProps> = ({
+  size = 240,
   className = "",
-  ...props 
+  ...props
 }) => {
   const width = typeof size === 'number' ? `${size}px` : size;
   const height = typeof size === 'number' ? `${size * 0.75}px` : size;
-  
+
+  // Brand colors from splash page
+  const wireColor = "#41ffc0";
+  const nodeColor = "#39ffb7";
+  const nodeStroke = "#05141c";
+  const labelColor = "#39ffb7";
+  const labelMuted = "#9db8ff";
+
   return (
-    <svg 
-      viewBox="0 0 260 200" 
-      xmlns="http://www.w3.org/2000/svg" 
-      role="img" 
+    <svg
+      viewBox="0 0 260 200"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
       aria-label="CircuiTry3D Logo - Three Resistor Circuit"
       width={width}
       height={height}
@@ -26,12 +33,12 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
     >
       <defs>
         <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{stopColor:"#2dd4bf", stopOpacity:1}} />
-          <stop offset="100%" style={{stopColor:"#14b8a6", stopOpacity:1}} />
+          <stop offset="0%" style={{stopColor: wireColor, stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor: nodeColor, stopOpacity:1}} />
         </linearGradient>
         <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style={{stopColor:"#2dd4bf", stopOpacity:1}} />
-          <stop offset="100%" style={{stopColor:"#5eead4", stopOpacity:1}} />
+          <stop offset="0%" style={{stopColor: nodeColor, stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor: wireColor, stopOpacity:1}} />
         </linearGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
@@ -41,58 +48,58 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
           </feMerge>
         </filter>
       </defs>
-      
+
       <g stroke="url(#wireGradient)" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        
+
         <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <g transform="translate(55, 80)">
           <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
           <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
-          <text x="0" y="-18" fontSize="9" fill="#2dd4bf" fontWeight="bold" textAnchor="middle">+</text>
-          <text x="-3" y="20" fontSize="9" fill="#888" fontWeight="bold" textAnchor="middle">-</text>
+          <text x="0" y="-18" fontSize="9" fill={nodeColor} fontWeight="bold" textAnchor="middle">+</text>
+          <text x="-3" y="20" fontSize="9" fill={labelMuted} fontWeight="bold" textAnchor="middle">-</text>
         </g>
-        
+
         <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <line x1="55" y1="50" x2="90" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <g transform="translate(130, 50)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
           <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
         </g>
-        
+
         <line x1="160" y1="50" x2="205" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <line x1="205" y1="50" x2="205" y2="70" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <g transform="translate(205, 105) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
           <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
         </g>
-        
+
         <line x1="205" y1="135" x2="205" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <line x1="205" y1="150" x2="160" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <g transform="translate(125, 150)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
           <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
         </g>
-        
+
         <line x1="95" y1="150" x2="55" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
+
         <line x1="55" y1="150" x2="55" y2="115" stroke="url(#wireGradient)" strokeWidth="3.5" />
-        
-        <circle cx="55" cy="50" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
-        <circle cx="205" cy="50" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
-        <circle cx="205" cy="150" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
-        <circle cx="55" cy="150" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
-        
-        <text x="35" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">1</text>
-        <text x="220" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">2</text>
-        <text x="220" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">3</text>
-        <text x="35" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">4</text>
+
+        <circle cx="55" cy="50" r="3.5" fill={nodeColor} stroke={nodeStroke} strokeWidth="1.5" />
+        <circle cx="205" cy="50" r="3.5" fill={nodeColor} stroke={nodeStroke} strokeWidth="1.5" />
+        <circle cx="205" cy="150" r="3.5" fill={nodeColor} stroke={nodeStroke} strokeWidth="1.5" />
+        <circle cx="55" cy="150" r="3.5" fill={nodeColor} stroke={nodeStroke} strokeWidth="1.5" />
+
+        <text x="35" y="35" fontSize="8" fill={labelMuted} fontWeight="bold">1</text>
+        <text x="220" y="35" fontSize="8" fill={labelMuted} fontWeight="bold">2</text>
+        <text x="220" y="165" fontSize="8" fill={labelMuted} fontWeight="bold">3</text>
+        <text x="35" y="165" fontSize="8" fill={labelMuted} fontWeight="bold">4</text>
       </g>
-      
-      <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill="#2dd4bf" textAnchor="middle" fontWeight="600">
+
+      <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill={labelColor} textAnchor="middle" fontWeight="600">
         <text x="37" y="98">9V</text>
         <text x="130" y="35">R₁ = 3 kΩ</text>
         <text x="225" y="105">R₂ = 10 kΩ</text>

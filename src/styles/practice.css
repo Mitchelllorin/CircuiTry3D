@@ -1,19 +1,9 @@
 .practice-page {
   display: grid;
   grid-template-columns: 280px 1fr;
-  background: radial-gradient(
-    circle at top,
-    rgba(12, 20, 34, 0.92),
-    #04070c 58%
-  );
-  color: #f3f8ff;
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  background: var(--bg-gradient-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family);
   min-width: 0;
   overflow-x: hidden;
   height: 100vh;
@@ -71,9 +61,9 @@
 }
 
 .problem-button[data-active="true"] {
-  background: rgba(40, 86, 148, 0.72);
+  background: var(--brand-primary-dim);
   border-color: var(--brand-secondary-glow);
-  box-shadow: 0 0 18px rgba(120, 200, 255, 0.32);
+  box-shadow: 0 0 18px var(--brand-primary-glow);
 }
 
 .problem-button small {
@@ -204,8 +194,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: rgba(18, 42, 78, 0.68);
-  border: 1px solid rgba(136, 204, 255, 0.32);
+  background: var(--brand-primary-dim);
+  border: 1px solid var(--brand-primary-glow);
   border-radius: 14px;
   padding: 16px 20px;
 }
@@ -219,13 +209,13 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: rgba(136, 204, 255, 0.18);
-  border: 1px solid rgba(136, 204, 255, 0.28);
+  background: var(--brand-primary-dim);
+  border: 1px solid var(--brand-primary-glow);
   display: grid;
   place-items: center;
   padding: 0;
   font-size: 1.4rem;
-  color: #8ecaff;
+  color: var(--brand-primary);
   cursor: pointer;
   transition:
     background 0.18s ease,
@@ -310,7 +300,7 @@
 .challenge-level-bar-fill {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(0, 195, 255, 0.5), rgba(88, 240, 200, 0.6));
+  background: linear-gradient(90deg, var(--brand-accent-dim), var(--brand-green-dim));
   border-radius: inherit;
   transition: width 0.3s ease;
 }
@@ -331,11 +321,11 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  background: rgba(10, 48, 80, 0.6);
-  border: 1px solid rgba(88, 228, 200, 0.35);
+  background: var(--brand-green-dim);
+  border: 1px solid var(--brand-green-glow);
   border-radius: 14px;
   padding: 10px 16px;
-  color: #aef9eb;
+  color: var(--brand-green);
 }
 
 .challenge-reward-banner span {
@@ -397,9 +387,9 @@
 
 .challenge-badge.is-unlocked {
   border-style: solid;
-  border-color: rgba(90, 220, 190, 0.5);
-  background: rgba(24, 60, 92, 0.8);
-  box-shadow: 0 0 24px rgba(80, 220, 200, 0.18);
+  border-color: var(--brand-green-glow);
+  background: var(--brand-primary-dim);
+  box-shadow: 0 0 24px var(--brand-green-glow);
 }
 
 .challenge-badge-icon {
@@ -426,8 +416,8 @@
 
 .challenge-next {
   border-radius: 16px;
-  border: 1px solid rgba(90, 220, 190, 0.38);
-  background: rgba(8, 30, 44, 0.78);
+  border: 1px solid var(--brand-green-glow);
+  background: var(--brand-green-dim);
   padding: 16px 18px;
   display: grid;
   gap: 8px;
@@ -466,7 +456,7 @@
 
 .challenge-next-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, rgba(0, 220, 190, 0.6), rgba(0, 190, 255, 0.8));
+  background: linear-gradient(90deg, var(--brand-green-glow), var(--brand-accent-glow));
   transition: width 0.3s ease;
 }
 
@@ -511,9 +501,9 @@
 }
 
 .challenge-leaderboard li.is-current {
-  border-color: rgba(74, 222, 128, 0.6);
-  background: rgba(10, 32, 16, 0.95);
-  color: #ecfdf5;
+  border-color: var(--brand-green-glow);
+  background: var(--brand-green-dim);
+  color: var(--text-primary);
 }
 
 .challenge-leaderboard li .rank {
@@ -940,9 +930,9 @@
 }
 
 .worksheet-status-banner[data-complete="true"] {
-  background: rgba(28, 94, 122, 0.68);
-  border-color: rgba(108, 228, 204, 0.56);
-  box-shadow: 0 0 24px rgba(80, 220, 200, 0.24);
+  background: var(--brand-green-dim);
+  border-color: var(--brand-green-glow);
+  box-shadow: 0 0 24px var(--brand-green-glow);
 }
 
 .worksheet-status-header {
@@ -1250,9 +1240,9 @@
 }
 
 .worksheet-cell.status-correct {
-  background: rgba(44, 128, 112, 0.52);
-  border-color: rgba(98, 220, 198, 0.64);
-  box-shadow: 0 0 18px rgba(80, 220, 200, 0.32);
+  background: var(--brand-green-dim);
+  border-color: var(--brand-green-glow);
+  box-shadow: 0 0 18px var(--brand-green-glow);
 }
 
 .worksheet-cell.status-incorrect {
@@ -1389,8 +1379,8 @@
 }
 
 .worksheet-controls .next-problem {
-  background: rgba(12, 140, 168, 0.72);
-  border: 1px solid rgba(108, 220, 228, 0.5);
+  background: var(--brand-accent-dim);
+  border: 1px solid var(--brand-accent-glow);
 }
 
 .worksheet-controls .next-problem[disabled] {
@@ -1582,11 +1572,11 @@
 .practice-visual-toggle button[data-active="true"] {
   background: linear-gradient(
     135deg,
-    rgba(0, 200, 255, 0.22),
-    rgba(56, 228, 200, 0.22)
+    var(--brand-accent-dim),
+    var(--brand-green-dim)
   );
-  color: #e7f5ff;
-  box-shadow: 0 12px 28px rgba(0, 150, 255, 0.22);
+  color: var(--text-primary);
+  box-shadow: 0 12px 28px var(--brand-primary-glow);
 }
 
 .practice-visual-toggle button:hover,
@@ -1634,11 +1624,11 @@
 }
 
 .practice-standard-buttons button[data-active="true"] {
-  border-color: rgba(0, 208, 255, 0.8);
+  border-color: var(--brand-accent-glow);
   background: linear-gradient(
     135deg,
-    rgba(0, 200, 255, 0.22),
-    rgba(56, 228, 200, 0.22)
+    var(--brand-accent-dim),
+    var(--brand-green-dim)
   );
   transform: translateY(-1px);
 }
