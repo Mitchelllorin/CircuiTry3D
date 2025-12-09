@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#050b1f" />
     <meta name="color-scheme" content="dark" />
     
     <!-- Open Graph / Facebook -->
@@ -42,29 +42,27 @@
         box-sizing: border-box;
         -webkit-tap-highlight-color: transparent;
       }
-      
+
       html {
         touch-action: pan-x pan-y;
         -webkit-text-size-adjust: 100%;
       }
-      
+
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-          sans-serif;
+        font-family: "Inter", "Poppins", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background-color: #0f172a;
+        background-color: #050b1f;
         color: #ffffff;
         overscroll-behavior: none;
       }
-      
+
       #root {
         width: 100%;
         height: 100vh;
         overscroll-behavior: contain;
       }
-      
+
       .initial-loader {
         position: fixed;
         inset: 0;
@@ -74,16 +72,33 @@
         justify-content: center;
         gap: 20px;
         z-index: 9999;
-        background: #0f172a;
+        background: radial-gradient(125% 125% at 50% 10%, rgba(47, 84, 235, 0.25) 0%, rgba(9, 17, 43, 0.85) 45%, #050b1f 100%);
       }
-      
-      .loader-text {
-        font-size: 1.2rem;
+
+      .loader-wordmark {
+        font-size: 2.4rem;
+        font-weight: 900;
+        letter-spacing: -0.015em;
+        display: inline-flex;
+        gap: 4px;
+        filter: drop-shadow(0 0 22px rgba(40, 255, 190, 0.4));
+      }
+
+      .loader-wordmark .brand-blue {
         color: #88ccff;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
+        text-shadow: 0 0 18px rgba(136, 204, 255, 0.7), 0 0 34px rgba(136, 204, 255, 0.55);
       }
-      
+
+      .loader-wordmark .brand-orange {
+        color: #ff8844;
+        text-shadow: 0 0 16px rgba(255, 136, 68, 0.65), 0 0 30px rgba(255, 136, 68, 0.55);
+      }
+
+      .loader-wordmark .brand-green {
+        color: #00ff88;
+        text-shadow: 0 0 18px rgba(0, 255, 136, 0.7), 0 0 34px rgba(0, 255, 136, 0.55);
+      }
+
       .loader-spinner {
         width: 50px;
         height: 50px;
@@ -92,7 +107,15 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
-      
+
+      .loader-status {
+        color: rgba(136, 204, 255, 0.75);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        margin-top: 10px;
+      }
+
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
@@ -101,9 +124,13 @@
   <body>
     <div id="root">
       <div class="initial-loader">
-        <div class="loader-text">CircuiTry3D</div>
+        <div class="loader-wordmark">
+          <span class="brand-blue">Circui</span>
+          <span class="brand-orange">Try</span>
+          <span class="brand-green">3D</span>
+        </div>
         <div class="loader-spinner"></div>
-        <div style="color: rgba(136, 204, 255, 0.6); font-size: 0.9rem; margin-top: 10px;">Initializing...</div>
+        <div class="loader-status">Initializing...</div>
       </div>
     </div>
     <script type="module" src="src/main.tsx"></script>
