@@ -581,7 +581,7 @@ export default function Practice({
       problemId: currentProblemId,
       complete: true,
     };
-  }, [recordPracticeCompletion, selectedProblem, worksheetComplete]);
+  }, [recordCompletion, selectedProblem, worksheetComplete]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
