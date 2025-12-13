@@ -1142,10 +1142,12 @@ export default function Builder() {
     isLoadModalOpen;
   const shouldShowFloatingActions = !isWorksheetVisible && !isOverlayActive;
 
-  const controlsDisabled = !isFrameReady;
-  const controlDisabledTitle = controlsDisabled
+  const controlsDisabled = !isFrameReady || isCircuitLocked;
+  const controlDisabledTitle = !isFrameReady
     ? "Workspace is still loading"
-    : undefined;
+    : isCircuitLocked
+      ? "Complete the worksheet to unlock editing"
+      : undefined;
   const builderFrameSrc = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1924,21 +1926,6 @@ export default function Builder() {
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
         />
-        {isPracticeWorkspaceMode && isCircuitLocked && (
-          <div className="builder-workspace-lock" role="status" aria-live="polite">
-            <div className="builder-workspace-lock-card">
-              <strong>Practice circuit locked</strong>
-              <p>Complete the W.I.R.E. worksheet to unlock editing or advance to the next problem.</p>
-              <button
-                type="button"
-                className="builder-workspace-lock-btn"
-                onClick={() => setCompactWorksheetOpen(true)}
-              >
-                Open Worksheet
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {shouldShowFloatingActions && (
