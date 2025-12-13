@@ -5,6 +5,7 @@ import { formatMetricValue, formatNumber } from "../../../utils/electrical";
 import { solvePracticeProblem, type SolveResult } from "../../../utils/practiceSolver";
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
 import CircuitDiagram from "../../../components/practice/CircuitDiagram";
+import { Component3DViewer } from "../../arena/Component3DViewer";
 import "../../../styles/compact-worksheet.css";
 
 type CompactWorksheetPanelProps = {
@@ -214,7 +215,7 @@ export function CompactWorksheetPanel({
     ];
   }, [problem]);
 
-  const [activeTab, setActiveTab] = useState<"worksheet" | "schematic" | "hints" | "formulas">("worksheet");
+  const [activeTab, setActiveTab] = useState<"worksheet" | "schematic" | "3dview" | "hints" | "formulas">("worksheet");
 
   // Extract givens from problem for display
   const givensDisplay = useMemo(() => {
@@ -273,6 +274,11 @@ export function CompactWorksheetPanel({
             {worksheetComplete ? "✓ Worksheet Complete" : "Practice Worksheet"}
           </span>
         </button>
+        {!worksheetComplete && isOpen && (
+          <span className="compact-worksheet-nav-hint">
+            View circuit above - zoom & pan to inspect
+          </span>
+        )}
         {worksheetComplete && (
           <div className="compact-worksheet-actions">
             <button
@@ -351,6 +357,13 @@ export function CompactWorksheetPanel({
             </button>
             <button
               type="button"
+              className={`worksheet-tab${activeTab === "3dview" ? " active" : ""}`}
+              onClick={() => setActiveTab("3dview")}
+            >
+              3D Circuit
+            </button>
+            <button
+              type="button"
               className={`worksheet-tab${activeTab === "hints" ? " active" : ""}`}
               onClick={() => setActiveTab("hints")}
             >
@@ -425,6 +438,58 @@ export function CompactWorksheetPanel({
                     <p>{problem.realWorldExample}</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 3D Circuit View Tab */}
+            {activeTab === "3dview" && (
+              <div className="circuit-3d-tab-content">
+                <div className="circuit-3d-header">
+                  <h4>Circuit Components</h4>
+                  <p className="circuit-3d-description">
+                    Individual component previews. Use the full 3D circuit workspace above to see the connected circuit - you can zoom and pan to inspect it freely.
+                  </p>
+                </div>
+                <div className="circuit-3d-grid">
+                  {/* Source component */}
+                  <div className="circuit-3d-card">
+                    <div className="circuit-3d-viewer-container">
+                      <Component3DViewer
+                        componentType={problem.source.type || "battery"}
+                        isRotating={true}
+                      />
+                    </div>
+                    <div className="circuit-3d-label">
+                      <span className="circuit-3d-name">{problem.source.label || "Source"}</span>
+                      <span className="circuit-3d-type">{problem.source.type || "Battery"}</span>
+                      {problem.source.givens?.voltage !== undefined && (
+                        <span className="circuit-3d-value">
+                          {formatMetricValue(problem.source.givens.voltage, "voltage")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Other components */}
+                  {problem.components.map((comp) => (
+                    <div key={comp.id} className="circuit-3d-card">
+                      <div className="circuit-3d-viewer-container">
+                        <Component3DViewer
+                          componentType={comp.type || "resistor"}
+                          isRotating={true}
+                        />
+                      </div>
+                      <div className="circuit-3d-label">
+                        <span className="circuit-3d-name">{comp.label}</span>
+                        <span className="circuit-3d-type">{comp.type || "Component"}</span>
+                        {comp.givens?.resistance !== undefined && (
+                          <span className="circuit-3d-value">
+                            {formatMetricValue(comp.givens.resistance, "resistance")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -522,7 +587,7 @@ export function CompactWorksheetPanel({
           {/* Always visible hint */}
           <div className="compact-worksheet-hint">
             <p>
-              <strong>Tip:</strong> Compare your answers to the 3D circuit above.
+              <strong>Tip:</strong> Zoom and pan the 3D circuit above to inspect components while solving.
               Green cells are correct. Complete all cells to unlock editing.
             </p>
           </div>

@@ -12193,7 +12193,19 @@ Made with ? for visual learners everywhere!
         }
 
         function loadPresetCircuit(presetName) {
-            const preset = PRESET_CIRCUITS[presetName];
+            // Map additional preset hints to existing presets for broader compatibility
+            const PRESET_ALIASES = {
+                series_voltage_drop: 'series_basic',
+                series_power: 'series_basic',
+                parallel_current: 'parallel_basic',
+                parallel_power: 'parallel_basic',
+                combo_sp: 'mixed_circuit',
+                combo_simple: 'mixed_circuit'
+            };
+
+            // Resolve the actual preset name (use alias if defined)
+            const resolvedPresetName = PRESET_ALIASES[presetName] || presetName;
+            const preset = PRESET_CIRCUITS[resolvedPresetName];
             if (!preset) {
                 setStatus('Preset circuit not found!');
                 return;
