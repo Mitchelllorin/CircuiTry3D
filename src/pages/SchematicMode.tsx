@@ -31,6 +31,8 @@ import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/th
 import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 import { buildPracticeCircuit } from "../schematic/presets";
 import { CurrentFlowAnimationSystem } from "../schematic/currentFlowAnimation";
+import { validateCircuit, type ValidationResult, type ValidationIssue } from "../sim/circuitValidator";
+import { ValidationPanel, ValidationIndicator } from "../components/validation/ValidationPanel";
 
 declare global {
   interface Window {
@@ -697,6 +699,25 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
   const [labelCounters, setLabelCounters] = useState<Record<string, number>>({});
   const [singleNodeOrientation, setSingleNodeOrientation] = useState<Orientation>("horizontal");
   const [isCatalogOpen, setCatalogOpen] = useState(true);
+  const [isValidationCollapsed, setValidationCollapsed] = useState(false);
+  const [highlightedElements, setHighlightedElements] = useState<Set<string>>(new Set());
+
+  // Circuit validation - runs automatically when elements change
+  const validationResult = useMemo<ValidationResult>(
+    () => validateCircuit(elements),
+    [elements]
+  );
+
+  // Handle clicking on a validation issue to highlight affected elements
+  const handleIssueClick = useCallback((issue: ValidationIssue) => {
+    setHighlightedElements(new Set(issue.affectedElements));
+    // Select the first affected element if any
+    if (issue.affectedElements.length > 0) {
+      setSelectedElementId(issue.affectedElements[0]);
+    }
+    // Clear highlight after 3 seconds
+    setTimeout(() => setHighlightedElements(new Set()), 3000);
+  }, []);
 
   const selectedCatalogEntry = useMemo(() => {
     const entry = COMPONENT_CATALOG.find((item) => item.id === selectedCatalogId);
@@ -933,6 +954,7 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
           elements={elements}
           previewElement={previewElement}
           selectedElementId={selectedElementId}
+          highlightedElementIds={highlightedElements}
           draftAnchor={draft ? draft.start : null}
           hoverPoint={hoverPoint}
           onBoardPointClick={handleBoardClick}
@@ -941,7 +963,15 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
           symbolStandard={symbolStandard}
         />
         <div className="schematic-overlay">
-          <div className="schematic-instructions">{instructions}</div>
+          <div className="schematic-instructions">
+            {instructions}
+            {validationResult.issues.length > 0 && (
+              <ValidationIndicator
+                result={validationResult}
+                onClick={() => setValidationCollapsed(false)}
+              />
+            )}
+          </div>
           <div className="schematic-readout">
             <span>Snapped: {hoverPoint ? formatPoint(hoverPoint) : "—"}</span>
             <span>Tool: {selectedCatalogEntry.name}</span>
@@ -961,6 +991,13 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
           {isCatalogOpen ? "Hide Library" : "Show Library"}
         </button>
         <div id="schematic-drawer-panel" className="schematic-drawer-body">
+          <ValidationPanel
+            result={validationResult}
+            onIssueClick={handleIssueClick}
+            collapsed={isValidationCollapsed}
+            onToggleCollapse={() => setValidationCollapsed((prev) => !prev)}
+          />
+
           <div className="schematic-catalog">
             <h2>Component Catalog</h2>
             <div className="catalog-grid" role="list">
@@ -1064,6 +1101,7 @@ type BuilderViewportProps = {
   elements: SchematicElement[];
   previewElement: SchematicElement | null;
   selectedElementId: string | null;
+  highlightedElementIds?: Set<string>;
   draftAnchor: Vec2 | null;
   hoverPoint: Vec2 | null;
   onBoardPointClick: (point: Vec2, event: PointerEvent) => void;
@@ -1076,6 +1114,7 @@ function BuilderViewport({
   elements,
   previewElement,
   selectedElementId,
+  highlightedElementIds = new Set(),
   draftAnchor,
   hoverPoint,
   onBoardPointClick,
@@ -1270,8 +1309,11 @@ function BuilderViewport({
     const terminalPoints: Vec2[] = [];
 
       elements.forEach((element) => {
+        const isSelected = element.id === selectedElementId;
+        const isHighlighted = highlightedElementIds.has(element.id);
         const { group, terminals } = buildElement(three, element, {
-          highlight: element.id === selectedElementId,
+          highlight: isSelected || isHighlighted,
+          highlightColor: isHighlighted && !isSelected ? 0xff6b6b : undefined, // Red for validation issues
           standard: symbolStandard,
         });
       tagWithElementId(group, element.id);
@@ -1338,7 +1380,7 @@ function BuilderViewport({
       scene.add(hoverMesh);
       hoverMarkerRef.current = hoverMesh;
     }
-  }, [elements, previewElement, selectedElementId, draftAnchor, hoverPoint, symbolStandard]);
+  }, [elements, previewElement, selectedElementId, highlightedElementIds, draftAnchor, hoverPoint, symbolStandard]);
 
   useEffect(() => {
     rebuildSceneContent();

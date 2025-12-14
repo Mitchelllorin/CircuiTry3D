@@ -13,6 +13,7 @@ export const LABEL_HEIGHT = 0.4;
 type BuildOptions = {
   preview?: boolean;
   highlight?: boolean;
+  highlightColor?: number;
   standard?: SymbolStandard;
 };
 
@@ -103,7 +104,9 @@ const styliseMaterial = (three: any, material: any, options: BuildOptions, baseC
 
   const base = new three.Color(baseColor);
   if (options.highlight) {
-    material.color = new three.Color(COLOR_HELPERS.highlight);
+    // Use custom highlight color if provided, otherwise use default blue
+    const highlightHex = options.highlightColor ?? COLOR_HELPERS.highlight;
+    material.color = new three.Color(highlightHex);
   } else if (options.preview) {
     const preview = new three.Color(COLOR_HELPERS.preview);
     material.color = base.clone().lerp(preview, 0.45);
