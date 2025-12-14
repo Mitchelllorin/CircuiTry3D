@@ -258,6 +258,15 @@
   border: 1px solid rgba(88, 146, 255, 0.32);
   font-size: 0.95rem;
   letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.schematic-instructions .validation-indicator {
+  pointer-events: auto;
 }
 
 .schematic-readout {
