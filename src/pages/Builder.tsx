@@ -885,6 +885,14 @@ export default function Builder() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isArenaPanelOpen]);
 
+  // Sync circuit lock state to the iframe
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction(isCircuitLocked ? "lock-circuit" : "unlock-circuit");
+  }, [isCircuitLocked, isFrameReady, triggerBuilderAction]);
+
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
     const timer = window.setTimeout(() => {

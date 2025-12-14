@@ -215,7 +215,8 @@ export function CompactWorksheetPanel({
     ];
   }, [problem]);
 
-  const [activeTab, setActiveTab] = useState<"worksheet" | "schematic" | "3dview" | "hints" | "formulas">("worksheet");
+  const [activeTab, setActiveTab] = useState<"worksheet" | "3dview" | "hints" | "formulas">("worksheet");
+  const [tipDismissed, setTipDismissed] = useState(false);
 
   // Extract givens from problem for display
   const givensDisplay = useMemo(() => {
@@ -299,43 +300,63 @@ export function CompactWorksheetPanel({
             )}
           </div>
         )}
+        {!worksheetComplete && onAdvance && (
+          <div className="compact-worksheet-actions">
+            <button
+              type="button"
+              className="compact-worksheet-next-btn skip-btn"
+              onClick={onAdvance}
+            >
+              Skip to Next Problem
+            </button>
+          </div>
+        )}
       </div>
 
       {isOpen && (
         <div className="compact-worksheet-body">
-          {/* Problem Header with Learning Objective */}
+          {/* Problem Header with Learning Objective and Inline Schematic */}
           <div className="compact-worksheet-problem-info">
-            <div className="problem-header-row">
-              <h3>{problem.title}</h3>
-              <span className="problem-difficulty" data-difficulty={problem.difficulty}>
-                {problem.difficulty}
-              </span>
-            </div>
-            {problem.learningObjective && (
-              <p className="learning-objective">{problem.learningObjective}</p>
-            )}
-            <p className="compact-worksheet-prompt">{problem.prompt}</p>
-
-            {/* Givens Display */}
-            {givensDisplay.length > 0 && (
-              <div className="givens-display">
-                <span className="givens-label">Given:</span>
-                {givensDisplay.map((given, index) => (
-                  <span key={index} className="given-item">
-                    {given.label} {given.metric} = {given.value}
-                    {index < givensDisplay.length - 1 && ", "}
+            <div className="problem-overview-row">
+              <div className="problem-description-column">
+                <div className="problem-header-row">
+                  <h3>{problem.title}</h3>
+                  <span className="problem-difficulty" data-difficulty={problem.difficulty}>
+                    {problem.difficulty}
                   </span>
-                ))}
-              </div>
-            )}
+                </div>
+                {problem.learningObjective && (
+                  <p className="learning-objective">{problem.learningObjective}</p>
+                )}
+                <p className="compact-worksheet-prompt">{problem.prompt}</p>
 
-            <div className="compact-worksheet-target">
-              <strong>{problem.targetQuestion}</strong>
-              <span className="compact-worksheet-answer">
-                {worksheetComplete && Number.isFinite(targetValue)
-                  ? formatMetricValue(targetValue as number, problem.targetMetric.key)
-                  : "Complete worksheet to reveal"}
-              </span>
+                {/* Givens Display */}
+                {givensDisplay.length > 0 && (
+                  <div className="givens-display">
+                    <span className="givens-label">Given:</span>
+                    {givensDisplay.map((given, index) => (
+                      <span key={index} className="given-item">
+                        {given.label} {given.metric} = {given.value}
+                        {index < givensDisplay.length - 1 && ", "}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="compact-worksheet-target">
+                  <strong>{problem.targetQuestion}</strong>
+                  <span className="compact-worksheet-answer">
+                    {worksheetComplete && Number.isFinite(targetValue)
+                      ? formatMetricValue(targetValue as number, problem.targetMetric.key)
+                      : "Complete worksheet to reveal"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Inline Schematic Diagram - Always Visible */}
+              <div className="problem-schematic-column">
+                <CircuitDiagram problem={problem} />
+              </div>
             </div>
           </div>
 
@@ -347,13 +368,6 @@ export function CompactWorksheetPanel({
               onClick={() => setActiveTab("worksheet")}
             >
               W.I.R.E. Table
-            </button>
-            <button
-              type="button"
-              className={`worksheet-tab${activeTab === "schematic" ? " active" : ""}`}
-              onClick={() => setActiveTab("schematic")}
-            >
-              Schematic
             </button>
             <button
               type="button"
@@ -425,19 +439,6 @@ export function CompactWorksheetPanel({
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
-
-            {/* Schematic Tab */}
-            {activeTab === "schematic" && (
-              <div className="schematic-tab-content">
-                <CircuitDiagram problem={problem} />
-                {problem.realWorldExample && (
-                  <div className="real-world-example">
-                    <strong>Real-World Application:</strong>
-                    <p>{problem.realWorldExample}</p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -584,13 +585,23 @@ export function CompactWorksheetPanel({
             )}
           </div>
 
-          {/* Always visible hint */}
-          <div className="compact-worksheet-hint">
-            <p>
-              <strong>Tip:</strong> Zoom and pan the 3D circuit above to inspect components while solving.
-              Green cells are correct. Complete all cells to unlock editing.
-            </p>
-          </div>
+          {/* Dismissable hint */}
+          {!tipDismissed && (
+            <div className="compact-worksheet-hint">
+              <button
+                type="button"
+                className="hint-dismiss-btn"
+                onClick={() => setTipDismissed(true)}
+                aria-label="Dismiss tip"
+              >
+                ×
+              </button>
+              <p>
+                <strong>Tip:</strong> Zoom and pan the 3D circuit above to inspect components while solving.
+                Green cells are correct. Complete all cells to unlock editing.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

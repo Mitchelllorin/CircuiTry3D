@@ -373,9 +373,6 @@ export default function Practice({
   const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(
     null,
   );
-  const [visualMode, setVisualMode] = useState<"diagram" | "schematic">(
-    "diagram",
-  );
   const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
     DEFAULT_SYMBOL_STANDARD,
   );
@@ -448,12 +445,11 @@ export default function Practice({
   });
 
   const scrollToDiagram = useCallback(() => {
-    setVisualMode("diagram");
     diagramAnchorRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
-  }, [setVisualMode]);
+  }, []);
 
   const scrollToOhmsWheel = useCallback(() => {
     ohmsWheelRef.current?.scrollIntoView({
@@ -871,42 +867,80 @@ export default function Practice({
             </div>
           </header>
 
-          <section className="prompt-card">
-            <strong>Practice Prompt</strong>
-            <p>{selectedProblem.prompt}</p>
-          </section>
-          <ProgressDashboard />
+          <section className="problem-overview">
+            <div className="problem-overview-content">
+              <div className="prompt-card">
+                <strong>Practice Prompt</strong>
+                <p>{selectedProblem.prompt}</p>
+              </div>
 
-          <section className="target-card" aria-live="polite">
-            <div className="target-icon-wrapper">
-              <button
-                type="button"
-                className="target-icon"
-                onClick={() => toggleHint("target")}
-                aria-label="Explain the question mark icon"
-                aria-haspopup="dialog"
-                aria-expanded={targetHintOpen}
-                aria-controls="practice-target-hint"
-              >
-                ?
-              </button>
+              <section className="target-card" aria-live="polite">
+                <div className="target-icon-wrapper">
+                  <button
+                    type="button"
+                    className="target-icon"
+                    onClick={() => toggleHint("target")}
+                    aria-label="Explain the question mark icon"
+                    aria-haspopup="dialog"
+                    aria-expanded={targetHintOpen}
+                    aria-controls="practice-target-hint"
+                  >
+                    ?
+                  </button>
+                </div>
+                <div>
+                  <div className="target-question">
+                    {selectedProblem.targetQuestion}
+                  </div>
+                  <div className="target-answer">
+                    {answerRevealed && Number.isFinite(targetValue) ? (
+                      formatMetricValue(
+                        targetValue as number,
+                        selectedProblem.targetMetric.key,
+                      )
+                    ) : (
+                      <span>Reveal the answer when you&apos;re ready.</span>
+                    )}
+                  </div>
+                </div>
+              </section>
             </div>
-            <div>
-              <div className="target-question">
-                {selectedProblem.targetQuestion}
+
+            <div className="problem-overview-diagram" ref={diagramAnchorRef}>
+              <div className="practice-diagram-inline">
+                <CircuitDiagram problem={selectedProblem} />
               </div>
-              <div className="target-answer">
-                {answerRevealed && Number.isFinite(targetValue) ? (
-                  formatMetricValue(
-                    targetValue as number,
-                    selectedProblem.targetMetric.key,
-                  )
-                ) : (
-                  <span>Reveal the answer when you&apos;re ready.</span>
-                )}
+              <div className="practice-schematic-controls">
+                <div
+                  className="practice-standard-control-compact"
+                  role="group"
+                  aria-label="Schematic symbol standard"
+                >
+                  <span className="practice-standard-label">3D Standard</span>
+                  <div className="practice-standard-buttons">
+                    {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        data-active={
+                          symbolStandard === option.key ? "true" : undefined
+                        }
+                        onClick={() => setSymbolStandard(option.key)}
+                        title={option.description}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+              <p className="practice-visual-caption">
+                Rendering {activeStandardLabel} symbols in the 3D workspace.
+              </p>
             </div>
           </section>
+
+          <ProgressDashboard />
 
           <section className="adaptive-card" aria-live="polite">
             <div className="adaptive-card-header">
@@ -1023,86 +1057,10 @@ export default function Practice({
               <button
                 type="button"
                 onClick={advanceToNextProblem}
-                disabled={!worksheetComplete}
                 className="next-problem"
               >
-                {worksheetComplete ? "Next Problem" : "Solve to Unlock Next"}
+                Next Problem
               </button>
-            </div>
-
-            <div className="practice-visual-wrapper" ref={diagramAnchorRef}>
-              <div className="practice-visual-toolbar">
-                <div
-                  className="practice-visual-toggle"
-                  role="tablist"
-                  aria-label="Visualization mode"
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={visualMode === "diagram"}
-                    data-active={visualMode === "diagram" ? "true" : undefined}
-                    onClick={() => setVisualMode("diagram")}
-                  >
-                    Diagram
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={visualMode === "schematic"}
-                    data-active={
-                      visualMode === "schematic" ? "true" : undefined
-                    }
-                    onClick={() => setVisualMode("schematic")}
-                  >
-                    3D Schematic
-                  </button>
-                </div>
-                {visualMode === "schematic" && (
-                  <div
-                    className="practice-standard-control"
-                    role="group"
-                    aria-label="Schematic symbol standard"
-                  >
-                    <span className="practice-standard-label">
-                      Symbol Standard
-                    </span>
-                    <div className="practice-standard-buttons">
-                      {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                        <button
-                          key={option.key}
-                          type="button"
-                          data-active={
-                            symbolStandard === option.key ? "true" : undefined
-                          }
-                          onClick={() => setSymbolStandard(option.key)}
-                          title={option.description}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div
-                className={`practice-visual-stage${visualMode === "schematic" ? " is-schematic" : ""}`}
-                aria-live="polite"
-              >
-                {visualMode === "schematic" ? (
-                  <PracticeViewport
-                    problem={selectedProblem}
-                    symbolStandard={symbolStandard}
-                  />
-                ) : (
-                  <CircuitDiagram problem={selectedProblem} />
-                )}
-              </div>
-              {visualMode === "schematic" && (
-                <p className="practice-visual-caption">
-                  Rendering {activeStandardLabel} symbols.
-                </p>
-              )}
             </div>
 
             <div
