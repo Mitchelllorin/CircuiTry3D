@@ -23,7 +23,9 @@ export type BuilderInvokeAction =
   | "undo"
   | "redo"
   | "clear-workspace"
-  | "run-simulation";
+  | "run-simulation"
+  | "lock-circuit"
+  | "unlock-circuit";
 
 export type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }

@@ -4026,6 +4026,14 @@ body.android-optimized.menu-visible .status {
                             case 'run-simulation':
                                 if (typeof runSimulation === 'function') runSimulation();
                                 break;
+                            case 'lock-circuit':
+                                isCircuitEditLocked = true;
+                                setStatus('🔒 Circuit locked - complete the worksheet to edit');
+                                break;
+                            case 'unlock-circuit':
+                                isCircuitEditLocked = false;
+                                setStatus('🔓 Circuit unlocked - you can now edit');
+                                break;
                             default:
                                 break;
                         }
@@ -4056,6 +4064,7 @@ body.android-optimized.menu-visible .status {
         let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
         let layoutMode = 'free'; // 'free', 'square', 'linear'
         let showPolarityIndicators = true;
+        let isCircuitEditLocked = false; // When true, prevents editing components/wires (for practice mode)
         
         let practiceQuestions = {
             series_basic: {
@@ -6320,10 +6329,29 @@ body.android-optimized.menu-visible .status {
                 hideComponentContextMenu();
                 return;
             }
-            
+
             const key = e.key.toLowerCase();
             const ctrl = e.ctrlKey || e.metaKey;
-            
+
+            // When circuit is locked, only allow view controls (h, f, g) and escape
+            if (isCircuitEditLocked) {
+                if (['h', 'f', 'g', 'escape'].includes(key)) {
+                    e.preventDefault();
+                    switch (key) {
+                        case 'h':
+                            resetCamera();
+                            break;
+                        case 'f':
+                            fitToScreen();
+                            break;
+                        case 'g':
+                            toggleGrid();
+                            break;
+                    }
+                }
+                return;
+            }
+
             // Prevent default for our shortcuts
             if (ctrl || ['b', 'r', 'l', 's', 'j', 'w', 't', 'c', ' ', 'h', 'f', 'g'].includes(key)) {
                 e.preventDefault();
@@ -6454,6 +6482,13 @@ body.android-optimized.menu-visible .status {
                 const touch = e.touches[0];
                 lastTouchPos = { x: touch.clientX, y: touch.clientY };
                 longPressStartPos = { x: touch.clientX, y: touch.clientY };
+
+                // If locked, only allow camera rotation - no component interaction
+                if (isCircuitEditLocked) {
+                    isRotating = true;
+                    isPanning = false;
+                    return;
+                }
 
                 // Start long press timer when allowed
                 if (shouldAllowLongPress()) {
@@ -6648,16 +6683,24 @@ body.android-optimized.menu-visible .status {
 
         function handleMouseDown(e) {
             if (e.button === 0) {
+                // Allow camera rotation even when locked, but not component interaction
+                if (isCircuitEditLocked) {
+                    // Only enable camera rotation when locked - no component interaction
+                    isRotating = true;
+                    lastTouchPos = { x: e.clientX, y: e.clientY };
+                    return;
+                }
+
                 longPressStartPos = { x: e.clientX, y: e.clientY };
                 if (shouldAllowLongPress()) {
                     startLongPressTimer(e.clientX, e.clientY);
                 } else {
                     cancelLongPress();
                 }
-                
+
                 // Check if clicking on a component first
                 const hitComponent = checkComponentHit(e.clientX, e.clientY);
-                
+
                 // If no component hit and not dragging, enable camera rotation
                 if (!hitComponent && !isDragging) {
                     isRotating = true;
