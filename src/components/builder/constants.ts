@@ -185,13 +185,13 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     id: "wire-mode",
     label: "Wire Mode",
     description:
-      "Switch into wiring mode to pick freeform, schematic (90 deg), star, or auto-routing paths.",
+      "Switch into wiring mode to pick freeform, Manhattan (90-deg), simple, perimeter, or A* auto-routing paths.",
     action: "toggle-wire-mode",
   },
   {
     id: "cycle-routing",
     label: "Cycle Wire Routing",
-    description: "Switch between freeform, schematic 90deg, star, and A* routing modes.",
+    description: "Switch between freeform, Manhattan 90-deg, simple, perimeter, and A* routing modes.",
     action: "cycle-wire-routing",
   },
   {

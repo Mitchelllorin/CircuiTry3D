@@ -7349,10 +7349,11 @@ body.android-optimized.menu-visible .status {
                 return routeFreeform(A, B, startSide, endSide);
             }
             
-            // Use enhanced Manhattan routing by default for textbook-style circuits
-            if (mode === 'manhattan' || mode === 'simple') {
+            // Use enhanced Manhattan routing for textbook-style circuits
+            if (mode === 'manhattan') {
                 return routeManhattan(A, B, startSide, endSide);
             }
+            if (mode === 'simple') return routeSimple(A, B, startSide, endSide);
             if (mode === 'perimeter') return routePerimeter(A, B, startSide, endSide);
             if (mode === 'astar') return routeAStar(A, B, startSide, endSide);
             
