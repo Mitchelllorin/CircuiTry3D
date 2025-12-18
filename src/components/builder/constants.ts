@@ -147,15 +147,6 @@ export const QUICK_ACTIONS: QuickAction[] = [
     tool: "select",
   },
   {
-    id: "wire",
-    label: "Wire Tool",
-    description: "Drag to sketch new connections",
-    kind: "tool",
-    action: "set-tool",
-    data: { tool: "wire" },
-    tool: "wire",
-  },
-  {
     id: "measure",
     label: "Measure",
     description: "Check distances and alignment",
