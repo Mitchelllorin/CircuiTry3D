@@ -47,7 +47,7 @@ export function BottomToolbar({
         }
       >
         <span className="toggle-icon">{isOpen ? "v" : "^"}</span>
-        <span className="toggle-text">Insights</span>
+        <span className="toggle-text">Analysis & Guides</span>
       </button>
       <nav
         className="builder-menu builder-menu-bottom"

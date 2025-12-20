@@ -611,8 +611,9 @@ body.builder-body {
   border: 1px solid var(--builder-border);
   background: rgba(12, 26, 52, 0.88);
   color: var(--builder-text);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 32px;
   border-radius: 999px;
@@ -625,6 +626,7 @@ body.builder-body {
     transform 0.15s ease;
   box-shadow: 0 6px 16px var(--builder-shadow);
   backdrop-filter: blur(14px);
+  padding: 0;
 }
 
 .builder-menu-toggle:hover,
@@ -663,13 +665,22 @@ body.builder-body {
 }
 
 .toggle-icon {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1;
   pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.toggle-chevron {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .toggle-text {
@@ -2408,5 +2419,25 @@ body.builder-body {
   }
   .builder-menu-toggle .toggle-text {
     display: inline;
+  }
+  .builder-menu-toggle-bottom {
+    width: auto;
+    height: auto;
+    padding: 8px 14px;
+    gap: 6px;
+  }
+  .builder-menu-toggle-bottom .toggle-icon {
+    width: auto;
+    height: auto;
+  }
+  .builder-menu-toggle-bottom .toggle-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .builder-menu-stage-bottom:not(.open) {
+    width: auto;
+    height: auto;
   }
 }

@@ -29,6 +29,8 @@ import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal"
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
+import { TutorialTip, TutorialControls } from "../components/tutorial";
+import { useTutorial } from "../context/TutorialContext";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -632,7 +634,76 @@ const IconPlay = ({ className }: IconProps) => (
   </svg>
 );
 
+const IconChevronLeft = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M10 12L6 8l4-4" />
+  </svg>
+);
+
+const IconChevronRight = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M6 4l4 4-4 4" />
+  </svg>
+);
+
+const IconChevronUp = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M12 10L8 6l-4 4" />
+  </svg>
+);
+
+const IconChevronDown = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M4 6l4 4 4-4" />
+  </svg>
+);
+
 export default function Builder() {
+  const { startTutorial, state: tutorialState } = useTutorial();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -884,6 +955,53 @@ export default function Builder() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isArenaPanelOpen]);
+
+  // Tutorial menu control: open/close menus based on tutorial step requirements
+  useEffect(() => {
+    const handleOpenMenu = (event: Event) => {
+      const customEvent = event as CustomEvent<{ menu: string; stepId: string }>;
+      const { menu } = customEvent.detail;
+
+      switch (menu) {
+        case "left":
+          setLeftMenuOpen(true);
+          break;
+        case "right":
+          setRightMenuOpen(true);
+          break;
+        case "bottom":
+          setBottomMenuOpen(true);
+          break;
+      }
+    };
+
+    const handleCloseMenu = (event: Event) => {
+      const customEvent = event as CustomEvent<{ menu: string; stepId: string }>;
+      const { menu } = customEvent.detail;
+
+      // Only close menus that were opened by the tutorial
+      // We could track this state if needed, but for now we'll just close them
+      switch (menu) {
+        case "left":
+          setLeftMenuOpen(false);
+          break;
+        case "right":
+          setRightMenuOpen(false);
+          break;
+        case "bottom":
+          setBottomMenuOpen(false);
+          break;
+      }
+    };
+
+    window.addEventListener("tutorial:open-menu", handleOpenMenu);
+    window.addEventListener("tutorial:close-menu", handleCloseMenu);
+
+    return () => {
+      window.removeEventListener("tutorial:open-menu", handleOpenMenu);
+      window.removeEventListener("tutorial:close-menu", handleCloseMenu);
+    };
+  }, [setLeftMenuOpen, setRightMenuOpen, setBottomMenuOpen]);
 
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
@@ -1276,16 +1394,13 @@ export default function Builder() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "learn" ? "true" : undefined}
-          onClick={() => {
-            setWorkspaceMode("learn");
-            openHelpCenter("overview");
-          }}
-          aria-label="Learn mode"
-          title="Tutorials, guides, and help resources"
+          data-active={tutorialState.isActive ? "true" : undefined}
+          onClick={startTutorial}
+          aria-label="Start tutorial"
+          title="Interactive tutorial - learn the basics step by step"
         >
-          <span className="mode-icon" aria-hidden="true">📚</span>
-          <span className="mode-label">Learn</span>
+          <span className="mode-icon" aria-hidden="true">🎓</span>
+          <span className="mode-label">Tutorial</span>
         </button>
         <div className="mode-bar-spacer" />
         <div className="mode-bar-actions" aria-label="Workspace actions">
@@ -1365,7 +1480,7 @@ export default function Builder() {
               : "Expand component library"
           }
         >
-          <span className="toggle-icon">{isLeftMenuOpen ? "◀" : "▶"}</span>
+          <span className="toggle-icon">{isLeftMenuOpen ? <IconChevronLeft className="toggle-chevron" /> : <IconChevronRight className="toggle-chevron" />}</span>
           <span className="toggle-text">Library</span>
         </button>
         <nav
@@ -1374,7 +1489,7 @@ export default function Builder() {
           aria-label="Component and wiring controls"
         >
           <div className="builder-menu-scroll">
-            <div className="slider-section">
+            <div className="slider-section" data-tutorial-target="components-library">
               <span className="slider-heading">Components Library</span>
               <div className="slider-stack">
                 {COMPONENT_ACTIONS.map((component) => (
@@ -1403,7 +1518,7 @@ export default function Builder() {
                 ))}
               </div>
             </div>
-            <div className="slider-section">
+            <div className="slider-section" data-tutorial-target="quick-actions">
               <span className="slider-heading">Quick Actions</span>
               <div className="slider-stack">
                 {QUICK_ACTIONS.map((action) => {
@@ -1442,7 +1557,7 @@ export default function Builder() {
                 })}
               </div>
             </div>
-            <div className="slider-section">
+            <div className="slider-section" data-tutorial-target="wire-modes">
               <span className="slider-heading">Wire Modes</span>
               <div className="slider-stack">
                 {WIRE_TOOL_ACTIONS.map((action) => {
@@ -1521,7 +1636,7 @@ export default function Builder() {
               : "Expand mode and view controls"
           }
         >
-          <span className="toggle-icon">{isRightMenuOpen ? "▶" : "◀"}</span>
+          <span className="toggle-icon">{isRightMenuOpen ? <IconChevronRight className="toggle-chevron" /> : <IconChevronLeft className="toggle-chevron" />}</span>
           <span className="toggle-text">Controls</span>
         </button>
         <nav
@@ -1662,8 +1777,8 @@ export default function Builder() {
               : "Expand analysis and guidance"
           }
         >
-          <span className="toggle-icon">{isBottomMenuOpen ? "▼" : "▲"}</span>
-          <span className="toggle-text">Insights</span>
+          <span className="toggle-icon">{isBottomMenuOpen ? <IconChevronDown className="toggle-chevron" /> : <IconChevronUp className="toggle-chevron" />}</span>
+          <span className="toggle-text">Analysis & Guides</span>
         </button>
         <nav
           className="builder-menu builder-menu-bottom"
@@ -2235,6 +2350,10 @@ export default function Builder() {
           onDismiss={() => circuitStorage.dismissRecovery()}
         />
       )}
+
+      {/* Interactive Tutorial System */}
+      <TutorialTip />
+      <TutorialControls />
     </div>
   );
 }

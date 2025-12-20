@@ -8,6 +8,7 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker, isCapacitor } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
+import { TutorialProvider } from "./context/TutorialContext";
 
 window.addEventListener('error', (event) => {
   document.body.style.background = '#1a0000';
@@ -65,7 +66,9 @@ try {
             <CircuitStorageProvider>
               <GamificationProvider>
                 <ClassroomProvider>
-                  <App />
+                  <TutorialProvider>
+                    <App />
+                  </TutorialProvider>
                 </ClassroomProvider>
               </GamificationProvider>
             </CircuitStorageProvider>

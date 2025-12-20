@@ -1,0 +1,425 @@
+/* Tutorial Tip Styles - Non-intrusive helpful tip bubbles */
+
+/* Spotlight overlay - dims the background and highlights the target */
+.tutorial-spotlight {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1400;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.tutorial-spotlight.visible {
+  opacity: 1;
+}
+
+/* Highlight effect on target elements - uses outline to avoid affecting layout */
+.tutorial-highlight {
+  position: relative;
+  z-index: 1450 !important;
+  outline: 3px solid rgba(0, 255, 136, 0.8) !important;
+  outline-offset: 4px !important;
+  border-radius: 8px;
+  animation: tutorialPulseOutline 2s ease-in-out infinite;
+  /* Ensure element stays visible and clickable */
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Floating buttons need special handling - bring them above the overlay */
+.builder-floating-button.tutorial-highlight {
+  z-index: 1450 !important;
+  position: relative !important;
+}
+
+/* Ensure parent container doesn't clip highlighted floating buttons */
+.builder-floating-action:has(.tutorial-highlight) {
+  z-index: 1450 !important;
+}
+
+/* Menu toggle buttons need to stay above overlay when highlighted */
+.builder-menu-toggle.tutorial-highlight {
+  z-index: 1450 !important;
+}
+
+/* Menu stage containers need to be above overlay when containing highlighted content */
+.builder-menu-stage:has(.tutorial-highlight) {
+  z-index: 1450 !important;
+}
+
+/* When menus are open during tutorial, keep them visible above spotlight */
+.builder-menu-stage.open {
+  z-index: 1410;
+}
+
+/* Content inside open menus should be highlightable */
+.builder-menu-stage.open .tutorial-highlight {
+  z-index: 1450 !important;
+}
+
+/* Mode bar needs to be above overlay when highlighted */
+.workspace-mode-bar.tutorial-highlight {
+  z-index: 1450 !important;
+}
+
+/* Builder iframe (3D workspace) needs to be above overlay when highlighted */
+.builder-iframe.tutorial-highlight {
+  z-index: 1450 !important;
+}
+
+/* Builder workspace needs proper z-index when containing highlighted elements */
+.builder-workspace:has(.tutorial-highlight) {
+  z-index: 1410 !important;
+}
+
+@keyframes tutorialPulseOutline {
+  0%, 100% {
+    outline-color: rgba(0, 255, 136, 0.7);
+    outline-offset: 4px;
+  }
+  50% {
+    outline-color: rgba(0, 255, 136, 1);
+    outline-offset: 6px;
+  }
+}
+
+/* Main tip bubble - compact mobile-friendly design */
+.tutorial-tip {
+  position: fixed;
+  z-index: 1500;
+  width: min(220px, calc(100vw - 20px));
+  max-width: 240px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: 10px 12px 8px;
+  background: linear-gradient(
+    145deg,
+    rgba(12, 28, 58, 0.96),
+    rgba(8, 20, 44, 0.97)
+  );
+  border: 1px solid rgba(0, 255, 136, 0.45);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 16px rgba(0, 255, 136, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  color: #e8f6ff;
+  font-family:
+    "Inter",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 11px;
+
+  /* Animation */
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  pointer-events: none;
+}
+
+.tutorial-tip.visible {
+  opacity: 1;
+  transform: translateY(0) translateX(0);
+  pointer-events: auto;
+}
+
+/* Centered tips need different transform handling */
+.tutorial-tip.visible[style*="translate(-50%, -50%)"] {
+  transform: translate(-50%, -50%);
+}
+
+.tutorial-tip.visible[style*="translateX(-50%)"] {
+  transform: translateX(-50%);
+}
+
+.tutorial-tip.visible[style*="translateY(-50%)"] {
+  transform: translateY(-50%);
+}
+
+/* Arrow indicators */
+.tutorial-tip::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: rgba(12, 28, 58, 0.96);
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  transform: rotate(45deg);
+  z-index: -1;
+}
+
+.tutorial-tip.arrow-top::before {
+  top: -7px;
+  left: 50%;
+  margin-left: -6px;
+  border-bottom: none;
+  border-right: none;
+}
+
+.tutorial-tip.arrow-bottom::before {
+  bottom: -7px;
+  left: 50%;
+  margin-left: -6px;
+  border-top: none;
+  border-left: none;
+}
+
+.tutorial-tip.arrow-left::before {
+  left: -7px;
+  top: 50%;
+  margin-top: -6px;
+  border-top: none;
+  border-right: none;
+}
+
+.tutorial-tip.arrow-right::before {
+  right: -7px;
+  top: 50%;
+  margin-top: -6px;
+  border-bottom: none;
+  border-left: none;
+}
+
+/* No arrow for center position */
+.tutorial-tip:not(.arrow-top):not(.arrow-bottom):not(.arrow-left):not(.arrow-right)::before {
+  display: none;
+}
+
+/* Header with category and progress */
+.tutorial-tip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.tutorial-tip-category {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(136, 204, 255, 0.75);
+}
+
+.category-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.category-label {
+  opacity: 0.85;
+}
+
+.tutorial-tip-progress {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(0, 255, 136, 0.8);
+  background: rgba(0, 255, 136, 0.1);
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.25);
+}
+
+/* Title */
+.tutorial-tip-title {
+  margin: 0 0 3px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+/* Content */
+.tutorial-tip-content {
+  margin: 0 0 5px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(200, 220, 255, 0.88);
+}
+
+/* Hint */
+.tutorial-tip-hint {
+  margin: 0 0 6px;
+  padding: 4px 6px;
+  background: rgba(255, 136, 68, 0.08);
+  border: 1px solid rgba(255, 136, 68, 0.22);
+  border-radius: 6px;
+  font-size: 9px;
+  line-height: 1.3;
+  color: rgba(255, 200, 160, 0.92);
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.hint-icon {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+/* Progress bar */
+.tutorial-tip-progress-bar {
+  height: 2px;
+  background: rgba(136, 204, 255, 0.15);
+  border-radius: 999px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.tutorial-tip-progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 136, 0.9),
+    rgba(136, 204, 255, 0.9)
+  );
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Action buttons */
+.tutorial-tip-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.tutorial-tip-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tutorial-tip-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.tutorial-tip-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tutorial-tip-btn:active {
+  transform: translateY(0);
+}
+
+.tutorial-tip-btn-skip {
+  background: transparent;
+  color: rgba(200, 220, 255, 0.6);
+  padding: 4px 8px;
+}
+
+.tutorial-tip-btn-skip:hover {
+  color: rgba(200, 220, 255, 0.85);
+  background: rgba(136, 204, 255, 0.08);
+}
+
+.tutorial-tip-btn-prev {
+  background: rgba(136, 204, 255, 0.12);
+  color: rgba(200, 220, 255, 0.9);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+}
+
+.tutorial-tip-btn-prev:hover {
+  background: rgba(136, 204, 255, 0.2);
+  border-color: rgba(136, 204, 255, 0.4);
+}
+
+.tutorial-tip-btn-next {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 136, 0.9),
+    rgba(0, 204, 180, 0.9)
+  );
+  color: #041820;
+  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.2);
+}
+
+.tutorial-tip-btn-next:hover {
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+/* Dismiss link */
+.tutorial-tip-dismiss {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 3px;
+  background: none;
+  border: none;
+  font-size: 9px;
+  color: rgba(200, 220, 255, 0.45);
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.tutorial-tip-dismiss:hover {
+  color: rgba(200, 220, 255, 0.7);
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 720px) {
+  .tutorial-tip {
+    width: min(200px, calc(100vw - 16px));
+    max-width: 220px;
+    padding: 8px 10px;
+  }
+
+  .tutorial-tip-title {
+    font-size: 11px;
+  }
+
+  .tutorial-tip-content {
+    font-size: 9px;
+  }
+
+  .tutorial-tip-hint {
+    font-size: 8px;
+    padding: 3px 5px;
+  }
+
+  .tutorial-tip-btn {
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-tip {
+    transition: opacity 0.15s ease;
+  }
+
+  .tutorial-tip-progress-fill {
+    transition: none;
+  }
+}
