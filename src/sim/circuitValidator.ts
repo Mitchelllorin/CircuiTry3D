@@ -9,6 +9,7 @@
  */
 
 import type { SchematicElement, TwoTerminalElement, GroundElement, WireElement, Vec2 } from '../schematic/types';
+import { solveDCCircuit } from './dcSolver';
 
 /**
  * Severity levels for validation issues
@@ -77,9 +78,8 @@ function arePointsConnected(p1: Vec2, p2: Vec2): boolean {
 function getElementTerminals(element: SchematicElement): Vec2[] {
   if (element.kind === 'wire') {
     const wire = element as WireElement;
-    return wire.path.length >= 2
-      ? [wire.path[0], wire.path[wire.path.length - 1]]
-      : wire.path;
+    // IMPORTANT: include ALL polyline points so junctions/taps can be detected.
+    return wire.path;
   }
 
   if (element.kind === 'ground') {
@@ -446,6 +446,30 @@ export function validateCircuit(elements: SchematicElement[]): ValidationResult 
   issues.push(...detectMissingGround(elements));
   issues.push(...detectMissingPowerSource(elements));
   issues.push(...detectFloatingWireEndpoints(elements, graph));
+
+  // Physics-backed sanity checks (Ohm + Kirchhoff):
+  // - enforce that ideal shorts across a battery are flagged
+  // - provide deterministic "no current in open circuit" behavior for simulation layers
+  const dcSolution = solveDCCircuit(elements);
+  if (dcSolution.status === 'invalid_ideal_short') {
+    const batteries = elements.filter(e => e.kind === 'battery') as TwoTerminalElement[];
+    issues.push({
+      type: 'short_circuit',
+      severity: 'error',
+      message: 'Ideal Short Across Source',
+      description: 'A battery’s positive and negative terminals are connected by a 0 Ω path (wire/short). This implies infinite current in an ideal model.',
+      affectedElements: batteries.map(b => b.id),
+      affectedPositions: batteries.flatMap(b => getElementTerminals(b))
+    });
+  } else if (dcSolution.status === 'singular') {
+    issues.push({
+      type: 'open_circuit',
+      severity: 'info',
+      message: 'Circuit Not Solvable (Floating Network)',
+      description: 'The circuit is electrically floating or under-constrained for DC solving. Add a ground reference and ensure there is at least one resistive path.',
+      affectedElements: [],
+    });
+  }
 
   // Determine circuit status
   const hasErrors = issues.some(i => i.severity === 'error');
