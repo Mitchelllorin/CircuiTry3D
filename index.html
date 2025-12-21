@@ -83,18 +83,75 @@
         letter-spacing: 0.1em;
         text-transform: uppercase;
       }
-      
-      .loader-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid rgba(136, 204, 255, 0.2);
-        border-top-color: #88ccff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+
+      .loader-logo-orbit {
+        position: relative;
+        width: 280px;
+        height: 220px;
+        display: grid;
+        place-items: center;
+        margin-top: 4px;
       }
-      
-      @keyframes spin {
+
+      .loader-logo {
+        width: 260px;
+        height: auto;
+        filter: drop-shadow(0 8px 22px rgba(45, 212, 191, 0.18));
+        opacity: 0.98;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      .photon-orbit {
+        position: absolute;
+        inset: -16px;
+        border-radius: 999px;
+        pointer-events: none;
+        animation: photonOrbit 1.75s linear infinite;
+      }
+
+      .photon-orbit.orbit-b {
+        inset: -28px;
+        animation-duration: 2.15s;
+        animation-direction: reverse;
+      }
+
+      .photon {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 8px;
+        height: 8px;
+        transform: translate(-50%, -50%);
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 30%, #ffffff 0%, #d9f4ff 30%, #7dd3fc 55%, rgba(125, 211, 252, 0.05) 100%);
+        box-shadow:
+          0 0 0 2px rgba(56, 189, 248, 0.10),
+          0 0 14px rgba(56, 189, 248, 0.55),
+          0 0 26px rgba(14, 165, 233, 0.35);
+        animation: photonPulse 0.9s ease-in-out infinite;
+      }
+
+      .photon.orbit-b {
+        width: 7px;
+        height: 7px;
+        animation-duration: 1.05s;
+      }
+
+      @keyframes photonOrbit {
         to { transform: rotate(360deg); }
+      }
+
+      @keyframes photonPulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.85; }
+        50% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .photon-orbit,
+        .photon {
+          animation: none !important;
+        }
       }
     </style>
   </head>
@@ -102,7 +159,15 @@
     <div id="root">
       <div class="initial-loader">
         <div class="loader-text">CircuiTry3D</div>
-        <div class="loader-spinner"></div>
+        <div class="loader-logo-orbit" aria-hidden="true">
+          <img class="loader-logo" src="/src/assets/circuit-logo.svg" alt="" />
+          <div class="photon-orbit orbit-a">
+            <div class="photon orbit-a"></div>
+          </div>
+          <div class="photon-orbit orbit-b">
+            <div class="photon orbit-b"></div>
+          </div>
+        </div>
         <div style="color: rgba(136, 204, 255, 0.6); font-size: 0.9rem; margin-top: 10px;">Initializing...</div>
       </div>
     </div>
