@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate-splash": "node generate-splash-images.js"
+    "generate-splash": "node generate-splash-images.js",
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "repository": {
     "type": "git",
