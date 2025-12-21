@@ -5,7 +5,7 @@ export type TroubleshootingProblem = {
   preset: string;
   hints?: string[];
   success: {
-    kind: "has-flow";
+    kind: "has-flow" | "has-flow-no-short";
   };
 };
 
@@ -43,6 +43,13 @@ export function isTroubleshootingSolved(problem: TroubleshootingProblem, simulat
       if (result.flow?.hasFlow === true) return true;
       return false;
     }
+    case "has-flow-no-short": {
+      const hasFlow = result.isComplete === true || result.flow?.hasFlow === true;
+      if (!hasFlow) return false;
+      if (result.flow?.warning === "short") return false;
+      if (result.flow?.reason === "short") return false;
+      return true;
+    }
   }
 }
 
@@ -68,6 +75,30 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
     hints: [
       "A series circuit needs a complete loop from battery + back to battery -.",
       "Look for a missing return connection near the battery.",
+    ],
+    success: { kind: "has-flow" },
+  },
+  {
+    id: "ts_short_circuit",
+    title: "Troubleshoot: Short Circuit",
+    prompt:
+      "This circuit has current flow, but it’s dangerously shorted. Fix it so current still flows without a short-circuit warning.",
+    preset: "troubleshoot_short_circuit",
+    hints: [
+      "A direct wire from battery + to battery - is a short.",
+      "Add resistance (e.g., a resistor) into the path or remove the direct connection.",
+    ],
+    success: { kind: "has-flow-no-short" },
+  },
+  {
+    id: "ts_led_polarity",
+    title: "Troubleshoot: Reversed LED",
+    prompt:
+      "The circuit is wired, but polarity is wrong and current won’t pass the LED. Fix the orientation/wiring so current can flow.",
+    preset: "troubleshoot_led_reverse",
+    hints: [
+      "Try swapping which side of the LED is connected toward the battery positive terminal.",
+      "If you still see a polarity mismatch, reverse the LED connections.",
     ],
     success: { kind: "has-flow" },
   },

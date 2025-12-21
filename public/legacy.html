@@ -12260,6 +12260,61 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
                     { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BL', side: 'center' } }
                 ]
+            },
+            troubleshoot_short_circuit: {
+                name: "Troubleshooting: Short Circuit",
+                description: "A dangerous direct path exists from the battery positive to negative.",
+                objectives: [
+                    "Identify the short circuit path.",
+                    "Fix it so current flows without short-circuit warnings."
+                ],
+                components: [
+                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
+                    { id: 'R1', type: 'resistor', position: [6, 0, 6], properties: { resistance: 220 } }
+                ],
+                junctions: [
+                    { id: 'J_TL', position: [-10, 0, 6] },
+                    { id: 'J_TR', position: [10, 0, 6] },
+                    { id: 'J_BR', position: [10, 0, -6] },
+                    { id: 'J_BL', position: [-10, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
+                    { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'R1', side: 'left' } },
+                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'J_BL', side: 'center' } },
+                    { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } },
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'B1', side: 'negative' } }
+                ]
+            },
+            troubleshoot_led_reverse: {
+                name: "Troubleshooting: Reversed LED",
+                description: "The LED is wired backwards, blocking current flow.",
+                objectives: [
+                    "Identify the polarity mismatch.",
+                    "Reverse the LED wiring/orientation to restore current flow."
+                ],
+                components: [
+                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
+                    { id: 'LED1', type: 'led', position: [0, 0, 6], properties: { resistance: 60 } },
+                    { id: 'R1', type: 'resistor', position: [8, 0, 6], properties: { resistance: 220 } }
+                ],
+                junctions: [
+                    { id: 'J_TL', position: [-10, 0, 6] },
+                    { id: 'J_TR', position: [10, 0, 6] },
+                    { id: 'J_BR', position: [10, 0, -6] },
+                    { id: 'J_BL', position: [-10, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
+                    { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'LED1', side: 'right' } },
+                    { from: { ref: 'LED1', side: 'left' }, to: { ref: 'R1', side: 'left' } },
+                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'J_BL', side: 'center' } },
+                    { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                ]
             }
         };
 
