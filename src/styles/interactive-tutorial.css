@@ -1,0 +1,183 @@
+.builder-tutorial-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 980;
+  pointer-events: none;
+}
+
+.builder-tutorial-card {
+  pointer-events: auto;
+  position: absolute;
+  left: calc(16px + env(safe-area-inset-left, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  width: min(420px, calc(100vw - 32px));
+  background: rgba(10, 24, 48, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(3, 12, 32, 0.7);
+  backdrop-filter: blur(16px);
+  padding: 14px 14px 12px;
+}
+
+.builder-tutorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.builder-tutorial-kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(136, 204, 255, 0.9);
+}
+
+.builder-tutorial-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  background: rgba(136, 204, 255, 0.06);
+  color: rgba(232, 246, 255, 0.9);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.builder-tutorial-close:hover {
+  border-color: rgba(136, 204, 255, 0.4);
+  background: rgba(136, 204, 255, 0.1);
+}
+
+.builder-tutorial-progress {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.builder-tutorial-progress-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(136, 204, 255, 0.12);
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  overflow: hidden;
+}
+
+.builder-tutorial-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(136, 204, 255, 0.75), rgba(0, 255, 136, 0.65));
+}
+
+.builder-tutorial-progress-text {
+  font-size: 11px;
+  color: rgba(200, 220, 255, 0.75);
+  flex: 0 0 auto;
+}
+
+.builder-tutorial-body {
+  margin-top: 12px;
+}
+
+.builder-tutorial-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.builder-tutorial-text {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(232, 246, 255, 0.82);
+}
+
+.builder-tutorial-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(200, 220, 255, 0.75);
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  background: rgba(14, 30, 58, 0.55);
+}
+
+.builder-tutorial-status-item strong {
+  color: rgba(232, 246, 255, 0.95);
+}
+
+.builder-tutorial-blocker {
+  margin-top: 10px;
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 170, 68, 0.35);
+  background: rgba(255, 170, 68, 0.1);
+  color: rgba(255, 210, 160, 0.92);
+}
+
+.builder-tutorial-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.builder-tutorial-btn {
+  border-radius: 12px;
+  padding: 9px 12px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  background: rgba(136, 204, 255, 0.06);
+  color: rgba(232, 246, 255, 0.88);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.builder-tutorial-btn:hover {
+  border-color: rgba(136, 204, 255, 0.35);
+  background: rgba(136, 204, 255, 0.1);
+}
+
+.builder-tutorial-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.builder-tutorial-btn--primary {
+  border-color: rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.builder-tutorial-btn--primary:hover {
+  border-color: rgba(0, 255, 136, 0.55);
+  background: rgba(0, 255, 136, 0.14);
+}
+
+.builder-tutorial-btn--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: rgba(200, 220, 255, 0.75);
+}
+
+.builder-tutorial-btn--ghost:hover {
+  border-color: rgba(136, 204, 255, 0.18);
+  background: rgba(136, 204, 255, 0.06);
+  color: rgba(232, 246, 255, 0.86);
+}
+
+.tutorial-highlight {
+  outline: 3px solid rgba(0, 255, 136, 0.78);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 4px rgba(0, 255, 136, 0.12),
+    0 0 24px rgba(0, 255, 136, 0.35);
+  border-radius: 14px;
+}
+

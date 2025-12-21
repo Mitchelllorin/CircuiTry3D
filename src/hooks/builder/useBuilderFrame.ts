@@ -6,6 +6,7 @@ import type {
   BuilderToolId,
   ArenaExportStatus,
   ArenaExportSummary,
+  LegacyCircuitState,
 } from "../../components/builder/types";
 
 interface UseBuilderFrameOptions {
@@ -34,6 +35,10 @@ export function useBuilderFrame({
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
   const [lastArenaExport, setLastArenaExport] =
     useState<ArenaExportSummary | null>(null);
+  const [circuitState, setCircuitState] = useState<LegacyCircuitState | null>(
+    null,
+  );
+  const [lastSimulationAt, setLastSimulationAt] = useState<string | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -91,6 +96,15 @@ export function useBuilderFrame({
         simulationPulseTimer.current = window.setTimeout(() => {
           simulationPulseTimer.current = null;
         }, 1400);
+        setLastSimulationAt(new Date().toISOString());
+        return;
+      }
+
+      if (type === "legacy:circuit-state") {
+        if (!payload || typeof payload !== "object") {
+          return;
+        }
+        setCircuitState(payload as LegacyCircuitState);
         return;
       }
 
@@ -232,6 +246,8 @@ export function useBuilderFrame({
     arenaExportStatus,
     arenaExportError,
     lastArenaExport,
+    circuitState,
+    lastSimulationAt,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
