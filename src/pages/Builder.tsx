@@ -74,7 +74,7 @@ const HELP_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
-      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Schematic, Star, or Routing modes from the left panel, and hold Shift in schematic mode to flip the elbow direction.",
+      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Simple, Perimeter, or A* routing modes from the left panel.",
     ],
     bullets: [
       "One-touch buttons add, rotate, duplicate, or delete components.",
@@ -157,7 +157,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Wire tool supports freeform, schematic, star, and auto-routing modes.",
+      "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
       "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
     ],
   },
@@ -1003,6 +1003,14 @@ export default function Builder() {
     };
   }, [setLeftMenuOpen, setRightMenuOpen, setBottomMenuOpen]);
 
+  // Sync circuit lock state to the iframe
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+    triggerBuilderAction(isCircuitLocked ? "lock-circuit" : "unlock-circuit");
+  }, [isCircuitLocked, isFrameReady, triggerBuilderAction]);
+
   const triggerSimulationPulse = useCallback(() => {
     setSimulatePulsing(true);
     const timer = window.setTimeout(() => {
@@ -1279,7 +1287,7 @@ export default function Builder() {
   };
   const wireRoutingNames: Record<string, string> = {
     freeform: "Freeform",
-    manhattan: "Schematic 90deg",
+    manhattan: "Manhattan (90-deg)",
     simple: "Simple",
     perimeter: "Perimeter",
     astar: "A* Auto",
