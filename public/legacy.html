@@ -3851,6 +3851,16 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function notifyParentCircuitState(snapshot) {
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:circuit-state', payload: snapshot }, '*');
+                } catch (error) {
+                    console.warn('Builder bridge: unable to share circuit state', error);
+                }
+            }
+        }
+
         function notifyParentModeState(extraState) {
             if (window.parent && window.parent !== window) {
                 try {
@@ -10269,6 +10279,29 @@ Made with ? for visual learners everywhere!
                 updateCircuitDisplay(0, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
                 setStatus('⚡ ADD A BATTERY to start W.I.R.E. analysis!');
+                const snapshot = {
+                    updatedAt: new Date().toISOString(),
+                    counts: {
+                        components: components.length,
+                        wires: wires.length,
+                        junctions: junctions.length,
+                        byType: components.reduce((acc, c) => {
+                            const key = (c && c.type) ? String(c.type) : 'unknown';
+                            acc[key] = (acc[key] || 0) + 1;
+                            return acc;
+                        }, {})
+                    },
+                    metrics: {
+                        voltage: 0,
+                        current: 0,
+                        resistance: null,
+                        power: 0,
+                        isComplete: false,
+                        reason: 'no-battery',
+                        flow: { hasFlow: false, reason: 'no-battery' }
+                    }
+                };
+                notifyParentCircuitState(snapshot);
                 return {
                     voltage: 0,
                     current: 0,
@@ -10284,6 +10317,29 @@ Made with ? for visual learners everywhere!
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
                 setStatus('⚡ ADD WIRES to complete the circuit for W.I.R.E. calculations!');
+                const snapshot = {
+                    updatedAt: new Date().toISOString(),
+                    counts: {
+                        components: components.length,
+                        wires: wires.length,
+                        junctions: junctions.length,
+                        byType: components.reduce((acc, c) => {
+                            const key = (c && c.type) ? String(c.type) : 'unknown';
+                            acc[key] = (acc[key] || 0) + 1;
+                            return acc;
+                        }, {})
+                    },
+                    metrics: {
+                        voltage: totalVoltage,
+                        current: 0,
+                        resistance: null,
+                        power: 0,
+                        isComplete: false,
+                        reason: 'no-wires',
+                        flow: { hasFlow: false, reason: 'no-wires' }
+                    }
+                };
+                notifyParentCircuitState(snapshot);
                 return {
                     voltage: totalVoltage,
                     current: 0,
@@ -10314,7 +10370,7 @@ Made with ? for visual learners everywhere!
                 setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from negative -> positive. Add resistance now!');
             }
 
-            return {
+            const circuitResult = {
                 voltage: result.voltage,
                 current: result.current,
                 resistance: result.resistance,
@@ -10323,6 +10379,30 @@ Made with ? for visual learners everywhere!
                 isComplete: Boolean(flowMeta?.hasFlow),
                 analysis: result
             };
+            const snapshot = {
+                updatedAt: new Date().toISOString(),
+                counts: {
+                    components: components.length,
+                    wires: wires.length,
+                    junctions: junctions.length,
+                    byType: components.reduce((acc, c) => {
+                        const key = (c && c.type) ? String(c.type) : 'unknown';
+                        acc[key] = (acc[key] || 0) + 1;
+                        return acc;
+                    }, {})
+                },
+                metrics: {
+                    voltage: Number.isFinite(result.voltage) ? result.voltage : 0,
+                    current: Number.isFinite(result.current) ? result.current : 0,
+                    resistance: Number.isFinite(result.resistance) ? result.resistance : null,
+                    power: Number.isFinite(result.power) ? result.power : 0,
+                    isComplete: Boolean(flowMeta?.hasFlow),
+                    reason: flowMeta?.reason,
+                    flow: flowMeta
+                }
+            };
+            notifyParentCircuitState(snapshot);
+            return circuitResult;
         }
 
         function getTerminalKey(entity, side) {

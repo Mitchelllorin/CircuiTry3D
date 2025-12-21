@@ -12,6 +12,7 @@ import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
+import "../styles/interactive-tutorial.css";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import {
@@ -19,14 +20,11 @@ import {
   getDefaultScenario,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
-import { LeftToolbar } from "../components/builder/toolbars/LeftToolbar";
-import { RightToolbar } from "../components/builder/toolbars/RightToolbar";
-import { BottomToolbar } from "../components/builder/toolbars/BottomToolbar";
-import { HelpModal } from "../components/builder/modals/HelpModal";
 import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
+import { BuilderInteractiveTutorial } from "../components/builder/tutorial/BuilderInteractiveTutorial";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
 import practiceProblems, {
@@ -62,7 +60,6 @@ import {
   SETTINGS_ITEMS,
   PRACTICE_SCENARIOS,
   PRACTICE_ACTIONS,
-  WIRE_METRICS,
   WIRE_LEGEND,
   HELP_ENTRIES,
 } from "../components/builder/constants";
@@ -675,6 +672,8 @@ export default function Builder() {
     resistance: 0,
     voltage: 0,
   });
+  const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
+    useState(false);
 
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
@@ -733,6 +732,8 @@ export default function Builder() {
     arenaExportStatus,
     arenaExportError,
     lastArenaExport,
+    circuitState,
+    lastSimulationAt,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
@@ -742,6 +743,28 @@ export default function Builder() {
     onToolChange: setActiveQuickTool,
     onSimulationPulse: handleSimulationPulse,
   });
+
+  useEffect(() => {
+    if (!circuitState) {
+      return;
+    }
+    setCircuitBaseMetrics({
+      watts: Number.isFinite(circuitState.metrics.power)
+        ? circuitState.metrics.power
+        : 0,
+      current: Number.isFinite(circuitState.metrics.current)
+        ? circuitState.metrics.current
+        : 0,
+      resistance:
+        typeof circuitState.metrics.resistance === "number" &&
+        Number.isFinite(circuitState.metrics.resistance)
+          ? circuitState.metrics.resistance
+          : 0,
+      voltage: Number.isFinite(circuitState.metrics.voltage)
+        ? circuitState.metrics.voltage
+        : 0,
+    });
+  }, [circuitState]);
 
   const {
     floatingLogoRef,
@@ -1199,6 +1222,43 @@ export default function Builder() {
     ? "Current flow visualisation active."
     : "Electron flow visualisation active.";
 
+  const wireMetrics = useMemo(() => {
+    const volts = circuitState?.metrics.voltage ?? circuitBaseMetrics.voltage;
+    const amps = circuitState?.metrics.current ?? circuitBaseMetrics.current;
+    const watts = circuitState?.metrics.power ?? circuitBaseMetrics.watts;
+    const resistanceDisplay =
+      circuitState?.metrics.resistance == null
+        ? "∞"
+        : `${circuitState.metrics.resistance.toFixed(1)} Ω`;
+
+    return [
+      {
+        id: "watts",
+        letter: "W",
+        label: "Watts",
+        value: `${Number.isFinite(watts) ? watts.toFixed(2) : "0.00"} W`,
+      },
+      {
+        id: "current",
+        letter: "I",
+        label: "Current",
+        value: `${Number.isFinite(amps) ? amps.toFixed(3) : "0.000"} A`,
+      },
+      {
+        id: "resistance",
+        letter: "R",
+        label: "Resistance",
+        value: resistanceDisplay,
+      },
+      {
+        id: "voltage",
+        letter: "E",
+        label: "Voltage",
+        value: `${Number.isFinite(volts) ? volts.toFixed(1) : "0.0"} V`,
+      },
+    ];
+  }, [circuitBaseMetrics, circuitState]);
+
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
     if (
@@ -1397,6 +1457,13 @@ export default function Builder() {
                       controlsDisabled ? controlDisabledTitle : component.description || component.label
                     }
                     data-component-action={component.action}
+                    data-tutorial-id={
+                      component.id === "battery"
+                        ? "tutorial-add-battery"
+                        : component.id === "resistor"
+                          ? "tutorial-add-resistor"
+                          : undefined
+                    }
                   >
                     <span className="slider-icon-label">
                       <span className="slider-icon" aria-hidden="true">
@@ -1439,6 +1506,11 @@ export default function Builder() {
                         controlsDisabled
                           ? controlDisabledTitle
                           : action.description
+                      }
+                      data-tutorial-id={
+                        action.id === "simulate"
+                          ? "tutorial-run-simulation"
+                          : undefined
                       }
                     >
                       <span className="slider-label">{action.label}</span>
@@ -1496,6 +1568,11 @@ export default function Builder() {
                       aria-pressed={
                         isWireToggle || isRotateToggle
                           ? isActionActive
+                          : undefined
+                      }
+                      data-tutorial-id={
+                        action.action === "toggle-wire-mode"
+                          ? "tutorial-enable-wire"
                           : undefined
                       }
                     >
@@ -1682,7 +1759,7 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
               <div className="menu-track menu-track-metrics">
-                {WIRE_METRICS.map((metric) => (
+                {wireMetrics.map((metric) => (
                   <div key={metric.id} className="slider-metric">
                     <span className="metric-letter">{metric.letter}</span>
                     <span className="metric-value">{metric.value}</span>
@@ -1851,6 +1928,14 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Guides</span>
               <div className="menu-track menu-track-chips">
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => setInteractiveTutorialOpen(true)}
+                  title="Start the interactive tutorial (battery → resistor → wire → simulate)"
+                >
+                  <span className="slider-chip-label">Interactive Tutorial</span>
+                </button>
                 {HELP_ENTRIES.map((entry) => (
                   <button
                     key={entry.id}
@@ -2243,6 +2328,16 @@ export default function Builder() {
           onDismiss={() => circuitStorage.dismissRecovery()}
         />
       )}
+
+      <BuilderInteractiveTutorial
+        isOpen={isInteractiveTutorialOpen}
+        onClose={() => setInteractiveTutorialOpen(false)}
+        modeState={modeState}
+        circuitState={circuitState}
+        lastSimulationAt={lastSimulationAt}
+        isLeftMenuOpen={isLeftMenuOpen}
+        onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
+      />
     </div>
   );
 }
