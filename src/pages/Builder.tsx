@@ -33,6 +33,10 @@ import practiceProblems, {
   findPracticeProblemByPreset,
   getRandomPracticeProblem,
 } from "../data/practiceProblems";
+import troubleshootingProblems, {
+  getAnalyzeCircuitResult,
+  isTroubleshootingSolved,
+} from "../data/troubleshootingProblems";
 import type { PracticeProblem } from "../model/practice";
 import type {
   BuilderInvokeAction,
@@ -654,6 +658,33 @@ export default function Builder() {
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
+  const [isTroubleshootPanelOpen, setTroubleshootPanelOpen] = useState(false);
+  const [activeTroubleshootId, setActiveTroubleshootId] = useState<string | null>(
+    troubleshootingProblems[0]?.id ?? null,
+  );
+  const [troubleshootSolvedIds, setTroubleshootSolvedIds] = useState<string[]>(
+    () => {
+      try {
+        const raw = window.localStorage.getItem(
+          "circuitry3d.troubleshoot.solved",
+        );
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed)
+          ? parsed.filter((id) => typeof id === "string")
+          : [];
+      } catch {
+        return [];
+      }
+    },
+  );
+  const [troubleshootStatus, setTroubleshootStatus] = useState<string | null>(
+    null,
+  );
+  const [troubleshootPendingCheckProblemId, setTroubleshootPendingCheckProblemId] =
+    useState<string | null>(null);
+  const [isTroubleshootCheckPending, setTroubleshootCheckPending] =
+    useState(false);
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<
     string | null
   >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
@@ -734,6 +765,7 @@ export default function Builder() {
     lastArenaExport,
     circuitState,
     lastSimulationAt,
+    lastSimulation,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
@@ -1169,6 +1201,7 @@ export default function Builder() {
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
     isLogoSettingsOpen ||
+    isTroubleshootPanelOpen ||
     isSaveModalOpen ||
     isLoadModalOpen;
   const shouldShowFloatingActions = !isWorksheetVisible && !isOverlayActive;
@@ -1179,6 +1212,72 @@ export default function Builder() {
     : isCircuitLocked
       ? "Complete the worksheet to unlock editing"
       : undefined;
+
+  const activeTroubleshootProblem = useMemo(() => {
+    if (!activeTroubleshootId) return null;
+    return (
+      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+      null
+    );
+  }, [activeTroubleshootId]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "circuitry3d.troubleshoot.solved",
+        JSON.stringify(troubleshootSolvedIds),
+      );
+    } catch {
+      // ignore write failures (private mode / storage blocked)
+    }
+  }, [troubleshootSolvedIds]);
+
+  useEffect(() => {
+    if (!isTroubleshootCheckPending) return;
+    if (!lastSimulation) return;
+    if (!activeTroubleshootProblem) {
+      setTroubleshootCheckPending(false);
+      setTroubleshootPendingCheckProblemId(null);
+      return;
+    }
+
+    if (
+      troubleshootPendingCheckProblemId &&
+      troubleshootPendingCheckProblemId !== activeTroubleshootProblem.id
+    ) {
+      return;
+    }
+
+    setTroubleshootCheckPending(false);
+    setTroubleshootPendingCheckProblemId(null);
+
+    const solved = isTroubleshootingSolved(activeTroubleshootProblem, lastSimulation);
+    if (solved) {
+      setTroubleshootStatus("Solved! Current is flowing.");
+      setTroubleshootSolvedIds((previous) => {
+        if (previous.includes(activeTroubleshootProblem.id)) return previous;
+        return [...previous, activeTroubleshootProblem.id];
+      });
+      return;
+    }
+
+    const analyzeResult = getAnalyzeCircuitResult(lastSimulation);
+    const reason = analyzeResult?.flow?.reason;
+    if (reason === "polarity") {
+      setTroubleshootStatus("Not solved yet: polarity mismatch is blocking flow.");
+    } else if (reason === "short") {
+      setTroubleshootStatus("Not solved yet: there’s a short circuit path.");
+    } else if (reason === "no-source") {
+      setTroubleshootStatus("Not solved yet: add a power source (battery).");
+    } else {
+      setTroubleshootStatus("Not solved yet: circuit still has no current flow.");
+    }
+  }, [
+    activeTroubleshootProblem,
+    isTroubleshootCheckPending,
+    lastSimulation,
+    troubleshootPendingCheckProblemId,
+  ]);
   const builderFrameSrc = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1300,6 +1399,7 @@ export default function Builder() {
             setCompactWorksheetOpen(false);
             setCircuitLocked(false);
             setArenaPanelOpen(false);
+            setTroubleshootPanelOpen(false);
           }}
           aria-label="Build mode"
           title="Component builder and circuit designer"
@@ -1312,6 +1412,7 @@ export default function Builder() {
           className="mode-tab"
           data-active={workspaceMode === "practice" ? "true" : undefined}
           onClick={() => {
+            setTroubleshootPanelOpen(false);
             if (workspaceMode === "practice") {
               setCompactWorksheetOpen(true);
               return;
@@ -1327,9 +1428,38 @@ export default function Builder() {
         <button
           type="button"
           className="mode-tab"
+          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
+          onClick={() => {
+            if (workspaceMode === "troubleshoot") {
+              setTroubleshootPanelOpen(true);
+              return;
+            }
+            const nextProblem =
+              activeTroubleshootProblem ?? troubleshootingProblems[0] ?? null;
+            if (nextProblem) {
+              triggerBuilderAction("load-preset", { preset: nextProblem.preset });
+            }
+            setWorkspaceMode("troubleshoot");
+            setPracticeWorkspaceMode(false);
+            setCompactWorksheetOpen(false);
+            setCircuitLocked(false);
+            setArenaPanelOpen(false);
+            setTroubleshootStatus(null);
+            setTroubleshootPanelOpen(true);
+          }}
+          aria-label="Troubleshooting mode"
+          title="Fix broken circuits and restore current flow"
+        >
+          <span className="mode-icon" aria-hidden="true">🛠️</span>
+          <span className="mode-label">Troubleshoot</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
           data-active={workspaceMode === "arena" ? "true" : undefined}
           onClick={() => {
             setWorkspaceMode("arena");
+            setTroubleshootPanelOpen(false);
             setArenaPanelOpen(true);
             if (arenaExportStatus !== "ready") {
               handleArenaSync({ openWindow: false });
@@ -1347,6 +1477,7 @@ export default function Builder() {
           data-active={workspaceMode === "learn" ? "true" : undefined}
           onClick={() => {
             setWorkspaceMode("learn");
+            setTroubleshootPanelOpen(false);
             openHelpCenter("overview");
           }}
           aria-label="Learn mode"
@@ -2203,6 +2334,205 @@ export default function Builder() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--troubleshoot${isTroubleshootPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isTroubleshootPanelOpen}
+        onClick={() => setTroubleshootPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--troubleshoot"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setTroubleshootPanelOpen(false)}
+            aria-label="Close troubleshooting mode"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--troubleshoot">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <h2 style={{ margin: 0 }}>Troubleshooting Mode</h2>
+                <p style={{ margin: "6px 0 0", opacity: 0.85, fontSize: 13 }}>
+                  Load a broken circuit, find the fault, then restore current flow.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <label style={{ fontSize: 12, opacity: 0.8 }}>
+                  Problem
+                  <select
+                    value={activeTroubleshootId ?? ""}
+                    onChange={(event) => {
+                      const nextId = event.target.value || null;
+                      setActiveTroubleshootId(nextId);
+                      setTroubleshootStatus(null);
+                      const next =
+                        troubleshootingProblems.find((p) => p.id === nextId) ??
+                        null;
+                      if (next) {
+                        triggerBuilderAction("load-preset", { preset: next.preset });
+                        setWorkspaceMode("troubleshoot");
+                        setCircuitLocked(false);
+                      }
+                    }}
+                    style={{
+                      marginLeft: 8,
+                      padding: "6px 8px",
+                      borderRadius: 8,
+                      background: "rgba(0,0,0,0.25)",
+                      color: "var(--text-primary)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                    }}
+                  >
+                    {troubleshootingProblems.map((problem) => (
+                      <option key={problem.id} value={problem.id}>
+                        {problem.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <span style={{ fontSize: 12, opacity: 0.8 }}>
+                  Progress:{" "}
+                  <strong>
+                    {troubleshootSolvedIds.length}/{troubleshootingProblems.length}
+                  </strong>
+                </span>
+              </div>
+
+              {activeTroubleshootProblem ? (
+                <div
+                  style={{
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid rgba(136, 204, 255, 0.18)",
+                    background: "rgba(14, 30, 58, 0.42)",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+                    <h3 style={{ margin: 0 }}>{activeTroubleshootProblem.title}</h3>
+                    {troubleshootSolvedIds.includes(activeTroubleshootProblem.id) && (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          border: "1px solid rgba(130, 255, 170, 0.35)",
+                          background: "rgba(40, 120, 70, 0.25)",
+                          color: "rgba(170, 255, 210, 0.92)",
+                        }}
+                      >
+                        Solved
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.4 }}>
+                    {activeTroubleshootProblem.prompt}
+                  </p>
+                  {activeTroubleshootProblem.hints?.length ? (
+                    <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.9 }}>
+                      {activeTroubleshootProblem.hints.map((hint) => (
+                        <li key={hint}>{hint}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, opacity: 0.8 }}>
+                  No troubleshooting problems available.
+                </div>
+              )}
+
+              {troubleshootStatus && (
+                <div
+                  role="status"
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    background: "rgba(0,0,0,0.22)",
+                    fontSize: 13,
+                  }}
+                >
+                  {troubleshootStatus}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => {
+                    if (!activeTroubleshootProblem) return;
+                    triggerBuilderAction("load-preset", {
+                      preset: activeTroubleshootProblem.preset,
+                    });
+                    setCircuitLocked(false);
+                    setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
+                  }}
+                >
+                  <span className="slider-chip-label">Reset Circuit</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => {
+                    if (!activeTroubleshootProblem) return;
+                    setTroubleshootStatus("Checking…");
+                    setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
+                    setTroubleshootCheckPending(true);
+                    triggerBuilderAction("run-simulation");
+                  }}
+                  disabled={!isFrameReady}
+                  aria-disabled={!isFrameReady}
+                  title={!isFrameReady ? "Workspace is still loading" : "Run simulation and check if current flows"}
+                >
+                  <span className="slider-chip-label">
+                    {isTroubleshootCheckPending ? "Checking…" : "Check Fix"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => {
+                    if (!troubleshootingProblems.length) return;
+                    const index = activeTroubleshootProblem
+                      ? troubleshootingProblems.findIndex((p) => p.id === activeTroubleshootProblem.id)
+                      : -1;
+                    const next =
+                      troubleshootingProblems[(index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length] ??
+                      troubleshootingProblems[0] ??
+                      null;
+                    if (!next) return;
+                    setActiveTroubleshootId(next.id);
+                    setTroubleshootStatus(null);
+                    triggerBuilderAction("load-preset", { preset: next.preset });
+                    setCircuitLocked(false);
+                  }}
+                >
+                  <span className="slider-chip-label">Next Problem</span>
+                </button>
+              </div>
+
+              <div style={{ fontSize: 12, opacity: 0.75 }}>
+                Tip: You can also tap the floating ▶ button to run a simulation anytime.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

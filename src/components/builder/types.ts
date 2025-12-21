@@ -87,7 +87,7 @@ export type ComponentAction = {
 
 export type BuilderToolId = "select" | "wire" | "measure";
 
-export type WorkspaceMode = "build" | "practice" | "arena" | "learn";
+export type WorkspaceMode = "build" | "practice" | "troubleshoot" | "arena" | "learn";
 
 export type LegacyModeState = {
   isWireMode: boolean;
