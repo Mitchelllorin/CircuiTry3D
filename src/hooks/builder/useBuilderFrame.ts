@@ -8,6 +8,12 @@ import type {
   ArenaExportSummary,
 } from "../../components/builder/types";
 
+export type LegacySimulationPayload = {
+  success: boolean;
+  result?: unknown;
+  error?: string;
+};
+
 interface UseBuilderFrameOptions {
   appBasePath: string;
   onModeStateChange: (state: Partial<LegacyModeState>) => void;
@@ -34,6 +40,8 @@ export function useBuilderFrame({
   const [arenaExportError, setArenaExportError] = useState<string | null>(null);
   const [lastArenaExport, setLastArenaExport] =
     useState<ArenaExportSummary | null>(null);
+  const [lastSimulation, setLastSimulation] =
+    useState<LegacySimulationPayload | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -86,6 +94,11 @@ export function useBuilderFrame({
       if (type === "legacy:simulation") {
         if (simulationPulseTimer.current !== null) {
           window.clearTimeout(simulationPulseTimer.current);
+        }
+        if (payload && typeof payload === "object") {
+          setLastSimulation(payload as LegacySimulationPayload);
+        } else {
+          setLastSimulation(null);
         }
         onSimulationPulse();
         simulationPulseTimer.current = window.setTimeout(() => {
@@ -232,6 +245,7 @@ export function useBuilderFrame({
     arenaExportStatus,
     arenaExportError,
     lastArenaExport,
+    lastSimulation,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
