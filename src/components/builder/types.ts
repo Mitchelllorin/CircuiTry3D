@@ -46,6 +46,36 @@ export type BuilderMessage =
       };
     };
 
+export type LegacyCircuitState = {
+  /**
+   * ISO timestamp produced by the legacy builder when the snapshot was sent.
+   * This is used for tutorial step validation (e.g., "did the user run a sim?").
+   */
+  updatedAt: string;
+  counts: {
+    components: number;
+    wires: number;
+    junctions: number;
+    byType: Record<string, number>;
+  };
+  metrics: {
+    voltage: number;
+    current: number;
+    /** null when open/infinite resistance */
+    resistance: number | null;
+    power: number;
+    /** True when the legacy flow engine reports a complete closed loop. */
+    isComplete: boolean;
+    /** Diagnostic reason when incomplete (e.g. 'no-battery', 'no-wires'). */
+    reason?: string;
+    flow?: {
+      hasFlow?: boolean;
+      reason?: string;
+      warning?: string;
+    };
+  };
+};
+
 export type ComponentAction = {
   id: string;
   icon: string;
