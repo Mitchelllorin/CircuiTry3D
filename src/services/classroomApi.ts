@@ -5,8 +5,10 @@ import {
   type AddStudentPayload,
   type ClassroomAction,
   type CreateAssignmentPayload,
+  type CreateCircuitAssignmentPayload,
   type CreateClassroomPayload,
   type RecordProgressPayload,
+  type SubmitAssignmentPayload,
 } from "./classroomMutations";
 
 const FUNCTION_ENDPOINT = "/.netlify/functions/classroom";
@@ -17,8 +19,34 @@ type ClassroomRequest =
   | { action: "createClass"; teacherId: string; payload: CreateClassroomPayload }
   | { action: "addStudent"; teacherId: string; payload: AddStudentPayload }
   | { action: "createAssignment"; teacherId: string; payload: CreateAssignmentPayload }
+  | { action: "createCircuitAssignment"; teacherId: string; payload: CreateCircuitAssignmentPayload }
   | { action: "recordProgress"; teacherId: string; payload: RecordProgressPayload }
+  | { action: "submitAssignment"; teacherId: string; payload: SubmitAssignmentPayload }
   | { action: "refreshAnalytics"; teacherId: string; payload: { classId: string } };
+
+export type StudentJoinRequest = {
+  joinCode: string;
+  student: { id: string; name: string; email: string };
+};
+
+export type StudentJoinResponse = {
+  teacherId: string;
+  classId: string;
+  classSnapshot: import("../model/classroom").Classroom;
+  updatedAt: number;
+};
+
+export type StudentSubmitRequest = {
+  joinCode: string;
+  payload: Omit<SubmitAssignmentPayload, "classId"> & { classId?: string };
+};
+
+export type StudentSubmitResponse = {
+  teacherId: string;
+  classId: string;
+  classSnapshot: import("../model/classroom").Classroom;
+  updatedAt: number;
+};
 
 export const classroomApi = {
   async load(teacherId: string): Promise<ClassroomDocument> {
@@ -49,9 +77,25 @@ export const classroomApi = {
     });
   },
 
+  async createCircuitAssignment(teacherId: string, payload: CreateCircuitAssignmentPayload): Promise<ClassroomDocument> {
+    return mutateWithFallback({ action: "createCircuitAssignment", teacherId, payload }, teacherId, {
+      type: "createCircuitAssignment",
+      teacherId,
+      payload,
+    });
+  },
+
   async recordProgress(teacherId: string, payload: RecordProgressPayload): Promise<ClassroomDocument> {
     return mutateWithFallback({ action: "recordProgress", teacherId, payload }, teacherId, {
       type: "recordProgress",
+      teacherId,
+      payload,
+    });
+  },
+
+  async submitAssignment(teacherId: string, payload: SubmitAssignmentPayload): Promise<ClassroomDocument> {
+    return mutateWithFallback({ action: "submitAssignment", teacherId, payload }, teacherId, {
+      type: "submitAssignment",
       teacherId,
       payload,
     });
@@ -63,6 +107,36 @@ export const classroomApi = {
       teacherId,
       { type: "refreshAnalytics", teacherId, payload: { classId } },
     );
+  },
+
+  async studentJoin(request: StudentJoinRequest): Promise<StudentJoinResponse> {
+    const response = await fetch(FUNCTION_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "studentJoin", ...request }),
+    });
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || "Unable to join classroom");
+    }
+
+    return (await response.json()) as StudentJoinResponse;
+  },
+
+  async studentSubmit(request: StudentSubmitRequest): Promise<StudentSubmitResponse> {
+    const response = await fetch(FUNCTION_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "studentSubmit", ...request }),
+    });
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || "Unable to submit assignment");
+    }
+
+    return (await response.json()) as StudentSubmitResponse;
   },
 };
 

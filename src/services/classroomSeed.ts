@@ -5,6 +5,7 @@ import type {
   ClassAssignment,
   ClassAnalytics,
   ClassStudent,
+  ClassAssignmentSubmission,
   Classroom,
   ClassroomDocument,
 } from "../model/classroom";
@@ -64,11 +65,19 @@ export const estimatePerformanceForProblem = (problem: PracticeProblem): Assignm
 export const computeAnalytics = (classroom: Classroom): ClassAnalytics => {
   const totalStudents = classroom.students.length;
   const activeStudents = classroom.students.filter((student) => student.status === "active").length;
+  const totalExpectedSubmissions = classroom.assignments.length * Math.max(1, classroom.students.length);
+  const uniqueSubmissions = new Set(
+    classroom.submissions.map((submission) => `${submission.assignmentId}:${submission.studentId}`),
+  ).size;
   const completionRate =
-    classroom.assignments.length === 0
+    totalExpectedSubmissions === 0
       ? 0
-      : classroom.assignments.reduce((sum, assignment) => sum + assignment.performance.completionRate, 0) /
-        classroom.assignments.length;
+      : uniqueSubmissions > 0
+        ? uniqueSubmissions / totalExpectedSubmissions
+        : classroom.assignments.length === 0
+          ? 0
+          : classroom.assignments.reduce((sum, assignment) => sum + assignment.performance.completionRate, 0) /
+            classroom.assignments.length;
   const averageTimeMinutes =
     classroom.assignments.length === 0
       ? 0
@@ -187,6 +196,7 @@ const createClassroom = (options: ClassroomSeedOptions): Classroom => {
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
     students: baseStudents,
     assignments,
+    submissions: [] satisfies ClassAssignmentSubmission[],
     analytics: {
       totalStudents: baseStudents.length,
       activeStudents: baseStudents.filter((student) => student.status === "active").length,

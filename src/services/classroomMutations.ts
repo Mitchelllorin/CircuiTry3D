@@ -4,6 +4,7 @@ import type {
   ClassAnalytics,
   ClassAssignment,
   ClassStudent,
+  ClassAssignmentSubmission,
   Classroom,
   ClassroomDocument,
 } from "../model/classroom";
@@ -20,6 +21,8 @@ export type AddStudentPayload = {
   classId: string;
   name: string;
   email: string;
+  studentId?: string;
+  status?: ClassStudent["status"];
 };
 
 export type CreateAssignmentPayload = {
@@ -27,6 +30,18 @@ export type CreateAssignmentPayload = {
   problemId: string;
   dueDate?: string;
   notes?: string;
+};
+
+export type CreateCircuitAssignmentPayload = {
+  classId: string;
+  title: string;
+  dueDate?: string;
+  notes?: string;
+  template: {
+    format: "legacy-json-v2";
+    filename?: string;
+    state: unknown;
+  };
 };
 
 export type RecordProgressPayload = {
@@ -43,15 +58,38 @@ export type RefreshAnalyticsPayload = {
   classId: string;
 };
 
+export type SubmitAssignmentPayload = {
+  classId: string;
+  assignmentId: string;
+  studentId: string;
+  studentName?: string;
+  status?: ClassAssignmentSubmission["status"];
+  score?: number;
+  completionRate?: number;
+  timeMinutes?: number;
+  notes?: string;
+  worksheetComplete?: boolean;
+};
+
 export type ClassroomAction =
   | { type: "createClass"; teacherId: string; payload: CreateClassroomPayload }
   | { type: "addStudent"; teacherId: string; payload: AddStudentPayload }
   | { type: "createAssignment"; teacherId: string; payload: CreateAssignmentPayload }
+  | { type: "createCircuitAssignment"; teacherId: string; payload: CreateCircuitAssignmentPayload }
   | { type: "recordProgress"; teacherId: string; payload: RecordProgressPayload }
+  | { type: "submitAssignment"; teacherId: string; payload: SubmitAssignmentPayload }
   | { type: "refreshAnalytics"; teacherId: string; payload: RefreshAnalyticsPayload };
 
-export const ensureDocument = (doc: ClassroomDocument | null | undefined, teacherId: string): ClassroomDocument =>
-  doc && doc.classes ? doc : generateClassroomDocument(teacherId);
+export const ensureDocument = (doc: ClassroomDocument | null | undefined, teacherId: string): ClassroomDocument => {
+  const base = doc && doc.classes ? doc : generateClassroomDocument(teacherId);
+  return {
+    ...base,
+    classes: base.classes.map((classroom) => ({
+      ...classroom,
+      submissions: Array.isArray((classroom as Partial<Classroom>).submissions) ? (classroom as Classroom).submissions : [],
+    })),
+  };
+};
 
 export const applyClassroomAction = (
   document: ClassroomDocument,
@@ -64,8 +102,12 @@ export const applyClassroomAction = (
       return applyAddStudent(document, action.payload);
     case "createAssignment":
       return applyCreateAssignment(document, action.payload);
+    case "createCircuitAssignment":
+      return applyCreateCircuitAssignment(document, action.payload);
     case "recordProgress":
       return applyRecordProgress(document, action.payload);
+    case "submitAssignment":
+      return applySubmitAssignment(document, action.payload);
     case "refreshAnalytics":
       return applyRefreshAnalytics(document, action.payload);
     default:
@@ -90,6 +132,7 @@ const applyCreateClass = (
     createdAt: now,
     students: [],
     assignments: [],
+    submissions: [],
     analytics: emptyAnalytics(),
   };
 
@@ -106,14 +149,23 @@ const applyAddStudent = (doc: ClassroomDocument, payload: AddStudentPayload): Cl
 
   const now = Date.now();
   const student: ClassStudent = {
-    id: `stu-${now}-${Math.random().toString(36).slice(2, 7)}`,
+    id: payload.studentId?.trim() || `stu-${now}-${Math.random().toString(36).slice(2, 7)}`,
     name: name.trim(),
     email: email.trim(),
-    status: "invited",
+    status: payload.status ?? "invited",
     invitedAt: now,
+    lastActiveAt: payload.status === "active" ? now : undefined,
   };
 
-  target.students = [student, ...target.students];
+  const existing = target.students.find((entry) => entry.id === student.id || entry.email.toLowerCase() === student.email.toLowerCase());
+  if (existing) {
+    existing.name = student.name;
+    existing.email = student.email;
+    existing.status = payload.status ?? existing.status;
+    existing.lastActiveAt = payload.status === "active" ? now : existing.lastActiveAt;
+  } else {
+    target.students = [student, ...target.students];
+  }
   target.analytics = computeAnalytics(target);
 
   return { ...doc, updatedAt: now, classes: replaceClass(doc.classes, target) };
@@ -139,6 +191,94 @@ const applyCreateAssignment = (doc: ClassroomDocument, payload: CreateAssignment
   target.analytics = computeAnalytics(target);
 
   return { ...doc, updatedAt: Date.now(), classes: replaceClass(doc.classes, target) };
+};
+
+const applyCreateCircuitAssignment = (
+  doc: ClassroomDocument,
+  payload: CreateCircuitAssignmentPayload,
+): ClassroomDocument => {
+  const target = doc.classes.find((classroom) => classroom.id === payload.classId);
+  if (!target) {
+    return doc;
+  }
+
+  const assignedAt = Date.now();
+  const dueDate =
+    payload.dueDate ??
+    new Date(assignedAt + 1000 * 60 * 60 * 24 * 3).toISOString();
+
+  const assignment: ClassAssignment = {
+    id: `assign-${assignedAt}-${Math.random().toString(36).slice(2, 8)}`,
+    title: payload.title.trim() || "Circuit Assignment",
+    assignmentType: "circuit",
+    problemId: `circuit:${assignedAt}`,
+    problemTitle: payload.title.trim() || "Circuit Assignment",
+    problemTags: [],
+    difficulty: "intro",
+    dueDate,
+    assignedAt,
+    status: "open",
+    notes: payload.notes?.trim() || undefined,
+    circuitTemplate: payload.template,
+    performance: {
+      completionRate: 0,
+      averageScore: 0,
+      strugglingConcepts: [],
+      averageTimeMinutes: 0,
+      hintsUsed: 0,
+    },
+  };
+
+  target.assignments = [assignment, ...target.assignments];
+  target.analytics = computeAnalytics(target);
+
+  return { ...doc, updatedAt: Date.now(), classes: replaceClass(doc.classes, target) };
+};
+
+const applySubmitAssignment = (doc: ClassroomDocument, payload: SubmitAssignmentPayload): ClassroomDocument => {
+  const target = doc.classes.find((classroom) => classroom.id === payload.classId);
+  if (!target) {
+    return doc;
+  }
+
+  const assignment = target.assignments.find((entry) => entry.id === payload.assignmentId);
+  if (!assignment) {
+    return doc;
+  }
+
+  const now = Date.now();
+  const submissionId = `sub-${now}-${Math.random().toString(36).slice(2, 7)}`;
+  const desiredStatus: ClassAssignmentSubmission["status"] = payload.status ?? "submitted";
+
+  const existing = target.submissions.find(
+    (entry) => entry.assignmentId === payload.assignmentId && entry.studentId === payload.studentId,
+  );
+
+  const next: ClassAssignmentSubmission = {
+    id: existing?.id ?? submissionId,
+    assignmentId: payload.assignmentId,
+    studentId: payload.studentId,
+    studentName: payload.studentName?.trim() || existing?.studentName,
+    submittedAt: now,
+    status: desiredStatus,
+    score: typeof payload.score === "number" ? clampTo01(payload.score) : existing?.score,
+    completionRate: typeof payload.completionRate === "number" ? clampTo01(payload.completionRate) : existing?.completionRate,
+    timeMinutes: typeof payload.timeMinutes === "number" ? Math.max(0, payload.timeMinutes) : existing?.timeMinutes,
+    notes: payload.notes?.trim() || existing?.notes,
+    artifact: {
+      kind: "practice",
+      problemId: assignment.problemId,
+      worksheetComplete: typeof payload.worksheetComplete === "boolean" ? payload.worksheetComplete : existing?.artifact?.worksheetComplete,
+    },
+  };
+
+  target.submissions = [
+    next,
+    ...target.submissions.filter((entry) => !(entry.assignmentId === payload.assignmentId && entry.studentId === payload.studentId)),
+  ];
+  target.analytics = computeAnalytics(target);
+
+  return { ...doc, updatedAt: now, classes: replaceClass(doc.classes, target) };
 };
 
 const applyRecordProgress = (doc: ClassroomDocument, payload: RecordProgressPayload): ClassroomDocument => {
