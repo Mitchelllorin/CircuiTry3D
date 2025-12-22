@@ -4,6 +4,8 @@ export type ClassStudentStatus = "invited" | "active" | "inactive";
 
 export type ClassAssignmentStatus = "draft" | "scheduled" | "open" | "closed";
 
+export type ClassAssignmentSubmissionStatus = "started" | "submitted" | "returned";
+
 export type ClassStudent = {
   id: string;
   name: string;
@@ -11,6 +13,24 @@ export type ClassStudent = {
   status: ClassStudentStatus;
   invitedAt: number;
   lastActiveAt?: number;
+};
+
+export type ClassAssignmentSubmission = {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName?: string;
+  submittedAt: number;
+  status: ClassAssignmentSubmissionStatus;
+  score?: number;
+  completionRate?: number;
+  timeMinutes?: number;
+  notes?: string;
+  artifact?: {
+    kind: "practice";
+    problemId: string;
+    worksheetComplete?: boolean;
+  };
 };
 
 export type AssignmentPerformance = {
@@ -56,6 +76,7 @@ export type Classroom = {
   createdAt: number;
   students: ClassStudent[];
   assignments: ClassAssignment[];
+  submissions: ClassAssignmentSubmission[];
   analytics: ClassAnalytics;
 };
 

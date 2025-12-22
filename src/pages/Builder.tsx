@@ -956,6 +956,23 @@ export default function Builder() {
     ],
   );
 
+  // Deep link support: open practice problem from URL (used by Classroom student view)
+  useEffect(() => {
+    if (!isFrameReady || typeof window === "undefined") {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const practiceProblemId = params.get("practiceProblemId");
+    if (!practiceProblemId) {
+      return;
+    }
+    const problem = findPracticeProblemById(practiceProblemId);
+    if (!problem) {
+      return;
+    }
+    openPracticeWorkspace(problem);
+  }, [isFrameReady, openPracticeWorkspace]);
+
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
