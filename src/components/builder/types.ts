@@ -12,6 +12,7 @@ export type BuilderInvokeAction =
   | "toggle-grid"
   | "toggle-labels"
   | "load-preset"
+  | "load-circuit-state"
   | "generate-practice"
   | "practice-help"
   | "show-tutorial"

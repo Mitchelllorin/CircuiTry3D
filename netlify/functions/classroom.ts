@@ -6,6 +6,7 @@ import {
   ensureDocument,
   type ClassroomAction,
   type CreateAssignmentPayload,
+  type CreateCircuitAssignmentPayload,
   type CreateClassroomPayload,
   type AddStudentPayload,
   type RecordProgressPayload,
@@ -180,6 +181,7 @@ type ClassroomRequest =
   | { action: "createClass"; teacherId: string; payload: CreateClassroomPayload }
   | { action: "addStudent"; teacherId: string; payload: AddStudentPayload }
   | { action: "createAssignment"; teacherId: string; payload: CreateAssignmentPayload }
+  | { action: "createCircuitAssignment"; teacherId: string; payload: CreateCircuitAssignmentPayload }
   | { action: "recordProgress"; teacherId: string; payload: RecordProgressPayload }
   | { action: "submitAssignment"; teacherId: string; payload: SubmitAssignmentPayload }
   | { action: "refreshAnalytics"; teacherId: string; payload: { classId: string } }
@@ -247,6 +249,8 @@ const mapAction = (request: ClassroomRequest): ClassroomAction | null => {
       return { type: "addStudent", teacherId: request.teacherId, payload: request.payload };
     case "createAssignment":
       return { type: "createAssignment", teacherId: request.teacherId, payload: request.payload };
+    case "createCircuitAssignment":
+      return { type: "createCircuitAssignment", teacherId: request.teacherId, payload: request.payload };
     case "recordProgress":
       return { type: "recordProgress", teacherId: request.teacherId, payload: request.payload };
     case "submitAssignment":

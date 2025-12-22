@@ -44,6 +44,7 @@ export type AssignmentPerformance = {
 export type ClassAssignment = {
   id: string;
   title: string;
+  assignmentType?: "practice" | "circuit";
   problemId: string;
   problemTitle: string;
   problemTags: string[];
@@ -52,6 +53,11 @@ export type ClassAssignment = {
   assignedAt: number;
   status: ClassAssignmentStatus;
   notes?: string;
+  circuitTemplate?: {
+    format: "legacy-json-v2";
+    filename?: string;
+    state: unknown;
+  };
   performance: AssignmentPerformance;
 };
 

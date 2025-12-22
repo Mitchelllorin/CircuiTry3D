@@ -3999,6 +3999,19 @@ body.android-optimized.menu-visible .status {
                                     loadPresetCircuit(data.preset);
                                 }
                                 break;
+                            case 'load-circuit-state':
+                                if (data && typeof data.state === 'object' && data.state) {
+                                    try {
+                                        if (typeof restoreState === 'function') {
+                                            restoreState(data.state);
+                                            setStatus('⚡ Assignment template loaded');
+                                        }
+                                    } catch (loadError) {
+                                        console.warn('Failed to load circuit state', loadError);
+                                        setStatus('⚠ Failed to load assignment template');
+                                    }
+                                }
+                                break;
                             case 'generate-practice':
                                 if (typeof generateRandomProblem === 'function') generateRandomProblem();
                                 break;

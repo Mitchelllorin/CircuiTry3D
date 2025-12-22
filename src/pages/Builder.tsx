@@ -962,6 +962,23 @@ export default function Builder() {
       return;
     }
     const params = new URLSearchParams(window.location.search);
+    const assignmentType = params.get("assignmentType");
+    if (assignmentType === "circuit") {
+      try {
+        const raw = window.localStorage.getItem("circuiTry3d.pendingCircuitAssignment.v1");
+        if (raw) {
+          const parsed = JSON.parse(raw) as { template?: { state?: unknown } } | null;
+          const state = parsed?.template?.state;
+          if (state && typeof state === "object") {
+            triggerBuilderAction("load-circuit-state", { state });
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+      return;
+    }
     const practiceProblemId = params.get("practiceProblemId");
     if (!practiceProblemId) {
       return;
@@ -971,7 +988,7 @@ export default function Builder() {
       return;
     }
     openPracticeWorkspace(problem);
-  }, [isFrameReady, openPracticeWorkspace]);
+  }, [isFrameReady, openPracticeWorkspace, triggerBuilderAction]);
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {

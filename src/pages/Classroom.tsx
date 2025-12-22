@@ -56,6 +56,7 @@ export default function Classroom() {
     createClassroom,
     inviteStudent,
     scheduleAssignment,
+    scheduleCircuitAssignment,
     recordProgress,
     refreshAnalytics,
     loading,
@@ -87,6 +88,15 @@ export default function Classroom() {
     dueDate: "",
     notes: "",
   });
+
+  const [circuitAssignmentForm, setCircuitAssignmentForm] = useState({
+    title: "",
+    dueDate: "",
+    notes: "",
+    templateFile: null as File | null,
+  });
+
+  const [circuitTemplateError, setCircuitTemplateError] = useState<string | null>(null);
 
   const classStats = useMemo(() => {
     const totalStudents = classes.reduce((sum, classroom) => sum + classroom.students.length, 0);
@@ -136,6 +146,44 @@ export default function Classroom() {
       notes: assignmentForm.notes || undefined,
     });
     setAssignmentForm((previous) => ({ ...previous, notes: "" }));
+  };
+
+  const handleScheduleCircuitAssignment = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedClass || !circuitAssignmentForm.templateFile) {
+      return;
+    }
+
+    setCircuitTemplateError(null);
+    const file = circuitAssignmentForm.templateFile;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+      const candidate = parsed as { components?: unknown; wires?: unknown; junctions?: unknown } | null;
+      const looksLikeLegacy =
+        Boolean(candidate) &&
+        Array.isArray(candidate.components) &&
+        Array.isArray(candidate.wires) &&
+        Array.isArray(candidate.junctions);
+
+      if (!looksLikeLegacy) {
+        setCircuitTemplateError("That file doesn't look like a Builder circuit JSON export.");
+        return;
+      }
+
+      await scheduleCircuitAssignment({
+        classId: selectedClass.id,
+        title: circuitAssignmentForm.title || file.name.replace(/\.json$/i, ""),
+        dueDate: circuitAssignmentForm.dueDate || undefined,
+        notes: circuitAssignmentForm.notes || undefined,
+        template: { format: "legacy-json-v2", filename: file.name, state: parsed },
+      });
+
+      setCircuitAssignmentForm({ title: "", dueDate: "", notes: "", templateFile: null });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unable to read circuit file.";
+      setCircuitTemplateError(message);
+    }
   };
 
   const handleQuickProgress = async (classroom: Classroom, assignmentId: string) => {
@@ -242,6 +290,29 @@ export default function Classroom() {
   const openStudentAssignment = (enrollment: StudentEnrollment, assignmentId: string) => {
     const assignment = enrollment.classSnapshot.assignments.find((a) => a.id === assignmentId);
     if (!assignment) {
+      return;
+    }
+    if ((assignment.assignmentType ?? "practice") === "circuit") {
+      if (assignment.circuitTemplate?.state) {
+        try {
+          window.localStorage.setItem(
+            "circuiTry3d.pendingCircuitAssignment.v1",
+            JSON.stringify({
+              assignmentId,
+              joinCode: enrollment.joinCode,
+              classId: enrollment.classId,
+              title: assignment.title,
+              template: assignment.circuitTemplate,
+            }),
+          );
+        } catch {
+          // ignore
+        }
+      }
+      const params = new URLSearchParams();
+      params.set("assignmentType", "circuit");
+      params.set("assignmentId", assignmentId);
+      window.location.assign(`/builder?${params.toString()}`);
       return;
     }
     const params = new URLSearchParams();
@@ -609,6 +680,39 @@ export default function Classroom() {
                   </button>
                 </form>
 
+                <form className="classroom-form" onSubmit={handleScheduleCircuitAssignment} style={{ marginTop: 10 }}>
+                  <input
+                    type="text"
+                    placeholder="Circuit assignment title"
+                    value={circuitAssignmentForm.title}
+                    onChange={(event) => setCircuitAssignmentForm((p) => ({ ...p, title: event.target.value }))}
+                  />
+                  <input
+                    type="datetime-local"
+                    value={circuitAssignmentForm.dueDate}
+                    onChange={(event) => setCircuitAssignmentForm((p) => ({ ...p, dueDate: event.target.value }))}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Notes / instructions"
+                    value={circuitAssignmentForm.notes}
+                    onChange={(event) => setCircuitAssignmentForm((p) => ({ ...p, notes: event.target.value }))}
+                  />
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={(event) => setCircuitAssignmentForm((p) => ({ ...p, templateFile: event.target.files?.[0] ?? null }))}
+                  />
+                  <button type="submit" disabled={saving || !circuitAssignmentForm.templateFile}>
+                    Assign Circuit Template
+                  </button>
+                </form>
+                {circuitTemplateError && (
+                  <div className="classroom-banner is-error" role="alert" style={{ marginTop: 8 }}>
+                    {circuitTemplateError}
+                  </div>
+                )}
+
                 <div className="assignment-list">
                   {selectedClass.assignments.map((assignment) => (
                     <article key={assignment.id} className="assignment-card">
@@ -617,7 +721,7 @@ export default function Classroom() {
                           <strong>{assignment.title}</strong>
                           <small>Due {new Date(assignment.dueDate).toLocaleString()}</small>
                         </div>
-                        <span>{assignment.difficulty}</span>
+                        <span>{(assignment.assignmentType ?? "practice") === "circuit" ? "Circuit" : assignment.difficulty}</span>
                       </header>
                       <p>{assignment.notes || "Auto-generated skills check."}</p>
                       <dl>

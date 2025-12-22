@@ -5,6 +5,7 @@ import {
   type AddStudentPayload,
   type ClassroomAction,
   type CreateAssignmentPayload,
+  type CreateCircuitAssignmentPayload,
   type CreateClassroomPayload,
   type RecordProgressPayload,
   type SubmitAssignmentPayload,
@@ -18,6 +19,7 @@ type ClassroomRequest =
   | { action: "createClass"; teacherId: string; payload: CreateClassroomPayload }
   | { action: "addStudent"; teacherId: string; payload: AddStudentPayload }
   | { action: "createAssignment"; teacherId: string; payload: CreateAssignmentPayload }
+  | { action: "createCircuitAssignment"; teacherId: string; payload: CreateCircuitAssignmentPayload }
   | { action: "recordProgress"; teacherId: string; payload: RecordProgressPayload }
   | { action: "submitAssignment"; teacherId: string; payload: SubmitAssignmentPayload }
   | { action: "refreshAnalytics"; teacherId: string; payload: { classId: string } };
@@ -70,6 +72,14 @@ export const classroomApi = {
   async createAssignment(teacherId: string, payload: CreateAssignmentPayload): Promise<ClassroomDocument> {
     return mutateWithFallback({ action: "createAssignment", teacherId, payload }, teacherId, {
       type: "createAssignment",
+      teacherId,
+      payload,
+    });
+  },
+
+  async createCircuitAssignment(teacherId: string, payload: CreateCircuitAssignmentPayload): Promise<ClassroomDocument> {
+    return mutateWithFallback({ action: "createCircuitAssignment", teacherId, payload }, teacherId, {
+      type: "createCircuitAssignment",
       teacherId,
       payload,
     });
