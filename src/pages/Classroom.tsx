@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import practiceProblems from "../data/practiceProblems";
 import type { Classroom } from "../model/classroom";
+import BrandMark from "../components/BrandMark";
 import { useClassroom } from "../context/ClassroomContext";
 import "../styles/classroom.css";
 
@@ -117,6 +118,7 @@ export default function Classroom() {
     <div className="classroom-page">
       <header className="classroom-header">
         <div>
+          <BrandMark size="sm" decorative className="classroom-brand" />
           <p className="eyebrow">Classroom Mode</p>
           <h1>Coordinate classes, assignments, and analytics.</h1>
           <p>Track student mastery in one dashboard. Create classes, invite students, and assign practice sets with live progress.</p>
@@ -444,4 +446,3 @@ export default function Classroom() {
     </div>
   );
 }
-

@@ -13,6 +13,7 @@ import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
+import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import {
@@ -1537,11 +1538,9 @@ export default function Builder() {
           </button>
         </div>
       </div>
-      <div className="builder-logo-header">
-        <div className="builder-logo-text" aria-label="CircuiTry3D">
-          <span className="builder-logo-circui">Circui</span>
-          <span className="builder-logo-try">Try</span>
-          <span className="builder-logo-3d">3D</span>
+      <div className="builder-logo-header" aria-hidden="true">
+        <div className="builder-logo-mark">
+          <BrandMark size="lg" decorative />
         </div>
       </div>
 
@@ -2205,9 +2204,11 @@ export default function Builder() {
         className="builder-floating-logo"
         aria-hidden="true"
       >
-        <span className="builder-logo-circui">Circui</span>
-        <span className="builder-logo-try">Try</span>
-        <span className="builder-logo-3d">3D</span>
+        <span className="builder-logo-text" aria-hidden="true">
+          <span className="builder-logo-circui">Circui</span>
+          <span className="builder-logo-try">Try</span>
+          <span className="builder-logo-3d">3D</span>
+        </span>
       </div>
 
       <div
@@ -2348,6 +2349,9 @@ export default function Builder() {
           className="builder-panel-shell builder-panel-shell--troubleshoot"
           onClick={(event) => event.stopPropagation()}
         >
+          <div className="builder-panel-brand" aria-hidden="true">
+            <BrandMark size="sm" decorative />
+          </div>
           <button
             type="button"
             className="builder-panel-close"
@@ -2547,6 +2551,9 @@ export default function Builder() {
           className="builder-panel builder-panel--logo-settings"
           onClick={(event) => event.stopPropagation()}
         >
+          <div className="builder-panel-brand" aria-hidden="true">
+            <BrandMark size="sm" decorative />
+          </div>
           <button
             type="button"
             className="builder-panel-close"
@@ -2600,6 +2607,9 @@ export default function Builder() {
           className="builder-panel-shell builder-panel-shell--environment"
           onClick={(event) => event.stopPropagation()}
         >
+          <div className="builder-panel-brand" aria-hidden="true">
+            <BrandMark size="sm" decorative />
+          </div>
           <button
             type="button"
             className="builder-panel-close"

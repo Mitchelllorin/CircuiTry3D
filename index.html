@@ -81,9 +81,9 @@
       }
       
       .loader-text {
-        font-size: 1.2rem;
-        color: #88ccff;
-        letter-spacing: 0.1em;
+        font-size: 1.05rem;
+        color: rgba(136, 204, 255, 0.78);
+        letter-spacing: 0.16em;
         text-transform: uppercase;
       }
 
@@ -96,13 +96,59 @@
         margin-top: 4px;
       }
 
-      .loader-logo {
-        width: 260px;
-        height: auto;
-        filter: drop-shadow(0 8px 22px rgba(45, 212, 191, 0.18));
-        opacity: 0.98;
+      .loader-wordmark {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.12em;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        user-select: none;
+        -webkit-user-select: none;
         user-select: none;
         -webkit-user-drag: none;
+        transform: translateY(-2px);
+        filter: drop-shadow(0 10px 24px rgba(56, 189, 248, 0.16));
+      }
+
+      .loader-wordmark span {
+        font-size: clamp(2.1rem, 8.2vw, 2.8rem);
+        line-height: 1;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 10px 22px rgba(2, 6, 23, 0.35);
+      }
+
+      .loader-wordmark .wm-circui {
+        color: #88ccff;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 0 14px rgba(136, 204, 255, 0.35),
+          0 0 26px rgba(136, 204, 255, 0.22);
+      }
+
+      .loader-wordmark .wm-try {
+        color: #ff8844;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 0 14px rgba(255, 136, 68, 0.35),
+          0 0 26px rgba(255, 136, 68, 0.22);
+      }
+
+      .loader-wordmark .wm-3d {
+        color: #00ff88;
+        letter-spacing: 0.18em;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 0 14px rgba(0, 255, 136, 0.28),
+          0 0 26px rgba(0, 255, 136, 0.2);
       }
 
       .photon-orbit {
@@ -161,9 +207,11 @@
   <body>
     <div id="root">
       <div class="initial-loader">
-        <div class="loader-text">CircuiTry3D</div>
+        <div class="loader-text">Loading</div>
         <div class="loader-logo-orbit" aria-hidden="true">
-          <img class="loader-logo" src="/src/assets/circuit-logo.svg" alt="" />
+          <div class="loader-wordmark" aria-label="CircuiTry3D">
+            <span class="wm-circui">Circui</span><span class="wm-try">Try</span><span class="wm-3d">3D</span>
+          </div>
           <div class="photon-orbit orbit-a">
             <div class="photon orbit-a"></div>
           </div>

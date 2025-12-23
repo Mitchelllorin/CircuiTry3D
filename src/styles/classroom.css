@@ -17,6 +17,15 @@
   border: 1px solid rgba(96, 165, 250, 0.25);
 }
 
+.classroom-brand {
+  margin-bottom: 0.75rem;
+  opacity: 0.95;
+}
+
+.classroom-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+}
+
 .classroom-header h1 {
   margin: 0.35rem 0;
   font-size: 1.7rem;
@@ -383,4 +392,3 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-

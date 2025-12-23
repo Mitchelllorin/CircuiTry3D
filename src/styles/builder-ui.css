@@ -68,11 +68,24 @@ body.builder-body {
   pointer-events: none;
 }
 
+.builder-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: builderLogoPulse 3.2s ease-in-out infinite;
+}
+
+.builder-logo-mark .circuitry-brandmark__img {
+  width: clamp(52px, 10vw, 72px);
+  height: auto;
+  filter: drop-shadow(0 0 10px rgba(136, 204, 255, 0.28))
+    drop-shadow(0 0 26px rgba(136, 204, 255, 0.45));
+}
+
 .builder-logo-text {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   display: inline-flex;
   align-items: baseline;
   gap: 0.2rem;
@@ -457,6 +470,37 @@ body.builder-body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.builder-panel {
+  position: relative;
+  width: min(96vw, 720px);
+  max-height: 90vh;
+  border-radius: 22px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(12, 28, 58, 0.94);
+  box-shadow: 0 28px 72px rgba(3, 12, 32, 0.65);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.builder-panel-brand {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.builder-panel-overlay--arena .builder-panel-brand .circuitry-brandmark__img {
+  width: clamp(40px, 6.5vw, 56px);
+  height: auto;
+}
+
+.builder-panel-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 8px 18px rgba(45, 212, 191, 0.18));
 }
 
 .builder-panel-shell--practice {
@@ -1735,31 +1779,26 @@ body.builder-body {
   top: 50%;
   left: 50%;
   transform: translateX(-50%) translateY(-50%);
-  font-size: clamp(2.8rem, 6vw, 5.2rem);
-  font-weight: 900;
-  letter-spacing: -0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
   z-index: 650;
   user-select: none;
-  line-height: 1;
-  text-transform: uppercase;
-  color: #f5f8ff;
   opacity: 1;
-  filter: drop-shadow(0 0 26px rgba(0, 255, 136, 0.28));
   transition: filter 0.2s ease;
   will-change: transform;
 }
 
-.builder-floating-logo .builder-logo-circui {
-  color: #88ccff;
+.builder-floating-logo .builder-logo-text {
+  font-size: clamp(56px, 12vw, 120px);
 }
 
-.builder-floating-logo .builder-logo-try {
-  color: #ff8844;
-}
-
-.builder-floating-logo .builder-logo-3d {
-  color: #00ff88;
+.builder-floating-logo-mark .circuitry-brandmark__img {
+  width: clamp(160px, 38vw, 320px);
+  height: auto;
+  filter: drop-shadow(0 0 26px rgba(0, 255, 136, 0.22));
+  opacity: 0.55;
 }
 
 .builder-logo-controls {

@@ -36,6 +36,22 @@ body.builder-body .arena-page {
   gap: 20px;
 }
 
+.arena-header-left .circuitry-brandmark__img {
+  width: clamp(56px, 10vw, 80px);
+  height: auto;
+  filter: drop-shadow(0 10px 22px rgba(45, 212, 191, 0.18));
+}
+
+.arena-header-left .circuitry-wordmark {
+  font-size: clamp(16px, 4.4vw, 22px);
+  letter-spacing: 0.12em;
+  filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.3));
+}
+
+.arena-header-left .circuitry-wordmark__3d {
+  letter-spacing: 0.14em;
+}
+
 .arena-title-group h1 {
   margin: 0;
   font-size: 1.75rem;
@@ -1073,6 +1089,8 @@ body.builder-body .arena-page {
     opacity: 0.85;
   }
 }
+
+.arena-battle-vs {
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.5);
@@ -2393,4 +2411,3 @@ body.builder-body .arena-page {
 .metric-value-changed {
   animation: metric-flash 0.6s ease-in-out;
 }
-

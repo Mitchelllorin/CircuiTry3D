@@ -31,6 +31,16 @@
   gap: 1rem;
 }
 
+.pricing-brand {
+  display: flex;
+  justify-content: center;
+  opacity: 0.95;
+}
+
+.pricing-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+}
+
 .pricing-hero h1 {
   font-size: clamp(2rem, 3vw, 3rem);
   margin: 0;
@@ -345,6 +355,16 @@
   text-align: center;
   display: grid;
   gap: 0.75rem;
+}
+
+.subscription-brand {
+  display: flex;
+  justify-content: center;
+  opacity: 0.95;
+}
+
+.subscription-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
 }
 
 .subscription-kicker {

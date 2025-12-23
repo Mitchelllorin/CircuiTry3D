@@ -58,6 +58,19 @@
   z-index: 1;
 }
 
+.circuit-modal-brand {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.circuit-modal-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 10px 22px rgba(45, 212, 191, 0.14));
+}
+
 .circuit-modal-close:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #fff;

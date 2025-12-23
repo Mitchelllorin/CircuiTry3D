@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import BrandMark from "../components/BrandMark";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
 import type { FormEvent } from "react";
@@ -239,6 +240,7 @@ export default function Community() {
     <div className="community-page">
       <header className="community-hero">
         <div>
+          <BrandMark size="sm" decorative className="community-brand" />
           <span className="community-eyebrow">Community Hub</span>
           <h1>The lab where builders compare notes</h1>
           <p>Sync with other makers, trade circuit tips, and capture feedback from the people using your builds.</p>
@@ -266,6 +268,7 @@ export default function Community() {
       <section className="community-grid">
         <article className="community-panel">
           <header className="panel-header">
+            <BrandMark size="xs" decorative className="panel-brand" />
             <div>
               <h2>Lab Chat</h2>
               <p>Drop quick ideas or ask for feedback on a tricky circuit stage.</p>
@@ -319,6 +322,7 @@ export default function Community() {
 
         <article className="community-panel">
           <header className="panel-header">
+            <BrandMark size="xs" decorative className="panel-brand" />
             <div>
               <h2>Circuit Gallery</h2>
               <p>Share schematics, quick exports, or Arena snapshots for review.</p>
@@ -402,6 +406,7 @@ export default function Community() {
 
         <article className="community-panel">
           <header className="panel-header">
+            <BrandMark size="xs" decorative className="panel-brand" />
             <div>
               <h2>Feedback Wall</h2>
               <p>Read what builders are saying or record how CircuiTry3D helps your workflow.</p>
@@ -481,6 +486,7 @@ export default function Community() {
 
         <article className="community-panel profile-panel">
           <header className="panel-header">
+            <BrandMark size="xs" decorative className="panel-brand" />
             <div>
               <h2>Member Profiles</h2>
               <p>Capture what you're building and browse active lab partners.</p>
@@ -583,4 +589,3 @@ export default function Community() {
     </div>
   );
 }
-

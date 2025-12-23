@@ -37,6 +37,64 @@ body {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
 }
 
+.circuitry-brandmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.circuitry-brandmark__img {
+  display: block;
+  height: auto;
+  filter: drop-shadow(0 8px 22px rgba(45, 212, 191, 0.18));
+  opacity: 0.98;
+  -webkit-user-drag: none;
+}
+
+.circuitry-brandmark__label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #f8fafc;
+  text-transform: none;
+  line-height: 1;
+}
+
+.circuitry-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18em;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.22));
+}
+
+.circuitry-wordmark__circui {
+  color: var(--brand-blue);
+  text-shadow:
+    0 0 12px rgba(136, 204, 255, 0.3),
+    0 0 24px rgba(136, 204, 255, 0.22);
+}
+
+.circuitry-wordmark__try {
+  color: var(--brand-orange);
+  text-shadow:
+    0 0 12px rgba(255, 136, 68, 0.3),
+    0 0 24px rgba(255, 136, 68, 0.22);
+}
+
+.circuitry-wordmark__3d {
+  color: var(--brand-green);
+  letter-spacing: 0.18em;
+  text-shadow:
+    0 0 12px rgba(0, 255, 136, 0.26),
+    0 0 24px rgba(0, 255, 136, 0.18);
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -196,4 +254,3 @@ body {
     padding: 20px;
   }
 }
-
