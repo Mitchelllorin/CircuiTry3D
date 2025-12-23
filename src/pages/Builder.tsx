@@ -1232,9 +1232,9 @@ export default function Builder() {
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
   const leftFloatingOffset =
-    "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-left, 0px))";
+    `calc(clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px))`;
   const rightFloatingOffset =
-    "calc(clamp(16px, 4vw, 48px) + env(safe-area-inset-right, 0px))";
+    `calc(clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px))`;
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isOverlayActive =
@@ -1245,7 +1245,16 @@ export default function Builder() {
     isTroubleshootPanelOpen ||
     isSaveModalOpen ||
     isLoadModalOpen;
-  const shouldShowFloatingActions = !isWorksheetVisible && !isOverlayActive;
+  const isActiveCircuitBuildMode =
+    workspaceMode === "build" ||
+    workspaceMode === "practice" ||
+    workspaceMode === "troubleshoot";
+  const shouldShowFloatingActions =
+    isActiveCircuitBuildMode &&
+    !isWorksheetVisible &&
+    !isOverlayActive &&
+    !isLeftMenuOpen &&
+    !isRightMenuOpen;
 
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
