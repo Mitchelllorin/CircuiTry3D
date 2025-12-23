@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, CSSProperties } from "react";
+import WordMark from "../WordMark";
 import "../../styles/arena.css";
 import { Component3DViewer } from "./Component3DViewer";
 
@@ -2142,6 +2143,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               ← Back
             </button>
           )}
+          <WordMark size="md" decorative />
           <div className="arena-title-group">
             <h1>Component Arena</h1>
             <p>Test and compare components side-by-side</p>

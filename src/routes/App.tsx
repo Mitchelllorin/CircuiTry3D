@@ -9,6 +9,7 @@ import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
 import UnifiedNav from "../components/UnifiedNav";
+import BrandMark from "../components/BrandMark";
 import "../styles/layout.css";
 
 export default function App() {
@@ -30,6 +31,9 @@ export default function App() {
 function NotFound() {
   return (
     <div style={{ padding: 24, color: "var(--text-primary)", background: "var(--bg-darker)", minHeight: "100vh" }}>
+      <div style={{ marginBottom: 16 }}>
+        <BrandMark size="md" withWordmark />
+      </div>
       <h1>404</h1>
       <p>Page not found.</p>
       <Link to="/" style={{ color: "var(--brand-primary)" }}>Go Home</Link>

@@ -6,6 +6,7 @@ import { solvePracticeProblem, type SolveResult } from "../../../utils/practiceS
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
 import CircuitDiagram from "../../../components/practice/CircuitDiagram";
 import { Component3DViewer } from "../../arena/Component3DViewer";
+import WordMark from "../../WordMark";
 import "../../../styles/compact-worksheet.css";
 
 type CompactWorksheetPanelProps = {
@@ -262,8 +263,11 @@ export function CompactWorksheetPanel({
   };
 
   return (
-    <div className={`compact-worksheet-panel${isOpen ? " open" : ""}`}>
+      <div className={`compact-worksheet-panel${isOpen ? " open" : ""}`}>
       <div className="compact-worksheet-header">
+        <div className="compact-worksheet-brand" aria-hidden="true">
+          <WordMark size="sm" decorative />
+        </div>
         <button
           type="button"
           className="compact-worksheet-toggle"

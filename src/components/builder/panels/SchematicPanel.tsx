@@ -1,6 +1,7 @@
 import type { SymbolStandard } from "../../../schematic/standards";
 import { SYMBOL_STANDARD_OPTIONS } from "../../../schematic/standards";
 import { BuilderModeView } from "../../../pages/SchematicMode";
+import BrandMark from "../../BrandMark";
 
 interface SchematicPanelProps {
   isOpen: boolean;
@@ -39,6 +40,9 @@ export function SchematicPanel({
         className="builder-panel-shell builder-panel-shell--schematic"
         onClick={handleShellClick}
       >
+        <div className="builder-panel-brand" aria-hidden="true">
+          <BrandMark size="sm" decorative />
+        </div>
         <button
           type="button"
           className="builder-panel-close"

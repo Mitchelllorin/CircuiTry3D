@@ -6,6 +6,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { CircuitState, SavedCircuit } from "../../../services/circuitSerializer";
 import type { StorageResult } from "../../../services/circuitStorage";
+import BrandMark from "../../BrandMark";
 
 interface CircuitSaveModalProps {
   isOpen: boolean;
@@ -105,6 +106,9 @@ export function CircuitSaveModal({
         className="circuit-modal-content circuit-save-modal"
         onClick={(event) => event.stopPropagation()}
       >
+        <div className="circuit-modal-brand" aria-hidden="true">
+          <BrandMark size="sm" decorative />
+        </div>
         <button
           type="button"
           className="circuit-modal-close"

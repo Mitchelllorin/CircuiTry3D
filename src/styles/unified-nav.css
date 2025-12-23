@@ -18,6 +18,9 @@
   color: #f8fafc;
   text-decoration: none;
   letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .unified-nav-brand span {

@@ -21,6 +21,15 @@
   margin: 0 32px;
 }
 
+.community-brand {
+  margin-bottom: 14px;
+  opacity: 0.95;
+}
+
+.community-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+}
+
 .community-eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -93,6 +102,15 @@
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+}
+
+.panel-brand {
+  margin-top: 4px;
+  opacity: 0.92;
+}
+
+.panel-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 10px 22px rgba(45, 212, 191, 0.14));
 }
 
 .panel-header h2 {
@@ -585,4 +603,3 @@
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
 }
-

@@ -29,6 +29,29 @@
   flex-wrap: wrap;
 }
 
+.compact-worksheet-brand {
+  display: flex;
+  align-items: center;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.compact-worksheet-brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 8px 18px rgba(45, 212, 191, 0.14));
+  width: clamp(40px, 9vw, 52px);
+  height: auto;
+}
+
+.compact-worksheet-brand .circuitry-wordmark {
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  filter: drop-shadow(0 8px 18px rgba(2, 6, 23, 0.28));
+}
+
+.compact-worksheet-brand .circuitry-wordmark__3d {
+  letter-spacing: 0.14em;
+}
+
 .compact-worksheet-toggle {
   display: flex;
   align-items: center;
