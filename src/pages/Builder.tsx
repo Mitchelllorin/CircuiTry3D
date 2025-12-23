@@ -1292,7 +1292,10 @@ export default function Builder() {
     setTroubleshootCheckPending(false);
     setTroubleshootPendingCheckProblemId(null);
 
-    const solved = isTroubleshootingSolved(activeTroubleshootProblem, lastSimulation);
+    const solved = isTroubleshootingSolved(
+      activeTroubleshootProblem,
+      lastSimulation,
+    );
     if (solved) {
       setTroubleshootStatus("Solved! Current is flowing.");
       setTroubleshootSolvedIds((previous) => {
@@ -1465,34 +1468,6 @@ export default function Builder() {
         >
           <span className="mode-icon" aria-hidden="true">📝</span>
           <span className="mode-label">Practice</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
-          onClick={() => {
-            if (workspaceMode === "troubleshoot") {
-              setTroubleshootPanelOpen(true);
-              return;
-            }
-            const nextProblem =
-              activeTroubleshootProblem ?? troubleshootingProblems[0] ?? null;
-            if (nextProblem) {
-              triggerBuilderAction("load-preset", { preset: nextProblem.preset });
-            }
-            setWorkspaceMode("troubleshoot");
-            setPracticeWorkspaceMode(false);
-            setCompactWorksheetOpen(false);
-            setCircuitLocked(false);
-            setArenaPanelOpen(false);
-            setTroubleshootStatus(null);
-            setTroubleshootPanelOpen(true);
-          }}
-          aria-label="Troubleshooting mode"
-          title="Fix broken circuits and restore current flow"
-        >
-          <span className="mode-icon" aria-hidden="true">🛠️</span>
-          <span className="mode-label">Troubleshoot</span>
         </button>
         <button
           type="button"
