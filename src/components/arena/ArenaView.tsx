@@ -2349,7 +2349,60 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             {!hasShowdown && <p className="arena-empty">Select two components above to see battle stats</p>}
           </div>
 
-          <div className="arena-battle-stage">
+          <div className={`arena-battle-stage${battleState === "battling" ? " battling" : ""}${battleState === "complete" ? " battle-complete" : ""}`}>
+            {/* Battle Effects Overlay - Lightning, Sparks, Energy Waves */}
+            <div className="arena-battle-effects">
+              {/* Lightning Bolts */}
+              <div className="arena-lightning-container">
+                <svg className="arena-lightning-bolt bolt-1" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M45 5 L42 25 L48 28 L35 50 L43 52 L25 95" />
+                </svg>
+                <svg className="arena-lightning-bolt bolt-2" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M55 10 L58 30 L52 33 L65 55 L57 58 L75 90" />
+                </svg>
+                <svg className="arena-lightning-bolt bolt-3" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <path d="M50 0 L47 20 L53 22 L45 45 L52 47 L48 70 L55 72 L50 100" />
+                </svg>
+              </div>
+
+              {/* Electrical Arc along center divider */}
+              <div className="arena-electrical-arc" />
+
+              {/* Spark Particles */}
+              <div className="arena-sparks-container">
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+                <div className="arena-spark" />
+              </div>
+
+              {/* Energy Wave Pulses */}
+              <div className="arena-energy-waves">
+                <div className="arena-energy-wave" />
+                <div className="arena-energy-wave" />
+                <div className="arena-energy-wave" />
+              </div>
+
+              {/* Screen Flash */}
+              <div className="arena-battle-flash" />
+
+              {/* Electric Crackle at top and bottom */}
+              <div className="arena-electric-crackle top">
+                <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                  <path d="M30 0 L35 15 L45 10 L50 25 L55 15 L65 20 L70 0" />
+                </svg>
+              </div>
+              <div className="arena-electric-crackle bottom">
+                <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+                  <path d="M30 0 L35 15 L45 10 L50 25 L55 15 L65 20 L70 0" />
+                </svg>
+              </div>
+            </div>
+
             {renderBattlePanel("left", {
               profile: componentAProfile,
               telemetry: componentATelemetry,
