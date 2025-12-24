@@ -1802,7 +1802,7 @@ body.builder-body {
 }
 
 .builder-floating-logo .builder-logo-text {
-  font-size: clamp(56px, 12vw, 120px);
+  font-size: clamp(45px, 9.6vw, 96px);
 }
 
 .builder-floating-logo-mark .circuitry-brandmark__img {

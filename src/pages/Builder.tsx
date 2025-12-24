@@ -67,6 +67,7 @@ import {
   PRACTICE_ACTIONS,
   WIRE_LEGEND,
   HELP_ENTRIES,
+  DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 
 const HELP_SECTIONS: HelpSection[] = [
@@ -1094,12 +1095,11 @@ export default function Builder() {
   }, []);
 
   const resetLogoSettings = useCallback(() => {
-    // Reset to defaults by setting each property
-    handleLogoSettingChange("speed", 14);
-    handleLogoSettingChange("travelX", 50);
-    handleLogoSettingChange("travelY", 40);
-    handleLogoSettingChange("bounce", 22);
-    handleLogoSettingChange("opacity", 52);
+    handleLogoSettingChange("speed", DEFAULT_LOGO_SETTINGS.speed);
+    handleLogoSettingChange("travelX", DEFAULT_LOGO_SETTINGS.travelX);
+    handleLogoSettingChange("travelY", DEFAULT_LOGO_SETTINGS.travelY);
+    handleLogoSettingChange("bounce", DEFAULT_LOGO_SETTINGS.bounce);
+    handleLogoSettingChange("opacity", DEFAULT_LOGO_SETTINGS.opacity);
   }, [handleLogoSettingChange]);
 
   const handleComponentAction = useCallback(
