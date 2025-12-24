@@ -202,25 +202,28 @@ const drawResistor = ({ start, end, orientation, label, value, key, labelOffset,
 };
 
 const SeriesRectDiagram = ({ problem }: DiagramProps) => {
-  // Get labels and values for each resistor
-  const r1Data = getComponentLabelWithValue(problem, "R1");
-  const r2Data = getComponentLabelWithValue(problem, "R2");
-  const r3Data = getComponentLabelWithValue(problem, "R3");
+  // Dynamically get component data from problem (supports 2, 3, 4+ resistors)
+  const componentIds = problem.components.map(c => c.id);
+  const componentCount = componentIds.length;
   const sourceData = getComponentLabelWithValue(problem, problem.source.id);
 
+  // Get component data map
+  const componentData = new Map(
+    componentIds.map(id => [id, getComponentLabelWithValue(problem, id)])
+  );
+
   // Layout matching CircuitLogo reference: battery on left, resistors distributed around circuit
-  const leftX = 100;
-  const rightX = 500;
-  const topY = 60;
-  const bottomY = 180;
+  const leftX = 80;
+  const rightX = 520;
+  const topY = 55;
+  const bottomY = 185;
 
   // Battery on left side (vertical orientation)
-  // Battery symbol spans 60 units (-30 to +30), scaled by 0.9 = 54 units
   const batteryScale = 0.9;
-  const batteryHalfSpan = 30 * batteryScale; // 27 units
-  const batteryCenterY = (topY + bottomY) / 2; // 120
-  const batteryTopY = batteryCenterY - batteryHalfSpan; // ~93
-  const batteryBottomY = batteryCenterY + batteryHalfSpan; // ~147
+  const batteryHalfSpan = 30 * batteryScale;
+  const batteryCenterY = (topY + bottomY) / 2;
+  const batteryTopY = batteryCenterY - batteryHalfSpan;
+  const batteryBottomY = batteryCenterY + batteryHalfSpan;
 
   // Corner nodes
   const topLeft: Point = { x: leftX, y: topY };
@@ -228,17 +231,159 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
   const bottomRight: Point = { x: rightX, y: bottomY };
   const bottomLeft: Point = { x: leftX, y: bottomY };
 
-  // R1 on top (horizontal)
-  const r1Start: Point = { x: leftX + 40, y: topY };
-  const r1End: Point = { x: rightX - 40, y: topY };
+  // Distribute resistors around the circuit based on count
+  // 2 components: R1 top, R2 bottom
+  // 3 components: R1 top, R2 right side, R3 bottom
+  // 4 components: R1 top, R2 right top, R3 right bottom, R4 bottom
+  // 5+ components: distributed evenly
 
-  // R2 on right side (vertical)
-  const r2Start: Point = { x: rightX, y: topY + 30 };
-  const r2End: Point = { x: rightX, y: bottomY - 30 };
+  const renderResistors = () => {
+    const elements: JSX.Element[] = [];
 
-  // R3 on bottom (horizontal)
-  const r3Start: Point = { x: rightX - 40, y: bottomY };
-  const r3End: Point = { x: leftX + 40, y: bottomY };
+    if (componentCount === 2) {
+      // Two resistors: top and bottom
+      const r1Data = componentData.get(componentIds[0]) ?? { label: componentIds[0], value: null };
+      const r2Data = componentData.get(componentIds[1]) ?? { label: componentIds[1], value: null };
+
+      // R1 on top (horizontal)
+      const r1Start: Point = { x: leftX + 60, y: topY };
+      const r1End: Point = { x: rightX - 60, y: topY };
+      elements.push(
+        <g key="series-r1-group">
+          <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          {drawResistor({ key: "series-R1", start: r1Start, end: r1End, label: r1Data.label, value: r1Data.value, orientation: "horizontal" })}
+          <line x1={r1End.x} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        </g>
+      );
+
+      // R2 on bottom (horizontal)
+      const r2Start: Point = { x: rightX - 60, y: bottomY };
+      const r2End: Point = { x: leftX + 60, y: bottomY };
+      elements.push(
+        <g key="series-r2-group">
+          <line x1={rightX} y1={bottomY} x2={r2Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          {drawResistor({ key: "series-R2", start: r2Start, end: r2End, label: r2Data.label, value: r2Data.value, orientation: "horizontal", labelOffset: 22 })}
+          <line x1={r2End.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        </g>
+      );
+
+      // Right side wire (connecting top to bottom)
+      elements.push(
+        <line key="series-right-wire" x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      );
+    } else if (componentCount === 3) {
+      // Three resistors: top, right side, bottom
+      const r1Data = componentData.get(componentIds[0]) ?? { label: componentIds[0], value: null };
+      const r2Data = componentData.get(componentIds[1]) ?? { label: componentIds[1], value: null };
+      const r3Data = componentData.get(componentIds[2]) ?? { label: componentIds[2], value: null };
+
+      // R1 on top (horizontal)
+      const r1Start: Point = { x: leftX + 40, y: topY };
+      const r1End: Point = { x: rightX - 40, y: topY };
+      elements.push(
+        <g key="series-r1-group">
+          <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          {drawResistor({ key: "series-R1", start: r1Start, end: r1End, label: r1Data.label, value: r1Data.value, orientation: "horizontal" })}
+          <line x1={r1End.x} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        </g>
+      );
+
+      // R2 on right side (vertical)
+      const r2Start: Point = { x: rightX, y: topY + 30 };
+      const r2End: Point = { x: rightX, y: bottomY - 30 };
+      elements.push(
+        <g key="series-r2-group">
+          <line x1={rightX} y1={topY} x2={rightX} y2={r2Start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          {drawResistor({ key: "series-R2", start: r2Start, end: r2End, label: r2Data.label, value: r2Data.value, orientation: "vertical", labelSide: "right" })}
+          <line x1={rightX} y1={r2End.y} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        </g>
+      );
+
+      // R3 on bottom (horizontal)
+      const r3Start: Point = { x: rightX - 40, y: bottomY };
+      const r3End: Point = { x: leftX + 40, y: bottomY };
+      elements.push(
+        <g key="series-r3-group">
+          <line x1={rightX} y1={bottomY} x2={r3Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          {drawResistor({ key: "series-R3", start: r3Start, end: r3End, label: r3Data.label, value: r3Data.value, orientation: "horizontal", labelOffset: 22 })}
+          <line x1={r3End.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        </g>
+      );
+    } else {
+      // 4+ resistors: distribute around the rectangle
+      // Top row: first half, Right side: middle, Bottom row: second half
+      const topCount = Math.ceil(componentCount / 3);
+      const bottomCount = Math.ceil((componentCount - topCount) / 2);
+      const rightCount = componentCount - topCount - bottomCount;
+
+      const topIds = componentIds.slice(0, topCount);
+      const rightIds = componentIds.slice(topCount, topCount + rightCount);
+      const bottomIds = componentIds.slice(topCount + rightCount);
+
+      // Top row resistors (horizontal)
+      const topWidth = rightX - leftX - 80;
+      const topSpacing = topWidth / topCount;
+      topIds.forEach((id, index) => {
+        const data = componentData.get(id) ?? { label: id, value: null };
+        const startX = leftX + 40 + index * topSpacing;
+        const endX = leftX + 40 + (index + 1) * topSpacing - 10;
+        const start: Point = { x: startX, y: topY };
+        const end: Point = { x: endX, y: topY };
+        elements.push(
+          <g key={`series-top-${id}-group`}>
+            {index === 0 && <line x1={leftX} y1={topY} x2={start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />}
+            {drawResistor({ key: `series-top-${id}`, start, end, label: data.label, value: data.value, orientation: "horizontal" })}
+            {index === topIds.length - 1 && <line x1={end.x} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />}
+          </g>
+        );
+      });
+
+      // Right side resistors (vertical)
+      if (rightIds.length > 0) {
+        const rightHeight = bottomY - topY - 60;
+        const rightSpacing = rightHeight / rightIds.length;
+        rightIds.forEach((id, index) => {
+          const data = componentData.get(id) ?? { label: id, value: null };
+          const startY = topY + 30 + index * rightSpacing;
+          const endY = topY + 30 + (index + 1) * rightSpacing - 10;
+          const start: Point = { x: rightX, y: startY };
+          const end: Point = { x: rightX, y: endY };
+          elements.push(
+            <g key={`series-right-${id}-group`}>
+              {index === 0 && <line x1={rightX} y1={topY} x2={rightX} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />}
+              {drawResistor({ key: `series-right-${id}`, start, end, label: data.label, value: data.value, orientation: "vertical", labelSide: "right" })}
+              {index === rightIds.length - 1 && <line x1={rightX} y1={end.y} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />}
+            </g>
+          );
+        });
+      } else {
+        // Just a wire on the right side
+        elements.push(
+          <line key="series-right-wire" x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        );
+      }
+
+      // Bottom row resistors (horizontal, reversed direction)
+      const bottomWidth = rightX - leftX - 80;
+      const bottomSpacing = bottomWidth / bottomIds.length;
+      bottomIds.forEach((id, index) => {
+        const data = componentData.get(id) ?? { label: id, value: null };
+        const startX = rightX - 40 - index * bottomSpacing;
+        const endX = rightX - 40 - (index + 1) * bottomSpacing + 10;
+        const start: Point = { x: startX, y: bottomY };
+        const end: Point = { x: endX, y: bottomY };
+        elements.push(
+          <g key={`series-bottom-${id}-group`}>
+            {index === 0 && <line x1={rightX} y1={bottomY} x2={start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />}
+            {drawResistor({ key: `series-bottom-${id}`, start, end, label: data.label, value: data.value, orientation: "horizontal", labelOffset: 22 })}
+            {index === bottomIds.length - 1 && <line x1={end.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />}
+          </g>
+        );
+      });
+    }
+
+    return elements;
+  };
 
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Series circuit diagram" preserveAspectRatio="xMidYMid meet">
@@ -258,43 +403,8 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
       </g>
       <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-      {/* Top run with R1 */}
-      <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {drawResistor({
-        key: "series-R1",
-        start: r1Start,
-        end: r1End,
-        label: r1Data.label,
-        value: r1Data.value,
-        orientation: "horizontal",
-      })}
-      <line x1={r1End.x} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-
-      {/* Right side with R2 (vertical) */}
-      <line x1={rightX} y1={topY} x2={rightX} y2={r2Start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {drawResistor({
-        key: "series-R2",
-        start: r2Start,
-        end: r2End,
-        label: r2Data.label,
-        value: r2Data.value,
-        orientation: "vertical",
-        labelSide: "right",
-      })}
-      <line x1={rightX} y1={r2End.y} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-
-      {/* Bottom run with R3 */}
-      <line x1={rightX} y1={bottomY} x2={r3Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {drawResistor({
-        key: "series-R3",
-        start: r3Start,
-        end: r3End,
-        label: r3Data.label,
-        value: r3Data.value,
-        orientation: "horizontal",
-        labelOffset: 22,
-      })}
-      <line x1={r3End.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      {/* Dynamically render resistors */}
+      {renderResistors()}
 
       {/* Corner nodes */}
       {drawNode(topLeft, "series-node-tl")}
@@ -316,32 +426,34 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
 };
 
 const ParallelRectDiagram = ({ problem }: DiagramProps) => {
-  const branchIds = ["R1", "R2", "R3"] as const;
+  // Dynamically get component IDs from the problem (supports 2, 3, 4+ resistors)
+  const branchIds = problem.components.map(c => c.id);
+  const branchCount = branchIds.length;
 
-  // Get labels and values for each resistor
-  const componentData: Record<(typeof branchIds)[number], { label: string; value: string | null }> = {
-    R1: getComponentLabelWithValue(problem, "R1"),
-    R2: getComponentLabelWithValue(problem, "R2"),
-    R3: getComponentLabelWithValue(problem, "R3"),
-  };
+  // Get labels and values for each resistor dynamically
+  const componentData = new Map(
+    branchIds.map(id => [id, getComponentLabelWithValue(problem, id)])
+  );
   const sourceData = getComponentLabelWithValue(problem, problem.source.id);
 
   // Layout with battery on left side (vertical orientation)
-  const leftX = 100;
-  const rightX = 520;
-  const topY = 60;
-  const bottomY = 180;
+  // Adjust layout based on number of branches
+  const leftX = 80;
+  const rightX = branchCount <= 3 ? 520 : 560;
+  const topY = 55;
+  const bottomY = 185;
 
   // Battery on left side (vertical)
-  // Battery symbol spans 60 units (-30 to +30), scaled by 0.85 = 51 units
   const batteryScale = 0.85;
-  const batteryHalfSpan = 30 * batteryScale; // 25.5 units
-  const batteryCenterY = (topY + bottomY) / 2; // 120
+  const batteryHalfSpan = 30 * batteryScale;
+  const batteryCenterY = (topY + bottomY) / 2;
   const batteryTopY = batteryCenterY - batteryHalfSpan;
   const batteryBottomY = batteryCenterY + batteryHalfSpan;
 
-  const branchStart = leftX + 100;
-  const branchSpacing = 100;
+  // Calculate branch spacing based on count
+  const totalBranchWidth = rightX - leftX - 100;
+  const branchSpacing = totalBranchWidth / (branchCount + 1);
+  const branchStart = leftX + branchSpacing + 50;
   const branchXs = branchIds.map((_, index) => branchStart + index * branchSpacing);
 
   const branchResTop = topY + 26;
@@ -374,9 +486,11 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
 
       {branchXs.map((x, index) => {
         const id = branchIds[index];
-        const data = componentData[id];
+        const data = componentData.get(id) ?? { label: id, value: null };
         const start: Point = { x, y: branchResTop };
         const end: Point = { x, y: branchResBottom };
+        // Alternate label sides for clarity when branches are close
+        const labelSide = index % 2 === 0 ? "left" : "right";
         return (
           <g key={`parallel-branch-${id}`}>
             <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -387,6 +501,7 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
               label: data.label,
               value: data.value,
               orientation: "vertical",
+              labelSide: branchCount > 3 ? labelSide : "right",
             })}
             <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {drawNode({ x, y: topY }, `parallel-node-top-${id}`)}
@@ -414,45 +529,65 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
 };
 
 const CombinationRectDiagram = ({ problem }: DiagramProps) => {
-  // Get labels and values for each resistor
-  const r1Data = getComponentLabelWithValue(problem, "R1");
-  const r2Data = getComponentLabelWithValue(problem, "R2");
-  const r3Data = getComponentLabelWithValue(problem, "R3");
-  const r4Data = getComponentLabelWithValue(problem, "R4");
+  // Dynamically get component data from the problem
+  const componentIds = problem.components.map(c => c.id);
+  const componentCount = componentIds.length;
   const sourceData = getComponentLabelWithValue(problem, problem.source.id);
 
-  const branchOrder = ["R2", "R3"] as const;
-  const branchData: Record<(typeof branchOrder)[number], { label: string; value: string | null }> = {
-    R2: r2Data,
-    R3: r3Data,
-  };
+  // Get component data map
+  const componentData = new Map(
+    componentIds.map(id => [id, getComponentLabelWithValue(problem, id)])
+  );
 
-  // Layout with battery on left side (vertical orientation)
-  const leftX = 100;
-  const topY = 60;
-  const bottomY = 180;
-  const branchX = 440;
+  // Analyze network structure to determine layout
+  // Default: R1 series top, R2||R3 parallel, R4 series bottom (standard combo)
+  // 3-component: R1 series, R2||R3 parallel (no bottom series)
+  // 4-component: Full standard layout
+  const hasBottomSeries = componentCount >= 4;
+
+  // Layout dimensions
+  const leftX = 80;
+  const topY = 55;
+  const bottomY = 185;
+  const rightX = 540;
 
   // Battery on left side (vertical)
-  // Battery symbol spans 60 units (-30 to +30), scaled by 0.85 = 51 units
   const batteryScale = 0.85;
-  const batteryHalfSpan = 30 * batteryScale; // 25.5 units
-  const batteryCenterY = (topY + bottomY) / 2; // 120
+  const batteryHalfSpan = 30 * batteryScale;
+  const batteryCenterY = (topY + bottomY) / 2;
   const batteryTopY = batteryCenterY - batteryHalfSpan;
   const batteryBottomY = batteryCenterY + batteryHalfSpan;
 
+  // Parallel branch center position
+  const branchCenterX = hasBottomSeries ? 420 : 460;
+
+  // Identify series vs parallel components based on problem network
+  // Standard layout: first component is series (top), middle components are parallel, last is series (bottom)
+  const seriesTopId = componentIds[0]; // R1
+  const seriesBottomId = hasBottomSeries ? componentIds[componentCount - 1] : null; // R4 if exists
+  const parallelIds = hasBottomSeries
+    ? componentIds.slice(1, -1) // R2, R3 (middle)
+    : componentIds.slice(1);    // All except first
+
+  const seriesTopData = componentData.get(seriesTopId) ?? { label: seriesTopId, value: null };
+  const seriesBottomData = seriesBottomId ? (componentData.get(seriesBottomId) ?? { label: seriesBottomId, value: null }) : null;
+
+  // Series resistor positions (horizontal)
   const r1Start: Point = { x: leftX + 50, y: topY };
-  const r1End: Point = { x: branchX - 60, y: topY };
+  const r1End: Point = { x: branchCenterX - 80, y: topY };
 
-  const branchOffsets: Record<(typeof branchOrder)[number], number> = {
-    R2: -36,
-    R3: 36,
-  };
-  const branchResTop = topY + 28;
-  const branchResBottom = bottomY - 32;
+  const r4Start: Point = hasBottomSeries ? { x: leftX + 50, y: bottomY } : { x: 0, y: 0 };
+  const r4End: Point = hasBottomSeries ? { x: branchCenterX - 80, y: bottomY } : { x: 0, y: 0 };
 
-  const r4Start: Point = { x: leftX + 50, y: bottomY };
-  const r4End: Point = { x: branchX - 60, y: bottomY };
+  // Parallel branch positions (vertical)
+  const parallelCount = parallelIds.length;
+  const branchSpacing = Math.min(72, 140 / parallelCount);
+  const totalBranchWidth = branchSpacing * (parallelCount - 1);
+  const branchStartX = branchCenterX - totalBranchWidth / 2;
+  const branchXs = parallelIds.map((_, index) => branchStartX + index * branchSpacing);
+
+  const branchResTop = topY + 26;
+  const branchResBottom = bottomY - 28;
 
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Combination circuit diagram" preserveAspectRatio="xMidYMid meet">
@@ -472,64 +607,83 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
       </g>
       <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-      {/* Top run with R1 */}
+      {/* Top run with series R1 */}
       <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
       {drawResistor({
-        key: "combo-R1",
+        key: "combo-series-top",
         start: r1Start,
         end: r1End,
-        label: r1Data.label,
-        value: r1Data.value,
+        label: seriesTopData.label,
+        value: seriesTopData.value,
         orientation: "horizontal",
       })}
-      <line x1={r1End.x} y1={topY} x2={branchX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={r1End.x} y1={topY} x2={branchCenterX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-      {/* Parallel branches */}
-      {branchOrder.map((id) => {
-        const offset = branchOffsets[id];
-        const data = branchData[id];
-        const branchXPos = branchX + offset;
-        const start: Point = { x: branchXPos, y: branchResTop };
-        const end: Point = { x: branchXPos, y: branchResBottom };
+      {/* Parallel branches section */}
+      {branchXs.map((x, index) => {
+        const id = parallelIds[index];
+        const data = componentData.get(id) ?? { label: id, value: null };
+        const start: Point = { x, y: branchResTop };
+        const end: Point = { x, y: branchResBottom };
+        // Alternate label sides for better readability
+        const labelSide = index === 0 ? "left" : "right";
         return (
-          <g key={`combo-branch-${id}`}>
-            <line x1={branchX} y1={topY} x2={branchXPos} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            <line x1={branchXPos} y1={topY} x2={branchXPos} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          <g key={`combo-parallel-${id}`}>
+            {/* Wire from top rail to branch */}
+            <line x1={branchCenterX} y1={topY} x2={x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {/* Parallel resistor */}
             {drawResistor({
-              key: `combo-resistor-${id}`,
+              key: `combo-parallel-resistor-${id}`,
               start,
               end,
               label: data.label,
               value: data.value,
               orientation: "vertical",
-              labelSide: id === "R2" ? "left" : "right",
+              labelSide,
             })}
-            <line x1={branchXPos} y1={end.y} x2={branchXPos} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            <line x1={branchXPos} y1={bottomY} x2={branchX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            {drawNode({ x: branchXPos, y: topY }, `combo-node-top-${id}`)}
-            {drawNode({ x: branchXPos, y: bottomY }, `combo-node-bottom-${id}`)}
+            {/* Wire from branch to bottom rail */}
+            <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            <line x1={x} y1={bottomY} x2={branchCenterX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {/* Junction nodes */}
+            {drawNode({ x, y: topY }, `combo-parallel-node-top-${id}`)}
+            {drawNode({ x, y: bottomY }, `combo-parallel-node-bottom-${id}`)}
           </g>
         );
       })}
 
-      {/* Bottom run with R4 */}
-      <line x1={branchX} y1={bottomY} x2={r4End.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {drawResistor({
-        key: "combo-R4",
-        start: r4Start,
-        end: r4End,
-        label: r4Data.label,
-        value: r4Data.value,
-        orientation: "horizontal",
-        labelOffset: 22,
-      })}
-      <line x1={r4Start.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      {/* Bottom run with series R4 (if present) */}
+      {hasBottomSeries && seriesBottomData ? (
+        <>
+          <line x1={branchCenterX} y1={bottomY} x2={r4End.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          {drawResistor({
+            key: "combo-series-bottom",
+            start: r4Start,
+            end: r4End,
+            label: seriesBottomData.label,
+            value: seriesBottomData.value,
+            orientation: "horizontal",
+            labelOffset: 22,
+          })}
+          <line x1={r4Start.x} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        </>
+      ) : (
+        /* Direct connection from parallel section back to source */
+        <line x1={branchCenterX} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      )}
+
+      {/* Right side closing wire (for proper circuit completion) */}
+      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={branchCenterX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={branchCenterX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Corner nodes */}
       {drawNode({ x: leftX, y: topY }, "combo-node-source-top")}
       {drawNode({ x: leftX, y: bottomY }, "combo-node-source-bottom")}
-      {drawNode({ x: branchX, y: topY }, "combo-node-branch-top")}
-      {drawNode({ x: branchX, y: bottomY }, "combo-node-branch-bottom")}
+      {drawNode({ x: branchCenterX, y: topY }, "combo-node-branch-top")}
+      {drawNode({ x: branchCenterX, y: bottomY }, "combo-node-branch-bottom")}
+      {drawNode({ x: rightX, y: topY }, "combo-node-right-top")}
+      {drawNode({ x: rightX, y: bottomY }, "combo-node-right-bottom")}
 
       {/* Battery label on left, outside the circuit */}
       <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
@@ -540,6 +694,11 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
           {sourceData.value}
         </text>
       )}
+
+      {/* Parallel section indicator bracket */}
+      <text x={branchCenterX + 60} y={(topY + bottomY) / 2} fill={VALUE_COLOR} fontSize={10} textAnchor="start" opacity={0.7}>
+        {"‖"}
+      </text>
     </svg>
   );
 };
