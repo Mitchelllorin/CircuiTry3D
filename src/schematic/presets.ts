@@ -92,23 +92,77 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
     pushWire(batteryEnd, topLeft);
 
     const count = Math.max(problem.components.length, 1);
-    const segmentWidth = (topRight.x - topLeft.x) / count;
-    const margin = Math.min(segmentWidth * 0.2, 0.5);
 
-    let previous = topLeft;
-    problem.components.forEach((component, index) => {
-      const startX = topLeft.x + index * segmentWidth + margin;
-      const endX = topLeft.x + (index + 1) * segmentWidth - margin;
-      const resistorStart = point(startX, top);
-      const resistorEnd = point(endX, top);
-      pushWire(previous, resistorStart);
-      pushResistor(labelFor(component.id), resistorStart, resistorEnd);
-      previous = resistorEnd;
-    });
+    if (count === 2) {
+      // Two resistors: one on top, one on bottom
+      const topMargin = 0.8;
+      const component1 = problem.components[0];
+      const component2 = problem.components[1];
 
-    pushWire(previous, topRight);
-    pushWire(topRight, bottomRight);
-    pushWire(bottomRight, start);
+      // R1 on top
+      const r1Start = point(topLeft.x + topMargin, top);
+      const r1End = point(topRight.x - topMargin, top);
+      pushWire(topLeft, r1Start);
+      pushResistor(labelFor(component1.id), r1Start, r1End);
+      pushWire(r1End, topRight);
+
+      // Right side wire
+      pushWire(topRight, bottomRight);
+
+      // R2 on bottom
+      const r2Start = point(bottomRight.x - topMargin, bottom);
+      const r2End = point(start.x + topMargin, bottom);
+      pushWire(bottomRight, r2Start);
+      pushResistor(labelFor(component2.id), r2Start, r2End);
+      pushWire(r2End, start);
+    } else if (count === 3) {
+      // Three resistors: top, right side, bottom
+      const topMargin = 0.8;
+      const sideMargin = 0.6;
+      const component1 = problem.components[0];
+      const component2 = problem.components[1];
+      const component3 = problem.components[2];
+
+      // R1 on top
+      const r1Start = point(topLeft.x + topMargin, top);
+      const r1End = point(topRight.x - topMargin, top);
+      pushWire(topLeft, r1Start);
+      pushResistor(labelFor(component1.id), r1Start, r1End);
+      pushWire(r1End, topRight);
+
+      // R2 on right side
+      const r2Start = point(right, top - sideMargin);
+      const r2End = point(right, bottom + sideMargin);
+      pushWire(topRight, r2Start);
+      pushResistor(labelFor(component2.id), r2Start, r2End);
+      pushWire(r2End, bottomRight);
+
+      // R3 on bottom
+      const r3Start = point(bottomRight.x - topMargin, bottom);
+      const r3End = point(start.x + topMargin, bottom);
+      pushWire(bottomRight, r3Start);
+      pushResistor(labelFor(component3.id), r3Start, r3End);
+      pushWire(r3End, start);
+    } else {
+      // 4+ resistors: distribute evenly along top rail
+      const segmentWidth = (topRight.x - topLeft.x) / count;
+      const margin = Math.min(segmentWidth * 0.2, 0.5);
+
+      let previous = topLeft;
+      problem.components.forEach((component, index) => {
+        const startX = topLeft.x + index * segmentWidth + margin;
+        const endX = topLeft.x + (index + 1) * segmentWidth - margin;
+        const resistorStart = point(startX, top);
+        const resistorEnd = point(endX, top);
+        pushWire(previous, resistorStart);
+        pushResistor(labelFor(component.id), resistorStart, resistorEnd);
+        previous = resistorEnd;
+      });
+
+      pushWire(previous, topRight);
+      pushWire(topRight, bottomRight);
+      pushWire(bottomRight, start);
+    }
   };
 
   const buildParallel = () => {
@@ -149,36 +203,88 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
   };
 
   const buildCombination = () => {
-    const start = point(-4.2, -2.3);
-    const batteryStart = point(-4.2, -1.5);
-    const batteryEnd = point(-4.2, 1.5);
-    const topLeft = point(-4.2, 2.3);
-    const topMid = point(-1.2, 2.3);
-    const seriesTop = point(0.4, 2.3);
-    const branchTop = point(1.4, 2.3);
-    const branchRightTop = point(3.2, 2.3);
-    const branchBottom = point(1.4, -0.3);
-    const branchRightBottom = point(3.2, -0.3);
-    const dropNode = point(1.4, -2.3);
-    const bottomLeft = point(-2.0, -2.3);
+    const componentCount = problem.components.length;
+    const hasBottomSeries = componentCount >= 4;
+
+    // Identify series vs parallel components
+    const seriesTopId = problem.components[0]?.id ?? "R1";
+    const seriesBottomId = hasBottomSeries ? problem.components[componentCount - 1]?.id : null;
+    const parallelIds = hasBottomSeries
+      ? problem.components.slice(1, -1).map(c => c.id)
+      : problem.components.slice(1).map(c => c.id);
+
+    const parallelCount = parallelIds.length;
+
+    // Layout dimensions
+    const left = -4.2;
+    const right = 3.8;
+    const top = 2.3;
+    const bottom = -2.3;
+
+    const start = point(left, bottom);
+    const batteryStart = point(left, bottom + 0.8);
+    const batteryEnd = point(left, top - 0.8);
+    const topLeft = point(left, top);
 
     pushWire(start, batteryStart);
     pushBattery(batteryStart, batteryEnd, sourceLabel);
     pushWire(batteryEnd, topLeft);
-    pushWire(topLeft, topMid);
 
-    pushResistor(labelFor("R1"), topMid, seriesTop);
-    pushWire(seriesTop, branchTop);
+    // Series resistor on top (R1)
+    const seriesTopStart = point(-2.4, top);
+    const seriesTopEnd = point(-0.4, top);
+    pushWire(topLeft, seriesTopStart);
+    pushResistor(labelFor(seriesTopId), seriesTopStart, seriesTopEnd);
 
-    pushResistor(labelFor("R2"), branchTop, branchBottom);
-    pushWire(branchTop, branchRightTop);
+    // Parallel branches
+    const branchCenterX = 1.4;
+    const branchSpacing = Math.min(1.8, 3.6 / parallelCount);
+    const totalWidth = branchSpacing * (parallelCount - 1);
+    const branchStartX = branchCenterX - totalWidth / 2;
 
-    pushResistor(labelFor("R3"), branchRightTop, branchRightBottom);
-    pushWire(branchRightBottom, branchBottom);
-    pushWire(branchBottom, dropNode);
+    const branchTop = point(branchCenterX, top);
+    const branchBottom = point(branchCenterX, hasBottomSeries ? -0.3 : bottom);
 
-    pushResistor(labelFor("R4"), dropNode, bottomLeft);
-    pushWire(bottomLeft, start);
+    pushWire(seriesTopEnd, branchTop);
+
+    // Create parallel branches
+    parallelIds.forEach((id, index) => {
+      const x = branchStartX + index * branchSpacing;
+      const branchTopPt = point(x, top);
+      const branchBottomPt = point(x, hasBottomSeries ? -0.3 : bottom);
+      const resistorTop = point(x, top - 0.6);
+      const resistorBottom = point(x, (hasBottomSeries ? -0.3 : bottom) + 0.6);
+
+      pushWire(branchTop, branchTopPt);
+      pushWire(branchTopPt, resistorTop);
+      pushResistor(labelFor(id), resistorTop, resistorBottom);
+      pushWire(resistorBottom, branchBottomPt);
+      pushWire(branchBottomPt, branchBottom);
+    });
+
+    // Close the circuit
+    if (hasBottomSeries && seriesBottomId) {
+      // Bottom series resistor (R4)
+      const dropNode = point(branchCenterX, bottom);
+      const seriesBottomStart = point(-0.4, bottom);
+      const seriesBottomEnd = point(-2.4, bottom);
+
+      pushWire(branchBottom, dropNode);
+      pushResistor(labelFor(seriesBottomId), dropNode, seriesBottomStart);
+      pushWire(seriesBottomStart, seriesBottomEnd);
+      pushWire(seriesBottomEnd, start);
+    } else {
+      // Direct return wire
+      pushWire(branchBottom, point(branchCenterX, bottom));
+      pushWire(point(branchCenterX, bottom), start);
+    }
+
+    // Right side closing wire
+    const rightTop = point(right, top);
+    const rightBottom = point(right, bottom);
+    pushWire(branchTop, rightTop);
+    pushWire(rightTop, rightBottom);
+    pushWire(rightBottom, point(branchCenterX, bottom));
   };
 
   const presetKey = problem.presetHint ?? problem.topology;
