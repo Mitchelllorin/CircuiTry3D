@@ -19,6 +19,7 @@ export type BuilderInvokeAction =
   | "show-shortcuts"
   | "show-about"
   | "open-arena"
+  | "open-logo-settings"
   | "set-tool"
   | "undo"
   | "redo"
@@ -81,7 +82,7 @@ export type ComponentAction = {
   icon: string;
   label: string;
   action: "component" | "junction";
-  builderType?: "battery" | "resistor" | "capacitor" | "inductor" | "lamp" | "diode" | "led" | "bjt" | "mosfet" | "switch" | "fuse" | "potentiometer" | "ground";
+  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "led" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground";
   description?: string;
 };
 

@@ -1,5 +1,5 @@
 import { DEFAULT_SYMBOL_STANDARD, STANDARD_PROFILES, SymbolStandard } from "./standards";
-import { GroundElement, Orientation, SchematicElement, ThreeTerminalElement, TwoTerminalElement, Vec2, WireElement } from "./types";
+import { GroundElement, MultiTerminalElement, Orientation, SchematicElement, ThreeTerminalElement, TwoTerminalElement, Vec2, WireElement } from "./types";
 
 const DEFAULT_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
 
@@ -38,13 +38,25 @@ const LABEL_COLOR = "#111111";
 
 const COMPONENT_TYPE_COLORS: Record<string, string> = {
   battery: "#ef4444",    // Red for power source
+  ac_source: "#f97316",  // Orange for AC power
   resistor: "#f59e0b",   // Amber for resistance
   capacitor: "#3b82f6",  // Blue for capacitance
   inductor: "#8b5cf6",   // Purple for inductance
   lamp: "#fbbf24",       // Yellow for light
-  switch: "#10b981",     // Green for switching
+  led: "#22c55e",        // Green for LED
+  switch: "#10b981",     // Emerald for switching
   diode: "#ec4899",      // Pink for one-way flow
+  fuse: "#f43f5e",       // Rose for protection
+  motor: "#06b6d4",      // Cyan for motors
+  speaker: "#a855f7",    // Purple for audio
   bjt: "#14b8a6",        // Teal for transistors
+  "bjt-npn": "#0d9488",  // Darker teal for NPN
+  "bjt-pnp": "#2dd4bf",  // Lighter teal for PNP
+  darlington: "#115e59", // Deep teal for Darlington
+  mosfet: "#059669",     // Emerald for MOSFET (voltage-controlled)
+  potentiometer: "#eab308", // Yellow for variable resistors
+  opamp: "#6366f1",      // Indigo for op-amps
+  transformer: "#84cc16", // Lime for transformers
   ground: "#6b7280",     // Gray for ground
   wire: "#111111",       // Black for wires
 };
@@ -1073,6 +1085,761 @@ const buildBJTElement = (three: any, element: ThreeTerminalElement, options: Bui
   return { group, terminals: [element.collector, element.base, element.emitter] };
 };
 
+// NPN Transistor builder - TO-92 package style with distinct visual
+const buildBJTNPNElement = (three: any, element: ThreeTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `bjt-npn-${element.id}`;
+
+  // TO-92 package colors
+  const bodyColor = 0x1a1a1a; // Dark package body
+  const leadColor = 0xc0c0c0; // Silver leads
+  const dotColor = 0xffffff; // White pin 1 indicator
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: bodyColor, metalness: 0.1, roughness: 0.8 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: leadColor, metalness: 0.6, roughness: 0.3 });
+  const arrowMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, arrowMaterial, options, COLOR_HELPERS.stroke);
+
+  const center = {
+    x: element.base.x,
+    z: element.base.z
+  };
+
+  // TO-92 body - half cylinder shape
+  const bodyRadius = 0.28;
+  const bodyHeight = 0.18;
+  const bodyGeom = new three.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 32, 1, false, 0, Math.PI);
+  const body = new three.Mesh(bodyGeom, bodyMaterial);
+  body.position.set(center.x, COMPONENT_HEIGHT + 0.05, center.z);
+  body.rotation.x = Math.PI / 2;
+  group.add(body);
+
+  // Flat face on top
+  const flatGeom = new three.BoxGeometry(bodyRadius * 2, bodyHeight, 0.02);
+  const flat = new three.Mesh(flatGeom, bodyMaterial);
+  flat.position.set(center.x, COMPONENT_HEIGHT + 0.05, center.z - bodyRadius * 0.5);
+  group.add(flat);
+
+  // Pin 1 indicator dot (white)
+  if (!options.preview) {
+    const dotGeom = new three.SphereGeometry(0.04, 12, 12);
+    const dotMat = new three.MeshStandardMaterial({ color: dotColor });
+    const dot = new three.Mesh(dotGeom, dotMat);
+    dot.position.set(center.x - bodyRadius * 0.5, COMPONENT_HEIGHT + 0.15, center.z);
+    group.add(dot);
+  }
+
+  const wireRadius = 0.035;
+  const baseLead = cylinderBetween(
+    three,
+    toVec3(three, element.base, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const collectorLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.collector, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const emitterLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.emitter, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (baseLead) group.add(baseLead);
+  if (collectorLead) group.add(collectorLead);
+  if (emitterLead) group.add(emitterLead);
+
+  // NPN arrow pointing outward from emitter
+  const arrowDir = new three.Vector3(
+    element.emitter.x - center.x,
+    0,
+    element.emitter.z - center.z
+  ).normalize();
+
+  const arrowLength = 0.12;
+  const arrowCone = new three.ConeGeometry(0.06, arrowLength, 8);
+  const arrow = new three.Mesh(arrowCone, arrowMaterial);
+
+  const arrowPos = new three.Vector3(
+    center.x + arrowDir.x * bodyRadius * 0.6,
+    COMPONENT_HEIGHT,
+    center.z + arrowDir.z * bodyRadius * 0.6
+  );
+  arrow.position.copy(arrowPos);
+
+  const angle = Math.atan2(arrowDir.z, arrowDir.x);
+  arrow.rotation.z = -Math.PI / 2 - angle;
+  group.add(arrow);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "Q", LABEL_COLOR, options, "bjt-npn");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.collector, element.base, element.emitter] };
+};
+
+// PNP Transistor builder - TO-92 package with red indicator
+const buildBJTPNPElement = (three: any, element: ThreeTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `bjt-pnp-${element.id}`;
+
+  // TO-92 package colors for PNP
+  const bodyColor = 0x1a1a1a; // Dark package body
+  const leadColor = 0xc0c0c0; // Silver leads
+  const dotColor = 0xff4444; // Red pin 1 indicator to distinguish from NPN
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: bodyColor, metalness: 0.1, roughness: 0.8 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: leadColor, metalness: 0.6, roughness: 0.3 });
+  const arrowMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, arrowMaterial, options, COLOR_HELPERS.stroke);
+
+  const center = {
+    x: element.base.x,
+    z: element.base.z
+  };
+
+  // TO-92 body - half cylinder shape
+  const bodyRadius = 0.28;
+  const bodyHeight = 0.18;
+  const bodyGeom = new three.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 32, 1, false, 0, Math.PI);
+  const body = new three.Mesh(bodyGeom, bodyMaterial);
+  body.position.set(center.x, COMPONENT_HEIGHT + 0.05, center.z);
+  body.rotation.x = Math.PI / 2;
+  group.add(body);
+
+  // Flat face on top
+  const flatGeom = new three.BoxGeometry(bodyRadius * 2, bodyHeight, 0.02);
+  const flat = new three.Mesh(flatGeom, bodyMaterial);
+  flat.position.set(center.x, COMPONENT_HEIGHT + 0.05, center.z - bodyRadius * 0.5);
+  group.add(flat);
+
+  // Pin 1 indicator dot (red for PNP)
+  if (!options.preview) {
+    const dotGeom = new three.SphereGeometry(0.04, 12, 12);
+    const dotMat = new three.MeshStandardMaterial({ color: dotColor });
+    const dot = new three.Mesh(dotGeom, dotMat);
+    dot.position.set(center.x - bodyRadius * 0.5, COMPONENT_HEIGHT + 0.15, center.z);
+    group.add(dot);
+  }
+
+  const wireRadius = 0.035;
+  const baseLead = cylinderBetween(
+    three,
+    toVec3(three, element.base, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const collectorLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.collector, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const emitterLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.emitter, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (baseLead) group.add(baseLead);
+  if (collectorLead) group.add(collectorLead);
+  if (emitterLead) group.add(emitterLead);
+
+  // PNP arrow pointing inward toward base
+  const arrowDir = new three.Vector3(
+    element.emitter.x - center.x,
+    0,
+    element.emitter.z - center.z
+  ).normalize();
+
+  const arrowLength = 0.12;
+  const arrowCone = new three.ConeGeometry(0.06, arrowLength, 8);
+  const arrow = new three.Mesh(arrowCone, arrowMaterial);
+
+  const arrowPos = new three.Vector3(
+    center.x + arrowDir.x * bodyRadius * 0.6,
+    COMPONENT_HEIGHT,
+    center.z + arrowDir.z * bodyRadius * 0.6
+  );
+  arrow.position.copy(arrowPos);
+
+  const angle = Math.atan2(arrowDir.z, arrowDir.x);
+  arrow.rotation.z = -Math.PI / 2 - angle + Math.PI; // Reversed for PNP
+  group.add(arrow);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "Q", LABEL_COLOR, options, "bjt-pnp");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.collector, element.base, element.emitter] };
+};
+
+// Darlington Pair builder - TO-220 power package style
+const buildDarlingtonElement = (three: any, element: ThreeTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `darlington-${element.id}`;
+
+  // TO-220 package colors
+  const bodyColor = 0x1a1a1a; // Dark package body
+  const heatsinkColor = 0x808080; // Gray heatsink tab
+  const leadColor = 0xc0c0c0; // Silver leads
+  const dotColor = 0x3b82f6; // Blue indicator dots for dual transistors
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: bodyColor, metalness: 0.1, roughness: 0.8 });
+  const heatsinkMaterial = new three.MeshStandardMaterial({ color: heatsinkColor, metalness: 0.7, roughness: 0.3 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: leadColor, metalness: 0.6, roughness: 0.3 });
+  const arrowMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, arrowMaterial, options, COLOR_HELPERS.stroke);
+
+  const center = {
+    x: element.base.x,
+    z: element.base.z
+  };
+
+  // TO-220 body - larger rectangular package
+  const bodyWidth = 0.45;
+  const bodyDepth = 0.2;
+  const bodyHeight = 0.35;
+  const bodyGeom = new three.BoxGeometry(bodyWidth, bodyHeight, bodyDepth);
+  const body = new three.Mesh(bodyGeom, bodyMaterial);
+  body.position.set(center.x, COMPONENT_HEIGHT + bodyHeight / 2, center.z);
+  group.add(body);
+
+  // Metal heatsink tab on top
+  const tabWidth = bodyWidth * 1.2;
+  const tabHeight = 0.03;
+  const tabDepth = bodyDepth * 1.5;
+  const tabGeom = new three.BoxGeometry(tabWidth, tabHeight, tabDepth);
+  const tab = new three.Mesh(tabGeom, heatsinkMaterial);
+  tab.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + tabHeight / 2, center.z);
+  group.add(tab);
+
+  // Mounting hole in heatsink tab
+  if (!options.preview) {
+    const holeGeom = new three.TorusGeometry(0.06, 0.015, 8, 16);
+    const holeMat = new three.MeshStandardMaterial({ color: 0x404040 });
+    const hole = new three.Mesh(holeGeom, holeMat);
+    hole.rotation.x = Math.PI / 2;
+    hole.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + tabHeight + 0.01, center.z);
+    group.add(hole);
+  }
+
+  // Dual indicator dots (blue) representing two internal transistors
+  if (!options.preview) {
+    const dotGeom = new three.SphereGeometry(0.035, 12, 12);
+    const dotMat = new three.MeshStandardMaterial({ color: dotColor, emissive: dotColor, emissiveIntensity: 0.3 });
+
+    const dot1 = new three.Mesh(dotGeom, dotMat);
+    dot1.position.set(center.x - 0.1, COMPONENT_HEIGHT + bodyHeight * 0.7, center.z + bodyDepth / 2 + 0.01);
+    group.add(dot1);
+
+    const dot2 = new three.Mesh(dotGeom, dotMat);
+    dot2.position.set(center.x + 0.1, COMPONENT_HEIGHT + bodyHeight * 0.7, center.z + bodyDepth / 2 + 0.01);
+    group.add(dot2);
+  }
+
+  const wireRadius = 0.04;
+  const baseLead = cylinderBetween(
+    three,
+    toVec3(three, element.base, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const collectorLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.collector, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const emitterLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.emitter, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (baseLead) group.add(baseLead);
+  if (collectorLead) group.add(collectorLead);
+  if (emitterLead) group.add(emitterLead);
+
+  // Arrow pointing outward (NPN-based Darlington)
+  const arrowDir = new three.Vector3(
+    element.emitter.x - center.x,
+    0,
+    element.emitter.z - center.z
+  ).normalize();
+
+  const arrowLength = 0.15;
+  const arrowCone = new three.ConeGeometry(0.07, arrowLength, 8);
+  const arrow = new three.Mesh(arrowCone, arrowMaterial);
+
+  const arrowPos = new three.Vector3(
+    center.x + arrowDir.x * bodyWidth * 0.6,
+    COMPONENT_HEIGHT,
+    center.z + arrowDir.z * bodyWidth * 0.6
+  );
+  arrow.position.copy(arrowPos);
+
+  const angle = Math.atan2(arrowDir.z, arrowDir.x);
+  arrow.rotation.z = -Math.PI / 2 - angle;
+  group.add(arrow);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "Q", LABEL_COLOR, options, "darlington");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT + 0.2, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.collector, element.base, element.emitter] };
+};
+
+// MOSFET builder - TO-220 power package style with gate symbol
+const buildMOSFETElement = (three: any, element: ThreeTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `mosfet-${element.id}`;
+
+  // TO-220 package colors for MOSFET
+  const bodyColor = 0x1a1a1a; // Dark package body
+  const heatsinkColor = 0x808080; // Gray heatsink tab
+  const leadColor = 0xc0c0c0; // Silver leads
+  const gateColor = 0x22c55e; // Green indicator for gate/voltage-controlled
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: bodyColor, metalness: 0.1, roughness: 0.8 });
+  const heatsinkMaterial = new three.MeshStandardMaterial({ color: heatsinkColor, metalness: 0.7, roughness: 0.3 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: leadColor, metalness: 0.6, roughness: 0.3 });
+  const arrowMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, arrowMaterial, options, COLOR_HELPERS.stroke);
+
+  const center = {
+    x: element.base.x, // For MOSFET: base = gate
+    z: element.base.z
+  };
+
+  // TO-220 body - rectangular package
+  const bodyWidth = 0.45;
+  const bodyDepth = 0.22;
+  const bodyHeight = 0.38;
+  const bodyGeom = new three.BoxGeometry(bodyWidth, bodyHeight, bodyDepth);
+  const body = new three.Mesh(bodyGeom, bodyMaterial);
+  body.position.set(center.x, COMPONENT_HEIGHT + bodyHeight / 2, center.z);
+  group.add(body);
+
+  // Metal heatsink tab on top
+  const tabWidth = bodyWidth * 1.2;
+  const tabHeight = 0.03;
+  const tabDepth = bodyDepth * 1.5;
+  const tabGeom = new three.BoxGeometry(tabWidth, tabHeight, tabDepth);
+  const tab = new three.Mesh(tabGeom, heatsinkMaterial);
+  tab.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + tabHeight / 2, center.z);
+  group.add(tab);
+
+  // Mounting hole in heatsink tab
+  if (!options.preview) {
+    const holeGeom = new three.TorusGeometry(0.06, 0.015, 8, 16);
+    const holeMat = new three.MeshStandardMaterial({ color: 0x404040 });
+    const hole = new three.Mesh(holeGeom, holeMat);
+    hole.rotation.x = Math.PI / 2;
+    hole.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + tabHeight + 0.01, center.z);
+    group.add(hole);
+  }
+
+  // Gate indicator stripe (green) - distinguishes from BJT
+  if (!options.preview) {
+    const stripeGeom = new three.BoxGeometry(bodyWidth * 0.8, 0.04, 0.01);
+    const stripeMat = new three.MeshStandardMaterial({ color: gateColor, emissive: gateColor, emissiveIntensity: 0.2 });
+    const stripe = new three.Mesh(stripeGeom, stripeMat);
+    stripe.position.set(center.x, COMPONENT_HEIGHT + bodyHeight * 0.6, center.z + bodyDepth / 2 + 0.01);
+    group.add(stripe);
+
+    // "M" marking for MOSFET identification
+    const markGeom = new three.BoxGeometry(0.12, 0.12, 0.01);
+    const markMat = new three.MeshStandardMaterial({ color: 0x3a3a3a });
+    const mark = new three.Mesh(markGeom, markMat);
+    mark.position.set(center.x, COMPONENT_HEIGHT + bodyHeight * 0.35, center.z + bodyDepth / 2 + 0.01);
+    group.add(mark);
+  }
+
+  const wireRadius = 0.04;
+  // Gate lead (replaces base in BJT terminology)
+  const gateLead = cylinderBetween(
+    three,
+    toVec3(three, element.base, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  // Drain lead (replaces collector)
+  const drainLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.collector, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  // Source lead (replaces emitter)
+  const sourceLead = cylinderBetween(
+    three,
+    toVec3(three, center, COMPONENT_HEIGHT),
+    toVec3(three, element.emitter, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (gateLead) group.add(gateLead);
+  if (drainLead) group.add(drainLead);
+  if (sourceLead) group.add(sourceLead);
+
+  // Arrow pointing inward (N-channel MOSFET style)
+  const arrowDir = new three.Vector3(
+    element.emitter.x - center.x,
+    0,
+    element.emitter.z - center.z
+  ).normalize();
+
+  const arrowLength = 0.14;
+  const arrowCone = new three.ConeGeometry(0.065, arrowLength, 8);
+  const arrow = new three.Mesh(arrowCone, arrowMaterial);
+
+  const arrowPos = new three.Vector3(
+    center.x + arrowDir.x * bodyWidth * 0.55,
+    COMPONENT_HEIGHT,
+    center.z + arrowDir.z * bodyWidth * 0.55
+  );
+  arrow.position.copy(arrowPos);
+
+  const angle = Math.atan2(arrowDir.z, arrowDir.x);
+  // Arrow points inward for N-channel MOSFET
+  arrow.rotation.z = -Math.PI / 2 - angle + Math.PI;
+  group.add(arrow);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "M", LABEL_COLOR, options, "mosfet");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT + 0.2, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.collector, element.base, element.emitter] };
+};
+
+const buildPotentiometerElement = (three: any, element: ThreeTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `potentiometer-${element.id}`;
+
+  // Potentiometer colors
+  const bodyColor = 0x2563eb; // Blue body
+  const trackColor = 0x1e1e1e; // Dark resistive track
+  const wiperColor = 0xc0c0c0; // Silver wiper
+  const shaftColor = 0x404040; // Dark gray shaft
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: bodyColor, metalness: 0.1, roughness: 0.7 });
+  const trackMaterial = new three.MeshStandardMaterial({ color: trackColor, metalness: 0.2, roughness: 0.8 });
+  const wiperMaterial = new three.MeshStandardMaterial({ color: wiperColor, metalness: 0.6, roughness: 0.3 });
+  const shaftMaterial = new three.MeshStandardMaterial({ color: shaftColor, metalness: 0.3, roughness: 0.5 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.6, roughness: 0.3 });
+
+  styliseMaterial(three, bodyMaterial, options, bodyColor);
+  styliseMaterial(three, trackMaterial, options, trackColor);
+  styliseMaterial(three, wiperMaterial, options, wiperColor);
+  styliseMaterial(three, shaftMaterial, options, shaftColor);
+  styliseMaterial(three, leadMaterial, options, 0xc0c0c0);
+
+  // Center position (base terminal is the wiper)
+  const center = {
+    x: element.base.x,
+    z: element.base.z
+  };
+
+  // Circular body (pot housing)
+  const bodyRadius = 0.35;
+  const bodyHeight = 0.25;
+  const bodyGeom = new three.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 24);
+  const body = new three.Mesh(bodyGeom, bodyMaterial);
+  body.position.set(center.x, COMPONENT_HEIGHT + bodyHeight / 2, center.z);
+  group.add(body);
+
+  // Resistive track ring on top
+  if (!options.preview) {
+    const trackGeom = new three.TorusGeometry(bodyRadius * 0.65, 0.03, 8, 24);
+    const track = new three.Mesh(trackGeom, trackMaterial);
+    track.rotation.x = Math.PI / 2;
+    track.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + 0.02, center.z);
+    group.add(track);
+  }
+
+  // Wiper shaft on top
+  const shaftRadius = 0.08;
+  const shaftHeight = 0.18;
+  const shaftGeom = new three.CylinderGeometry(shaftRadius, shaftRadius, shaftHeight, 16);
+  const shaft = new three.Mesh(shaftGeom, shaftMaterial);
+  shaft.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + shaftHeight / 2, center.z);
+  group.add(shaft);
+
+  // Wiper indicator line on shaft
+  if (!options.preview) {
+    const indicatorGeom = new three.BoxGeometry(shaftRadius * 2.2, 0.02, 0.015);
+    const indicator = new three.Mesh(indicatorGeom, wiperMaterial);
+    indicator.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + shaftHeight, center.z);
+    group.add(indicator);
+  }
+
+  const wireRadius = 0.04;
+
+  // Terminal 1 lead (one end of resistive element) - collector position
+  const lead1 = cylinderBetween(
+    three,
+    toVec3(three, element.collector, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  // Terminal 2 lead (other end of resistive element) - emitter position
+  const lead2 = cylinderBetween(
+    three,
+    toVec3(three, element.emitter, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  // Wiper lead (center tap) - base position
+  const wiperLead = cylinderBetween(
+    three,
+    toVec3(three, element.base, WIRE_HEIGHT),
+    toVec3(three, center, COMPONENT_HEIGHT),
+    wireRadius,
+    wiperMaterial
+  );
+
+  if (lead1) group.add(lead1);
+  if (lead2) group.add(lead2);
+  if (wiperLead) group.add(wiperLead);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "POT", LABEL_COLOR, options, "potentiometer");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT + 0.3, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.collector, element.base, element.emitter] };
+};
+
+const buildOpampElement = (three: any, element: any, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `opamp-${element.id}`;
+
+  // Op-amp colors (DIP package style)
+  const bodyColor = 0x1a1a1a; // Black IC body
+  const notchColor = 0x2a2a2a; // Slightly lighter notch
+  const pinColor = 0xc0c0c0; // Silver pins
+  const markColor = 0xffffff; // White markings
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: bodyColor, metalness: 0.1, roughness: 0.8 });
+  const notchMaterial = new three.MeshStandardMaterial({ color: notchColor, metalness: 0.1, roughness: 0.9 });
+  const pinMaterial = new three.MeshStandardMaterial({ color: pinColor, metalness: 0.6, roughness: 0.3 });
+  const markMaterial = new three.MeshStandardMaterial({ color: markColor, metalness: 0, roughness: 0.9 });
+
+  styliseMaterial(three, bodyMaterial, options, bodyColor);
+  styliseMaterial(three, notchMaterial, options, notchColor);
+  styliseMaterial(three, pinMaterial, options, pinColor);
+  styliseMaterial(three, markMaterial, options, markColor);
+
+  // Calculate center from terminals (expect at least 3: inverting, non-inverting, output)
+  const terminals: Vec2[] = element.terminals || [];
+  let center: Vec2;
+  if (terminals.length >= 3) {
+    center = {
+      x: (terminals[0].x + terminals[1].x + terminals[2].x) / 3,
+      z: (terminals[0].z + terminals[1].z + terminals[2].z) / 3
+    };
+  } else {
+    center = terminals[0] || { x: 0, z: 0 };
+  }
+
+  // DIP-8 package body
+  const bodyWidth = 0.55;
+  const bodyDepth = 0.35;
+  const bodyHeight = 0.22;
+  const bodyGeom = new three.BoxGeometry(bodyWidth, bodyHeight, bodyDepth);
+  const body = new three.Mesh(bodyGeom, bodyMaterial);
+  body.position.set(center.x, COMPONENT_HEIGHT + bodyHeight / 2, center.z);
+  group.add(body);
+
+  // Orientation notch (semicircle indent)
+  if (!options.preview) {
+    const notchGeom = new three.CylinderGeometry(0.05, 0.05, 0.02, 16, 1, false, 0, Math.PI);
+    const notch = new three.Mesh(notchGeom, notchMaterial);
+    notch.rotation.x = Math.PI / 2;
+    notch.rotation.z = Math.PI / 2;
+    notch.position.set(center.x - bodyWidth / 2 + 0.01, COMPONENT_HEIGHT + bodyHeight, center.z);
+    group.add(notch);
+
+    // Triangle symbol for op-amp on body
+    const triangleShape = new three.Shape();
+    triangleShape.moveTo(-0.08, -0.06);
+    triangleShape.lineTo(0.08, 0);
+    triangleShape.lineTo(-0.08, 0.06);
+    triangleShape.lineTo(-0.08, -0.06);
+    const triangleGeom = new three.ShapeGeometry(triangleShape);
+    const triangle = new three.Mesh(triangleGeom, markMaterial);
+    triangle.rotation.x = -Math.PI / 2;
+    triangle.position.set(center.x, COMPONENT_HEIGHT + bodyHeight + 0.01, center.z);
+    group.add(triangle);
+  }
+
+  const wireRadius = 0.035;
+
+  // Connect all terminals to center
+  terminals.forEach((terminal, index) => {
+    const lead = cylinderBetween(
+      three,
+      toVec3(three, terminal, WIRE_HEIGHT),
+      toVec3(three, center, COMPONENT_HEIGHT),
+      wireRadius,
+      pinMaterial
+    );
+    if (lead) group.add(lead);
+  });
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "U", LABEL_COLOR, options, "opamp");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT + 0.15, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals };
+};
+
+const buildTransformerElement = (three: any, element: any, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `transformer-${element.id}`;
+
+  // Transformer colors
+  const coreColor = 0x4a4a4a; // Dark gray iron core
+  const primaryColor = 0xb45309; // Copper/amber for primary winding
+  const secondaryColor = 0xb45309; // Copper/amber for secondary winding
+  const leadColor = 0xc0c0c0; // Silver leads
+
+  const coreMaterial = new three.MeshStandardMaterial({ color: coreColor, metalness: 0.4, roughness: 0.6 });
+  const primaryMaterial = new three.MeshStandardMaterial({ color: primaryColor, metalness: 0.5, roughness: 0.4 });
+  const secondaryMaterial = new three.MeshStandardMaterial({ color: secondaryColor, metalness: 0.5, roughness: 0.4 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: leadColor, metalness: 0.6, roughness: 0.3 });
+
+  styliseMaterial(three, coreMaterial, options, coreColor);
+  styliseMaterial(three, primaryMaterial, options, primaryColor);
+  styliseMaterial(three, secondaryMaterial, options, secondaryColor);
+  styliseMaterial(three, leadMaterial, options, leadColor);
+
+  // Calculate center from terminals (expect 4: 2 primary, 2 secondary)
+  const terminals: Vec2[] = element.terminals || [];
+  let center: Vec2;
+  if (terminals.length >= 4) {
+    center = {
+      x: (terminals[0].x + terminals[1].x + terminals[2].x + terminals[3].x) / 4,
+      z: (terminals[0].z + terminals[1].z + terminals[2].z + terminals[3].z) / 4
+    };
+  } else if (terminals.length > 0) {
+    center = {
+      x: terminals.reduce((sum, t) => sum + t.x, 0) / terminals.length,
+      z: terminals.reduce((sum, t) => sum + t.z, 0) / terminals.length
+    };
+  } else {
+    center = { x: 0, z: 0 };
+  }
+
+  // Core - E-I laminated core style
+  const coreWidth = 0.5;
+  const coreHeight = 0.45;
+  const coreDepth = 0.3;
+  const coreGeom = new three.BoxGeometry(coreWidth, coreHeight, coreDepth);
+  const core = new three.Mesh(coreGeom, coreMaterial);
+  core.position.set(center.x, COMPONENT_HEIGHT + coreHeight / 2, center.z);
+  group.add(core);
+
+  // Primary winding (left side coil)
+  const coilRadius = 0.12;
+  const coilHeight = coreHeight * 0.7;
+  const primaryGeom = new three.CylinderGeometry(coilRadius, coilRadius, coilHeight, 16);
+  const primary = new three.Mesh(primaryGeom, primaryMaterial);
+  primary.position.set(center.x - coreWidth * 0.25, COMPONENT_HEIGHT + coreHeight / 2, center.z);
+  group.add(primary);
+
+  // Secondary winding (right side coil)
+  const secondaryGeom = new three.CylinderGeometry(coilRadius, coilRadius, coilHeight, 16);
+  const secondary = new three.Mesh(secondaryGeom, secondaryMaterial);
+  secondary.position.set(center.x + coreWidth * 0.25, COMPONENT_HEIGHT + coreHeight / 2, center.z);
+  group.add(secondary);
+
+  // Magnetic coupling lines between windings
+  if (!options.preview) {
+    const lineGeom = new three.BoxGeometry(0.01, coreHeight * 0.5, 0.01);
+    const lineMat = new three.MeshStandardMaterial({ color: 0x666666 });
+    for (let i = 0; i < 2; i++) {
+      const line = new three.Mesh(lineGeom, lineMat);
+      line.position.set(center.x, COMPONENT_HEIGHT + coreHeight / 2, center.z + (i === 0 ? 0.04 : -0.04));
+      group.add(line);
+    }
+  }
+
+  const wireRadius = 0.04;
+
+  // Connect all terminals to center
+  terminals.forEach((terminal) => {
+    const lead = cylinderBetween(
+      three,
+      toVec3(three, terminal, WIRE_HEIGHT),
+      toVec3(three, center, COMPONENT_HEIGHT),
+      wireRadius,
+      leadMaterial
+    );
+    if (lead) group.add(lead);
+  });
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "T", LABEL_COLOR, options, "transformer");
+    if (labelSprite) {
+      labelSprite.position.set(center.x, COMPONENT_HEIGHT + LABEL_HEIGHT + 0.35, center.z);
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals };
+};
+
 const buildGroundElement = (three: any, element: GroundElement, options: BuildOptions): BuildResult => {
   const group = new three.Group();
   group.name = `ground-${element.id}`;
@@ -1100,6 +1867,461 @@ const buildGroundElement = (three: any, element: GroundElement, options: BuildOp
   return { group, terminals: [element.position] };
 };
 
+// LED builder with glowing effect
+const buildLEDElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `led-${element.id}`;
+  const profile = resolveProfile(options.standard);
+  const metrics = computeAxisMetrics(element);
+  const wireRadius = profile.general.strokeRadius;
+
+  // LED colors based on typical LED colors
+  const ledColor = 0x22c55e; // Default green
+  const ledGlowColor = 0x4ade80;
+
+  const bodyMaterial = new three.MeshStandardMaterial({
+    color: ledColor,
+    transparent: true,
+    opacity: 0.85,
+    emissive: options.preview ? 0x000000 : ledGlowColor,
+    emissiveIntensity: options.preview ? 0 : 0.4
+  });
+  const cathodeMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, cathodeMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
+
+  const bodyLength = Math.min(metrics.length * 0.5, 0.6);
+  const leadLength = (metrics.length - bodyLength) / 2;
+
+  const bodyStart = metrics.offsetPoint(leadLength);
+  const bodyEnd = metrics.offsetPoint(metrics.length - leadLength);
+  const bodyCenter = metrics.offsetPoint(metrics.length / 2);
+
+  // LED dome shape
+  const domeRadius = bodyLength * 0.35;
+  const dome = new three.Mesh(
+    new three.SphereGeometry(domeRadius, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+    bodyMaterial
+  );
+  dome.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + 0.1));
+  group.add(dome);
+
+  // LED base cylinder
+  const base = new three.Mesh(
+    new three.CylinderGeometry(domeRadius, domeRadius * 0.8, 0.15, 24),
+    bodyMaterial
+  );
+  base.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT));
+  group.add(base);
+
+  // Add arrows to indicate light emission
+  if (!options.preview) {
+    const arrowMaterial = new three.MeshStandardMaterial({
+      color: ledGlowColor,
+      emissive: ledGlowColor,
+      emissiveIntensity: 0.5
+    });
+    for (let i = 0; i < 2; i++) {
+      const arrow = new three.Mesh(
+        new three.ConeGeometry(0.04, 0.15, 6),
+        arrowMaterial
+      );
+      const offset = i === 0 ? 0.15 : -0.15;
+      if (metrics.orientation === "horizontal") {
+        arrow.position.set(bodyCenter.x, COMPONENT_HEIGHT + 0.3, bodyCenter.z + offset);
+        arrow.rotation.z = -Math.PI / 4;
+      } else {
+        arrow.position.set(bodyCenter.x + offset, COMPONENT_HEIGHT + 0.3, bodyCenter.z);
+        arrow.rotation.x = Math.PI / 4;
+      }
+      group.add(arrow);
+    }
+
+    // Add point light for glow effect
+    const glowLight = new three.PointLight(ledGlowColor, 0.5, 1.5);
+    glowLight.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + 0.2));
+    group.add(glowLight);
+  }
+
+  const startLead = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, bodyStart, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const endLead = cylinderBetween(
+    three,
+    toVec3(three, bodyEnd, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (startLead) group.add(startLead);
+  if (endLead) group.add(endLead);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "LED", LABEL_COLOR, options, "led");
+    if (labelSprite) {
+      const midpoint = new three.Vector3().addVectors(
+        toVec3(three, element.start, COMPONENT_HEIGHT),
+        toVec3(three, element.end, COMPONENT_HEIGHT)
+      ).multiplyScalar(0.5);
+      labelSprite.position.copy(midpoint);
+      labelSprite.position.y += LABEL_HEIGHT + 0.1;
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.start, element.end] };
+};
+
+// Fuse builder with glass tube appearance
+const buildFuseElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `fuse-${element.id}`;
+  const profile = resolveProfile(options.standard);
+  const metrics = computeAxisMetrics(element);
+  const wireRadius = profile.general.strokeRadius;
+
+  const glassMaterial = new three.MeshStandardMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.4,
+    metalness: 0.1,
+    roughness: 0.1
+  });
+  const capMaterial = new three.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.6, roughness: 0.3 });
+  const filamentMaterial = new three.MeshStandardMaterial({ color: 0x333333 });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
+
+  const bodyLength = Math.min(metrics.length * 0.6, 0.7);
+  const leadLength = (metrics.length - bodyLength) / 2;
+  const bodyCenter = metrics.offsetPoint(metrics.length / 2);
+
+  // Glass tube
+  const tubeRadius = 0.12;
+  const tubeGeom = metrics.orientation === "horizontal"
+    ? new three.CylinderGeometry(tubeRadius, tubeRadius, bodyLength * 0.7, 16, 1, true)
+    : new three.CylinderGeometry(tubeRadius, tubeRadius, bodyLength * 0.7, 16, 1, true);
+  const tube = new three.Mesh(tubeGeom, glassMaterial);
+  tube.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT));
+  if (metrics.orientation === "horizontal") {
+    tube.rotation.z = Math.PI / 2;
+  }
+  group.add(tube);
+
+  // Metal end caps
+  const capGeom = new three.CylinderGeometry(tubeRadius * 1.1, tubeRadius * 1.1, 0.1, 16);
+  const bodyStart = metrics.offsetPoint(leadLength + bodyLength * 0.15);
+  const bodyEnd = metrics.offsetPoint(metrics.length - leadLength - bodyLength * 0.15);
+
+  const cap1 = new three.Mesh(capGeom, capMaterial);
+  cap1.position.copy(toVec3(three, bodyStart, COMPONENT_HEIGHT));
+  if (metrics.orientation === "horizontal") cap1.rotation.z = Math.PI / 2;
+
+  const cap2 = new three.Mesh(capGeom, capMaterial);
+  cap2.position.copy(toVec3(three, bodyEnd, COMPONENT_HEIGHT));
+  if (metrics.orientation === "horizontal") cap2.rotation.z = Math.PI / 2;
+
+  group.add(cap1, cap2);
+
+  // Internal filament
+  const filament = cylinderBetween(
+    three,
+    toVec3(three, bodyStart, COMPONENT_HEIGHT),
+    toVec3(three, bodyEnd, COMPONENT_HEIGHT),
+    0.015,
+    filamentMaterial
+  );
+  if (filament) group.add(filament);
+
+  // Leads
+  const startLeadPoint = metrics.offsetPoint(leadLength);
+  const endLeadPoint = metrics.offsetPoint(metrics.length - leadLength);
+
+  const startLead = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, startLeadPoint, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const endLead = cylinderBetween(
+    three,
+    toVec3(three, endLeadPoint, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (startLead) group.add(startLead);
+  if (endLead) group.add(endLead);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "F", LABEL_COLOR, options, "fuse");
+    if (labelSprite) {
+      labelSprite.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + LABEL_HEIGHT));
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.start, element.end] };
+};
+
+// AC Source builder with sine wave symbol
+const buildACSourceElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `ac_source-${element.id}`;
+  const profile = resolveProfile(options.standard);
+  const metrics = computeAxisMetrics(element);
+  const wireRadius = profile.general.strokeRadius;
+
+  const circleMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, circleMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
+
+  const bodyCenter = metrics.offsetPoint(metrics.length / 2);
+  const circleRadius = Math.min(metrics.length * 0.25, 0.5);
+
+  // Circle body
+  const ring = new three.Mesh(
+    new three.TorusGeometry(circleRadius, 0.04, 16, 48),
+    circleMaterial
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT));
+  group.add(ring);
+
+  // Sine wave inside circle (approximated with curve)
+  const sinePoints: any[] = [];
+  const sineSegments = 20;
+  for (let i = 0; i <= sineSegments; i++) {
+    const t = i / sineSegments;
+    const x = (t - 0.5) * circleRadius * 1.4;
+    const y = Math.sin(t * Math.PI * 2) * circleRadius * 0.3;
+    sinePoints.push(new three.Vector3(x, y, 0));
+  }
+
+  const sineGeom = new three.TubeGeometry(
+    new three.CatmullRomCurve3(sinePoints),
+    20, 0.025, 8, false
+  );
+  const sineMesh = new three.Mesh(sineGeom, circleMaterial);
+  sineMesh.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT));
+  if (metrics.orientation === "vertical") {
+    sineMesh.rotation.y = Math.PI / 2;
+  }
+  group.add(sineMesh);
+
+  // Leads
+  const leadStart = metrics.offsetPoint(metrics.length / 2 - circleRadius);
+  const leadEnd = metrics.offsetPoint(metrics.length / 2 + circleRadius);
+
+  const startLead = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, leadStart, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const endLead = cylinderBetween(
+    three,
+    toVec3(three, leadEnd, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (startLead) group.add(startLead);
+  if (endLead) group.add(endLead);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "AC", LABEL_COLOR, options, "ac_source");
+    if (labelSprite) {
+      labelSprite.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + LABEL_HEIGHT));
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.start, element.end] };
+};
+
+// Motor builder with circular body and shaft
+const buildMotorElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `motor-${element.id}`;
+  const profile = resolveProfile(options.standard);
+  const metrics = computeAxisMetrics(element);
+  const wireRadius = profile.general.strokeRadius;
+
+  const bodyMaterial = new three.MeshStandardMaterial({ color: 0x3d3d3d, metalness: 0.3, roughness: 0.6 });
+  const shaftMaterial = new three.MeshStandardMaterial({ color: 0x8c8c8c, metalness: 0.7, roughness: 0.3 });
+  const labelMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, labelMaterial, options, COLOR_HELPERS.stroke);
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
+
+  const bodyCenter = metrics.offsetPoint(metrics.length / 2);
+  const bodyRadius = Math.min(metrics.length * 0.25, 0.45);
+
+  // Motor body (circle with M)
+  const ring = new three.Mesh(
+    new three.TorusGeometry(bodyRadius, 0.05, 16, 48),
+    bodyMaterial
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT));
+  group.add(ring);
+
+  // Inner fill
+  const disc = new three.Mesh(
+    new three.CylinderGeometry(bodyRadius - 0.03, bodyRadius - 0.03, 0.04, 32),
+    new three.MeshStandardMaterial({ color: 0x555555 })
+  );
+  disc.rotation.x = Math.PI / 2;
+  disc.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT));
+  group.add(disc);
+
+  // Shaft (small cylinder extending from motor)
+  const shaft = new three.Mesh(
+    new three.CylinderGeometry(0.06, 0.06, 0.25, 16),
+    shaftMaterial
+  );
+  shaft.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + 0.15));
+  group.add(shaft);
+
+  // Leads
+  const leadStart = metrics.offsetPoint(metrics.length / 2 - bodyRadius);
+  const leadEnd = metrics.offsetPoint(metrics.length / 2 + bodyRadius);
+
+  const startLead = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, leadStart, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const endLead = cylinderBetween(
+    three,
+    toVec3(three, leadEnd, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (startLead) group.add(startLead);
+  if (endLead) group.add(endLead);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "M", LABEL_COLOR, options, "motor");
+    if (labelSprite) {
+      labelSprite.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + LABEL_HEIGHT + 0.1));
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.start, element.end] };
+};
+
+// Speaker builder with cone shape
+const buildSpeakerElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
+  const group = new three.Group();
+  group.name = `speaker-${element.id}`;
+  const profile = resolveProfile(options.standard);
+  const metrics = computeAxisMetrics(element);
+  const wireRadius = profile.general.strokeRadius;
+
+  const coneMaterial = new three.MeshStandardMaterial({ color: 0x4a4a4a });
+  const frameMaterial = new three.MeshStandardMaterial({ color: 0x2d2d2d });
+  const leadMaterial = new three.MeshStandardMaterial({ color: COLOR_HELPERS.stroke });
+
+  styliseMaterial(three, leadMaterial, options, COLOR_HELPERS.stroke);
+
+  const bodyCenter = metrics.offsetPoint(metrics.length / 2);
+  const coneRadius = Math.min(metrics.length * 0.2, 0.35);
+
+  // Speaker frame (back)
+  const frame = new three.Mesh(
+    new three.BoxGeometry(coneRadius * 1.8, 0.15, coneRadius * 1.8),
+    frameMaterial
+  );
+  frame.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT - 0.05));
+  group.add(frame);
+
+  // Speaker cone
+  const cone = new three.Mesh(
+    new three.ConeGeometry(coneRadius, 0.25, 16),
+    coneMaterial
+  );
+  cone.rotation.x = -Math.PI / 2;
+  cone.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + 0.1));
+  group.add(cone);
+
+  // Sound waves (decorative curved lines)
+  if (!options.preview) {
+    const waveMaterial = new three.MeshStandardMaterial({
+      color: 0xa855f7,
+      transparent: true,
+      opacity: 0.5
+    });
+    for (let i = 1; i <= 2; i++) {
+      const wave = new three.Mesh(
+        new three.TorusGeometry(coneRadius * (0.5 + i * 0.3), 0.02, 8, 12, Math.PI),
+        waveMaterial
+      );
+      if (metrics.orientation === "horizontal") {
+        wave.rotation.y = Math.PI / 2;
+        wave.position.set(bodyCenter.x + 0.15 + i * 0.1, COMPONENT_HEIGHT + 0.1, bodyCenter.z);
+      } else {
+        wave.rotation.x = 0;
+        wave.position.set(bodyCenter.x, COMPONENT_HEIGHT + 0.1, bodyCenter.z + 0.15 + i * 0.1);
+      }
+      group.add(wave);
+    }
+  }
+
+  // Leads
+  const leadStart = metrics.offsetPoint(metrics.length / 2 - coneRadius * 1.2);
+  const leadEnd = metrics.offsetPoint(metrics.length / 2 + coneRadius * 1.2);
+
+  const startLead = cylinderBetween(
+    three,
+    toVec3(three, element.start, WIRE_HEIGHT),
+    toVec3(three, leadStart, COMPONENT_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+  const endLead = cylinderBetween(
+    three,
+    toVec3(three, leadEnd, COMPONENT_HEIGHT),
+    toVec3(three, element.end, WIRE_HEIGHT),
+    wireRadius,
+    leadMaterial
+  );
+
+  if (startLead) group.add(startLead);
+  if (endLead) group.add(endLead);
+
+  if (!options.preview) {
+    const labelSprite = createLabelSprite(three, element.label ?? "SPK", LABEL_COLOR, options, "speaker");
+    if (labelSprite) {
+      labelSprite.position.copy(toVec3(three, bodyCenter, COMPONENT_HEIGHT + LABEL_HEIGHT));
+      group.add(labelSprite);
+    }
+  }
+
+  return { group, terminals: [element.start, element.end] };
+};
+
 const buildTwoTerminalElement = (three: any, element: TwoTerminalElement, options: BuildOptions): BuildResult => {
   switch (element.kind) {
     case "resistor":
@@ -1116,6 +2338,16 @@ const buildTwoTerminalElement = (three: any, element: TwoTerminalElement, option
       return buildSwitchElement(three, element, options);
     case "diode":
       return buildDiodeElement(three, element, options);
+    case "led":
+      return buildLEDElement(three, element, options);
+    case "fuse":
+      return buildFuseElement(three, element, options);
+    case "ac_source":
+      return buildACSourceElement(three, element, options);
+    case "motor":
+      return buildMotorElement(three, element, options);
+    case "speaker":
+      return buildSpeakerElement(three, element, options);
     default:
       return buildResistorElement(three, element, options);
   }
@@ -1132,6 +2364,27 @@ export const buildElement = (three: any, element: SchematicElement, options: Bui
   }
   if (element.kind === "bjt") {
     return buildBJTElement(three, element as ThreeTerminalElement, effective);
+  }
+  if (element.kind === "bjt-npn") {
+    return buildBJTNPNElement(three, element as ThreeTerminalElement, effective);
+  }
+  if (element.kind === "bjt-pnp") {
+    return buildBJTPNPElement(three, element as ThreeTerminalElement, effective);
+  }
+  if (element.kind === "darlington") {
+    return buildDarlingtonElement(three, element as ThreeTerminalElement, effective);
+  }
+  if (element.kind === "mosfet") {
+    return buildMOSFETElement(three, element as ThreeTerminalElement, effective);
+  }
+  if (element.kind === "potentiometer") {
+    return buildPotentiometerElement(three, element as ThreeTerminalElement, effective);
+  }
+  if (element.kind === "opamp") {
+    return buildOpampElement(three, element as MultiTerminalElement, effective);
+  }
+  if (element.kind === "transformer") {
+    return buildTransformerElement(three, element as MultiTerminalElement, effective);
   }
   return buildTwoTerminalElement(three, element as TwoTerminalElement, effective);
 };
