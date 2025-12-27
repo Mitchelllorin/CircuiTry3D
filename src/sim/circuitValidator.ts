@@ -556,3 +556,81 @@ export function getSeverityLabel(severity: ValidationSeverity): string {
     case 'info': return 'Info';
   }
 }
+
+/**
+ * Determines if current flow animation should be enabled based on circuit validation.
+ *
+ * Current flow should ONLY be enabled when:
+ * 1. Circuit has no errors (open circuit, short circuit)
+ * 2. Circuit forms a complete closed loop
+ * 3. There is at least one power source and one load
+ *
+ * This implements CircuiTry3D Rule C3D-010: Circuit Completion State
+ * "Current flow animation and simulation shall only run when circuit validation returns 'complete' status."
+ *
+ * @param elements - The schematic elements in the circuit
+ * @returns Object with shouldAnimate boolean and reason string
+ */
+export function shouldEnableCurrentFlow(elements: SchematicElement[]): {
+  shouldAnimate: boolean;
+  reason: string;
+  currentAmps: number;
+} {
+  // First validate the circuit
+  const validation = validateCircuit(elements);
+
+  // Check for errors - no animation if circuit has errors
+  if (!validation.isValid) {
+    const firstError = validation.issues.find(i => i.severity === 'error');
+    return {
+      shouldAnimate: false,
+      reason: firstError?.message ?? 'Circuit has validation errors',
+      currentAmps: 0
+    };
+  }
+
+  // Check circuit status - only animate if complete
+  if (validation.circuitStatus !== 'complete') {
+    return {
+      shouldAnimate: false,
+      reason: validation.circuitStatus === 'incomplete'
+        ? 'Circuit is incomplete - ensure all components are connected in a closed loop'
+        : 'Circuit is invalid',
+      currentAmps: 0
+    };
+  }
+
+  // Circuit is valid and complete - solve to get current value
+  const solution = solveDCCircuit(elements);
+
+  if (solution.status !== 'solved') {
+    return {
+      shouldAnimate: false,
+      reason: solution.reason ?? 'Unable to solve circuit',
+      currentAmps: 0
+    };
+  }
+
+  // Find the total circuit current (from battery or first resistor)
+  let totalCurrent = 0;
+  for (const [, current] of solution.elementCurrents) {
+    if (Math.abs(current.amps) > Math.abs(totalCurrent)) {
+      totalCurrent = current.amps;
+    }
+  }
+
+  // Only animate if there's measurable current (> 0.001mA threshold)
+  if (Math.abs(totalCurrent) < 0.000001) {
+    return {
+      shouldAnimate: false,
+      reason: 'No current flow detected in circuit',
+      currentAmps: 0
+    };
+  }
+
+  return {
+    shouldAnimate: true,
+    reason: 'Circuit complete - current flow enabled',
+    currentAmps: Math.abs(totalCurrent)
+  };
+}
