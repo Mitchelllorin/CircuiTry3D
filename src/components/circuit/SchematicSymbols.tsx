@@ -206,26 +206,150 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = 3.2,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
       <circle cx="0" cy="0" r="20" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
-      
+
       <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="-8" y1="-12" x2="-8" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      
+
       <line x1="-8" y1="-8" x2="10" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="-20" x2="10" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      
+
       <line x1="-8" y1="8" x2="10" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      
+
       <polygon
         points="10,20 5,14 2,22"
         fill={color}
         stroke={color}
       />
-      
+
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={13}
+          fontWeight={600}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -25,
+  color = COMPONENT_STROKE,
+  strokeWidth = 3.2,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      {/* Outer circle */}
+      <circle cx="0" cy="0" r="20" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+
+      {/* Base lead and vertical bar */}
+      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-8" y1="-12" x2="-8" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* Collector (top) - no arrow */}
+      <line x1="-8" y1="-8" x2="10" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="10" y1="-20" x2="10" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* Emitter (bottom) - arrow points INWARD for PNP */}
+      <line x1="-8" y1="8" x2="10" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* PNP arrow points inward (toward base) */}
+      <polygon
+        points="-5,10 0,16 -3,4"
+        fill={color}
+        stroke={color}
+      />
+
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={13}
+          fontWeight={600}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -32,
+  color = COMPONENT_STROKE,
+  strokeWidth = 3.2,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      {/* Outer circle - larger for Darlington */}
+      <circle cx="0" cy="0" r="26" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+
+      {/* Base lead */}
+      <line x1="-38" y1="0" x2="-14" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* First transistor (input stage) - smaller */}
+      <line x1="-14" y1="-8" x2="-14" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-14" y1="-4" x2="0" y2="-12" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+      <line x1="-14" y1="4" x2="0" y2="12" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+
+      {/* Arrow on first emitter (pointing outward - NPN) */}
+      <polygon
+        points="0,12 -4,7 -6,13"
+        fill={color}
+        stroke={color}
+        strokeWidth={1}
+      />
+
+      {/* Second transistor (output stage) - base connects to first emitter */}
+      <line x1="0" y1="12" x2="0" y2="6" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+      <line x1="0" y1="0" x2="0" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="0" y1="3" x2="14" y2="-10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="0" y1="9" x2="14" y2="22" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* Arrow on second emitter (pointing outward - NPN) */}
+      <polygon
+        points="14,22 9,17 7,23"
+        fill={color}
+        stroke={color}
+        strokeWidth={1}
+      />
+
+      {/* Collector lead (from first transistor collector, joined) */}
+      <line x1="0" y1="-12" x2="14" y2="-10" stroke={color} strokeWidth={strokeWidth * 0.7} strokeLinecap="round" strokeDasharray="2,2" />
+      <line x1="14" y1="-10" x2="14" y2="-32" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* Emitter lead (from second transistor) */}
+      <line x1="14" y1="22" x2="14" y2="32" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
       {showLabel && label && (
         <text
           x={0}
@@ -502,12 +626,14 @@ export const PotentiometerSymbol: FC<SchematicSymbolProps> = ({
   );
 };
 
-export type ComponentSymbol = 
+export type ComponentSymbol =
   | 'resistor'
   | 'capacitor'
   | 'diode'
   | 'led'
   | 'transistor-npn'
+  | 'transistor-pnp'
+  | 'darlington'
   | 'inductor'
   | 'battery'
   | 'ground'
@@ -521,6 +647,8 @@ export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolPro
   'diode': DiodeSymbol,
   'led': LEDSymbol,
   'transistor-npn': TransistorNPNSymbol,
+  'transistor-pnp': TransistorPNPSymbol,
+  'darlington': DarlingtonPairSymbol,
   'inductor': InductorSymbol,
   'battery': BatterySymbol,
   'ground': GroundSymbol,

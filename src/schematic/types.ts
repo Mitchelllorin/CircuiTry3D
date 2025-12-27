@@ -14,8 +14,20 @@ export type ComponentKind =
   | "switch"
   | "diode"
   | "bjt"
+  | "bjt-npn"
+  | "bjt-pnp"
+  | "darlington"
+  | "mosfet"
   | "ground"
-  | "wire";
+  | "wire"
+  | "led"
+  | "fuse"
+  | "potentiometer"
+  | "opamp"
+  | "ac_source"
+  | "motor"
+  | "speaker"
+  | "transformer";
 
 export type TwoTerminalComponentKind =
   | "battery"
@@ -24,13 +36,18 @@ export type TwoTerminalComponentKind =
   | "inductor"
   | "lamp"
   | "switch"
-  | "diode";
+  | "diode"
+  | "led"
+  | "fuse"
+  | "ac_source"
+  | "motor"
+  | "speaker";
 
 export type SingleNodeComponentKind = "ground";
 
 export type WireComponentKind = "wire";
 
-export type CatalogPlacementMode = "single-point" | "two-point";
+export type CatalogPlacementMode = "single-point" | "two-point" | "three-point" | "multi-point";
 
 export type CatalogEntry = {
   id: string;
@@ -68,16 +85,23 @@ export type GroundElement = BaseElement & {
 };
 
 export type ThreeTerminalElement = BaseElement & {
-  kind: "bjt";
+  kind: "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "potentiometer";
   label: string;
   collector: Vec2;
   base: Vec2;
   emitter: Vec2;
   orientation: Orientation;
-  transistorType: "npn" | "pnp";
+  transistorType?: "npn" | "pnp";
 };
 
-export type SchematicElement = TwoTerminalElement | WireElement | GroundElement | ThreeTerminalElement;
+export type MultiTerminalElement = BaseElement & {
+  kind: "opamp" | "transformer";
+  label: string;
+  terminals: Vec2[];
+  orientation: Orientation;
+};
+
+export type SchematicElement = TwoTerminalElement | WireElement | GroundElement | ThreeTerminalElement | MultiTerminalElement;
 
 export type ElementTerminal = {
   elementId: string;
