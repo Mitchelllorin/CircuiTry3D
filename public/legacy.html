@@ -253,6 +253,7 @@
             box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
             z-index: 10000;
             backdrop-filter: blur(18px);
+            touch-action: auto;
         }
 
         .component-context-menu[data-visible="true"] {
@@ -952,7 +953,7 @@
             border: 2px solid #00ff88;
             border-radius: 16px;
             padding: 24px;
-            z-index: 1000;
+            z-index: 10001;
             display: none;
             width: 90%;
             max-width: 400px;
@@ -960,6 +961,7 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             box-shadow: 0 10px 30px rgba(0,255,136,0.3);
+            touch-action: auto;
         }
         
         .edit-popup h3 {
@@ -1703,7 +1705,7 @@
             border: 2px solid #00ff88;
             border-radius: 16px;
             padding: 24px;
-            z-index: 1000;
+            z-index: 10001;
             display: none;
             width: 90%;
             max-width: 400px;
@@ -1711,6 +1713,7 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             box-shadow: 0 10px 30px rgba(0,255,136,0.3);
+            touch-action: auto;
         }
         
         .edit-popup h3 {
@@ -4664,8 +4667,9 @@ body.android-optimized.menu-visible .status {
         let longPressStartPos = { x: 0, y: 0 };
         let isLongPressing = false;
         let currentEditComponent = null;
-        const LONG_PRESS_DURATION = 600; // Shorter for mobile
+        const LONG_PRESS_DURATION = 500; // Reduced for faster response on mobile
         const COMPONENT_DRAG_THRESHOLD = 8;
+        const LONG_PRESS_MOVEMENT_THRESHOLD = 15; // Increased for mobile finger wobble tolerance
         let componentContextMenu = null;
         let componentContextTarget = null;
         let componentContextConnectionPoint = null;
@@ -6799,9 +6803,10 @@ body.android-optimized.menu-visible .status {
                 if (!e.target.closest('.menu-bar')) {
                     closeAllSubmenus();
                 }
-                
+
                 // Close edit popup when clicking outside
-                if (!e.target.closest('.edit-popup') && !e.target.closest('#canvas')) {
+                // Don't close if clicking on context menu (may be opening edit popup)
+                if (!e.target.closest('.edit-popup') && !e.target.closest('#canvas') && !e.target.closest('#component-context-menu')) {
                     if (currentEditComponent) {
                         hideEditPopup();
                     }
@@ -7061,10 +7066,10 @@ body.android-optimized.menu-visible .status {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
 
-                // Check if moved too far for long press - reduced threshold for faster response
+                // Check if moved too far for long press - use configurable threshold
                 const totalDeltaX = Math.abs(touch.clientX - longPressStartPos.x);
                 const totalDeltaY = Math.abs(touch.clientY - longPressStartPos.y);
-                if ((totalDeltaX > 8 || totalDeltaY > 8) && longPressTimer) {
+                if ((totalDeltaX > LONG_PRESS_MOVEMENT_THRESHOLD || totalDeltaY > LONG_PRESS_MOVEMENT_THRESHOLD) && longPressTimer) {
                     cancelLongPress();
                 }
 
@@ -7229,13 +7234,13 @@ body.android-optimized.menu-visible .status {
         }
 
         function handleMouseMove(e) {
-            // Check if moved too far for long press
+            // Check if moved too far for long press - use configurable threshold
             const deltaX = Math.abs(e.clientX - longPressStartPos.x);
             const deltaY = Math.abs(e.clientY - longPressStartPos.y);
-            if ((deltaX > 10 || deltaY > 10) && longPressTimer) {
+            if ((deltaX > LONG_PRESS_MOVEMENT_THRESHOLD || deltaY > LONG_PRESS_MOVEMENT_THRESHOLD) && longPressTimer) {
                 cancelLongPress();
             }
-            
+
             if (selectedComponent && !isDragging) {
                 maybeStartDrag(e.clientX, e.clientY);
             }
@@ -8319,13 +8324,26 @@ body.android-optimized.menu-visible .status {
                 </div>
             `;
 
-            menu.addEventListener('click', (event) => {
+            // Handle both click and touch events for mobile compatibility
+            const handleMenuAction = (event) => {
                 const action = event.target.closest('button')?.dataset?.action;
                 if (!action) {
                     return;
                 }
                 event.preventDefault();
+                event.stopPropagation(); // Prevent event from bubbling to global handlers
                 handleComponentContextAction(action);
+            };
+
+            menu.addEventListener('click', handleMenuAction);
+            menu.addEventListener('touchend', (event) => {
+                // Prevent default to avoid double-firing with click
+                const action = event.target.closest('button')?.dataset?.action;
+                if (action) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleComponentContextAction(action);
+                }
             });
 
             document.body.appendChild(menu);
@@ -11389,14 +11407,16 @@ Made with ? for visual learners everywhere!
                 const flowState = computeFlowState(batteries, components, wires, junctions);
 
                 if (!flowState.hasPath) {
-                    // Even if directed path finding fails, check if there's a physical closed circuit.
-                    // If so, provide flow animation along all wires to give visual feedback.
-                    const hasPhysicalLoop = hasClosedCircuitPath(batteries[0], wires, components);
+                    // Directed path finding failed. Only enable fallback flow animation if:
+                    // 1. The reason is specifically 'polarity' (not 'open' circuit)
+                    // 2. AND there's a verified physical closed loop
+                    // This prevents current from flowing in genuinely open circuits.
+                    const isPolarityIssue = flowState.reason === 'polarity';
+                    const hasPhysicalLoop = isPolarityIssue && hasClosedCircuitPath(batteries[0], wires, components);
 
                     if (hasPhysicalLoop && wires.length > 0) {
-                        // There's a closed loop but directed path finding failed (e.g., polarity issue).
-                        // Still show flow animation to indicate circuit completion.
-                        // Calculate approximate current assuming simple series circuit.
+                        // There's a closed loop but directed path finding failed due to polarity.
+                        // Show flow animation to indicate circuit completion with polarity issue.
                         let approxResistance = 0.01;
                         resistors.forEach(r => {
                             approxResistance += r.properties?.resistance || 100;
@@ -11408,7 +11428,7 @@ Made with ? for visual learners everywhere!
                         });
                         const approxCurrent = totalVoltage / Math.max(approxResistance, 0.01);
 
-                        updateTopologyDisplay(flowState.reason === 'polarity' ? 'Polarity' : topology?.type || 'simple');
+                        updateTopologyDisplay('Polarity');
                         const flowResult = {
                             ...flowState,
                             hasFlow: true,
@@ -11433,7 +11453,8 @@ Made with ? for visual learners everywhere!
                         };
                     }
 
-                    updateTopologyDisplay('Polarity');
+                    // Open circuit or other non-polarity issue - no current flow
+                    updateTopologyDisplay(flowState.reason === 'open' ? 'Open Circuit' : 'Polarity');
                     const flowResult = {
                         ...flowState,
                         hasFlow: false,
@@ -11999,53 +12020,130 @@ Made with ? for visual learners everywhere!
         }
         
         // Check if there's a complete circuit path from battery positive to negative
+        // C3D-001: Open Circuit = Zero Current - A closed loop is required for current to flow
+        // This function uses terminal-level checking: each connection point (component+side)
+        // is a separate node in the graph to ensure BOTH terminals must be connected
         function hasClosedCircuitPath(battery, wires, allComponents) {
             if (!battery || wires.length === 0) return false;
-            
-            // Build adjacency graph of all connections
+
+            // Build adjacency graph using TERMINAL-LEVEL nodes (component+side combinations)
+            // This ensures we check that BOTH terminals of components are connected,
+            // not just that the component object itself appears in some wire
             const graph = new Map();
-            
-            // Add all components and junctions to graph
-            allComponents.forEach(comp => graph.set(comp, []));
-            junctions.forEach(j => graph.set(j, []));
-            
-            // Build connections from wires
+
+            // Helper to create unique terminal key
+            const terminalKey = (obj, side) => {
+                const objId = obj?.id || (obj === battery ? 'battery_main' : String(obj));
+                return `${objId}:${side || 'any'}`;
+            };
+
+            // Helper to add bidirectional edge in the graph
+            const addEdge = (key1, key2) => {
+                if (!graph.has(key1)) graph.set(key1, []);
+                if (!graph.has(key2)) graph.set(key2, []);
+                graph.get(key1).push(key2);
+                graph.get(key2).push(key1);
+            };
+
+            // Build connections from wires - each wire connects two specific terminals
             wires.forEach(wire => {
-                const start = wire.startObj;
-                const end = wire.endObj;
-                
-                if (!graph.has(start)) graph.set(start, []);
-                if (!graph.has(end)) graph.set(end, []);
-                
-                graph.get(start).push(end);
-                graph.get(end).push(start);
+                const startKey = terminalKey(wire.startObj, wire.startSide);
+                const endKey = terminalKey(wire.endObj, wire.endSide);
+                addEdge(startKey, endKey);
             });
-            
-            // Check if we can reach back to the battery from any connected component
-            // This creates a closed loop
+
+            // For two-terminal components (resistors, LEDs, switches), their internal
+            // connection allows current flow from one terminal to the other.
+            // Components may be wired using different terminal naming conventions:
+            // - 'positive'/'negative' (polarity-based)
+            // - 'left'/'right' (position-based)
+            // We create internal paths for ALL terminal pairs to handle both conventions.
+            allComponents.forEach(comp => {
+                if (comp.type === 'resistor' || comp.type === 'led' || comp.type === 'switch') {
+                    // Only conduct if switch is ON
+                    if (comp.type === 'switch' && !comp.properties?.isOn) return;
+
+                    // Get all terminal keys that exist in the graph for this component
+                    const compId = comp?.id || String(comp);
+                    const terminalSides = ['positive', 'negative', 'left', 'right'];
+                    const existingTerminals = [];
+
+                    terminalSides.forEach(side => {
+                        const key = `${compId}:${side}`;
+                        if (graph.has(key)) {
+                            existingTerminals.push(key);
+                        }
+                    });
+
+                    // Connect all terminals of this component internally
+                    // This handles cases where wires use 'left'/'right' naming
+                    for (let i = 0; i < existingTerminals.length; i++) {
+                        for (let j = i + 1; j < existingTerminals.length; j++) {
+                            addEdge(existingTerminals[i], existingTerminals[j]);
+                        }
+                    }
+
+                    // Also add explicit positive/negative internal path if they exist
+                    const posKey = terminalKey(comp, 'positive');
+                    const negKey = terminalKey(comp, 'negative');
+                    if (graph.has(posKey) && graph.has(negKey)) {
+                        addEdge(posKey, negKey);
+                    }
+
+                    // And left/right internal path if they exist
+                    const leftKey = terminalKey(comp, 'left');
+                    const rightKey = terminalKey(comp, 'right');
+                    if (graph.has(leftKey) && graph.has(rightKey)) {
+                        addEdge(leftKey, rightKey);
+                    }
+                }
+            });
+
+            // Junctions connect all wires attached to them
+            junctions.forEach(junction => {
+                const junctionKey = terminalKey(junction, 'junction');
+                // Junction terminals are already connected via wires in the graph
+            });
+
+            // Check if there's a path from battery negative to battery positive
+            // This represents current flowing out of negative, through the circuit, back to positive
+            const batteryNegKey = terminalKey(battery, 'negative');
+            const batteryPosKey = terminalKey(battery, 'positive');
+
+            // Both terminals must exist in the graph (be connected to something)
+            if (!graph.has(batteryNegKey) || !graph.has(batteryPosKey)) {
+                return false;
+            }
+
+            // BFS to find path from negative terminal to positive terminal
             const visited = new Set();
-            const startConnections = graph.get(battery) || [];
-            
-            if (startConnections.length === 0) return false;
-            
-            // For each initial connection from battery, try to find path back
-            for (const firstConnection of startConnections) {
-                visited.clear();
-                visited.add(battery); // Don't revisit battery in the middle
-                
-                if (canReachBattery(firstConnection, battery, graph, visited)) {
-                    return true; // Found a closed loop
+            const queue = [batteryNegKey];
+            visited.add(batteryNegKey);
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                if (current === batteryPosKey) {
+                    return true; // Found closed loop from negative to positive
+                }
+
+                const neighbors = graph.get(current) || [];
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor)) {
+                        visited.add(neighbor);
+                        queue.push(neighbor);
+                    }
                 }
             }
-            
+
             return false;
         }
-        
-        // Helper function to check if we can reach the battery
+
+        // Helper function to check if we can reach the battery (legacy - kept for compatibility)
         function canReachBattery(current, target, graph, visited) {
             if (current === target) return true;
             if (visited.has(current)) return false;
-            
+
             visited.add(current);
             const neighbors = graph.get(current) || [];
             
