@@ -1,4 +1,11 @@
 import type { FC, SVGProps } from "react";
+import {
+  SCHEMATIC_COLORS,
+  STROKE_WIDTHS,
+  RESISTOR_SPECS,
+  BATTERY_SPECS,
+  LABEL_SPECS,
+} from "../../schematic/visualConstants";
 
 export type SchematicSymbolProps = {
   x: number;
@@ -12,9 +19,11 @@ export type SchematicSymbolProps = {
   strokeWidth?: number;
 };
 
-const WIRE_COLOR = "rgba(162, 212, 255, 0.9)";
-const COMPONENT_STROKE = "rgba(148, 208, 255, 0.9)";
-const LABEL_COLOR = "#d6ecff";
+// Use centralized visual constants
+const WIRE_COLOR = SCHEMATIC_COLORS.wire;
+const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
+const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
+const DEFAULT_STROKE_WIDTH = STROKE_WIDTHS.wireSvgSymbol;
 
 export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   x,
@@ -25,18 +34,18 @@ export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
 
   return (
     <g transform={transform}>
       {/* Lead wires */}
-      <line x1="-30" y1="0" x2="-20" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="20" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      {/* 3 tight zigzag body */}
+      <line x1={-RESISTOR_SPECS.totalHalfSpan} y1="0" x2={-RESISTOR_SPECS.bodyHalfWidth} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={RESISTOR_SPECS.bodyHalfWidth} y1="0" x2={RESISTOR_SPECS.totalHalfSpan} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Zigzag body (4-6 peaks per style guide) */}
       <polyline
-        points="-20,0 -16,-8 -10,8 -4,-8 2,8 8,-8 14,8 20,0"
+        points={RESISTOR_SPECS.zigzagPoints}
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
@@ -49,8 +58,8 @@ export const ResistorSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -68,10 +77,10 @@ export const CapacitorSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
@@ -84,8 +93,8 @@ export const CapacitorSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -103,10 +112,10 @@ export const DiodeSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-10" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
@@ -125,8 +134,8 @@ export const DiodeSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -144,10 +153,10 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-10" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
@@ -160,7 +169,7 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
       />
       <line x1="10" y1="-12" x2="10" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      
+
       <polyline
         points="8,-14 18,-24 22,-20"
         stroke={color}
@@ -177,15 +186,15 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      
+
       {showLabel && label && (
         <text
           x={0}
           y={labelOffset - 8}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -203,7 +212,7 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -25,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
 
@@ -232,8 +241,8 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -251,7 +260,7 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -25,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
 
@@ -285,8 +294,8 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -304,7 +313,7 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -32,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
 
@@ -356,8 +365,8 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -375,10 +384,10 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-25" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
@@ -397,8 +406,8 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -416,7 +425,7 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = WIRE_COLOR,
-  strokeWidth = 3,
+  strokeWidth = STROKE_WIDTHS.componentDetail,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
 
@@ -425,15 +434,15 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
       {/* Lead wires - horizontal */}
       <line x1="-30" y1="0" x2="-7" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="7" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      {/* Negative plate (shorter vertical line on left) */}
+      {/* Negative plate (shorter vertical line on left) per style guide */}
       <line x1="-7" y1="-10" x2="-7" y2="10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      {/* Positive plate (longer, thicker vertical line on right) */}
-      <line x1="7" y1="-18" x2="7" y2="18" stroke={color} strokeWidth={strokeWidth + 2} strokeLinecap="round" />
-      {/* Polarity markings */}
-      <text x={-14} y={4} fill={LABEL_COLOR} fontSize={11} textAnchor="middle" fontWeight="bold">
+      {/* Positive plate (longer, thicker vertical line on right) per style guide */}
+      <line x1="7" y1="-18" x2="7" y2="18" stroke={color} strokeWidth={strokeWidth + BATTERY_SPECS.positiveStrokeExtra} strokeLinecap="round" />
+      {/* Polarity markings per ANSI/IEEE standard */}
+      <text x={-14} y={4} fill={LABEL_COLOR} fontSize={LABEL_SPECS.polarityMarkerSize} textAnchor="middle" fontWeight="bold">
         -
       </text>
-      <text x={18} y={4} fill={LABEL_COLOR} fontSize={11} textAnchor="middle" fontWeight="bold">
+      <text x={18} y={4} fill={LABEL_COLOR} fontSize={LABEL_SPECS.polarityMarkerSize} textAnchor="middle" fontWeight="bold">
         +
       </text>
       {showLabel && label && (
@@ -442,8 +451,8 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset - 10}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -460,12 +469,13 @@ export const GroundSymbol: FC<SchematicSymbolProps> = ({
   label,
   showLabel = true,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
+      {/* Three progressively shorter bars per style guide */}
       <line x1="0" y1="-15" x2="0" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="-15" y1="0" x2="15" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="-10" y1="5" x2="10" y2="5" stroke={color} strokeWidth={strokeWidth * 0.8} strokeLinecap="round" />
@@ -476,8 +486,8 @@ export const GroundSymbol: FC<SchematicSymbolProps> = ({
           y={5}
           textAnchor="start"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -495,34 +505,34 @@ export const SwitchSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
   ...props
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
   const isOpen = (props as any).isOpen ?? false;
-  
+
   return (
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <circle cx="-8" cy="0" r="3" fill={color} />
-      
+
       {isOpen ? (
         <line x1="-8" y1="0" x2="8" y2="-15" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       ) : (
         <line x1="-8" y1="0" x2="8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       )}
-      
+
       <circle cx="8" cy="0" r="3" fill={color} />
       <line x1="8" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      
+
       {showLabel && label && (
         <text
           x={0}
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -540,10 +550,10 @@ export const FuseSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -18,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  
+
   return (
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-15" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
@@ -565,8 +575,8 @@ export const FuseSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>
@@ -584,18 +594,18 @@ export const PotentiometerSymbol: FC<SchematicSymbolProps> = ({
   showLabel = true,
   labelOffset = -25,
   color = COMPONENT_STROKE,
-  strokeWidth = 3.2,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
 
   return (
     <g transform={transform}>
       {/* Lead wires */}
-      <line x1="-30" y1="0" x2="-20" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="20" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      {/* 3 tight zigzag body */}
+      <line x1={-RESISTOR_SPECS.totalHalfSpan} y1="0" x2={-RESISTOR_SPECS.bodyHalfWidth} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={RESISTOR_SPECS.bodyHalfWidth} y1="0" x2={RESISTOR_SPECS.totalHalfSpan} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Zigzag body using centralized constants */}
       <polyline
-        points="-20,0 -16,-8 -10,8 -4,-8 2,8 8,-8 14,8 20,0"
+        points={RESISTOR_SPECS.zigzagPoints}
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
@@ -616,8 +626,8 @@ export const PotentiometerSymbol: FC<SchematicSymbolProps> = ({
           y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
-          fontSize={13}
-          fontWeight={600}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
         >
           {label}
         </text>

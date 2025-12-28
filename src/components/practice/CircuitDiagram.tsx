@@ -1,5 +1,15 @@
 import type { PracticeProblem } from "../../model/practice";
 import { ResistorSymbol, BatterySymbol } from "../circuit/SchematicSymbols";
+import {
+  SCHEMATIC_COLORS,
+  STROKE_WIDTHS,
+  NODE_DIMENSIONS,
+  LAYOUT_SPECS,
+  LABEL_SPECS,
+  RESISTOR_SPECS,
+  formatResistance,
+  formatVoltage,
+} from "../../schematic/visualConstants";
 
 type DiagramProps = {
   problem: PracticeProblem;
@@ -10,29 +20,15 @@ type Point = {
   y: number;
 };
 
-const WIRE_COLOR = "rgba(162, 212, 255, 0.9)";
-const COMPONENT_STROKE = "rgba(148, 208, 255, 0.9)";
-const LABEL_COLOR = "#d6ecff";
-const VALUE_COLOR = "#a8d8ff";
-const NODE_FILL = "rgba(162, 212, 255, 0.95)";
-const NODE_STROKE = "rgba(12, 32, 64, 0.9)";
-const WIRE_STROKE_WIDTH = 4;
-const NODE_RADIUS = 4.2;
-
-// Format resistance value for display (e.g., "150 Ω", "1.5 kΩ")
-const formatResistance = (value: number): string => {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)} MΩ`;
-  } else if (value >= 1000) {
-    return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)} kΩ`;
-  }
-  return `${value} Ω`;
-};
-
-// Format voltage value for display (e.g., "24V")
-const formatVoltage = (value: number): string => {
-  return `${value}V`;
-};
+// Use centralized visual constants
+const WIRE_COLOR = SCHEMATIC_COLORS.wire;
+const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
+const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
+const VALUE_COLOR = SCHEMATIC_COLORS.labelValue;
+const NODE_FILL = SCHEMATIC_COLORS.nodeFill;
+const NODE_STROKE = SCHEMATIC_COLORS.nodeStroke;
+const WIRE_STROKE_WIDTH = STROKE_WIDTHS.wire;
+const NODE_RADIUS = NODE_DIMENSIONS.radius2D;
 
 // Get component label with resistance value (e.g., "R1 150Ω")
 const getComponentLabelWithValue = (problem: PracticeProblem, componentId: string): { label: string; value: string | null } => {
@@ -73,6 +69,7 @@ const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
   return match?.label ?? componentId;
 };
 
+// Junction node drawn per style guide (filled circles at T-junctions)
 const drawNode = ({ x, y }: Point, key?: string) => (
   <circle
     key={key}
@@ -81,7 +78,7 @@ const drawNode = ({ x, y }: Point, key?: string) => (
     r={NODE_RADIUS}
     fill={NODE_FILL}
     stroke={NODE_STROKE}
-    strokeWidth={1.4}
+    strokeWidth={STROKE_WIDTHS.nodeStroke}
   />
 );
 
@@ -101,10 +98,10 @@ const drawResistor = ({ start, end, orientation, label, value, key, labelOffset,
   const centerY = (start.y + end.y) / 2;
   const rotation = orientation === "horizontal" ? 0 : 90;
 
-  // For horizontal resistors, position label above the zigzag peak (which is 8px above center)
+  // For horizontal resistors, position label above the zigzag peak
   // Label needs to be higher to avoid being obscured by the resistor body
   const adjustedLabelOffset = orientation === "horizontal"
-    ? (labelOffset ?? -26)
+    ? (labelOffset ?? LABEL_SPECS.horizontalLabelOffset)
     : 0;
 
   const labelX = orientation === "horizontal"
@@ -120,8 +117,8 @@ const drawResistor = ({ start, end, orientation, label, value, key, labelOffset,
     : ((labelSide ?? "right") === "left" ? "end" as const : "start" as const);
 
   // Calculate proper wire endpoints accounting for direction
-  // Resistor symbol body spans from -20 to +20 (leads from -30 to -20 and +20 to +30)
-  const resistorHalfWidth = 30; // Total symbol span
+  // Resistor symbol body uses centralized constant for total span
+  const resistorHalfWidth = RESISTOR_SPECS.totalHalfSpan;
 
   // For horizontal: wire goes from start to left edge, then from right edge to end
   // For vertical: wire goes from start to top edge, then from bottom edge to end
@@ -178,7 +175,7 @@ const drawResistor = ({ start, end, orientation, label, value, key, labelOffset,
         label=""
         showLabel={false}
         color={COMPONENT_STROKE}
-        strokeWidth={3.2}
+        strokeWidth={STROKE_WIDTHS.wireSvgSymbol}
       />
       <line
         x1={wireStartToEnd.x}
@@ -189,11 +186,11 @@ const drawResistor = ({ start, end, orientation, label, value, key, labelOffset,
         strokeWidth={WIRE_STROKE_WIDTH}
         strokeLinecap="round"
       />
-      <text x={labelX} y={labelY} textAnchor={textAnchor} fill={LABEL_COLOR} fontSize={13} fontWeight={600}>
+      <text x={labelX} y={labelY} textAnchor={textAnchor} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} fontWeight={LABEL_SPECS.labelWeight}>
         {label}
       </text>
       {value && (
-        <text x={labelX} y={valueY} textAnchor={textAnchor} fill={VALUE_COLOR} fontSize={11} fontWeight={500}>
+        <text x={labelX} y={valueY} textAnchor={textAnchor} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} fontWeight={LABEL_SPECS.valueWeight}>
           {value}
         </text>
       )}
@@ -413,11 +410,11 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
       {drawNode(bottomLeft, "series-node-bl")}
 
       {/* Battery label on the left, outside the circuit */}
-      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
+      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
         {sourceData.label}
       </text>
       {sourceData.value && (
-        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={11} textAnchor="middle">
+        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
           {sourceData.value}
         </text>
       )}
@@ -516,11 +513,11 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
       {drawNode({ x: rightX, y: bottomY }, "parallel-node-right-bottom")}
 
       {/* Battery label on left, outside the circuit */}
-      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
+      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
         {sourceData.label}
       </text>
       {sourceData.value && (
-        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={11} textAnchor="middle">
+        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
           {sourceData.value}
         </text>
       )}
@@ -686,11 +683,11 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
       {drawNode({ x: rightX, y: bottomY }, "combo-node-right-bottom")}
 
       {/* Battery label on left, outside the circuit */}
-      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={13} textAnchor="middle">
+      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
         {sourceData.label}
       </text>
       {sourceData.value && (
-        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={11} textAnchor="middle">
+        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
           {sourceData.value}
         </text>
       )}
