@@ -1,14 +1,20 @@
 import { DEFAULT_SYMBOL_STANDARD, STANDARD_PROFILES, SymbolStandard } from "./standards";
 import { GroundElement, MultiTerminalElement, Orientation, SchematicElement, ThreeTerminalElement, TwoTerminalElement, Vec2, WireElement } from "./types";
+import {
+  THREE_COLORS,
+  THREE_STROKE_RADII,
+  HEIGHT_LAYERS,
+} from "./visualConstants";
 
 const DEFAULT_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
 
-export const WIRE_RADIUS = DEFAULT_PROFILE.general.strokeRadius;
-export const RESISTOR_RADIUS = DEFAULT_PROFILE.general.strokeRadius;
-export const NODE_RADIUS = DEFAULT_PROFILE.general.nodeRadius;
-export const WIRE_HEIGHT = 0.12;
-export const COMPONENT_HEIGHT = 0.16;
-export const LABEL_HEIGHT = 0.4;
+// Use centralized visual constants for 3D rendering
+export const WIRE_RADIUS = THREE_STROKE_RADII.wire;
+export const RESISTOR_RADIUS = THREE_STROKE_RADII.resistor;
+export const NODE_RADIUS = THREE_STROKE_RADII.node;
+export const WIRE_HEIGHT = HEIGHT_LAYERS.wire;
+export const COMPONENT_HEIGHT = HEIGHT_LAYERS.component;
+export const LABEL_HEIGHT = HEIGHT_LAYERS.label;
 
 type BuildOptions = {
   preview?: boolean;
@@ -22,19 +28,20 @@ type BuildResult = {
   terminals: Vec2[];
 };
 
+// Use centralized color constants for 3D rendering
 const COLOR_HELPERS = {
-  stroke: 0x111111,
-  highlight: 0x2563eb,
-  preview: 0x94a3b8,
-  nodeFill: 0x111111,
-  plate: 0x111111,
-  dielectric: 0xededed,
-  lampRing: 0x111111,
-  lampFill: 0xffffff,
-  ground: 0x111111
+  stroke: THREE_COLORS.stroke,
+  highlight: THREE_COLORS.highlight,
+  preview: THREE_COLORS.preview,
+  nodeFill: THREE_COLORS.nodeFill,
+  plate: THREE_COLORS.plate,
+  dielectric: THREE_COLORS.dielectric,
+  lampRing: THREE_COLORS.lampRing,
+  lampFill: THREE_COLORS.lampFill,
+  ground: THREE_COLORS.ground
 } as const;
 
-const LABEL_COLOR = "#111111";
+const LABEL_COLOR = THREE_COLORS.labelText;
 
 const COMPONENT_TYPE_COLORS: Record<string, string> = {
   battery: "#ef4444",    // Red for power source
