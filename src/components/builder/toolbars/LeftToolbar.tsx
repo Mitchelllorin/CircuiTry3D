@@ -24,6 +24,43 @@ interface LeftToolbarProps {
   controlDisabledTitle?: string;
 }
 
+/**
+ * Renders the component icon/schematic symbol for the library
+ * Supports text icons, schematic symbol images, and preview images
+ */
+function ComponentIcon({ component }: { component: ComponentAction }) {
+  const hasSchematic = component.metadata?.schematicSymbolPath;
+  const hasPreview = component.metadata?.previewImagePath;
+
+  return (
+    <span className="slider-icon-label">
+      {hasSchematic ? (
+        <span className="slider-schematic" aria-hidden="true">
+          <img
+            src={component.metadata!.schematicSymbolPath}
+            alt=""
+            loading="lazy"
+          />
+        </span>
+      ) : (
+        <span className="slider-icon" aria-hidden="true">
+          {component.icon}
+        </span>
+      )}
+      <span className="slider-label">{component.label}</span>
+      {hasPreview && (
+        <span className="slider-preview" aria-hidden="true">
+          <img
+            src={component.metadata!.previewImagePath}
+            alt=""
+            loading="lazy"
+          />
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function LeftToolbar({
   isOpen,
   onToggle,
@@ -41,21 +78,6 @@ export function LeftToolbar({
     <div
       className={`builder-menu-stage builder-menu-stage-left${isOpen ? " open" : ""}`}
     >
-      <button
-        type="button"
-        className="builder-menu-toggle builder-menu-toggle-left"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-label={
-          isOpen ? "Collapse component library" : "Expand component library"
-        }
-        title={
-          isOpen ? "Collapse component library" : "Expand component library"
-        }
-      >
-        <span className="toggle-icon">{isOpen ? "◀" : "▶"}</span>
-        <span className="toggle-text">Library</span>
-      </button>
       <nav
         className="builder-menu builder-menu-left"
         role="navigation"
@@ -63,7 +85,7 @@ export function LeftToolbar({
       >
         <div className="builder-menu-scroll">
           <div className="slider-section">
-            <span className="slider-heading">Components Library</span>
+            <span className="slider-heading">Components</span>
             <div className="slider-stack">
               {COMPONENT_ACTIONS.map((component) => (
                 <button
@@ -79,18 +101,9 @@ export function LeftToolbar({
                       : component.description || component.label
                   }
                   data-component-action={component.action}
+                  data-category={component.metadata?.category}
                 >
-                  <span className="slider-icon-label">
-                    <span className="slider-icon" aria-hidden="true">
-                      {component.icon}
-                    </span>
-                    <span className="slider-label">{component.label}</span>
-                  </span>
-                  {component.description && (
-                    <span className="slider-description">
-                      {component.description}
-                    </span>
-                  )}
+                  <ComponentIcon component={component} />
                 </button>
               ))}
             </div>
@@ -124,16 +137,13 @@ export function LeftToolbar({
                     }
                   >
                     <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">
-                      {action.description}
-                    </span>
                   </button>
                 );
               })}
             </div>
           </div>
           <div className="slider-section">
-            <span className="slider-heading">Schematic Mode</span>
+            <span className="slider-heading">Schematic</span>
             <div className="slider-stack">
               <button
                 type="button"
@@ -142,9 +152,6 @@ export function LeftToolbar({
                 title="Open the 3D schematic workspace"
               >
                 <span className="slider-label">Launch Builder</span>
-                <span className="slider-description">
-                  Place ANSI/IEC symbols on the snap grid
-                </span>
               </button>
             </div>
           </div>
@@ -157,19 +164,6 @@ export function LeftToolbar({
                 const isActionActive =
                   (isWireToggle && modeState.isWireMode) ||
                   (isRotateToggle && modeState.isRotateMode);
-                const description = (() => {
-                  if (isWireToggle) {
-                    return modeState.isWireMode
-                      ? "Wire tool active"
-                      : "Activate wire mode to sketch connections";
-                  }
-                  if (isRotateToggle) {
-                    return modeState.isRotateMode
-                      ? "Rotate mode active"
-                      : "Rotate the active component";
-                  }
-                  return action.description;
-                })();
 
                 return (
                   <button
@@ -192,7 +186,6 @@ export function LeftToolbar({
                     }
                   >
                     <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">{description}</span>
                   </button>
                 );
               })}
@@ -200,6 +193,21 @@ export function LeftToolbar({
           </div>
         </div>
       </nav>
+      <button
+        type="button"
+        className="builder-menu-toggle builder-menu-toggle-left"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-label={
+          isOpen ? "Collapse component library" : "Expand component library"
+        }
+        title={
+          isOpen ? "Collapse component library" : "Expand component library"
+        }
+      >
+        <span className="toggle-icon">{isOpen ? "◀" : "▶"}</span>
+        <span className="toggle-text">Library</span>
+      </button>
     </div>
   );
 }

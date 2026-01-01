@@ -68,19 +68,11 @@ export function RightToolbar({
                     ? modeState.showPolarityIndicators
                     : false;
 
-                const description = (() => {
-                  if (isFlowToggle) {
-                    return `${currentFlowLabel} visualisation active`;
-                  }
-                  if (isPolarityToggle) {
-                    return modeState.showPolarityIndicators
-                      ? "Polarity markers visible"
-                      : "Polarity markers hidden";
-                  }
-                  if (isLayoutCycle) {
-                    return `Current layout: ${layoutModeLabel}`;
-                  }
-                  return action.description;
+                const statusText = (() => {
+                  if (isFlowToggle) return currentFlowLabel;
+                  if (isPolarityToggle) return modeState.showPolarityIndicators ? "On" : "Off";
+                  if (isLayoutCycle) return layoutModeLabel;
+                  return "";
                 })();
 
                 return (
@@ -104,7 +96,9 @@ export function RightToolbar({
                     }
                   >
                     <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">{description}</span>
+                    {statusText && (
+                      <span className="slider-status">{statusText}</span>
+                    )}
                   </button>
                 );
               })}
@@ -119,17 +113,6 @@ export function RightToolbar({
                 const isActionActive =
                   (isGridToggle && modeState.showGrid) ||
                   (isLabelToggle && modeState.showLabels);
-                const description = (() => {
-                  if (isGridToggle) {
-                    return modeState.showGrid ? "Grid visible" : "Grid hidden";
-                  }
-                  if (isLabelToggle) {
-                    return modeState.showLabels
-                      ? "Labels shown"
-                      : "Labels hidden";
-                  }
-                  return action.description;
-                })();
 
                 return (
                   <button
@@ -150,7 +133,6 @@ export function RightToolbar({
                     }
                   >
                     <span className="slider-label">{action.label}</span>
-                    <span className="slider-description">{description}</span>
                   </button>
                 );
               })}

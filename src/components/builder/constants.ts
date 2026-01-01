@@ -9,6 +9,7 @@ import type {
   HelpModalView,
   PracticeScenario,
   BuilderLogoSettings,
+  ComponentCategory,
 } from "./types";
 
 export const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
@@ -22,6 +23,34 @@ export const DEFAULT_LOGO_SETTINGS: BuilderLogoSettings = {
   isVisible: true,
 };
 
+/**
+ * Schematic symbol identifiers following ANSI/IEEE standards.
+ * These map to schematic symbol images when available.
+ * The infrastructure is ready for real-world component integration.
+ */
+export const SCHEMATIC_SYMBOLS = {
+  BATTERY: "ANSI_BATTERY",
+  AC_SOURCE: "ANSI_AC_SOURCE",
+  RESISTOR: "ANSI_RESISTOR",
+  CAPACITOR: "ANSI_CAPACITOR",
+  INDUCTOR: "ANSI_INDUCTOR",
+  DIODE: "ANSI_DIODE",
+  LED: "ANSI_LED",
+  BJT_NPN: "ANSI_BJT_NPN",
+  BJT_PNP: "ANSI_BJT_PNP",
+  MOSFET: "ANSI_MOSFET",
+  SWITCH: "ANSI_SWITCH",
+  FUSE: "ANSI_FUSE",
+  POTENTIOMETER: "ANSI_POTENTIOMETER",
+  LAMP: "ANSI_LAMP",
+  MOTOR: "ANSI_MOTOR",
+  SPEAKER: "ANSI_SPEAKER",
+  OPAMP: "ANSI_OPAMP",
+  TRANSFORMER: "ANSI_TRANSFORMER",
+  GROUND: "ANSI_GROUND",
+  JUNCTION: "ANSI_JUNCTION",
+} as const;
+
 export const COMPONENT_ACTIONS: ComponentAction[] = [
   {
     id: "battery",
@@ -30,6 +59,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "battery",
     description: "Add power source - drives current through the circuit",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.BATTERY,
+      category: "power",
+      educationalTags: ["voltage-source", "dc-power", "energy-storage"],
+    },
   },
   {
     id: "ac_source",
@@ -38,6 +72,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "ac_source",
     description: "Add AC power source - alternating current supply",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.AC_SOURCE,
+      category: "power",
+      educationalTags: ["ac-power", "alternating-current", "mains"],
+    },
   },
   {
     id: "resistor",
@@ -46,6 +85,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "resistor",
     description: "Add resistor - controls current flow and voltage drop",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.RESISTOR,
+      category: "passive",
+      educationalTags: ["resistance", "ohms-law", "voltage-divider"],
+    },
   },
   {
     id: "capacitor",
@@ -54,6 +98,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "capacitor",
     description: "Add capacitor - stores electrical energy temporarily",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.CAPACITOR,
+      category: "passive",
+      educationalTags: ["capacitance", "energy-storage", "filtering"],
+    },
   },
   {
     id: "inductor",
@@ -62,6 +111,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "inductor",
     description: "Add inductor - stores energy in magnetic field",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.INDUCTOR,
+      category: "passive",
+      educationalTags: ["inductance", "magnetic-field", "coil"],
+    },
   },
   {
     id: "diode",
@@ -70,6 +124,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "diode",
     description: "Add diode - one-way current flow control",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.DIODE,
+      category: "semiconductor",
+      educationalTags: ["rectifier", "forward-bias", "reverse-bias"],
+    },
   },
   {
     id: "led",
@@ -78,6 +137,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "led",
     description: "Add LED - light emitting diode indicator",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.LED,
+      category: "semiconductor",
+      educationalTags: ["light-emitter", "indicator", "photonics"],
+    },
   },
   {
     id: "bjt",
@@ -86,6 +150,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "bjt",
     description: "Add transistor - amplification and switching control",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.BJT_NPN,
+      category: "semiconductor",
+      educationalTags: ["transistor", "amplifier", "switch"],
+    },
   },
   {
     id: "bjt-npn",
@@ -94,6 +163,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "bjt-npn",
     description: "Add NPN transistor - current flows collector to emitter when base is positive",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.BJT_NPN,
+      category: "semiconductor",
+      educationalTags: ["npn", "transistor", "current-gain"],
+    },
   },
   {
     id: "bjt-pnp",
@@ -102,6 +176,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "bjt-pnp",
     description: "Add PNP transistor - current flows emitter to collector when base is negative",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.BJT_PNP,
+      category: "semiconductor",
+      educationalTags: ["pnp", "transistor", "current-gain"],
+    },
   },
   {
     id: "darlington",
@@ -110,6 +189,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "darlington",
     description: "Add Darlington pair - high-gain transistor configuration (beta squared)",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.BJT_NPN,
+      category: "semiconductor",
+      educationalTags: ["darlington", "high-gain", "compound-transistor"],
+    },
   },
   {
     id: "mosfet",
@@ -118,6 +202,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "mosfet",
     description: "Add MOSFET - power switching transistor",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.MOSFET,
+      category: "semiconductor",
+      educationalTags: ["mosfet", "power-switch", "voltage-controlled"],
+    },
   },
   {
     id: "switch",
@@ -126,6 +215,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "switch",
     description: "Add switch - open/close circuit path on demand",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.SWITCH,
+      category: "electromechanical",
+      educationalTags: ["control", "on-off", "manual"],
+    },
   },
   {
     id: "fuse",
@@ -134,6 +228,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "fuse",
     description: "Add fuse - overcurrent protection device",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.FUSE,
+      category: "electromechanical",
+      educationalTags: ["protection", "safety", "overcurrent"],
+    },
   },
   {
     id: "potentiometer",
@@ -142,6 +241,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "potentiometer",
     description: "Add variable resistor - adjustable resistance",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.POTENTIOMETER,
+      category: "passive",
+      educationalTags: ["variable-resistor", "adjustment", "volume-control"],
+    },
   },
   {
     id: "lamp",
@@ -150,6 +254,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "lamp",
     description: "Add lamp - visual load indicator with glow effect",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.LAMP,
+      category: "electromechanical",
+      educationalTags: ["load", "indicator", "incandescent"],
+    },
   },
   {
     id: "motor",
@@ -158,6 +267,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "motor",
     description: "Add motor - DC motor with rotating armature",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.MOTOR,
+      category: "electromechanical",
+      educationalTags: ["actuator", "dc-motor", "mechanical-output"],
+    },
   },
   {
     id: "speaker",
@@ -166,6 +280,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "speaker",
     description: "Add speaker - audio output device or buzzer",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.SPEAKER,
+      category: "electromechanical",
+      educationalTags: ["audio", "transducer", "output"],
+    },
   },
   {
     id: "opamp",
@@ -174,6 +293,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "opamp",
     description: "Add op-amp - operational amplifier for analog circuits",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.OPAMP,
+      category: "integrated",
+      educationalTags: ["amplifier", "analog", "signal-processing"],
+    },
   },
   {
     id: "transformer",
@@ -182,6 +306,11 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "transformer",
     description: "Add transformer - voltage step-up/step-down isolation",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.TRANSFORMER,
+      category: "passive",
+      educationalTags: ["isolation", "voltage-conversion", "coupling"],
+    },
   },
   {
     id: "ground",
@@ -190,13 +319,23 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     action: "component",
     builderType: "ground",
     description: "Add ground reference - circuit return path",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.GROUND,
+      category: "connector",
+      educationalTags: ["reference", "return-path", "common"],
+    },
   },
-  { 
-    id: "junction", 
-    icon: "J", 
-    label: "Junction", 
+  {
+    id: "junction",
+    icon: "J",
+    label: "Junction",
     action: "junction",
     description: "Add junction - branch wires for parallel paths",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.JUNCTION,
+      category: "connector",
+      educationalTags: ["node", "connection", "branch"],
+    },
   },
 ];
 
