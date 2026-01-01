@@ -1566,57 +1566,55 @@ export default function Builder() {
             <span className="scroll-indicator-arrow">›</span>
           </div>
         )}
-        <div className="mode-bar-spacer" />
-        <div className="mode-bar-actions" aria-label="Workspace actions">
-          <button
-            type="button"
-            className="mode-action-btn"
-            onClick={() => triggerBuilderAction("undo")}
-            disabled={controlsDisabled}
-            aria-disabled={controlsDisabled}
-            aria-label="Undo last change"
-            title="Undo (Ctrl+Z)"
-          >
-            <span className="mode-action-icon" aria-hidden="true">↺</span>
-            <span className="mode-action-label">Undo</span>
-          </button>
-          <button
-            type="button"
-            className="mode-action-btn"
-            onClick={() => triggerBuilderAction("redo")}
-            disabled={controlsDisabled}
-            aria-disabled={controlsDisabled}
-            aria-label="Redo previous change"
-            title="Redo (Ctrl+Shift+Z)"
-          >
-            <span className="mode-action-icon" aria-hidden="true">↻</span>
-            <span className="mode-action-label">Redo</span>
-          </button>
-          <button
-            type="button"
-            className="mode-action-btn"
-            onClick={() => setIsLoadModalOpen(true)}
-            aria-label="Open circuit"
-            title="Open saved circuit (Ctrl+O)"
-          >
-            <span className="mode-action-icon" aria-hidden="true">📂</span>
-            <span className="mode-action-label">Open</span>
-          </button>
-          <button
-            type="button"
-            className="mode-action-btn"
-            onClick={() => setIsSaveModalOpen(true)}
-            aria-label="Save circuit"
-            title="Save circuit (Ctrl+S)"
-          >
-            <span className="mode-action-icon" aria-hidden="true">💾</span>
-            <span className="mode-action-label">Save</span>
-            {circuitStorage.hasUnsavedChanges && (
-              <span className="unsaved-dot" aria-label="Unsaved changes" />
-            )}
-          </button>
-        </div>
       </div>
+
+      {/* Workspace Action Buttons - positioned at edge of workspace */}
+      <div className="workspace-edge-actions" aria-label="Workspace actions">
+        <button
+          type="button"
+          className="edge-action-btn"
+          onClick={() => triggerBuilderAction("undo")}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          aria-label="Undo last change"
+          title="Undo (Ctrl+Z)"
+        >
+          <span className="edge-action-icon" aria-hidden="true">↺</span>
+        </button>
+        <button
+          type="button"
+          className="edge-action-btn"
+          onClick={() => triggerBuilderAction("redo")}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          aria-label="Redo previous change"
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          <span className="edge-action-icon" aria-hidden="true">↻</span>
+        </button>
+        <button
+          type="button"
+          className="edge-action-btn"
+          onClick={() => setIsLoadModalOpen(true)}
+          aria-label="Open circuit"
+          title="Open saved circuit (Ctrl+O)"
+        >
+          <span className="edge-action-icon" aria-hidden="true">📂</span>
+        </button>
+        <button
+          type="button"
+          className="edge-action-btn"
+          onClick={() => setIsSaveModalOpen(true)}
+          aria-label="Save circuit"
+          title="Save circuit (Ctrl+S)"
+        >
+          <span className="edge-action-icon" aria-hidden="true">💾</span>
+          {circuitStorage.hasUnsavedChanges && (
+            <span className="unsaved-dot" aria-label="Unsaved changes" />
+          )}
+        </button>
+      </div>
+
       <div className="builder-logo-header" aria-hidden="true">
         <div className="builder-logo-mark">
           <BrandMark size="lg" decorative />

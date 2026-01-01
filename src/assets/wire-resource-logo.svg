@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+  <defs>
+    <!-- Copper gradient for conductor cores -->
+    <radialGradient id="copperCore" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FFB366"/>
+      <stop offset="40%" stop-color="#E87D2B"/>
+      <stop offset="100%" stop-color="#B8621B"/>
+    </radialGradient>
+
+    <!-- Black rubber insulation -->
+    <radialGradient id="blackInsulation" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#4A4A4A"/>
+      <stop offset="60%" stop-color="#2A2A2A"/>
+      <stop offset="100%" stop-color="#1A1A1A"/>
+    </radialGradient>
+
+    <!-- Red insulation -->
+    <radialGradient id="redInsulation" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#E04040"/>
+      <stop offset="60%" stop-color="#B82020"/>
+      <stop offset="100%" stop-color="#901818"/>
+    </radialGradient>
+
+    <!-- Blue insulation -->
+    <radialGradient id="blueInsulation" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#4488DD"/>
+      <stop offset="60%" stop-color="#2266AA"/>
+      <stop offset="100%" stop-color="#184080"/>
+    </radialGradient>
+
+    <!-- Green/Yellow ground insulation -->
+    <linearGradient id="groundInsulation" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#40B040"/>
+      <stop offset="45%" stop-color="#40B040"/>
+      <stop offset="50%" stop-color="#E8D820"/>
+      <stop offset="55%" stop-color="#E8D820"/>
+      <stop offset="100%" stop-color="#40B040"/>
+    </linearGradient>
+
+    <!-- Subtle glow filter -->
+    <filter id="wireGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Wire 1: Large black (6 AWG) - leftmost -->
+  <g filter="url(#wireGlow)">
+    <circle cx="35" cy="50" r="28" fill="url(#blackInsulation)"/>
+    <circle cx="35" cy="50" r="18" fill="url(#copperCore)"/>
+    <!-- Highlight on copper -->
+    <ellipse cx="29" cy="44" rx="5" ry="4" fill="#FFD699" opacity="0.5"/>
+  </g>
+
+  <!-- Wire 2: Medium red (12 AWG) -->
+  <g filter="url(#wireGlow)">
+    <circle cx="85" cy="50" r="22" fill="url(#redInsulation)"/>
+    <circle cx="85" cy="50" r="13" fill="url(#copperCore)"/>
+    <!-- Highlight on copper -->
+    <ellipse cx="80" cy="45" rx="4" ry="3" fill="#FFD699" opacity="0.5"/>
+  </g>
+
+  <!-- Wire 3: Medium blue (14 AWG) -->
+  <g filter="url(#wireGlow)">
+    <circle cx="125" cy="50" r="18" fill="url(#blueInsulation)"/>
+    <circle cx="125" cy="50" r="10" fill="url(#copperCore)"/>
+    <!-- Highlight on copper -->
+    <ellipse cx="121" cy="46" rx="3" ry="2.5" fill="#FFD699" opacity="0.5"/>
+  </g>
+
+  <!-- Wire 4: Small ground (18 AWG) - rightmost -->
+  <g filter="url(#wireGlow)">
+    <circle cx="160" cy="50" r="14" fill="url(#groundInsulation)"/>
+    <circle cx="160" cy="50" r="7" fill="url(#copperCore)"/>
+    <!-- Highlight on copper -->
+    <ellipse cx="157" cy="47" rx="2" ry="1.8" fill="#FFD699" opacity="0.4"/>
+  </g>
+</svg>

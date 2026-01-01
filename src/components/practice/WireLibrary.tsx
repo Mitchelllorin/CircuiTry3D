@@ -13,6 +13,7 @@ import {
   type WireMaterialSpec,
 } from "../../data/wireLibrary";
 import { formatNumber } from "../../utils/electrical";
+import { WireResourceBrand } from "./WireResourceBrand";
 
 type MaterialOption = WireMaterialId | "any";
 type InsulationOption = WireInsulationId | "any";
@@ -158,6 +159,9 @@ export default function WireLibrary() {
   return (
     <section className="practice-wire-library" aria-labelledby="wire-library-title">
       <header className="wire-library-header">
+        <div className="wire-library-brand-section">
+          <WireResourceBrand size="md" />
+        </div>
         <div>
           <h3 id="wire-library-title">Wire Gauge Library</h3>
           <p>

@@ -286,6 +286,100 @@ body.builder-body {
   min-width: 12px;
 }
 
+/* Edge-positioned workspace action buttons (Undo, Redo, Open, Save) */
+.workspace-edge-actions {
+  position: fixed;
+  top: 72px;
+  right: clamp(12px, 3vw, 24px);
+  z-index: 940;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(10, 24, 48, 0.75);
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(3, 12, 32, 0.45);
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.workspace-edge-actions:hover {
+  opacity: 1;
+  background: rgba(10, 24, 48, 0.88);
+}
+
+.edge-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--builder-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.edge-action-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.edge-action-btn:disabled,
+.edge-action-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.edge-action-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.edge-action-btn .unsaved-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+
+@media (max-width: 720px) {
+  .workspace-edge-actions {
+    top: 64px;
+    right: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .edge-action-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .edge-action-icon {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace-edge-actions {
+    top: 56px;
+    flex-direction: row;
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+
 .mode-bar-actions {
   display: flex;
   gap: 4px;
