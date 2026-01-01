@@ -16,6 +16,7 @@ import "../styles/interactive-tutorial.css";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
+import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
@@ -736,6 +737,12 @@ export default function Builder() {
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
+  const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
+  const [modeBarScrollState, setModeBarScrollState] = useState<{
+    canScrollLeft: boolean;
+    canScrollRight: boolean;
+  }>({ canScrollLeft: false, canScrollRight: false });
+  const modeBarRef = useRef<HTMLDivElement>(null);
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
     getDefaultScenario()
   );
@@ -917,6 +924,34 @@ export default function Builder() {
     document.body.classList.add("builder-body");
     return () => {
       document.body.classList.remove("builder-body");
+    };
+  }, []);
+
+  // Track mode bar scroll state for scroll indicators
+  useEffect(() => {
+    const modeBar = modeBarRef.current;
+    if (!modeBar) return;
+
+    const updateScrollState = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = modeBar;
+      const canScrollLeft = scrollLeft > 5;
+      const canScrollRight = scrollLeft < scrollWidth - clientWidth - 5;
+      setModeBarScrollState({ canScrollLeft, canScrollRight });
+    };
+
+    // Initial check
+    updateScrollState();
+
+    // Listen for scroll events
+    modeBar.addEventListener("scroll", updateScrollState, { passive: true });
+
+    // Resize observer to detect layout changes
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(modeBar);
+
+    return () => {
+      modeBar.removeEventListener("scroll", updateScrollState);
+      resizeObserver.disconnect();
     };
   }, []);
 
@@ -1441,7 +1476,12 @@ export default function Builder() {
 
   return (
     <div className="builder-shell">
-      <div className="workspace-mode-bar">
+      {modeBarScrollState.canScrollLeft && (
+        <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--left" aria-hidden="true">
+          <span className="scroll-indicator-arrow">‹</span>
+        </div>
+      )}
+      <div className="workspace-mode-bar" ref={modeBarRef}>
         <button
           type="button"
           className="mode-tab"
@@ -1511,6 +1551,21 @@ export default function Builder() {
           <span className="mode-icon" aria-hidden="true">📚</span>
           <span className="mode-label">Learn</span>
         </button>
+        <button
+          type="button"
+          className="mode-tab mode-tab--icon-only"
+          data-active={isWireLibraryPanelOpen ? "true" : undefined}
+          onClick={() => setWireLibraryPanelOpen(true)}
+          aria-label="Wire gauge library"
+          title="Wire gauge library and specifications"
+        >
+          <span className="mode-icon" aria-hidden="true">🔌</span>
+        </button>
+        {modeBarScrollState.canScrollRight && (
+          <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
+            <span className="scroll-indicator-arrow">›</span>
+          </div>
+        )}
         <div className="mode-bar-spacer" />
         <div className="mode-bar-actions" aria-label="Workspace actions">
           <button
@@ -2656,6 +2711,12 @@ export default function Builder() {
           </div>
         </div>
       </div>
+
+      {/* Wire Library Panel */}
+      <WireLibraryPanel
+        isOpen={isWireLibraryPanelOpen}
+        onClose={() => setWireLibraryPanelOpen(false)}
+      />
 
       {/* Circuit Save Modal */}
       <CircuitSaveModal

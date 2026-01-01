@@ -193,6 +193,94 @@ body.builder-body {
   font-family: inherit;
 }
 
+.mode-tab--icon-only {
+  padding: 10px 12px;
+}
+
+.mode-tab--icon-only .mode-icon {
+  margin: 0;
+}
+
+/* Scroll indicator for mode bar */
+.mode-bar-scroll-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 4px;
+  color: var(--builder-cyan);
+  animation: scroll-hint 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Left scroll indicator - positioned outside the bar */
+.mode-bar-scroll-indicator--left {
+  position: fixed;
+  top: 12px;
+  left: calc(50% - min(600px, calc(50vw - 12px)) - 28px);
+  z-index: 951;
+  background: rgba(10, 24, 48, 0.95);
+  border: 1px solid var(--builder-border);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(3, 12, 32, 0.5);
+}
+
+.mode-bar-scroll-indicator--left .scroll-indicator-arrow {
+  animation: scroll-hint-left 1.5s ease-in-out infinite;
+}
+
+/* Inline indicator within the bar */
+.mode-bar-scroll-indicator--inline {
+  margin-left: 2px;
+}
+
+.scroll-indicator-arrow {
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(136, 204, 255, 0.6);
+  line-height: 1;
+}
+
+@keyframes scroll-hint {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+}
+
+@keyframes scroll-hint-left {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-3px);
+  }
+}
+
+@media (max-width: 640px) {
+  .mode-bar-scroll-indicator--left {
+    top: 8px;
+    left: calc(50% - min(50vw - 8px, 50vw - 8px) - 28px);
+    left: 4px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .scroll-indicator-arrow {
+    font-size: 16px;
+  }
+}
+
 .mode-bar-spacer {
   flex: 1;
   min-width: 12px;
@@ -528,6 +616,53 @@ body.builder-body {
   background: transparent;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Wire Library Panel */
+.builder-panel-shell--wire-library {
+  width: min(96vw, 1280px);
+  max-height: 92vh;
+}
+
+.builder-panel-body--wire-library {
+  overflow: auto;
+  padding: 24px 28px;
+  background: linear-gradient(
+    160deg,
+    rgba(6, 16, 34, 0.96),
+    rgba(2, 8, 18, 0.94)
+  );
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.builder-panel-body--wire-library .practice-wire-library {
+  margin-top: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.builder-panel-body--wire-library .wire-library-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.builder-panel-body--wire-library .wire-library-header h3 {
+  font-size: 1.4rem;
+  color: #a8dcff;
+}
+
+.builder-panel-overlay--wire-library .wire-library-table-wrapper {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.mode-action-btn--wire-library:hover {
+  background: rgba(45, 212, 191, 0.15);
+  color: #6ee7b7;
+  border-color: rgba(45, 212, 191, 0.3);
 }
 
 .builder-panel-close {
