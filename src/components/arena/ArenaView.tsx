@@ -2270,7 +2270,6 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                   className={`arena-metric-toggle${selectedMetrics.has(preset.id) ? ' active' : ''}`}
                   onClick={() => handleMetricToggle(preset.id)}
                   type="button"
-                  disabled={selectedMetrics.has('all')}
                 >
                   <span className="toggle-icon">{preset.icon}</span>
                   <span className="toggle-label">{preset.label}</span>
