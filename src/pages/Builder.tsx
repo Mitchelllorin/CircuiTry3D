@@ -1568,8 +1568,8 @@ export default function Builder() {
         )}
       </div>
 
-      {/* Workspace Action Buttons - positioned at edge of workspace */}
-      <div className="workspace-edge-actions" aria-label="Workspace actions">
+      {/* Workspace Quick Action Buttons - History/File actions on right edge */}
+      <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
         <button
           type="button"
           className="edge-action-btn"
@@ -1612,6 +1612,45 @@ export default function Builder() {
           {circuitStorage.hasUnsavedChanges && (
             <span className="unsaved-dot" aria-label="Unsaved changes" />
           )}
+        </button>
+      </div>
+
+      {/* Workspace Quick Action Buttons - Tool actions on left edge */}
+      <div className="workspace-edge-actions workspace-edge-actions--left" aria-label="Tool quick actions">
+        <button
+          type="button"
+          className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
+          onClick={() => triggerBuilderAction("toggle-wire-mode")}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          aria-pressed={modeState.isWireMode}
+          aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
+          title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+        >
+          <span className="edge-action-icon" aria-hidden="true">🔌</span>
+        </button>
+        <button
+          type="button"
+          className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
+          onClick={() => triggerBuilderAction("toggle-rotate-mode")}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          aria-pressed={modeState.isRotateMode}
+          aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
+          title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
+        >
+          <span className="edge-action-icon" aria-hidden="true">🔄</span>
+        </button>
+        <button
+          type="button"
+          className="edge-action-btn"
+          onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
+          disabled={controlsDisabled}
+          aria-disabled={controlsDisabled}
+          aria-label="Edit selected component"
+          title="Edit / Select (E)"
+        >
+          <span className="edge-action-icon" aria-hidden="true">✏️</span>
         </button>
       </div>
 

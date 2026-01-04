@@ -353,12 +353,45 @@ body.builder-body {
   animation: pulse-dot 1.5s infinite;
 }
 
+/* Active state for toggle buttons (Wire mode, Rotate mode) */
+.edge-action-btn--active {
+  background: rgba(136, 204, 255, 0.25);
+  border-color: var(--builder-cyan);
+  color: var(--builder-cyan);
+  box-shadow: 0 0 12px rgba(136, 204, 255, 0.35);
+}
+
+.edge-action-btn--active:hover:not(:disabled) {
+  background: rgba(136, 204, 255, 0.35);
+  border-color: var(--builder-cyan);
+  color: #fff;
+}
+
+/* Right edge positioning (default - Undo, Redo, Load, Save) */
+.workspace-edge-actions--right {
+  right: clamp(12px, 3vw, 24px);
+  left: auto;
+}
+
+/* Left edge positioning (Wire, Rotate, Edit tools) */
+.workspace-edge-actions--left {
+  left: clamp(12px, 3vw, 24px);
+  right: auto;
+}
+
 @media (max-width: 720px) {
   .workspace-edge-actions {
     top: 64px;
-    right: 8px;
     padding: 4px;
     gap: 4px;
+  }
+
+  .workspace-edge-actions--right {
+    right: 8px;
+  }
+
+  .workspace-edge-actions--left {
+    left: 8px;
   }
 
   .edge-action-btn {
@@ -373,10 +406,21 @@ body.builder-body {
 
 @media (max-width: 480px) {
   .workspace-edge-actions {
-    top: 56px;
-    flex-direction: row;
-    right: 50%;
-    transform: translateX(50%);
+    top: auto;
+    bottom: clamp(80px, 18vh, 140px);
+    flex-direction: column;
+  }
+
+  .workspace-edge-actions--right {
+    right: 8px;
+    left: auto;
+    transform: none;
+  }
+
+  .workspace-edge-actions--left {
+    left: 8px;
+    right: auto;
+    transform: none;
   }
 }
 
