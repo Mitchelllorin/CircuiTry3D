@@ -77,6 +77,63 @@ export type LegacyCircuitState = {
   };
 };
 
+/**
+ * Component metadata for scalable integration of real-world components.
+ * This structure supports schematic symbols, preview images, manufacturer data,
+ * and other metadata needed for educational and professional use.
+ */
+export type ComponentMetadata = {
+  /** Schematic symbol identifier (e.g., 'ANSI_RESISTOR', 'IEC_CAPACITOR') */
+  schematicSymbol?: string;
+  /** Path to schematic symbol SVG/PNG for display in library */
+  schematicSymbolPath?: string;
+  /** Path to component preview image (3D render or photo) */
+  previewImagePath?: string;
+  /** ASCII/Unicode schematic symbol representation (e.g., '─/\\/\\/─' for resistor) */
+  symbolText?: string;
+  /** Short description for easy ID (e.g., 'Ohms', 'DC V', 'Farad') */
+  symbolDesc?: string;
+  /** Unit of measurement (e.g., 'Ω', 'V', 'F', 'H') */
+  symbolUnit?: string;
+  /** Reference designator (e.g., 'R1', 'C1', 'V1') */
+  symbolRef?: string;
+  /** Component category for filtering/organization */
+  category?: ComponentCategory;
+  /** Real-world component data for future integration */
+  realWorld?: RealWorldComponentData;
+  /** Educational tags for curriculum alignment */
+  educationalTags?: string[];
+};
+
+export type ComponentCategory =
+  | "power"
+  | "passive"
+  | "semiconductor"
+  | "electromechanical"
+  | "integrated"
+  | "connector"
+  | "sensor"
+  | "display";
+
+/**
+ * Real-world component data structure for future manufacturer/distributor integration.
+ * This enables linking simulation components to purchasable real-world parts.
+ */
+export type RealWorldComponentData = {
+  /** Manufacturer part number */
+  partNumber?: string;
+  /** Manufacturer name */
+  manufacturer?: string;
+  /** Datasheet URL */
+  datasheetUrl?: string;
+  /** Typical package types (e.g., 'DIP-8', 'SMD-0805', 'TO-220') */
+  packages?: string[];
+  /** Price range estimate */
+  priceRange?: { min: number; max: number; currency: string };
+  /** Common distributor links */
+  distributors?: Array<{ name: string; url: string; sku?: string }>;
+};
+
 export type ComponentAction = {
   id: string;
   icon: string;
@@ -84,6 +141,8 @@ export type ComponentAction = {
   action: "component" | "junction";
   builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "led" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground";
   description?: string;
+  /** Extended metadata for scalable component integration */
+  metadata?: ComponentMetadata;
 };
 
 export type BuilderToolId = "select" | "wire" | "measure";
