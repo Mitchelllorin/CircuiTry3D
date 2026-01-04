@@ -33,14 +33,69 @@ export const FLOW_MODE_APPEARANCE = {
   conventional: { opacity: 0.95, size: 0.09, glowOpacity: 0.4 }  // Solid for conventional current
 } as const;
 
+/**
+ * Physics-based constants for realistic current flow visualization
+ * These constants map electrical properties to visual representations
+ */
+export const CURRENT_FLOW_PHYSICS = {
+  /**
+   * Base speed multiplier for particle movement (units per second at 1A)
+   * In real circuits, drift velocity is very slow (~0.0001 m/s for 1A in copper)
+   * We scale this up dramatically for visualization while maintaining proportionality
+   */
+  BASE_SPEED_PER_AMP: 0.3,
+
+  /**
+   * Minimum speed to ensure particles are always visibly moving when current flows
+   */
+  MIN_VISIBLE_SPEED: 0.15,
+
+  /**
+   * Maximum speed cap to prevent particles from moving too fast to see
+   */
+  MAX_SPEED: 1.5,
+
+  /**
+   * Base number of particles per unit path length at 1A
+   * Higher current = more charge carriers = more visible particles
+   */
+  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 0.8,
+
+  /**
+   * Minimum particles regardless of current (ensures visibility)
+   */
+  MIN_PARTICLES_PER_PATH: 2,
+
+  /**
+   * Maximum particles per path (performance limit)
+   */
+  MAX_PARTICLES_PER_PATH: 15,
+
+  /**
+   * Current threshold below which we consider "no current" (microamps)
+   */
+  ZERO_CURRENT_THRESHOLD: 0.000001,
+
+  /**
+   * Speed variation factor - adds natural randomness to particle movement
+   * Real electrons don't all move at exactly the same speed
+   */
+  SPEED_VARIATION: 0.15,
+} as const;
+
 export type CurrentFlowParticle = {
   id: string;
   position: Vec2;
   progress: number;
+  /** Base speed from current calculation (will be modified by variation) */
+  baseSpeed: number;
+  /** Actual speed including random variation */
   speed: number;
   path: Vec2[];
   intensity: CurrentIntensity;
   reversed: boolean; // True for electron flow (reversed direction)
+  /** The amperage this particle represents */
+  currentAmps: number;
 };
 
 export type FlowPathConfig = {
@@ -49,6 +104,8 @@ export type FlowPathConfig = {
   baseSpeed?: number;
   currentAmps?: number;
   sourcePolarity?: "positive" | "negative";
+  /** Direction of current flow: true if current flows forward along path */
+  flowsForward?: boolean;
 };
 
 export class CurrentFlowAnimationSystem {
@@ -60,10 +117,71 @@ export class CurrentFlowAnimationSystem {
   private flowMode: FlowMode = "electron";
   private isCircuitClosed: boolean = false;
   private globalIntensity: CurrentIntensity = "medium";
+  /** Global current value in amps for physics-based calculations */
+  private globalCurrentAmps: number = 0;
 
   constructor(three: any, parentGroup: any) {
     this.three = three;
     this.parentGroup = parentGroup;
+  }
+
+  /**
+   * Calculate physics-based speed from current magnitude
+   * Higher current = faster drift velocity = faster particles
+   * Uses logarithmic scaling to handle wide current ranges (mA to A)
+   */
+  private calculateSpeedFromCurrent(amps: number): number {
+    const absAmps = Math.abs(amps);
+
+    // No current = no movement
+    if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+      return 0;
+    }
+
+    // Use logarithmic scaling to handle the wide range of currents
+    // log10(0.001) = -3, log10(1) = 0, log10(10) = 1
+    // This gives us smooth visual scaling across mA to A range
+    const logCurrent = Math.log10(absAmps + 0.001); // +0.001 to avoid log(0)
+    const normalizedCurrent = (logCurrent + 3) / 4; // Map -3 to 1 into 0 to 1
+
+    // Calculate speed with minimum and maximum bounds
+    const baseSpeed = CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED +
+      normalizedCurrent * (CURRENT_FLOW_PHYSICS.MAX_SPEED - CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED);
+
+    return Math.min(CURRENT_FLOW_PHYSICS.MAX_SPEED, Math.max(CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED, baseSpeed));
+  }
+
+  /**
+   * Calculate number of particles based on path length and current
+   * Higher current = more charge carriers = more visible particles
+   * This creates a denser "stream" of particles for higher currents
+   */
+  private calculateParticleCount(pathLength: number, amps: number): number {
+    const absAmps = Math.abs(amps);
+
+    if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+      return 0;
+    }
+
+    // Base count on path length and current magnitude
+    // Use square root scaling so particle density doesn't explode at high currents
+    const densityFactor = Math.sqrt(absAmps) * CURRENT_FLOW_PHYSICS.PARTICLES_PER_UNIT_LENGTH_PER_AMP;
+    const baseCount = Math.round(pathLength * densityFactor);
+
+    // Clamp to reasonable bounds
+    return Math.min(
+      CURRENT_FLOW_PHYSICS.MAX_PARTICLES_PER_PATH,
+      Math.max(CURRENT_FLOW_PHYSICS.MIN_PARTICLES_PER_PATH, baseCount)
+    );
+  }
+
+  /**
+   * Add random variation to speed to simulate natural electron movement
+   * Real charge carriers don't move at uniform velocities
+   */
+  private addSpeedVariation(baseSpeed: number): number {
+    const variation = (Math.random() - 0.5) * 2 * CURRENT_FLOW_PHYSICS.SPEED_VARIATION * baseSpeed;
+    return baseSpeed + variation;
   }
 
   /**
@@ -120,11 +238,29 @@ export class CurrentFlowAnimationSystem {
 
   /**
    * Set the global current intensity based on amperage
+   * This affects both visual appearance AND particle physics (speed, density)
    * @param amps - Current in amperes
    */
   public setCurrentIntensity(amps: number): void {
+    this.globalCurrentAmps = Math.abs(amps);
     this.globalIntensity = this.calculateIntensity(amps);
+
+    // Update all existing particle speeds based on new current value
+    const newBaseSpeed = this.calculateSpeedFromCurrent(this.globalCurrentAmps);
+    this.particles.forEach(particle => {
+      particle.currentAmps = this.globalCurrentAmps;
+      particle.baseSpeed = newBaseSpeed;
+      particle.speed = this.addSpeedVariation(newBaseSpeed);
+    });
+
     this.updateAllParticleAppearances();
+  }
+
+  /**
+   * Get the current amperage value
+   */
+  public getCurrentAmps(): number {
+    return this.globalCurrentAmps;
   }
 
   /**
@@ -148,34 +284,59 @@ export class CurrentFlowAnimationSystem {
    * - The flow mode determines animation direction:
    *   - "conventional": particles move forward along path (progress increases)
    *   - "electron": particles move backward along path (progress decreases)
+   *
+   * Physics-based behavior:
+   * - Particle count scales with current magnitude (more current = more visible charge carriers)
+   * - Particle speed scales with current magnitude (more current = faster drift velocity)
+   * - Speed includes natural variation to simulate real electron behavior
    */
   public addFlowPath(
     pathOrConfig: Vec2[] | FlowPathConfig,
-    particleCount: number = 3,
-    baseSpeed: number = 0.4
+    particleCount?: number,
+    baseSpeed?: number
   ): void {
     let path: Vec2[];
-    let count = particleCount;
-    let speed = baseSpeed;
-    let intensity = this.globalIntensity;
+    let currentAmps = this.globalCurrentAmps;
+    let flowsForward = true;
 
     if (Array.isArray(pathOrConfig)) {
       path = pathOrConfig;
     } else {
       path = pathOrConfig.path;
-      count = pathOrConfig.particleCount ?? particleCount;
-      speed = pathOrConfig.baseSpeed ?? baseSpeed;
       if (pathOrConfig.currentAmps !== undefined) {
-        intensity = this.calculateIntensity(pathOrConfig.currentAmps);
+        currentAmps = Math.abs(pathOrConfig.currentAmps);
+      }
+      if (pathOrConfig.flowsForward !== undefined) {
+        flowsForward = pathOrConfig.flowsForward;
+      }
+      // Allow explicit override of particle count, otherwise calculate from physics
+      if (pathOrConfig.particleCount !== undefined) {
+        particleCount = pathOrConfig.particleCount;
+      }
+      // Allow explicit override of speed, otherwise calculate from physics
+      if (pathOrConfig.baseSpeed !== undefined) {
+        baseSpeed = pathOrConfig.baseSpeed;
       }
     }
 
     if (path.length < 2) return;
 
-    // Determine flow direction based on mode
-    // Electron flow: reversed = true (particles move backward along path)
-    // Conventional flow: reversed = false (particles move forward along path)
-    const isReversed = this.flowMode === "electron";
+    // Calculate path length for physics-based calculations
+    const pathLength = this.calculatePathLength(path);
+
+    // Calculate intensity from current
+    const intensity = currentAmps > 0 ? this.calculateIntensity(currentAmps) : this.globalIntensity;
+
+    // Calculate physics-based particle count if not explicitly provided
+    const count = particleCount ?? this.calculateParticleCount(pathLength, currentAmps);
+
+    // Calculate physics-based speed if not explicitly provided
+    const calculatedSpeed = baseSpeed ?? this.calculateSpeedFromCurrent(currentAmps);
+
+    // Determine flow direction based on mode and current direction
+    // - In electron flow mode, electrons move opposite to conventional current
+    // - If current flows forward along path, electrons flow backward, and vice versa
+    const isReversed = this.flowMode === "electron" ? flowsForward : !flowsForward;
 
     for (let i = 0; i < count; i++) {
       // For electron flow, start at the end of the path (since we'll move backward)
@@ -184,14 +345,19 @@ export class CurrentFlowAnimationSystem {
       // Distribute particles evenly along the path
       const initialProgress = isReversed ? 1 - (i / count) : i / count;
 
+      // Add speed variation for natural movement
+      const particleSpeed = this.addSpeedVariation(calculatedSpeed);
+
       const particle: CurrentFlowParticle = {
         id: `particle-${this.nextParticleId++}`,
         position: { ...startPosition },
         progress: initialProgress,
-        speed: speed + Math.random() * 0.2,
+        baseSpeed: calculatedSpeed,
+        speed: particleSpeed,
         path: path, // Use the path as-is, direction is handled in update()
         intensity,
-        reversed: isReversed
+        reversed: isReversed,
+        currentAmps
       };
       this.particles.push(particle);
       this.createParticleMesh(particle);
@@ -359,6 +525,120 @@ export class CurrentFlowAnimationSystem {
     }
 
     return path[path.length - 1];
+  }
+
+  /**
+   * Add flow paths from DC solver wire segment results
+   * This provides physics-accurate current flow visualization using actual solved currents
+   *
+   * @param wireSegmentCurrents - Array of per-segment current data from solveDCCircuit()
+   * @param wirePathMap - Map of wireId to full path points
+   *
+   * Each segment gets particles proportional to and moving at speeds based on
+   * the actual current flowing through that segment, providing realistic visualization
+   * of current distribution in complex circuits (e.g., parallel branches)
+   */
+  public addFlowPathsFromSolver(
+    wireSegmentCurrents: Array<{ wireId: string; segmentIndex: number; amps: number }>,
+    wirePathMap: Map<string, Vec2[]>
+  ): void {
+    // Group segments by wire
+    const wireGroups = new Map<string, Array<{ segmentIndex: number; amps: number }>>();
+
+    for (const segment of wireSegmentCurrents) {
+      if (!wireGroups.has(segment.wireId)) {
+        wireGroups.set(segment.wireId, []);
+      }
+      wireGroups.get(segment.wireId)!.push({
+        segmentIndex: segment.segmentIndex,
+        amps: segment.amps
+      });
+    }
+
+    // Create flow paths for each wire's segments
+    for (const [wireId, segments] of wireGroups) {
+      const fullPath = wirePathMap.get(wireId);
+      if (!fullPath || fullPath.length < 2) continue;
+
+      // Sort segments by index
+      segments.sort((a, b) => a.segmentIndex - b.segmentIndex);
+
+      // Create a flow path for each segment with its own current
+      for (const segment of segments) {
+        const startIdx = segment.segmentIndex;
+        const endIdx = segment.segmentIndex + 1;
+
+        if (startIdx >= fullPath.length - 1) continue;
+
+        // Extract segment path (just two points for a single segment)
+        const segmentPath = [fullPath[startIdx], fullPath[endIdx]];
+        const currentAmps = segment.amps;
+
+        // Direction: positive amps means current flows startIdx -> endIdx
+        // If amps is negative, current flows in reverse
+        const flowsForward = currentAmps >= 0;
+
+        this.addFlowPath({
+          path: segmentPath,
+          currentAmps: Math.abs(currentAmps),
+          flowsForward
+        });
+      }
+    }
+  }
+
+  /**
+   * Calculate power dissipation color based on P = I²R
+   * Returns a color that transitions from cool (low power) to hot (high power)
+   * for visualizing heat generation in resistive elements
+   *
+   * @param powerWatts - Power dissipation in watts
+   * @returns RGB color value as a hex number
+   */
+  public static calculatePowerDissipationColor(powerWatts: number): number {
+    const absPower = Math.abs(powerWatts);
+
+    // Power thresholds for color transitions (educational circuit ranges)
+    // 0W = no glow, 0.01W = warm start, 0.1W = visible glow, 1W = bright, 5W+ = critical
+    if (absPower < 0.001) {
+      // No power - neutral gray
+      return 0x4b5563;
+    } else if (absPower < 0.01) {
+      // Very low power - slight warm tint
+      return 0x6b7280;
+    } else if (absPower < 0.1) {
+      // Low power - warm orange glow
+      return 0xf59e0b;
+    } else if (absPower < 0.5) {
+      // Medium power - orange-red
+      return 0xf97316;
+    } else if (absPower < 2.0) {
+      // High power - red glow
+      return 0xef4444;
+    } else {
+      // Critical power - bright red-white (overheating)
+      return 0xff6b6b;
+    }
+  }
+
+  /**
+   * Calculate glow intensity based on power dissipation
+   * Higher power = brighter glow to simulate heat radiation
+   *
+   * @param powerWatts - Power dissipation in watts
+   * @returns Emissive intensity value (0 to 2)
+   */
+  public static calculatePowerGlowIntensity(powerWatts: number): number {
+    const absPower = Math.abs(powerWatts);
+
+    // Use logarithmic scaling for wide power range
+    if (absPower < 0.001) return 0;
+
+    const logPower = Math.log10(absPower + 0.001);
+    // Map from -3 (0.001W) to 1 (10W) into 0.1 to 2.0
+    const normalizedPower = (logPower + 3) / 4;
+
+    return Math.min(2.0, Math.max(0.1, normalizedPower * 1.5));
   }
 
   public clear() {
