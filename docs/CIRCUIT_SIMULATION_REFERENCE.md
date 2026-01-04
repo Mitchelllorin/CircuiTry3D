@@ -100,7 +100,7 @@ This project includes an educational wire library with computed \(R\) per meter 
 
 Right now, schematic wires are treated as ideal shorts for clarity and stable educational behavior. If/when we want “voltage drop on long wires”, the solver can be extended to stamp wire segments as resistors using the library’s `resistanceOhmPerMeter`.
 
-## What’s Explicitly Not Modeled (Yet)
+## What's Explicitly Not Modeled (Yet)
 
 To keep the solver deterministic and linear, these are currently treated as open/nonlinear and are not solved in DC:
 
@@ -108,4 +108,75 @@ To keep the solver deterministic and linear, these are currently treated as open
 - `bjt` (nonlinear multi-terminal)
 - `capacitor` (open at DC steady state; transient would require time-domain solving)
 - `switch` (needs an explicit open/closed state in the schematic model)
+
+## Physics-Based Current Flow Visualization
+
+The current flow animation system maps electrical quantities to visual properties that accurately represent real circuit behavior:
+
+### Particle Speed ~ Drift Velocity
+
+Particle movement speed scales with current magnitude using logarithmic scaling:
+
+- **Low current (< 1mA)**: Slow, barely perceptible movement
+- **Medium current (100mA)**: Moderate, clearly visible flow
+- **High current (> 1A)**: Fast, energetic particle movement
+
+This reflects how drift velocity increases with current: \( v_d = \frac{I}{nAq} \)
+
+### Particle Density ~ Charge Carrier Count
+
+More particles appear when current is higher, representing increased charge flow:
+
+- Higher current = more visible "charge carriers" flowing through wires
+- Particle count scales with \(\sqrt{I}\) to prevent visual overload at high currents
+- Minimum of 2 particles per path ensures visibility even at low currents
+
+### Particle Direction ~ Current Direction
+
+- **Conventional current mode**: Particles flow positive → negative (standard engineering convention)
+- **Electron flow mode**: Particles flow negative → positive (actual electron movement)
+
+The animation direction is determined by the solved current sign from the MNA solver:
+- Positive current through a wire segment = forward direction
+- Negative current = reverse direction
+
+### Per-Segment Current
+
+Each wire segment can have different current values (important for parallel branches):
+
+- The DC solver calculates current through every wire segment
+- Animation uses these per-segment values for accurate visualization
+- Parallel branches show different particle densities/speeds based on actual current division
+
+### Power Dissipation Visualization (P = I²R)
+
+Components glow based on their power dissipation:
+
+| Power Level | Visual Effect | Color |
+|-------------|---------------|-------|
+| < 0.001 W | No glow | Gray |
+| 0.001 - 0.01 W | Slight warmth | Gray-warm |
+| 0.01 - 0.1 W | Warm glow | Orange |
+| 0.1 - 0.5 W | Bright glow | Orange-red |
+| 0.5 - 2 W | Hot glow | Red |
+| > 2 W | Critical (overheating) | Bright red |
+
+This helps students understand:
+- Where energy is being dissipated in the circuit
+- Why high-current paths through resistors generate heat
+- The relationship between current, resistance, and power
+
+### Voltage Potential Visualization
+
+Node voltages are visualized using:
+
+- **Color gradient**: Blue (negative) → Gray (0V) → Green (low) → Yellow → Red (high)
+- **Height offset**: Higher voltage = higher visual position (represents potential energy)
+- **Glow intensity**: Higher voltage magnitude = brighter indicator
+
+This helps students visualize:
+- Where potential energy is stored in the circuit
+- Voltage drops across components
+- The concept of electrical potential
+
 
