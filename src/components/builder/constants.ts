@@ -54,7 +54,7 @@ export const SCHEMATIC_SYMBOLS = {
 export const COMPONENT_ACTIONS: ComponentAction[] = [
   {
     id: "battery",
-    icon: "B",
+    icon: "─|├─",
     label: "Battery",
     action: "component",
     builderType: "battery",
@@ -71,7 +71,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "ac_source",
-    icon: "AC",
+    icon: "─(~)─",
     label: "AC Source",
     action: "component",
     builderType: "ac_source",
@@ -88,7 +88,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "resistor",
-    icon: "R",
+    icon: "─/\\/\\/─",
     label: "Resistor",
     action: "component",
     builderType: "resistor",
@@ -105,7 +105,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "capacitor",
-    icon: "C",
+    icon: "─||─",
     label: "Capacitor",
     action: "component",
     builderType: "capacitor",
@@ -122,7 +122,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "inductor",
-    icon: "L",
+    icon: "─⌇⌇⌇─",
     label: "Inductor",
     action: "component",
     builderType: "inductor",
@@ -139,7 +139,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "diode",
-    icon: "D",
+    icon: "─▷|─",
     label: "Diode",
     action: "component",
     builderType: "diode",
@@ -156,7 +156,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "led",
-    icon: "LED",
+    icon: "─▷|→",
     label: "LED",
     action: "component",
     builderType: "led",
@@ -173,7 +173,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "bjt",
-    icon: "Q",
+    icon: "─⧫─",
     label: "BJT",
     action: "component",
     builderType: "bjt",
@@ -190,7 +190,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "bjt-npn",
-    icon: "NPN",
+    icon: "─⧫→",
     label: "NPN Transistor",
     action: "component",
     builderType: "bjt-npn",
@@ -207,7 +207,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "bjt-pnp",
-    icon: "PNP",
+    icon: "─⧫←",
     label: "PNP Transistor",
     action: "component",
     builderType: "bjt-pnp",
@@ -224,7 +224,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "darlington",
-    icon: "DRL",
+    icon: "─⧫⧫─",
     label: "Darlington Pair",
     action: "component",
     builderType: "darlington",
@@ -241,7 +241,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "mosfet",
-    icon: "M",
+    icon: "─⫞|─",
     label: "MOSFET",
     action: "component",
     builderType: "mosfet",
@@ -258,7 +258,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "switch",
-    icon: "SW",
+    icon: "─o/o─",
     label: "Switch",
     action: "component",
     builderType: "switch",
@@ -275,7 +275,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "fuse",
-    icon: "F",
+    icon: "─◇─",
     label: "Fuse",
     action: "component",
     builderType: "fuse",
@@ -292,7 +292,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "potentiometer",
-    icon: "POT",
+    icon: "─/↕/─",
     label: "Potentiometer",
     action: "component",
     builderType: "potentiometer",
@@ -309,7 +309,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "lamp",
-    icon: "LA",
+    icon: "─⊗─",
     label: "Lamp",
     action: "component",
     builderType: "lamp",
@@ -326,7 +326,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "motor",
-    icon: "MTR",
+    icon: "─(M)─",
     label: "Motor",
     action: "component",
     builderType: "motor",
@@ -343,7 +343,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "speaker",
-    icon: "SPK",
+    icon: "─◁)))",
     label: "Speaker",
     action: "component",
     builderType: "speaker",
@@ -360,7 +360,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "opamp",
-    icon: "OP",
+    icon: "─▷─",
     label: "Op-Amp",
     action: "component",
     builderType: "opamp",
@@ -377,7 +377,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "transformer",
-    icon: "T",
+    icon: "⌇||⌇",
     label: "Transformer",
     action: "component",
     builderType: "transformer",
@@ -394,7 +394,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "ground",
-    icon: "GND",
+    icon: "─┴─",
     label: "Ground",
     action: "component",
     builderType: "ground",
@@ -411,7 +411,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
   {
     id: "junction",
-    icon: "J",
+    icon: "─●─",
     label: "Junction",
     action: "junction",
     description: "Add junction - branch wires for parallel paths",

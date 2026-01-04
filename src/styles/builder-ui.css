@@ -952,9 +952,11 @@ body.builder-body {
 }
 
 .slider-icon {
-  font-size: 16px;
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
 }
 
 /* Component library item with schematic symbol */
@@ -969,17 +971,21 @@ body.builder-body {
 
 .slider-icon-label .slider-icon {
   flex-shrink: 0;
-  width: 28px;
+  min-width: 52px;
   height: 28px;
+  padding: 0 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 255, 136, 0.1);
   border-radius: 6px;
   border: 1px solid rgba(0, 255, 136, 0.22);
-  font-size: 11px;
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 12px;
   font-weight: 700;
   color: var(--builder-green);
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, text-shadow 0.2s ease;
 }
 
 /* Schematic symbol image container */
@@ -1020,6 +1026,14 @@ body.builder-body {
 
 .slider-btn:hover .slider-preview {
   opacity: 1;
+}
+
+/* Hover enhancement for schematic icon */
+.slider-btn:hover .slider-icon {
+  background: rgba(0, 255, 136, 0.18);
+  border-color: rgba(0, 255, 136, 0.4);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
 }
 
 .slider-icon-label .slider-preview img {
