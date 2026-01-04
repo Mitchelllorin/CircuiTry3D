@@ -961,9 +961,10 @@ body.builder-body {
 .slider-icon-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 11px;
   width: 100%;
+  min-height: 32px;
 }
 
 .slider-icon-label .slider-icon {
@@ -1046,64 +1047,68 @@ body.builder-body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  min-width: 42px;
-  max-width: 52px;
-  padding: 2px 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 2px;
+  min-width: 54px;
+  max-width: 68px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-left: 4px;
+  margin-right: 4px;
 }
 
 .slider-symbol-text {
-  font-family: "Courier New", monospace;
-  font-size: 9px;
-  font-weight: 600;
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 11px;
+  font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.5px;
-  line-height: 1;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
   white-space: nowrap;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
 }
 
 .slider-symbol-info {
   display: flex;
   align-items: center;
-  gap: 3px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
   justify-content: center;
 }
 
 .slider-symbol-ref {
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 255, 136, 0.95);
   letter-spacing: 0.02em;
 }
 
 .slider-symbol-desc {
-  font-size: 6px;
-  font-weight: 500;
-  color: rgba(200, 220, 255, 0.75);
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(200, 220, 255, 0.9);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .slider-symbol-unit {
-  font-size: 6px;
-  font-weight: 600;
-  color: rgba(0, 255, 200, 0.8);
+  font-size: 8px;
+  font-weight: 700;
+  color: rgba(0, 220, 255, 0.95);
   letter-spacing: 0.02em;
 }
 
 /* Hover enhancement for symbol column */
 .slider-btn:hover .slider-symbol-col {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(0, 255, 136, 0.35);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.15);
 }
 
 .slider-btn:hover .slider-symbol-text {
   color: #ffffff;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 .slider-label {
