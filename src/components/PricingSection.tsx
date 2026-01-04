@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import pricingSource from "../data/pricing.json";
-import BrandMark from "./BrandMark";
+import WordMark from "./WordMark";
 import "../styles/pricing.css";
 
 type BillingCycleId = "monthly" | "annual";
@@ -163,9 +163,7 @@ export default function PricingSection() {
   return (
     <section className="pricing-section" aria-labelledby="pricing-title">
       <div className="pricing-hero">
-        <div className="pricing-brand" aria-hidden="true">
-          <BrandMark size="sm" decorative />
-        </div>
+        <WordMark size="sm" decorative className="pricing-brand" />
         <h1 id="pricing-title">Plans &amp; Pricing</h1>
         <p className="pricing-subtitle">
           Choose the subscription that powers your classroom. Upgrade any time as your program grows.

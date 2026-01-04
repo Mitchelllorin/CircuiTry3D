@@ -154,6 +154,18 @@ body.builder-body {
   border-radius: 999px;
 }
 
+.mode-bar-brand {
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 8px;
+  flex: 0 0 auto;
+}
+
+.mode-bar-brand .circuitry-wordmark {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
 .mode-tab {
   display: flex;
   align-items: center;
@@ -196,6 +208,21 @@ body.builder-body {
 .mode-bar-spacer {
   flex: 1;
   min-width: 12px;
+}
+
+.mode-bar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--builder-border);
+  margin: 0 4px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .mode-bar-divider {
+    height: 22px;
+    margin: 0 2px;
+  }
 }
 
 .mode-bar-actions {
@@ -265,6 +292,14 @@ body.builder-body {
     right: auto;
     width: calc(100vw - 16px);
     max-width: calc(100vw - 16px);
+  }
+
+  .mode-bar-brand {
+    padding: 0 8px 0 4px;
+  }
+
+  .mode-bar-brand .circuitry-wordmark {
+    font-size: 12px;
   }
 
   .mode-tab {
@@ -2452,4 +2487,43 @@ body.builder-body {
   .slider-chip {
     min-height: 48px;
   }
+}
+
+/* Classroom, Pricing, and Community Panel Overlays */
+.builder-panel-shell--classroom,
+.builder-panel-shell--pricing,
+.builder-panel-shell--community {
+  width: min(96vw, 1280px);
+  max-height: 92vh;
+}
+
+.builder-panel-body--classroom,
+.builder-panel-body--pricing,
+.builder-panel-body--community {
+  overflow: auto;
+  padding: 0;
+  background: rgba(8, 20, 44, 0.95);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.builder-panel-body--classroom > *,
+.builder-panel-body--pricing > *,
+.builder-panel-body--community > * {
+  max-width: 100%;
+}
+
+/* Reset padding for embedded page sections */
+.builder-panel-body--classroom .classroom-page,
+.builder-panel-body--pricing .pricing-section,
+.builder-panel-body--community .community-page {
+  padding: 24px;
+  min-height: 100%;
+}
+
+/* Ensure scrollable content */
+.builder-panel-overlay--classroom .classroom-page,
+.builder-panel-overlay--pricing .pricing-section,
+.builder-panel-overlay--community .community-page {
+  overflow-y: auto;
 }

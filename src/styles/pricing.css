@@ -37,8 +37,10 @@
   opacity: 0.95;
 }
 
-.pricing-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+.pricing-brand.circuitry-wordmark {
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.22));
 }
 
 .pricing-hero h1 {
@@ -363,8 +365,10 @@
   opacity: 0.95;
 }
 
-.subscription-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+.subscription-brand.circuitry-wordmark {
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.22));
 }
 
 .subscription-kicker {

@@ -1,0 +1,598 @@
+.student-view-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 0;
+  color: #e2e8f0;
+}
+
+.student-view-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(34, 197, 94, 0.15));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.student-view-brand {
+  margin-bottom: 0.75rem;
+  opacity: 0.95;
+}
+
+.student-view-header h1 {
+  margin: 0.35rem 0;
+  font-size: 1.7rem;
+}
+
+.student-view-header p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.86);
+}
+
+.student-view-header .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  margin: 0;
+  color: rgba(134, 239, 172, 0.85);
+}
+
+.student-stats-row {
+  display: flex;
+  gap: 1.25rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.student-stats-row div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 5rem;
+  text-align: center;
+}
+
+.student-stats-row strong {
+  font-size: 1.5rem;
+  color: #86efac;
+}
+
+.student-stats-row span {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.student-view-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 1.5rem;
+}
+
+.student-view-panel {
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 1.2rem;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.student-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.student-panel-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.student-panel-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.student-class-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.student-class-card {
+  text-align: left;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  background: rgba(30, 41, 59, 0.65);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.student-class-card:hover {
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.student-class-card.is-selected {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.1);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.student-class-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.student-class-card header span {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.student-class-card p {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.student-class-card footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.student-join-form {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+}
+
+.student-join-form h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.student-join-form input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.7);
+  color: inherit;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.6rem;
+}
+
+.student-join-form button {
+  width: 100%;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 0.6rem;
+  background: linear-gradient(120deg, #22c55e, #16a34a);
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.student-join-form button:hover {
+  opacity: 0.9;
+}
+
+.join-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.join-success {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #86efac;
+}
+
+.assignments-panel {
+  min-height: 400px;
+}
+
+.student-assignments-section header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+  margin-bottom: 0.75rem;
+}
+
+.student-assignments-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.student-assignment-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.student-assignment-card {
+  border-radius: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.student-assignment-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.student-assignment-card header div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.student-assignment-card header small {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.difficulty-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.7rem;
+  text-transform: capitalize;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.student-assignment-card p {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.assignment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.tag {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  font-size: 0.7rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.status-completed {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #86efac;
+}
+
+.status-progress {
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  color: #fde047;
+}
+
+.status-pending {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.assignment-results {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-radius: 0.6rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  margin-bottom: 0.75rem;
+}
+
+.assignment-results div {
+  text-align: center;
+}
+
+.assignment-results dt {
+  font-size: 0.65rem;
+  color: rgba(148, 163, 184, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.assignment-results dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #86efac;
+}
+
+.student-assignment-card footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.assignment-action-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  background: linear-gradient(120deg, #3b82f6, #6366f1);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.assignment-action-btn:hover {
+  opacity: 0.9;
+}
+
+.assignment-action-btn.secondary {
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.student-shared-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.student-shared-section header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+
+.student-shared-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.shared-circuit-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.shared-circuit-card {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.shared-circuit-card strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.shared-circuit-card small {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.shared-circuit-card p {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.view-circuit-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.student-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.student-empty-state h3 {
+  margin: 0 0 0.5rem;
+}
+
+.student-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.progress-panel {
+  gap: 1.25rem;
+}
+
+.progress-summary {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.progress-ring-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.progress-ring-bg {
+  stroke: rgba(51, 65, 85, 0.6);
+}
+
+.progress-ring-fill {
+  stroke: #22c55e;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.progress-ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.progress-ring-text strong {
+  display: block;
+  font-size: 1.5rem;
+  color: #86efac;
+}
+
+.progress-ring-text span {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.progress-metrics {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.metric-item strong {
+  color: #e2e8f0;
+}
+
+.concept-mastery {
+  border-top: 1px solid rgba(51, 65, 85, 0.6);
+  padding-top: 1rem;
+}
+
+.concept-mastery h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.mastery-tags {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mastery-tag {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mastery-tag span {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.85);
+  text-transform: capitalize;
+}
+
+.mastery-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(51, 65, 85, 0.6);
+  overflow: hidden;
+}
+
+.mastery-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #86efac);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 1100px) {
+  .student-view-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .progress-panel {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-view-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-panel {
+    grid-column: span 1;
+  }
+
+  .student-stats-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

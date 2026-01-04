@@ -4,6 +4,18 @@ export type ClassStudentStatus = "invited" | "active" | "inactive";
 
 export type ClassAssignmentStatus = "draft" | "scheduled" | "open" | "closed";
 
+export type StudentAssignmentProgress = {
+  assignmentId: string;
+  status: "not_started" | "in_progress" | "completed";
+  score: number;
+  timeSpentMinutes: number;
+  attempts: number;
+  hintsUsed: number;
+  startedAt?: number;
+  completedAt?: number;
+  lastActivityAt?: number;
+};
+
 export type ClassStudent = {
   id: string;
   name: string;
@@ -11,6 +23,10 @@ export type ClassStudent = {
   status: ClassStudentStatus;
   invitedAt: number;
   lastActiveAt?: number;
+  userId?: string;
+  progress?: StudentAssignmentProgress[];
+  totalXp?: number;
+  currentStreak?: number;
 };
 
 export type AssignmentPerformance = {
@@ -57,6 +73,26 @@ export type Classroom = {
   students: ClassStudent[];
   assignments: ClassAssignment[];
   analytics: ClassAnalytics;
+  sharedCircuits?: SharedCircuit[];
+  liveSession?: LiveSession;
+};
+
+export type SharedCircuit = {
+  id: string;
+  title: string;
+  circuitData: string;
+  sharedAt: number;
+  sharedBy: string;
+  notes?: string;
+};
+
+export type LiveSession = {
+  id: string;
+  startedAt: number;
+  endedAt?: number;
+  activeAssignmentId?: string;
+  participantIds: string[];
+  status: "active" | "paused" | "ended";
 };
 
 export type ClassroomDocument = {

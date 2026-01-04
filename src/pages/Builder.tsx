@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
@@ -14,6 +15,7 @@ import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
 import BrandMark from "../components/BrandMark";
+import WordMark from "../components/WordMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import {
@@ -21,6 +23,9 @@ import {
   getDefaultScenario,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
+import PricingSection from "../components/PricingSection";
+import ClassroomPage from "./Classroom";
+import CommunityPage from "./Community";
 import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
@@ -675,6 +680,7 @@ const IconPlay = ({ className }: IconProps) => (
 );
 
 export default function Builder() {
+  const navigate = useNavigate();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -746,6 +752,9 @@ export default function Builder() {
   });
   const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
     useState(false);
+  const [isClassroomPanelOpen, setClassroomPanelOpen] = useState(false);
+  const [isPricingPanelOpen, setPricingPanelOpen] = useState(false);
+  const [isCommunityPanelOpen, setCommunityPanelOpen] = useState(false);
 
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
@@ -1244,7 +1253,10 @@ export default function Builder() {
     isLogoSettingsOpen ||
     isTroubleshootPanelOpen ||
     isSaveModalOpen ||
-    isLoadModalOpen;
+    isLoadModalOpen ||
+    isClassroomPanelOpen ||
+    isPricingPanelOpen ||
+    isCommunityPanelOpen;
   const isActiveCircuitBuildMode =
     workspaceMode === "build" ||
     workspaceMode === "practice" ||
@@ -1442,6 +1454,10 @@ export default function Builder() {
   return (
     <div className="builder-shell">
       <div className="workspace-mode-bar">
+        <div className="mode-bar-brand" aria-label="CircuiTry3D">
+          <WordMark size="sm" decorative />
+        </div>
+        <div className="mode-bar-divider" aria-hidden="true" />
         <button
           type="button"
           className="mode-tab"
@@ -1510,6 +1526,54 @@ export default function Builder() {
         >
           <span className="mode-icon" aria-hidden="true">📚</span>
           <span className="mode-label">Learn</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "classroom" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("classroom");
+            setTroubleshootPanelOpen(false);
+            setArenaPanelOpen(false);
+            setClassroomPanelOpen(true);
+          }}
+          aria-label="Classroom mode"
+          title="Educator dashboard and student management"
+        >
+          <span className="mode-icon" aria-hidden="true">🎓</span>
+          <span className="mode-label">Classroom</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "pricing" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("pricing");
+            setTroubleshootPanelOpen(false);
+            setArenaPanelOpen(false);
+            setPricingPanelOpen(true);
+          }}
+          aria-label="Pricing mode"
+          title="Plans and subscription options"
+        >
+          <span className="mode-icon" aria-hidden="true">💰</span>
+          <span className="mode-label">Pricing</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "community" ? "true" : undefined}
+          onClick={() => {
+            setWorkspaceMode("community");
+            setTroubleshootPanelOpen(false);
+            setArenaPanelOpen(false);
+            setCommunityPanelOpen(true);
+          }}
+          aria-label="Community mode"
+          title="Community features and social"
+        >
+          <span className="mode-icon" aria-hidden="true">👥</span>
+          <span className="mode-label">Community</span>
         </button>
         <div className="mode-bar-spacer" />
         <div className="mode-bar-actions" aria-label="Workspace actions">
@@ -2698,6 +2762,84 @@ export default function Builder() {
           onDismiss={() => circuitStorage.dismissRecovery()}
         />
       )}
+
+      {/* Classroom Panel Overlay */}
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--classroom${isClassroomPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isClassroomPanelOpen}
+        onClick={() => setClassroomPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--classroom"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setClassroomPanelOpen(false)}
+            aria-label="Close classroom panel"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--classroom">
+            <ClassroomPage />
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Panel Overlay */}
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--pricing${isPricingPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isPricingPanelOpen}
+        onClick={() => setPricingPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--pricing"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setPricingPanelOpen(false)}
+            aria-label="Close pricing panel"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--pricing">
+            <PricingSection />
+          </div>
+        </div>
+      </div>
+
+      {/* Community Panel Overlay */}
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--community${isCommunityPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isCommunityPanelOpen}
+        onClick={() => setCommunityPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--community"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setCommunityPanelOpen(false)}
+            aria-label="Close community panel"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--community">
+            <CommunityPage />
+          </div>
+        </div>
+      </div>
 
       <BuilderInteractiveTutorial
         isOpen={isInteractiveTutorialOpen}
