@@ -26,11 +26,16 @@ interface LeftToolbarProps {
 
 /**
  * Renders the component icon/schematic symbol for the library
- * Supports text icons, schematic symbol images, and preview images
+ * Supports text icons, schematic symbol images, preview images,
+ * and a schematic symbol column with multiple descriptors
  */
 function ComponentIcon({ component }: { component: ComponentAction }) {
   const hasSchematic = component.metadata?.schematicSymbolPath;
   const hasPreview = component.metadata?.previewImagePath;
+  const symbolText = component.metadata?.symbolText;
+  const symbolDesc = component.metadata?.symbolDesc;
+  const symbolUnit = component.metadata?.symbolUnit;
+  const symbolRef = component.metadata?.symbolRef;
 
   return (
     <span className="slider-icon-label">
@@ -45,6 +50,17 @@ function ComponentIcon({ component }: { component: ComponentAction }) {
       ) : (
         <span className="slider-icon" aria-hidden="true">
           {component.icon}
+        </span>
+      )}
+      {/* Schematic symbol column with descriptors */}
+      {symbolText && (
+        <span className="slider-symbol-col" aria-hidden="true">
+          <span className="slider-symbol-text">{symbolText}</span>
+          <span className="slider-symbol-info">
+            <span className="slider-symbol-ref">{symbolRef}</span>
+            <span className="slider-symbol-desc">{symbolDesc}</span>
+            <span className="slider-symbol-unit">{symbolUnit}</span>
+          </span>
         </span>
       )}
       <span className="slider-label">{component.label}</span>

@@ -89,6 +89,14 @@ export type ComponentMetadata = {
   schematicSymbolPath?: string;
   /** Path to component preview image (3D render or photo) */
   previewImagePath?: string;
+  /** ASCII/Unicode schematic symbol representation (e.g., '─/\\/\\/─' for resistor) */
+  symbolText?: string;
+  /** Short description for easy ID (e.g., 'Ohms', 'DC V', 'Farad') */
+  symbolDesc?: string;
+  /** Unit of measurement (e.g., 'Ω', 'V', 'F', 'H') */
+  symbolUnit?: string;
+  /** Reference designator (e.g., 'R1', 'C1', 'V1') */
+  symbolRef?: string;
   /** Component category for filtering/organization */
   category?: ComponentCategory;
   /** Real-world component data for future integration */
