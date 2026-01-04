@@ -959,7 +959,113 @@ body.builder-body {
   white-space: nowrap;
 }
 
-/* Component library item with schematic symbol */
+/* Component library card - vertical layout with schematic symbol, name, and preview */
+.slider-component-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 0;
+}
+
+/* Schematic symbol at top - prominent display */
+.slider-component-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  background: rgba(0, 255, 136, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.slider-component-symbol img {
+  width: 100%;
+  max-width: 80px;
+  height: auto;
+  max-height: 28px;
+  object-fit: contain;
+  filter: brightness(1.1) contrast(1.05);
+}
+
+.slider-component-symbol-text {
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--builder-green);
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+/* Component name below the symbol */
+.slider-component-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--builder-text);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+/* Preview image at bottom */
+.slider-component-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  background: rgba(136, 204, 255, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(136, 204, 255, 0.15);
+  overflow: hidden;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.slider-component-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(0.95) contrast(1.05);
+}
+
+.slider-component-preview-placeholder {
+  width: 24px;
+  height: 16px;
+  background: linear-gradient(135deg, rgba(136, 204, 255, 0.15), rgba(0, 255, 136, 0.1));
+  border-radius: 3px;
+  opacity: 0.4;
+}
+
+/* Hover effects for component card */
+.slider-btn:hover .slider-component-symbol {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.4);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+}
+
+.slider-btn:hover .slider-component-symbol-text {
+  text-shadow: 0 0 12px rgba(0, 255, 136, 0.6);
+}
+
+.slider-btn:hover .slider-component-preview {
+  border-color: rgba(136, 204, 255, 0.3);
+}
+
+.slider-btn:hover .slider-component-preview-placeholder {
+  opacity: 0.6;
+}
+
+/* Legacy horizontal layout styles (kept for backwards compatibility) */
 .slider-icon-label {
   display: flex;
   align-items: center;
@@ -1052,77 +1158,6 @@ body.builder-body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* Schematic symbol column - descriptors for component identification */
-.slider-symbol-col {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: 54px;
-  max-width: 68px;
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  margin-left: 4px;
-  margin-right: 4px;
-}
-
-.slider-symbol-text {
-  font-family: "Courier New", "Consolas", monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.3px;
-  line-height: 1.1;
-  white-space: nowrap;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
-}
-
-.slider-symbol-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-  justify-content: center;
-}
-
-.slider-symbol-ref {
-  font-size: 9px;
-  font-weight: 700;
-  color: rgba(0, 255, 136, 0.95);
-  letter-spacing: 0.02em;
-}
-
-.slider-symbol-desc {
-  font-size: 8px;
-  font-weight: 600;
-  color: rgba(200, 220, 255, 0.9);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.slider-symbol-unit {
-  font-size: 8px;
-  font-weight: 700;
-  color: rgba(0, 220, 255, 0.95);
-  letter-spacing: 0.02em;
-}
-
-/* Hover enhancement for symbol column */
-.slider-btn:hover .slider-symbol-col {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(0, 255, 136, 0.35);
-  box-shadow: 0 0 8px rgba(0, 255, 136, 0.15);
-}
-
-.slider-btn:hover .slider-symbol-text {
-  color: #ffffff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 .slider-label {

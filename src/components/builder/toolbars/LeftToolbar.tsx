@@ -26,53 +26,40 @@ interface LeftToolbarProps {
 
 /**
  * Renders the component icon/schematic symbol for the library
- * Supports text icons, schematic symbol images, preview images,
- * and a schematic symbol column with multiple descriptors
+ * Vertical layout: schematic symbol at top, component name below, preview image at bottom
  */
 function ComponentIcon({ component }: { component: ComponentAction }) {
   const hasSchematic = component.metadata?.schematicSymbolPath;
   const hasPreview = component.metadata?.previewImagePath;
-  const symbolText = component.metadata?.symbolText;
-  const symbolDesc = component.metadata?.symbolDesc;
-  const symbolUnit = component.metadata?.symbolUnit;
-  const symbolRef = component.metadata?.symbolRef;
 
   return (
-    <span className="slider-icon-label">
-      {hasSchematic ? (
-        <span className="slider-schematic" aria-hidden="true">
+    <span className="slider-component-card">
+      {/* Schematic symbol at top */}
+      <span className="slider-component-symbol" aria-hidden="true">
+        {hasSchematic ? (
           <img
             src={component.metadata!.schematicSymbolPath}
             alt=""
             loading="lazy"
           />
-        </span>
-      ) : (
-        <span className="slider-icon" aria-hidden="true">
-          {component.icon}
-        </span>
-      )}
-      {/* Schematic symbol column with descriptors */}
-      {symbolText && (
-        <span className="slider-symbol-col" aria-hidden="true">
-          <span className="slider-symbol-text">{symbolText}</span>
-          <span className="slider-symbol-info">
-            <span className="slider-symbol-ref">{symbolRef}</span>
-            <span className="slider-symbol-desc">{symbolDesc}</span>
-            <span className="slider-symbol-unit">{symbolUnit}</span>
-          </span>
-        </span>
-      )}
-      <span className="slider-label">{component.label}</span>
-      {hasPreview && (
-        <span className="slider-preview" aria-hidden="true">
+        ) : (
+          <span className="slider-component-symbol-text">{component.icon}</span>
+        )}
+      </span>
+      {/* Component name below the symbol */}
+      <span className="slider-component-name">{component.label}</span>
+      {/* Preview image at bottom */}
+      <span className="slider-component-preview" aria-hidden="true">
+        {hasPreview ? (
           <img
             src={component.metadata!.previewImagePath}
             alt=""
             loading="lazy"
           />
-        </span>
-      )}
+        ) : (
+          <span className="slider-component-preview-placeholder" />
+        )}
+      </span>
     </span>
   );
 }
