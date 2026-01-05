@@ -386,18 +386,16 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Series circuit diagram" preserveAspectRatio="xMidYMid meet">
       {/* Left side with battery (vertical) */}
       <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      <g transform={`translate(${leftX}, ${batteryCenterY}) rotate(-90)`}>
-        <BatterySymbol
-          x={0}
-          y={0}
-          rotation={0}
-          scale={batteryScale}
-          label=""
-          showLabel={false}
-          color={WIRE_COLOR}
-          strokeWidth={3}
-        />
-      </g>
+      <BatterySymbol
+        x={leftX}
+        y={batteryCenterY}
+        rotation={-90}
+        scale={batteryScale}
+        label=""
+        showLabel={false}
+        color={WIRE_COLOR}
+        strokeWidth={3}
+      />
       <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Dynamically render resistors */}
@@ -460,18 +458,16 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Parallel circuit diagram" preserveAspectRatio="xMidYMid meet">
       {/* Left side with battery (vertical) */}
       <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      <g transform={`translate(${leftX}, ${batteryCenterY}) rotate(-90)`}>
-        <BatterySymbol
-          x={0}
-          y={0}
-          rotation={0}
-          scale={batteryScale}
-          label=""
-          showLabel={false}
-          color={WIRE_COLOR}
-          strokeWidth={3}
-        />
-      </g>
+      <BatterySymbol
+        x={leftX}
+        y={batteryCenterY}
+        rotation={-90}
+        scale={batteryScale}
+        label=""
+        showLabel={false}
+        color={WIRE_COLOR}
+        strokeWidth={3}
+      />
       <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Top rail */}
@@ -590,18 +586,16 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Combination circuit diagram" preserveAspectRatio="xMidYMid meet">
       {/* Left side with battery (vertical) */}
       <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      <g transform={`translate(${leftX}, ${batteryCenterY}) rotate(-90)`}>
-        <BatterySymbol
-          x={0}
-          y={0}
-          rotation={0}
-          scale={batteryScale}
-          label=""
-          showLabel={false}
-          color={WIRE_COLOR}
-          strokeWidth={3}
-        />
-      </g>
+      <BatterySymbol
+        x={leftX}
+        y={batteryCenterY}
+        rotation={-90}
+        scale={batteryScale}
+        label=""
+        showLabel={false}
+        color={WIRE_COLOR}
+        strokeWidth={3}
+      />
       <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Top run with series R1 */}
