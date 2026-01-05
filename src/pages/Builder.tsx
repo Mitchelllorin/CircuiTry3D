@@ -10,6 +10,7 @@ import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
+import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
@@ -755,6 +756,43 @@ export default function Builder() {
   const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
     useState(false);
 
+  // Global workspace mode context - sync with local state
+  const globalModeContext = useWorkspaceMode();
+  const pendingModeChangeRef = useRef<WorkspaceMode | null>(null);
+
+  // Sync local workspaceMode with global context on mount and when global changes
+  useEffect(() => {
+    // Notify global context that we're in the workspace
+    globalModeContext.setIsInWorkspace(true);
+    return () => {
+      globalModeContext.setIsInWorkspace(false);
+    };
+  }, []);
+
+  // Track global mode changes for later processing
+  useEffect(() => {
+    if (globalModeContext.workspaceMode !== workspaceMode) {
+      pendingModeChangeRef.current = globalModeContext.workspaceMode;
+    }
+  }, [globalModeContext.workspaceMode, workspaceMode]);
+
+  // Sync global isWireLibraryPanelOpen with local state
+  useEffect(() => {
+    if (globalModeContext.isWireLibraryPanelOpen && !isWireLibraryPanelOpen) {
+      setWireLibraryPanelOpen(true);
+      // Reset global flag after consuming it
+      globalModeContext.setWireLibraryPanelOpen(false);
+    }
+  }, [globalModeContext.isWireLibraryPanelOpen, isWireLibraryPanelOpen]);
+
+  // Update global context when local mode changes (from Builder-internal actions)
+  const setWorkspaceModeWithGlobalSync = useCallback((mode: WorkspaceMode) => {
+    setWorkspaceMode(mode);
+    if (globalModeContext.workspaceMode !== mode) {
+      globalModeContext.setWorkspaceMode(mode);
+    }
+  }, [globalModeContext]);
+
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
       ...previous,
@@ -1087,6 +1125,50 @@ export default function Builder() {
       setArenaPanelOpen,
     ],
   );
+
+  // Process pending global mode changes after all handlers are ready
+  useEffect(() => {
+    const pendingMode = pendingModeChangeRef.current;
+    if (pendingMode && pendingMode !== workspaceMode) {
+      pendingModeChangeRef.current = null;
+
+      if (pendingMode === "build") {
+        setWorkspaceMode("build");
+        setPracticeWorkspaceMode(false);
+        setCompactWorksheetOpen(false);
+        setCircuitLocked(false);
+        setArenaPanelOpen(false);
+        setTroubleshootPanelOpen(false);
+      } else if (pendingMode === "practice") {
+        openPracticeWorkspace();
+      } else if (pendingMode === "arena") {
+        setWorkspaceMode("arena");
+        setTroubleshootPanelOpen(false);
+        setArenaPanelOpen(true);
+        if (arenaExportStatus !== "ready") {
+          handleArenaSync({ openWindow: false });
+        }
+      } else if (pendingMode === "learn") {
+        setWorkspaceMode("learn");
+        setTroubleshootPanelOpen(false);
+        openHelpCenter("overview");
+      } else if (pendingMode === "troubleshoot") {
+        setWorkspaceMode("troubleshoot");
+        setTroubleshootPanelOpen(true);
+      }
+
+      // Sync back to global context
+      globalModeContext.setWorkspaceMode(pendingMode);
+    }
+  }, [
+    globalModeContext.workspaceMode,
+    workspaceMode,
+    openPracticeWorkspace,
+    handleArenaSync,
+    openHelpCenter,
+    arenaExportStatus,
+    globalModeContext,
+  ]);
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
@@ -1476,97 +1558,7 @@ export default function Builder() {
 
   return (
     <div className="builder-shell">
-      {modeBarScrollState.canScrollLeft && (
-        <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--left" aria-hidden="true">
-          <span className="scroll-indicator-arrow">‹</span>
-        </div>
-      )}
-      <div className="workspace-mode-bar" ref={modeBarRef}>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "build" ? "true" : undefined}
-          onClick={() => {
-            setWorkspaceMode("build");
-            setPracticeWorkspaceMode(false);
-            setCompactWorksheetOpen(false);
-            setCircuitLocked(false);
-            setArenaPanelOpen(false);
-            setTroubleshootPanelOpen(false);
-          }}
-          aria-label="Build mode"
-          title="Component builder and circuit designer"
-        >
-          <span className="mode-icon" aria-hidden="true">🔧</span>
-          <span className="mode-label">Build</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "practice" ? "true" : undefined}
-          onClick={() => {
-            setTroubleshootPanelOpen(false);
-            if (workspaceMode === "practice") {
-              setCompactWorksheetOpen(true);
-              return;
-            }
-            openPracticeWorkspace();
-          }}
-          aria-label="Practice mode"
-          title="Guided worksheets and W.I.R.E. problems"
-        >
-          <span className="mode-icon" aria-hidden="true">📝</span>
-          <span className="mode-label">Practice</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "arena" ? "true" : undefined}
-          onClick={() => {
-            setWorkspaceMode("arena");
-            setTroubleshootPanelOpen(false);
-            setArenaPanelOpen(true);
-            if (arenaExportStatus !== "ready") {
-              handleArenaSync({ openWindow: false });
-            }
-          }}
-          aria-label="Arena mode"
-          title="Component testing and advanced simulation"
-        >
-          <span className="mode-icon" aria-hidden="true">⚡</span>
-          <span className="mode-label">Arena</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "learn" ? "true" : undefined}
-          onClick={() => {
-            setWorkspaceMode("learn");
-            setTroubleshootPanelOpen(false);
-            openHelpCenter("overview");
-          }}
-          aria-label="Learn mode"
-          title="Tutorials, guides, and help resources"
-        >
-          <span className="mode-icon" aria-hidden="true">📚</span>
-          <span className="mode-label">Learn</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab mode-tab--icon-only"
-          data-active={isWireLibraryPanelOpen ? "true" : undefined}
-          onClick={() => setWireLibraryPanelOpen(true)}
-          aria-label="Wire gauge library"
-          title="Wire gauge library and specifications"
-        >
-          <span className="mode-icon" aria-hidden="true">🔌</span>
-        </button>
-        {modeBarScrollState.canScrollRight && (
-          <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
-            <span className="scroll-indicator-arrow">›</span>
-          </div>
-        )}
-      </div>
+      {/* Mode bar is now rendered globally in AppLayout */}
 
       {/* Workspace Quick Action Buttons - History/File actions on right edge */}
       <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">

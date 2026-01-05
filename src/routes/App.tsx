@@ -10,21 +10,25 @@ import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
 import UnifiedNav from "../components/UnifiedNav";
 import BrandMark from "../components/BrandMark";
+import GlobalModeBar from "../components/GlobalModeBar";
+import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/app" element={<Builder />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/classroom" element={<Classroom />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <WorkspaceModeProvider>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/app" element={<Builder />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/classroom" element={<Classroom />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </WorkspaceModeProvider>
   );
 }
 
@@ -46,11 +50,17 @@ function AppLayout() {
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
 
-  const shellClass = isLanding ? "app-shell is-landing" : "app-shell";
+  const shellClass = [
+    "app-shell",
+    isLanding && "is-landing",
+    isWorkspace && "is-workspace",
+  ].filter(Boolean).join(" ");
   const contentClass = isLanding ? "app-content is-landing" : "app-content";
 
   return (
     <div className={shellClass}>
+      {/* Global Mode Bar - shown on all pages except landing */}
+      {!isLanding && <GlobalModeBar />}
       {!isLanding && !isWorkspace && (
         <UnifiedNav />
       )}
