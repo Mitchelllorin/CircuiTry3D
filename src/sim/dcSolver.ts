@@ -40,6 +40,8 @@ export type DCSolution = {
   wireSegmentCurrents: SolvedWireSegmentCurrent[];
   /** The node chosen as 0 V reference. */
   referenceNodeId?: string;
+  /** Map from terminal keys (elementId:terminalKey) to node IDs */
+  terminalToNode?: Map<string, string>;
 };
 
 type TerminalRef = {
@@ -383,6 +385,7 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
       nodeVoltages: new Map(),
       elementCurrents: new Map(),
       wireSegmentCurrents: [],
+      terminalToNode,
     };
   }
 
@@ -462,8 +465,46 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
 
     // DC steady-state simplifications:
     // - capacitor: open circuit (ignore)
-    // - diode / bjt: nonlinear; ignored here to keep DC solver linear and predictable
     // - switch: no state in schematic model yet; treat as open circuit
+
+    // Diodes and LEDs: Model as voltage-controlled resistors
+    // Forward bias (anode > cathode): conduct with small resistance + forward voltage drop
+    // Reverse bias (anode < cathode): block current (very high resistance / open circuit)
+    // This is a simplified linear approximation for DC analysis
+    if (element.kind === "diode" || element.kind === "led") {
+      const anode = terminalNodeId(terminalToNode, element.id, "start"); // anode at start
+      const cathode = terminalNodeId(terminalToNode, element.id, "end"); // cathode at end
+      if (!anode || !cathode || anode === cathode) continue;
+
+      // For initial DC solve, we model diodes as having:
+      // - Forward: small resistance (allows current flow from anode to cathode)
+      // - We'll use a voltage source for the forward voltage drop + small series resistance
+      // This creates a "diode in forward bias" model
+      const forwardVoltage = element.kind === "led" ? 2.0 : 0.7; // LED ~2V, silicon diode ~0.7V
+      const forwardResistance = element.kind === "led" ? 50 : 10; // Small series resistance in ohms
+
+      // Add diode as a voltage source (forward drop) + resistor in series
+      // The voltage source enforces the forward voltage drop
+      // Note: This assumes forward bias. The validator will catch reverse bias conditions.
+      pushVoltageSource({
+        id: `vs:${element.id}`,
+        positiveNode: anode,
+        negativeNode: cathode,
+        volts: forwardVoltage,
+        meta: { type: "short", elementId: element.id, label: element.kind === "led" ? "LED" : "Diode" },
+      });
+
+      // Add a small series resistance for realistic current limiting
+      // This helps prevent numerical issues and models the real diode behavior better
+      resistors.push({
+        elementId: `${element.id}_fwd`,
+        kind: "resistor",
+        a: anode,
+        b: cathode,
+        ohms: forwardResistance,
+      });
+      continue;
+    }
   }
 
   // Partition into electrically connected components. This prevents floating/unconnected parts
@@ -513,6 +554,7 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
         elementCurrents: new Map(),
         wireSegmentCurrents: [],
         referenceNodeId: globalPreferredReference,
+        terminalToNode,
       };
     }
   }
@@ -621,6 +663,7 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
         elementCurrents: new Map(),
         wireSegmentCurrents: [],
         referenceNodeId: globalPreferredReference,
+        terminalToNode,
       };
     }
 
@@ -658,6 +701,17 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
       }
       if (src.meta.type === "wireSegment") {
         wireSegmentCurrents.push({ wireId: src.meta.wireId, segmentIndex: src.meta.segmentIndex, amps });
+        continue;
+      }
+      // Diode/LED current: positive amps means forward current (anode to cathode = start to end)
+      if (src.meta.type === "short" && (src.meta.label === "LED" || src.meta.label === "Diode")) {
+        // For diodes/LEDs, current flows from anode (start) to cathode (end) in forward bias
+        // Positive source current means conventional current from anode to cathode
+        elementCurrents.set(src.meta.elementId, {
+          elementId: src.meta.elementId,
+          amps: Math.abs(amps), // Forward current should be positive
+          direction: amps >= 0 ? "start->end" : "end->start",
+        });
       }
     }
   }
@@ -675,6 +729,7 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
     elementCurrents,
     wireSegmentCurrents,
     referenceNodeId: primaryReferenceNodeId,
+    terminalToNode,
   };
 }
 

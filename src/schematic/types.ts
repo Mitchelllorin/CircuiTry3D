@@ -49,6 +49,46 @@ export type WireComponentKind = "wire";
 
 export type CatalogPlacementMode = "single-point" | "two-point" | "three-point" | "multi-point";
 
+/**
+ * Polarity configuration for components that have directional current flow requirements.
+ * Used to enforce correct orientation and detect reverse polarity conditions.
+ *
+ * Terminal conventions for two-terminal polarity-sensitive components:
+ * - start: anode (positive side for diodes/LEDs) or negative terminal (batteries)
+ * - end: cathode (negative side for diodes/LEDs) or positive terminal (batteries)
+ *
+ * Current flow in forward bias:
+ * - For diodes/LEDs: conventional current flows from start (anode) to end (cathode)
+ * - For batteries: conventional current flows from end (positive) to start (negative) through external circuit
+ */
+export type PolarityConfig = {
+  /**
+   * Whether this component is polarity-sensitive (will not function or may be damaged if reversed)
+   */
+  isPolaritySensitive: boolean;
+  /**
+   * Which terminal is the positive/anode side
+   * - "start" means element.start is the anode/positive terminal
+   * - "end" means element.end is the anode/positive terminal
+   */
+  positiveTerminal?: "start" | "end";
+  /**
+   * Whether current can flow in reverse direction
+   * - false: component blocks reverse current (diodes, LEDs)
+   * - true: component allows reverse current (batteries supply reverse if connected wrong)
+   */
+  allowsReverseCurrent?: boolean;
+  /**
+   * Forward voltage drop in volts (for diodes/LEDs)
+   * Used for simulation accuracy
+   */
+  forwardVoltageDrop?: number;
+  /**
+   * Description of polarity behavior for educational display
+   */
+  polarityDescription?: string;
+};
+
 export type CatalogEntry = {
   id: string;
   kind: ComponentKind;
@@ -58,6 +98,10 @@ export type CatalogEntry = {
   icon: string;
   defaultLabelPrefix?: string;
   tags?: string[];
+  /**
+   * Polarity configuration for components with directional current requirements
+   */
+  polarity?: PolarityConfig;
 };
 
 type BaseElement = {
