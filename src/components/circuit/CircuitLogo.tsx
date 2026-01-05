@@ -61,8 +61,6 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <g transform="translate(55, 80)">
           <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
           <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
-          <text x="0" y="-18" fontSize="9" fill={LOGO_COLORS.labelPrimary} fontWeight="bold" textAnchor="middle">+</text>
-          <text x="-3" y="20" fontSize="9" fill="#888" fontWeight="bold" textAnchor="middle">-</text>
         </g>
 
         <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />

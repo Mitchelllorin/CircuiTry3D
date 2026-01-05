@@ -6247,21 +6247,34 @@ body.android-optimized.menu-visible .status {
             updatePolarityPositions() {
                 // Skip expensive calculations if indicators are hidden
                 if (!showPolarityIndicators || !this.polarityDivs || !this.mesh) return;
-                
+
                 this.polarityDivs.forEach(item => {
+                    // Find the connection point for this terminal to get its rotated position
+                    const connectionPoint = this.connectionPoints?.find(
+                        cp => cp.userData?.side === item.side
+                    );
+
                     const worldPos = new THREE.Vector3();
-                    worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
-                    
-                    // Offset based on side
-                    if (item.side === 'positive') {
-                        worldPos.x += 1.2;
-                    } else if (item.side === 'negative') {
-                        worldPos.x -= 1.2;
+
+                    if (connectionPoint) {
+                        // Get the world position of the actual terminal connection point
+                        // This automatically accounts for component rotation
+                        connectionPoint.getWorldPosition(worldPos);
+                    } else {
+                        // Fallback to mesh position with fixed offsets (for backwards compatibility)
+                        worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
+                        if (item.side === 'positive') {
+                            worldPos.x += 1.2;
+                        } else if (item.side === 'negative') {
+                            worldPos.x -= 1.2;
+                        }
                     }
-                    worldPos.y += 0.8; // Above the terminal
-                    
+
+                    // Offset marker slightly above the terminal
+                    worldPos.y += 0.8;
+
                     const screenPos = worldToScreen(worldPos);
-                    
+
                     item.div.style.left = screenPos.x + 'px';
                     item.div.style.top = screenPos.y + 'px';
                 });
