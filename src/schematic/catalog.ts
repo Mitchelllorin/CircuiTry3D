@@ -1,6 +1,58 @@
-import { CatalogEntry } from "./types";
+import { CatalogEntry, PolarityConfig } from "./types";
 
 export type CatalogPlacementMode = "single-point" | "two-point" | "three-point" | "multi-point";
+
+/**
+ * Polarity configuration for battery components.
+ * Convention: start = negative terminal, end = positive terminal
+ * Conventional current flows from positive (end) to negative (start) through external circuit.
+ */
+const BATTERY_POLARITY: PolarityConfig = {
+  isPolaritySensitive: true,
+  positiveTerminal: "end",
+  allowsReverseCurrent: true, // Batteries can source current if connected in reverse (though not recommended)
+  polarityDescription: "Positive terminal (+) at end, negative terminal (-) at start. Current flows from + to - through external circuit."
+};
+
+/**
+ * Polarity configuration for diodes.
+ * Convention: start = anode (+), end = cathode (-)
+ * Current can only flow from anode to cathode (forward bias).
+ * Reverse bias blocks current flow.
+ */
+const DIODE_POLARITY: PolarityConfig = {
+  isPolaritySensitive: true,
+  positiveTerminal: "start", // Anode is at start
+  allowsReverseCurrent: false, // Diodes block reverse current
+  forwardVoltageDrop: 0.7, // Silicon diode typical Vf
+  polarityDescription: "Anode (+) at start, cathode (-) at end. Current flows only from anode to cathode. Blocks reverse current."
+};
+
+/**
+ * Polarity configuration for LEDs.
+ * Convention: start = anode (+), end = cathode (-)
+ * Current can only flow from anode to cathode (forward bias).
+ * LEDs require correct polarity to emit light; reverse polarity blocks current.
+ */
+const LED_POLARITY: PolarityConfig = {
+  isPolaritySensitive: true,
+  positiveTerminal: "start", // Anode is at start
+  allowsReverseCurrent: false, // LEDs block reverse current
+  forwardVoltageDrop: 2.0, // Typical LED forward voltage (varies by color: red ~1.8V, blue ~3.0V)
+  polarityDescription: "Anode (+) at start, cathode (-) at end. LED only lights when current flows from anode to cathode. Reverse connection blocks current."
+};
+
+/**
+ * Polarity configuration for electrolytic capacitors.
+ * Convention: start = negative terminal, end = positive terminal
+ * Electrolytic capacitors are polarized and can be damaged by reverse voltage.
+ */
+const CAPACITOR_POLARITY: PolarityConfig = {
+  isPolaritySensitive: true,
+  positiveTerminal: "end",
+  allowsReverseCurrent: false, // Reverse polarity can damage electrolytic capacitors
+  polarityDescription: "Positive terminal at end, negative at start. Reverse polarity can damage electrolytic capacitors."
+};
 
 export const COMPONENT_CATALOG: CatalogEntry[] = [
   {
@@ -11,7 +63,8 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     placement: "two-point",
     icon: "DC",
     defaultLabelPrefix: "V",
-    tags: ["source", "supply"]
+    tags: ["source", "supply"],
+    polarity: BATTERY_POLARITY
   },
   {
     id: "ac_source",
@@ -41,7 +94,8 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     placement: "two-point",
     icon: "C",
     defaultLabelPrefix: "C",
-    tags: ["passive", "reactive"]
+    tags: ["passive", "reactive"],
+    polarity: CAPACITOR_POLARITY
   },
   {
     id: "inductor",
@@ -71,7 +125,8 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     placement: "two-point",
     icon: "LED",
     defaultLabelPrefix: "LED",
-    tags: ["indicator", "semiconductor", "light"]
+    tags: ["indicator", "semiconductor", "light"],
+    polarity: LED_POLARITY
   },
   {
     id: "switch",
@@ -91,7 +146,8 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     placement: "two-point",
     icon: "D",
     defaultLabelPrefix: "D",
-    tags: ["semiconductor", "rectifier"]
+    tags: ["semiconductor", "rectifier"],
+    polarity: DIODE_POLARITY
   },
   {
     id: "fuse",
@@ -222,3 +278,29 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     tags: ["reference"]
   }
 ];
+
+/**
+ * Get polarity configuration for a component kind.
+ * Returns undefined if the component is not polarity-sensitive.
+ */
+export function getPolarityConfig(kind: string): PolarityConfig | undefined {
+  const entry = COMPONENT_CATALOG.find(c => c.kind === kind);
+  return entry?.polarity;
+}
+
+/**
+ * Check if a component type is polarity-sensitive.
+ */
+export function isPolaritySensitive(kind: string): boolean {
+  const config = getPolarityConfig(kind);
+  return config?.isPolaritySensitive ?? false;
+}
+
+/**
+ * Get all polarity-sensitive component kinds.
+ */
+export function getPolaritySensitiveKinds(): string[] {
+  return COMPONENT_CATALOG
+    .filter(c => c.polarity?.isPolaritySensitive)
+    .map(c => c.kind);
+}

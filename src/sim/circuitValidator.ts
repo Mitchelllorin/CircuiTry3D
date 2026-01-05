@@ -6,10 +6,12 @@
  * - Floating node/component identification
  * - Short circuit warnings
  * - Missing ground reference notifications
+ * - Polarity violation detection for diodes, LEDs, and other polarity-sensitive components
  */
 
 import type { SchematicElement, TwoTerminalElement, GroundElement, WireElement, Vec2 } from '../schematic/types';
 import { solveDCCircuit } from './dcSolver';
+import { getPolarityConfig, isPolaritySensitive } from '../schematic/catalog';
 
 /**
  * Severity levels for validation issues
@@ -27,7 +29,11 @@ export type ValidationIssueType =
   | 'missing_ground'
   | 'missing_power_source'
   | 'unconnected_terminal'
-  | 'multiple_power_sources';
+  | 'multiple_power_sources'
+  | 'reverse_polarity'
+  | 'diode_reverse_bias'
+  | 'led_reverse_bias'
+  | 'capacitor_reverse_polarity';
 
 /**
  * Single validation issue
@@ -402,6 +408,119 @@ function detectFloatingWireEndpoints(
 }
 
 /**
+ * Detect polarity violations in the circuit.
+ *
+ * This function analyzes the circuit topology to determine if polarity-sensitive
+ * components (diodes, LEDs, electrolytic capacitors) are connected with correct polarity.
+ *
+ * For current to flow correctly:
+ * - Diodes/LEDs: Anode must be at higher potential than cathode (forward bias)
+ * - Capacitors: Positive terminal must be at higher potential than negative
+ *
+ * @param elements - All schematic elements
+ * @param graph - Connection graph of elements
+ * @param nodeVoltages - Solved node voltages from DC analysis
+ * @param terminalToNode - Map of terminal keys to node IDs
+ */
+function detectPolarityViolations(
+  elements: SchematicElement[],
+  nodeVoltages: Map<string, number>,
+  terminalToNode: Map<string, string>
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  // Find all polarity-sensitive components
+  const polarityComponents = elements.filter(e =>
+    isPolaritySensitive(e.kind) && e.kind !== 'battery'
+  ) as TwoTerminalElement[];
+
+  for (const component of polarityComponents) {
+    const polarityConfig = getPolarityConfig(component.kind);
+    if (!polarityConfig) continue;
+
+    // Get terminal node IDs
+    const startNodeId = terminalToNode.get(`${component.id}:start`);
+    const endNodeId = terminalToNode.get(`${component.id}:end`);
+
+    if (!startNodeId || !endNodeId) continue;
+
+    // Get voltages at each terminal
+    const startVoltage = nodeVoltages.get(startNodeId) ?? 0;
+    const endVoltage = nodeVoltages.get(endNodeId) ?? 0;
+
+    // Calculate voltage across the component (from positive to negative terminal)
+    // For diodes/LEDs: positiveTerminal = "start" (anode), so Vanode - Vcathode
+    // For capacitors: positiveTerminal = "end", so Vend - Vstart
+    let voltageAcross: number;
+    if (polarityConfig.positiveTerminal === 'start') {
+      voltageAcross = startVoltage - endVoltage; // Vanode - Vcathode
+    } else {
+      voltageAcross = endVoltage - startVoltage; // Vpositive - Vnegative
+    }
+
+    // Check for reverse polarity (negative voltage across the component)
+    // A small threshold avoids false positives from floating-point errors
+    const REVERSE_POLARITY_THRESHOLD = -0.01; // -10mV threshold
+
+    if (voltageAcross < REVERSE_POLARITY_THRESHOLD && !polarityConfig.allowsReverseCurrent) {
+      const label = component.label ?? component.kind.toUpperCase();
+      const terminals = getElementTerminals(component);
+
+      // Determine specific issue type based on component kind
+      let issueType: ValidationIssueType;
+      let message: string;
+      let description: string;
+
+      switch (component.kind) {
+        case 'diode':
+          issueType = 'diode_reverse_bias';
+          message = `Diode ${label} is Reverse Biased`;
+          description = `The diode's cathode is at higher potential than its anode (reverse bias). ` +
+            `Current cannot flow through a reverse-biased diode. ` +
+            `Swap the diode orientation or check your circuit connections. ` +
+            `Voltage across: ${voltageAcross.toFixed(2)}V (anode to cathode).`;
+          break;
+
+        case 'led':
+          issueType = 'led_reverse_bias';
+          message = `LED ${label} Will Not Light (Reverse Polarity)`;
+          description = `The LED's cathode is at higher potential than its anode (reverse bias). ` +
+            `LEDs only emit light when current flows from anode (+) to cathode (-). ` +
+            `Check the LED orientation: the longer leg (anode) should connect to the positive side. ` +
+            `Voltage across: ${voltageAcross.toFixed(2)}V (anode to cathode).`;
+          break;
+
+        case 'capacitor':
+          issueType = 'capacitor_reverse_polarity';
+          message = `Capacitor ${label} Has Reverse Polarity`;
+          description = `The electrolytic capacitor is connected with reverse polarity. ` +
+            `The negative terminal is at higher potential than the positive terminal. ` +
+            `This can damage the capacitor. Check the capacitor orientation. ` +
+            `Voltage across: ${voltageAcross.toFixed(2)}V.`;
+          break;
+
+        default:
+          issueType = 'reverse_polarity';
+          message = `${label} Has Reverse Polarity`;
+          description = `This component is connected with reverse polarity and may not function correctly. ` +
+            `Voltage across: ${voltageAcross.toFixed(2)}V.`;
+      }
+
+      issues.push({
+        type: issueType,
+        severity: component.kind === 'capacitor' ? 'error' : 'warning',
+        message,
+        description,
+        affectedElements: [component.id],
+        affectedPositions: terminals
+      });
+    }
+  }
+
+  return issues;
+}
+
+/**
  * Main validation function - validates entire circuit
  */
 export function validateCircuit(elements: SchematicElement[]): ValidationResult {
@@ -450,6 +569,7 @@ export function validateCircuit(elements: SchematicElement[]): ValidationResult 
   // Physics-backed sanity checks (Ohm + Kirchhoff):
   // - enforce that ideal shorts across a battery are flagged
   // - provide deterministic "no current in open circuit" behavior for simulation layers
+  // - detect polarity violations in diodes, LEDs, and other polarity-sensitive components
   const dcSolution = solveDCCircuit(elements);
   if (dcSolution.status === 'invalid_ideal_short') {
     const batteries = elements.filter(e => e.kind === 'battery') as TwoTerminalElement[];
@@ -457,7 +577,7 @@ export function validateCircuit(elements: SchematicElement[]): ValidationResult 
       type: 'short_circuit',
       severity: 'error',
       message: 'Ideal Short Across Source',
-      description: 'A battery’s positive and negative terminals are connected by a 0 Ω path (wire/short). This implies infinite current in an ideal model.',
+      description: 'A battery\'s positive and negative terminals are connected by a 0 Ω path (wire/short). This implies infinite current in an ideal model.',
       affectedElements: batteries.map(b => b.id),
       affectedPositions: batteries.flatMap(b => getElementTerminals(b))
     });
@@ -469,6 +589,16 @@ export function validateCircuit(elements: SchematicElement[]): ValidationResult 
       description: 'The circuit is electrically floating or under-constrained for DC solving. Add a ground reference and ensure there is at least one resistive path.',
       affectedElements: [],
     });
+  }
+
+  // Polarity violation detection for diodes, LEDs, capacitors
+  // Only check if we have valid node voltages from the solver
+  if (dcSolution.status === 'solved' && dcSolution.terminalToNode) {
+    issues.push(...detectPolarityViolations(
+      elements,
+      dcSolution.nodeVoltages,
+      dcSolution.terminalToNode
+    ));
   }
 
   // Determine circuit status
