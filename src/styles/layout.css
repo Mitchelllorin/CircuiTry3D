@@ -254,3 +254,24 @@ body {
     padding: 20px;
   }
 }
+
+/* Global Mode Bar adjustments for non-workspace pages */
+.app-shell:not(.is-landing):not(.is-workspace) .workspace-mode-bar--global {
+  /* Position below the unified nav on pages that have it */
+  top: 84px;
+}
+
+/* On workspace page (/app), position at original top */
+.app-shell.is-workspace .workspace-mode-bar--global {
+  top: 12px;
+}
+
+/* Add top padding to content when mode bar is present on non-workspace pages */
+.app-shell:not(.is-landing):not(.is-workspace) .app-content {
+  padding-top: 64px;
+}
+
+/* On workspace page, no extra padding needed as Builder handles its own layout */
+.app-shell.is-workspace .app-content {
+  padding-top: 0;
+}
