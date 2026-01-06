@@ -74,49 +74,55 @@ import {
 
 const HELP_SECTIONS: HelpSection[] = [
   {
-    title: "Getting Started",
+    title: "Welcome to CircuiTry3D Help",
     paragraphs: [
-      "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
-      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Simple, Perimeter, or A* routing modes from the left panel.",
+      "This Help Center provides quick access to support resources, documentation, and answers to common questions.",
+      "Use the navigation buttons below to jump to specific topics, or scroll through for a complete overview.",
     ],
     bullets: [
-      "One-touch buttons add, rotate, duplicate, or delete components.",
-      "Click anywhere along an existing wire to drop a junction and branch a new run - junctions can fan out in any direction.",
-      "Use the bottom analysis panel to monitor live circuit health via W.I.R.E.",
-      "Open the Schematic Standards guide when you need a refresher on textbook layout and symbol rules.",
+      "Getting Started - First steps with the circuit builder",
+      "W.I.R.E. Guide - Understand electrical fundamentals",
+      "Schematic Standards - Professional circuit layout practices",
+      "Keyboard & Gestures - Complete controls reference",
+      "Troubleshooting - Solutions to common issues",
+      "FAQ - Frequently asked questions",
+    ],
+  },
+  {
+    title: "Quick Start",
+    paragraphs: [
+      "Open the Component Library from the left panel, select a component, and place it in the 3D workspace.",
+      "Use the Wire Tool to connect component terminals. Choose from multiple routing modes: Freeform, Manhattan (90°), Simple, Perimeter, or A* pathfinding.",
+    ],
+    bullets: [
+      "One-tap actions for adding, rotating, duplicating, or deleting components.",
+      "Click existing wires to create junctions and branch into parallel paths.",
+      "Monitor circuit health via the W.I.R.E. analysis panel at the bottom.",
+      "Save circuits locally or to cloud storage for later access.",
     ],
   },
   {
     title: "Workspace Navigation",
     paragraphs: [
-      "Orbit with left-click drag, pan with Shift+scroll or right-click, and scroll or pinch to zoom.",
-      "Toggle panels closed when you need the full canvas; only the slim toggles remain visible.",
+      "Orbit the view with left-click drag, pan with Shift+scroll or right-click, and zoom with scroll wheel or pinch gestures.",
+      "Collapse panels when you need more canvas space - toggle buttons remain visible for quick access.",
     ],
     bullets: [
-      "Double-tap a component to focus the camera.",
-      "Hold Shift while wiring to enable precision snapping.",
+      "Double-click any component to center the camera on it.",
+      "Hold Shift while wiring for precision snapping.",
+      "Press H to reset the camera view at any time.",
     ],
   },
   {
-    title: "Build Smarter with W.I.R.E.",
+    title: "Need More Help?",
     paragraphs: [
-      "Watch wattage, current, resistance, and voltage update in real time as you design.",
-      "Hover any metric in the analysis panel to view optimization tips for that value.",
+      "For detailed guidance, use the navigation buttons above to access specific help topics.",
+      "The Classroom section (coming soon) will include interactive tutorials and guided lessons for structured learning.",
     ],
     bullets: [
-      "Green metrics indicate optimal performance.",
-      "Orange or red highlights call out potential bottlenecks.",
-    ],
-  },
-  {
-    title: "Tips & Shortcuts",
-    paragraphs: [
-      "Tap the quick actions on the left panel to rotate, mirror, or lock components instantly.",
-      "Save favorite setups as templates for fast reuse across projects.",
-    ],
-    bullets: [
-      "Ctrl + S saves to the cloud instantly.",
-      "Ctrl + Z reverts the last action; Ctrl + Shift + Z replays it.",
+      "Contact support: info@circuitry3d.net",
+      "Report issues: github.com/Mitchelllorin/CircuiTry3D",
+      "Documentation and updates: circuitry3d.net",
     ],
   },
 ];
@@ -150,63 +156,62 @@ const getNextPracticeProblem = (currentId: string | null) => {
 
   return pool[(index + 1) % pool.length] ?? null;
 };
-const TUTORIAL_SECTIONS: HelpSection[] = [
+const GETTING_STARTED_SECTIONS: HelpSection[] = [
   {
-    title: "Getting Started",
+    title: "Your First Circuit",
     paragraphs: [
-      "Add components from the Components menu, then place them directly into the 3D workspace.",
-      "Use the Wire tool to connect terminals and close the circuit loop so current can flow.",
-      "Open the analysis panels on the right to watch live calculations while you build.",
+      "Building a circuit in CircuiTry3D follows a straightforward workflow: add components, connect them with wires, and run the simulation to see results.",
+      "Start by adding a battery (voltage source) from the Components menu, then add a resistor or LED as your load.",
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
-      "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
+      "Components auto-label (B1, R1, LED1) for easy reference.",
+      "Adjust component values by clicking on them in the workspace.",
     ],
   },
   {
-    title: "Visual Learning",
+    title: "Connecting Components",
     paragraphs: [
-      "CircuiTry3D leans on the W.I.R.E. colour system so you always know which value you are adjusting.",
-      "Switch between flow visualizations to compare electron movement with conventional current.",
+      "Use the Wire Tool (W key) to connect component terminals. Click a terminal to start a wire, then click the destination terminal to complete the connection.",
+      "Choose from multiple routing modes based on your needs: Freeform for quick connections, Manhattan for professional 90° layouts, or A* for automatic pathfinding.",
     ],
     bullets: [
-      "Colour legend: blue watts, orange current, green resistance, red voltage.",
-      "Electron Flow mode shows semi-transparent particles moving negative to positive.",
-      "Current Flow mode renders solid particles in the conventional positive to negative direction.",
-      "Toggle polarity indicators to keep track of positive and negative terminals while wiring.",
+      "Freeform: Direct point-to-point connections",
+      "Manhattan (90°): Professional schematic-style right-angle routing",
+      "Simple: Minimal path connections",
+      "Perimeter: Routes along component edges",
+      "A* Auto-routing: Intelligent pathfinding around obstacles",
     ],
   },
   {
-    title: "Advanced Features",
+    title: "Running Simulations",
     paragraphs: [
-      "Explore routing, junctions, and layout tools to organise complex practice problems quickly.",
+      "Once your circuit forms a complete loop, the simulation runs automatically. Watch the W.I.R.E. analysis panel update in real time as current flows through your circuit.",
     ],
     bullets: [
-      "Swap between free-form and Manhattan routes for textbook wiring.",
-      "Drop junctions to branch into parallel paths.",
-      "Auto-arrange builds clean study-ready layouts in a single click.",
-      "Cycle through free, square, and linear layout modes from the View controls.",
+      "Green indicators show optimal performance.",
+      "Orange or red highlights identify potential issues.",
+      "Hover over metrics for detailed explanations and tips.",
+      "Use Electron Flow or Conventional Current visualization modes.",
     ],
   },
   {
-    title: "Controls",
+    title: "Saving Your Work",
     paragraphs: [
-      "Use mouse, keyboard, or touch controls depending on your device.",
+      "Save your circuits locally or to cloud storage at any time. Circuits are automatically backed up to prevent data loss.",
     ],
     bullets: [
-      "Drag to move components, long-press to edit values, and use two-finger gestures to zoom or pan.",
-      "Keyboard: W toggles wire mode, T toggles rotate mode, Space toggles the builder menu.",
-      "Quick keys add components instantly: B, R, L, S, and J.",
+      "Ctrl+S / Cmd+S: Save current circuit",
+      "Ctrl+O / Cmd+O: Open saved circuit",
+      "Ctrl+N / Cmd+N: Start a new circuit",
+      "Export options available for sharing and documentation",
     ],
   },
   {
-    title: "View Controls & Tips",
-    paragraphs: ["Keep the scene readable while you iterate on designs."],
-    bullets: [
-      "Reset View recentres the camera; Fit to Screen frames the active circuit.",
-      "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
-      "Complete the circuit loop, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
+    title: "Interactive Tutorial",
+    paragraphs: [
+      "For hands-on guided instruction, try the Interactive Tutorial from the Practice mode. This step-by-step walkthrough covers building your first working circuit.",
+      "A comprehensive Classroom section with structured lessons and learning paths is coming soon.",
     ],
   },
 ];
@@ -340,58 +345,162 @@ const SCHEMATIC_SECTIONS: HelpSection[] = [
   },
 ];
 
-const TABLE_METHOD_SECTIONS: HelpSection[] = [
+const TROUBLESHOOTING_SECTIONS: HelpSection[] = [
   {
-    title: "Why the Table Method",
+    title: "Common Issues",
     paragraphs: [
-      "The W.I.R.E. table gives every component its own row so you can log what is known before solving any unknowns.",
-      "Keep the columns locked to the W.I.R.E. compass: Watts (W), Current (I), Resistance (R), and Voltage (E).",
+      "Most circuit problems fall into a few categories. Here are solutions to the most frequently encountered issues.",
+    ],
+  },
+  {
+    title: "Circuit Not Running",
+    paragraphs: [
+      "If your circuit simulation is not running, check for an incomplete loop.",
     ],
     bullets: [
-      "Start with the givens from the prompt or schematic.",
-      "Copy shared values (for example, series current) into each affected row.",
-      "Leave blanks or '?' markers anywhere you still need to solve.",
+      "Verify all components are connected - look for disconnected terminals.",
+      "Ensure there is a complete path from battery positive through components back to battery negative.",
+      "Check for broken or missing wire segments.",
+      "Use the Wire Tool to reconnect any gaps in the circuit.",
     ],
   },
   {
-    title: "Solve in Five Moves",
+    title: "No Current Flow Displayed",
     paragraphs: [
-      "1. Read the question and circle the target variable.",
-      "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
-      "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
-      "4. Record the newly solved value in the table, then update the totals row when complete.",
-      "5. Check your work with Kirchhoff: sum voltages around each loop and verify currents at junctions.",
-    ],
-  },
-  {
-    title: "Formula Picker",
-    paragraphs: [
-      "Keep these identities beside the worksheet and grab the one that matches the givens in a row.",
+      "If you don't see current flow animation but the circuit appears connected:",
     ],
     bullets: [
-      "Ohm's Law: E = I * R, I = E / R, R = E / I.",
-      "Power rules: P = E * I, P = I * I * R, P = (E * E) / R.",
-      "Series recap: R_T = R1 + R2 + ..., current the same through every element.",
-      "Parallel recap: 1 / R_T = 1/R1 + 1/R2 + ..., voltage the same on every branch.",
+      "Verify the simulation is running (check the play/pause button).",
+      "Ensure Flow Visualization is enabled in View settings.",
+      "Check that your battery has a non-zero voltage value.",
+      "Confirm resistors have appropriate values (not infinite or zero).",
     ],
   },
   {
-    title: "Worksheet Template",
+    title: "Components Not Connecting",
     paragraphs: [
-      "Copy this layout or print it from the guide panel whenever you need a blank sheet.",
-      "```\nComponent        | W (Power) | I (Current) | R (Resistance) | E (Voltage)\n-----------------|-----------|-------------|----------------|-----------\nSource / Battery |           |             |                |           \nLoad 1           |           |             |                |           \nLoad 2           |           |             |                |           \nTotals           |           |             |                |           \n```",
+      "Wire connections require clicking directly on component terminals.",
     ],
     bullets: [
-      "Add extra rows for more loads or branches.",
-      "Totals confirm once every component row is solved.",
+      "Zoom in for better precision when connecting small terminals.",
+      "Look for the terminal highlight indicator before clicking.",
+      "Try different routing modes if wires are not reaching terminals.",
+      "Use junctions (J key) to create connection points for complex layouts.",
     ],
   },
   {
-    title: "Where to Find It",
+    title: "Performance Issues",
     paragraphs: [
-      "Load any practice circuit inside the Builder and scroll to the Practice panel to see the interactive W.I.R.E. worksheet.",
-      "Use Clear entries to reset your work and Reveal totals to compare against the simulator once you finish.",
-      "Need a paper copy? Tap the Table Method Guide button again and print this view.",
+      "If the application runs slowly or is unresponsive:",
+    ],
+    bullets: [
+      "Reduce the number of components in complex circuits.",
+      "Disable flow visualization for large circuits.",
+      "Close unnecessary browser tabs.",
+      "Try refreshing the page if issues persist.",
+      "Use a modern browser (Chrome, Firefox, Edge, Safari) for best performance.",
+    ],
+  },
+  {
+    title: "Data Recovery",
+    paragraphs: [
+      "CircuiTry3D automatically saves backup data. If you lose work:",
+    ],
+    bullets: [
+      "Check for auto-recovery prompts when reopening the application.",
+      "Look in the Load menu for recently saved circuits.",
+      "Browser storage may contain backup data if you didn't clear it.",
+    ],
+  },
+];
+
+const FAQ_SECTIONS: HelpSection[] = [
+  {
+    title: "General Questions",
+    paragraphs: [],
+  },
+  {
+    title: "What is CircuiTry3D?",
+    paragraphs: [
+      "CircuiTry3D is a browser-based, mobile-first circuit simulator designed for education. It allows students, teachers, and STEM enthusiasts to build and test electronic circuits in real time using an intuitive 3D interface.",
+    ],
+  },
+  {
+    title: "Is CircuiTry3D free to use?",
+    paragraphs: [
+      "CircuiTry3D offers free access to core features. Premium features and educator licenses are available for classrooms and institutions that need additional capabilities.",
+    ],
+  },
+  {
+    title: "What devices are supported?",
+    paragraphs: [
+      "CircuiTry3D works on any modern web browser. It is optimized for both desktop computers (with mouse and keyboard) and mobile devices (with touch controls).",
+    ],
+    bullets: [
+      "Desktop: Chrome, Firefox, Edge, Safari",
+      "Mobile: iOS Safari, Android Chrome",
+      "Tablet: Full touch support with gesture controls",
+    ],
+  },
+  {
+    title: "Do I need to install anything?",
+    paragraphs: [
+      "No installation required. CircuiTry3D runs entirely in your web browser. Simply visit circuitry3d.net to start building circuits immediately.",
+    ],
+  },
+  {
+    title: "Features & Capabilities",
+    paragraphs: [],
+  },
+  {
+    title: "What components are available?",
+    paragraphs: [
+      "CircuiTry3D includes essential circuit components for learning electrical fundamentals:",
+    ],
+    bullets: [
+      "Batteries (voltage sources) with adjustable voltage",
+      "Resistors with configurable resistance values",
+      "LEDs with forward voltage characteristics",
+      "Switches for circuit control",
+      "Junctions for branching wire paths",
+    ],
+  },
+  {
+    title: "Does it simulate real physics?",
+    paragraphs: [
+      "CircuiTry3D provides real-time feedback on Watts, Current, Resistance, and Voltage (W.I.R.E.) based on Ohm's Law and power calculations. The simulation is designed for educational clarity rather than professional-grade circuit analysis.",
+    ],
+  },
+  {
+    title: "Can I save my circuits?",
+    paragraphs: [
+      "Yes. Circuits can be saved locally in your browser storage. Cloud storage options are available for users who need to access their work across multiple devices.",
+    ],
+  },
+  {
+    title: "For Educators",
+    paragraphs: [],
+  },
+  {
+    title: "Can I use this in my classroom?",
+    paragraphs: [
+      "Absolutely. CircuiTry3D was designed with educators in mind. The visual W.I.R.E. system helps students understand abstract electrical concepts through immediate feedback and color-coded metrics.",
+    ],
+  },
+  {
+    title: "Are school licenses available?",
+    paragraphs: [
+      "Yes. We offer educator and school license tiers with additional features for classroom use. Contact info@circuitry3d.net for licensing information.",
+    ],
+  },
+  {
+    title: "Getting Help",
+    paragraphs: [],
+  },
+  {
+    title: "How do I report a bug or request a feature?",
+    paragraphs: [
+      "Visit github.com/Mitchelllorin/CircuiTry3D to report issues or suggest features. You can also email info@circuitry3d.net for direct support.",
     ],
   },
 ];
@@ -412,6 +521,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Tools & Modes",
+    paragraphs: [],
     bullets: [
       "W - toggle wire mode",
       "T - toggle rotate mode",
@@ -421,6 +531,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Editing & Files",
+    paragraphs: [],
     bullets: [
       "Ctrl+Z - undo",
       "Ctrl+Y - redo",
@@ -434,10 +545,12 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "View Control",
+    paragraphs: [],
     bullets: ["H - reset camera", "F - fit to screen", "G - toggle grid"],
   },
   {
     title: "Mouse Actions",
+    paragraphs: [],
     bullets: [
       "Click to select and drag to move components.",
       "Scroll to zoom; right-click for context actions.",
@@ -448,6 +561,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Touch Actions",
+    paragraphs: [],
     bullets: [
       "Tap to select, drag to move, and long-press to edit.",
       "Pinch to zoom; two-finger drag to pan the workspace.",
@@ -457,6 +571,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Pro Tips",
+    paragraphs: [],
     bullets: [
       "Hold Shift while dragging to temporarily disable grid snapping.",
       "Use arrow keys for fine component positioning.",
@@ -480,6 +595,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Circuit Building",
+    paragraphs: [],
     bullets: [
       "Interactive 3D workspace with colour-coded W.I.R.E. metrics.",
       "Components auto-label as B1, R1, LED1, SW1 for quick reference.",
@@ -488,6 +604,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Visualization",
+    paragraphs: [],
     bullets: [
       "Electron flow and conventional current particle systems show movement through wires.",
       "Polarity indicators mark positive and negative terminals at a glance.",
@@ -496,6 +613,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Flexible Wiring & Layouts",
+    paragraphs: [],
     bullets: [
       "Free-form, Manhattan, simple, perimeter, and A* routing styles.",
       "Smart junction placement with long-press editing for parallel branches.",
@@ -504,6 +622,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Educational Tools",
+    paragraphs: [],
     bullets: [
       "W.I.R.E., EIR triangle, power, worksheet, and solve panels support multiple learning paths.",
       "Practice mode covers series, parallel, mixed, and switch-controlled circuits with guided steps.",
@@ -519,6 +638,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Platform Support",
+    paragraphs: [],
     bullets: [
       "Desktop: full keyboard and mouse support with high-performance rendering.",
       "Mobile and tablet: touch-optimised gestures, pinch-to-zoom, long-press editing, responsive layout.",
@@ -526,6 +646,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "Technical Details",
+    paragraphs: [],
     bullets: [
       "Built with Three.js, JavaScript, HTML5 Canvas, and CSS3.",
       "Features real-time simulation, graph-based topology detection, multiple routing algorithms, and persistent storage.",
@@ -533,6 +654,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   },
   {
     title: "For Students & Educators",
+    paragraphs: [],
     bullets: [
       "Students get instant feedback, practice problems, and exportable circuits.",
       "Educators can rapidly build examples, rely on professional layouts, and use the tool freely in class.",
@@ -559,15 +681,15 @@ const HELP_VIEW_CONTENT: Record<
   overview: {
     title: "CircuiTry3D Help Center",
     description:
-      "Browse quick-start advice, navigation tips, and the W.I.R.E. legend.",
+      "Support resources, documentation, and answers to common questions.",
     sections: HELP_SECTIONS,
     showLegend: true,
   },
-  tutorial: {
-    title: "Guided Tutorial",
+  "getting-started": {
+    title: "Getting Started",
     description:
-      "Follow the guided walkthrough tailored for the modern interface.",
-    sections: TUTORIAL_SECTIONS,
+      "Learn the basics of building circuits in CircuiTry3D.",
+    sections: GETTING_STARTED_SECTIONS,
   },
   "wire-guide": {
     title: "W.I.R.E. Guide",
@@ -581,22 +703,28 @@ const HELP_VIEW_CONTENT: Record<
       "Apply industry schematic standards while wiring inside the Builder.",
     sections: SCHEMATIC_SECTIONS,
   },
-  practice: {
-    title: "Table Method Worksheet",
-    description:
-      "Log the givens, pick the matching formula, and solve every W.I.R.E. slot step by step.",
-    sections: TABLE_METHOD_SECTIONS,
-  },
   shortcuts: {
     title: "Keyboard & Gesture Shortcuts",
     description:
-      "Reference the complete set of controls for desktop and mobile builders.",
+      "Complete controls reference for desktop and mobile.",
     sections: SHORTCUT_SECTIONS,
+  },
+  troubleshooting: {
+    title: "Troubleshooting",
+    description:
+      "Solutions to common issues and problems.",
+    sections: TROUBLESHOOTING_SECTIONS,
+  },
+  faq: {
+    title: "Frequently Asked Questions",
+    description:
+      "Answers to common questions about CircuiTry3D.",
+    sections: FAQ_SECTIONS,
   },
   about: {
     title: "About CircuiTry3D",
     description:
-      "Review feature highlights, learning goals, and support resources.",
+      "Feature highlights, learning goals, and support resources.",
     sections: ABOUT_SECTIONS,
   },
 };
@@ -1148,8 +1276,8 @@ export default function Builder() {
         if (arenaExportStatus !== "ready") {
           handleArenaSync({ openWindow: false });
         }
-      } else if (pendingMode === "learn") {
-        setWorkspaceMode("learn");
+      } else if (pendingMode === "help") {
+        setWorkspaceMode("help");
         setTroubleshootPanelOpen(false);
         openHelpCenter("overview");
       } else if (pendingMode === "troubleshoot") {

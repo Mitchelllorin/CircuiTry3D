@@ -665,31 +665,59 @@ export const WIRE_LEGEND: HelpLegendItem[] = [
 
 export const HELP_ENTRIES: HelpEntry[] = [
   {
+    id: "getting-started",
+    label: "Getting Started",
+    description:
+      "Learn the basics of building circuits in CircuiTry3D.",
+    view: "getting-started",
+  },
+  {
     id: "wire-guide",
     label: "W.I.R.E. Guide",
     description:
-      "Break down Watts, Current, Resistance, and Voltage in detail.",
+      "Understand Watts, Current, Resistance, and Voltage fundamentals.",
     view: "wire-guide",
   },
   {
-    id: "shortcuts",
-    label: "Keyboard Shortcuts",
+    id: "schematic",
+    label: "Schematic Standards",
     description:
-      "Look up every keyboard, mouse, and touch shortcut in one place.",
+      "Apply professional circuit layout and wiring conventions.",
+    view: "schematic",
+  },
+  {
+    id: "shortcuts",
+    label: "Keyboard & Gestures",
+    description:
+      "Complete controls reference for desktop and mobile.",
     view: "shortcuts",
+  },
+  {
+    id: "troubleshooting",
+    label: "Troubleshooting",
+    description:
+      "Solutions to common issues and problems.",
+    view: "troubleshooting",
+  },
+  {
+    id: "faq",
+    label: "FAQ",
+    description:
+      "Frequently asked questions about CircuiTry3D.",
+    view: "faq",
   },
   {
     id: "about",
     label: "About CircuiTry3D",
     description:
-      "Learn what is new in v2.5 and how the simulator supports teaching.",
+      "Version information, features, and support resources.",
     view: "about",
   },
   {
     id: "help-center",
-    label: "Help Center",
+    label: "Help Overview",
     description:
-      "Open quick-start tips, navigation help, and the W.I.R.E. legend.",
+      "Return to the main Help Center overview.",
     view: "overview",
   },
 ];
