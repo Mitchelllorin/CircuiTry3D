@@ -147,7 +147,7 @@ export type ComponentAction = {
 
 export type BuilderToolId = "select" | "wire" | "measure";
 
-export type WorkspaceMode = "build" | "practice" | "troubleshoot" | "arena" | "learn";
+export type WorkspaceMode = "build" | "practice" | "troubleshoot" | "arena" | "help";
 
 export type LegacyModeState = {
   isWireMode: boolean;
@@ -185,11 +185,12 @@ export type HelpLegendItem = {
 
 export type HelpModalView =
   | "overview"
-  | "tutorial"
+  | "getting-started"
   | "wire-guide"
   | "schematic"
-  | "practice"
   | "shortcuts"
+  | "troubleshooting"
+  | "faq"
   | "about";
 
 export type HelpEntry = {

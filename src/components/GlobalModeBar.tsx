@@ -72,8 +72,8 @@ export function GlobalModeBar() {
     handleModeClick("arena");
   }, [handleModeClick]);
 
-  const handleLearnClick = useCallback(() => {
-    handleModeClick("learn");
+  const handleHelpClick = useCallback(() => {
+    handleModeClick("help");
   }, [handleModeClick]);
 
   const handleWireLibraryClick = useCallback(() => {
@@ -128,13 +128,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "learn" ? "true" : undefined}
-          onClick={handleLearnClick}
-          aria-label="Learn mode"
-          title="Tutorials, guides, and help resources"
+          data-active={workspaceMode === "help" ? "true" : undefined}
+          onClick={handleHelpClick}
+          aria-label="Help center"
+          title="Support resources, guides, and documentation"
         >
-          <span className="mode-icon" aria-hidden="true">📚</span>
-          <span className="mode-label">Learn</span>
+          <span className="mode-icon" aria-hidden="true">❓</span>
+          <span className="mode-label">Help</span>
         </button>
         <button
           type="button"
