@@ -1245,10 +1245,27 @@ body.builder-body {
 .slider-component-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  align-items: stretch;
+  gap: 8px;
   width: 100%;
   padding: 4px 0;
+}
+
+/* Component name at top */
+/* (Make it readable: no forced uppercase, allow 2 lines) */
+.slider-component-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--builder-text);
+  text-align: left;
+  width: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 /* Schematic symbol at top - prominent display */
@@ -1284,28 +1301,32 @@ body.builder-body {
   white-space: nowrap;
 }
 
-/* Component name below the symbol */
-.slider-component-name {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--builder-text);
-  text-align: center;
+/* Description + preview row */
+.slider-component-footer {
+  display: grid;
+  grid-template-columns: 1fr 38px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0 2px;
 }
 
-/* Preview image at bottom */
+.slider-component-description {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--builder-muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Preview image (small thumbnail) */
 .slider-component-preview {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   background: rgba(136, 204, 255, 0.06);
   border-radius: 6px;
   border: 1px solid rgba(136, 204, 255, 0.15);
@@ -1316,7 +1337,7 @@ body.builder-body {
 .slider-component-preview img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   filter: brightness(0.95) contrast(1.05);
 }
 

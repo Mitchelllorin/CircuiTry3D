@@ -26,15 +26,19 @@ interface LeftToolbarProps {
 
 /**
  * Renders the component icon/schematic symbol for the library
- * Vertical layout: schematic symbol at top, component name below, preview image at bottom
+ * Vertical layout: name at top, schematic symbol, description + preview at bottom
  */
 function ComponentIcon({ component }: { component: ComponentAction }) {
   const hasSchematic = component.metadata?.schematicSymbolPath;
   const hasPreview = component.metadata?.previewImagePath;
+  const description = component.description?.trim();
 
   return (
     <span className="slider-component-card">
-      {/* Schematic symbol at top */}
+      {/* Component name at top */}
+      <span className="slider-component-name">{component.label}</span>
+
+      {/* Schematic symbol */}
       <span className="slider-component-symbol" aria-hidden="true">
         {hasSchematic ? (
           <img
@@ -46,19 +50,23 @@ function ComponentIcon({ component }: { component: ComponentAction }) {
           <span className="slider-component-symbol-text">{component.icon}</span>
         )}
       </span>
-      {/* Component name below the symbol */}
-      <span className="slider-component-name">{component.label}</span>
-      {/* Preview image at bottom */}
-      <span className="slider-component-preview" aria-hidden="true">
-        {hasPreview ? (
-          <img
-            src={component.metadata!.previewImagePath}
-            alt=""
-            loading="lazy"
-          />
-        ) : (
-          <span className="slider-component-preview-placeholder" />
-        )}
+
+      {/* Description + preview */}
+      <span className="slider-component-footer">
+        <span className="slider-component-description">
+          {description || " "}
+        </span>
+        <span className="slider-component-preview" aria-hidden="true">
+          {hasPreview ? (
+            <img
+              src={component.metadata!.previewImagePath}
+              alt=""
+              loading="lazy"
+            />
+          ) : (
+            <span className="slider-component-preview-placeholder" />
+          )}
+        </span>
       </span>
     </span>
   );
