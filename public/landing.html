@@ -288,6 +288,8 @@
                   <g aria-hidden="true">
                     <!-- Circuit loop: Battery on LEFT, R1 on TOP, R2 on RIGHT, R3 on BOTTOM -->
                     <!-- Corners: TL(100,60) TR(500,60) BR(500,220) BL(100,220) -->
+                    <!-- Hidden trace path for photon animation -->
+                    <path id="series-path" class="trace-path" d="M100 60 L500 60 L500 220 L100 220 Z" />
 
                     <!-- LEFT SIDE - Battery B1 (vertical orientation between corners) -->
                     <!-- Wire from top-left corner down to battery -->
@@ -329,6 +331,9 @@
                     <circle class="node" cx="100" cy="220" r="4.2" />
                   </g>
 
+                  <!-- Animated photons -->
+                  <g id="photons" class="photons" aria-hidden="true"></g>
+
                   <!-- Component labels - positioned inside the circuit loop -->
                   <!-- B1 label - inside loop, to the right of battery -->
                   <text class="component-tag" x="135" y="145" text-anchor="start">
@@ -366,27 +371,39 @@
     (function(){
       const path = document.getElementById('series-path');
       const holder = document.getElementById('photons');
-      if (path && holder) {
-        const length = path.getTotalLength();
-        const total = Math.max(10, Math.floor(length / 70));
-        const dots = [];
-        for (let i = 0; i < total; i++) {
-          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          c.setAttribute('r', '3.1');
-          holder.appendChild(c);
-          dots.push({ el: c, t: (i / total) });
-        }
-        function tick(){
+      const reduceMotion = typeof window !== "undefined"
+        && typeof window.matchMedia === "function"
+        && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (path && holder && !reduceMotion) {
+        const dots = [0, 0.5].map(() => {
+          const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          dot.setAttribute("r", "3.2");
+          holder.appendChild(dot);
+          return dot;
+        });
+
+        let last = performance.now();
+        let offset = 0;
+        const speedPxPerSecond = 135;
+
+        function tick(now) {
+          const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+          last = now;
+
           const len = path.getTotalLength();
-          dots.forEach((d, idx) => {
-            d.t += 0.0038 + (idx % 4) * 0.0012;
-            if (d.t > 1) d.t -= 1;
-            const p = path.getPointAtLength(d.t * len);
-            d.el.setAttribute('cx', p.x);
-            d.el.setAttribute('cy', p.y);
+          offset = (offset + speedPxPerSecond * dt) % len;
+
+          dots.forEach((dot, idx) => {
+            const dist = (offset + (idx * len) / 2) % len;
+            const p = path.getPointAtLength(dist);
+            dot.setAttribute("cx", p.x);
+            dot.setAttribute("cy", p.y);
           });
+
           requestAnimationFrame(tick);
         }
+
         requestAnimationFrame(tick);
       }
 
