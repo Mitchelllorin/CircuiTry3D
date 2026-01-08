@@ -532,8 +532,12 @@ function formatNumericForProperty(key: string, value: number): { display: string
   const unit = METRIC_UNIT_MAP[normalisedKey] ?? null;
 
   if (unit === "%") {
-    const decimals = Math.abs(value) < 10 ? 1 : 0;
-    return { display: `${value.toFixed(decimals)} %`, unit };
+    // Many datasets express efficiency / power factor as a 0..1 ratio. Display those as 0..100%.
+    const shouldScaleRatioPercent =
+      (normalisedKey.includes("efficiency") || normalisedKey.includes("powerfactor")) && Math.abs(value) <= 1.2;
+    const scaledValue = shouldScaleRatioPercent ? value * 100 : value;
+    const decimals = Math.abs(scaledValue) < 10 ? 1 : 0;
+    return { display: `${scaledValue.toFixed(decimals)} %`, unit };
   }
 
   if (unit === "ms" || unit === "mAh" || unit === "s") {
@@ -1174,7 +1178,7 @@ function computeShowdownScore(componentA: ComponentShowdownProfile | null, compo
       label: metricA.label,
       leftValue: metricA.displayValue,
       rightValue: metricB.displayValue,
-      deltaLabel: formatDeltaLabel(metricA.label, metricA.unit ?? metricB.unit ?? null, metricA.numericValue, metricB.numericValue),
+      deltaLabel: formatDeltaLabel(metricA.key, metricA.unit ?? metricB.unit ?? null, metricA.numericValue, metricB.numericValue),
       winner,
       preference,
       advantageScore: relative,
@@ -1340,11 +1344,20 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   });
   const [battleState, setBattleState] = useState<"idle" | "battling" | "complete">("idle");
   const [battleWinner, setBattleWinner] = useState<"left" | "right" | "tie" | null>(null);
-  const [beforeMetrics, setBeforeMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
+  const [beforeMetrics, setBeforeMetrics] = useState<{ left: ComponentTelemetryEntry[] | null; right: ComponentTelemetryEntry[] | null }>({
+    left: null,
+    right: null
+  });
   const [rotationEnabled, setRotationEnabled] = useState(true);
-  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(new Set(['all']));
-  const [afterMetrics, setAfterMetrics] = useState<{left: ComponentTelemetryEntry[] | null, right: ComponentTelemetryEntry[] | null}>({left: null, right: null});
-  const [selectedScenario, setSelectedScenario] = useState<string>('standard');
+  const [varianceEnabled, setVarianceEnabled] = useState(true);
+  const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(new Set(["all"]));
+  const [afterMetrics, setAfterMetrics] = useState<{ left: ComponentTelemetryEntry[] | null; right: ComponentTelemetryEntry[] | null }>({
+    left: null,
+    right: null
+  });
+  const [selectedScenario, setSelectedScenario] = useState<string>("standard");
+  const [battleScore, setBattleScore] = useState<{ leftWins: number; rightWins: number; ties: number; totalRounds: number } | null>(null);
+  const battleSeedRef = useRef<number>(0);
 
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
@@ -1827,7 +1840,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         const label = metricA?.label ?? metricB?.label ?? formatPropertyLabel(key);
         const aValue = metricA?.displayValue ?? "—";
         const bValue = metricB?.displayValue ?? "—";
-        const deltaLabel = metricA && metricB ? formatDeltaLabel(label, metricA.unit ?? metricB.unit ?? null, metricA.numericValue, metricB.numericValue) : null;
+        const deltaLabel = metricA && metricB ? formatDeltaLabel(key, metricA.unit ?? metricB.unit ?? null, metricA.numericValue, metricB.numericValue) : null;
 
         return {
           key,
@@ -1928,18 +1941,19 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
 
   const applyScenarioModifiers = useCallback((telemetry: ComponentTelemetryEntry[], scenarioId: string): ComponentTelemetryEntry[] => {
     const scenario = ENVIRONMENTAL_SCENARIOS.find(s => s.id === scenarioId);
-    if (!scenario || scenarioId === 'standard') {
+    if (!scenario || scenarioId === "standard") {
       return telemetry;
     }
 
     return telemetry.map(entry => {
-      if (!entry.metric?.numericValue) {
+      const baseValue = entry.metric?.numericValue ?? null;
+      if (baseValue === null || !Number.isFinite(baseValue)) {
         return entry;
       }
 
       const modifierKey = entry.id as keyof typeof scenario.modifiers;
       const modifier = scenario.modifiers[modifierKey] ?? 1.0;
-      const modifiedValue = entry.metric.numericValue * modifier;
+      const modifiedValue = baseValue * modifier;
       const formattedValue = formatNumericForProperty(entry.id, modifiedValue);
 
       return {
@@ -1954,8 +1968,119 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     });
   }, []);
 
+  const getBattlePreference = useCallback((metricId: string): "higher" | "lower" => {
+    switch (metricId) {
+      case "temperature":
+        return "lower";
+      case "current":
+        // "Current draw" is typically better when lower (less waste / stress).
+        return "lower";
+      case "efficiency":
+        return "higher";
+      case "power":
+        return "higher";
+      case "voltage":
+        return "higher";
+      default:
+        return "higher";
+    }
+  }, []);
+
+  const mulberry32 = useCallback((seed: number) => {
+    let t = seed >>> 0;
+    return () => {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }, []);
+
+  const applyVariance = useCallback((telemetry: ComponentTelemetryEntry[], seed: number, varianceFraction: number): ComponentTelemetryEntry[] => {
+    if (!varianceEnabled || varianceFraction <= 0) {
+      return telemetry;
+    }
+
+    const rng = mulberry32(seed);
+    return telemetry.map((entry) => {
+      const numeric = entry.metric?.numericValue ?? null;
+      if (numeric === null || !Number.isFinite(numeric)) {
+        return entry;
+      }
+
+      const jitter = (rng() * 2 - 1) * varianceFraction;
+      const nextValue = numeric * (1 + jitter);
+      const formatted = formatNumericForProperty(entry.id, nextValue);
+
+      return {
+        ...entry,
+        displayValue: formatted.display,
+        metric: entry.metric
+          ? {
+              ...entry.metric,
+              numericValue: nextValue,
+              displayValue: formatted.display
+            }
+          : null
+      };
+    });
+  }, [mulberry32, varianceEnabled]);
+
+  const computeBattleScore = useCallback(
+    (left: ComponentTelemetryEntry[], right: ComponentTelemetryEntry[]) => {
+      const rightById = new Map(right.map((entry) => [entry.id, entry]));
+      const isAll = selectedMetrics.has("all");
+      const ids = isAll ? TELEMETRY_PRESETS.map((preset) => preset.id) : Array.from(selectedMetrics);
+
+      let leftWins = 0;
+      let rightWins = 0;
+      let ties = 0;
+      let totalRounds = 0;
+
+      ids.forEach((id) => {
+        if (id === "all") {
+          return;
+        }
+
+        const entryL = left.find((entry) => entry.id === id) ?? null;
+        const entryR = rightById.get(id) ?? null;
+
+        const a = entryL?.metric?.numericValue ?? null;
+        const b = entryR?.metric?.numericValue ?? null;
+        if (a === null || b === null || !Number.isFinite(a) || !Number.isFinite(b)) {
+          return;
+        }
+
+        const preference = getBattlePreference(id);
+        const diff = a - b;
+        const base = Math.max(Math.abs(a), Math.abs(b), 1e-9);
+        const relative = Math.abs(diff) / base;
+        const tieThreshold = 0.015;
+
+        totalRounds += 1;
+
+        if (relative < tieThreshold) {
+          ties += 1;
+          return;
+        }
+
+        const advantage = preference === "higher" ? diff : -diff;
+        if (advantage > 0) {
+          leftWins += 1;
+        } else {
+          rightWins += 1;
+        }
+      });
+
+      return { leftWins, rightWins, ties, totalRounds };
+    },
+    [getBattlePreference, selectedMetrics]
+  );
+
   const handleBattle = useCallback(() => {
-    if (battleState === "battling") return;
+    if (battleState === "battling") {
+      return;
+    }
 
     setBeforeMetrics({
       left: componentATelemetry,
@@ -1963,63 +2088,68 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     });
     setBattleState("battling");
     setBattleWinner(null);
-    setAfterMetrics({left: null, right: null});
+    setBattleScore(null);
+    setAfterMetrics({ left: null, right: null });
 
     setTimeout(() => {
-      // Apply scenario modifiers to simulate environmental effects
+      // Use a stable per-battle seed so the "after" results and winner match what the user sees.
+      const seed = Date.now();
+      battleSeedRef.current = seed;
+
       const modifiedLeftTelemetry = applyScenarioModifiers(componentATelemetry, selectedScenario);
       const modifiedRightTelemetry = applyScenarioModifiers(componentBTelemetry, selectedScenario);
 
-      // Add some randomization to simulate real-world variance (±5%)
-      const addVariance = (telemetry: ComponentTelemetryEntry[]) => {
-        return telemetry.map(entry => ({
-          ...entry,
-          displayValue: entry.metric?.numericValue
-            ? formatNumericForProperty(entry.id, entry.metric.numericValue * (0.95 + Math.random() * 0.10)).display
-            : entry.displayValue
-        }));
-      };
+      const varianceFraction = 0.05;
+      const variedLeft = applyVariance(modifiedLeftTelemetry, seed ^ 0xA5A5A5A5, varianceFraction);
+      const variedRight = applyVariance(modifiedRightTelemetry, seed ^ 0x5A5A5A5A, varianceFraction);
 
-      setAfterMetrics({
-        left: addVariance(modifiedLeftTelemetry),
-        right: addVariance(modifiedRightTelemetry)
-      });
+      setAfterMetrics({ left: variedLeft, right: variedRight });
 
-      if (showdownWinner) {
-        setBattleWinner(showdownWinner);
+      const score = computeBattleScore(variedLeft, variedRight);
+      setBattleScore(score);
+
+      if (score.totalRounds === 0) {
+        setBattleWinner(null);
+      } else if (score.leftWins > score.rightWins) {
+        setBattleWinner("left");
+      } else if (score.rightWins > score.leftWins) {
+        setBattleWinner("right");
+      } else {
+        setBattleWinner("tie");
       }
       setBattleState("complete");
     }, 3000);
-  }, [battleState, componentATelemetry, componentBTelemetry, showdownWinner, applyScenarioModifiers, selectedScenario]);
+  }, [battleState, componentATelemetry, componentBTelemetry, applyScenarioModifiers, selectedScenario, applyVariance, computeBattleScore]);
 
   const handleResetBattle = useCallback(() => {
     setBattleState("idle");
     setBattleWinner(null);
-    setBeforeMetrics({left: null, right: null});
-    setAfterMetrics({left: null, right: null});
+    setBattleScore(null);
+    setBeforeMetrics({ left: null, right: null });
+    setAfterMetrics({ left: null, right: null });
   }, []);
 
   const handleMetricToggle = useCallback((metricId: string) => {
     setSelectedMetrics(prev => {
       const next = new Set(prev);
-      if (metricId === 'all') {
-        return new Set(['all']);
+      if (metricId === "all") {
+        return new Set(["all"]);
       }
-      next.delete('all');
+      next.delete("all");
       if (next.has(metricId)) {
         next.delete(metricId);
       } else {
         next.add(metricId);
       }
       if (next.size === 0) {
-        return new Set(['all']);
+        return new Set(["all"]);
       }
       return next;
     });
   }, []);
 
   const getFilteredTelemetry = useCallback((telemetry: ComponentTelemetryEntry[]) => {
-    if (selectedMetrics.has('all')) {
+    if (selectedMetrics.has("all")) {
       return telemetry;
     }
     return telemetry.filter(entry => selectedMetrics.has(entry.id));
@@ -2257,8 +2387,8 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             </div>
             <div className="arena-metric-toggles">
               <button
-                className={`arena-metric-toggle${selectedMetrics.has('all') ? ' active' : ''}`}
-                onClick={() => handleMetricToggle('all')}
+                className={`arena-metric-toggle${selectedMetrics.has("all") ? " active" : ""}`}
+                onClick={() => handleMetricToggle("all")}
                 type="button"
               >
                 <span className="toggle-icon">✨</span>
@@ -2267,7 +2397,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               {TELEMETRY_PRESETS.map((preset) => (
                 <button
                   key={preset.id}
-                  className={`arena-metric-toggle${selectedMetrics.has(preset.id) ? ' active' : ''}`}
+                  className={`arena-metric-toggle${selectedMetrics.has(preset.id) ? " active" : ""}`}
                   onClick={() => handleMetricToggle(preset.id)}
                   type="button"
                 >
@@ -2291,7 +2421,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               {ENVIRONMENTAL_SCENARIOS.map((scenario) => (
                 <button
                   key={scenario.id}
-                  className={`arena-scenario-card${selectedScenario === scenario.id ? ' active' : ''}`}
+                  className={`arena-scenario-card${selectedScenario === scenario.id ? " active" : ""}`}
                   onClick={() => setSelectedScenario(scenario.id)}
                   type="button"
                 >
@@ -2312,7 +2442,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                 </button>
               ))}
             </div>
-            {selectedScenario !== 'standard' && (
+            {selectedScenario !== "standard" && (
               <div className="arena-scenario-active-notice">
                 <div className="notice-icon">{currentScenario.icon}</div>
                 <div className="notice-content">
@@ -2329,7 +2459,22 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             <div className="arena-card-header">
               <h2>Battle Stats</h2>
             </div>
-            {hasShowdown && (
+            {battleState === "complete" && battleScore && battleScore.totalRounds > 0 ? (
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Battle Result (A)</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{formatShowdownRecord(battleScore.leftWins, battleScore.rightWins, battleScore.ties)}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Total Rounds</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{battleScore.totalRounds}</div>
+                </div>
+                <div>
+                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Battle Result (B)</div>
+                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{formatShowdownRecord(battleScore.rightWins, battleScore.leftWins, battleScore.ties)}</div>
+                </div>
+              </div>
+            ) : hasShowdown ? (
               <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
                 <div>
                   <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component A Record</div>
@@ -2344,8 +2489,9 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                   <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{rightRecord}</div>
                 </div>
               </div>
+            ) : (
+              <p className="arena-empty">Select two components above to see battle stats</p>
             )}
-            {!hasShowdown && <p className="arena-empty">Select two components above to see battle stats</p>}
           </div>
 
           <div className={`arena-battle-stage${battleState === "battling" ? " battling" : ""}${battleState === "complete" ? " battle-complete" : ""}`}>
@@ -2415,6 +2561,24 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             })}
 
             <div className="arena-battle-overlay">
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+                <button
+                  className="arena-btn ghost small"
+                  type="button"
+                  onClick={() => setRotationEnabled((prev) => !prev)}
+                  title={rotationEnabled ? "Stop component rotation" : "Enable component rotation"}
+                >
+                  {rotationEnabled ? "Rotation: On" : "Rotation: Off"}
+                </button>
+                <button
+                  className="arena-btn ghost small"
+                  type="button"
+                  onClick={() => setVarianceEnabled((prev) => !prev)}
+                  title={varianceEnabled ? "Disable randomness (more repeatable)" : "Enable variance (more realistic)"}
+                >
+                  {varianceEnabled ? "Variance: On" : "Variance: Off"}
+                </button>
+              </div>
               <button 
                 className={`arena-battle-btn${battleState === "battling" ? " battling" : ""}${battleState === "complete" ? " complete" : ""}`}
                 onClick={handleBattle}
@@ -2430,6 +2594,11 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                   <div className="winner-name">
                     {battleWinner === "left" ? componentAProfile?.name : battleWinner === "right" ? componentBProfile?.name : "TIE"}
                   </div>
+                  {battleScore && battleScore.totalRounds > 0 ? (
+                    <div style={{ fontSize: "0.8rem", color: "rgba(226, 232, 240, 0.9)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      {battleScore.leftWins}-{battleScore.rightWins}{battleScore.ties > 0 ? `-${battleScore.ties}` : ""} · {battleScore.totalRounds} metric{battleScore.totalRounds === 1 ? "" : "s"}
+                    </div>
+                  ) : null}
                   <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">Reset Battle</button>
                 </div>
               )}
