@@ -28,6 +28,7 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
     <svg
       viewBox="0 0 260 200"
       xmlns="http://www.w3.org/2000/svg"
+        xmlnsXlink="http://www.w3.org/1999/xlink"
       role="img"
       aria-label="CircuiTry3D Logo - Three Resistor Circuit"
       width={width}
@@ -51,6 +52,68 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
+
+        {/* Photon glow + soft comet tail */}
+        <filter id="photonGlow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="2.2" result="blur" />
+          <feColorMatrix
+            in="blur"
+            type="matrix"
+            values={`
+              1 0 0 0 0
+              0 1 0 0 0
+              0 0 1 0 0
+              0 0 0 12 -3
+            `}
+            result="glow"
+          />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <radialGradient id="photonFill" cx="35%" cy="35%" r="75%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+          <stop offset="42%" stopColor="#d6fff6" stopOpacity="1" />
+          <stop offset="100%" stopColor="#3ff9d2" stopOpacity="0.96" />
+        </radialGradient>
+
+        {/* Circuit flow path including resistor zigzags */}
+        <path
+          id="photonPath"
+          d={`M 55 150
+             L 55 50
+             L 90 50
+             L 100 50
+             L 108 50
+             L 113 40
+             L 123 60
+             L 133 40
+             L 143 60
+             L 148 50
+             L 160 50
+             L 205 50
+             L 205 75
+             L 205 83
+             L 215 88
+             L 195 98
+             L 215 108
+             L 195 118
+             L 205 123
+             L 205 135
+             L 205 150
+             L 160 150
+             L 155 150
+             L 103 150
+             L 108 140
+             L 118 160
+             L 128 140
+             L 138 160
+             L 143 150
+             L 95 150
+             L 55 150`}
+        />
       </defs>
 
       <g stroke="url(#wireGradient)" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -117,6 +180,67 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <text x="130" y="35">R₁ = 3 kΩ</text>
         <text x="225" y="105">R₂ = 10 kΩ</text>
         <text x="125" y="172">R₃ = 5 kΩ</text>
+      </g>
+
+      {/* Animated photons (two bright particles with comet tails) */}
+      <g aria-hidden="true" filter="url(#photonGlow)">
+        {/* Photon A */}
+        <g>
+          <circle r="3.35" fill="url(#photonFill)" opacity="0.98">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="2.7" fill="url(#photonFill)" opacity="0.34">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.10s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="2.1" fill="url(#photonFill)" opacity="0.22">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.18s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="1.6" fill="url(#photonFill)" opacity="0.14">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.26s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="1.2" fill="url(#photonFill)" opacity="0.09">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.34s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+        </g>
+
+        {/* Photon B (phase offset) */}
+        <g>
+          <circle r="3.35" fill="url(#photonFill)" opacity="0.98">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.7s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="2.7" fill="url(#photonFill)" opacity="0.34">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.80s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="2.1" fill="url(#photonFill)" opacity="0.22">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.88s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="1.6" fill="url(#photonFill)" opacity="0.14">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.96s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+          <circle r="1.2" fill="url(#photonFill)" opacity="0.09">
+            <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.04s">
+              <mpath href="#photonPath" xlinkHref="#photonPath" />
+            </animateMotion>
+          </circle>
+        </g>
       </g>
     </svg>
   );
