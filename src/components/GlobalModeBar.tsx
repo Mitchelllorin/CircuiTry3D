@@ -21,6 +21,10 @@ export function GlobalModeBar() {
 
   const isWorkspacePage = location.pathname === "/app";
   const isLandingPage = location.pathname === "/";
+  const isPricingPage = location.pathname === "/pricing";
+  const isCommunityPage = location.pathname === "/community";
+  const isAccountPage = location.pathname === "/account";
+  const isClassroomPage = location.pathname === "/classroom";
 
   // Don't show on landing page
   if (isLandingPage) {
@@ -60,6 +64,12 @@ export function GlobalModeBar() {
     }
   }, [setWorkspaceMode, navigate, isWorkspacePage]);
 
+  const handleNavigateTo = useCallback((path: string) => {
+    // If leaving the workspace, ensure any workspace-only panels don't stay "active".
+    setWireLibraryPanelOpen(false);
+    navigate(path);
+  }, [navigate, setWireLibraryPanelOpen]);
+
   const handleBuildClick = useCallback(() => {
     handleModeClick("build");
   }, [handleModeClick]);
@@ -92,6 +102,16 @@ export function GlobalModeBar() {
         </div>
       )}
       <div className="workspace-mode-bar workspace-mode-bar--global" ref={modeBarRef}>
+        <button
+          type="button"
+          className="mode-tab mode-tab--icon-only"
+          data-active={isWorkspacePage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/app")}
+          aria-label="Open workspace"
+          title="Workspace hub"
+        >
+          <span className="mode-icon" aria-hidden="true">🏠</span>
+        </button>
         <button
           type="button"
           className="mode-tab"
@@ -135,6 +155,50 @@ export function GlobalModeBar() {
         >
           <span className="mode-icon" aria-hidden="true">📚</span>
           <span className="mode-label">Learn</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={isClassroomPage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/classroom")}
+          aria-label="Classroom"
+          title="Classroom"
+        >
+          <span className="mode-icon" aria-hidden="true">🎓</span>
+          <span className="mode-label">Classroom</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={isCommunityPage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/community")}
+          aria-label="Community"
+          title="Community"
+        >
+          <span className="mode-icon" aria-hidden="true">🌐</span>
+          <span className="mode-label">Community</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={isAccountPage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/account")}
+          aria-label="Account"
+          title="Account"
+        >
+          <span className="mode-icon" aria-hidden="true">👤</span>
+          <span className="mode-label">Account</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={isPricingPage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/pricing")}
+          aria-label="Pricing"
+          title="Pricing"
+        >
+          <span className="mode-icon" aria-hidden="true">💳</span>
+          <span className="mode-label">Pricing</span>
         </button>
         <button
           type="button"

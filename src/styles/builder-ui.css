@@ -130,7 +130,8 @@ body.builder-body {
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 950;
+  /* Keep the workspace bar above all builder overlays (arena, help, etc.) */
+  z-index: 2100;
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
@@ -223,7 +224,7 @@ body.builder-body {
   position: fixed;
   top: 12px;
   left: calc(50% - min(600px, calc(50vw - 12px)) - 28px);
-  z-index: 951;
+  z-index: 2101;
   background: rgba(10, 24, 48, 0.95);
   border: 1px solid var(--builder-border);
   border-radius: 50%;
