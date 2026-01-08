@@ -18,8 +18,7 @@ android/.idea/
 *.aab
 circuitry3d-release.aab
 
-# Keystore (keep the file, but don't commit it publicly in production)
-# For this demo, we include it, but in real production:
-# android/app/keystore/
-# android/key.properties
+# Android signing (never commit signing keys/credentials)
+android/app/keystore/
+android/key.properties
 

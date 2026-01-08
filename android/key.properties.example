@@ -1,0 +1,25 @@
+## Android release signing configuration (EXAMPLE)
+#
+# Copy this file to `android/key.properties` (which is gitignored) and fill
+# in your real values.
+#
+# IMPORTANT:
+# - Never commit `android/key.properties`
+# - Never commit your `.keystore` / `.jks` file
+# - Prefer injecting these via CI secrets / environment variables for builds
+#
+# See also: `android/app/build.gradle` for supported environment variables.
+
+# Password used to protect the keystore file:
+storePassword=REPLACE_ME
+
+# Password used to protect the private key within the keystore:
+keyPassword=REPLACE_ME
+
+# Alias name for the key within the keystore:
+keyAlias=REPLACE_ME
+
+# Path to the keystore file (relative to android/app, or absolute):
+# Example: keystore/my-release-key.keystore
+storeFile=keystore/REPLACE_ME.keystore
+
