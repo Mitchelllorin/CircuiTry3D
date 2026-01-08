@@ -1370,6 +1370,7 @@ export default function Builder() {
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
     !isOverlayActive &&
+    !isBottomMenuOpen &&
     !isLeftMenuOpen &&
     !isRightMenuOpen;
 
@@ -1557,7 +1558,12 @@ export default function Builder() {
   };
 
   return (
-    <div className="builder-shell">
+    <div
+      className="builder-shell"
+      data-left-menu-open={isLeftMenuOpen ? "true" : "false"}
+      data-right-menu-open={isRightMenuOpen ? "true" : "false"}
+      data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
+    >
       {/* Mode bar is now rendered globally in AppLayout */}
 
       {/* Workspace Quick Action Buttons - History/File actions on right edge */}
