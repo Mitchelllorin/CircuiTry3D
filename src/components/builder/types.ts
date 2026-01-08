@@ -19,6 +19,7 @@ export type BuilderInvokeAction =
   | "show-shortcuts"
   | "show-about"
   | "open-arena"
+  | "export-arena"
   | "open-logo-settings"
   | "set-tool"
   | "undo"
@@ -173,7 +174,7 @@ export type QuickAction = {
 
 export type HelpSection = {
   title: string;
-  paragraphs: string[];
+  paragraphs?: string[];
   bullets?: string[];
 };
 

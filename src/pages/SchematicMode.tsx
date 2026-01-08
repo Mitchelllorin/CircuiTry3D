@@ -1810,9 +1810,10 @@ function BuilderViewport({
         renderer.domElement.addEventListener("pointercancel", handlePointerUp, { passive: false });
         renderer.domElement.addEventListener("pointerleave", handlePointerLeave, { passive: false });
         renderer.domElement.addEventListener("wheel", handleWheel, { passive: false });
-        renderer.domElement.addEventListener("contextmenu", (event) => {
+        const handleContextMenu = (event: MouseEvent) => {
           event.preventDefault();
-        });
+        };
+        renderer.domElement.addEventListener("contextmenu", handleContextMenu);
 
         rebuildSceneContent();
 
@@ -1835,7 +1836,7 @@ function BuilderViewport({
           renderer.domElement.removeEventListener("pointercancel", handlePointerUp);
           renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
           renderer.domElement.removeEventListener("wheel", handleWheel);
-          renderer.domElement.removeEventListener("contextmenu", () => {});
+          renderer.domElement.removeEventListener("contextmenu", handleContextMenu);
           if (container && renderer.domElement.parentNode === container) {
             container.removeChild(renderer.domElement);
           }
@@ -2309,9 +2310,10 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         renderer.domElement.addEventListener("pointercancel", handleCameraPointerUp, { passive: false });
         renderer.domElement.addEventListener("pointerleave", handlePointerLeave, { passive: false });
         renderer.domElement.addEventListener("wheel", handleWheel, { passive: false });
-        renderer.domElement.addEventListener("contextmenu", (event) => {
+        const handleContextMenu = (event: MouseEvent) => {
           event.preventDefault();
-        });
+        };
+        renderer.domElement.addEventListener("contextmenu", handleContextMenu);
 
         let circuitGroup: any = null;
         let flowAnimationSystem: CurrentFlowAnimationSystem | null = null;
@@ -2474,7 +2476,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           renderer.domElement.removeEventListener("pointercancel", handleCameraPointerUp);
           renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
           renderer.domElement.removeEventListener("wheel", handleWheel);
-          renderer.domElement.removeEventListener("contextmenu", () => {});
+          renderer.domElement.removeEventListener("contextmenu", handleContextMenu);
           if (container && renderer.domElement.parentNode === container) {
             container.removeChild(renderer.domElement);
           }

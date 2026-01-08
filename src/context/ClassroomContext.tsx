@@ -93,7 +93,7 @@ export function ClassroomProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const runMutation = useCallback(
-    async (mutator: () => Promise<ReturnType<typeof classroomApi.load>>) => {
+    async (mutator: () => ReturnType<typeof classroomApi.load>) => {
       setState((previous) => ({ ...previous, saving: true, error: undefined }));
       try {
         const document = await mutator();

@@ -11,6 +11,7 @@
 import type { Node, NodeType } from "../model/node";
 import type { Wire } from "../model/wire";
 import type { Vec2 } from "../model/types";
+import { createId } from "../utils/id";
 
 // Serializable versions of the types (Sets converted to Arrays)
 export interface SerializedNode {
@@ -159,7 +160,7 @@ export function createSavedCircuit(
   }
 ): SavedCircuit {
   const now = Date.now();
-  const id = `circuit_${now}_${Math.random().toString(36).substring(2, 11)}`;
+  const id = createId("circuit");
 
   return {
     version: CIRCUIT_SCHEMA_VERSION,

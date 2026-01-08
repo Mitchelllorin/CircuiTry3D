@@ -6,7 +6,7 @@ import { createNode, findClosestNode, shouldMergeNodes, mergeNodes } from '../mo
 import { createWire, ensurePointOnWire, findClosestPointOnWire } from '../model/wire';
 import { segmentIntersect, distance } from '../utils/geom';
 import { rebuildAdjacencyForWires } from '../sim/connectivity';
-import { handleWireDraw } from '../src/WireManager';
+import { handleWireDraw } from '../routing/WireManager';
 
 // Configuration constants
 const SNAP_RADIUS = 12; // px - snap endpoint to nearest pin/junction
@@ -238,11 +238,17 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     }
   }, [mode, buildRoutingGrid, toGridPoint, fromGridPoint, nodes]);
 
-  const findWireHit = useCallback((pos: Vec2) => {
+  type WireHit = {
+    wireIndex: number;
+    point: Vec2;
+    segIndex: number;
+    distance: number;
+    wire: Wire;
+  };
+
+  const findWireHit = useCallback((pos: Vec2): WireHit | null => {
     const hitRadius = getWireHitRadius();
-    let best:
-      | { wireIndex: number; point: Vec2; segIndex: number; distance: number; wire: Wire }
-      | null = null;
+    let best: WireHit | null = null;
 
     wires.forEach((wire, wireIndex) => {
       const closest = findClosestPointOnWire(pos, wire);

@@ -1,4 +1,5 @@
 import type { PracticeProblem } from "../../model/practice";
+import type { JSX } from "react";
 import { ResistorSymbol, BatterySymbol } from "../circuit/SchematicSymbols";
 import {
   SCHEMATIC_COLORS,

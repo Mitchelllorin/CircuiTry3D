@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import type { HelpModalView, HelpSection, HelpLegendItem } from "../types";
+import type { HelpModalView, HelpSection } from "../types";
 import { WIRE_LEGEND } from "../constants";
 
 interface HelpModalProps {
@@ -128,7 +128,7 @@ export function HelpModal({
             }
           >
             <h3>{section.title}</h3>
-            {section.paragraphs.map((paragraph, paragraphIndex) =>
+            {(section.paragraphs ?? []).map((paragraph, paragraphIndex) =>
               renderHelpParagraph(
                 paragraph,
                 `${section.title}-p-${paragraphIndex}`,

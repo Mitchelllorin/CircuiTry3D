@@ -6,6 +6,7 @@ import type {
 } from "../../model/practice";
 import type { WireMetricKey } from "../../utils/electrical";
 import type { WorksheetEntryStatus } from "../../components/practice/WireTable";
+import { createId } from "../../utils/id";
 
 const NEGATIVE_STATUSES: WorksheetEntryStatus[] = ["incorrect", "invalid"];
 const MAX_LOG_ENTRIES = 20;
@@ -139,7 +140,7 @@ export function useAdaptivePractice({
         const next: MistakeRecord[] = [
           ...prev,
           {
-            id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            id: createId("mistake"),
             timestamp: Date.now(),
             metric,
             problemId: selectedProblem.id,

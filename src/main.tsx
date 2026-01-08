@@ -6,29 +6,95 @@ import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
 import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
-import { initializeAndroid, registerServiceWorker, isCapacitor } from "./hooks/capacitor/useAndroidInit";
+import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
 
-window.addEventListener('error', (event) => {
-  document.body.style.background = '#1a0000';
-  document.body.innerHTML = `
-    <div style="color: white; padding: 20px; font-family: monospace;">
-      <h1>Application Error</h1>
-      <p><strong>Message:</strong> ${event.error?.message || event.message}</p>
-      <p><strong>Stack:</strong></p>
-      <pre style="background: #000; padding: 10px; overflow: auto;">${event.error?.stack || 'No stack trace'}</pre>
-    </div>
-  `;
+function renderFatalOverlay(payload: {
+  title: string;
+  message: string;
+  stack?: string;
+  details?: string;
+}) {
+  // Avoid throwing while trying to render an error UI
+  try {
+    document.body.style.background = "#1a0000";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+
+    const root = document.createElement("div");
+    root.style.color = "white";
+    root.style.padding = "20px";
+    root.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+
+    const h1 = document.createElement("h1");
+    h1.textContent = payload.title;
+    root.appendChild(h1);
+
+    const p = document.createElement("p");
+    p.textContent = payload.message;
+    root.appendChild(p);
+
+    if (payload.details) {
+      const details = document.createElement("pre");
+      details.style.background = "#000";
+      details.style.padding = "10px";
+      details.style.overflow = "auto";
+      details.textContent = payload.details;
+      root.appendChild(details);
+    }
+
+    if (payload.stack) {
+      const stackLabel = document.createElement("p");
+      stackLabel.textContent = "Stack:";
+      root.appendChild(stackLabel);
+
+      const pre = document.createElement("pre");
+      pre.style.background = "#000";
+      pre.style.padding = "10px";
+      pre.style.overflow = "auto";
+      pre.textContent = payload.stack;
+      root.appendChild(pre);
+    }
+
+    document.body.replaceChildren(root);
+  } catch {
+    // no-op
+  }
+}
+
+window.addEventListener("error", (event) => {
+  // Ignore resource loading errors (script/link/img) which are not application crashes.
+  const target = (event as Event).target;
+  if (
+    target instanceof HTMLScriptElement ||
+    target instanceof HTMLLinkElement ||
+    target instanceof HTMLImageElement
+  ) {
+    return;
+  }
+
+  if (!(event instanceof ErrorEvent)) {
+    return;
+  }
+
+  const message = event.error instanceof Error ? event.error.message : event.message;
+  const stack = event.error instanceof Error ? event.error.stack : undefined;
+  renderFatalOverlay({
+    title: "Application Error",
+    message: message || "An unexpected error occurred.",
+    stack,
+  });
 });
 
-window.addEventListener('unhandledrejection', (event) => {
-  document.body.style.background = '#1a0000';
-  document.body.innerHTML = `
-    <div style="color: white; padding: 20px; font-family: monospace;">
-      <h1>Unhandled Promise Rejection</h1>
-      <p><strong>Reason:</strong> ${event.reason}</p>
-    </div>
-  `;
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = (event as PromiseRejectionEvent).reason;
+  const message = reason instanceof Error ? reason.message : String(reason);
+  const stack = reason instanceof Error ? reason.stack : undefined;
+  renderFatalOverlay({
+    title: "Unhandled Promise Rejection",
+    message,
+    stack,
+  });
 });
 
 const container = document.getElementById("root");
@@ -82,12 +148,9 @@ try {
     }
   }, 100);
 } catch (error) {
-  document.body.style.background = '#1a0000';
-  document.body.innerHTML = `
-    <div style="color: white; padding: 20px; font-family: monospace;">
-      <h1>React Initialization Error</h1>
-      <p><strong>Error:</strong> ${error instanceof Error ? error.message : String(error)}</p>
-      <pre style="background: #000; padding: 10px; overflow: auto;">${error instanceof Error && error.stack ? error.stack : 'No stack trace'}</pre>
-    </div>
-  `;
+  renderFatalOverlay({
+    title: "React Initialization Error",
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
 }

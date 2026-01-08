@@ -11,6 +11,8 @@ export type PracticeDiagramId = "seriesRect" | "parallelRect" | "comboRect";
 export type PracticeComponent = {
   id: string;
   label: string;
+  /** Optional component type key for 3D previews (e.g. 'battery', 'resistor', 'led'). */
+  type?: string;
   role: ComponentRole;
   givens?: PartialWireMetrics;
   values?: PartialWireMetrics;

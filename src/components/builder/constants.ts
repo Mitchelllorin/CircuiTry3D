@@ -3,13 +3,10 @@ import type {
   QuickAction,
   PanelAction,
   SettingsItem,
-  HelpSection,
   HelpEntry,
   HelpLegendItem,
-  HelpModalView,
   PracticeScenario,
   BuilderLogoSettings,
-  ComponentCategory,
 } from "./types";
 
 export const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
