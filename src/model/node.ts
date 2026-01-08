@@ -1,4 +1,5 @@
 import type { Vec2 } from './types';
+import { createId } from "../utils/id";
 
 export type NodeType = "componentPin" | "junction" | "wireAnchor";
 
@@ -14,7 +15,7 @@ export interface Node {
  */
 export function createNode(type: NodeType, pos: Vec2, id?: string): Node {
   return {
-    id: id ?? `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: id ?? createId("node"),
     type,
     pos: { ...pos },
     attachedWireIds: new Set<string>()

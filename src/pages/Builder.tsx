@@ -2427,7 +2427,7 @@ export default function Builder() {
               }
             >
               <h3>{section.title}</h3>
-              {section.paragraphs.map((paragraph, paragraphIndex) =>
+              {(section.paragraphs ?? []).map((paragraph, paragraphIndex) =>
                 renderHelpParagraph(
                   paragraph,
                   `${section.title}-p-${paragraphIndex}`,

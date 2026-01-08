@@ -1,5 +1,5 @@
 import type { Vec2 } from './types';
-import type { Node } from './node';
+import { createId } from "../utils/id";
 
 export interface Wire {
   id: string;
@@ -12,7 +12,7 @@ export interface Wire {
  */
 export function createWire(points: Vec2[], id?: string): Wire {
   return {
-    id: id ?? `wire_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: id ?? createId("wire"),
     points: points.map(p => ({ ...p })),
     attachedNodeIds: new Set<string>()
   };

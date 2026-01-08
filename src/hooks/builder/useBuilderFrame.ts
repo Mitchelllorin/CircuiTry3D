@@ -8,6 +8,7 @@ import type {
   ArenaExportSummary,
   LegacyCircuitState,
 } from "../../components/builder/types";
+import { createId } from "../../utils/id";
 
 export type LegacySimulationPayload = {
   success: boolean;
@@ -239,7 +240,7 @@ export function useBuilderFrame({
       } = {},
     ) => {
       const openWindow = options.openWindow ?? true;
-      const requestId = `arena-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const requestId = createId("arena");
       pendingArenaRequests.current.set(requestId, { openWindow });
       setArenaExportStatus("exporting");
       setArenaExportError(null);

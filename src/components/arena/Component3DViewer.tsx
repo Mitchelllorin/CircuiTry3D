@@ -6,6 +6,7 @@ import {
   getGeometrySegments,
   getTargetFrameRate
 } from '../../utils/mobilePerformance';
+import type { BufferGeometry } from "three";
 
 interface Component3DViewerProps {
   componentType: string;
@@ -21,7 +22,7 @@ export function Component3DViewer({
   const rendererRef = useRef<any>(null);
   const animationIdRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleResizeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export function Component3DViewer({
       if (componentDef) {
         // Build shapes
         componentDef.geometry.shapes.forEach((shapeDef) => {
-          let geometry: THREE.BufferGeometry | null = null;
+          let geometry: BufferGeometry | null = null;
 
           switch (shapeDef.type) {
             case 'box':

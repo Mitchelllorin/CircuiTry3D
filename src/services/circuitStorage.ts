@@ -10,7 +10,7 @@
  * - Recovery of unsaved work
  */
 
-import type { SavedCircuit, CircuitState, CircuitMetadata } from "./circuitSerializer";
+import type { SavedCircuit, CircuitState } from "./circuitSerializer";
 import {
   CIRCUIT_SCHEMA_VERSION,
   createSavedCircuit,
@@ -18,11 +18,11 @@ import {
   migrateCircuitDocument,
   getCircuitSummary,
 } from "./circuitSerializer";
+import { createId } from "../utils/id";
 
 // Storage keys
 const STORAGE_PREFIX = "circuiTry3d.circuit.";
 const CIRCUITS_INDEX_KEY = "circuiTry3d.circuits.index.v1";
-const AUTO_SAVE_KEY = "circuiTry3d.circuit.autosave.v1";
 const RECOVERY_KEY = "circuiTry3d.circuit.recovery.v1";
 
 // Configuration
@@ -308,7 +308,7 @@ export async function importCircuitFromFile(file: File): Promise<StorageResult<S
 
     // Generate new ID for imported circuit to avoid conflicts
     const now = Date.now();
-    migrated.metadata.id = `circuit_${now}_${Math.random().toString(36).substring(2, 11)}`;
+    migrated.metadata.id = createId("circuit");
     migrated.metadata.createdAt = now;
     migrated.metadata.updatedAt = now;
     migrated.metadata.name = `${migrated.metadata.name} (imported)`;
@@ -420,7 +420,9 @@ export function getStorageUsage(): { used: number; total: number; percentage: nu
 
   // Rough estimate based on localStorage
   let used = 0;
-  for (const key in localStorage) {
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (!key) continue;
     if (key.startsWith(STORAGE_PREFIX) || key.startsWith("circuiTry3d.")) {
       const value = localStorage.getItem(key);
       if (value) {

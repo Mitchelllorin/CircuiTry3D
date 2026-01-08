@@ -39,9 +39,10 @@ import {
   getStorageUsage,
 } from "../services/circuitStorage";
 import type { CircuitIndexEntry, RecoveryData, StorageResult } from "../services/circuitStorage";
+import { createId } from "../utils/id";
 
 // Session ID for tracking recovery
-const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+const SESSION_ID = createId("session");
 
 // Context value type
 interface CircuitStorageContextValue {

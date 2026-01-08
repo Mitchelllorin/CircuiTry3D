@@ -2,12 +2,12 @@ import { findPracticeProblemById, getRandomPracticeProblem } from "../data/pract
 import type {
   AssignmentPerformance,
   ClassAnalytics,
-  ClassAssignment,
   ClassStudent,
   Classroom,
   ClassroomDocument,
 } from "../model/classroom";
 import { computeAnalytics, createAssignmentFromProblem, generateClassroomDocument, generateJoinCode } from "./classroomSeed";
+import { createId } from "../utils/id";
 
 export type CreateClassroomPayload = {
   name: string;
@@ -80,7 +80,7 @@ const applyCreateClass = (
 ): ClassroomDocument => {
   const now = Date.now();
   const classroom: Classroom = {
-    id: `class-${now}-${Math.random().toString(36).slice(2, 7)}`,
+    id: createId("class"),
     name: payload.name.trim(),
     subject: payload.subject.trim(),
     gradeLevel: payload.gradeLevel?.trim(),
@@ -106,7 +106,7 @@ const applyAddStudent = (doc: ClassroomDocument, payload: AddStudentPayload): Cl
 
   const now = Date.now();
   const student: ClassStudent = {
-    id: `stu-${now}-${Math.random().toString(36).slice(2, 7)}`,
+    id: createId("stu"),
     name: name.trim(),
     email: email.trim(),
     status: "invited",

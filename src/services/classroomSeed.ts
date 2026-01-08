@@ -8,6 +8,7 @@ import type {
   Classroom,
   ClassroomDocument,
 } from "../model/classroom";
+import { createId } from "../utils/id";
 
 const SAMPLE_STUDENTS: ClassStudent[] = [
   { id: "stu-ava", name: "Ava Patel", email: "ava.patel@classroom.dev", status: "active", invitedAt: Date.now() - 1000 * 60 * 60 * 72, lastActiveAt: Date.now() - 1000 * 60 * 60 * 2 },
@@ -114,7 +115,7 @@ export const createAssignmentFromProblem = (
     new Date(assignedAt + 1000 * 60 * 60 * 24 * (problem.difficulty === "challenge" ? 5 : 3)).toISOString();
 
   return {
-    id: `assign-${assignedAt}-${Math.random().toString(36).slice(2, 8)}`,
+    id: createId("assign"),
     title: problem.title,
     problemId: problem.id,
     problemTitle: problem.title,
@@ -177,7 +178,7 @@ type ClassroomSeedOptions = {
 const createClassroom = (options: ClassroomSeedOptions): Classroom => {
   const { teacherId, name, subject, gradeLevel, description, baseStudents, assignments } = options;
   const classroom: Classroom = {
-    id: `class-${name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Math.random().toString(36).slice(2, 6)}`,
+    id: createId("class"),
     name,
     subject,
     gradeLevel,
