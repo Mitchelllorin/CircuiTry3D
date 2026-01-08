@@ -395,6 +395,26 @@ body.builder-body {
   right: auto;
 }
 
+/* When side menus are open, anchor edge actions to the "inner perimeter"
+   (i.e. inside the open menu), so they don't overlap the menu/toggle. */
+.builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
+  left: calc(
+    env(safe-area-inset-left, 0px) +
+    var(--builder-menu-left-width) +
+    var(--builder-menu-toggle-hit-width) +
+    12px
+  );
+}
+
+.builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
+  right: calc(
+    env(safe-area-inset-right, 0px) +
+    var(--builder-menu-right-width) +
+    var(--builder-menu-toggle-hit-width) +
+    12px
+  );
+}
+
 @media (max-width: 720px) {
   .workspace-edge-actions {
     top: 64px;
@@ -417,6 +437,24 @@ body.builder-body {
       8px +
       var(--builder-menu-toggle-hit-width) +
       6px
+    );
+  }
+
+  .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
+    left: calc(
+      env(safe-area-inset-left, 0px) +
+      var(--builder-menu-left-width) +
+      var(--builder-menu-toggle-hit-width) +
+      10px
+    );
+  }
+
+  .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
+    right: calc(
+      env(safe-area-inset-right, 0px) +
+      var(--builder-menu-right-width) +
+      var(--builder-menu-toggle-hit-width) +
+      10px
     );
   }
 
@@ -457,6 +495,12 @@ body.builder-body {
     );
     right: auto;
     transform: none;
+  }
+
+  /* On very small screens, the bottom Insights drawer and edge actions fight for space.
+     Hide edge actions while the drawer is open to avoid button/menu overlaps. */
+  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions {
+    display: none;
   }
 }
 
