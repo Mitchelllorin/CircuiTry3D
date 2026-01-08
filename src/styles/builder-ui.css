@@ -17,6 +17,8 @@
   /* Toggle tabs - slimmer for minimal footprint */
   --builder-menu-toggle-width: 24px;
   --builder-menu-toggle-height: 64px;
+  /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
+  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
   --builder-menu-left-width: 180px;
   --builder-menu-right-width: 172px;
@@ -372,13 +374,23 @@ body.builder-body {
 
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
 .workspace-edge-actions--right {
-  right: clamp(12px, 3vw, 24px);
+  right: calc(
+    env(safe-area-inset-right, 0px) +
+    clamp(12px, 3vw, 24px) +
+    var(--builder-menu-toggle-hit-width) +
+    8px
+  );
   left: auto;
 }
 
 /* Left edge positioning (Wire, Rotate, Edit tools) */
 .workspace-edge-actions--left {
-  left: clamp(12px, 3vw, 24px);
+  left: calc(
+    env(safe-area-inset-left, 0px) +
+    clamp(12px, 3vw, 24px) +
+    var(--builder-menu-toggle-hit-width) +
+    8px
+  );
   right: auto;
 }
 
@@ -390,11 +402,21 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: 8px;
+    right: calc(
+      env(safe-area-inset-right, 0px) +
+      8px +
+      var(--builder-menu-toggle-hit-width) +
+      6px
+    );
   }
 
   .workspace-edge-actions--left {
-    left: 8px;
+    left: calc(
+      env(safe-area-inset-left, 0px) +
+      8px +
+      var(--builder-menu-toggle-hit-width) +
+      6px
+    );
   }
 
   .edge-action-btn {
@@ -415,13 +437,23 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: 8px;
+    right: calc(
+      env(safe-area-inset-right, 0px) +
+      8px +
+      var(--builder-menu-toggle-hit-width) +
+      6px
+    );
     left: auto;
     transform: none;
   }
 
   .workspace-edge-actions--left {
-    left: 8px;
+    left: calc(
+      env(safe-area-inset-left, 0px) +
+      8px +
+      var(--builder-menu-toggle-hit-width) +
+      6px
+    );
     right: auto;
     transform: none;
   }
