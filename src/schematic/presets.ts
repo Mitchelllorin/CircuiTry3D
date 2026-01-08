@@ -20,10 +20,7 @@ const formatVoltage = (value: number): string => {
   return `${value}V`;
 };
 
-export function buildPracticeCircuit(three: any, problem: PracticeProblem, standard: SymbolStandard) {
-  const group = new three.Group();
-  group.name = `circuit-${problem.id}`;
-
+export function buildPracticeCircuitElements(problem: PracticeProblem): SchematicElement[] {
   const elements: SchematicElement[] = [];
   let elementCounter = 0;
 
@@ -308,6 +305,14 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
       break;
   }
 
+  return elements;
+}
+
+export function buildPracticeCircuit(three: any, problem: PracticeProblem, standard: SymbolStandard) {
+  const group = new three.Group();
+  group.name = `circuit-${problem.id}`;
+
+  const elements = buildPracticeCircuitElements(problem);
   const nodeMap = new Map<string, Vec2>();
   const elementGroup = new three.Group();
 
@@ -331,6 +336,9 @@ export function buildPracticeCircuit(three: any, problem: PracticeProblem, stand
   });
 
   group.add(nodeGroup);
+
+  // Expose the canonical elements used to build the circuit (useful for flow/path visualisation)
+  group.userData = { ...(group.userData ?? {}), elements };
 
   return group;
 }

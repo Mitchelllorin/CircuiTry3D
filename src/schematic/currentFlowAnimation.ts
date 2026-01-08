@@ -29,8 +29,19 @@ export const INTENSITY_COLORS = {
  * Particle appearance based on flow mode
  */
 export const FLOW_MODE_APPEARANCE = {
-  electron: { opacity: 0.7, size: 0.07, glowOpacity: 0.25 },    // Semi-transparent for electron flow
-  conventional: { opacity: 0.95, size: 0.09, glowOpacity: 0.4 }  // Solid for conventional current
+  // NOTE: size here is the *base radius* in scene units (scaled in update()).
+  electron: { opacity: 0.72, size: 0.13, glowOpacity: 0.28 },       // Softer, slightly larger
+  conventional: { opacity: 0.95, size: 0.16, glowOpacity: 0.42 }    // Brighter, larger
+} as const;
+
+const COMET_TAIL = {
+  segments: 7,
+  // Tail is expressed in multiples of the particle radius (since we scale the whole mesh by baseScale)
+  length: 6.5,
+  maxOpacity: 0.28,
+  minOpacity: 0.02,
+  maxRadiusFactor: 0.75,  // relative to particle size
+  minRadiusFactor: 0.18
 } as const;
 
 /**
@@ -368,7 +379,8 @@ export class CurrentFlowAnimationSystem {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
     const colors = INTENSITY_COLORS[particle.intensity];
 
-    const geometry = new this.three.SphereGeometry(appearance.size, 16, 16);
+    // Use unit geometry and scale it so we can easily combine base size + pulse in update()
+    const geometry = new this.three.SphereGeometry(1, 18, 18);
     const material = new this.three.MeshStandardMaterial({
       color: colors.core,
       emissive: colors.emissive,
@@ -380,16 +392,47 @@ export class CurrentFlowAnimationSystem {
     });
     const mesh = new this.three.Mesh(geometry, material);
     mesh.position.set(particle.position.x, 0.2, particle.position.z);
+    mesh.scale.setScalar(1);
+    mesh.userData.baseScale = appearance.size;
 
     // Add a glow effect
-    const glowGeometry = new this.three.SphereGeometry(appearance.size * 1.8, 16, 16);
+    const glowGeometry = new this.three.SphereGeometry(1, 16, 16);
     const glowMaterial = new this.three.MeshBasicMaterial({
       color: colors.glow,
       transparent: true,
       opacity: appearance.glowOpacity
     });
     const glow = new this.three.Mesh(glowGeometry, glowMaterial);
+    glow.name = "glow";
+    glow.scale.setScalar(1.9);
     mesh.add(glow);
+
+    // Add a comet tail (stacked translucent spheres that trail behind)
+    const tailGroup = new this.three.Group();
+    tailGroup.name = "tail";
+    const tailColor = colors.glow;
+
+    for (let i = 0; i < COMET_TAIL.segments; i++) {
+      const t = i / Math.max(COMET_TAIL.segments - 1, 1); // 0..1
+      const falloff = (1 - t) * (1 - t);
+      const opacity = COMET_TAIL.minOpacity + (COMET_TAIL.maxOpacity - COMET_TAIL.minOpacity) * falloff;
+      const radiusFactor = COMET_TAIL.minRadiusFactor + (COMET_TAIL.maxRadiusFactor - COMET_TAIL.minRadiusFactor) * falloff;
+
+      const segGeom = new this.three.SphereGeometry(1, 12, 12);
+      const segMat = new this.three.MeshBasicMaterial({
+        color: tailColor,
+        transparent: true,
+        opacity,
+        depthWrite: false
+      });
+      const seg = new this.three.Mesh(segGeom, segMat);
+      // In local space, the particle faces +Z. Tail goes down -Z.
+      seg.position.set(0, 0, -(t * COMET_TAIL.length));
+      seg.scale.setScalar(radiusFactor);
+      tailGroup.add(seg);
+    }
+
+    mesh.add(tailGroup);
 
     // Set initial visibility based on circuit state
     mesh.visible = this.isCircuitClosed;
@@ -418,15 +461,26 @@ export class CurrentFlowAnimationSystem {
         mesh.material.opacity = appearance.opacity;
       }
 
-      // Update glow child
-      if (mesh.children[0] && mesh.children[0].material) {
-        mesh.children[0].material.color.setHex(colors.glow);
-        mesh.children[0].material.opacity = appearance.glowOpacity;
+      mesh.userData.baseScale = appearance.size;
+
+      // Update glow + tail children (by name)
+      const glow = mesh.children.find((child: any) => child?.name === "glow");
+      if (glow?.material) {
+        glow.material.color.setHex(colors.glow);
+        glow.material.opacity = appearance.glowOpacity;
+        glow.scale.setScalar(1.9);
       }
 
-      // Update geometry size
-      const newSize = appearance.size;
-      mesh.scale.set(newSize / 0.08, newSize / 0.08, newSize / 0.08);
+      const tail = mesh.children.find((child: any) => child?.name === "tail");
+      if (tail) {
+        tail.children?.forEach?.((seg: any, index: number) => {
+          if (!seg?.material) return;
+          const t = index / Math.max((COMET_TAIL.segments - 1), 1);
+          const falloff = (1 - t) * (1 - t);
+          seg.material.color.setHex(colors.glow);
+          seg.material.opacity = COMET_TAIL.minOpacity + (COMET_TAIL.maxOpacity - COMET_TAIL.minOpacity) * falloff;
+        });
+      }
     });
   }
 
@@ -468,10 +522,28 @@ export class CurrentFlowAnimationSystem {
         if (mesh) {
           mesh.position.set(pos.x, 0.2, pos.z);
 
+          // Orient the particle so +Z matches direction of travel (tail trails in -Z)
+          const sampleDistance = 0.08;
+          const signed = particle.reversed ? -1 : 1;
+          const ahead = this.getPositionAlongPath(particle.path, targetDistance + signed * sampleDistance);
+          if (ahead) {
+            const dx = ahead.x - pos.x;
+            const dz = ahead.z - pos.z;
+            const mag = Math.sqrt(dx * dx + dz * dz);
+            if (mag > 1e-6) {
+              const dir = new this.three.Vector3(dx / mag, 0, dz / mag);
+              const forward = new this.three.Vector3(0, 0, 1);
+              const q = new this.three.Quaternion().setFromUnitVectors(forward, dir);
+              mesh.quaternion.copy(q);
+            }
+          }
+
           // Pulse effect scaled by intensity
           const intensityPulseScale = this.getIntensityPulseScale(particle.intensity);
-          const pulseScale = 1 + Math.sin(particle.progress * Math.PI * 4) * 0.2 * intensityPulseScale;
-          mesh.scale.set(pulseScale, pulseScale, pulseScale);
+          const pulse = 1 + Math.sin(particle.progress * Math.PI * 4) * 0.2 * intensityPulseScale;
+          const baseScale = typeof mesh.userData.baseScale === "number" ? mesh.userData.baseScale : FLOW_MODE_APPEARANCE[this.flowMode].size;
+          const finalScale = baseScale * pulse;
+          mesh.scale.setScalar(finalScale);
         }
       }
     });
