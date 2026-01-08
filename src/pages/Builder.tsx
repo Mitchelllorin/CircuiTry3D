@@ -1178,7 +1178,7 @@ export default function Builder() {
         return;
       }
       if (action.action === "practice-help") {
-        openHelpCenter("overview");
+        openHelpCenter("practice");
         return;
       }
       if (action.action === "generate-practice") {
@@ -2004,7 +2004,20 @@ export default function Builder() {
               <span className="slider-heading">Analysis</span>
               <div className="menu-track menu-track-metrics">
                 {wireMetrics.map((metric) => (
-                  <div key={metric.id} className="slider-metric">
+                  <div
+                    key={metric.id}
+                    className="slider-metric"
+                    title={`${metric.label}: ${metric.value} — Click to open the W.I.R.E. guide`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openHelpCenter("wire-guide")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openHelpCenter("wire-guide");
+                      }
+                    }}
+                  >
                     <span className="metric-letter">{metric.letter}</span>
                     <span className="metric-value">{metric.value}</span>
                     <span className="metric-label">{metric.label}</span>
@@ -2134,7 +2147,14 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Settings</span>
               <div className="slider-stack">
-                {SETTINGS_ITEMS.map((setting) => {
+                {SETTINGS_ITEMS.filter((setting) =>
+                  ![
+                    "toggle-current-flow",
+                    "toggle-polarity",
+                    "toggle-grid",
+                    "toggle-labels",
+                  ].includes(setting.action),
+                ).map((setting) => {
                   const description = setting.getDescription(modeState, {
                     currentFlowLabel,
                   });
