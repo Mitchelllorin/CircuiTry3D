@@ -66,13 +66,9 @@ CircuiTry3D/
 - ✅ Set versionCode: 1, versionName: 1.0.0
 
 ### 2. Signing Configuration
-- ✅ Generated release keystore: `circuitry3d-release.keystore`
-- ✅ Created key.properties for signing configuration
+- ✅ Signing config support added (via `android/key.properties`)
 - ✅ Updated build.gradle with signing config
-- ✅ Keystore credentials:
-  - Store password: `circuitry3d123`
-  - Key alias: `circuitry3d`
-  - Key password: `circuitry3d123`
+- ⚠️ **IMPORTANT:** Keystores and signing passwords must be created locally and never committed to git.
 
 ### 3. Play Store Assets
 - ✅ Created 512x512 app icon (PNG)
@@ -180,8 +176,8 @@ Before submitting to Google Play Store:
 ## 🔐 Security Information
 
 ### Keystore Details
-- **Location:** `android/app/keystore/circuitry3d-release.keystore`
-- **Alias:** circuitry3d
+- **Location:** `android/app/keystore/<your-keystore-file>` (local-only)
+- **Alias:** <your-alias>
 - **Validity:** 10,000 days (27+ years)
 
 ⚠️ **IMPORTANT:** 
