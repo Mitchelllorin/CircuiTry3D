@@ -7,6 +7,22 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Signing configuration can also be provided via environment variables (recommended for CI):
+// - ANDROID_KEYSTORE_PATH
+// - ANDROID_KEYSTORE_PASSWORD
+// - ANDROID_KEY_ALIAS
+// - ANDROID_KEY_PASSWORD
+def env = System.getenv()
+def signingKeyAlias = (keystoreProperties['keyAlias'] ?: env['ANDROID_KEY_ALIAS'])?.toString()
+def signingKeyPassword = (keystoreProperties['keyPassword'] ?: env['ANDROID_KEY_PASSWORD'])?.toString()
+def signingStorePassword = (keystoreProperties['storePassword'] ?: env['ANDROID_KEYSTORE_PASSWORD'])?.toString()
+def signingStoreFilePath = (keystoreProperties['storeFile'] ?: env['ANDROID_KEYSTORE_PATH'])?.toString()
+def hasReleaseSigning =
+        signingKeyAlias &&
+        signingKeyPassword &&
+        signingStorePassword &&
+        signingStoreFilePath
+
 android {
     namespace "com.circuitry3d.app"
     compileSdk rootProject.ext.compileSdkVersion
@@ -26,21 +42,37 @@ android {
     
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
+            if (hasReleaseSigning) {
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+                storeFile file(signingStoreFilePath)
+                storePassword signingStorePassword
             }
         }
     }
     
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+// Fail fast only when building a release artifact that must be signed.
+gradle.taskGraph.whenReady { taskGraph ->
+    def needsSignedRelease =
+            taskGraph.hasTask(':app:bundleRelease') ||
+            taskGraph.hasTask(':app:assembleRelease')
+    if (needsSignedRelease && !hasReleaseSigning) {
+        throw new GradleException(
+                "Release signing is not configured. " +
+                "Create android/key.properties (see android/key.properties.example) " +
+                "or set ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD."
+        )
     }
 }
 
