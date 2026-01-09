@@ -28,6 +28,10 @@
   
   --border-subtle: rgba(136, 204, 255, 0.22);
   --border-emphasis: rgba(136, 204, 255, 0.56);
+
+  /* Safe-area insets (iOS notch/status bar, etc.) */
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+  --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 body {
@@ -97,14 +101,15 @@ body {
 
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: radial-gradient(circle at top, var(--brand-primary-dim), transparent 55%), var(--bg-darker);
 }
 
 .app-header {
-  height: 72px;
-  padding: 0 28px;
+  min-height: 72px;
+  padding: var(--app-safe-area-top) 28px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -211,7 +216,8 @@ body {
 .home-page {
   flex: 1;
   display: flex;
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 72px - var(--app-safe-area-top));
+  min-height: calc(100dvh - 72px - var(--app-safe-area-top));
 }
 
 .home-page iframe {
@@ -258,17 +264,17 @@ body {
 /* Global Mode Bar adjustments for non-workspace pages */
 .app-shell:not(.is-landing):not(.is-workspace) .workspace-mode-bar--global {
   /* Position below the unified nav on pages that have it */
-  top: 84px;
+  top: calc(84px + var(--app-safe-area-top));
 }
 
 /* On workspace page (/app), position at original top */
 .app-shell.is-workspace .workspace-mode-bar--global {
-  top: 12px;
+  top: calc(12px + var(--app-safe-area-top));
 }
 
 /* Add top padding to content when mode bar is present on non-workspace pages */
 .app-shell:not(.is-landing):not(.is-workspace) .app-content {
-  padding-top: 64px;
+  padding-top: calc(64px + var(--app-safe-area-top));
 }
 
 /* On workspace page, no extra padding needed as Builder handles its own layout */

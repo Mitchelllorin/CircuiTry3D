@@ -1,6 +1,6 @@
 .unified-nav {
-  height: 72px;
-  padding: 0 28px;
+  min-height: 72px;
+  padding: var(--app-safe-area-top) 28px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -85,7 +85,7 @@
     height: auto;
     flex-direction: column;
     gap: 16px;
-    padding: 16px;
+    padding: calc(16px + var(--app-safe-area-top)) 16px 16px;
     align-items: flex-start;
   }
 
@@ -102,7 +102,7 @@
 
 @media (max-width: 640px) {
   .unified-nav {
-    padding: 12px;
+    padding: calc(12px + var(--app-safe-area-top)) 12px 12px;
   }
 
   .unified-nav-links {

@@ -38,6 +38,9 @@ export async function initializeAndroid(options?: {
   try {
     // Configure status bar for Android
     if (isAndroid()) {
+      // Ensure the OS reserves space for the status bar (prevents UI rendering underneath it)
+      await StatusBar.setOverlaysWebView({ overlay: false });
+      await StatusBar.show();
       await StatusBar.setStyle({ style: Style.Dark });
       await StatusBar.setBackgroundColor({ color: '#0f172a' });
       console.log('[Android] Status bar configured');
