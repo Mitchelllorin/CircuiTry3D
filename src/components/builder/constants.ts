@@ -55,7 +55,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Battery",
     action: "component",
     builderType: "battery",
-    description: "Add power source - drives current through the circuit",
+    description: "Power source - drives current through the circuit",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.BATTERY,
       symbolText: "─|├─",
@@ -72,7 +72,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "AC Source",
     action: "component",
     builderType: "ac_source",
-    description: "Add AC power source - alternating current supply",
+    description: "AC power source - alternating current supply",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.AC_SOURCE,
       symbolText: "─(~)─",
@@ -89,7 +89,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Resistor",
     action: "component",
     builderType: "resistor",
-    description: "Add resistor - controls current flow and voltage drop",
+    description: "Resistor - controls current flow and voltage drop",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.RESISTOR,
       symbolText: "─/\\/\\/─",
@@ -106,7 +106,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Capacitor",
     action: "component",
     builderType: "capacitor",
-    description: "Add capacitor - stores electrical energy temporarily",
+    description: "Capacitor - stores electrical energy temporarily",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.CAPACITOR,
       symbolText: "─||─",
@@ -123,7 +123,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Inductor",
     action: "component",
     builderType: "inductor",
-    description: "Add inductor - stores energy in magnetic field",
+    description: "Inductor - stores energy in magnetic field",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.INDUCTOR,
       symbolText: "─⌇⌇⌇─",
@@ -140,7 +140,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Diode",
     action: "component",
     builderType: "diode",
-    description: "Add diode - one-way current flow control",
+    description: "Diode - one-way current flow control",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.DIODE,
       symbolText: "─▷|─",
@@ -157,7 +157,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "LED",
     action: "component",
     builderType: "led",
-    description: "Add LED - light emitting diode indicator",
+    description: "LED - light emitting diode indicator",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.LED,
       symbolText: "─▷|→",
@@ -174,7 +174,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "BJT",
     action: "component",
     builderType: "bjt",
-    description: "Add transistor - amplification and switching control",
+    description: "Transistor - amplification and switching control",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.BJT_NPN,
       symbolText: "─⧫─",
@@ -191,7 +191,8 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "NPN Transistor",
     action: "component",
     builderType: "bjt-npn",
-    description: "Add NPN transistor - current flows collector to emitter when base is positive",
+    description:
+      "NPN transistor - current flows collector to emitter when base is positive",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.BJT_NPN,
       symbolText: "─⧫→",
@@ -208,7 +209,8 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "PNP Transistor",
     action: "component",
     builderType: "bjt-pnp",
-    description: "Add PNP transistor - current flows emitter to collector when base is negative",
+    description:
+      "PNP transistor - current flows emitter to collector when base is negative",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.BJT_PNP,
       symbolText: "─⧫←",
@@ -225,7 +227,8 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Darlington Pair",
     action: "component",
     builderType: "darlington",
-    description: "Add Darlington pair - high-gain transistor configuration (beta squared)",
+    description:
+      "Darlington pair - high-gain transistor configuration (beta squared)",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.BJT_NPN,
       symbolText: "─⧫⧫─",
@@ -242,7 +245,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "MOSFET",
     action: "component",
     builderType: "mosfet",
-    description: "Add MOSFET - power switching transistor",
+    description: "MOSFET - power switching transistor",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.MOSFET,
       symbolText: "─⫞|─",
@@ -259,7 +262,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Switch",
     action: "component",
     builderType: "switch",
-    description: "Add switch - open/close circuit path on demand",
+    description: "Switch - open/close circuit path on demand",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.SWITCH,
       symbolText: "─o/o─",
@@ -276,7 +279,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Fuse",
     action: "component",
     builderType: "fuse",
-    description: "Add fuse - overcurrent protection device",
+    description: "Fuse - overcurrent protection device",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.FUSE,
       symbolText: "─◇─",
@@ -293,7 +296,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Potentiometer",
     action: "component",
     builderType: "potentiometer",
-    description: "Add variable resistor - adjustable resistance",
+    description: "Variable resistor - adjustable resistance",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.POTENTIOMETER,
       symbolText: "─/↕/─",
@@ -310,7 +313,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Lamp",
     action: "component",
     builderType: "lamp",
-    description: "Add lamp - visual load indicator with glow effect",
+    description: "Lamp - visual load indicator with glow effect",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.LAMP,
       symbolText: "─⊗─",
@@ -327,7 +330,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Motor",
     action: "component",
     builderType: "motor",
-    description: "Add motor - DC motor with rotating armature",
+    description: "Motor - DC motor with rotating armature",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.MOTOR,
       symbolText: "─(M)─",
@@ -344,7 +347,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Speaker",
     action: "component",
     builderType: "speaker",
-    description: "Add speaker - audio output device or buzzer",
+    description: "Speaker - audio output device or buzzer",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.SPEAKER,
       symbolText: "─◁)))",
@@ -361,7 +364,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Op-Amp",
     action: "component",
     builderType: "opamp",
-    description: "Add op-amp - operational amplifier for analog circuits",
+    description: "Op-amp - operational amplifier for analog circuits",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.OPAMP,
       symbolText: "─▷─",
@@ -378,7 +381,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Transformer",
     action: "component",
     builderType: "transformer",
-    description: "Add transformer - voltage step-up/step-down isolation",
+    description: "Transformer - voltage step-up/step-down isolation",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.TRANSFORMER,
       symbolText: "⌇||⌇",
@@ -395,7 +398,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     label: "Ground",
     action: "component",
     builderType: "ground",
-    description: "Add ground reference - circuit return path",
+    description: "Ground reference - circuit return path",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.GROUND,
       symbolText: "─┴─",
@@ -411,7 +414,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     icon: "─●─",
     label: "Junction",
     action: "junction",
-    description: "Add junction - branch wires for parallel paths",
+    description: "Junction - branch wires for parallel paths",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.JUNCTION,
       symbolText: "─●─",
