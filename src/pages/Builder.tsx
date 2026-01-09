@@ -1496,10 +1496,12 @@ export default function Builder() {
     const volts = circuitState?.metrics.voltage ?? circuitBaseMetrics.voltage;
     const amps = circuitState?.metrics.current ?? circuitBaseMetrics.current;
     const watts = circuitState?.metrics.power ?? circuitBaseMetrics.watts;
+    const resistanceValue =
+      circuitState?.metrics.resistance ?? circuitBaseMetrics.resistance;
     const resistanceDisplay =
-      circuitState?.metrics.resistance == null
-        ? "∞"
-        : `${circuitState.metrics.resistance.toFixed(1)} Ω`;
+      circuitState?.metrics.resistance === null
+        ? "∞ Ω"
+        : `${Number.isFinite(resistanceValue) ? resistanceValue.toFixed(1) : "0.0"} Ω`;
 
     return [
       {
@@ -2220,6 +2222,14 @@ export default function Builder() {
               Flow: {currentFlowLabel}
             </span>
             <span className="ticker-separator">•</span>
+            {wireMetrics.map((metric) => (
+              <Fragment key={`ticker-metric-${metric.id}`}>
+                <span className="ticker-item">
+                  {metric.letter}: {metric.value}
+                </span>
+                <span className="ticker-separator">•</span>
+              </Fragment>
+            ))}
             <span className="ticker-item">
               Layout: {layoutModeLabel}
             </span>
@@ -2246,6 +2256,14 @@ export default function Builder() {
               Flow: {currentFlowLabel}
             </span>
             <span className="ticker-separator">•</span>
+            {wireMetrics.map((metric) => (
+              <Fragment key={`ticker-metric-repeat-${metric.id}`}>
+                <span className="ticker-item">
+                  {metric.letter}: {metric.value}
+                </span>
+                <span className="ticker-separator">•</span>
+              </Fragment>
+            ))}
             <span className="ticker-item">
               Layout: {layoutModeLabel}
             </span>
