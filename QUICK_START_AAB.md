@@ -91,10 +91,10 @@ cp android/app/build/outputs/bundle/release/app-release.aab ./circuitry3d-releas
    - Click "Next"
 
 4. **Sign the bundle:**
-   - Key store path: `app/keystore/circuitry3d-release.keystore`
-   - Key store password: `circuitry3d123`
-   - Key alias: `circuitry3d`
-   - Key password: `circuitry3d123`
+   - Key store path: your local keystore under `app/keystore/`
+   - Key store password: (your value)
+   - Key alias: (your value)
+   - Key password: (your value)
    - Click "Next"
 
 5. **Choose build variant:**
@@ -180,16 +180,14 @@ cd android
 **Solution:**
 Ensure the keystore file exists at:
 ```
-android/app/keystore/circuitry3d-release.keystore
+android/app/keystore/<your-keystore-file>
 ```
 
 If missing, regenerate it:
 ```bash
 cd android/app/keystore
-keytool -genkey -v -keystore circuitry3d-release.keystore \
-  -alias circuitry3d -keyalg RSA -keysize 2048 -validity 10000 \
-  -storepass circuitry3d123 -keypass circuitry3d123 \
-  -dname "CN=CircuiTry3D, OU=Development, O=CircuiTry3D, L=Unknown, ST=Unknown, C=US"
+keytool -genkey -v -keystore your-upload-keystore.jks \
+  -alias your-key-alias -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 ## Next Steps

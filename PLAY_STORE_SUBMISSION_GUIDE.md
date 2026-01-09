@@ -34,10 +34,10 @@ Before you begin, ensure you have:
    - Click "Next"
    
 4. **Configure signing:**
-   - Key store path: `android/app/keystore/circuitry3d-release.keystore`
-   - Key store password: `circuitry3d123`
-   - Key alias: `circuitry3d`
-   - Key password: `circuitry3d123`
+   - Key store path: your local keystore under `android/app/keystore/`
+   - Key store password: (your value)
+   - Key alias: (your value)
+   - Key password: (your value)
    - Click "Next"
    
 5. **Choose build variant:**
@@ -424,10 +424,10 @@ Before releasing to production:
 
 - **Backup your keystore:**
   ```bash
-  cp android/app/keystore/circuitry3d-release.keystore ~/safe-backup-location/
+  cp android/app/keystore/<your-keystore-file> ~/safe-backup-location/
   ```
 - Store keystore credentials securely (password manager)
-- Never commit keystore to Git (it's already in `.gitignore`)
+- Never commit keystore or `android/key.properties` to Git (it's in `.gitignore`)
 - Consider using Google Play App Signing for additional security
 
 ### Enable Google Play App Signing

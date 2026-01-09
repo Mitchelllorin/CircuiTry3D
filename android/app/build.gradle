@@ -37,7 +37,11 @@ android {
     
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // Allow building the project without local signing material.
+            // For Play Store releases, provide android/key.properties + a local keystore.
+            signingConfig keystorePropertiesFile.exists()
+                ? signingConfigs.release
+                : signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

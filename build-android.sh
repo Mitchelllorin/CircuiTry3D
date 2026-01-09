@@ -42,6 +42,33 @@ echo ""
 
 # Step 4: Build Android AAB
 echo -e "${YELLOW}Step 4: Building Android App Bundle...${NC}"
+
+# Play Store releases require a local signing config.
+if [ ! -f "android/key.properties" ]; then
+    echo -e "${RED}Error: android/key.properties not found.${NC}"
+    echo ""
+    echo "To create it:"
+    echo "1) Copy android/key.properties.example -> android/key.properties"
+    echo "2) Generate a keystore under android/app/keystore/"
+    echo "3) Update storeFile/keyAlias/passwords in android/key.properties"
+    echo ""
+    echo -e "${YELLOW}Note:${NC} Keystores and key.properties must NOT be committed to git."
+    exit 1
+fi
+
+# Validate storeFile points to an existing file (relative to android/app)
+STORE_FILE_REL="$(grep -E '^storeFile=' android/key.properties | cut -d= -f2- | tr -d '\r' | xargs)"
+if [ -z "$STORE_FILE_REL" ]; then
+    echo -e "${RED}Error: storeFile is missing from android/key.properties${NC}"
+    exit 1
+fi
+KEYSTORE_PATH="android/app/$STORE_FILE_REL"
+if [ ! -f "$KEYSTORE_PATH" ]; then
+    echo -e "${RED}Error: Keystore not found at: $KEYSTORE_PATH${NC}"
+    echo "Update storeFile in android/key.properties or create the keystore."
+    exit 1
+fi
+
 cd android
 
 # Check if gradlew exists

@@ -8,7 +8,7 @@ Use this checklist to track your progress through the submission process.
 - [x] Package name configured: `com.circuitry3d.app`
 - [x] AndroidManifest.xml configured with permissions
 - [x] build.gradle configured (versionCode: 1, versionName: 1.0.0, targetSdk: 35)
-- [x] Release keystore generated and configured
+- [ ] Release keystore generated and configured (local-only; never commit)
 - [x] App icon created (512x512 PNG)
 - [x] Feature graphic created (1024x500 PNG)
 - [x] Phone screenshots created (4 images, 1080x1920)
@@ -39,8 +39,8 @@ Use this checklist to track your progress through the submission process.
 - [ ] Verify AAB is created at: `android/app/build/outputs/bundle/release/app-release.aab`
 - [ ] Verify AAB is signed: `jarsigner -verify -verbose -certs app-release.aab`
 - [ ] Copy AAB to a safe location
-- [ ] **CRITICAL:** Backup the keystore file: `android/app/keystore/circuitry3d-release.keystore`
-- [ ] **CRITICAL:** Store keystore password safely (circuitry3d123)
+- [ ] **CRITICAL:** Backup your keystore file (local-only; do not commit it)
+- [ ] **CRITICAL:** Store keystore passwords safely (password manager)
 
 ### Phase 3: Customize Assets (Optional but Recommended)
 
