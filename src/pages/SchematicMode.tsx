@@ -29,8 +29,9 @@ import {
 } from "../schematic/types";
 import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/threeFactory";
 import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
-import { buildPracticeCircuit } from "../schematic/presets";
+import { buildPracticeCircuit, buildPracticeCircuitElements } from "../schematic/presets";
 import { CurrentFlowAnimationSystem } from "../schematic/currentFlowAnimation";
+import { buildFlowPathsFromElements } from "../schematic/flowPaths";
 import { validateCircuit, type ValidationResult, type ValidationIssue } from "../sim/circuitValidator";
 import { ValidationPanel, ValidationIndicator } from "../components/validation/ValidationPanel";
 
@@ -2318,7 +2319,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         let circuitGroup: any = null;
         let flowAnimationSystem: CurrentFlowAnimationSystem | null = null;
 
-          const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
+        const setCircuit = (practiceProblem: PracticeProblem, activeStandard: SymbolStandard) => {
           if (circuitGroup) {
             scene.remove(circuitGroup);
             disposeThreeObject(circuitGroup);
@@ -2328,7 +2329,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
             flowAnimationSystem.dispose();
             flowAnimationSystem = null;
           }
-            circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
+          circuitGroup = buildPracticeCircuit(three, practiceProblem, activeStandard);
           scene.add(circuitGroup);
 
           // Initialize current flow animation - add particles to circuitGroup so they move with the circuit
@@ -2345,91 +2346,17 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
             flowAnimationSystem.setCurrentIntensity(solution.totals.current);
           }
 
-          // Build flow paths based on circuit topology
-          // These paths represent the complete circuit loop for animation
-          const flowPaths = buildFlowPathsForTopology(practiceProblem);
-          flowPaths.forEach(path => {
+          // Build flow paths from the same element geometry used to render the circuit.
+          // This ensures particles follow wires and zig-zag through resistors instead of cutting across.
+          const elements = buildPracticeCircuitElements(practiceProblem);
+          const flowPaths = buildFlowPathsFromElements(elements, activeStandard);
+          flowPaths.forEach((path) => {
             flowAnimationSystem?.addFlowPath({
               path,
-              particleCount: 3,
-              baseSpeed: 0.35,
-              currentAmps: solution.totals.current
+              currentAmps: solution.totals.current,
+              flowsForward: true
             });
           });
-        };
-
-        // Helper function to build flow paths based on topology
-        // IMPORTANT: Paths are defined in CONVENTIONAL current direction (positive to negative)
-        // The animation system handles direction reversal for electron flow mode
-        const buildFlowPathsForTopology = (problem: PracticeProblem): Vec2[][] => {
-          const paths: Vec2[][] = [];
-
-          // Define standard circuit layouts matching presets.ts
-          if (problem.topology === "series") {
-            // Series: single loop path
-            const left = -4.4;
-            const right = 4.4;
-            const top = 2.7;
-            const bottom = -2.7;
-
-            // Complete loop in CONVENTIONAL direction: battery (+) -> top -> right -> bottom -> back to battery (-)
-            // Conventional current flows from positive to negative terminal
-            paths.push([
-              { x: left, z: top },              // Start at battery positive (top)
-              { x: right, z: top },             // Top right
-              { x: right, z: bottom },          // Bottom right
-              { x: left, z: bottom },           // Bottom left
-              { x: left, z: top - 0.9 }         // Back to battery negative terminal area
-            ]);
-          } else if (problem.topology === "parallel") {
-            // Parallel: main loop with branch points
-            const left = -2.6;
-            const right = 3.8;
-            const top = 2.5;
-            const bottom = -2.5;
-
-            // Main path in CONVENTIONAL direction (clockwise from top)
-            paths.push([
-              { x: left, z: top },
-              { x: right, z: top },
-              { x: right, z: bottom },
-              { x: left, z: bottom },
-              { x: left, z: top - 0.9 }
-            ]);
-
-            // Add paths for parallel branches if there are components
-            // Branches go top to bottom in conventional direction
-            const branchCount = Math.max(problem.components.length, 1);
-            const spacing = (right - left) / (branchCount + 1);
-
-            for (let i = 0; i < branchCount; i++) {
-              const x = left + spacing * (i + 1);
-              paths.push([
-                { x, z: top },
-                { x, z: bottom }
-              ]);
-            }
-          } else if (problem.topology === "combination") {
-            // Combination: main series path with parallel section in CONVENTIONAL direction
-            paths.push([
-              { x: -4.2, z: 2.3 },    // Start at top left (positive side)
-              { x: 1.4, z: 2.3 },     // Branch top
-              { x: 1.4, z: -2.3 },    // Drop node
-              { x: -2.0, z: -2.3 },   // Bottom left
-              { x: -4.2, z: -2.3 },   // Far left bottom
-              { x: -4.2, z: 2.3 }     // Back to start
-            ]);
-
-            // Parallel branch path (conventional direction)
-            paths.push([
-              { x: 1.4, z: 2.3 },
-              { x: 3.2, z: 2.3 },
-              { x: 3.2, z: -0.3 },
-              { x: 1.4, z: -0.3 }
-            ]);
-          }
-
-          return paths;
         };
 
         applyProblemRef.current = setCircuit;

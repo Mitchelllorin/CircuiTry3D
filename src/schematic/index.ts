@@ -79,7 +79,7 @@ export type {
 export { COMPONENT_CATALOG } from "./catalog";
 
 // Practice circuit builder
-export { buildPracticeCircuit } from "./presets";
+export { buildPracticeCircuit, buildPracticeCircuitElements } from "./presets";
 
 // 3D factory exports
 export {
