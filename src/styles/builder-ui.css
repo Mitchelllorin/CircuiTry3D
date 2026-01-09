@@ -58,7 +58,8 @@ body.builder-body {
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: calc(64px + var(--builder-safe-area-top));
+  padding-top: var(--builder-safe-area-top);
   background: linear-gradient(
     180deg,
     rgba(15, 27, 61, 0.92),
@@ -127,7 +128,7 @@ body.builder-body {
 
 .workspace-mode-bar {
   position: fixed;
-  top: 12px;
+  top: calc(12px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   /* Keep the workspace bar above all builder overlays (arena, help, etc.) */
@@ -222,7 +223,7 @@ body.builder-body {
 /* Left scroll indicator - positioned outside the bar */
 .mode-bar-scroll-indicator--left {
   position: fixed;
-  top: 12px;
+  top: calc(12px + var(--builder-safe-area-top));
   left: calc(50% - min(600px, calc(50vw - 12px)) - 28px);
   z-index: 2101;
   background: rgba(10, 24, 48, 0.95);
@@ -275,7 +276,7 @@ body.builder-body {
 
 @media (max-width: 640px) {
   .mode-bar-scroll-indicator--left {
-    top: 8px;
+    top: calc(8px + var(--builder-safe-area-top));
     left: calc(50% - min(50vw - 8px, 50vw - 8px) - 28px);
     left: 4px;
     width: 24px;
@@ -295,7 +296,7 @@ body.builder-body {
 /* Edge-positioned workspace action buttons (Undo, Redo, Open, Save) */
 .workspace-edge-actions {
   position: fixed;
-  top: 72px;
+  top: calc(72px + var(--builder-safe-area-top));
   right: clamp(12px, 3vw, 24px);
   z-index: 940;
   display: flex;
@@ -417,7 +418,7 @@ body.builder-body {
 
 @media (max-width: 720px) {
   .workspace-edge-actions {
-    top: 64px;
+    top: calc(64px + var(--builder-safe-area-top));
     padding: 4px;
     gap: 4px;
   }
@@ -565,7 +566,7 @@ body.builder-body {
 
 @media (max-width: 640px) {
   .workspace-mode-bar {
-    top: 8px;
+    top: calc(8px + var(--builder-safe-area-top));
     left: 50%;
     transform: translateX(-50%);
     right: auto;
