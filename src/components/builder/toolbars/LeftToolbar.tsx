@@ -9,6 +9,8 @@ import {
   QUICK_ACTIONS,
   WIRE_TOOL_ACTIONS,
 } from "../constants";
+import { getSchematicSymbol } from "../../circuit/SchematicSymbols";
+import { useComponent3DThumbnail } from "./useComponent3DThumbnail";
 
 interface LeftToolbarProps {
   isOpen: boolean;
@@ -26,12 +28,26 @@ interface LeftToolbarProps {
 
 /**
  * Renders the component icon/schematic symbol for the library
- * Vertical layout: name at top, schematic symbol, description + preview at bottom
+ * Vertical layout: name at top, schematic symbol, 3D thumbnail at bottom
  */
 function ComponentIcon({ component }: { component: ComponentAction }) {
-  const hasSchematic = component.metadata?.schematicSymbolPath;
-  const hasPreview = component.metadata?.previewImagePath;
-  const description = component.description?.trim();
+  const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id);
+
+  const symbolKey = (() => {
+    const type = component.builderType ?? component.id;
+    switch (type) {
+      case "bjt-npn":
+        return "transistor-npn";
+      case "bjt-pnp":
+        return "transistor-pnp";
+      case "bjt":
+        return "transistor-npn";
+      default:
+        return type;
+    }
+  })();
+
+  const Symbol = getSchematicSymbol(symbolKey as any);
 
   return (
     <span className="slider-component-card">
@@ -40,33 +56,28 @@ function ComponentIcon({ component }: { component: ComponentAction }) {
 
       {/* Schematic symbol */}
       <span className="slider-component-symbol" aria-hidden="true">
-        {hasSchematic ? (
-          <img
-            src={component.metadata!.schematicSymbolPath}
-            alt=""
-            loading="lazy"
-          />
+        {Symbol ? (
+          <svg
+            className="slider-component-symbol-svg"
+            viewBox="-40 -40 80 80"
+            width="100%"
+            height="100%"
+            focusable="false"
+          >
+            <Symbol x={0} y={0} scale={1} showLabel={false} />
+          </svg>
         ) : (
           <span className="slider-component-symbol-text">{component.icon}</span>
         )}
       </span>
 
-      {/* Description + preview */}
-      <span className="slider-component-footer">
-        <span className="slider-component-description">
-          {description || " "}
-        </span>
-        <span className="slider-component-preview" aria-hidden="true">
-          {hasPreview ? (
-            <img
-              src={component.metadata!.previewImagePath}
-              alt=""
-              loading="lazy"
-            />
-          ) : (
-            <span className="slider-component-preview-placeholder" />
-          )}
-        </span>
+      {/* 3D thumbnail */}
+      <span className="slider-component-thumbnail" aria-hidden="true">
+        {thumbSrc ? (
+          <img src={thumbSrc} alt="" loading="lazy" />
+        ) : (
+          <span className="slider-component-thumbnail-placeholder" />
+        )}
       </span>
     </span>
   );

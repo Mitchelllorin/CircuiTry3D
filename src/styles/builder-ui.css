@@ -1360,13 +1360,11 @@ body.builder-body {
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.slider-component-symbol img {
+.slider-component-symbol-svg {
   width: 100%;
-  max-width: 80px;
-  height: auto;
-  max-height: 28px;
-  object-fit: contain;
-  filter: brightness(1.1) contrast(1.05);
+  height: 44px;
+  display: block;
+  overflow: visible;
 }
 
 .slider-component-symbol-text {
@@ -1379,52 +1377,37 @@ body.builder-body {
   white-space: nowrap;
 }
 
-/* Description + preview row */
-.slider-component-footer {
-  display: grid;
-  grid-template-columns: 1fr 38px;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.slider-component-description {
-  font-size: 10px;
-  line-height: 1.35;
-  color: var(--builder-muted);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-/* Preview image (small thumbnail) */
-.slider-component-preview {
+/* 3D thumbnail (generated in-browser) */
+.slider-component-thumbnail {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 100%;
+  height: 64px;
   background: rgba(136, 204, 255, 0.06);
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid rgba(136, 204, 255, 0.15);
   overflow: hidden;
   transition: opacity 0.2s ease, border-color 0.2s ease;
 }
 
-.slider-component-preview img {
+.slider-component-thumbnail img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  filter: brightness(0.95) contrast(1.05);
+  object-fit: contain;
+  image-rendering: auto;
 }
 
-.slider-component-preview-placeholder {
-  width: 24px;
-  height: 16px;
-  background: linear-gradient(135deg, rgba(136, 204, 255, 0.15), rgba(0, 255, 136, 0.1));
-  border-radius: 3px;
-  opacity: 0.4;
+.slider-component-thumbnail-placeholder {
+  width: 40px;
+  height: 26px;
+  background: linear-gradient(
+    135deg,
+    rgba(136, 204, 255, 0.16),
+    rgba(0, 255, 136, 0.12)
+  );
+  border-radius: 5px;
+  opacity: 0.45;
 }
 
 /* Hover effects for component card */
@@ -1438,11 +1421,11 @@ body.builder-body {
   text-shadow: 0 0 12px rgba(0, 255, 136, 0.6);
 }
 
-.slider-btn:hover .slider-component-preview {
+.slider-btn:hover .slider-component-thumbnail {
   border-color: rgba(136, 204, 255, 0.3);
 }
 
-.slider-btn:hover .slider-component-preview-placeholder {
+.slider-btn:hover .slider-component-thumbnail-placeholder {
   opacity: 0.6;
 }
 
