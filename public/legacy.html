@@ -9941,7 +9941,7 @@ body.android-optimized.menu-visible .status {
             
             notifyParentModeState();
 
-            setStatus(`⚡  Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Holes drift positive -> negative (opposite current)' : 'CURRENT FLOW - Charge travels negative -> positive through the loop'}`);
+            setStatus(`⚡  Flow: ${currentFlowStyle === 'misty' ? 'ELECTRON FLOW - Particles move negative -> positive (opposite conventional current)' : 'CURRENT FLOW - Particles move positive -> negative (conventional current)'}`);
         }
         
         // Toggle polarity indicators
@@ -10923,14 +10923,14 @@ Made with ? for visual learners everywhere!
 
             if (!flowMeta.hasFlow) {
                 if (flowMeta.reason === 'polarity') {
-                    setStatus('POLARITY MISMATCH: Reverse components so current can travel negative -> positive.');
+                    setStatus('POLARITY MISMATCH: Reverse components so current can travel positive -> negative.');
                 } else if (flowMeta.reason === 'short') {
                     setStatus('⚡ SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
                 } else if (flowMeta.reason === 'no-source') {
                     setStatus('⚡ Add a battery to power the circuit and start current flow.');
                 }
             } else if (flowMeta.warning === 'short') {
-                setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from negative -> positive. Add resistance now!');
+                setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from positive -> negative. Add resistance now!');
             }
 
             const circuitResult = {
