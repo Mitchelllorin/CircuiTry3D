@@ -10,6 +10,10 @@
   --builder-blue: #88ccff;
   --builder-orange: #ff8844;
   --builder-green: #00ff88;
+  --wire-w: var(--builder-blue);
+  --wire-i: var(--builder-orange);
+  --wire-r: var(--builder-green);
+  --wire-e: #ff4444;
   --builder-cyan: #88ccff;
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
@@ -2050,6 +2054,56 @@ body.builder-body {
   overflow: hidden;
   z-index: 810;
   backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+}
+
+.ticker-wire-fixed {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  height: 100%;
+  white-space: nowrap;
+  border-right: 1px solid rgba(136, 204, 255, 0.18);
+  background: rgba(8, 18, 36, 0.35);
+}
+
+.ticker-wire-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(200, 220, 255, 0.9);
+}
+
+.ticker-wire-letter {
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.ticker-wire-value {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(226, 240, 255, 0.92);
+}
+
+.ticker-wire-metric--watts .ticker-wire-letter {
+  color: var(--wire-w);
+}
+
+.ticker-wire-metric--current .ticker-wire-letter {
+  color: var(--wire-i);
+}
+
+.ticker-wire-metric--resistance .ticker-wire-letter {
+  color: var(--wire-r);
+}
+
+.ticker-wire-metric--voltage .ticker-wire-letter {
+  color: var(--wire-e);
 }
 
 .ticker-wrapper {
@@ -2057,6 +2111,7 @@ body.builder-body {
   height: 100%;
   position: relative;
   overflow: hidden;
+  flex: 1 1 auto;
 }
 
 .ticker-content {
