@@ -104,28 +104,38 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   const [snapTarget, setSnapTarget] = useState<Node | null>(null);
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [hoveredWireInfo, setHoveredWireInfo] = useState<{ wireId: string; point: Vec2 } | null>(null);
-  const [pulsePhase, setPulsePhase] = useState(0);
   const startNodeRef = useRef<Node | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const pulsePhaseRef = useRef(0);
+  const hoverPulseFrameRef = useRef<number | null>(null);
+  const backgroundCacheRef = useRef<{ key: string; canvas: HTMLCanvasElement } | null>(null);
+  const pathCacheRef = useRef<Map<string, { key: string; path: Path2D }>>(new Map());
 
-  // Animate the pulse effect when hovering over a wire
+  // Animate the hovered-wire pulse *without* causing React re-renders.
+  // We drive animation via requestAnimationFrame and redraw only the canvas.
   useEffect(() => {
-    if (hoveredWireInfo) {
-      const animate = () => {
-        setPulsePhase(prev => (prev + 0.08) % (Math.PI * 2));
-        animationFrameRef.current = requestAnimationFrame(animate);
-      };
-      animationFrameRef.current = requestAnimationFrame(animate);
-    } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
+    if (!hoveredWireInfo) {
+      if (hoverPulseFrameRef.current !== null) {
+        cancelAnimationFrame(hoverPulseFrameRef.current);
+        hoverPulseFrameRef.current = null;
       }
-      setPulsePhase(0);
+      pulsePhaseRef.current = 0;
+      return;
     }
+
+    let lastTime = performance.now();
+    const animate = (now: number) => {
+      const deltaMs = now - lastTime;
+      lastTime = now;
+      // ~0.5 cycles/sec at 60fps feels "alive" without being distracting.
+      pulsePhaseRef.current = (pulsePhaseRef.current + deltaMs * 0.005) % (Math.PI * 2);
+      hoverPulseFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    hoverPulseFrameRef.current = requestAnimationFrame(animate);
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (hoverPulseFrameRef.current !== null) {
+        cancelAnimationFrame(hoverPulseFrameRef.current);
+        hoverPulseFrameRef.current = null;
       }
     };
   }, [hoveredWireInfo]);
@@ -792,12 +802,14 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       return;
     }
 
-    const ctx = canvas.getContext('2d');
+    const ctx =
+      canvas.getContext('2d', { alpha: true, desynchronized: true }) ??
+      canvas.getContext('2d');
     if (!ctx) {
       return;
     }
 
-    const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
+    const deviceRatio = typeof window !== 'undefined' && window.devicePixelRatio ? Math.min(window.devicePixelRatio, 2) : 1;
     const displayWidth = width;
     const displayHeight = height;
     const scaledWidth = Math.round(displayWidth * deviceRatio);
@@ -808,16 +820,16 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       canvas.height = scaledHeight;
     }
 
-    if (canvas.style.width !== `${displayWidth}px`) {
-      canvas.style.width = `${displayWidth}px`;
-    }
-    if (canvas.style.height !== `${displayHeight}px`) {
-      canvas.style.height = `${displayHeight}px`;
-    }
+    // Set CSS size explicitly (keeps crispness and prevents layout thrash)
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
 
     ctx.save();
     ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
     ctx.clearRect(0, 0, displayWidth, displayHeight);
+    ctx.imageSmoothingEnabled = true;
+    // @ts-expect-error - not present in older CanvasRenderingContext2D typings
+    ctx.imageSmoothingQuality = 'high';
 
     const tracePolyline = (points: Vec2[]) => {
       if (points.length < 2) {
@@ -831,83 +843,125 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       return true;
     };
 
+    const getWirePath = (wireId: string, points: Vec2[]) => {
+      const key = points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|');
+      const existing = pathCacheRef.current.get(wireId);
+      if (existing && existing.key === key) {
+        return existing.path;
+      }
+      const path = new Path2D();
+      if (points.length >= 2) {
+        path.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i += 1) {
+          path.lineTo(points[i].x, points[i].y);
+        }
+      }
+      pathCacheRef.current.set(wireId, { key, path });
+      return path;
+    };
+
     const drawBackground = () => {
-      const gradient = ctx.createLinearGradient(0, 0, 0, displayHeight);
-      gradient.addColorStop(0, CANVAS_COLORS.backgroundTop);
-      gradient.addColorStop(0.55, CANVAS_COLORS.backgroundMid);
-      gradient.addColorStop(1, CANVAS_COLORS.backgroundBottom);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, displayWidth, displayHeight);
+      const cacheKey = `${displayWidth}x${displayHeight}@${deviceRatio}`;
+      const cached = backgroundCacheRef.current;
 
-      const minorSpacing = ROUTING_GRID_SIZE / 2;
-      const majorSpacing = ROUTING_GRID_SIZE * 2;
-
-      if (minorSpacing >= 1) {
-        ctx.save();
-        ctx.strokeStyle = CANVAS_COLORS.gridMinor;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let x = minorSpacing; x < displayWidth; x += minorSpacing) {
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, displayHeight);
+      if (!cached || cached.key !== cacheKey) {
+        const bgCanvas = document.createElement('canvas');
+        bgCanvas.width = scaledWidth;
+        bgCanvas.height = scaledHeight;
+        const bgCtx = bgCanvas.getContext('2d');
+        if (!bgCtx) {
+          backgroundCacheRef.current = null;
+          return;
         }
-        for (let y = minorSpacing; y < displayHeight; y += minorSpacing) {
-          ctx.moveTo(0, y);
-          ctx.lineTo(displayWidth, y);
+
+        bgCtx.save();
+        bgCtx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+
+        const gradient = bgCtx.createLinearGradient(0, 0, 0, displayHeight);
+        gradient.addColorStop(0, CANVAS_COLORS.backgroundTop);
+        gradient.addColorStop(0.55, CANVAS_COLORS.backgroundMid);
+        gradient.addColorStop(1, CANVAS_COLORS.backgroundBottom);
+        bgCtx.fillStyle = gradient;
+        bgCtx.fillRect(0, 0, displayWidth, displayHeight);
+
+        const minorSpacing = ROUTING_GRID_SIZE / 2;
+        const majorSpacing = ROUTING_GRID_SIZE * 2;
+
+        if (minorSpacing >= 1) {
+          bgCtx.save();
+          bgCtx.strokeStyle = CANVAS_COLORS.gridMinor;
+          bgCtx.lineWidth = 1;
+          bgCtx.beginPath();
+          for (let x = minorSpacing; x < displayWidth; x += minorSpacing) {
+            bgCtx.moveTo(x, 0);
+            bgCtx.lineTo(x, displayHeight);
+          }
+          for (let y = minorSpacing; y < displayHeight; y += minorSpacing) {
+            bgCtx.moveTo(0, y);
+            bgCtx.lineTo(displayWidth, y);
+          }
+          bgCtx.stroke();
+          bgCtx.restore();
         }
-        ctx.stroke();
-        ctx.restore();
+
+        bgCtx.save();
+        bgCtx.strokeStyle = CANVAS_COLORS.gridMajor;
+        bgCtx.lineWidth = 1.2;
+        bgCtx.beginPath();
+        for (let x = majorSpacing; x < displayWidth; x += majorSpacing) {
+          bgCtx.moveTo(x, 0);
+          bgCtx.lineTo(x, displayHeight);
+        }
+        for (let y = majorSpacing; y < displayHeight; y += majorSpacing) {
+          bgCtx.moveTo(0, y);
+          bgCtx.lineTo(displayWidth, y);
+        }
+        bgCtx.stroke();
+        bgCtx.restore();
+
+        bgCtx.save();
+        const ambient = bgCtx.createRadialGradient(
+          displayWidth * 0.45,
+          displayHeight * 0.38,
+          Math.max(displayWidth, displayHeight) * 0.05,
+          displayWidth * 0.55,
+          displayHeight * 0.58,
+          Math.max(displayWidth, displayHeight) * 0.9
+        );
+        ambient.addColorStop(0, CANVAS_COLORS.ambientCore);
+        ambient.addColorStop(0.55, CANVAS_COLORS.ambientMid);
+        ambient.addColorStop(1, CANVAS_COLORS.ambientEdge);
+        bgCtx.globalCompositeOperation = 'lighter';
+        bgCtx.fillStyle = ambient;
+        bgCtx.fillRect(0, 0, displayWidth, displayHeight);
+        bgCtx.restore();
+
+        bgCtx.save();
+        const vignette = bgCtx.createRadialGradient(
+          displayWidth / 2,
+          displayHeight / 2,
+          Math.max(displayWidth, displayHeight) * 0.32,
+          displayWidth / 2,
+          displayHeight / 2,
+          Math.max(displayWidth, displayHeight) * 0.78
+        );
+        vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vignette.addColorStop(1, CANVAS_COLORS.vignette);
+        bgCtx.globalCompositeOperation = 'multiply';
+        bgCtx.fillStyle = vignette;
+        bgCtx.fillRect(0, 0, displayWidth, displayHeight);
+        bgCtx.restore();
+
+        bgCtx.globalCompositeOperation = 'source-over';
+        bgCtx.restore();
+
+        backgroundCacheRef.current = { key: cacheKey, canvas: bgCanvas };
       }
 
-      ctx.save();
-      ctx.strokeStyle = CANVAS_COLORS.gridMajor;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      for (let x = majorSpacing; x < displayWidth; x += majorSpacing) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, displayHeight);
+      const nextCache = backgroundCacheRef.current;
+      if (nextCache) {
+        ctx.drawImage(nextCache.canvas, 0, 0, displayWidth, displayHeight);
       }
-      for (let y = majorSpacing; y < displayHeight; y += majorSpacing) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(displayWidth, y);
-      }
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.save();
-      const ambient = ctx.createRadialGradient(
-        displayWidth * 0.45,
-        displayHeight * 0.38,
-        Math.max(displayWidth, displayHeight) * 0.05,
-        displayWidth * 0.55,
-        displayHeight * 0.58,
-        Math.max(displayWidth, displayHeight) * 0.9
-      );
-      ambient.addColorStop(0, CANVAS_COLORS.ambientCore);
-      ambient.addColorStop(0.55, CANVAS_COLORS.ambientMid);
-      ambient.addColorStop(1, CANVAS_COLORS.ambientEdge);
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = ambient;
-      ctx.fillRect(0, 0, displayWidth, displayHeight);
-      ctx.restore();
-
-      ctx.save();
-      const vignette = ctx.createRadialGradient(
-        displayWidth / 2,
-        displayHeight / 2,
-        Math.max(displayWidth, displayHeight) * 0.32,
-        displayWidth / 2,
-        displayHeight / 2,
-        Math.max(displayWidth, displayHeight) * 0.78
-      );
-      vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vignette.addColorStop(1, CANVAS_COLORS.vignette);
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, displayWidth, displayHeight);
-      ctx.restore();
-
-      ctx.globalCompositeOperation = 'source-over';
     };
 
     const drawWire = (wire: Wire, isHighlighted: boolean) => {
@@ -921,6 +975,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       gradient.addColorStop(0, CANVAS_COLORS.wireCoreStart);
       gradient.addColorStop(0.5, CANVAS_COLORS.wireCoreMid);
       gradient.addColorStop(1, CANVAS_COLORS.wireCoreEnd);
+      const path = getWirePath(wire.id, wire.points);
 
       ctx.save();
       ctx.lineJoin = 'round';
@@ -929,8 +984,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.lineWidth = 6.6;
       ctx.shadowColor = CANVAS_COLORS.wireShadow;
       ctx.shadowBlur = 18;
-      tracePolyline(wire.points);
-      ctx.stroke();
+      ctx.stroke(path);
       ctx.restore();
 
       ctx.save();
@@ -942,8 +996,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.globalAlpha = isHighlighted ? 0.9 : 0.6;
       ctx.shadowColor = isHighlighted ? CANVAS_COLORS.wireGlowActive : CANVAS_COLORS.wireGlow;
       ctx.shadowBlur = isHighlighted ? 28 : 18;
-      tracePolyline(wire.points);
-      ctx.stroke();
+      ctx.stroke(path);
       ctx.restore();
 
       ctx.save();
@@ -952,8 +1005,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.strokeStyle = gradient;
       ctx.lineWidth = isHighlighted ? 3.6 : 3.2;
       ctx.globalAlpha = 0.96;
-      tracePolyline(wire.points);
-      ctx.stroke();
+      ctx.stroke(path);
       ctx.restore();
 
       ctx.save();
@@ -963,8 +1015,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
       ctx.lineWidth = 1.2;
       ctx.globalAlpha = isHighlighted ? 0.75 : 0.4;
-      tracePolyline(wire.points);
-      ctx.stroke();
+      ctx.stroke(path);
       ctx.restore();
     };
 
@@ -1034,6 +1085,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
         return;
       }
 
+      const path = getWirePath('__preview__', currentWire);
       ctx.save();
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
@@ -1043,8 +1095,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.lineWidth = 4.4;
       ctx.shadowColor = CANVAS_COLORS.previewGlow;
       ctx.shadowBlur = 22;
-      tracePolyline(currentWire);
-      ctx.stroke();
+      ctx.stroke(path);
       ctx.restore();
 
       ctx.save();
@@ -1054,8 +1105,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       ctx.strokeStyle = CANVAS_COLORS.previewCore;
       ctx.lineWidth = 2.6;
       ctx.globalAlpha = 0.92;
-      tracePolyline(currentWire);
-      ctx.stroke();
+      ctx.stroke(path);
       ctx.restore();
     };
 
@@ -1067,6 +1117,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       const { point } = hoveredWireInfo;
 
       // Animated pulse effect - grows and fades
+      const pulsePhase = pulsePhaseRef.current;
       const pulseScale = 1 + Math.sin(pulsePhase) * 0.25;
       const pulseAlpha = 0.5 + Math.sin(pulsePhase) * 0.3;
       const outerRingScale = 1.5 + Math.sin(pulsePhase * 0.7) * 0.4;
@@ -1143,13 +1194,46 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     drawHoveredWireCue();
 
     ctx.restore();
-  }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget, pulsePhase]);
+    // If the hover pulse is active, keep repainting at the display refresh rate.
+    // We avoid React state updates; redraw is local to this effect.
+    let raf: number | null = null;
+    if (hoveredWireInfo) {
+      const repaint = () => {
+        // Re-run this effect's drawing logic by triggering a manual redraw:
+        // we do it by re-entering the body via requestAnimationFrame closure.
+        ctx.save();
+        ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+        ctx.clearRect(0, 0, displayWidth, displayHeight);
+        ctx.imageSmoothingEnabled = true;
+        // @ts-expect-error - not present in older CanvasRenderingContext2D typings
+        ctx.imageSmoothingQuality = 'high';
+
+        drawBackground();
+        for (const wire of wires) {
+          drawWire(wire, hoveredWireInfo?.wireId === wire.id);
+        }
+        for (const node of nodes) {
+          drawNode(node);
+        }
+        drawActiveWire();
+        drawHoveredWireCue();
+        ctx.restore();
+
+        raf = requestAnimationFrame(repaint);
+      };
+      raf = requestAnimationFrame(repaint);
+    }
+
+    return () => {
+      if (raf !== null) {
+        cancelAnimationFrame(raf);
+      }
+    };
+  }, [wires, nodes, currentWire, isDrawing, hoveredNode, hoveredWireInfo, width, height, snapTarget]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={width}
-      height={height}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -1157,6 +1241,8 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
+        width: `${width}px`,
+        height: `${height}px`,
         cursor: isDrawing ? 'crosshair' : hoveredNode || hoveredWireInfo ? 'pointer' : 'default',
         touchAction: 'none', // Prevent default touch behaviors like scrolling
         borderRadius: '18px',

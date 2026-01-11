@@ -208,6 +208,14 @@ const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, option
   ctx.textBaseline = "middle";
   ctx.fillText(text, canvas.width / 2, canvas.height / 2);
   const texture = new three.CanvasTexture(canvas);
+  // Correct color space so label colors render accurately.
+  if (three.SRGBColorSpace) {
+    texture.colorSpace = three.SRGBColorSpace;
+  } else if (three.sRGBEncoding) {
+    // Legacy fallback for older Three versions.
+    texture.encoding = three.sRGBEncoding;
+  }
+  texture.needsUpdate = true;
   texture.anisotropy = 4;
   const material = new three.SpriteMaterial({
     map: texture,
