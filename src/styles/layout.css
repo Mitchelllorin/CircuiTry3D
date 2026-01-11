@@ -2,6 +2,11 @@
   --brand-blue: #88ccff;
   --brand-orange: #ff8844;
   --brand-green: #00ff88;
+  /* CircuiTry3D W.I.R.E. standard color system */
+  --wire-w: var(--brand-blue);
+  --wire-i: var(--brand-orange);
+  --wire-r: var(--brand-green);
+  --wire-e: #ff4444;
   --brand-blue-dim: rgba(136, 204, 255, 0.18);
   --brand-blue-glow: rgba(136, 204, 255, 0.42);
   --brand-orange-dim: rgba(255, 136, 68, 0.18);

@@ -2206,6 +2206,20 @@ export default function Builder() {
       </div>
 
       <div className="builder-ticker-feed" role="status" aria-live="polite">
+        <div className="ticker-wire-fixed" role="group" aria-label="W.I.R.E. live metrics">
+          {wireMetrics.map((metric) => (
+            <span
+              key={`ticker-wire-fixed-${metric.id}`}
+              className={`ticker-wire-metric ticker-wire-metric--${metric.id}`}
+              title={`${metric.label}: ${metric.value}`}
+            >
+              <span className="ticker-wire-letter" aria-hidden="true">
+                {metric.letter}
+              </span>
+              <span className="ticker-wire-value">{metric.value}</span>
+            </span>
+          ))}
+        </div>
         <div className="ticker-wrapper">
           <div className="ticker-content">
             <span className="ticker-item">
@@ -2222,14 +2236,6 @@ export default function Builder() {
               Flow: {currentFlowLabel}
             </span>
             <span className="ticker-separator">•</span>
-            {wireMetrics.map((metric) => (
-              <Fragment key={`ticker-metric-${metric.id}`}>
-                <span className="ticker-item">
-                  {metric.letter}: {metric.value}
-                </span>
-                <span className="ticker-separator">•</span>
-              </Fragment>
-            ))}
             <span className="ticker-item">
               Layout: {layoutModeLabel}
             </span>
@@ -2256,14 +2262,6 @@ export default function Builder() {
               Flow: {currentFlowLabel}
             </span>
             <span className="ticker-separator">•</span>
-            {wireMetrics.map((metric) => (
-              <Fragment key={`ticker-metric-repeat-${metric.id}`}>
-                <span className="ticker-item">
-                  {metric.letter}: {metric.value}
-                </span>
-                <span className="ticker-separator">•</span>
-              </Fragment>
-            ))}
             <span className="ticker-item">
               Layout: {layoutModeLabel}
             </span>
