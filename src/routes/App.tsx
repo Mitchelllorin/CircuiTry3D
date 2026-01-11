@@ -1,12 +1,11 @@
 import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
-import Arena from "../pages/Arena";
-import WireDemo from "../pages/WireDemo";
+import Practice from "../pages/Practice";
+import SchematicMode from "../pages/SchematicMode";
 import Pricing from "../pages/Pricing";
 import Community from "../pages/Community";
 import Account from "../pages/Account";
-import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
 import UnifiedNav from "../components/UnifiedNav";
 import BrandMark from "../components/BrandMark";
@@ -21,6 +20,8 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/app" element={<Builder />} />
+          <Route path="/practice" element={<Practice />} />
+          <Route path="/schematic" element={<SchematicMode />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/community" element={<Community />} />
           <Route path="/account" element={<Account />} />
