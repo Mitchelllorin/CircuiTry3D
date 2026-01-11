@@ -100,29 +100,90 @@ function parseNumberWithMetricPrefix(raw: string): number | null {
   return base;
 }
 
+function parseNumberWithMetricPrefixNearUnit(raw: string, unitPattern: RegExp): number | null {
+  const text = raw.replace(/\s+/g, " ").trim();
+  if (!text) return null;
+
+  // Prefer the number that is directly associated with a unit, e.g.
+  // - "R1 = 150 Ω"  -> 150
+  // - "V1 = 24V"    -> 24
+  // We intentionally avoid accidentally parsing the "1" in "R1" / "V1".
+  const re = new RegExp(String.raw`([-+]?\d+(?:\.\d+)?)\s*([kKmM])?\s*${unitPattern.source}`, "gi");
+  let match: RegExpExecArray | null = null;
+  let last: { base: number; prefix: string } | null = null;
+  while ((match = re.exec(text))) {
+    const base = Number(match[1]);
+    const prefix = (match[2] ?? "").trim();
+    if (Number.isFinite(base)) {
+      last = { base, prefix };
+    }
+  }
+  if (!last) return null;
+  const { base, prefix } = last;
+  if (!prefix) return base;
+  if (prefix.toLowerCase() === "k") return base * 1e3;
+  if (prefix === "M") return base * 1e6;
+  if (prefix === "m") return base * 1e-3;
+  return base;
+}
+
+function parseLastNumberWithMetricPrefix(raw: string): number | null {
+  const text = raw.replace(/\s+/g, " ").trim();
+  if (!text) return null;
+
+  const re = /([-+]?\d+(?:\.\d+)?)(\s*[kKmM])?/g;
+  let match: RegExpExecArray | null = null;
+  let last: { base: number; prefix: string } | null = null;
+
+  while ((match = re.exec(text))) {
+    const base = Number(match[1]);
+    const prefix = (match[2] ?? "").trim();
+    if (Number.isFinite(base)) {
+      last = { base, prefix };
+    }
+  }
+
+  if (!last) return null;
+  const { base, prefix } = last;
+  if (!prefix) return base;
+  if (prefix.toLowerCase() === "k") return base * 1e3;
+  if (prefix === "M") return base * 1e6;
+  if (prefix === "m") return base * 1e-3;
+  return base;
+}
+
 function parseVoltageVolts(label: string | undefined): number | null {
   if (!label) return null;
-  const lowered = label.toLowerCase();
-  if (!lowered.includes("v")) {
-    // practice mode uses "24V" so this is a strong signal, but fallback if it's numeric-only
-    const n = parseNumberWithMetricPrefix(label);
-    return n;
+  const unitMatch = parseNumberWithMetricPrefixNearUnit(label, /v\b/i);
+  if (unitMatch !== null) return unitMatch;
+
+  // Fallbacks:
+  // - practice mode uses "24V" (handled above)
+  // - accept "V = 24" style labels or numeric-only labels
+  const eqMatch = label.match(/=\s*([-+]?\d+(?:\.\d+)?)(\s*[kKmM])?/i);
+  if (eqMatch) {
+    const n = parseNumberWithMetricPrefix(eqMatch[0].replace("=", ""));
+    if (n !== null) return n;
   }
-  const n = parseNumberWithMetricPrefix(label);
-  return n;
+
+  return parseLastNumberWithMetricPrefix(label) ?? parseNumberWithMetricPrefix(label);
 }
 
 function parseResistanceOhms(label: string | undefined): number | null {
   if (!label) return null;
-  // Accept Ω, ohm, and plain numbers (as many UIs label resistors as "R1 = 220 Ω")
-  const lowered = label.toLowerCase();
-  if (!lowered.includes("ohm") && !lowered.includes("ω") && !lowered.includes("r")) {
-    // still allow numeric-only labels like "220"
-    const n = parseNumberWithMetricPrefix(label);
-    return n;
+  // Prefer values explicitly expressed in ohms to avoid parsing "R1" as 1 Ω.
+  const unitMatch = parseNumberWithMetricPrefixNearUnit(label, /(?:ohms?|[ωΩ])/i);
+  if (unitMatch !== null) return unitMatch;
+
+  // Next prefer explicit "R = 220" style labels (common in worksheets).
+  const eqMatch = label.match(/=\s*([-+]?\d+(?:\.\d+)?)(\s*[kKmM])?/i);
+  if (eqMatch) {
+    const n = parseNumberWithMetricPrefix(eqMatch[0].replace("=", ""));
+    if (n !== null) return n;
   }
-  const n = parseNumberWithMetricPrefix(label);
-  return n;
+
+  // Final fallback: take the last number in the label (helps with "R1 220" style labels).
+  return parseLastNumberWithMetricPrefix(label) ?? parseNumberWithMetricPrefix(label);
 }
 
 function gaussianSolve(A: number[][], b: number[]): number[] | null {

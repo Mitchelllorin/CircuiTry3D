@@ -9,6 +9,7 @@ import type { PracticeProblem, PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
 import { formatMetricValue, formatNumber } from "../utils/electrical";
 import { solvePracticeProblem, type SolveResult } from "../utils/practiceSolver";
+import { solveDCCircuit } from "../sim/dcSolver";
 import WireTable, {
   METRIC_ORDER,
   METRIC_PRECISION,
@@ -31,7 +32,7 @@ import { buildElement, buildNodeMesh, disposeThreeObject } from "../schematic/th
 import { DEFAULT_SYMBOL_STANDARD, SYMBOL_STANDARD_OPTIONS, SymbolStandard } from "../schematic/standards";
 import { buildPracticeCircuit, buildPracticeCircuitElements } from "../schematic/presets";
 import { CurrentFlowAnimationSystem } from "../schematic/currentFlowAnimation";
-import { buildFlowPathsFromElements } from "../schematic/flowPaths";
+import { buildElementConductorPath } from "../schematic/flowPaths";
 import { validateCircuit, type ValidationResult, type ValidationIssue } from "../sim/circuitValidator";
 import { ValidationPanel, ValidationIndicator } from "../components/validation/ValidationPanel";
 
@@ -2337,26 +2338,58 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
 
           // Solve the circuit to get current values
           const solution = solvePracticeProblem(practiceProblem);
+          const elements = buildPracticeCircuitElements(practiceProblem);
+          const dcSolution = solveDCCircuit(elements);
 
-          // Set the circuit as closed (practice problems are complete circuits)
-          flowAnimationSystem.setCircuitClosed(true);
+          // Circuit is "closed" for animation only if the DC solver can actually solve it.
+          flowAnimationSystem.setCircuitClosed(dcSolution.status === "solved");
 
           // Set current intensity based on solved circuit current
           if (solution.totals.current !== undefined) {
             flowAnimationSystem.setCurrentIntensity(solution.totals.current);
           }
 
-          // Build flow paths from the same element geometry used to render the circuit.
-          // This ensures particles follow wires and zig-zag through resistors instead of cutting across.
-          const elements = buildPracticeCircuitElements(practiceProblem);
-          const flowPaths = buildFlowPathsFromElements(elements, activeStandard);
-          flowPaths.forEach((path) => {
-            flowAnimationSystem?.addFlowPath({
-              path,
-              currentAmps: solution.totals.current,
-              flowsForward: true
-            });
-          });
+          // Drive particle speed/density from Kirchhoff + Ohm (via DC solver).
+          // This makes parallel branches visibly differ: low resistance branch carries more current,
+          // so flow is faster/denser there.
+          if (dcSolution.status === "solved") {
+            // 1) Animate wires using per-segment solved currents.
+            const wirePathMap = new Map<string, Vec2[]>();
+            for (const el of elements) {
+              if (el.kind === "wire") {
+                wirePathMap.set(el.id, el.path);
+              }
+            }
+            flowAnimationSystem.addFlowPathsFromSolver(dcSolution.wireSegmentCurrents, wirePathMap);
+
+            // 2) Animate two-terminal components (resistors, batteries, etc.) along their rendered conductor path.
+            for (const el of elements) {
+              if (el.kind === "wire") continue;
+              if (!("start" in el) || !("end" in el)) continue;
+
+              const solved = dcSolution.elementCurrents.get(el.id);
+              if (!solved) continue;
+
+              const path = buildElementConductorPath(el, activeStandard);
+              if (!path || path.length < 2) continue;
+
+              const currentAmps = Math.abs(solved.amps);
+              if (currentAmps <= 0) continue;
+
+              const flowsForward =
+                solved.direction === "start->end"
+                  ? true
+                  : solved.direction === "end->start"
+                    ? false
+                    : solved.amps >= 0;
+
+              flowAnimationSystem.addFlowPath({
+                path,
+                currentAmps,
+                flowsForward,
+              });
+            }
+          }
         };
 
         applyProblemRef.current = setCircuit;

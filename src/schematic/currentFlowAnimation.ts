@@ -253,15 +253,20 @@ export class CurrentFlowAnimationSystem {
    * @param amps - Current in amperes
    */
   public setCurrentIntensity(amps: number): void {
+    const prevGlobal = this.globalCurrentAmps;
     this.globalCurrentAmps = Math.abs(amps);
     this.globalIntensity = this.calculateIntensity(amps);
 
-    // Update all existing particle speeds based on new current value
+    // If particles were created using the previous global current (no per-path current provided),
+    // update them. If they have their own per-path currents (e.g., parallel branches), preserve them.
     const newBaseSpeed = this.calculateSpeedFromCurrent(this.globalCurrentAmps);
-    this.particles.forEach(particle => {
-      particle.currentAmps = this.globalCurrentAmps;
-      particle.baseSpeed = newBaseSpeed;
-      particle.speed = this.addSpeedVariation(newBaseSpeed);
+    const EPS_AMPS = 1e-9;
+    this.particles.forEach((particle) => {
+      if (Math.abs(particle.currentAmps - prevGlobal) <= EPS_AMPS) {
+        particle.currentAmps = this.globalCurrentAmps;
+        particle.baseSpeed = newBaseSpeed;
+        particle.speed = this.addSpeedVariation(newBaseSpeed);
+      }
     });
 
     this.updateAllParticleAppearances();
@@ -451,8 +456,11 @@ export class CurrentFlowAnimationSystem {
       const mesh = this.particleMeshes.get(particle.id);
       if (!mesh) return;
 
-      const colors = INTENSITY_COLORS[this.globalIntensity];
-      particle.intensity = this.globalIntensity;
+      // Per-particle intensity (derived from this particle's own current) so parallel
+      // branches can look/feel different.
+      const intensity = this.calculateIntensity(particle.currentAmps);
+      const colors = INTENSITY_COLORS[intensity];
+      particle.intensity = intensity;
 
       // Update main mesh material
       if (mesh.material) {
