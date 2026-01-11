@@ -67,6 +67,19 @@ export function Component3DViewer({
         powerPreference: rendererOptions.powerPreference,
         precision: rendererOptions.precision
       });
+      // Best-practice color management for crisp, accurate materials.
+      if ("outputColorSpace" in renderer && (THREE as any).SRGBColorSpace) {
+        (renderer as any).outputColorSpace = (THREE as any).SRGBColorSpace;
+      } else if ("outputEncoding" in renderer && (THREE as any).sRGBEncoding) {
+        (renderer as any).outputEncoding = (THREE as any).sRGBEncoding;
+      }
+      if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
+        (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;
+        (renderer as any).toneMappingExposure = 1.0;
+      }
+      if ("physicallyCorrectLights" in renderer) {
+        (renderer as any).physicallyCorrectLights = true;
+      }
       renderer.setPixelRatio(getMobilePixelRatio());
       renderer.setSize(width, height);
       rendererRef.current = renderer;
