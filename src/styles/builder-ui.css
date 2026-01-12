@@ -53,6 +53,8 @@ body.builder-body {
 .builder-shell {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   width: 100vw;
   color: inherit;
 }
@@ -779,6 +781,7 @@ body.builder-body {
   position: relative;
   width: min(96vw, 1280px);
   max-height: 90vh;
+  max-height: 90dvh;
   border-radius: 22px;
   border: 1px solid rgba(136, 204, 255, 0.3);
   background: rgba(12, 28, 58, 0.94);
@@ -792,6 +795,7 @@ body.builder-body {
   position: relative;
   width: min(96vw, 720px);
   max-height: 90vh;
+  max-height: 90dvh;
   border-radius: 22px;
   border: 1px solid rgba(136, 204, 255, 0.3);
   background: rgba(12, 28, 58, 0.94);
@@ -826,16 +830,19 @@ body.builder-body {
 .builder-panel-shell--arena {
   width: min(96vw, 1320px);
   max-height: 92vh;
+  max-height: 92dvh;
 }
 
 .builder-panel-shell--schematic {
   width: min(96vw, 1380px);
   max-height: 92vh;
+  max-height: 92dvh;
 }
 
 .builder-panel-shell--environment {
   width: min(94vw, 720px);
   max-height: 90vh;
+  max-height: 90dvh;
 }
 
 .builder-panel-body--environment {
@@ -850,6 +857,7 @@ body.builder-body {
 .builder-panel-shell--wire-library {
   width: min(96vw, 1280px);
   max-height: 92vh;
+  max-height: 92dvh;
 }
 
 .builder-panel-body--wire-library {
@@ -2252,6 +2260,8 @@ body.builder-body {
   position: fixed;
   inset: 0;
   height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   background:
     radial-gradient(circle at 30% 20%, rgba(0, 255, 136, 0.1), transparent 55%),
     radial-gradient(
@@ -2794,6 +2804,7 @@ body.builder-body {
   position: relative;
   max-width: 720px;
   max-height: 82vh;
+  max-height: 82dvh;
   width: 100%;
   border-radius: 20px;
   border: 1px solid rgba(136, 204, 255, 0.28);
@@ -3155,6 +3166,67 @@ body.builder-body {
     box-shadow:
       0 -4px 16px var(--builder-shadow),
       0 -4px 20px rgba(136, 204, 255, 0.3);
+  }
+}
+
+/* ============================================
+   Short landscape phones (low vertical space)
+   Keep UI usable when rotated.
+   ============================================ */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+  :root {
+    /* Reduce bottom drawer footprint on short screens. */
+    --builder-menu-bottom-height: 160px;
+    --builder-menu-toggle-height: 44px;
+  }
+
+  /* Hide the decorative ticker to free vertical space. */
+  .builder-ticker-feed {
+    display: none;
+  }
+
+  .builder-logo-header {
+    height: calc(44px + var(--builder-safe-area-top));
+  }
+
+  .workspace-mode-bar {
+    top: calc(6px + var(--builder-safe-area-top));
+    padding: 4px;
+    border-radius: 14px;
+    max-width: calc(100vw - 16px);
+  }
+
+  .mode-tab {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .mode-tab--icon-only {
+    padding: 6px 9px;
+  }
+
+  .workspace-edge-actions {
+    top: auto;
+    bottom: calc(14px + var(--builder-safe-area-bottom));
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .builder-menu-stage-left,
+  .builder-menu-stage-right {
+    top: calc(56px + var(--builder-safe-area-top));
+    bottom: calc(16px + var(--builder-safe-area-bottom));
+  }
+
+  .builder-menu-stage-bottom {
+    bottom: calc(12px + var(--builder-safe-area-bottom));
+  }
+
+  .builder-status-bar {
+    top: calc(52px + var(--builder-safe-area-top));
+    padding: 6px 12px;
+    font-size: 10px;
+    gap: 8px;
   }
 }
 

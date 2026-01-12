@@ -17,6 +17,7 @@
   color: var(--pricing-text);
   padding: clamp(2rem, 5vw, 4rem) 1.5rem 3rem;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
