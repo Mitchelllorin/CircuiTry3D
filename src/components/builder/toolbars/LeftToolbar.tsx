@@ -71,6 +71,11 @@ function ComponentIcon({ component }: { component: ComponentAction }) {
         )}
       </span>
 
+      {/* Description (under symbol, above thumbnail) */}
+      {component.description ? (
+        <span className="slider-component-description">{component.description}</span>
+      ) : null}
+
       {/* 3D thumbnail */}
       <span className="slider-component-thumbnail" aria-hidden="true">
         {thumbSrc ? (
