@@ -4,6 +4,15 @@ import { buildElement, buildNodeMesh, disposeThreeObject } from "../../../schema
 
 const THUMBNAIL_SIZE_PX = 160;
 const THUMBNAIL_CACHE = new Map<string, string>();
+const THUMBNAIL_IN_FLIGHT = new Map<string, Promise<string>>();
+
+type SharedThumbnailRenderer = {
+  canvas: HTMLCanvasElement;
+  renderer: THREE.WebGLRenderer;
+};
+
+let sharedRenderer: SharedThumbnailRenderer | null = null;
+let renderQueue: Promise<void> = Promise.resolve();
 
 type ThumbnailKind =
   | "battery"
@@ -93,18 +102,24 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
     return "";
   }
 
-  const canvas = document.createElement("canvas");
-  canvas.width = THUMBNAIL_SIZE_PX;
-  canvas.height = THUMBNAIL_SIZE_PX;
+  // Creating too many WebGL contexts (one per thumbnail) will fail on many devices.
+  // Reuse a single renderer/canvas for all thumbnails.
+  if (!sharedRenderer) {
+    const canvas = document.createElement("canvas");
+    canvas.width = THUMBNAIL_SIZE_PX;
+    canvas.height = THUMBNAIL_SIZE_PX;
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
+    renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
+    renderer.setPixelRatio(1);
+    sharedRenderer = { canvas, renderer };
+  }
 
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    alpha: true,
-    antialias: true,
-    preserveDrawingBuffer: true,
-  });
-  renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
-  renderer.setPixelRatio(1);
+  const { canvas, renderer } = sharedRenderer;
 
   const scene = new THREE.Scene();
   const ambient = new THREE.AmbientLight(0xffffff, 0.85);
@@ -143,7 +158,6 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
     if (root) {
       disposeThreeObject(root);
     }
-    renderer.dispose();
   }
 }
 
@@ -176,14 +190,41 @@ export function useComponent3DThumbnail(builderType?: string): string | undefine
         : (cb: () => void) => window.setTimeout(cb, 0);
 
     const handle = schedule(() => {
-      try {
-        const dataUrl = renderComponentThumbnail(kind);
-        if (cancelled || !dataUrl) return;
-        THUMBNAIL_CACHE.set(kind, dataUrl);
-        setSrc(dataUrl);
-      } catch {
-        // Thumbnail is a non-critical enhancement; ignore failures gracefully.
+      const existing = THUMBNAIL_IN_FLIGHT.get(kind);
+      const job =
+        existing ??
+        (async () => {
+          // Ensure renders happen one-at-a-time to avoid resource spikes.
+          await (renderQueue = renderQueue.then(async () => {
+            // If someone else already cached it while we waited, use that.
+            const cachedNow = THUMBNAIL_CACHE.get(kind);
+            if (cachedNow) return;
+            const dataUrl = renderComponentThumbnail(kind);
+            if (!dataUrl) return;
+            THUMBNAIL_CACHE.set(kind, dataUrl);
+          }));
+          return THUMBNAIL_CACHE.get(kind) ?? "";
+        })();
+
+      if (!existing) {
+        THUMBNAIL_IN_FLIGHT.set(kind, job);
       }
+
+      job
+        .then((dataUrl) => {
+          if (cancelled || !dataUrl) return;
+          setSrc(dataUrl);
+        })
+        .catch(() => {
+          // Thumbnail is a non-critical enhancement; ignore failures gracefully.
+        })
+        .finally(() => {
+          // Best-effort: clear in-flight entry once completed.
+          const current = THUMBNAIL_IN_FLIGHT.get(kind);
+          if (current === job) {
+            THUMBNAIL_IN_FLIGHT.delete(kind);
+          }
+        });
     });
 
     return () => {
