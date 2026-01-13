@@ -238,16 +238,23 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
       root.add(new THREE.Mesh(geometry, material));
     }
 
-    // Fit camera to content.
+    // Fit camera to content (tight framing so the model looks big in the same container).
     scene.add(root);
     const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    const radius = Math.max(sphere.radius, 0.001);
 
-    const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 100);
-    const distance = maxDim * 3.0;
-    camera.position.set(center.x + distance, center.y + distance * 0.85, center.z + distance);
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 200);
+    const halfFovRad = THREE.MathUtils.degToRad(camera.fov * 0.5);
+    // Smaller = more zoom (fills more of the thumbnail).
+    const padding = 1.12;
+    const distance = (radius / Math.sin(halfFovRad)) * padding;
+
+    const viewDir = new THREE.Vector3(1, 0.85, 1).normalize();
+    camera.position.copy(center).addScaledVector(viewDir, distance);
+    camera.near = Math.max(0.01, distance / 100);
+    camera.far = distance * 100;
     camera.lookAt(center);
     camera.updateProjectionMatrix();
 

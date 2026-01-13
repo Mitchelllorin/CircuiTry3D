@@ -353,26 +353,40 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
   {
     type: 'battery',
     label: 'Battery',
-    description: '9V battery',
+    description: 'AA-style battery cell',
     geometry: {
       shapes: [
         {
-          type: 'box',
+          // Main cylindrical body (generic "black + copper top" vibe, no branding)
+          type: 'cylinder',
           position: [0, 0, 0],
-          scale: [0.5, 1.0, 0.3],
-          color: '#2C5F8D',
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.32, 1.35, 0.32],
+          color: '#1A1A1A',
         },
         {
+          // Copper-ish top sleeve
           type: 'cylinder',
-          position: [0, 0.55, 0.1],
-          scale: [0.1, 0.15, 0.1],
-          color: '#FFD700',
+          position: [0.58, 0, 0],
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.325, 0.34, 0.325],
+          color: '#B87333',
         },
         {
+          // Positive terminal nub
           type: 'cylinder',
-          position: [0, 0.55, -0.1],
-          scale: [0.1, 0.15, 0.1],
-          color: '#C0C0C0',
+          position: [0.78, 0, 0],
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.12, 0.08, 0.12],
+          color: '#D4AF37',
+        },
+        {
+          // Subtle mid-body band to add visual contrast
+          type: 'cylinder',
+          position: [0.05, 0, 0],
+          rotation: [0, 0, Math.PI / 2],
+          scale: [0.322, 0.16, 0.322],
+          color: '#2C2C2C',
         },
       ],
       leads: [],
