@@ -240,11 +240,13 @@ body {
 
 .app-shell.is-landing .home-page {
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 0;
 }
 
 .app-shell.is-landing .home-page iframe {
   height: 100vh;
+  height: 100dvh;
 }
 
 @media (max-width: 960px) {
