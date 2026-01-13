@@ -144,6 +144,116 @@ export const DiodeSymbol: FC<SchematicSymbolProps> = ({
   );
 };
 
+export const ZenerDiodeSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -18,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      <line x1="-30" y1="0" x2="-10" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <polygon
+        points="-10,-12 -10,12 10,0"
+        fill={color}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinejoin="round"
+      />
+      {/* Zener cathode "bent" line */}
+      <polyline
+        points="10,-12 14,-12 6,12 10,12"
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line x1="10" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const PhotodiodeSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -18,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      {/* Diode body */}
+      <line x1="-30" y1="0" x2="-10" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <polygon
+        points="-10,-12 -10,12 10,0"
+        fill={color}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinejoin="round"
+      />
+      <line x1="10" y1="-12" x2="10" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="10" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+
+      {/* Incoming light arrows */}
+      <polyline
+        points="-2,-20 -12,-30 -10,-26"
+        stroke={color}
+        strokeWidth={strokeWidth * 0.6}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="6,-16 -4,-26 -2,-22"
+        stroke={color}
+        strokeWidth={strokeWidth * 0.6}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
 export const LEDSymbol: FC<SchematicSymbolProps> = ({
   x,
   y,
@@ -191,6 +301,127 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
         <text
           x={0}
           y={labelOffset - 8}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const ThermistorSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -18,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      <line x1={-RESISTOR_SPECS.totalHalfSpan} y1="0" x2={-RESISTOR_SPECS.bodyHalfWidth} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={RESISTOR_SPECS.bodyHalfWidth} y1="0" x2={RESISTOR_SPECS.totalHalfSpan} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <polyline
+        points={RESISTOR_SPECS.zigzagPoints}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Temperature slash */}
+      <line x1="-12" y1="-18" x2="12" y2="18" stroke={color} strokeWidth={strokeWidth * 0.8} strokeLinecap="round" />
+      {/* Small "T" hint */}
+      <text x="16" y="-10" textAnchor="middle" fill={color} fontSize={10} fontWeight={700}>
+        T
+      </text>
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const CeramicCapacitorSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -18,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-8" y1="-18" x2="-8" y2="18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="8" y1="-18" x2="8" y2="18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="8" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* non-polar hint */}
+      <circle cx="0" cy="0" r="2" fill={color} opacity={0.35} />
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const CrystalSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -18,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+
+  return (
+    <g transform={transform}>
+      <line x1="-30" y1="0" x2="-16" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="16" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Crystal plates + resonator */}
+      <line x1="-16" y1="-14" x2="-16" y2="14" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="16" y1="-14" x2="16" y2="14" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <rect x="-10" y="-14" width="20" height="28" fill="none" stroke={color} strokeWidth={strokeWidth * 0.9} rx="2" />
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
           fontSize={LABEL_SPECS.componentLabelSize}
@@ -1021,7 +1252,10 @@ export const JunctionSymbol: FC<SchematicSymbolProps> = ({
 export type ComponentSymbol =
   | 'resistor'
   | 'capacitor'
+  | 'capacitor-ceramic'
   | 'diode'
+  | 'zener-diode'
+  | 'photodiode'
   | 'led'
   | 'transistor-npn'
   | 'transistor-pnp'
@@ -1039,12 +1273,17 @@ export type ComponentSymbol =
   | 'opamp'
   | 'transformer'
   | 'mosfet'
+  | 'thermistor'
+  | 'crystal'
   | 'junction';
 
 export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolProps>> = {
   'resistor': ResistorSymbol,
   'capacitor': CapacitorSymbol,
+  'capacitor-ceramic': CeramicCapacitorSymbol,
   'diode': DiodeSymbol,
+  'zener-diode': ZenerDiodeSymbol,
+  'photodiode': PhotodiodeSymbol,
   'led': LEDSymbol,
   'transistor-npn': TransistorNPNSymbol,
   'transistor-pnp': TransistorPNPSymbol,
@@ -1062,6 +1301,8 @@ export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolPro
   'opamp': OpAmpSymbol,
   'transformer': TransformerSymbol,
   'mosfet': MOSFETSymbol,
+  'thermistor': ThermistorSymbol,
+  'crystal': CrystalSymbol,
   'junction': JunctionSymbol,
 };
 

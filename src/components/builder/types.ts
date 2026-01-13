@@ -140,7 +140,7 @@ export type ComponentAction = {
   icon: string;
   label: string;
   action: "component" | "junction";
-  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "led" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground";
+  builderType?: "battery" | "ac_source" | "resistor" | "capacitor" | "capacitor-ceramic" | "inductor" | "lamp" | "motor" | "speaker" | "diode" | "zener-diode" | "photodiode" | "led" | "thermistor" | "crystal" | "bjt" | "bjt-npn" | "bjt-pnp" | "darlington" | "mosfet" | "switch" | "fuse" | "potentiometer" | "opamp" | "transformer" | "ground";
   description?: string;
   /** Extended metadata for scalable component integration */
   metadata?: ComponentMetadata;

@@ -2345,13 +2345,23 @@ const buildTwoTerminalElement = (three: any, element: TwoTerminalElement, option
       return buildBatteryElement(three, element, options);
     case "capacitor":
       return buildCapacitorElement(three, element, options);
+    case "capacitor-ceramic":
+      return buildCapacitorElement(three, element, options);
     case "inductor":
       return buildInductorElement(three, element, options);
+    case "thermistor":
+      return buildResistorElement(three, element, options);
+    case "crystal":
+      return buildCapacitorElement(three, element, options);
     case "lamp":
       return buildLampElement(three, element, options);
     case "switch":
       return buildSwitchElement(three, element, options);
     case "diode":
+      return buildDiodeElement(three, element, options);
+    case "zener-diode":
+      return buildDiodeElement(three, element, options);
+    case "photodiode":
       return buildDiodeElement(three, element, options);
     case "led":
       return buildLEDElement(three, element, options);

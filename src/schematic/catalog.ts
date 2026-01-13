@@ -29,6 +29,31 @@ const DIODE_POLARITY: PolarityConfig = {
 };
 
 /**
+ * Polarity configuration for zener diodes.
+ * Convention: start = anode (+), end = cathode (-)
+ * Zeners conduct forward like a diode and regulate in reverse breakdown (advanced).
+ */
+const ZENER_POLARITY: PolarityConfig = {
+  isPolaritySensitive: true,
+  positiveTerminal: "start",
+  allowsReverseCurrent: false,
+  forwardVoltageDrop: 0.7,
+  polarityDescription: "Anode (+) at start, cathode (-) at end. Reverse breakdown regulation is an advanced behavior."
+};
+
+/**
+ * Polarity configuration for photodiodes.
+ * Convention: start = anode (+), end = cathode (-)
+ */
+const PHOTODIODE_POLARITY: PolarityConfig = {
+  isPolaritySensitive: true,
+  positiveTerminal: "start",
+  allowsReverseCurrent: false,
+  forwardVoltageDrop: 0.7,
+  polarityDescription: "Anode (+) at start, cathode (-) at end. Photodiodes are often reverse-biased in sensor circuits."
+};
+
+/**
  * Polarity configuration for LEDs.
  * Convention: start = anode (+), end = cathode (-)
  * Current can only flow from anode to cathode (forward bias).
@@ -98,6 +123,16 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     polarity: CAPACITOR_POLARITY
   },
   {
+    id: "capacitor-ceramic",
+    kind: "capacitor-ceramic",
+    name: "Ceramic Capacitor",
+    description: "Non-polarized capacitor commonly used for coupling and decoupling.",
+    placement: "two-point",
+    icon: "CC",
+    defaultLabelPrefix: "C",
+    tags: ["passive", "reactive", "decoupling"]
+  },
+  {
     id: "inductor",
     kind: "inductor",
     name: "Inductor",
@@ -106,6 +141,26 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     icon: "L",
     defaultLabelPrefix: "L",
     tags: ["passive", "reactive"]
+  },
+  {
+    id: "thermistor",
+    kind: "thermistor",
+    name: "Thermistor",
+    description: "Temperature-dependent resistor used for sensing and compensation.",
+    placement: "two-point",
+    icon: "RT",
+    defaultLabelPrefix: "RT",
+    tags: ["sensor", "temperature", "resistive"]
+  },
+  {
+    id: "crystal",
+    kind: "crystal",
+    name: "Crystal",
+    description: "Quartz crystal resonator used for stable timing references.",
+    placement: "two-point",
+    icon: "Y",
+    defaultLabelPrefix: "Y",
+    tags: ["timing", "oscillator", "passive"]
   },
   {
     id: "lamp",
@@ -148,6 +203,28 @@ export const COMPONENT_CATALOG: CatalogEntry[] = [
     defaultLabelPrefix: "D",
     tags: ["semiconductor", "rectifier"],
     polarity: DIODE_POLARITY
+  },
+  {
+    id: "zener-diode",
+    kind: "zener-diode",
+    name: "Zener Diode",
+    description: "Zener diode used for voltage reference and regulation (advanced behavior).",
+    placement: "two-point",
+    icon: "DZ",
+    defaultLabelPrefix: "DZ",
+    tags: ["semiconductor", "regulation", "reference"],
+    polarity: ZENER_POLARITY
+  },
+  {
+    id: "photodiode",
+    kind: "photodiode",
+    name: "Photodiode",
+    description: "Light-sensitive diode used for sensing and measurement.",
+    placement: "two-point",
+    icon: "PD",
+    defaultLabelPrefix: "PD",
+    tags: ["sensor", "light", "semiconductor"],
+    polarity: PHOTODIODE_POLARITY
   },
   {
     id: "fuse",
