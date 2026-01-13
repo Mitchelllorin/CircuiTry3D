@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { buildElement, buildNodeMesh, disposeThreeObject } from "../../../schematic/threeFactory";
+import { getComponent3D } from "../../circuit/Component3DLibrary";
 
 const THUMBNAIL_SIZE_PX = 160;
 const THUMBNAIL_CACHE = new Map<string, string>();
@@ -38,63 +38,69 @@ type ThumbnailKind =
   | "ground"
   | "junction";
 
-function buildThumbnailElement(kind: ThumbnailKind): any {
-  if (kind === "junction") {
-    return { kind: "junction" };
+function mapBuilderTypeToComponent3DType(kind: ThumbnailKind): string | null {
+  switch (kind) {
+    case "bjt":
+      return "transistor-bjt-npn";
+    case "bjt-npn":
+      return "transistor-bjt-npn";
+    case "bjt-pnp":
+      return "transistor-bjt-pnp";
+    case "darlington":
+      return "darlington-pair";
+    case "mosfet":
+      return "transistor-mosfet";
+    case "ac_source":
+      return "ac_source";
+    case "battery":
+      return "battery";
+    case "resistor":
+      return "resistor";
+    case "capacitor":
+      return "capacitor";
+    case "inductor":
+      return "inductor";
+    case "lamp":
+      return "lamp";
+    case "motor":
+      return "motor";
+    case "speaker":
+      return "speaker";
+    case "diode":
+      return "diode";
+    case "led":
+      return "led";
+    case "switch":
+      return "switch";
+    case "fuse":
+      return "fuse";
+    case "potentiometer":
+      return "potentiometer";
+    case "opamp":
+      return "opamp";
+    case "transformer":
+      return "transformer";
+    case "ground":
+    case "junction":
+    default:
+      return null;
   }
+}
 
-  if (kind === "ground") {
-    return {
-      id: "thumb-ground",
-      kind: "ground",
-      orientation: "horizontal",
-      position: { x: 0, z: 0 },
-    };
-  }
-
-  if (kind === "opamp" || kind === "transformer") {
-    // Minimal multi-terminal elements: terminals are enough for the 3D builders.
-    return {
-      id: `thumb-${kind}`,
-      kind,
-      terminals:
-        kind === "opamp"
-          ? [
-              { x: -1.0, z: -0.5 }, // in-
-              { x: -1.0, z: 0.5 }, // in+
-              { x: 1.2, z: 0.0 }, // out
-            ]
-          : [
-              { x: -1.0, z: -0.6 },
-              { x: -1.0, z: 0.6 },
-              { x: 1.0, z: -0.6 },
-              { x: 1.0, z: 0.6 },
-            ],
-      label: "",
-    };
-  }
-
-  if (kind === "bjt" || kind === "bjt-npn" || kind === "bjt-pnp" || kind === "darlington" || kind === "mosfet" || kind === "potentiometer") {
-    return {
-      id: `thumb-${kind}`,
-      kind,
-      collector: { x: 1.0, z: 0.6 },
-      base: { x: -1.0, z: 0.0 },
-      emitter: { x: 1.0, z: -0.6 },
-      transistorType: kind === "bjt-pnp" ? "pnp" : "npn",
-      label: "",
-    };
-  }
-
-  // Default: two terminal component.
-  return {
-    id: `thumb-${kind}`,
-    kind,
-    orientation: "horizontal",
-    start: { x: -1.2, z: 0 },
-    end: { x: 1.2, z: 0 },
-    label: "",
-  };
+function disposeThreeObject(root: THREE.Object3D) {
+  root.traverse((object: any) => {
+    if (object.geometry && typeof object.geometry.dispose === "function") {
+      object.geometry.dispose();
+    }
+    const material = object.material;
+    if (material) {
+      if (Array.isArray(material)) {
+        material.forEach((mat) => mat?.dispose?.());
+      } else {
+        material.dispose?.();
+      }
+    }
+  });
 }
 
 function renderComponentThumbnail(kind: ThumbnailKind): string {
@@ -122,21 +128,108 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
   const { canvas, renderer } = sharedRenderer;
 
   const scene = new THREE.Scene();
-  const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.72);
   scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
-  key.position.set(3, 4, 3);
+  const key = new THREE.DirectionalLight(0xffffff, 0.95);
+  key.position.set(4, 5, 4);
   scene.add(key);
+  const fill = new THREE.DirectionalLight(0x88ccff, 0.35);
+  fill.position.set(-4, 2.5, -3);
+  scene.add(fill);
 
   let root: THREE.Object3D | null = null;
   try {
-    if (kind === "junction") {
-      root = new THREE.Group();
-      root.add(buildNodeMesh(THREE, { x: 0, z: 0 }, { preview: true }));
+    const mappedType = mapBuilderTypeToComponent3DType(kind);
+    const def = mappedType ? getComponent3D(mappedType) : undefined;
+
+    root = new THREE.Group();
+
+    if (def) {
+      const segments = 24;
+
+      def.geometry.shapes.forEach((shapeDef) => {
+        let geometry: THREE.BufferGeometry | null = null;
+        switch (shapeDef.type) {
+          case "box":
+            geometry = new THREE.BoxGeometry(
+              shapeDef.scale?.[0] ?? 1,
+              shapeDef.scale?.[1] ?? 1,
+              shapeDef.scale?.[2] ?? 1,
+            );
+            break;
+          case "cylinder":
+            geometry = new THREE.CylinderGeometry(
+              shapeDef.scale?.[0] ?? 0.5,
+              shapeDef.scale?.[0] ?? 0.5,
+              shapeDef.scale?.[1] ?? 1,
+              segments,
+            );
+            break;
+          case "sphere":
+            geometry = new THREE.SphereGeometry(shapeDef.scale?.[0] ?? 0.5, segments, segments);
+            break;
+          case "cone":
+            geometry = new THREE.ConeGeometry(
+              shapeDef.scale?.[0] ?? 0.5,
+              shapeDef.scale?.[1] ?? 1,
+              segments,
+            );
+            break;
+          case "torus":
+            geometry = new THREE.TorusGeometry(
+              shapeDef.scale?.[0] ?? 0.5,
+              shapeDef.scale?.[1] ?? 0.2,
+              Math.max(8, Math.floor(segments / 2)),
+              segments * 3,
+            );
+            break;
+          default:
+            geometry = null;
+        }
+
+        if (!geometry) return;
+
+        const material = new THREE.MeshStandardMaterial({
+          color: shapeDef.color ?? "#888888",
+          metalness: 0.3,
+          roughness: 0.45,
+          transparent: shapeDef.opacity !== undefined,
+          opacity: shapeDef.opacity ?? 1.0,
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(shapeDef.position[0], shapeDef.position[1], shapeDef.position[2]);
+        if (shapeDef.rotation) {
+          mesh.rotation.set(shapeDef.rotation[0], shapeDef.rotation[1], shapeDef.rotation[2]);
+        }
+        root.add(mesh);
+      });
+
+      def.geometry.leads.forEach((leadDef) => {
+        const geometry = new THREE.CylinderGeometry(
+          leadDef.radius,
+          leadDef.radius,
+          leadDef.length,
+          Math.max(8, Math.floor(segments / 2)),
+        );
+        const material = new THREE.MeshStandardMaterial({
+          color: leadDef.color ?? "#C0C0C0",
+          metalness: 0.85,
+          roughness: 0.25,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(leadDef.position[0], leadDef.position[1], leadDef.position[2]);
+        root.add(mesh);
+      });
     } else {
-      const element = buildThumbnailElement(kind);
-      const built = buildElement(THREE, element, { preview: true });
-      root = built.group as THREE.Object3D;
+      // Fallback: generic cube if we don't have a 3D definition (e.g., ground/junction).
+      const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+      const material = new THREE.MeshStandardMaterial({
+        color: "#3b82f6",
+        metalness: 0.2,
+        roughness: 0.5,
+      });
+      root.add(new THREE.Mesh(geometry, material));
     }
 
     // Fit camera to content.
@@ -146,9 +239,9 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z, 0.001);
 
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
-    const distance = maxDim * 3.2;
-    camera.position.set(center.x + distance, center.y + distance * 0.9, center.z + distance);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 100);
+    const distance = maxDim * 3.0;
+    camera.position.set(center.x + distance, center.y + distance * 0.85, center.z + distance);
     camera.lookAt(center);
     camera.updateProjectionMatrix();
 
