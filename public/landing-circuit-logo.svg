@@ -45,34 +45,34 @@
     <path
       id="photonPath"
       d="M 40 96
-         L 40 140
-         L 90 140
-         L 100 140
-         L 105 128
-         L 115 152
-         L 125 128
-         L 135 152
-         L 140 140
-         L 150 140
-         L 200 140
-         L 200 138
-         L 188 133
-         L 212 123
-         L 188 113
-         L 212 103
-         L 200 98
-         L 200 90
-         L 200 40
-         L 150 40
-         L 140 40
-         L 135 52
-         L 125 28
-         L 115 52
-         L 105 28
-         L 100 40
-         L 90 40
-         L 40 40
          L 40 84
+         L 40 40
+         L 90 40
+         L 100 40
+         L 105 28
+         L 115 52
+         L 125 28
+         L 135 52
+         L 140 40
+         L 150 40
+         L 200 40
+         L 200 90
+         L 200 98
+         L 212 103
+         L 188 113
+         L 212 123
+         L 188 133
+         L 200 138
+         L 200 140
+         L 150 140
+         L 140 140
+         L 135 152
+         L 125 128
+         L 115 152
+         L 105 128
+         L 100 140
+         L 90 140
+         L 40 140
          L 40 96"
     />
   </defs>
@@ -100,12 +100,11 @@
     <line x1="200" y1="40" x2="200" y2="90" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
     <!-- Second Resistor (right side, vertical) - 3 peaks -->
-    <g transform="translate(200, 130) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
-      <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+    <g transform="translate(200, 115) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+      <polyline points="-25,0 -17,0 -13,-10 -4,10 4,-10 13,10 17,0 25,0" />
     </g>
 
     <!-- Wire to third resistor -->
-    <line x1="200" y1="140" x2="200" y2="140" stroke="url(#wireGradient)" strokeWidth="3.5" />
     <line x1="200" y1="140" x2="150" y2="140" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
     <!-- Third Resistor (bottom, horizontal) - 3 peaks -->
