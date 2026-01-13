@@ -85,8 +85,6 @@
     <g transform="translate(55, 80)">
       <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
       <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
-      <text x="0" y="-18" fontSize="9" fill="#2dd4bf" fontWeight="bold" textAnchor="middle">+</text>
-      <text x="-3" y="20" fontSize="9" fill="#888" fontWeight="bold" textAnchor="middle">-</text>
     </g>
 
     <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
@@ -121,18 +119,6 @@
     <circle cx="205" cy="50" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
     <circle cx="205" cy="150" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
     <circle cx="55" cy="150" r="3.5" fill="#2dd4bf" stroke="#0d9488" strokeWidth="1.5" />
-
-    <text x="35" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">1</text>
-    <text x="220" y="35" fontSize="8" fill="#94a3b8" fontWeight="bold">2</text>
-    <text x="220" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">3</text>
-    <text x="35" y="165" fontSize="8" fill="#94a3b8" fontWeight="bold">4</text>
-  </g>
-
-  <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill="#2dd4bf" textAnchor="middle" fontWeight="600">
-    <text x="37" y="98">9V</text>
-    <text x="130" y="35">R&#8321; = 3 k&#937;</text>
-    <text x="225" y="105">R&#8322; = 10 k&#937;</text>
-    <text x="125" y="172">R&#8323; = 5 k&#937;</text>
   </g>
 
   <!-- Animated photons (two bright particles with comet tails) -->
