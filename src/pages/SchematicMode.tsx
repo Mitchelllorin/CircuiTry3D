@@ -983,6 +983,7 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
           previewElement={previewElement}
           selectedElementId={selectedElementId}
           highlightedElementIds={highlightedElements}
+          validationIssues={validationResult.issues}
           draftAnchor={draft ? draft.start : null}
           hoverPoint={hoverPoint}
           onBoardPointClick={handleBoardClick}
@@ -1130,6 +1131,7 @@ type BuilderViewportProps = {
   previewElement: SchematicElement | null;
   selectedElementId: string | null;
   highlightedElementIds?: Set<string>;
+  validationIssues: ValidationIssue[];
   draftAnchor: Vec2 | null;
   hoverPoint: Vec2 | null;
   onBoardPointClick: (point: Vec2, event: PointerEvent) => void;
@@ -1143,6 +1145,7 @@ function BuilderViewport({
   previewElement,
   selectedElementId,
   highlightedElementIds = new Set(),
+  validationIssues,
   draftAnchor,
   hoverPoint,
   onBoardPointClick,
@@ -1176,6 +1179,13 @@ function BuilderViewport({
   const raycasterRef = useRef<any>(null);
   const pointerRef = useRef<any>(null);
   const animationFrameRef = useRef<number>(0);
+
+  // Validation issue effects (short circuits / polarity) - use refs so the render loop sees latest values.
+  const validationIssuesRef = useRef<ValidationIssue[]>([]);
+  const elementMaterialsRef = useRef<Map<string, Set<any>>>(new Map());
+  const allMaterialsRef = useRef<Set<any>>(new Set());
+  const faultFxGroupRef = useRef<any>(null);
+  const sparkAccumulatorRef = useRef<number>(0);
 
   // Camera control state refs
   const cameraStateRef = useRef<any>(null);
@@ -1286,6 +1296,10 @@ function BuilderViewport({
     updateCamera(true);
   }, [CAMERA_DEFAULT_POSITION, CAMERA_DEFAULT_TARGET, normalizeAzimuth, updateCamera]);
 
+  useEffect(() => {
+    validationIssuesRef.current = validationIssues;
+  }, [validationIssues]);
+
   const rebuildSceneContent = useCallback(() => {
     const three = threeRef.current;
     const scene = sceneRef.current;
@@ -1354,6 +1368,32 @@ function BuilderViewport({
         }
       });
     });
+
+    // Build a mapping of elementId -> materials so we can animate faults without rebuilding geometry.
+    const elementMaterials = new Map<string, Set<any>>();
+    const allMaterials = new Set<any>();
+    elementGroup.traverse((child: any) => {
+      const elementId = child?.userData?.elementId;
+      const material = child?.material;
+      if (!elementId || !material) return;
+      const mats = Array.isArray(material) ? material : [material];
+      for (const mat of mats) {
+        if (!mat) continue;
+        allMaterials.add(mat);
+        if (!(mat as any).__c3dBase) {
+          const baseEmissiveHex =
+            mat.emissive && typeof mat.emissive.getHex === "function" ? mat.emissive.getHex() : 0x000000;
+          (mat as any).__c3dBase = {
+            emissiveHex: baseEmissiveHex,
+            emissiveIntensity: typeof mat.emissiveIntensity === "number" ? mat.emissiveIntensity : 0,
+          };
+        }
+        if (!elementMaterials.has(elementId)) elementMaterials.set(elementId, new Set());
+        elementMaterials.get(elementId)!.add(mat);
+      }
+    });
+    elementMaterialsRef.current = elementMaterials;
+    allMaterialsRef.current = allMaterials;
 
     scene.add(elementGroup);
     componentGroupRef.current = elementGroup;
@@ -1848,6 +1888,136 @@ function BuilderViewport({
 
         const animate = () => {
           animationFrameRef.current = window.requestAnimationFrame(animate);
+          // Lightweight fault animations (short circuit sparks / polarity pulsing).
+          const sceneNow = sceneRef.current;
+          const threeNow = threeRef.current;
+          if (sceneNow && threeNow) {
+            // Use a single clock attached to the renderer instance to keep time stable across renders.
+            const clock = (renderer as any).__c3dClock ?? new threeNow.Clock();
+            (renderer as any).__c3dClock = clock;
+            const dt = clock.getDelta();
+            const t = clock.getElapsedTime();
+
+            const issues = validationIssuesRef.current ?? [];
+            const primaryError = issues.find((i) => i.severity === "error" && i.type === "short_circuit")
+              ?? issues.find((i) => i.severity === "error");
+            const primaryWarning = issues.find((i) =>
+              i.severity === "warning" &&
+              (i.type === "reverse_polarity" || i.type === "diode_reverse_bias" || i.type === "led_reverse_bias" || i.type === "capacitor_reverse_polarity")
+            ) ?? issues.find((i) => i.severity === "warning");
+
+            const activeIssue = primaryError ?? primaryWarning ?? null;
+            const affectedIds = new Set(activeIssue?.affectedElements ?? []);
+            const isShortCircuit = activeIssue?.type === "short_circuit";
+            const isPolarityFault =
+              activeIssue?.type === "reverse_polarity" ||
+              activeIssue?.type === "diode_reverse_bias" ||
+              activeIssue?.type === "led_reverse_bias" ||
+              activeIssue?.type === "capacitor_reverse_polarity";
+
+            // Reset emissive on all known materials to their base state.
+            for (const mat of allMaterialsRef.current) {
+              const base = (mat as any).__c3dBase;
+              if (!base || !mat.emissive) continue;
+              mat.emissive.setHex(base.emissiveHex);
+              mat.emissiveIntensity = base.emissiveIntensity;
+            }
+
+            // Apply pulsing emissive to affected elements (red for shorts, amber for polarity).
+            if (activeIssue && affectedIds.size > 0) {
+              const pulse = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * (isShortCircuit ? 9 : 6)));
+              const emissiveHex = isShortCircuit ? 0xef4444 : (isPolarityFault ? 0xf59e0b : 0x60a5fa);
+              const boost = isShortCircuit ? 1.6 : (isPolarityFault ? 0.9 : 0.6);
+
+              for (const elementId of affectedIds) {
+                const mats = elementMaterialsRef.current.get(elementId);
+                if (!mats) continue;
+                for (const mat of mats) {
+                  if (!mat?.emissive) continue;
+                  mat.emissive.setHex(emissiveHex);
+                  mat.emissiveIntensity = ((mat as any).__c3dBase?.emissiveIntensity ?? 0) + pulse * boost;
+                }
+              }
+            }
+
+            // Short circuit sparks: spawn simple particle bursts at affected positions.
+            if (!faultFxGroupRef.current) {
+              const group = new threeNow.Group();
+              group.name = "fault-fx";
+              sceneNow.add(group);
+              faultFxGroupRef.current = group;
+            }
+
+            const fxGroup = faultFxGroupRef.current;
+
+            // Update existing sparks
+            if (fxGroup && fxGroup.children?.length) {
+              const GRAVITY = 2.8;
+              const toRemove: any[] = [];
+              for (const child of fxGroup.children) {
+                const ud = child.userData ?? {};
+                if (!ud.__spark) continue;
+                ud.life = (ud.life ?? 0) - dt;
+                if (ud.life <= 0) {
+                  toRemove.push(child);
+                  continue;
+                }
+                const v = ud.vel;
+                if (v) {
+                  v.y -= GRAVITY * dt;
+                  child.position.x += v.x * dt;
+                  child.position.y += v.y * dt;
+                  child.position.z += v.z * dt;
+                }
+                if (child.material) {
+                  child.material.opacity = Math.max(0, Math.min(1, (ud.life ?? 0) / (ud.maxLife ?? 0.35)));
+                }
+              }
+              for (const child of toRemove) {
+                fxGroup.remove(child);
+                if (child.geometry?.dispose) child.geometry.dispose();
+                if (child.material?.dispose) child.material.dispose();
+              }
+            }
+
+            // Spawn new sparks only for short circuits.
+            if (isShortCircuit) {
+              sparkAccumulatorRef.current += dt;
+              const spawnInterval = 0.22;
+              if (sparkAccumulatorRef.current >= spawnInterval) {
+                sparkAccumulatorRef.current = 0;
+                const positions = activeIssue?.affectedPositions ?? [];
+                for (const pos of positions) {
+                  const base = new threeNow.Vector3(pos.x, 0.12, pos.z);
+                  const count = 6;
+                  for (let i = 0; i < count; i += 1) {
+                    const geom = new threeNow.SphereGeometry(0.04, 10, 10);
+                    const mat = new threeNow.MeshBasicMaterial({
+                      color: 0xfbbf24,
+                      transparent: true,
+                      opacity: 0.95,
+                    });
+                    const spark = new threeNow.Mesh(geom, mat);
+                    spark.position.copy(base);
+                    spark.userData = {
+                      ...(spark.userData || {}),
+                      __spark: true,
+                      life: 0.35 + Math.random() * 0.2,
+                      maxLife: 0.55,
+                      vel: new threeNow.Vector3(
+                        (Math.random() - 0.5) * 1.6,
+                        1.4 + Math.random() * 1.6,
+                        (Math.random() - 0.5) * 1.6
+                      ),
+                    };
+                    fxGroup.add(spark);
+                  }
+                }
+              }
+            } else {
+              sparkAccumulatorRef.current = 0;
+            }
+          }
           updateCamera(false, three, camera);
           renderer.render(scene, camera);
         };
@@ -1868,6 +2038,11 @@ function BuilderViewport({
           renderer.domElement.removeEventListener("contextmenu", handleContextMenu);
           if (container && renderer.domElement.parentNode === container) {
             container.removeChild(renderer.domElement);
+          }
+          if (faultFxGroupRef.current) {
+            scene.remove(faultFxGroupRef.current);
+            disposeThreeObject(faultFxGroupRef.current);
+            faultFxGroupRef.current = null;
           }
           disposeThreeObject(scene);
           renderer.dispose();
