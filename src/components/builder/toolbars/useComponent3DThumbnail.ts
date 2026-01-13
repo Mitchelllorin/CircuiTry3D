@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { getComponent3D } from "../../circuit/Component3DLibrary";
 
-const THUMBNAIL_SIZE_PX = 160;
+// Render at a higher resolution than we display for sharper thumbnails.
+const THUMBNAIL_SIZE_PX = 256;
 const THUMBNAIL_CACHE = new Map<string, string>();
 const THUMBNAIL_IN_FLIGHT = new Map<string, Promise<string>>();
 
@@ -121,7 +122,12 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
       preserveDrawingBuffer: true,
     });
     renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
-    renderer.setPixelRatio(1);
+    // Improve clarity on high-DPI screens, but avoid extreme memory usage.
+    const dpr =
+      typeof window !== "undefined" && typeof window.devicePixelRatio === "number"
+        ? Math.min(2, Math.max(1, window.devicePixelRatio))
+        : 1;
+    renderer.setPixelRatio(dpr);
     sharedRenderer = { canvas, renderer };
   }
 
