@@ -14,6 +14,7 @@ import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
+import { getSchematicSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
@@ -71,6 +72,7 @@ import {
   HELP_ENTRIES,
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
+import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -676,6 +678,60 @@ const IconPlay = ({ className }: IconProps) => (
     <path d="m8 6.25 6.25 3.75L8 13.75V6.25Z" />
   </svg>
 );
+
+function ComponentLibraryCard({ component }: { component: ComponentAction }) {
+  const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id);
+
+  const symbolKey = (() => {
+    const type = component.builderType ?? component.id;
+    switch (type) {
+      case "bjt-npn":
+        return "transistor-npn";
+      case "bjt-pnp":
+        return "transistor-pnp";
+      case "bjt":
+        return "transistor-npn";
+      default:
+        return type;
+    }
+  })();
+
+  const Symbol = getSchematicSymbol(symbolKey as any);
+
+  return (
+    <span className="slider-component-card">
+      <span className="slider-component-name">{component.label}</span>
+
+      <span className="slider-component-symbol" aria-hidden="true">
+        {Symbol ? (
+          <svg
+            className="slider-component-symbol-svg"
+            viewBox="-40 -40 80 80"
+            width="100%"
+            height="100%"
+            focusable="false"
+          >
+            <Symbol x={0} y={0} scale={1} showLabel={false} />
+          </svg>
+        ) : (
+          <span className="slider-component-symbol-text">{component.icon}</span>
+        )}
+      </span>
+
+      {component.description ? (
+        <span className="slider-component-description">{component.description}</span>
+      ) : null}
+
+      <span className="slider-component-thumbnail" aria-hidden="true">
+        {thumbSrc ? (
+          <img src={thumbSrc} alt="" loading="lazy" />
+        ) : (
+          <span className="slider-component-thumbnail-placeholder" />
+        )}
+      </span>
+    </span>
+  );
+}
 
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
@@ -1713,15 +1769,7 @@ export default function Builder() {
                           : undefined
                     }
                   >
-                    <span className="slider-icon-label">
-                      <span className="slider-icon" aria-hidden="true">
-                        {component.icon}
-                      </span>
-                      <span className="slider-label">{component.label}</span>
-                    </span>
-                    {component.description && (
-                      <span className="slider-description">{component.description}</span>
-                    )}
+                    <ComponentLibraryCard component={component} />
                   </button>
                 ))}
               </div>
