@@ -15,14 +15,14 @@ export type CurrentIntensity = "off" | "low" | "medium" | "high" | "critical";
 
 /**
  * Color scheme for current intensity visualization
- * Colors progress from cool (low) to warm (high) for intuitive understanding
+ * CircuiTry3D standard: colors progress from red (slow/low) to blue-white (fast/high)
  */
 export const INTENSITY_COLORS = {
   off: { core: 0x6b7280, glow: 0x9ca3af, emissive: 0x4b5563 },        // Gray - no current
-  low: { core: 0x22c55e, glow: 0x86efac, emissive: 0x16a34a },        // Green - low current
-  medium: { core: 0xeab308, glow: 0xfde047, emissive: 0xca8a04 },     // Yellow - medium current
-  high: { core: 0xf97316, glow: 0xfb923c, emissive: 0xea580c },       // Orange - high current
-  critical: { core: 0xef4444, glow: 0xfca5a5, emissive: 0xdc2626 }    // Red - critical/max current
+  low: { core: 0xef4444, glow: 0xfca5a5, emissive: 0xdc2626 },        // Red - low/slow current
+  medium: { core: 0xf97316, glow: 0xfb923c, emissive: 0xea580c },     // Orange - medium current
+  high: { core: 0xeab308, glow: 0xfde047, emissive: 0xca8a04 },       // Yellow - high current
+  critical: { core: 0xffffff, glow: 0xbfdbfe, emissive: 0x3b82f6 }    // Blue-white - critical/max current
 } as const;
 
 /**
