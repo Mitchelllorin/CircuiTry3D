@@ -4705,8 +4705,13 @@ body.android-optimized.menu-visible .status {
             led: 0,
             switch: 0,
             capacitor: 0,
+            'capacitor-ceramic': 0,
             inductor: 0,
             diode: 0,
+            'zener-diode': 0,
+            photodiode: 0,
+            thermistor: 0,
+            crystal: 0,
             bjt: 0,
             'bjt-npn': 0,
             'bjt-pnp': 0,
@@ -4896,8 +4901,13 @@ body.android-optimized.menu-visible .status {
                     case 'led': return { resistance: 10 };
                     case 'switch': return { resistance: 0.1, isOn: true };
                     case 'capacitor': return { capacitance: 100 }; // μF
+                    case 'capacitor-ceramic': return { capacitance: 0.1 }; // μF (typical decoupling)
                     case 'inductor': return { inductance: 10 }; // mH
                     case 'diode': return { forwardVoltage: 0.7 };
+                    case 'zener-diode': return { forwardVoltage: 0.7, zenerVoltage: 5.1 };
+                    case 'photodiode': return { forwardVoltage: 0.7 };
+                    case 'thermistor': return { resistance: 10000 }; // Ω @ 25C (typical NTC)
+                    case 'crystal': return { frequency: 16000000 }; // Hz
                     case 'bjt': return { gain: 100 };
                     case 'bjt-npn': return { gain: 100, polarity: 'NPN' };
                     case 'bjt-pnp': return { gain: 100, polarity: 'PNP' };
@@ -4947,8 +4957,13 @@ body.android-optimized.menu-visible .status {
                     case 'led': return `LED${this.componentNumber}`;
                     case 'switch': return `SW${this.componentNumber}`;
                     case 'capacitor': return `C${this.componentNumber}`;
+                    case 'capacitor-ceramic': return `C${this.componentNumber}`;
                     case 'inductor': return `L${this.componentNumber}`;
                     case 'diode': return `D${this.componentNumber}`;
+                    case 'zener-diode': return `DZ${this.componentNumber}`;
+                    case 'photodiode': return `PD${this.componentNumber}`;
+                    case 'thermistor': return `RT${this.componentNumber}`;
+                    case 'crystal': return `Y${this.componentNumber}`;
                     case 'bjt': return `Q${this.componentNumber}`;
                     case 'bjt-npn': return `NPN${this.componentNumber}`;
                     case 'bjt-pnp': return `PNP${this.componentNumber}`;
@@ -4995,6 +5010,11 @@ body.android-optimized.menu-visible .status {
                             text: `${this.properties.capacitance}μF`,
                             color: '#4488ff' // Blue
                         };
+                    case 'capacitor-ceramic':
+                        return {
+                            text: `${this.properties.capacitance}μF`,
+                            color: '#66aaff' // Light blue
+                        };
                     case 'inductor':
                         return {
                             text: `${this.properties.inductance}mH`,
@@ -5004,6 +5024,26 @@ body.android-optimized.menu-visible .status {
                         return {
                             text: `${this.properties.forwardVoltage}V`,
                             color: '#888888' // Gray
+                        };
+                    case 'zener-diode':
+                        return {
+                            text: `Vz=${this.properties.zenerVoltage}V`,
+                            color: '#4A90D9' // Blue-gray
+                        };
+                    case 'photodiode':
+                        return {
+                            text: `Light`,
+                            color: '#aaaaaa' // Gray
+                        };
+                    case 'thermistor':
+                        return {
+                            text: `${this.properties.resistance}Ω`,
+                            color: '#ff8844' // Orange
+                        };
+                    case 'crystal':
+                        return {
+                            text: `${this.properties.frequency}Hz`,
+                            color: '#66ccff' // Cyan
                         };
                     case 'bjt':
                         return {
@@ -5129,11 +5169,26 @@ body.android-optimized.menu-visible .status {
                     case 'capacitor':
                         this.createCapacitorMesh(group);
                         break;
+                    case 'capacitor-ceramic':
+                        this.createCapacitorMesh(group);
+                        break;
                     case 'inductor':
                         this.createInductorMesh(group);
                         break;
                     case 'diode':
                         this.createDiodeMesh(group);
+                        break;
+                    case 'zener-diode':
+                        this.createDiodeMesh(group);
+                        break;
+                    case 'photodiode':
+                        this.createDiodeMesh(group);
+                        break;
+                    case 'thermistor':
+                        this.createResistorMesh(group);
+                        break;
+                    case 'crystal':
+                        this.createFuseMesh(group);
                         break;
                     case 'bjt':
                         this.createBJTMesh(group);
@@ -10986,6 +11041,19 @@ Made with ? for visual learners everywhere!
                 case 'resistor':
                 case 'led':
                 case 'switch':
+                case 'capacitor':
+                case 'capacitor-ceramic':
+                case 'inductor':
+                case 'diode':
+                case 'zener-diode':
+                case 'photodiode':
+                case 'thermistor':
+                case 'crystal':
+                case 'fuse':
+                case 'lamp':
+                case 'ac_source':
+                case 'motor':
+                case 'speaker':
                     return ['left', 'right'];
                 default:
                     return [];
@@ -10994,7 +11062,7 @@ Made with ? for visual learners everywhere!
 
         function getDirectionalComponentConfig(component) {
             if (!component) return null;
-            if (component.type === 'led') {
+            if (component.type === 'led' || component.type === 'diode' || component.type === 'zener-diode' || component.type === 'photodiode') {
                 return { directional: true, forwardFrom: 'left', forwardTo: 'right' };
             }
             return null;
@@ -11020,8 +11088,16 @@ Made with ? for visual learners everywhere!
                 return Number(component.properties?.resistance) || Number(component.properties?.onResistance) || 0.05;
             }
 
+            if (component.type === 'thermistor') {
+                return Number(component.properties?.resistance) || 0;
+            }
+
             if (component.type === 'battery') {
                 return Number(component.properties?.internalResistance) || FLOW_CONSTANTS.wireResistance;
+            }
+
+            if (component.type === 'diode' || component.type === 'zener-diode' || component.type === 'photodiode') {
+                return Number(component.properties?.forwardResistance) || 0.2;
             }
 
             return FLOW_CONSTANTS.wireResistance;
@@ -13411,8 +13487,13 @@ Made with ? for visual learners everywhere!
                 led: 0,
                 switch: 0,
                 capacitor: 0,
+                'capacitor-ceramic': 0,
                 inductor: 0,
                 diode: 0,
+                'zener-diode': 0,
+                photodiode: 0,
+                thermistor: 0,
+                crystal: 0,
                 bjt: 0,
                 'bjt-npn': 0,
                 'bjt-pnp': 0,
