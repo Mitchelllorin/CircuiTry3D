@@ -3131,6 +3131,7 @@
             <button class="analysis-tab" onclick="switchAnalysisTab('worksheet')" id="tab-worksheet">Sheet</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('problem')" id="tab-problem">Solve</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('practice')" id="tab-practice">Practice</button>
+            <button class="analysis-tab" onclick="switchAnalysisTab('meter')" id="tab-meter">Meter</button>
         </div>
 
         <!-- W.I.R.E. Method Panel -->
@@ -3419,6 +3420,62 @@
                 </div>
             </div>
         </div>
+
+        <!-- Measurement Tools Panel -->
+        <div class="analysis-content" id="content-meter" style="display: none;">
+            <div class="wire-analysis">
+                <div class="wire-title">⚡ MEASUREMENT TOOLS</div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin: 10px 0 14px;">
+                    <button class="practice-btn" type="button" onclick="setMeterMode('voltage')" id="meter-mode-voltage">Volts (V)</button>
+                    <button class="practice-btn secondary" type="button" onclick="setMeterMode('current')" id="meter-mode-current">Amps (A)</button>
+                    <button class="practice-btn secondary" type="button" onclick="setMeterMode('resistance')" id="meter-mode-resistance">Ohms (Ω)</button>
+                    <button class="practice-btn secondary" type="button" onclick="setMeterMode('scope')" id="meter-mode-scope">Scope</button>
+                </div>
+
+                <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom: 10px;">
+                    <button class="practice-btn secondary" type="button" onclick="toggleMeterArmed()" id="meter-toggle-armed">
+                        Enable probes
+                    </button>
+                    <button class="practice-btn secondary" type="button" onclick="clearMeterSelection()">
+                        Clear
+                    </button>
+                </div>
+
+                <div style="color:#ccc; font-size: 12px; line-height:1.5; text-align:center; margin-bottom: 12px;">
+                    <div id="meter-instructions">Enable probes, then click two terminals to measure voltage.</div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px;">
+                    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px;">
+                        <div style="color:#ff6666; font-weight:700; margin-bottom:6px;">Red probe</div>
+                        <div id="meter-probe-a" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 12px;">—</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px;">
+                        <div style="color:#aab0b8; font-weight:700; margin-bottom:6px;">Black probe</div>
+                        <div id="meter-probe-b" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 12px;">—</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(0,255,136,0.22); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                    <div style="display:flex; justify-content:space-between; gap: 12px; flex-wrap:wrap; align-items:baseline;">
+                        <div style="color:#00ff88; font-weight:800; letter-spacing:0.03em;">Reading</div>
+                        <div id="meter-reading" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 16px; font-weight:700;">—</div>
+                    </div>
+                    <div id="meter-subreading" style="margin-top:6px; color: rgba(220,234,255,0.72); font-size: 12px;"></div>
+                </div>
+
+                <div id="scope-panel" style="display:none; background: rgba(255,255,255,0.05); border: 1px solid rgba(136, 204, 255, 0.24); border-radius: 12px; padding: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap: 10px; margin-bottom: 8px; flex-wrap:wrap;">
+                        <div style="color:#88ccff; font-weight:800; letter-spacing:0.03em;">Oscilloscope (DC)</div>
+                        <div id="scope-readout" style="color:#e8f6ff; font-family: Consolas, Monaco, monospace; font-size: 12px;">—</div>
+                    </div>
+                    <canvas id="scope-canvas" width="640" height="160" style="width: 100%; height: 160px; background: rgba(0,0,0,0.55); border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);"></canvas>
+                    <div style="margin-top:8px; color: rgba(220,234,255,0.72); font-size: 12px; text-align:center;">
+                        Pick a terminal for the scope probe (black is the reference).
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="status" id="status" style="display: none;">W.I.R.E. Circuit Builder Ready!</div>
@@ -3700,6 +3757,17 @@
         let isWireMode = false, isRotateMode = false, wireStart = null;
         let isMeasureMode = false;
         let measureStartPoint = null;
+        // Measurement tools (multimeter + scope)
+        let meterMode = 'voltage'; // 'voltage' | 'current' | 'resistance' | 'scope'
+        let meterArmed = false;
+        let meterProbeA = null; // pointData for red probe
+        let meterProbeB = null; // pointData for black probe
+        let meterCurrentTarget = null; // component for current measurement
+        let lastDCSolution = null;
+
+        let scopeTimer = null;
+        let scopeBuffer = [];
+        const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
         let currentFlowParticles = [];
         let menuVisible = isEmbedded ? false : true;
@@ -3999,6 +4067,9 @@ body.android-optimized.menu-visible .status {
                                 break;
                             case 'cycle-layout':
                                 if (typeof cycleLayoutMode === 'function') cycleLayoutMode();
+                                break;
+                            case 'open-measurement-tools':
+                                if (typeof openMeasurementTools === 'function') openMeasurementTools();
                                 break;
                             case 'cycle-wire-routing':
                                 if (typeof cycleRoutingMode === 'function') cycleRoutingMode();
@@ -8826,6 +8897,10 @@ body.android-optimized.menu-visible .status {
         }
 
         function handleConnectionPointClick(pointData) {
+            if (!isWireMode && meterArmed) {
+                handleMeterProbeClick(pointData);
+                return;
+            }
             if (!isWireMode) {
                 const terminalInfo = getTerminalInfo(pointData);
                 const objectType = pointData.component ? pointData.component.type : 'junction';
@@ -9007,6 +9082,14 @@ body.android-optimized.menu-visible .status {
 
         function handleComponentClick(component) {
             hideComponentContextMenu();
+
+            if (meterArmed && meterMode === 'current' && !isWireMode && !isRotateMode && !isMeasureMode) {
+                meterCurrentTarget = component;
+                updateMeterUI();
+                const label = component?.id ? `${component.type}:${component.id}` : (component?.type || 'component');
+                setStatus(`⚡ Current probe set to ${label}`);
+                return;
+            }
 
             if (isRotateMode) {
                 rotateComponent(component);
@@ -9498,6 +9581,368 @@ body.android-optimized.menu-visible .status {
             }
 
             notifyParentAnalysisState();
+        }
+
+        function openMeasurementTools() {
+            const panel = document.getElementById('wire-analysis');
+            if (panel && panel.classList.contains('collapsed')) {
+                panel.classList.remove('collapsed');
+            }
+            analysisVisible = true;
+            notifyParentAnalysisState();
+            switchAnalysisTab('meter');
+            if (!meterArmed) {
+                meterArmed = true;
+            }
+            updateMeterUI();
+            setStatus('⚡ Measurement tools ready - click terminals to probe');
+        }
+
+        function setMeterMode(nextMode) {
+            const mode = String(nextMode || '').toLowerCase();
+            if (mode !== 'voltage' && mode !== 'current' && mode !== 'resistance' && mode !== 'scope') {
+                return;
+            }
+            meterMode = mode;
+            meterCurrentTarget = null;
+            updateMeterUI();
+        }
+
+        function toggleMeterArmed() {
+            meterArmed = !meterArmed;
+            if (!meterArmed) {
+                stopScope();
+            } else if (meterMode === 'scope') {
+                startScope();
+            }
+            updateMeterUI();
+        }
+
+        function clearMeterSelection() {
+            if (meterProbeA) restoreConnectionPointVisual(meterProbeA);
+            if (meterProbeB) restoreConnectionPointVisual(meterProbeB);
+            meterProbeA = null;
+            meterProbeB = null;
+            meterCurrentTarget = null;
+            scopeBuffer = [];
+            updateMeterUI();
+        }
+
+        function updateMeterButtonStates() {
+            const ids = ['voltage', 'current', 'resistance', 'scope'];
+            ids.forEach(id => {
+                const btn = document.getElementById(`meter-mode-${id}`);
+                if (!btn) return;
+                const active = meterMode === id;
+                btn.classList.toggle('secondary', !active);
+            });
+            const armedBtn = document.getElementById('meter-toggle-armed');
+            if (armedBtn) {
+                armedBtn.textContent = meterArmed ? 'Disable probes' : 'Enable probes';
+            }
+        }
+
+        function describeTerminal(pointData) {
+            if (!pointData) return '—';
+            const obj = pointData.component || pointData.junction;
+            if (!obj) return '—';
+            const type = pointData.component ? String(pointData.component.type || 'component') : 'junction';
+            const id = obj.id || '';
+            const side = String(pointData.side || 'center');
+            return `${type}:${id}:${side}`;
+        }
+
+        function getPointTerminalKey(pointData) {
+            const obj = pointData?.component || pointData?.junction;
+            const side = pointData?.side || 'center';
+            return getTerminalKey(obj, side);
+        }
+
+        function applyProbeVisual(pointData, which) {
+            let connectionPoint;
+            if (pointData?.component) {
+                connectionPoint = pointData.component.connectionPoints?.find(point =>
+                    point.userData?.side === pointData.side
+                );
+            } else if (pointData?.junction) {
+                connectionPoint = pointData.junction.connectionPoint;
+            }
+            if (!connectionPoint?.material) return;
+
+            if (which === 'a') {
+                connectionPoint.material.color.setRGB(1.0, 0.25, 0.25);
+                connectionPoint.material.emissive.setRGB(0.5, 0.05, 0.05);
+                connectionPoint.scale.setScalar(2.2);
+            } else if (which === 'b') {
+                connectionPoint.material.color.setRGB(0.7, 0.7, 0.75);
+                connectionPoint.material.emissive.setRGB(0.15, 0.15, 0.18);
+                connectionPoint.scale.setScalar(1.9);
+            } else {
+                connectionPoint.material.color.setRGB(0.5, 0.9, 1.0);
+                connectionPoint.material.emissive.setRGB(0.05, 0.22, 0.28);
+                connectionPoint.scale.setScalar(2.0);
+            }
+        }
+
+        function restoreConnectionPointVisual(pointData) {
+            if (!pointData) return;
+            highlightConnectionPoint(pointData, false);
+        }
+
+        function handleMeterProbeClick(pointData) {
+            if (!meterArmed) {
+                return;
+            }
+            if (meterMode === 'current') {
+                setStatus('⚡ Current mode: click a component (resistor/LED/switch/battery) to read amps');
+                return;
+            }
+
+            if (meterMode === 'scope') {
+                if (meterProbeA) restoreConnectionPointVisual(meterProbeA);
+                meterProbeA = pointData;
+                applyProbeVisual(meterProbeA, 'scope');
+                startScope();
+                updateMeterUI();
+                return;
+            }
+
+            // voltage / resistance: pick two probes
+            if (!meterProbeA) {
+                meterProbeA = pointData;
+                applyProbeVisual(meterProbeA, 'a');
+                setStatus('⚡ Red probe set - click a second terminal for the black probe');
+                updateMeterUI();
+                return;
+            }
+
+            if (!meterProbeB) {
+                meterProbeB = pointData;
+                applyProbeVisual(meterProbeB, 'b');
+                updateMeterUI();
+                return;
+            }
+
+            // If both already set, restart selection from A
+            restoreConnectionPointVisual(meterProbeA);
+            restoreConnectionPointVisual(meterProbeB);
+            meterProbeA = pointData;
+            meterProbeB = null;
+            applyProbeVisual(meterProbeA, 'a');
+            updateMeterUI();
+        }
+
+        function startScope() {
+            stopScope();
+            if (meterMode !== 'scope' || !meterArmed || !meterProbeA) {
+                return;
+            }
+            scopeTimer = window.setInterval(() => {
+                updateScopeSample();
+            }, 60);
+        }
+
+        function stopScope() {
+            if (scopeTimer !== null) {
+                window.clearInterval(scopeTimer);
+                scopeTimer = null;
+            }
+        }
+
+        function drawScope() {
+            const canvas = document.getElementById('scope-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // background
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(0, 0, w, h);
+
+            // grid
+            ctx.strokeStyle = 'rgba(136, 204, 255, 0.12)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 10; i += 1) {
+                const x = (w * i) / 10;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let i = 1; i < 4; i += 1) {
+                const y = (h * i) / 4;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            if (!scopeBuffer.length) {
+                return;
+            }
+
+            let minV = Math.min(...scopeBuffer);
+            let maxV = Math.max(...scopeBuffer);
+            if (!Number.isFinite(minV) || !Number.isFinite(maxV)) {
+                return;
+            }
+            if (Math.abs(maxV - minV) < 1e-6) {
+                minV -= 1;
+                maxV += 1;
+            } else {
+                const pad = (maxV - minV) * 0.2;
+                minV -= pad;
+                maxV += pad;
+            }
+
+            const toX = (i) => (w * i) / Math.max(scopeBuffer.length - 1, 1);
+            const toY = (v) => {
+                const t = (v - minV) / (maxV - minV);
+                return h - (t * h);
+            };
+
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.95)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < scopeBuffer.length; i += 1) {
+                const x = toX(i);
+                const y = toY(scopeBuffer[i]);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        function updateScopeSample() {
+            if (meterMode !== 'scope' || !meterArmed || !meterProbeA) {
+                return;
+            }
+            const solution = solveDCCircuitLegacy();
+            lastDCSolution = solution;
+            if (!solution || solution.status !== 'solved') {
+                return;
+            }
+
+            const aKey = getPointTerminalKey(meterProbeA);
+            const bKey = meterProbeB ? getPointTerminalKey(meterProbeB) : null;
+            if (!aKey) return;
+
+            const nodeA = solution.terminalToNode?.get(aKey);
+            const nodeB = bKey ? solution.terminalToNode?.get(bKey) : solution.referenceNodeId;
+            if (!nodeA || !nodeB) return;
+
+            const vA = solution.nodeVoltages.get(nodeA) ?? 0;
+            const vB = solution.nodeVoltages.get(nodeB) ?? 0;
+            const dv = vA - vB;
+            if (!Number.isFinite(dv)) return;
+
+            scopeBuffer.push(dv);
+            while (scopeBuffer.length > SCOPE_BUFFER_SIZE) scopeBuffer.shift();
+
+            const readout = document.getElementById('scope-readout');
+            if (readout) {
+                readout.textContent = `V = ${dv.toFixed(3)} V`;
+            }
+            drawScope();
+        }
+
+        function updateMeterUI() {
+            updateMeterButtonStates();
+
+            const instructions = document.getElementById('meter-instructions');
+            const probeAEl = document.getElementById('meter-probe-a');
+            const probeBEl = document.getElementById('meter-probe-b');
+            const readingEl = document.getElementById('meter-reading');
+            const subEl = document.getElementById('meter-subreading');
+            const scopePanel = document.getElementById('scope-panel');
+
+            if (probeAEl) probeAEl.textContent = describeTerminal(meterProbeA);
+            if (probeBEl) probeBEl.textContent = describeTerminal(meterProbeB);
+
+            if (scopePanel) {
+                scopePanel.style.display = meterMode === 'scope' ? 'block' : 'none';
+            }
+
+            if (instructions) {
+                if (!meterArmed) {
+                    instructions.textContent = 'Enable probes to begin measuring.';
+                } else if (meterMode === 'voltage') {
+                    instructions.textContent = 'Click two terminals to measure voltage (red minus black).';
+                } else if (meterMode === 'resistance') {
+                    instructions.textContent = 'Click two terminals to estimate equivalent resistance (sources disabled).';
+                } else if (meterMode === 'current') {
+                    instructions.textContent = 'Click a component to read its DC current.';
+                } else if (meterMode === 'scope') {
+                    instructions.textContent = 'Click a terminal to probe. Black probe is reference if set; otherwise battery negative.';
+                }
+            }
+
+            if (readingEl) readingEl.textContent = '—';
+            if (subEl) subEl.textContent = '';
+
+            if (!meterArmed) {
+                stopScope();
+                return;
+            }
+
+            // Keep a fresh solution for voltage/current/scope readouts
+            try {
+                lastDCSolution = solveDCCircuitLegacy();
+            } catch (error) {
+                lastDCSolution = { status: 'unsolved', reason: String(error || 'solve failed') };
+            }
+
+            if (meterMode === 'current') {
+                if (!meterCurrentTarget) {
+                    if (readingEl) readingEl.textContent = 'Click a component…';
+                    return;
+                }
+                const amps = getComponentCurrentFromSolution(meterCurrentTarget, lastDCSolution);
+                if (readingEl) readingEl.textContent = Number.isFinite(amps) ? `${amps.toFixed(6)} A` : '—';
+                if (subEl) subEl.textContent = meterCurrentTarget?.id ? `Target: ${meterCurrentTarget.type}:${meterCurrentTarget.id}` : '';
+                return;
+            }
+
+            if (meterMode === 'scope') {
+                if (!meterProbeA) {
+                    if (readingEl) readingEl.textContent = 'Pick a terminal…';
+                    stopScope();
+                    return;
+                }
+                startScope();
+                if (readingEl) {
+                    const latest = scopeBuffer.length ? scopeBuffer[scopeBuffer.length - 1] : null;
+                    readingEl.textContent = Number.isFinite(latest) ? `${latest.toFixed(3)} V` : '—';
+                }
+                return;
+            }
+
+            if (!meterProbeA || !meterProbeB) {
+                if (readingEl) readingEl.textContent = 'Pick two terminals…';
+                return;
+            }
+
+            if (meterMode === 'voltage') {
+                const dv = getVoltageBetweenProbes(meterProbeA, meterProbeB, lastDCSolution);
+                if (readingEl) readingEl.textContent = Number.isFinite(dv) ? `${dv.toFixed(3)} V` : '—';
+                if (subEl && lastDCSolution?.status && lastDCSolution.status !== 'solved') {
+                    subEl.textContent = `Solver: ${lastDCSolution.status}${lastDCSolution.reason ? ' — ' + lastDCSolution.reason : ''}`;
+                }
+                return;
+            }
+
+            if (meterMode === 'resistance') {
+                const ohms = getEquivalentResistanceBetweenProbes(meterProbeA, meterProbeB);
+                if (readingEl) {
+                    if (ohms === Infinity) readingEl.textContent = '∞ Ω';
+                    else readingEl.textContent = Number.isFinite(ohms) ? `${ohms.toFixed(2)} Ω` : '—';
+                }
+                return;
+            }
         }
 
         // State management functions
@@ -10916,6 +11361,16 @@ Made with ? for visual learners everywhere!
             const result = performCircuitAnalysis();
             updateCircuitDisplay(result.voltage, result.current, result.resistance, result.power);
 
+            // Keep measurement tools synced with latest DC solve
+            try {
+                lastDCSolution = solveDCCircuitLegacy();
+            } catch (error) {
+                lastDCSolution = { status: 'unsolved', reason: String(error || 'solve failed') };
+            }
+            if (meterArmed || currentAnalysisTab === 'meter') {
+                updateMeterUI();
+            }
+
             const runtimeFlow = currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 };
             animateCurrentFlow(runtimeFlow);
 
@@ -11146,6 +11601,455 @@ Made with ? for visual learners everywhere!
             });
 
             return adjacency;
+        }
+
+        // --- DC nodal analysis for measurement tools (multimeter/scope) ---
+        function gaussianSolve(A, b) {
+            const n = b.length;
+            const M = A.map(row => row.slice());
+            const x = b.slice();
+            const EPS = 1e-12;
+
+            for (let col = 0; col < n; col += 1) {
+                let pivotRow = col;
+                let pivotAbs = Math.abs(M[col][col]);
+                for (let r = col + 1; r < n; r += 1) {
+                    const v = Math.abs(M[r][col]);
+                    if (v > pivotAbs) {
+                        pivotAbs = v;
+                        pivotRow = r;
+                    }
+                }
+                if (pivotAbs < EPS) return null;
+
+                if (pivotRow !== col) {
+                    const tmpRow = M[col];
+                    M[col] = M[pivotRow];
+                    M[pivotRow] = tmpRow;
+                    const tmpB = x[col];
+                    x[col] = x[pivotRow];
+                    x[pivotRow] = tmpB;
+                }
+
+                const pivot = M[col][col];
+                for (let c = col; c < n; c += 1) M[col][c] /= pivot;
+                x[col] /= pivot;
+
+                for (let r = 0; r < n; r += 1) {
+                    if (r === col) continue;
+                    const factor = M[r][col];
+                    if (Math.abs(factor) < EPS) continue;
+                    for (let c = col; c < n; c += 1) {
+                        M[r][c] -= factor * M[col][c];
+                    }
+                    x[r] -= factor * x[col];
+                }
+            }
+            return x;
+        }
+
+        function buildUnionFind() {
+            const parent = new Map();
+            const ensure = (k) => {
+                const key = String(k || '');
+                if (!key) return null;
+                if (!parent.has(key)) parent.set(key, key);
+                return key;
+            };
+            const find = (k) => {
+                const key = ensure(k);
+                if (!key) return null;
+                let x = key;
+                while (parent.get(x) !== x) {
+                    parent.set(x, parent.get(parent.get(x)));
+                    x = parent.get(x);
+                }
+                return x;
+            };
+            const union = (a, b) => {
+                const ra = find(a);
+                const rb = find(b);
+                if (!ra || !rb) return;
+                if (ra !== rb) parent.set(rb, ra);
+            };
+            return { parent, ensure, find, union };
+        }
+
+        function getBatteryTerminals(component) {
+            return { neg: getTerminalKey(component, 'negative'), pos: getTerminalKey(component, 'positive') };
+        }
+
+        function buildElectricalNodesLegacy(options = {}) {
+            const includeBatteryShorts = Boolean(options.includeBatteryShorts);
+            const uf = buildUnionFind();
+
+            // Ensure terminals exist
+            components.forEach(comp => {
+                if (!comp) return;
+                const sides = getComponentTerminals(comp);
+                sides.forEach(side => uf.ensure(getTerminalKey(comp, side)));
+            });
+            junctions.forEach(j => uf.ensure(getTerminalKey(j, 'center')));
+            wires.forEach(w => {
+                uf.ensure(getTerminalKey(w.startObj, w.startSide || 'center'));
+                uf.ensure(getTerminalKey(w.endObj, w.endSide || 'center'));
+            });
+
+            // Wires are ideal shorts
+            wires.forEach(wire => {
+                const a = getTerminalKey(wire.startObj, wire.startSide || 'center');
+                const b = getTerminalKey(wire.endObj, wire.endSide || 'center');
+                if (a && b) uf.union(a, b);
+            });
+
+            // For resistance measurements we "deactivate" sources (short ideal voltage sources)
+            if (includeBatteryShorts) {
+                components.filter(c => c?.type === 'battery').forEach(bat => {
+                    const { neg, pos } = getBatteryTerminals(bat);
+                    if (neg && pos) uf.union(neg, pos);
+                });
+            }
+
+            const terminalToNode = new Map();
+            for (const key of uf.parent.keys()) {
+                const root = uf.find(key);
+                if (root) terminalToNode.set(key, root);
+            }
+
+            const nodeIds = new Set(Array.from(terminalToNode.values()));
+            return { terminalToNode, nodeIds };
+        }
+
+        function buildNetlistLegacy(terminalToNode) {
+            const resistors = [];
+            const sources = [];
+
+            const nodeOf = (terminalKey) => terminalToNode.get(terminalKey) || null;
+
+            components.forEach(comp => {
+                if (!comp) return;
+                if (comp.type === 'battery') {
+                    const { neg, pos } = getBatteryTerminals(comp);
+                    const nNeg = neg ? nodeOf(neg) : null;
+                    const nPos = pos ? nodeOf(pos) : null;
+                    if (!nNeg || !nPos || nNeg === nPos) return;
+                    const volts = Number.isFinite(comp.properties?.voltage) ? Number(comp.properties.voltage) : 9;
+                    sources.push({
+                        id: `vs:${comp.id}`,
+                        elementId: comp.id,
+                        positiveNode: nPos,
+                        negativeNode: nNeg,
+                        volts
+                    });
+                    return;
+                }
+
+                const sides = getComponentTerminals(comp);
+                if (!Array.isArray(sides) || sides.length !== 2) return;
+                if (comp.type === 'switch' && comp.properties?.isOn === false) {
+                    return; // open circuit
+                }
+
+                const aKey = getTerminalKey(comp, sides[0]);
+                const bKey = getTerminalKey(comp, sides[1]);
+                const a = aKey ? nodeOf(aKey) : null;
+                const b = bKey ? nodeOf(bKey) : null;
+                if (!a || !b || a === b) return;
+
+                const ohms = getComponentResistance(comp);
+                if (!Number.isFinite(ohms) || ohms <= 0) return;
+
+                resistors.push({
+                    elementId: comp.id,
+                    kind: comp.type,
+                    a,
+                    b,
+                    ohms
+                });
+            });
+
+            return { resistors, sources };
+        }
+
+        function pickReferenceNodeLegacy(terminalToNode, nodeIds) {
+            const firstBattery = components.find(c => c?.type === 'battery');
+            if (firstBattery) {
+                const { neg } = getBatteryTerminals(firstBattery);
+                const node = neg ? terminalToNode.get(neg) : null;
+                if (node) return node;
+            }
+            const first = nodeIds.values().next();
+            return first.done ? null : first.value;
+        }
+
+        function solveDCCircuitLegacy() {
+            const { terminalToNode, nodeIds } = buildElectricalNodesLegacy();
+            const { resistors, sources } = buildNetlistLegacy(terminalToNode);
+
+            const globalRef = pickReferenceNodeLegacy(terminalToNode, nodeIds);
+            if (!globalRef) {
+                return {
+                    status: 'no_reference',
+                    reason: 'No terminals available for a reference node.',
+                    nodeVoltages: new Map(),
+                    elementCurrents: new Map(),
+                    referenceNodeId: null,
+                    terminalToNode
+                };
+            }
+
+            // Default all nodes to 0 V (covers unsolved floating components)
+            const nodeVoltages = new Map();
+            nodeIds.forEach(id => nodeVoltages.set(id, 0));
+            const elementCurrents = new Map();
+
+            // Partition into connected components (prevents singular matrices for floating subcircuits)
+            const nodes = Array.from(nodeIds);
+            const nodeToIdx = new Map(nodes.map((id, idx) => [id, idx]));
+            const parent = nodes.map((_, idx) => idx);
+            const find = (i) => {
+                let x = i;
+                while (parent[x] !== x) {
+                    parent[x] = parent[parent[x]];
+                    x = parent[x];
+                }
+                return x;
+            };
+            const union = (a, b) => {
+                const ia = nodeToIdx.get(a);
+                const ib = nodeToIdx.get(b);
+                if (ia === undefined || ib === undefined) return;
+                const ra = find(ia);
+                const rb = find(ib);
+                if (ra !== rb) parent[rb] = ra;
+            };
+            resistors.forEach(r => union(r.a, r.b));
+            sources.forEach(s => union(s.positiveNode, s.negativeNode));
+
+            const componentMap = new Map();
+            nodes.forEach(id => {
+                const root = find(nodeToIdx.get(id));
+                if (!componentMap.has(root)) componentMap.set(root, new Set());
+                componentMap.get(root).add(id);
+            });
+
+            let primaryReferenceNodeId = globalRef;
+            const componentRoots = Array.from(componentMap.keys());
+            for (const root of componentRoots) {
+                const compNodes = componentMap.get(root);
+                const compSources = sources.filter(s => compNodes.has(s.positiveNode) && compNodes.has(s.negativeNode));
+                const compResistors = resistors.filter(r => compNodes.has(r.a) && compNodes.has(r.b));
+
+                if (!compSources.length) {
+                    compResistors.forEach(r => {
+                        elementCurrents.set(r.elementId, { elementId: r.elementId, amps: 0 });
+                    });
+                    continue;
+                }
+
+                const referenceNodeId = compNodes.has(primaryReferenceNodeId)
+                    ? primaryReferenceNodeId
+                    : compNodes.values().next().value;
+                primaryReferenceNodeId = primaryReferenceNodeId || referenceNodeId;
+
+                const unknownNodes = Array.from(compNodes).filter(n => n !== referenceNodeId);
+                const nodeIndex = new Map(unknownNodes.map((id, idx) => [id, idx]));
+                const n = unknownNodes.length;
+                const m = compSources.length;
+                const dim = n + m;
+
+                if (dim === 0) {
+                    nodeVoltages.set(referenceNodeId, 0);
+                    continue;
+                }
+
+                const A = Array.from({ length: dim }, () => Array.from({ length: dim }, () => 0));
+                const bVec = Array.from({ length: dim }, () => 0);
+                const EPS = 1e-12;
+
+                const idxV = (nodeId) => (nodeId === referenceNodeId ? null : (nodeIndex.get(nodeId) ?? null));
+                const idxI = (k) => n + k;
+
+                for (const r of compResistors) {
+                    const g = r.ohms > EPS ? 1 / r.ohms : 1 / EPS;
+                    const ia = idxV(r.a);
+                    const ib = idxV(r.b);
+                    if (ia !== null) A[ia][ia] += g;
+                    if (ib !== null) A[ib][ib] += g;
+                    if (ia !== null && ib !== null) {
+                        A[ia][ib] -= g;
+                        A[ib][ia] -= g;
+                    }
+                }
+
+                for (let k = 0; k < compSources.length; k += 1) {
+                    const src = compSources[k];
+                    const ip = idxV(src.positiveNode);
+                    const ineg = idxV(src.negativeNode);
+                    const colI = idxI(k);
+                    if (ip !== null) A[ip][colI] += 1;
+                    if (ineg !== null) A[ineg][colI] -= 1;
+                    const row = idxI(k);
+                    if (ip !== null) A[row][ip] += 1;
+                    if (ineg !== null) A[row][ineg] -= 1;
+                    bVec[row] = src.volts;
+                }
+
+                const solved = gaussianSolve(A, bVec);
+                if (!solved) {
+                    return {
+                        status: 'singular',
+                        reason: 'Circuit matrix is singular (floating network or ideal-only loop).',
+                        nodeVoltages,
+                        elementCurrents,
+                        referenceNodeId: globalRef,
+                        terminalToNode
+                    };
+                }
+
+                nodeVoltages.set(referenceNodeId, 0);
+                unknownNodes.forEach(nodeId => {
+                    nodeVoltages.set(nodeId, solved[nodeIndex.get(nodeId)]);
+                });
+
+                const V = (nodeId) => nodeVoltages.get(nodeId) ?? 0;
+
+                // Currents through resistor-like elements
+                for (const r of compResistors) {
+                    const amps = (V(r.a) - V(r.b)) / r.ohms;
+                    elementCurrents.set(r.elementId, { elementId: r.elementId, amps });
+                }
+
+                // Currents through sources (positive-to-negative)
+                for (let k = 0; k < compSources.length; k += 1) {
+                    const src = compSources[k];
+                    const amps = solved[idxI(k)];
+                    elementCurrents.set(src.elementId, { elementId: src.elementId, amps });
+                }
+            }
+
+            return {
+                status: 'solved',
+                nodeVoltages,
+                elementCurrents,
+                referenceNodeId: primaryReferenceNodeId,
+                terminalToNode
+            };
+        }
+
+        function getVoltageBetweenProbes(probeA, probeB, solution) {
+            if (!probeA || !probeB || !solution || solution.status !== 'solved') return NaN;
+            const aKey = getPointTerminalKey(probeA);
+            const bKey = getPointTerminalKey(probeB);
+            if (!aKey || !bKey) return NaN;
+            const nodeA = solution.terminalToNode?.get(aKey);
+            const nodeB = solution.terminalToNode?.get(bKey);
+            if (!nodeA || !nodeB) return NaN;
+            const vA = solution.nodeVoltages.get(nodeA) ?? 0;
+            const vB = solution.nodeVoltages.get(nodeB) ?? 0;
+            return vA - vB;
+        }
+
+        function getComponentCurrentFromSolution(component, solution) {
+            if (!component || !solution || solution.status !== 'solved') return NaN;
+            const entry = solution.elementCurrents?.get(component.id);
+            if (entry && typeof entry.amps === 'number') {
+                return entry.amps;
+            }
+            // Fallback: compute for resistor-like components
+            const sides = getComponentTerminals(component);
+            if (!Array.isArray(sides) || sides.length !== 2) return NaN;
+            const aKey = getTerminalKey(component, sides[0]);
+            const bKey = getTerminalKey(component, sides[1]);
+            const nodeA = aKey ? solution.terminalToNode?.get(aKey) : null;
+            const nodeB = bKey ? solution.terminalToNode?.get(bKey) : null;
+            if (!nodeA || !nodeB) return NaN;
+            const ohms = getComponentResistance(component);
+            if (!Number.isFinite(ohms) || ohms <= 0) return NaN;
+            const vA = solution.nodeVoltages.get(nodeA) ?? 0;
+            const vB = solution.nodeVoltages.get(nodeB) ?? 0;
+            return (vA - vB) / ohms;
+        }
+
+        function getEquivalentResistanceBetweenProbes(probeA, probeB) {
+            if (!probeA || !probeB) return NaN;
+            const aKey = getPointTerminalKey(probeA);
+            const bKey = getPointTerminalKey(probeB);
+            if (!aKey || !bKey) return NaN;
+            if (aKey === bKey) return 0;
+
+            // Build nodes with wires + (deactivated) battery shorts merged
+            const { terminalToNode, nodeIds } = buildElectricalNodesLegacy({ includeBatteryShorts: true });
+
+            const nodeA = terminalToNode.get(aKey);
+            const nodeB = terminalToNode.get(bKey);
+            if (!nodeA || !nodeB) return Infinity;
+            if (nodeA === nodeB) return 0;
+
+            // Collect resistive elements only (no active sources)
+            const { resistors } = buildNetlistLegacy(terminalToNode);
+
+            // Connectivity check: if nodes aren't connected through resistors, it's open
+            const nodeList = Array.from(nodeIds);
+            const nodeToIdx = new Map(nodeList.map((id, idx) => [id, idx]));
+            const uf = nodeList.map((_, idx) => idx);
+            const find = (i) => {
+                let x = i;
+                while (uf[x] !== x) {
+                    uf[x] = uf[uf[x]];
+                    x = uf[x];
+                }
+                return x;
+            };
+            const union = (u, v) => {
+                const iu = nodeToIdx.get(u);
+                const iv = nodeToIdx.get(v);
+                if (iu === undefined || iv === undefined) return;
+                const ru = find(iu);
+                const rv = find(iv);
+                if (ru !== rv) uf[rv] = ru;
+            };
+            resistors.forEach(r => union(r.a, r.b));
+            if (find(nodeToIdx.get(nodeA)) !== find(nodeToIdx.get(nodeB))) {
+                return Infinity;
+            }
+
+            // Nodal solve with nodeB as reference, inject +1A at nodeA and return to nodeB
+            const referenceNodeId = nodeB;
+            const unknownNodes = nodeList.filter(n => n !== referenceNodeId);
+            const n = unknownNodes.length;
+            if (n === 0) return 0;
+
+            const idx = new Map(unknownNodes.map((id, i) => [id, i]));
+            const G = Array.from({ length: n }, () => Array.from({ length: n }, () => 0));
+            const I = Array.from({ length: n }, () => 0);
+            const EPS = 1e-12;
+
+            const stampG = (a, b, g) => {
+                const ia = a === referenceNodeId ? null : (idx.get(a) ?? null);
+                const ib = b === referenceNodeId ? null : (idx.get(b) ?? null);
+                if (ia !== null) G[ia][ia] += g;
+                if (ib !== null) G[ib][ib] += g;
+                if (ia !== null && ib !== null) {
+                    G[ia][ib] -= g;
+                    G[ib][ia] -= g;
+                }
+            };
+
+            resistors.forEach(r => {
+                const g = r.ohms > EPS ? 1 / r.ohms : 1 / EPS;
+                stampG(r.a, r.b, g);
+            });
+
+            if (nodeA !== referenceNodeId) {
+                I[idx.get(nodeA)] += 1;
+            }
+
+            const solved = gaussianSolve(G, I);
+            if (!solved) return Infinity;
+
+            const vA = nodeA === referenceNodeId ? 0 : solved[idx.get(nodeA)];
+            return Number.isFinite(vA) ? Math.abs(vA) : Infinity;
         }
 
         function findLowestResistancePath(adjacency, startKey, endKey) {
@@ -12453,6 +13357,9 @@ Made with ? for visual learners everywhere!
                     break;
                 case 'practice':
                     updatePracticeStatus();
+                    break;
+                case 'meter':
+                    updateMeterUI();
                     break;
             }
             

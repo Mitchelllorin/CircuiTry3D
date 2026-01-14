@@ -8,6 +8,7 @@ export type BuilderInvokeAction =
   | "toggle-current-flow"
   | "toggle-polarity"
   | "cycle-layout"
+  | "open-measurement-tools"
   | "cycle-wire-routing"
   | "toggle-grid"
   | "toggle-labels"
