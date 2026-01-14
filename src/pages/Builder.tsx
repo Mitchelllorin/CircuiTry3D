@@ -849,6 +849,15 @@ export default function Builder() {
     }
   }, [globalModeContext]);
 
+  const exitTroubleshootMode = useCallback(() => {
+    setTroubleshootPanelOpen(false);
+    setTroubleshootStatus(null);
+    // Ensure global mode bar stays consistent and the panel can be reopened.
+    if (workspaceMode === "troubleshoot") {
+      setWorkspaceModeWithGlobalSync("build");
+    }
+  }, [setWorkspaceModeWithGlobalSync, workspaceMode]);
+
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
       ...previous,
@@ -1169,7 +1178,7 @@ export default function Builder() {
       }
 
       assignPracticeProblem(nextProblem, presetOverride);
-      setWorkspaceMode("practice");
+      setWorkspaceModeWithGlobalSync("practice");
       setPracticeWorkspaceMode(true);
       setCompactWorksheetOpen(true);
       setCircuitLocked(true);
@@ -1179,6 +1188,7 @@ export default function Builder() {
       activePracticeProblemId,
       assignPracticeProblem,
       setArenaPanelOpen,
+      setWorkspaceModeWithGlobalSync,
     ],
   );
 
@@ -2527,7 +2537,7 @@ export default function Builder() {
         role="dialog"
         aria-modal="true"
         aria-hidden={!isTroubleshootPanelOpen}
-        onClick={() => setTroubleshootPanelOpen(false)}
+        onClick={exitTroubleshootMode}
       >
         <div
           className="builder-panel-shell builder-panel-shell--troubleshoot"
@@ -2539,7 +2549,7 @@ export default function Builder() {
           <button
             type="button"
             className="builder-panel-close"
-            onClick={() => setTroubleshootPanelOpen(false)}
+            onClick={exitTroubleshootMode}
             aria-label="Close troubleshooting mode"
           >
             X
@@ -2574,7 +2584,7 @@ export default function Builder() {
                         null;
                       if (next) {
                         triggerBuilderAction("load-preset", { preset: next.preset });
-                        setWorkspaceMode("troubleshoot");
+                        setWorkspaceModeWithGlobalSync("troubleshoot");
                         setCircuitLocked(false);
                       }
                     }}

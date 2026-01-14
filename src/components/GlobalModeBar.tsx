@@ -78,6 +78,10 @@ export function GlobalModeBar() {
     handleModeClick("practice");
   }, [handleModeClick]);
 
+  const handleTroubleshootClick = useCallback(() => {
+    handleModeClick("troubleshoot");
+  }, [handleModeClick]);
+
   const handleArenaClick = useCallback(() => {
     handleModeClick("arena");
   }, [handleModeClick]);
@@ -133,6 +137,17 @@ export function GlobalModeBar() {
         >
           <span className="mode-icon" aria-hidden="true">📝</span>
           <span className="mode-label">Practice</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
+          onClick={handleTroubleshootClick}
+          aria-label="Troubleshoot mode"
+          title="Fix broken circuits and restore current flow"
+        >
+          <span className="mode-icon" aria-hidden="true">🩺</span>
+          <span className="mode-label">Troubleshoot</span>
         </button>
         <button
           type="button"
