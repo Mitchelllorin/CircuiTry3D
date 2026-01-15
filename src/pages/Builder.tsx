@@ -18,6 +18,7 @@ import { getSchematicSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
+import { TroubleshootPanel } from "../components/builder/panels/TroubleshootPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
   type EnvironmentalScenario,
@@ -38,6 +39,7 @@ import practiceProblems, {
   getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import troubleshootingProblems, {
+  type TroubleshootingProblem,
   getAnalyzeCircuitResult,
   isTroubleshootingSolved,
 } from "../data/troubleshootingProblems";
@@ -759,6 +761,7 @@ export default function Builder() {
   const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
   const [isTroubleshootPanelOpen, setTroubleshootPanelOpen] = useState(false);
+  const pendingTroubleshootPresetRef = useRef<string | null>(null);
   const [activeTroubleshootId, setActiveTroubleshootId] = useState<string | null>(
     troubleshootingProblems[0]?.id ?? null,
   );
@@ -927,6 +930,64 @@ export default function Builder() {
     onToolChange: setActiveQuickTool,
     onSimulationPulse: handleSimulationPulse,
   });
+
+  const queueOrLoadTroubleshootPreset = useCallback(
+    (preset: string) => {
+      if (!preset) return;
+      if (isFrameReady) {
+        triggerBuilderAction("load-preset", { preset });
+        return;
+      }
+      pendingTroubleshootPresetRef.current = preset;
+    },
+    [isFrameReady, triggerBuilderAction],
+  );
+
+  useEffect(() => {
+    if (!isFrameReady) return;
+    const pendingPreset = pendingTroubleshootPresetRef.current;
+    if (!pendingPreset) return;
+    pendingTroubleshootPresetRef.current = null;
+    triggerBuilderAction("load-preset", { preset: pendingPreset });
+  }, [isFrameReady, triggerBuilderAction]);
+
+  const openTroubleshootProblem = useCallback(
+    (problem: TroubleshootingProblem) => {
+      setActiveTroubleshootId(problem.id);
+      setTroubleshootStatus(null);
+      queueOrLoadTroubleshootPreset(problem.preset);
+      setWorkspaceModeWithGlobalSync("troubleshoot");
+      setTroubleshootPanelOpen(true);
+      setCircuitLocked(false);
+      setPracticeWorkspaceMode(false);
+      setCompactWorksheetOpen(false);
+      setArenaPanelOpen(false);
+    },
+    [queueOrLoadTroubleshootPreset, setWorkspaceModeWithGlobalSync],
+  );
+
+  const enterTroubleshootMode = useCallback(
+    (problemOverride?: TroubleshootingProblem | null) => {
+      const fallbackProblem =
+        troubleshootingProblems.find((p) => p.id === activeTroubleshootId) ??
+        troubleshootingProblems[0] ??
+        null;
+      const targetProblem = problemOverride ?? fallbackProblem;
+
+      if (targetProblem) {
+        openTroubleshootProblem(targetProblem);
+        return;
+      }
+
+      setWorkspaceModeWithGlobalSync("troubleshoot");
+      setTroubleshootPanelOpen(true);
+      setCircuitLocked(false);
+      setPracticeWorkspaceMode(false);
+      setCompactWorksheetOpen(false);
+      setArenaPanelOpen(false);
+    },
+    [activeTroubleshootId, openTroubleshootProblem, setWorkspaceModeWithGlobalSync],
+  );
 
   useEffect(() => {
     if (!circuitState) {
@@ -1120,6 +1181,21 @@ export default function Builder() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isArenaPanelOpen]);
 
+  useEffect(() => {
+    if (!isTroubleshootPanelOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isTroubleshootPanelOpen) {
+        exitTroubleshootMode();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [exitTroubleshootMode, isTroubleshootPanelOpen]);
+
   // Sync circuit lock state to the iframe
   useEffect(() => {
     if (!isFrameReady) {
@@ -1206,6 +1282,8 @@ export default function Builder() {
         setArenaPanelOpen(false);
         setTroubleshootPanelOpen(false);
       } else if (pendingMode === "practice") {
+        setTroubleshootPanelOpen(false);
+        setTroubleshootStatus(null);
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
         setWorkspaceMode("arena");
@@ -1219,8 +1297,7 @@ export default function Builder() {
         setTroubleshootPanelOpen(false);
         openHelpCenter("overview");
       } else if (pendingMode === "troubleshoot") {
-        setWorkspaceMode("troubleshoot");
-        setTroubleshootPanelOpen(true);
+        enterTroubleshootMode();
       }
 
       // Sync back to global context
@@ -1233,6 +1310,7 @@ export default function Builder() {
     handleArenaSync,
     openHelpCenter,
     arenaExportStatus,
+    enterTroubleshootMode,
     globalModeContext,
   ]);
 
@@ -2532,207 +2610,61 @@ export default function Builder() {
         </div>
       </div>
 
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--troubleshoot${isTroubleshootPanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isTroubleshootPanelOpen}
-        onClick={exitTroubleshootMode}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--troubleshoot"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="builder-panel-brand" aria-hidden="true">
-            <BrandMark size="sm" decorative />
-          </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={exitTroubleshootMode}
-            aria-label="Close troubleshooting mode"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--troubleshoot">
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div>
-                <h2 style={{ margin: 0 }}>Troubleshooting Mode</h2>
-                <p style={{ margin: "6px 0 0", opacity: 0.85, fontSize: 13 }}>
-                  Load a broken circuit, find the fault, then restore current flow.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <label style={{ fontSize: 12, opacity: 0.8 }}>
-                  Problem
-                  <select
-                    value={activeTroubleshootId ?? ""}
-                    onChange={(event) => {
-                      const nextId = event.target.value || null;
-                      setActiveTroubleshootId(nextId);
-                      setTroubleshootStatus(null);
-                      const next =
-                        troubleshootingProblems.find((p) => p.id === nextId) ??
-                        null;
-                      if (next) {
-                        triggerBuilderAction("load-preset", { preset: next.preset });
-                        setWorkspaceModeWithGlobalSync("troubleshoot");
-                        setCircuitLocked(false);
-                      }
-                    }}
-                    style={{
-                      marginLeft: 8,
-                      padding: "6px 8px",
-                      borderRadius: 8,
-                      background: "rgba(0,0,0,0.25)",
-                      color: "var(--text-primary)",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                    }}
-                  >
-                    {troubleshootingProblems.map((problem) => (
-                      <option key={problem.id} value={problem.id}>
-                        {problem.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span style={{ fontSize: 12, opacity: 0.8 }}>
-                  Progress:{" "}
-                  <strong>
-                    {troubleshootSolvedIds.length}/{troubleshootingProblems.length}
-                  </strong>
-                </span>
-              </div>
-
-              {activeTroubleshootProblem ? (
-                <div
-                  style={{
-                    padding: 12,
-                    borderRadius: 12,
-                    border: "1px solid rgba(136, 204, 255, 0.18)",
-                    background: "rgba(14, 30, 58, 0.42)",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                    <h3 style={{ margin: 0 }}>{activeTroubleshootProblem.title}</h3>
-                    {troubleshootSolvedIds.includes(activeTroubleshootProblem.id) && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          border: "1px solid rgba(130, 255, 170, 0.35)",
-                          background: "rgba(40, 120, 70, 0.25)",
-                          color: "rgba(170, 255, 210, 0.92)",
-                        }}
-                      >
-                        Solved
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {activeTroubleshootProblem.prompt}
-                  </p>
-                  {activeTroubleshootProblem.hints?.length ? (
-                    <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.9 }}>
-                      {activeTroubleshootProblem.hints.map((hint) => (
-                        <li key={hint}>{hint}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  No troubleshooting problems available.
-                </div>
-              )}
-
-              {troubleshootStatus && (
-                <div
-                  role="status"
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    background: "rgba(0,0,0,0.22)",
-                    fontSize: 13,
-                  }}
-                >
-                  {troubleshootStatus}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!activeTroubleshootProblem) return;
-                    triggerBuilderAction("load-preset", {
-                      preset: activeTroubleshootProblem.preset,
-                    });
-                    setCircuitLocked(false);
-                    setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
-                  }}
-                >
-                  <span className="slider-chip-label">Reset Circuit</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!activeTroubleshootProblem) return;
-                    setTroubleshootStatus("Checking…");
-                    setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
-                    setTroubleshootCheckPending(true);
-                    triggerBuilderAction("run-simulation");
-                  }}
-                  disabled={!isFrameReady}
-                  aria-disabled={!isFrameReady}
-                  title={!isFrameReady ? "Workspace is still loading" : "Run simulation and check if current flows"}
-                >
-                  <span className="slider-chip-label">
-                    {isTroubleshootCheckPending ? "Checking…" : "Check Fix"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!troubleshootingProblems.length) return;
-                    const index = activeTroubleshootProblem
-                      ? troubleshootingProblems.findIndex((p) => p.id === activeTroubleshootProblem.id)
-                      : -1;
-                    const next =
-                      troubleshootingProblems[(index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length] ??
-                      troubleshootingProblems[0] ??
-                      null;
-                    if (!next) return;
-                    setActiveTroubleshootId(next.id);
-                    setTroubleshootStatus(null);
-                    triggerBuilderAction("load-preset", { preset: next.preset });
-                    setCircuitLocked(false);
-                  }}
-                >
-                  <span className="slider-chip-label">Next Problem</span>
-                </button>
-              </div>
-
-              <div style={{ fontSize: 12, opacity: 0.75 }}>
-                Tip: You can also tap the floating ▶ button to run a simulation anytime.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TroubleshootPanel
+        isOpen={isTroubleshootPanelOpen}
+        onClose={exitTroubleshootMode}
+        problems={troubleshootingProblems}
+        activeProblemId={activeTroubleshootId}
+        onChangeProblemId={(nextId) => {
+          if (!nextId) {
+            setActiveTroubleshootId(null);
+            setTroubleshootStatus(null);
+            return;
+          }
+          const next =
+            troubleshootingProblems.find((problem) => problem.id === nextId) ??
+            null;
+          if (next) {
+            openTroubleshootProblem(next);
+          }
+        }}
+        solvedIds={troubleshootSolvedIds}
+        status={troubleshootStatus}
+        isChecking={isTroubleshootCheckPending}
+        isFrameReady={isFrameReady}
+        onReset={() => {
+          if (!activeTroubleshootProblem) return;
+          queueOrLoadTroubleshootPreset(activeTroubleshootProblem.preset);
+          setCircuitLocked(false);
+          setTroubleshootStatus(
+            "Reset loaded. Fix the fault, then tap Check Fix.",
+          );
+        }}
+        onCheckFix={() => {
+          if (!activeTroubleshootProblem) return;
+          setTroubleshootStatus("Checking…");
+          setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
+          setTroubleshootCheckPending(true);
+          triggerBuilderAction("run-simulation");
+        }}
+        onNextProblem={() => {
+          if (!troubleshootingProblems.length) return;
+          const index = activeTroubleshootProblem
+            ? troubleshootingProblems.findIndex(
+                (p) => p.id === activeTroubleshootProblem.id,
+              )
+            : -1;
+          const next =
+            troubleshootingProblems[
+              (index + 1 + troubleshootingProblems.length) %
+                troubleshootingProblems.length
+            ] ??
+            troubleshootingProblems[0] ??
+            null;
+          if (!next) return;
+          openTroubleshootProblem(next);
+        }}
+      />
 
       <div
         className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}
