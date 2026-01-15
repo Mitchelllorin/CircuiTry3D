@@ -605,6 +605,12 @@ export const CURRENT_MODE_ACTIONS: PanelAction[] = [
     description: "Step through free, square, and linear auto-layout modes.",
     action: "cycle-layout",
   },
+  {
+    id: "measurement-tools",
+    label: "Measurement Tools",
+    description: "Open the multimeter and oscilloscope tools.",
+    action: "open-measurement-tools",
+  },
 ];
 
 export const VIEW_CONTROL_ACTIONS: PanelAction[] = [
