@@ -852,11 +852,20 @@ export default function Builder() {
   const exitTroubleshootMode = useCallback(() => {
     setTroubleshootPanelOpen(false);
     setTroubleshootStatus(null);
+    setTroubleshootCheckPending(false);
+    setTroubleshootPendingCheckProblemId(null);
     // Ensure global mode bar stays consistent and the panel can be reopened.
-    if (workspaceMode === "troubleshoot") {
+    if (
+      workspaceMode === "troubleshoot" ||
+      globalModeContext.workspaceMode === "troubleshoot"
+    ) {
       setWorkspaceModeWithGlobalSync("build");
     }
-  }, [setWorkspaceModeWithGlobalSync, workspaceMode]);
+  }, [
+    globalModeContext.workspaceMode,
+    setWorkspaceModeWithGlobalSync,
+    workspaceMode,
+  ]);
 
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
@@ -1221,12 +1230,27 @@ export default function Builder() {
       } else if (pendingMode === "troubleshoot") {
         setWorkspaceMode("troubleshoot");
         setTroubleshootPanelOpen(true);
+        setTroubleshootStatus(null);
+        setTroubleshootCheckPending(false);
+        setTroubleshootPendingCheckProblemId(null);
+        setCircuitLocked(false);
+        const nextProblem =
+          troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+          troubleshootingProblems[0] ??
+          null;
+        if (nextProblem) {
+          if (nextProblem.id !== activeTroubleshootId) {
+            setActiveTroubleshootId(nextProblem.id);
+          }
+          triggerBuilderAction("load-preset", { preset: nextProblem.preset });
+        }
       }
 
       // Sync back to global context
       globalModeContext.setWorkspaceMode(pendingMode);
     }
   }, [
+    activeTroubleshootId,
     globalModeContext.workspaceMode,
     workspaceMode,
     openPracticeWorkspace,
@@ -1234,6 +1258,7 @@ export default function Builder() {
     openHelpCenter,
     arenaExportStatus,
     globalModeContext,
+    triggerBuilderAction,
   ]);
 
   const handlePracticeAction = useCallback(
@@ -1467,6 +1492,15 @@ export default function Builder() {
   }, [troubleshootSolvedIds]);
 
   useEffect(() => {
+    // If the user changes problems mid-check, cancel the in-flight check so the UI doesn't get stuck.
+    if (!isTroubleshootCheckPending) {
+      return;
+    }
+    setTroubleshootCheckPending(false);
+    setTroubleshootPendingCheckProblemId(null);
+  }, [activeTroubleshootId, isTroubleshootCheckPending]);
+
+  useEffect(() => {
     if (!isTroubleshootCheckPending) return;
     if (!lastSimulation) return;
     if (!activeTroubleshootProblem) {
@@ -1479,6 +1513,9 @@ export default function Builder() {
       troubleshootPendingCheckProblemId &&
       troubleshootPendingCheckProblemId !== activeTroubleshootProblem.id
     ) {
+      // Problem changed while a sim was running; cancel this check.
+      setTroubleshootCheckPending(false);
+      setTroubleshootPendingCheckProblemId(null);
       return;
     }
 
@@ -2577,6 +2614,8 @@ export default function Builder() {
                     value={activeTroubleshootId ?? ""}
                     onChange={(event) => {
                       const nextId = event.target.value || null;
+                      setTroubleshootCheckPending(false);
+                      setTroubleshootPendingCheckProblemId(null);
                       setActiveTroubleshootId(nextId);
                       setTroubleshootStatus(null);
                       const next =
@@ -2585,6 +2624,7 @@ export default function Builder() {
                       if (next) {
                         triggerBuilderAction("load-preset", { preset: next.preset });
                         setWorkspaceModeWithGlobalSync("troubleshoot");
+                        setTroubleshootPanelOpen(true);
                         setCircuitLocked(false);
                       }
                     }}
@@ -2676,6 +2716,10 @@ export default function Builder() {
                   className="slider-chip"
                   onClick={() => {
                     if (!activeTroubleshootProblem) return;
+                    setWorkspaceModeWithGlobalSync("troubleshoot");
+                    setTroubleshootPanelOpen(true);
+                    setTroubleshootCheckPending(false);
+                    setTroubleshootPendingCheckProblemId(null);
                     triggerBuilderAction("load-preset", {
                       preset: activeTroubleshootProblem.preset,
                     });
@@ -2690,6 +2734,8 @@ export default function Builder() {
                   className="slider-chip"
                   onClick={() => {
                     if (!activeTroubleshootProblem) return;
+                    setWorkspaceModeWithGlobalSync("troubleshoot");
+                    setTroubleshootPanelOpen(true);
                     setTroubleshootStatus("Checking…");
                     setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
                     setTroubleshootCheckPending(true);
@@ -2716,6 +2762,10 @@ export default function Builder() {
                       troubleshootingProblems[0] ??
                       null;
                     if (!next) return;
+                    setWorkspaceModeWithGlobalSync("troubleshoot");
+                    setTroubleshootPanelOpen(true);
+                    setTroubleshootCheckPending(false);
+                    setTroubleshootPendingCheckProblemId(null);
                     setActiveTroubleshootId(next.id);
                     setTroubleshootStatus(null);
                     triggerBuilderAction("load-preset", { preset: next.preset });
