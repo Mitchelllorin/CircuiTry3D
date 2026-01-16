@@ -8035,6 +8035,19 @@ body.android-optimized.menu-visible .status {
                 setStatus('⚡ Add a battery first for schematic arrangement');
                 return;
             }
+
+            // Detect branching BEFORE we clear wires/junctions.
+            // The previous heuristic ("many components => parallel") caused incorrect layouts for long series chains.
+            const terminalFanout = new Map();
+            const bumpFanout = (key) => {
+                if (!key) return;
+                terminalFanout.set(key, (terminalFanout.get(key) || 0) + 1);
+            };
+            wires.forEach((wire) => {
+                bumpFanout(getTerminalKey(wire.startObj, wire.startSide || 'center'));
+                bumpFanout(getTerminalKey(wire.endObj, wire.endSide || 'center'));
+            });
+            const hasBranching = (junctions && junctions.length > 0) || Array.from(terminalFanout.values()).some((count) => count > 1);
             
             // Clear existing wires for clean re-routing
             wires.forEach(wire => wire.remove());
@@ -8053,47 +8066,42 @@ body.android-optimized.menu-visible .status {
             // Position battery on the left aligned to grid
             battery.position.set(-SPACING * 2, 0, 0);
             battery.mesh.position.copy(battery.position);
+            // Orient battery vertically like textbook schematics.
+            battery.rotation = normalizeAngle(Math.PI / 2);
+            battery.mesh.rotation.y = battery.rotation;
             
-            // Detect if we should create series or parallel layout
-            if (otherComponents.length <= 1) {
-                // Single component - simple series
-                if (otherComponents.length === 1) {
-                    const comp = otherComponents[0];
-                    const x = SPACING;
-                    const p = snapToGrid(new THREE.Vector3(x, 0, 0));
-                    comp.position.copy(p);
-                    comp.mesh.position.copy(comp.position);
-                    
-                    // Wire in series
-                    const wire1 = new Wire(battery, 'positive', comp, 'left');
-                    const wire2 = new Wire(comp, 'right', battery, 'negative');
-                    wires.push(wire1, wire2);
+            // Arrange as series unless the existing circuit shows branching/junctions.
+            if (!hasBranching) {
+                if (otherComponents.length === 0) {
+                    fitToScreen();
+                    setStatus('⚡ Add components to arrange');
+                    return;
                 }
-            } else if (otherComponents.length <= 3) {
-                // Few components - arrange in series horizontal line
+
+                // Series chain - lay components in a clean line (router handles the orthogonal loop).
                 otherComponents.forEach((comp, index) => {
                     const x = index * SPACING;
                     const p = snapToGrid(new THREE.Vector3(x, 0, 0));
                     comp.position.copy(p);
                     comp.mesh.position.copy(comp.position);
+                    comp.rotation = 0;
+                    comp.mesh.rotation.y = 0;
                 });
-                
-                // Connect in series using Manhattan routing
-                const wire1 = new Wire(battery, 'positive', otherComponents[0], 'left');
-                wires.push(wire1);
-                
+
+                const firstWire = new Wire(battery, 'positive', otherComponents[0], 'left');
+                wires.push(firstWire);
+
                 for (let i = 0; i < otherComponents.length - 1; i++) {
                     const wire = new Wire(otherComponents[i], 'right', otherComponents[i + 1], 'left');
                     wires.push(wire);
                 }
-                
+
                 const lastWire = new Wire(otherComponents[otherComponents.length - 1], 'right', battery, 'negative');
                 wires.push(lastWire);
             } else {
-                // Many components - create intelligent parallel layout
-                // Position components in vertical arrangement for parallel configuration
-                const halfCount = Math.ceil(otherComponents.length / 2);
-                
+                // Parallel / combination layout: hang branches between supply and return rails.
+                const halfCount = Math.max(1, Math.ceil(otherComponents.length / 2));
+
                 otherComponents.forEach((comp, index) => {
                     const row = index % halfCount;
                     const col = Math.floor(index / halfCount);
@@ -8102,33 +8110,35 @@ body.android-optimized.menu-visible .status {
                     const p = snapToGrid(new THREE.Vector3(x, 0, z));
                     comp.position.copy(p);
                     comp.mesh.position.copy(comp.position);
+                    comp.rotation = Math.PI / 2;
+                    comp.mesh.rotation.y = comp.rotation;
                 });
-                
+
                 // Create parallel circuit with intelligent splitting
                 createParallelBus(battery, otherComponents);
-                
+
                 // Return path - create return junctions and connect back to battery
                 const returnX = SPACING * 6;
                 const returnJunctions = [];
-                
-                otherComponents.forEach((comp, index) => {
+
+                otherComponents.forEach((comp) => {
                     const z = comp.position.z;
                     const jPos = snapToGrid(new THREE.Vector3(returnX, 0, z));
                     const junction = new Junction(jPos);
                     junctions.push(junction);
                     returnJunctions.push(junction);
-                    
+
                     // Connect component to return junction
                     const wire = new Wire(comp, 'right', junction, 'center');
                     wires.push(wire);
                 });
-                
+
                 // Connect return junctions vertically
                 for (let i = 0; i < returnJunctions.length - 1; i++) {
                     const wire = new Wire(returnJunctions[i], 'center', returnJunctions[i + 1], 'center');
                     wires.push(wire);
                 }
-                
+
                 // Connect middle return junction back to battery
                 const midReturn = returnJunctions[Math.floor(returnJunctions.length / 2)];
                 const finalWire = new Wire(midReturn, 'center', battery, 'negative');
