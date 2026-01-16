@@ -66,6 +66,18 @@
       color: #00ff88;
       text-shadow: 0 0 18px rgba(0, 255, 136, 0.7), 0 0 34px rgba(0, 255, 136, 0.55);
     }
+    .logo-mark {
+      width: clamp(140px, 32vw, 240px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.45));
+    }
+    .logo-mark img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
     .subtitle {
       color: #9db8ff;
       font-weight: 700;
@@ -150,6 +162,9 @@
         <span class="brand-blue">Circui</span>
         <span class="brand-orange">Try</span>
         <span class="brand-green">3D</span>
+      </div>
+      <div class="logo-mark" aria-hidden="true">
+        <img src="/circuit-logo.svg" alt="" />
       </div>
       <div class="subtitle">Professional Circuit Design</div>
     <div class="status-wrapper">
