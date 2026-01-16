@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import Home from "../pages/Home";
 import Builder from "../pages/Builder";
@@ -49,6 +50,7 @@ function AppLayout() {
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
+  const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
     "app-shell",
@@ -57,8 +59,41 @@ function AppLayout() {
   ].filter(Boolean).join(" ");
   const contentClass = isLanding ? "app-content is-landing" : "app-content";
 
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) {
+      return;
+    }
+
+    const nav = shell.querySelector<HTMLElement>(".unified-nav");
+    const modeBar = shell.querySelector<HTMLElement>(".workspace-mode-bar--global");
+
+    const updateLayoutVars = () => {
+      const navHeight = nav?.offsetHeight ?? 0;
+      const modeBarHeight = modeBar?.offsetHeight ?? 0;
+      shell.style.setProperty("--app-nav-height", `${navHeight}px`);
+      shell.style.setProperty("--app-mode-bar-height", `${modeBarHeight}px`);
+    };
+
+    updateLayoutVars();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateLayoutVars);
+      return () => window.removeEventListener("resize", updateLayoutVars);
+    }
+
+    const observer = new ResizeObserver(updateLayoutVars);
+    if (nav) {
+      observer.observe(nav);
+    }
+    if (modeBar) {
+      observer.observe(modeBar);
+    }
+    return () => observer.disconnect();
+  }, [location.pathname]);
+
   return (
-    <div className={shellClass}>
+    <div className={shellClass} ref={shellRef}>
       {/* Global Mode Bar - shown on all pages except landing */}
       {!isLanding && <GlobalModeBar />}
       {!isLanding && !isWorkspace && (
