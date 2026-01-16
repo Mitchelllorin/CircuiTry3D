@@ -12,14 +12,18 @@
   gap: 20px;
   justify-content: space-between;
   align-items: flex-end;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(51, 65, 85, 0.6);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 18px 40px -24px rgba(15, 118, 110, 0.45);
+  box-shadow: 0 18px 40px -24px var(--brand-primary-glow);
 }
 
 .account-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
   opacity: 0.95;
 }
@@ -39,13 +43,14 @@
 
 .account-header h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  font-weight: 700;
 }
 
 .account-header p {
   margin: 8px 0 0;
   max-width: 520px;
-  color: rgba(226, 232, 240, 0.8);
+  color: var(--text-muted);
 }
 
 .account-switcher {
@@ -211,7 +216,7 @@
   background: rgba(30, 41, 59, 0.6);
   border-radius: 12px;
   padding: 12px;
-  border: 1px dashed rgba(94, 234, 212, 0.3);
+  border: 1px dashed var(--brand-primary-dim);
   color: rgba(226, 232, 240, 0.8);
 }
 
