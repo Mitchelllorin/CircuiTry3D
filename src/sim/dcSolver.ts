@@ -169,7 +169,7 @@ function parseVoltageVolts(label: string | undefined): number | null {
   return parseLastNumberWithMetricPrefix(label) ?? parseNumberWithMetricPrefix(label);
 }
 
-function parseResistanceOhms(label: string | undefined): number | null {
+export function parseResistanceOhms(label: string | undefined): number | null {
   if (!label) return null;
   // Prefer values explicitly expressed in ohms to avoid parsing "R1" as 1 Ω.
   const unitMatch = parseNumberWithMetricPrefixNearUnit(label, /(?:ohms?|[ωΩ])/i);

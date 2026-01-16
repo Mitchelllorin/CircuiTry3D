@@ -15,14 +15,18 @@ export type CurrentIntensity = "off" | "low" | "medium" | "high" | "critical";
 
 /**
  * Color scheme for current intensity visualization
- * Colors progress from cool (low) to warm (high) for intuitive understanding
+ * Slowest -> fastest: red -> blue -> white
  */
-export const INTENSITY_COLORS = {
-  off: { core: 0x6b7280, glow: 0x9ca3af, emissive: 0x4b5563 },        // Gray - no current
-  low: { core: 0x22c55e, glow: 0x86efac, emissive: 0x16a34a },        // Green - low current
-  medium: { core: 0xeab308, glow: 0xfde047, emissive: 0xca8a04 },     // Yellow - medium current
-  high: { core: 0xf97316, glow: 0xfb923c, emissive: 0xea580c },       // Orange - high current
-  critical: { core: 0xef4444, glow: 0xfca5a5, emissive: 0xdc2626 }    // Red - critical/max current
+export const CURRENT_FLOW_COLOR_RAMP = {
+  slow: 0xef4444, // Red - slowest current
+  mid: 0x3b82f6,  // Blue - mid current
+  fast: 0xffffff  // White - fastest current
+} as const;
+
+const CURRENT_FLOW_OFF_COLORS = {
+  core: 0x6b7280,     // Gray - no current
+  glow: 0x9ca3af,
+  emissive: 0x4b5563
 } as const;
 
 /**
@@ -43,6 +47,25 @@ const COMET_TAIL = {
   maxRadiusFactor: 0.75,  // relative to particle size
   minRadiusFactor: 0.18
 } as const;
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+const lerp = (start: number, end: number, t: number) => start + (end - start) * t;
+
+const lerpColor = (start: number, end: number, t: number) => {
+  const tt = clamp01(t);
+  const sr = (start >> 16) & 0xff;
+  const sg = (start >> 8) & 0xff;
+  const sb = start & 0xff;
+  const er = (end >> 16) & 0xff;
+  const eg = (end >> 8) & 0xff;
+  const eb = end & 0xff;
+
+  const r = Math.round(lerp(sr, er, tt));
+  const g = Math.round(lerp(sg, eg, tt));
+  const b = Math.round(lerp(sb, eb, tt));
+  return (r << 16) + (g << 8) + b;
+};
 
 /**
  * Physics-based constants for realistic current flow visualization
@@ -92,6 +115,13 @@ export const CURRENT_FLOW_PHYSICS = {
    * Real electrons don't all move at exactly the same speed
    */
   SPEED_VARIATION: 0.15,
+
+  /**
+   * Resistance scaling: higher resistance slows particles within that element
+   */
+  RESISTANCE_LOG_RANGE: 4,          // log10 range (1Ω to 10kΩ) for full slowdown
+  MAX_RESISTANCE_SLOWDOWN: 0.6,     // up to 60% slowdown at high resistance
+  RESISTANCE_SPEED_FLOOR: 0.35      // keep at least 35% of min visible speed
 } as const;
 
 export type CurrentFlowParticle = {
@@ -107,6 +137,10 @@ export type CurrentFlowParticle = {
   reversed: boolean; // True for electron flow (reversed direction)
   /** The amperage this particle represents */
   currentAmps: number;
+  /** Whether this particle should track global current updates */
+  usesGlobalCurrent: boolean;
+  /** Optional resistance to slow this particle's speed */
+  resistanceOhms?: number;
 };
 
 export type FlowPathConfig = {
@@ -117,6 +151,8 @@ export type FlowPathConfig = {
   sourcePolarity?: "positive" | "negative";
   /** Direction of current flow: true if current flows forward along path */
   flowsForward?: boolean;
+  /** Resistance in ohms to slow particle speed through this path */
+  resistanceOhms?: number;
 };
 
 export class CurrentFlowAnimationSystem {
@@ -141,6 +177,54 @@ export class CurrentFlowAnimationSystem {
    * Higher current = faster drift velocity = faster particles
    * Uses logarithmic scaling to handle wide current ranges (mA to A)
    */
+  private calculateNormalizedCurrent(amps: number): number {
+    const absAmps = Math.abs(amps);
+    if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+      return 0;
+    }
+
+    const logCurrent = Math.log10(absAmps + 0.001);
+    return clamp01((logCurrent + 3) / 4);
+  }
+
+  private getCurrentFlowColors(amps: number): { core: number; glow: number; emissive: number } {
+    const absAmps = Math.abs(amps);
+    if (absAmps < CURRENT_FLOW_PHYSICS.ZERO_CURRENT_THRESHOLD) {
+      return CURRENT_FLOW_OFF_COLORS;
+    }
+
+    const normalized = this.calculateNormalizedCurrent(absAmps);
+    const base =
+      normalized <= 0.5
+        ? lerpColor(CURRENT_FLOW_COLOR_RAMP.slow, CURRENT_FLOW_COLOR_RAMP.mid, normalized / 0.5)
+        : lerpColor(CURRENT_FLOW_COLOR_RAMP.mid, CURRENT_FLOW_COLOR_RAMP.fast, (normalized - 0.5) / 0.5);
+
+    return {
+      core: base,
+      glow: lerpColor(base, 0xffffff, 0.45),
+      emissive: lerpColor(base, 0x000000, 0.25),
+    };
+  }
+
+  private calculateResistanceMultiplier(resistanceOhms: number): number {
+    if (!Number.isFinite(resistanceOhms) || resistanceOhms <= 0) {
+      return 1;
+    }
+
+    const normalized = clamp01(Math.log10(resistanceOhms + 1) / CURRENT_FLOW_PHYSICS.RESISTANCE_LOG_RANGE);
+    const slowdown = 1 - normalized * CURRENT_FLOW_PHYSICS.MAX_RESISTANCE_SLOWDOWN;
+    return Math.max(1 - CURRENT_FLOW_PHYSICS.MAX_RESISTANCE_SLOWDOWN, slowdown);
+  }
+
+  private applyResistanceToSpeed(baseSpeed: number, resistanceOhms?: number): number {
+    if (baseSpeed <= 0) return 0;
+    if (!Number.isFinite(resistanceOhms) || resistanceOhms <= 0) return baseSpeed;
+
+    const multiplier = this.calculateResistanceMultiplier(resistanceOhms);
+    const minSpeed = CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED * CURRENT_FLOW_PHYSICS.RESISTANCE_SPEED_FLOOR;
+    return Math.max(minSpeed, baseSpeed * multiplier);
+  }
+
   private calculateSpeedFromCurrent(amps: number): number {
     const absAmps = Math.abs(amps);
 
@@ -149,11 +233,7 @@ export class CurrentFlowAnimationSystem {
       return 0;
     }
 
-    // Use logarithmic scaling to handle the wide range of currents
-    // log10(0.001) = -3, log10(1) = 0, log10(10) = 1
-    // This gives us smooth visual scaling across mA to A range
-    const logCurrent = Math.log10(absAmps + 0.001); // +0.001 to avoid log(0)
-    const normalizedCurrent = (logCurrent + 3) / 4; // Map -3 to 1 into 0 to 1
+    const normalizedCurrent = this.calculateNormalizedCurrent(absAmps);
 
     // Calculate speed with minimum and maximum bounds
     const baseSpeed = CURRENT_FLOW_PHYSICS.MIN_VISIBLE_SPEED +
@@ -260,13 +340,12 @@ export class CurrentFlowAnimationSystem {
     // If particles were created using the previous global current (no per-path current provided),
     // update them. If they have their own per-path currents (e.g., parallel branches), preserve them.
     const newBaseSpeed = this.calculateSpeedFromCurrent(this.globalCurrentAmps);
-    const EPS_AMPS = 1e-9;
     this.particles.forEach((particle) => {
-      if (Math.abs(particle.currentAmps - prevGlobal) <= EPS_AMPS) {
-        particle.currentAmps = this.globalCurrentAmps;
-        particle.baseSpeed = newBaseSpeed;
-        particle.speed = this.addSpeedVariation(newBaseSpeed);
-      }
+      if (!particle.usesGlobalCurrent) return;
+      particle.currentAmps = this.globalCurrentAmps;
+      const adjustedSpeed = this.applyResistanceToSpeed(newBaseSpeed, particle.resistanceOhms);
+      particle.baseSpeed = adjustedSpeed;
+      particle.speed = this.addSpeedVariation(adjustedSpeed);
     });
 
     this.updateAllParticleAppearances();
@@ -314,6 +393,8 @@ export class CurrentFlowAnimationSystem {
     let path: Vec2[];
     let currentAmps = this.globalCurrentAmps;
     let flowsForward = true;
+    let usesGlobalCurrent = true;
+    let resistanceOhms: number | undefined;
 
     if (Array.isArray(pathOrConfig)) {
       path = pathOrConfig;
@@ -321,9 +402,13 @@ export class CurrentFlowAnimationSystem {
       path = pathOrConfig.path;
       if (pathOrConfig.currentAmps !== undefined) {
         currentAmps = Math.abs(pathOrConfig.currentAmps);
+        usesGlobalCurrent = false;
       }
       if (pathOrConfig.flowsForward !== undefined) {
         flowsForward = pathOrConfig.flowsForward;
+      }
+      if (pathOrConfig.resistanceOhms !== undefined) {
+        resistanceOhms = pathOrConfig.resistanceOhms;
       }
       // Allow explicit override of particle count, otherwise calculate from physics
       if (pathOrConfig.particleCount !== undefined) {
@@ -348,6 +433,7 @@ export class CurrentFlowAnimationSystem {
 
     // Calculate physics-based speed if not explicitly provided
     const calculatedSpeed = baseSpeed ?? this.calculateSpeedFromCurrent(currentAmps);
+    const adjustedSpeed = this.applyResistanceToSpeed(calculatedSpeed, resistanceOhms);
 
     // Determine flow direction based on mode and current direction
     // - In electron flow mode, electrons move opposite to conventional current
@@ -362,18 +448,20 @@ export class CurrentFlowAnimationSystem {
       const initialProgress = isReversed ? 1 - (i / count) : i / count;
 
       // Add speed variation for natural movement
-      const particleSpeed = this.addSpeedVariation(calculatedSpeed);
+      const particleSpeed = this.addSpeedVariation(adjustedSpeed);
 
       const particle: CurrentFlowParticle = {
         id: `particle-${this.nextParticleId++}`,
         position: { ...startPosition },
         progress: initialProgress,
-        baseSpeed: calculatedSpeed,
+        baseSpeed: adjustedSpeed,
         speed: particleSpeed,
         path: path, // Use the path as-is, direction is handled in update()
         intensity,
         reversed: isReversed,
-        currentAmps
+        currentAmps,
+        usesGlobalCurrent,
+        resistanceOhms
       };
       this.particles.push(particle);
       this.createParticleMesh(particle);
@@ -382,7 +470,7 @@ export class CurrentFlowAnimationSystem {
 
   private createParticleMesh(particle: CurrentFlowParticle): void {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
-    const colors = INTENSITY_COLORS[particle.intensity];
+    const colors = this.getCurrentFlowColors(particle.currentAmps);
 
     // Use unit geometry and scale it so we can easily combine base size + pulse in update()
     const geometry = new this.three.SphereGeometry(1, 18, 18);
@@ -459,7 +547,7 @@ export class CurrentFlowAnimationSystem {
       // Per-particle intensity (derived from this particle's own current) so parallel
       // branches can look/feel different.
       const intensity = this.calculateIntensity(particle.currentAmps);
-      const colors = INTENSITY_COLORS[intensity];
+      const colors = this.getCurrentFlowColors(particle.currentAmps);
       particle.intensity = intensity;
 
       // Update main mesh material
