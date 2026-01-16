@@ -30,6 +30,8 @@
   --builder-menu-bottom-height: 248px;
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --builder-ticker-height: 32px;
+  --builder-ticker-gap: 8px;
 }
 
 body.builder-body {
@@ -302,7 +304,7 @@ body.builder-body {
 /* Edge-positioned workspace action buttons (Undo, Redo, Open, Save) */
 .workspace-edge-actions {
   position: fixed;
-  top: calc(72px + var(--builder-safe-area-top));
+  top: calc(72px + var(--builder-safe-area-top) + var(--builder-ticker-height, 0px) + var(--builder-ticker-gap, 0px));
   right: clamp(12px, 3vw, 24px);
   z-index: 940;
   display: flex;
@@ -424,7 +426,7 @@ body.builder-body {
 
 @media (max-width: 720px) {
   .workspace-edge-actions {
-    top: calc(64px + var(--builder-safe-area-top));
+    top: calc(64px + var(--builder-safe-area-top) + var(--builder-ticker-height, 0px) + var(--builder-ticker-gap, 0px));
     padding: 4px;
     gap: 4px;
   }
@@ -2071,7 +2073,7 @@ body.builder-body {
   top: calc(72px + var(--builder-safe-area-top));
   left: 0;
   right: 0;
-  height: 32px;
+  height: var(--builder-ticker-height, 32px);
   background: rgba(10, 24, 48, 0.88);
   border-bottom: 1px solid rgba(0, 255, 136, 0.22);
   overflow: hidden;
@@ -2179,7 +2181,7 @@ body.builder-body {
 @media (max-width: 960px) {
   .builder-ticker-feed {
     top: calc(68px + var(--builder-safe-area-top));
-    height: 28px;
+    height: var(--builder-ticker-height, 28px);
   }
 
   .ticker-content {
@@ -2192,7 +2194,7 @@ body.builder-body {
 @media (max-width: 720px) {
   .builder-ticker-feed {
     top: calc(64px + var(--builder-safe-area-top));
-    height: 26px;
+    height: var(--builder-ticker-height, 26px);
   }
 
   .ticker-content {
@@ -3041,6 +3043,7 @@ body.builder-body {
     --builder-menu-bottom-height: 216px;
     --builder-menu-toggle-width: 22px;
     --builder-menu-toggle-height: 56px;
+    --builder-ticker-height: 28px;
   }
 
   .builder-menu-stage-left,
@@ -3076,6 +3079,7 @@ body.builder-body {
     --builder-menu-bottom-height: 196px;
     --builder-menu-toggle-width: 20px;
     --builder-menu-toggle-height: 48px;
+    --builder-ticker-height: 26px;
   }
 
   .builder-menu-stage-left,
@@ -3193,6 +3197,8 @@ body.builder-body {
     /* Reduce bottom drawer footprint on short screens. */
     --builder-menu-bottom-height: 160px;
     --builder-menu-toggle-height: 44px;
+    --builder-ticker-height: 0px;
+    --builder-ticker-gap: 0px;
   }
 
   /* Hide the decorative ticker to free vertical space. */
