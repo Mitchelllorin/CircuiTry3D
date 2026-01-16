@@ -95,7 +95,7 @@ export {
 export {
   CurrentFlowAnimationSystem,
   CURRENT_FLOW_PHYSICS,
-  INTENSITY_COLORS,
+  CURRENT_FLOW_COLOR_RAMP,
   FLOW_MODE_APPEARANCE,
   type FlowMode,
   type CurrentIntensity,

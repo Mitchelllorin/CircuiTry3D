@@ -9,7 +9,7 @@ import type { PracticeProblem, PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
 import { formatMetricValue, formatNumber } from "../utils/electrical";
 import { solvePracticeProblem, type SolveResult } from "../utils/practiceSolver";
-import { solveDCCircuit } from "../sim/dcSolver";
+import { parseResistanceOhms, solveDCCircuit } from "../sim/dcSolver";
 import WireTable, {
   METRIC_ORDER,
   METRIC_PRECISION,
@@ -44,6 +44,32 @@ declare global {
 
 const THREE_CDN = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r161/three.min.js";
 let threeLoaderPromise: Promise<any> | null = null;
+
+const RESISTIVE_ELEMENT_KINDS = new Set<TwoTerminalElement["kind"]>([
+  "resistor",
+  "lamp",
+  "thermistor",
+  "fuse",
+  "motor",
+  "speaker",
+]);
+
+const hasResistanceHint = (label: string) =>
+  /(?:ohms?|[ωΩ])/i.test(label) || /=\s*[-+]?\d/.test(label);
+
+const getElementResistanceOhms = (element: TwoTerminalElement): number | undefined => {
+  if (!RESISTIVE_ELEMENT_KINDS.has(element.kind)) {
+    return undefined;
+  }
+  if (!hasResistanceHint(element.label)) {
+    return undefined;
+  }
+  const parsed = parseResistanceOhms(element.label);
+  if (!parsed || !Number.isFinite(parsed) || parsed <= 0) {
+    return undefined;
+  }
+  return parsed;
+};
 
 function configureRendererForBestQuality(three: any, renderer: any) {
   if (!three || !renderer) {
@@ -2579,6 +2605,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
               const currentAmps = Math.abs(solved.amps);
               if (currentAmps <= 0) continue;
 
+              const resistanceOhms = getElementResistanceOhms(el);
               const flowsForward =
                 solved.direction === "start->end"
                   ? true
@@ -2590,6 +2617,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
                 path,
                 currentAmps,
                 flowsForward,
+                resistanceOhms,
               });
             }
           }
