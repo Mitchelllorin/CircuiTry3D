@@ -145,7 +145,7 @@ export default function Classroom() {
 
       {(loading || saving) && (
         <div className="classroom-banner" role="status">
-          {loading ? "Loading classroom data..." : "Syncing updates to Netlify..."}
+          {loading ? "Loading classroom data..." : "Syncing updates..."}
         </div>
       )}
       {error && (

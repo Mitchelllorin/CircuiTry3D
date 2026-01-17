@@ -9,7 +9,7 @@ import {
   type RecordProgressPayload,
 } from "./classroomMutations";
 
-const FUNCTION_ENDPOINT = "/.netlify/functions/classroom";
+const FUNCTION_ENDPOINT = "/api/classroom";
 const LOCAL_STORAGE_KEY = "circuiTry3d.classrooms.fallback.v2";
 
 type ClassroomRequest =
