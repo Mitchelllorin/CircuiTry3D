@@ -14,6 +14,10 @@ export type SolveResult = {
   stepContext: PracticeStepContext;
 };
 
+export type SolveAttempt =
+  | { ok: true; data: SolveResult }
+  | { ok: false; error: string };
+
 type ComponentMap = Record<string, PracticeComponent>;
 
 const ensureFinite = (value: number, description: string) => {
@@ -155,5 +159,15 @@ export function solvePracticeProblem(problem: PracticeProblem): SolveResult {
     equivalentResistance: totalResistance,
     stepContext,
   };
+}
+
+export function trySolvePracticeProblem(problem: PracticeProblem): SolveAttempt {
+  try {
+    return { ok: true, data: solvePracticeProblem(problem) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown solver error";
+    console.warn(`[PracticeSolver] Failed to solve '${problem.id}'`, error);
+    return { ok: false, error: message };
+  }
 }
 

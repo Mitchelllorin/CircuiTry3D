@@ -10,7 +10,8 @@ import type { PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
 import { formatMetricValue, formatNumber } from "../utils/electrical";
 import {
-  solvePracticeProblem,
+  trySolvePracticeProblem,
+  type SolveAttempt,
   type SolveResult,
 } from "../utils/practiceSolver";
 import WireTable, {
@@ -220,18 +221,18 @@ const buildStepPresentations = (
   solution: SolveResult,
 ) => problem.steps.map((step) => step(solution.stepContext));
 
-const ensureProblem = (problem: PracticeProblem | null): PracticeProblem => {
+const ensureProblem = (problem: PracticeProblem | null): PracticeProblem | null => {
   const fallback = DEFAULT_PRACTICE_PROBLEM;
   if (problem) {
     return problem;
   }
   if (!fallback) {
-    throw new Error("No practice problems available");
+    return null;
   }
   return fallback;
 };
 
-const findProblem = (id: string | null): PracticeProblem =>
+const findProblem = (id: string | null): PracticeProblem | null =>
   ensureProblem(findPracticeProblemById(id));
 
 const parseMetricInput = (raw: string): number | null => {
@@ -420,16 +421,19 @@ export default function Practice({
     [internalProblemId],
   );
 
-  const solution = useMemo(
-    () => solvePracticeProblem(selectedProblem),
-    [selectedProblem],
-  );
+  const solutionResult = useMemo((): SolveAttempt => {
+    if (!selectedProblem) {
+      return { ok: false, error: "No practice problems available" };
+    }
+    return trySolvePracticeProblem(selectedProblem);
+  }, [selectedProblem]);
+  const solution = solutionResult.ok ? solutionResult.data : null;
   const tableRows = useMemo(
-    () => buildTableRows(selectedProblem, solution),
+    () => (selectedProblem && solution ? buildTableRows(selectedProblem, solution) : []),
     [selectedProblem, solution],
   );
   const stepPresentations = useMemo(
-    () => buildStepPresentations(selectedProblem, solution),
+    () => (selectedProblem && solution ? buildStepPresentations(selectedProblem, solution) : []),
     [selectedProblem, solution],
   );
 
@@ -552,9 +556,12 @@ export default function Practice({
   useEffect(() => {
     setWorksheetEntries(baselineWorksheet);
     setWorksheetComplete(false);
-  }, [baselineWorksheet, selectedProblem.id]);
+  }, [baselineWorksheet, selectedProblem?.id]);
 
   useEffect(() => {
+    if (!selectedProblem) {
+      return;
+    }
     const currentProblemId = selectedProblem.id;
     const previous = lastChallengeReport.current;
 
@@ -626,11 +633,14 @@ export default function Practice({
 
   useEffect(() => {
     setActiveHint(null);
-  }, [selectedProblem.id]);
+  }, [selectedProblem?.id]);
 
-  const targetValue = resolveTarget(selectedProblem, solution);
+  const targetValue = selectedProblem && solution ? resolveTarget(selectedProblem, solution) : null;
 
   const highlightRowId = (() => {
+    if (!selectedProblem) {
+      return null;
+    }
     const id = selectedProblem.targetMetric.componentId;
     if (id === "source") {
       return selectedProblem.source.id;
@@ -638,7 +648,7 @@ export default function Practice({
     return id;
   })();
 
-  const highlightKey = selectedProblem.targetMetric.key as WireMetricKey;
+  const highlightKey = selectedProblem ? (selectedProblem.targetMetric.key as WireMetricKey) : null;
 
   const activeStandardLabel = useMemo(
     () =>
@@ -736,6 +746,9 @@ export default function Practice({
   };
 
   const advanceToNextProblem = () => {
+    if (!selectedProblem) {
+      return;
+    }
     const bucket = grouped[selectedProblem.topology] ?? practiceProblems;
     const currentIndex = bucket.findIndex(
       (problem) => problem.id === selectedProblem.id,
@@ -749,6 +762,25 @@ export default function Practice({
       selectProblemById(nextProblem.id);
     }
   };
+
+  if (!selectedProblem || !solution) {
+    return (
+      <div className="practice-page">
+        <aside className="practice-sidebar">
+          <h2>Practice</h2>
+          <p className="schematic-empty">
+            {solutionResult.ok ? "No practice problems are available." : solutionResult.error}
+          </p>
+        </aside>
+        <main className="practice-main">
+          <header className="practice-header">
+            <h1>Practice Lab</h1>
+            <p>Practice presets are unavailable right now.</p>
+          </header>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1105,7 +1137,11 @@ export default function Practice({
               <WireTable
                 rows={tableRows}
                 revealAll={tableRevealed}
-                highlight={{ rowId: highlightRowId, key: highlightKey }}
+                highlight={
+                  highlightRowId && highlightKey
+                    ? { rowId: highlightRowId, key: highlightKey }
+                    : undefined
+                }
                 entries={worksheetEntries}
                 onChange={handleWorksheetChange}
               />

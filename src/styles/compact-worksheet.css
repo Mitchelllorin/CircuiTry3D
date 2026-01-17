@@ -478,6 +478,30 @@
   transform: scale(0.95);
 }
 
+.compact-worksheet-error {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(88, 24, 24, 0.5);
+  border: 1px solid rgba(255, 132, 132, 0.45);
+  color: rgba(255, 230, 230, 0.9);
+}
+
+.compact-worksheet-error h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.compact-worksheet-error p {
+  margin: 0;
+}
+
+.compact-worksheet-error-detail {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: rgba(255, 210, 210, 0.75);
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .compact-worksheet-panel {

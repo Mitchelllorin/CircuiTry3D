@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PracticeProblem } from "../../../model/practice";
 import type { WireMetricKey } from "../../../utils/electrical";
 import { formatMetricValue, formatNumber } from "../../../utils/electrical";
-import { solvePracticeProblem, type SolveResult } from "../../../utils/practiceSolver";
+import { trySolvePracticeProblem } from "../../../utils/practiceSolver";
 import { METRIC_ORDER, METRIC_PRECISION, type WorksheetEntry, type WorksheetEntryStatus } from "../../../components/practice/WireTable";
 import CircuitDiagram from "../../../components/practice/CircuitDiagram";
 import { Component3DViewer } from "../../arena/Component3DViewer";
@@ -56,9 +56,13 @@ export function CompactWorksheetPanel({
   onRequestUnlock,
   onAdvance,
 }: CompactWorksheetPanelProps) {
-  const solution = useMemo(() => solvePracticeProblem(problem), [problem]);
+  const solutionResult = useMemo(() => trySolvePracticeProblem(problem), [problem]);
+  const solution = solutionResult.ok ? solutionResult.data : null;
 
-  const expectedValues = useMemo(() => {
+  const expectedValues = useMemo<Record<string, Record<WireMetricKey, number>>>(() => {
+    if (!solution) {
+      return {};
+    }
     const map: Record<string, Record<WireMetricKey, number>> = {};
     const includeSource = shouldIncludeSource(problem);
 
@@ -194,6 +198,9 @@ export function CompactWorksheetPanel({
   }, [expectedValues, computeWorksheetComplete, onComplete]);
 
   const targetValue = useMemo(() => {
+    if (!solution) {
+      return null;
+    }
     const { componentId, key } = problem.targetMetric;
     if (componentId === "totals") return solution.totals[key];
     if (componentId === "source" || componentId === problem.source.id) return solution.source[key];
@@ -319,6 +326,17 @@ export function CompactWorksheetPanel({
 
       {isOpen && (
         <div className="compact-worksheet-body">
+          {!solution && (
+            <div className="compact-worksheet-error" role="status">
+              <h3>Practice data unavailable</h3>
+              <p>We couldn't solve this worksheet. Try another practice preset.</p>
+              {!solutionResult.ok && (
+                <p className="compact-worksheet-error-detail">{solutionResult.error}</p>
+              )}
+            </div>
+          )}
+          {solution && (
+            <>
           {/* Problem Header with Learning Objective and Inline Schematic */}
           <div className="compact-worksheet-problem-info">
             <div className="problem-overview-row">
@@ -607,6 +625,8 @@ export function CompactWorksheetPanel({
             </div>
           )}
         </div>
+          </>
+          )}
       )}
     </div>
   );
