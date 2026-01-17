@@ -111,16 +111,24 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
   // Reuse a single renderer/canvas for all thumbnails.
   if (!sharedRenderer) {
     const canvas = document.createElement("canvas");
-    canvas.width = THUMBNAIL_SIZE_PX;
-    canvas.height = THUMBNAIL_SIZE_PX;
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
       antialias: true,
       preserveDrawingBuffer: true,
     });
+    // Render thumbnails at a higher DPR for sharpness, while keeping the displayed
+    // CSS size small in the component library.
+    const dpr = Math.min((window.devicePixelRatio || 1), 2);
+    renderer.setPixelRatio(dpr);
     renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
-    renderer.setPixelRatio(1);
+    renderer.setClearColor(0x000000, 0);
+    // Keep colors consistent across Three versions.
+    if ((renderer as any).outputColorSpace && (THREE as any).SRGBColorSpace) {
+      (renderer as any).outputColorSpace = (THREE as any).SRGBColorSpace;
+    } else if ((renderer as any).outputEncoding && (THREE as any).sRGBEncoding) {
+      (renderer as any).outputEncoding = (THREE as any).sRGBEncoding;
+    }
     sharedRenderer = { canvas, renderer };
   }
 
@@ -147,16 +155,25 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
     // Fit camera to content.
     scene.add(root);
     const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z, 0.001);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
-    const distance = maxDim * 3.2;
-    camera.position.set(center.x + distance, center.y + distance * 0.9, center.z + distance);
+    const sphere = new THREE.Sphere();
+    box.getBoundingSphere(sphere);
+    const radius = Math.max(sphere.radius, 0.001);
+
+    // Compute a tight-but-safe distance so the object fills the thumbnail instead
+    // of looking tiny. For aspect=1, vertical/horizontal fit is symmetric.
+    const fovRad = THREE.MathUtils.degToRad(camera.fov);
+    const fitDistance = (radius / Math.sin(fovRad / 2)) * 1.12;
+    const viewDir = new THREE.Vector3(1, 0.85, 1).normalize();
+    camera.position.copy(center).addScaledVector(viewDir, fitDistance);
+    camera.near = Math.max(0.01, fitDistance - radius * 3);
+    camera.far = fitDistance + radius * 3;
     camera.lookAt(center);
     camera.updateProjectionMatrix();
 
+    renderer.clear();
     renderer.render(scene, camera);
     return canvas.toDataURL("image/png");
   } finally {
