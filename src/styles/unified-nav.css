@@ -23,7 +23,7 @@
   gap: 12px;
 }
 
-.unified-nav-brand span {
+.unified-nav-brand .circuitry-brandmark__label {
   color: var(--brand-blue);
 }
 

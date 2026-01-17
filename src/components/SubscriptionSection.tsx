@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import pricingSource from "../data/pricing.json";
-import BrandMark from "./BrandMark";
-import WordMark from "./WordMark";
+import BrandSignature from "./BrandSignature";
 import "../styles/pricing.css";
 
 type StripeMeta = {
@@ -127,10 +126,7 @@ export default function SubscriptionSection() {
   return (
     <section className="subscription-section" aria-labelledby="subscription-title">
       <div className="subscription-hero">
-        <div className="subscription-brand" aria-hidden="true">
-          <BrandMark size="sm" decorative />
-          <WordMark size="sm" decorative />
-        </div>
+        <BrandSignature size="sm" decorative className="subscription-brand" />
         <span className="subscription-kicker">Subscription Success</span>
         <h2 id="subscription-title">Launch CircuiTry3D across your program</h2>
         <p>

@@ -70,13 +70,13 @@ export const THREE_COLORS = {
  * Used in CircuitLogo.tsx for the app logo
  */
 export const LOGO_COLORS = {
-  wireGradientStart: "#2dd4bf",
-  wireGradientEnd: "#14b8a6",
-  componentGradientStart: "#2dd4bf",
-  componentGradientEnd: "#5eead4",
-  nodeFill: "#2dd4bf",
-  nodeStroke: "#0d9488",
-  labelPrimary: "#2dd4bf",
+  wireGradientStart: "#88ccff",
+  wireGradientEnd: "#00ff88",
+  componentGradientStart: "#ff8844",
+  componentGradientEnd: "#ff8844",
+  nodeFill: "#00ff88",
+  nodeStroke: "#0f172a",
+  labelPrimary: "#88ccff",
   labelSecondary: "#94a3b8",
 } as const;
 

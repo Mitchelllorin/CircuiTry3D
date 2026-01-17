@@ -29,7 +29,7 @@
 }
 
 .account-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+  filter: drop-shadow(0 14px 34px var(--brand-primary-glow));
 }
 
 .account-eyebrow {
