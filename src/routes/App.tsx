@@ -10,7 +10,7 @@ import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
 import UnifiedNav from "../components/UnifiedNav";
-import BrandMark from "../components/BrandMark";
+import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
@@ -37,7 +37,7 @@ function NotFound() {
   return (
     <div style={{ padding: 24, color: "var(--text-primary)", background: "var(--bg-darker)", minHeight: "100vh" }}>
       <div style={{ marginBottom: 16 }}>
-        <BrandMark size="md" withWordmark />
+        <BrandSignature size="md" />
       </div>
       <h1>404</h1>
       <p>Page not found.</p>

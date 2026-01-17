@@ -44,7 +44,7 @@
 }
 
 .community-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px rgba(45, 212, 191, 0.16));
+  filter: drop-shadow(0 14px 34px var(--brand-primary-glow));
 }
 
 .community-eyebrow {
@@ -128,7 +128,7 @@
 }
 
 .panel-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 10px 22px rgba(45, 212, 191, 0.14));
+  filter: drop-shadow(0 10px 22px var(--brand-primary-glow));
 }
 
 .panel-header h2 {

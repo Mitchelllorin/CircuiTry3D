@@ -810,7 +810,7 @@ body.builder-body {
 .builder-panel-brand {
   position: absolute;
   top: 16px;
-  left: 16px;
+  right: 16px;
   z-index: 10;
   pointer-events: none;
   opacity: 0.95;
@@ -822,7 +822,7 @@ body.builder-body {
 }
 
 .builder-panel-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 8px 18px rgba(45, 212, 191, 0.18));
+  filter: drop-shadow(0 8px 18px var(--brand-primary-glow));
 }
 
 .builder-panel-shell--practice {

@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import practiceProblems from "../data/practiceProblems";
 import type { Classroom } from "../model/classroom";
-import BrandMark from "../components/BrandMark";
-import WordMark from "../components/WordMark";
+import BrandSignature from "../components/BrandSignature";
 import { useClassroom } from "../context/ClassroomContext";
 import "../styles/classroom.css";
 
@@ -119,10 +118,7 @@ export default function Classroom() {
     <div className="classroom-page">
       <header className="classroom-header">
         <div>
-          <div className="classroom-brand">
-            <BrandMark size="sm" decorative />
-            <WordMark size="sm" decorative />
-          </div>
+          <BrandSignature size="sm" decorative className="classroom-brand" />
           <p className="eyebrow">Classroom Mode</p>
           <h1>Coordinate classes, assignments, and analytics.</h1>
           <p>Track student mastery in one dashboard. Create classes, invite students, and assign practice sets with live progress.</p>
@@ -157,9 +153,12 @@ export default function Classroom() {
       <div className="classroom-grid">
         <section className="classroom-panel">
           <div className="classroom-panel-header">
-            <div>
-              <h2>Your Classes</h2>
-              <p>Switch cohorts or create a new group.</p>
+            <div className="classroom-panel-title">
+              <BrandSignature size="xs" decorative className="classroom-panel-brand" />
+              <div>
+                <h2>Your Classes</h2>
+                <p>Switch cohorts or create a new group.</p>
+              </div>
             </div>
             <small>Last sync {lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString() : "—"}</small>
           </div>
@@ -236,11 +235,14 @@ export default function Classroom() {
           {selectedClass ? (
             <>
               <div className="classroom-panel-header">
-                <div>
-                  <h2>{selectedClass.name}</h2>
-                  <p>
-                    Join code <strong>{selectedClass.joinCode}</strong>
-                  </p>
+                <div className="classroom-panel-title">
+                  <BrandSignature size="xs" decorative className="classroom-panel-brand" />
+                  <div>
+                    <h2>{selectedClass.name}</h2>
+                    <p>
+                      Join code <strong>{selectedClass.joinCode}</strong>
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -382,9 +384,12 @@ export default function Classroom() {
 
         <section className="classroom-panel analytics-panel">
           <div className="classroom-panel-header">
-            <div>
-              <h2>Learning Analytics</h2>
-              <p>Completion, time-on-task, and misconceptions.</p>
+            <div className="classroom-panel-title">
+              <BrandSignature size="xs" decorative className="classroom-panel-brand" />
+              <div>
+                <h2>Learning Analytics</h2>
+                <p>Completion, time-on-task, and misconceptions.</p>
+              </div>
             </div>
           </div>
           {selectedClass ? (

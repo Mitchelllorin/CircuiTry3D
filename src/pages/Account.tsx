@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import BrandMark from "../components/BrandMark";
-import WordMark from "../components/WordMark";
+import BrandSignature from "../components/BrandSignature";
 import type { FormEvent } from "react";
 import "../styles/account.css";
 
@@ -103,10 +102,7 @@ export default function Account() {
     <div className="account-page">
       <header className="account-header">
         <div>
-          <div className="account-brand">
-            <BrandMark size="sm" decorative />
-            <WordMark size="sm" decorative />
-          </div>
+          <BrandSignature size="sm" decorative className="account-brand" />
           <span className="account-eyebrow">User Accounts</span>
           <h1>{modeLabel}</h1>
           <p>Join the community to chat, share circuits, and sync your builds across devices.</p>
