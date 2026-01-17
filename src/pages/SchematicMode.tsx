@@ -8,7 +8,7 @@ import practiceProblems, {
 import type { PracticeProblem, PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
 import { formatMetricValue, formatNumber } from "../utils/electrical";
-import { solvePracticeProblem, type SolveResult } from "../utils/practiceSolver";
+import { trySolvePracticeProblem, type SolveAttempt, type SolveResult } from "../utils/practiceSolver";
 import { parseResistanceOhms, solveDCCircuit } from "../sim/dcSolver";
 import WireTable, {
   METRIC_ORDER,
@@ -187,17 +187,17 @@ const groupProblems = (problems: PracticeProblem[]): GroupedProblems =>
     { series: [], parallel: [], combination: [] }
   );
 
-const ensureProblem = (problem: PracticeProblem | null): PracticeProblem => {
+const ensureProblem = (problem: PracticeProblem | null): PracticeProblem | null => {
   if (problem) {
     return problem;
   }
   if (!DEFAULT_PRACTICE_PROBLEM) {
-    throw new Error("No practice problems available");
+    return null;
   }
   return DEFAULT_PRACTICE_PROBLEM;
 };
 
-const resolveProblem = (id: string | null): PracticeProblem => ensureProblem(findPracticeProblemById(id));
+const resolveProblem = (id: string | null): PracticeProblem | null => ensureProblem(findPracticeProblemById(id));
 
 const buildTableRows = (problem: PracticeProblem, solution: SolveResult): WireTableRow[] => {
   const componentRows = problem.components.map((component) => ({
@@ -414,13 +414,19 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
   const [worksheetComplete, setWorksheetComplete] = useState(false);
 
   const selectedProblem = useMemo(() => resolveProblem(selectedProblemId), [selectedProblemId]);
-  const solution = useMemo(() => solvePracticeProblem(selectedProblem), [selectedProblem]);
+  const solutionResult = useMemo((): SolveAttempt => {
+    if (!selectedProblem) {
+      return { ok: false, error: "No practice problems available" };
+    }
+    return trySolvePracticeProblem(selectedProblem);
+  }, [selectedProblem]);
+  const solution = solutionResult.ok ? solutionResult.data : null;
   const tableRows = useMemo(
-    () => buildTableRows(selectedProblem, solution),
+    () => (selectedProblem && solution ? buildTableRows(selectedProblem, solution) : []),
     [selectedProblem, solution]
   );
   const stepPresentations = useMemo(
-    () => selectedProblem.steps.map((step) => step(solution.stepContext)),
+    () => (selectedProblem && solution ? selectedProblem.steps.map((step) => step(solution.stepContext)) : []),
     [selectedProblem, solution]
   );
 
@@ -461,12 +467,20 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
   }, [expectedValues, tableRows]);
 
   useEffect(() => {
+    if (!selectedProblem) {
+      setWorksheetEntries({});
+      setWorksheetComplete(false);
+      setTableRevealed(false);
+      setStepsVisible(false);
+      setAnswerRevealed(false);
+      return;
+    }
     setWorksheetEntries(baselineWorksheet);
     setWorksheetComplete(false);
     setTableRevealed(false);
     setStepsVisible(false);
     setAnswerRevealed(false);
-  }, [baselineWorksheet, selectedProblem.id]);
+  }, [baselineWorksheet, selectedProblem?.id]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
@@ -474,9 +488,12 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
     }
   }, [worksheetComplete, answerRevealed]);
 
-  const targetValue = resolveTarget(selectedProblem, solution);
+  const targetValue = selectedProblem && solution ? resolveTarget(selectedProblem, solution) : null;
 
   const highlightRowId = (() => {
+    if (!selectedProblem) {
+      return null;
+    }
     const id = selectedProblem.targetMetric.componentId;
     if (id === "source") {
       return selectedProblem.source.id;
@@ -484,7 +501,7 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
     return id;
   })();
 
-  const highlightKey = selectedProblem.targetMetric.key as WireMetricKey;
+  const highlightKey = selectedProblem ? (selectedProblem.targetMetric.key as WireMetricKey) : null;
 
   const computeWorksheetComplete = (state: WorksheetState) =>
     tableRows.every((row) =>
@@ -562,6 +579,9 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
   };
 
   const advanceToNextProblem = () => {
+    if (!selectedProblem) {
+      return;
+    }
     const bucket = grouped[selectedProblem.topology] ?? practiceProblems;
     const currentIndex = bucket.findIndex((problem) => problem.id === selectedProblem.id);
     const nextProblem =
@@ -571,6 +591,24 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
       setSelectedProblemId(nextProblem.id);
     }
   };
+
+  if (!selectedProblem || !solution) {
+    return (
+      <div className="schematic-shell">
+        <header className="schematic-header">
+          <div>
+            <h1>3D Schematic Mode</h1>
+            <p>Practice presets are unavailable right now.</p>
+          </div>
+        </header>
+        <div className="schematic-body">
+          <p className="schematic-empty">
+            {solutionResult.ok ? "No practice problems are available." : solutionResult.error}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="schematic-shell">
@@ -718,7 +756,11 @@ function PracticeModeView({ symbolStandard }: { symbolStandard: SymbolStandard }
             <WireTable
               rows={tableRows}
               revealAll={tableRevealed}
-              highlight={{ rowId: highlightRowId, key: highlightKey }}
+              highlight={
+                highlightRowId && highlightKey
+                  ? { rowId: highlightRowId, key: highlightKey }
+                  : undefined
+              }
               entries={worksheetEntries}
               onChange={handleWorksheetChange}
             />
@@ -2566,7 +2608,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           flowAnimationSystem = new CurrentFlowAnimationSystem(three, circuitGroup);
 
           // Solve the circuit to get current values
-          const solution = solvePracticeProblem(practiceProblem);
+          const solutionResult = trySolvePracticeProblem(practiceProblem);
+          const solution = solutionResult.ok ? solutionResult.data : null;
           const elements = buildPracticeCircuitElements(practiceProblem);
           const dcSolution = solveDCCircuit(elements);
 
@@ -2574,8 +2617,10 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           flowAnimationSystem.setCircuitClosed(dcSolution.status === "solved");
 
           // Set current intensity based on solved circuit current
-          if (solution.totals.current !== undefined) {
+          if (solution?.totals.current !== undefined) {
             flowAnimationSystem.setCurrentIntensity(solution.totals.current);
+          } else {
+            flowAnimationSystem.setCurrentIntensity(0);
           }
 
           // Drive particle speed/density from Kirchhoff + Ohm (via DC solver).

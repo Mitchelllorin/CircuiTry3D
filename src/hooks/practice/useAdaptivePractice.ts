@@ -59,7 +59,7 @@ export type AdaptiveRecommendation = {
 
 export type UseAdaptivePracticeOptions = {
   problems: PracticeProblem[];
-  selectedProblem: PracticeProblem;
+  selectedProblem: PracticeProblem | null;
   worksheetComplete: boolean;
 };
 
@@ -106,21 +106,26 @@ export function useAdaptivePractice({
   const [mistakes, setMistakes] = useState<MistakeRecord[]>([]);
   const [completions, setCompletions] = useState<Record<string, number>>({});
   const prevCompleteRef = useRef(false);
+  const activeProblem = selectedProblem;
 
   useEffect(() => {
+    if (!activeProblem) {
+      prevCompleteRef.current = worksheetComplete;
+      return;
+    }
     if (worksheetComplete && !prevCompleteRef.current) {
       setCompletions((prev) => {
-        if (prev[selectedProblem.id]) {
+        if (prev[activeProblem.id]) {
           return prev;
         }
         return {
           ...prev,
-          [selectedProblem.id]: Date.now(),
+          [activeProblem.id]: Date.now(),
         };
       });
     }
     prevCompleteRef.current = worksheetComplete;
-  }, [selectedProblem.id, worksheetComplete]);
+  }, [activeProblem, worksheetComplete]);
 
   const recordAttempt = useCallback(
     ({
@@ -135,6 +140,9 @@ export function useAdaptivePractice({
       if (!isStruggleStatus(status) || isStruggleStatus(previousStatus)) {
         return;
       }
+      if (!activeProblem) {
+        return;
+      }
 
       setMistakes((prev) => {
         const next: MistakeRecord[] = [
@@ -143,15 +151,15 @@ export function useAdaptivePractice({
             id: createId("mistake"),
             timestamp: Date.now(),
             metric,
-            problemId: selectedProblem.id,
-            conceptTags: [...selectedProblem.conceptTags],
+            problemId: activeProblem.id,
+            conceptTags: [...activeProblem.conceptTags],
             status,
           },
         ];
         return next.slice(-MAX_LOG_ENTRIES);
       });
     },
-    [selectedProblem.conceptTags, selectedProblem.id],
+    [activeProblem],
   );
 
   const conceptCounts = useMemo(() => {
@@ -200,8 +208,8 @@ export function useAdaptivePractice({
         .sort((a, b) => b[1] - a[1])
         .map(([key]) => key);
     }
-    return selectedProblem.conceptTags;
-  }, [conceptCounts, focusConceptEntry, selectedProblem.conceptTags]);
+    return activeProblem?.conceptTags ?? [];
+  }, [activeProblem?.conceptTags, conceptCounts, focusConceptEntry]);
 
   const helperTargets = useMemo(() => {
     const targets: HelperTarget[] = [];
@@ -228,10 +236,13 @@ export function useAdaptivePractice({
   }, [focusConceptEntry?.key, focusMetricEntry?.key]);
 
   const recommendations = useMemo<AdaptiveRecommendation[]>(() => {
+    if (!activeProblem) {
+      return [];
+    }
     const completedIds = new Set(Object.keys(completions));
 
     const scored = problems
-      .filter((problem) => problem.id !== selectedProblem.id)
+      .filter((problem) => problem.id !== activeProblem.id)
       .map((problem) => {
         const conceptScore = prioritizedConcepts.reduce((score, tag, index) => {
           if (problem.conceptTags.includes(tag)) {
@@ -248,11 +259,11 @@ export function useAdaptivePractice({
         const completionScore = completedIds.has(problem.id) ? 0 : 3;
         const difficultyDelta = Math.abs(
           getDifficultyRank(problem.difficulty) -
-            getDifficultyRank(selectedProblem.difficulty),
+            getDifficultyRank(activeProblem.difficulty),
         );
         const difficultyScore = Math.max(0, 2 - difficultyDelta);
         const topologyScore =
-          problem.topology === selectedProblem.topology ? 1 : 0;
+          problem.topology === activeProblem.topology ? 1 : 0;
 
         const totalScore =
           conceptScore +
@@ -288,14 +299,12 @@ export function useAdaptivePractice({
 
     return scored.slice(0, 3).map(({ problem, reason }) => ({ problem, reason }));
   }, [
+    activeProblem,
     completions,
     focusConceptEntry,
     focusMetricEntry,
     prioritizedConcepts,
     problems,
-    selectedProblem.difficulty,
-    selectedProblem.id,
-    selectedProblem.topology,
   ]);
 
   const insights: AdaptiveInsights = useMemo(

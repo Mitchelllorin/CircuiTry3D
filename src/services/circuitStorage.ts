@@ -418,24 +418,29 @@ export function getStorageUsage(): { used: number; total: number; percentage: nu
     return null;
   }
 
-  // Rough estimate based on localStorage
-  let used = 0;
-  for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
-    if (!key) continue;
-    if (key.startsWith(STORAGE_PREFIX) || key.startsWith("circuiTry3d.")) {
-      const value = localStorage.getItem(key);
-      if (value) {
-        used += key.length + value.length;
+  try {
+    // Rough estimate based on localStorage
+    let used = 0;
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith(STORAGE_PREFIX) || key.startsWith("circuiTry3d.")) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          used += key.length + value.length;
+        }
       }
     }
+
+    // Approximate total (5MB is common localStorage limit)
+    const total = 5 * 1024 * 1024;
+    const percentage = used / total;
+
+    return { used, total, percentage };
+  } catch (error) {
+    console.warn("Failed to read storage usage:", error);
+    return null;
   }
-
-  // Approximate total (5MB is common localStorage limit)
-  const total = 5 * 1024 * 1024;
-  const percentage = used / total;
-
-  return { used, total, percentage };
 }
 
 /**
