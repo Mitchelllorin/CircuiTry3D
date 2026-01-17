@@ -28,7 +28,7 @@ interface LeftToolbarProps {
 
 /**
  * Renders the component icon/schematic symbol for the library
- * Vertical layout: name at top, schematic symbol, 3D thumbnail at bottom
+ * Vertical layout: name, description, schematic symbol, 3D thumbnail
  */
 function ComponentIcon({ component }: { component: ComponentAction }) {
   const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id);
@@ -54,6 +54,11 @@ function ComponentIcon({ component }: { component: ComponentAction }) {
       {/* Component name at top */}
       <span className="slider-component-name">{component.label}</span>
 
+      {/* Description */}
+      {component.description ? (
+        <span className="slider-component-description">{component.description}</span>
+      ) : null}
+
       {/* Schematic symbol */}
       <span className="slider-component-symbol" aria-hidden="true">
         {Symbol ? (
@@ -70,11 +75,6 @@ function ComponentIcon({ component }: { component: ComponentAction }) {
           <span className="slider-component-symbol-text">{component.icon}</span>
         )}
       </span>
-
-      {/* Description (under symbol, above thumbnail) */}
-      {component.description ? (
-        <span className="slider-component-description">{component.description}</span>
-      ) : null}
 
       {/* 3D thumbnail */}
       <span className="slider-component-thumbnail" aria-hidden="true">
