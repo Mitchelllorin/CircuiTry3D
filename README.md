@@ -4,7 +4,7 @@
 
 ## 🚀 Available Platforms
 
-- **Web Application** - Built with React + Vite, deployed on Netlify
+- **Web Application** - Built with React + Vite, deployed on Vercel
 - **Android Application** - Native Android app using Capacitor (ready for Google Play Store)
 
 ## 📱 Android App Setup
@@ -96,7 +96,7 @@ CircuiTry3D/
 - **Build Tool:** Vite 7
 - **Mobile:** Capacitor
 - **Routing:** React Router DOM
-- **Deployment:** Netlify (web), Google Play Store (Android)
+- **Deployment:** Vercel (web), Google Play Store (Android)
 
 ## 🎯 Adaptive Practice Paths
 
@@ -115,7 +115,8 @@ CircuiTry3D/
 ## 🎓 Teacher Dashboard / Classroom Mode
 
 - Visit `/classroom` to create cohorts, invite students with shareable join codes, and schedule practice assignments sourced from the existing problem library.
-- The new **ClassroomContext** talks to Netlify Blobs via a serverless function (`/.netlify/functions/classroom`) so class rosters, assignments, and analytics persist beyond the browser.
+- The new **ClassroomContext** uses Vercel KV via the `/api/classroom` serverless route so class rosters, assignments, and analytics persist beyond the browser.
+- Configure `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel to enable cloud sync; without them the app falls back to local storage.
 - Teachers can monitor completion rates, average time-on-task, and the most common misconception tags per class, plus log quick progress updates for formative assessments.
 - Local development gracefully falls back to seeded demo data to showcase the workflow without requiring a deployed backend.
 
