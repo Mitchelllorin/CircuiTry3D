@@ -23,6 +23,8 @@ export default function UnifiedNav() {
       </Link>
       <div className="unified-nav-links">
         <Link to="/app" className="unified-nav-link">Workspace</Link>
+        <Link to="/practice" className="unified-nav-link">Practice</Link>
+        <Link to="/schematic" className="unified-nav-link">3D Schematic</Link>
         <Link to="/pricing" className="unified-nav-link">Pricing</Link>
         <Link to="/classroom" className="unified-nav-link">Classroom</Link>
         <Link to="/community" className="unified-nav-link">Community</Link>
