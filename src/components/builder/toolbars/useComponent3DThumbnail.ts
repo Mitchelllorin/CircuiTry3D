@@ -10,6 +10,10 @@ import {
 const THUMBNAIL_SIZE_PX = 200;
 const THUMBNAIL_CACHE = new Map<string, string>();
 const THUMBNAIL_IN_FLIGHT = new Map<string, Promise<string>>();
+const THUMBNAIL_ANIMATION_FRAME_MS = 300;
+const THUMBNAIL_ANIMATION_SECONDS_PER_REV = 24;
+const THUMBNAIL_ANIMATION_SPEED =
+  (Math.PI * 2) / THUMBNAIL_ANIMATION_SECONDS_PER_REV;
 
 type SharedThumbnailRenderer = {
   canvas: HTMLCanvasElement;
@@ -20,6 +24,17 @@ let sharedRenderer: SharedThumbnailRenderer | null = null;
 let renderQueue: Promise<void> = Promise.resolve();
 
 type ThumbnailKind = string;
+
+type ThumbnailListener = (dataUrl: string) => void;
+
+const THUMBNAIL_ANIMATION_LISTENERS = new Map<
+  ThumbnailKind,
+  Set<ThumbnailListener>
+>();
+const THUMBNAIL_ANIMATION_ROTATIONS = new Map<ThumbnailKind, number>();
+let animationFrameHandle: number | null = null;
+let lastAnimationTime = 0;
+let isAnimationRenderQueued = false;
 
 const COMPONENT_3D_TYPE_MAP: Record<string, string> = {
   bjt: "transistor-bjt",
@@ -211,7 +226,10 @@ function buildComponentLibraryGroup(kind: ThumbnailKind): THREE.Object3D | null 
   return group;
 }
 
-function renderComponentThumbnail(kind: ThumbnailKind): string {
+function renderComponentThumbnail(
+  kind: ThumbnailKind,
+  rotationY = 0
+): string {
   if (typeof document === "undefined") {
     return "";
   }
@@ -258,6 +276,7 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
   scene.add(fill);
 
   let root: THREE.Object3D | null = null;
+  let pivot: THREE.Group | null = null;
   try {
     const libraryGroup = buildComponentLibraryGroup(kind);
 
@@ -273,28 +292,160 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
     }
 
     // Fit camera to content.
-    scene.add(root);
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z, 0.001);
 
+    pivot = new THREE.Group();
+    pivot.name = `thumb-pivot-${kind}`;
+    root.position.sub(center);
+    pivot.add(root);
+    pivot.rotation.y = rotationY;
+    scene.add(pivot);
+
     const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
     const distance = maxDim * 2.6;
-    camera.position.set(center.x + distance, center.y + distance * 0.9, center.z + distance);
-    camera.lookAt(center);
+    camera.position.set(distance, distance * 0.9, distance);
+    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
 
     renderer.render(scene, camera);
     return canvas.toDataURL("image/png");
   } finally {
-    if (root) {
+    if (pivot) {
+      disposeThreeObject(pivot);
+    } else if (root) {
       disposeThreeObject(root);
     }
   }
 }
 
-export function useComponent3DThumbnail(builderType?: string): string | undefined {
+function startThumbnailAnimationLoop() {
+  if (animationFrameHandle !== null) {
+    return;
+  }
+
+  const tick = (time: number) => {
+    if (THUMBNAIL_ANIMATION_LISTENERS.size === 0) {
+      animationFrameHandle = null;
+      lastAnimationTime = 0;
+      return;
+    }
+
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+      lastAnimationTime = time;
+      animationFrameHandle = requestAnimationFrame(tick);
+      return;
+    }
+
+    const elapsed = time - lastAnimationTime;
+    if (lastAnimationTime !== 0 && elapsed < THUMBNAIL_ANIMATION_FRAME_MS) {
+      animationFrameHandle = requestAnimationFrame(tick);
+      return;
+    }
+
+    const deltaSeconds =
+      lastAnimationTime === 0
+        ? THUMBNAIL_ANIMATION_FRAME_MS / 1000
+        : elapsed / 1000;
+    lastAnimationTime = time;
+
+    if (!isAnimationRenderQueued) {
+      isAnimationRenderQueued = true;
+      renderQueue = renderQueue
+        .then(async () => {
+          for (const [kind, listeners] of THUMBNAIL_ANIMATION_LISTENERS) {
+            if (!listeners.size) {
+              continue;
+            }
+
+            const nextAngle =
+              ((THUMBNAIL_ANIMATION_ROTATIONS.get(kind) ?? 0) +
+                deltaSeconds * THUMBNAIL_ANIMATION_SPEED) %
+              (Math.PI * 2);
+            THUMBNAIL_ANIMATION_ROTATIONS.set(kind, nextAngle);
+
+            const dataUrl = renderComponentThumbnail(kind, nextAngle);
+            if (!dataUrl) {
+              continue;
+            }
+
+            THUMBNAIL_CACHE.set(kind, dataUrl);
+            listeners.forEach((listener) => listener(dataUrl));
+          }
+        })
+        .finally(() => {
+          isAnimationRenderQueued = false;
+        });
+    }
+
+    animationFrameHandle = requestAnimationFrame(tick);
+  };
+
+  animationFrameHandle = requestAnimationFrame(tick);
+}
+
+function subscribeToThumbnailAnimation(
+  kind: ThumbnailKind,
+  listener: ThumbnailListener
+) {
+  const listeners =
+    THUMBNAIL_ANIMATION_LISTENERS.get(kind) ?? new Set<ThumbnailListener>();
+  listeners.add(listener);
+  THUMBNAIL_ANIMATION_LISTENERS.set(kind, listeners);
+
+  startThumbnailAnimationLoop();
+
+  return () => {
+    const current = THUMBNAIL_ANIMATION_LISTENERS.get(kind);
+    if (!current) {
+      return;
+    }
+    current.delete(listener);
+    if (!current.size) {
+      THUMBNAIL_ANIMATION_LISTENERS.delete(kind);
+      THUMBNAIL_ANIMATION_ROTATIONS.delete(kind);
+    }
+  };
+}
+
+type ThumbnailOptions = {
+  animated?: boolean;
+};
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    updatePreference();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updatePreference);
+      return () => {
+        mediaQuery.removeEventListener("change", updatePreference);
+      };
+    }
+
+    mediaQuery.addListener(updatePreference);
+    return () => {
+      mediaQuery.removeListener(updatePreference);
+    };
+  }, []);
+
+  return prefersReducedMotion;
+}
+
+export function useComponent3DThumbnail(
+  builderType?: string,
+  options: ThumbnailOptions = {}
+): string | undefined {
   const kind = useMemo(() => {
     if (!builderType) return undefined;
     return builderType as ThumbnailKind;
@@ -305,12 +456,19 @@ export function useComponent3DThumbnail(builderType?: string): string | undefine
     return THUMBNAIL_CACHE.get(kind);
   });
 
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const shouldAnimate = Boolean(options.animated && !prefersReducedMotion);
+
   useEffect(() => {
     if (!kind) return;
 
     const cached = THUMBNAIL_CACHE.get(kind);
     if (cached) {
       setSrc(cached);
+      return;
+    }
+
+    if (THUMBNAIL_IN_FLIGHT.has(kind)) {
       return;
     }
 
@@ -368,6 +526,14 @@ export function useComponent3DThumbnail(builderType?: string): string | undefine
       // requestIdleCallback cancellation is best-effort; ignore if unsupported.
     };
   }, [kind]);
+
+  useEffect(() => {
+    if (!kind || !shouldAnimate) {
+      return;
+    }
+
+    return subscribeToThumbnailAnimation(kind, setSrc);
+  }, [kind, shouldAnimate]);
 
   return src;
 }
