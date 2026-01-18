@@ -7,7 +7,7 @@ import {
   disposeThreeObject,
 } from "../../../schematic/threeFactory";
 
-const THUMBNAIL_SIZE_PX = 160;
+const THUMBNAIL_SIZE_PX = 200;
 const THUMBNAIL_CACHE = new Map<string, string>();
 const THUMBNAIL_IN_FLIGHT = new Map<string, Promise<string>>();
 
@@ -280,7 +280,7 @@ function renderComponentThumbnail(kind: ThumbnailKind): string {
     const maxDim = Math.max(size.x, size.y, size.z, 0.001);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
-    const distance = maxDim * 3.2;
+    const distance = maxDim * 2.6;
     camera.position.set(center.x + distance, center.y + distance * 0.9, center.z + distance);
     camera.lookAt(center);
     camera.updateProjectionMatrix();
