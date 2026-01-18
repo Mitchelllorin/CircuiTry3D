@@ -129,7 +129,7 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         {/* Top horizontal wire to R1 */}
-        <line x1="55" y1="50" x2="90" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        <line x1="55" y1="50" x2="100" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         {/* R1 - Horizontal resistor using zigzag pattern (4-6 peaks per style guide) */}
         <g transform="translate(130, 50)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
@@ -139,7 +139,7 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <line x1="160" y1="50" x2="205" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         {/* Right vertical wire to R2 */}
-        <line x1="205" y1="50" x2="205" y2="70" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        <line x1="205" y1="50" x2="205" y2="75" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         {/* R2 - Vertical resistor (rotated 90°) */}
         <g transform="translate(205, 105) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
@@ -149,7 +149,7 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         <line x1="205" y1="135" x2="205" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         {/* Bottom horizontal wire to R3 */}
-        <line x1="205" y1="150" x2="160" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        <line x1="205" y1="150" x2="155" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
         {/* R3 - Horizontal resistor on bottom */}
         <g transform="translate(125, 150)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
