@@ -702,6 +702,10 @@ function ComponentLibraryCard({ component }: { component: ComponentAction }) {
     <span className="slider-component-card">
       <span className="slider-component-name">{component.label}</span>
 
+      {component.description ? (
+        <span className="slider-component-description">{component.description}</span>
+      ) : null}
+
       <span className="slider-component-symbol" aria-hidden="true">
         {Symbol ? (
           <svg
@@ -717,10 +721,6 @@ function ComponentLibraryCard({ component }: { component: ComponentAction }) {
           <span className="slider-component-symbol-text">{component.icon}</span>
         )}
       </span>
-
-      {component.description ? (
-        <span className="slider-component-description">{component.description}</span>
-      ) : null}
 
       <span className="slider-component-thumbnail" aria-hidden="true">
         {thumbSrc ? (
