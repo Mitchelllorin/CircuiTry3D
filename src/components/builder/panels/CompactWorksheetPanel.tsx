@@ -270,7 +270,7 @@ export function CompactWorksheetPanel({
   };
 
   return (
-      <div className={`compact-worksheet-panel${isOpen ? " open" : ""}`}>
+    <div className={`compact-worksheet-panel${isOpen ? " open" : ""}`}>
       <div className="compact-worksheet-header">
         <div className="compact-worksheet-brand" aria-hidden="true">
           <WordMark size="sm" decorative />
