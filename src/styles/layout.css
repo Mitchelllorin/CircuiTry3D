@@ -188,6 +188,43 @@ body {
   color: var(--brand-secondary);
 }
 
+.build-stamp {
+  position: fixed;
+  right: 16px;
+  bottom: calc(12px + var(--app-safe-area-bottom));
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(8, 16, 34, 0.78);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.build-stamp__label {
+  color: var(--brand-green);
+}
+
+.build-stamp__value {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .build-stamp {
+    right: 10px;
+    bottom: calc(10px + var(--app-safe-area-bottom));
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+}
+
 .app-account {
   display: flex;
   align-items: center;

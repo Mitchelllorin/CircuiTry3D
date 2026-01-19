@@ -847,10 +847,24 @@ body.builder-body {
   max-height: 90dvh;
 }
 
+.builder-panel-shell--measurement {
+  width: min(96vw, 820px);
+  max-height: 90vh;
+  max-height: 90dvh;
+}
+
 .builder-panel-body--environment {
   overflow: auto;
   padding: 0;
   background: transparent;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.builder-panel-body--measurement {
+  overflow: auto;
+  padding: 0;
+  background: rgba(8, 20, 44, 0.92);
   flex: 1 1 auto;
   min-height: 0;
 }

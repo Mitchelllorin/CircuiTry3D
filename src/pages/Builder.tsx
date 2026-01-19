@@ -18,6 +18,7 @@ import { getSchematicSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
+import { MeasurementToolsPanel } from "../components/builder/panels/MeasurementToolsPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
   type EnvironmentalScenario,
@@ -48,6 +49,7 @@ import type {
   BuilderToolId,
   WorkspaceMode,
   LegacyModeState,
+  MeterMode,
   QuickAction,
   HelpSection,
   HelpLegendItem,
@@ -794,6 +796,7 @@ export default function Builder() {
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
+  const [isMeasurementPanelOpen, setMeasurementPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
   const [modeBarScrollState, setModeBarScrollState] = useState<{
     canScrollLeft: boolean;
@@ -927,6 +930,7 @@ export default function Builder() {
     circuitState,
     lastSimulationAt,
     lastSimulation,
+    meterState,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
@@ -936,6 +940,14 @@ export default function Builder() {
     onToolChange: setActiveQuickTool,
     onSimulationPulse: handleSimulationPulse,
   });
+
+  useEffect(() => {
+    if (!isMeasurementPanelOpen) {
+      return;
+    }
+    triggerBuilderAction("open-measurement-tools");
+    triggerBuilderAction("request-meter-state");
+  }, [isMeasurementPanelOpen, triggerBuilderAction]);
 
   useEffect(() => {
     if (!circuitState) {
@@ -1349,6 +1361,33 @@ export default function Builder() {
     [triggerBuilderAction, triggerSimulationPulse],
   );
 
+  const handleModeAction = useCallback(
+    (action: PanelAction) => {
+      if (action.action === "open-measurement-tools") {
+        setMeasurementPanelOpen(true);
+        triggerBuilderAction("open-measurement-tools");
+        return;
+      }
+      triggerBuilderAction(action.action, action.data);
+    },
+    [setMeasurementPanelOpen, triggerBuilderAction],
+  );
+
+  const handleMeterModeChange = useCallback(
+    (mode: MeterMode) => {
+      triggerBuilderAction("set-meter-mode", { mode });
+    },
+    [triggerBuilderAction],
+  );
+
+  const handleMeterToggle = useCallback(() => {
+    triggerBuilderAction("toggle-meter-armed");
+  }, [triggerBuilderAction]);
+
+  const handleMeterClear = useCallback(() => {
+    triggerBuilderAction("clear-meter-selection");
+  }, [triggerBuilderAction]);
+
   const handleAdvancePracticeProblem = useCallback(() => {
     const currentId =
       practiceProblemRef.current ??
@@ -1448,6 +1487,7 @@ export default function Builder() {
   const isOverlayActive =
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
+    isMeasurementPanelOpen ||
     isHelpOpen ||
     isLogoSettingsOpen ||
     isTroubleshootPanelOpen ||
@@ -1975,10 +2015,14 @@ export default function Builder() {
                   const isFlowToggle = action.action === "toggle-current-flow";
                   const isPolarityToggle = action.action === "toggle-polarity";
                   const isLayoutCycle = action.action === "cycle-layout";
+                  const isMeasurementToggle =
+                    action.action === "open-measurement-tools";
                   const isActionActive = isFlowToggle
                     ? modeState.currentFlowStyle === "solid"
                     : isPolarityToggle
                       ? modeState.showPolarityIndicators
+                      : isMeasurementToggle
+                        ? isMeasurementPanelOpen
                       : false;
 
                   const description = (() => {
@@ -1993,6 +2037,11 @@ export default function Builder() {
                     if (isLayoutCycle) {
                       return `Current layout: ${layoutModeLabel}`;
                     }
+                    if (isMeasurementToggle) {
+                      return isMeasurementPanelOpen
+                        ? "Measurement tools open"
+                        : action.description;
+                    }
                     return action.description;
                   })();
 
@@ -2001,9 +2050,7 @@ export default function Builder() {
                       key={action.id}
                       type="button"
                       className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(action.action, action.data)
-                      }
+                      onClick={() => handleModeAction(action)}
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
                       title={
@@ -2013,7 +2060,7 @@ export default function Builder() {
                       }
                       data-active={isActionActive ? "true" : undefined}
                       aria-pressed={
-                        isFlowToggle || isPolarityToggle
+                        isFlowToggle || isPolarityToggle || isMeasurementToggle
                           ? isActionActive
                           : undefined
                       }
@@ -2823,6 +2870,41 @@ export default function Builder() {
             onToggleLogoVisibility={toggleLogoVisibility}
             onResetLogoSettings={resetLogoSettings}
           />
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--measurement${isMeasurementPanelOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isMeasurementPanelOpen}
+        onClick={() => setMeasurementPanelOpen(false)}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--measurement"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="builder-panel-brand" aria-hidden="true">
+            <BrandMark size="sm" decorative />
+          </div>
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setMeasurementPanelOpen(false)}
+            aria-label="Close measurement tools"
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--measurement">
+            <MeasurementToolsPanel
+              meterState={meterState}
+              controlsDisabled={controlsDisabled}
+              controlDisabledTitle={controlDisabledTitle}
+              onSetMode={handleMeterModeChange}
+              onToggleArmed={handleMeterToggle}
+              onClear={handleMeterClear}
+            />
+          </div>
         </div>
       </div>
 

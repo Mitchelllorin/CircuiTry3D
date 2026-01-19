@@ -7,6 +7,7 @@ import type {
   ArenaExportStatus,
   ArenaExportSummary,
   LegacyCircuitState,
+  LegacyMeterState,
 } from "../../components/builder/types";
 import { createId } from "../../utils/id";
 
@@ -48,6 +49,7 @@ export function useBuilderFrame({
     null,
   );
   const [lastSimulationAt, setLastSimulationAt] = useState<string | null>(null);
+  const [meterState, setMeterState] = useState<LegacyMeterState | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -119,6 +121,14 @@ export function useBuilderFrame({
           return;
         }
         setCircuitState(payload as LegacyCircuitState);
+        return;
+      }
+
+      if (type === "legacy:meter-state") {
+        if (!payload || typeof payload !== "object") {
+          return;
+        }
+        setMeterState(payload as LegacyMeterState);
         return;
       }
 
@@ -263,6 +273,7 @@ export function useBuilderFrame({
     circuitState,
     lastSimulationAt,
     lastSimulation,
+    meterState,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
