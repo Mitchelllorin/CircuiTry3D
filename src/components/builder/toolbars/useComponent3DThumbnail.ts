@@ -253,7 +253,7 @@ function renderComponentThumbnail(
     }
     if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
       (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;
-      (renderer as any).toneMappingExposure = 1.0;
+      (renderer as any).toneMappingExposure = 1.15;
     }
     if ("physicallyCorrectLights" in renderer) {
       (renderer as any).physicallyCorrectLights = true;
@@ -266,12 +266,12 @@ function renderComponentThumbnail(
   const { canvas, renderer } = sharedRenderer;
 
   const scene = new THREE.Scene();
-  const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.0);
   scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  const key = new THREE.DirectionalLight(0xffffff, 1.25);
   key.position.set(3, 4, 3);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0x88ccff, 0.35);
+  const fill = new THREE.DirectionalLight(0x88ccff, 0.5);
   fill.position.set(-3, 2, -3);
   scene.add(fill);
 
@@ -305,7 +305,7 @@ function renderComponentThumbnail(
     scene.add(pivot);
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
-    const distance = maxDim * 2.6;
+    const distance = maxDim * 2.35;
     camera.position.set(distance, distance * 0.9, distance);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
