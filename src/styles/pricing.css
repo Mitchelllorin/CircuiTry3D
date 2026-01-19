@@ -15,7 +15,7 @@
     radial-gradient(circle at 80% 10%, var(--brand-secondary-dim), transparent 60%),
     linear-gradient(135deg, var(--bg-darker), var(--bg-dark));
   color: var(--pricing-text);
-  padding: clamp(2rem, 5vw, 4rem) 1.5rem 3rem;
+  padding: calc(clamp(2rem, 5vw, 4rem) + var(--app-safe-area-top)) 1.5rem 3rem;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
