@@ -945,6 +945,7 @@ export default function Builder() {
     if (!isMeasurementPanelOpen) {
       return;
     }
+    triggerBuilderAction("set-tool", { tool: "select" });
     triggerBuilderAction("open-measurement-tools");
     triggerBuilderAction("request-meter-state");
   }, [isMeasurementPanelOpen, triggerBuilderAction]);
@@ -1364,8 +1365,7 @@ export default function Builder() {
   const handleModeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-measurement-tools") {
-        setMeasurementPanelOpen(true);
-        triggerBuilderAction("open-measurement-tools");
+        setMeasurementPanelOpen((open) => !open);
         return;
       }
       triggerBuilderAction(action.action, action.data);
@@ -1487,7 +1487,6 @@ export default function Builder() {
   const isOverlayActive =
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
-    isMeasurementPanelOpen ||
     isHelpOpen ||
     isLogoSettingsOpen ||
     isTroubleshootPanelOpen ||
@@ -2874,16 +2873,13 @@ export default function Builder() {
       </div>
 
       <div
-        className={`builder-panel-overlay builder-panel-overlay--measurement${isMeasurementPanelOpen ? " open" : ""}`}
+        className={`measurement-panel-float${isMeasurementPanelOpen ? " open" : ""}`}
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
+        aria-label="Measurement tools"
         aria-hidden={!isMeasurementPanelOpen}
-        onClick={() => setMeasurementPanelOpen(false)}
       >
-        <div
-          className="builder-panel-shell builder-panel-shell--measurement"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="builder-panel-shell builder-panel-shell--measurement">
           <div className="builder-panel-brand" aria-hidden="true">
             <BrandMark size="sm" decorative />
           </div>

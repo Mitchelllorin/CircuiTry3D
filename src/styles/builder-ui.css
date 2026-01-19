@@ -847,12 +847,6 @@ body.builder-body {
   max-height: 90dvh;
 }
 
-.builder-panel-shell--measurement {
-  width: min(96vw, 820px);
-  max-height: 90vh;
-  max-height: 90dvh;
-}
-
 .builder-panel-body--environment {
   overflow: auto;
   padding: 0;
@@ -867,6 +861,40 @@ body.builder-body {
   background: rgba(8, 20, 44, 0.92);
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.measurement-panel-float {
+  position: fixed;
+  right: calc(16px + var(--builder-menu-toggle-hit-width));
+  bottom: calc(16px + var(--builder-safe-area-bottom));
+  z-index: 1700;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.measurement-panel-float.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.builder-panel-shell--measurement {
+  width: min(92vw, 420px);
+  max-height: min(80vh, 720px);
+}
+
+@media (max-width: 720px) {
+  .measurement-panel-float {
+    right: 10px;
+    left: 10px;
+    bottom: calc(10px + var(--builder-safe-area-bottom));
+  }
+
+  .builder-panel-shell--measurement {
+    width: 100%;
+  }
 }
 
 /* Wire Library Panel */
