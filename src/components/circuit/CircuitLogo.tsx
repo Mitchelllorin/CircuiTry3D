@@ -161,6 +161,18 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         {/* Return wire to battery */}
         <line x1="55" y1="150" x2="55" y2="115" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
+        <g stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.2" opacity="0.9">
+          <line x1="55" y1="115" x2="55" y2="95" />
+          <line x1="55" y1="65" x2="55" y2="50" />
+          <line x1="55" y1="50" x2="100" y2="50" />
+          <line x1="160" y1="50" x2="205" y2="50" />
+          <line x1="205" y1="50" x2="205" y2="75" />
+          <line x1="205" y1="135" x2="205" y2="150" />
+          <line x1="205" y1="150" x2="155" y2="150" />
+          <line x1="95" y1="150" x2="55" y2="150" />
+          <line x1="55" y1="150" x2="55" y2="115" />
+        </g>
+
         {/* Junction nodes at corners per style guide (filled circles at T-junctions) */}
         <circle cx="55" cy="50" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
         <circle cx="205" cy="50" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
