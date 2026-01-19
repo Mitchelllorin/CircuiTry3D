@@ -134,7 +134,6 @@ body {
   display: flex;
   flex-direction: column;
   background: radial-gradient(circle at top, var(--brand-primary-dim), transparent 55%), var(--bg-darker);
-  --app-nav-height: 0px;
   --app-mode-bar-height: 0px;
 }
 
@@ -294,24 +293,18 @@ body {
   }
 }
 
-/* Global Mode Bar adjustments for non-workspace pages */
-.app-shell:not(.is-landing):not(.is-workspace) .workspace-mode-bar--global {
-  /* Position below the unified nav on pages that have it */
-  top: calc(var(--app-nav-height, 72px) + var(--app-mode-bar-gap, 12px));
+/* Global Mode Bar adjustments for non-landing pages */
+.app-shell:not(.is-landing) .workspace-mode-bar--global {
+  top: calc(var(--app-safe-area-top) + var(--app-mode-bar-gap, 12px));
 }
 
-.app-shell:not(.is-landing):not(.is-workspace) .mode-bar-scroll-indicator--left {
-  top: calc(var(--app-nav-height, 72px) + var(--app-mode-bar-gap, 12px));
-}
-
-/* On workspace page (/app), position at original top */
-.app-shell.is-workspace .workspace-mode-bar--global {
-  top: calc(12px + var(--app-safe-area-top));
+.app-shell:not(.is-landing) .mode-bar-scroll-indicator--left {
+  top: calc(var(--app-safe-area-top) + var(--app-mode-bar-gap, 12px));
 }
 
 /* Add top padding to content when mode bar is present on non-workspace pages */
 .app-shell:not(.is-landing):not(.is-workspace) .app-content {
-  padding-top: calc(var(--app-mode-bar-height, 0px) + var(--app-mode-bar-gap, 12px));
+  padding-top: calc(var(--app-mode-bar-height, 0px) + var(--app-mode-bar-gap, 12px) + var(--app-safe-area-top));
 }
 
 /* On workspace page, no extra padding needed as Builder handles its own layout */

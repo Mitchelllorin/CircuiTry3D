@@ -9,7 +9,6 @@ import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
-import UnifiedNav from "../components/UnifiedNav";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
@@ -65,13 +64,10 @@ function AppLayout() {
       return;
     }
 
-    const nav = shell.querySelector<HTMLElement>(".unified-nav");
     const modeBar = shell.querySelector<HTMLElement>(".workspace-mode-bar--global");
 
     const updateLayoutVars = () => {
-      const navHeight = nav?.offsetHeight ?? 0;
       const modeBarHeight = modeBar?.offsetHeight ?? 0;
-      shell.style.setProperty("--app-nav-height", `${navHeight}px`);
       shell.style.setProperty("--app-mode-bar-height", `${modeBarHeight}px`);
     };
 
@@ -83,9 +79,6 @@ function AppLayout() {
     }
 
     const observer = new ResizeObserver(updateLayoutVars);
-    if (nav) {
-      observer.observe(nav);
-    }
     if (modeBar) {
       observer.observe(modeBar);
     }
@@ -96,9 +89,6 @@ function AppLayout() {
     <div className={shellClass} ref={shellRef}>
       {/* Global Mode Bar - shown on all pages except landing */}
       {!isLanding && <GlobalModeBar />}
-      {!isLanding && !isWorkspace && (
-        <UnifiedNav />
-      )}
       <main className={contentClass}>
         <Outlet />
       </main>
