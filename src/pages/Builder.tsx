@@ -680,7 +680,9 @@ const IconPlay = ({ className }: IconProps) => (
 );
 
 function ComponentLibraryCard({ component }: { component: ComponentAction }) {
-  const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id);
+  const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id, {
+    animated: true,
+  });
 
   const symbolKey = (() => {
     const type = component.builderType ?? component.id;
