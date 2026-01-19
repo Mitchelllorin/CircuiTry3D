@@ -3929,6 +3929,16 @@ body.android-optimized.menu-visible .status {
             }
         }
 
+        function notifyParentMeterState(payload) {
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({ type: 'legacy:meter-state', payload }, '*');
+                } catch (error) {
+                    console.warn('Builder bridge: unable to share meter state', error);
+                }
+            }
+        }
+
         function notifyParentCircuitState(snapshot) {
             if (window.parent && window.parent !== window) {
                 try {
@@ -4070,6 +4080,20 @@ body.android-optimized.menu-visible .status {
                                 break;
                             case 'open-measurement-tools':
                                 if (typeof openMeasurementTools === 'function') openMeasurementTools();
+                                break;
+                            case 'set-meter-mode':
+                                if (typeof data.mode === 'string' && typeof setMeterMode === 'function') {
+                                    setMeterMode(data.mode);
+                                }
+                                break;
+                            case 'toggle-meter-armed':
+                                if (typeof toggleMeterArmed === 'function') toggleMeterArmed();
+                                break;
+                            case 'clear-meter-selection':
+                                if (typeof clearMeterSelection === 'function') clearMeterSelection();
+                                break;
+                            case 'request-meter-state':
+                                sendMeterState();
                                 break;
                             case 'cycle-wire-routing':
                                 if (typeof cycleRoutingMode === 'function') cycleRoutingMode();
@@ -9913,6 +9937,36 @@ body.android-optimized.menu-visible .status {
                 readout.textContent = `V = ${dv.toFixed(3)} V`;
             }
             drawScope();
+            sendMeterState();
+        }
+
+        function collectMeterState() {
+            const instructions = document.getElementById('meter-instructions');
+            const probeAEl = document.getElementById('meter-probe-a');
+            const probeBEl = document.getElementById('meter-probe-b');
+            const readingEl = document.getElementById('meter-reading');
+            const subEl = document.getElementById('meter-subreading');
+            const scopeReadout = document.getElementById('scope-readout');
+            const buffer = Array.isArray(scopeBuffer) ? scopeBuffer.slice() : [];
+
+            return {
+                mode: meterMode,
+                armed: Boolean(meterArmed),
+                instructions: instructions ? instructions.textContent || '' : '',
+                probeA: probeAEl ? probeAEl.textContent || '—' : '—',
+                probeB: probeBEl ? probeBEl.textContent || '—' : '—',
+                reading: readingEl ? readingEl.textContent || '—' : '—',
+                subreading: subEl ? subEl.textContent || '' : '',
+                scope: {
+                    readout: scopeReadout ? scopeReadout.textContent || '—' : '—',
+                    buffer: meterMode === 'scope' ? buffer : [],
+                    active: meterMode === 'scope' && meterArmed
+                }
+            };
+        }
+
+        function sendMeterState() {
+            notifyParentMeterState(collectMeterState());
         }
 
         function updateMeterUI() {
@@ -9951,6 +10005,7 @@ body.android-optimized.menu-visible .status {
 
             if (!meterArmed) {
                 stopScope();
+                sendMeterState();
                 return;
             }
 
@@ -9964,11 +10019,13 @@ body.android-optimized.menu-visible .status {
             if (meterMode === 'current') {
                 if (!meterCurrentTarget) {
                     if (readingEl) readingEl.textContent = 'Click a component…';
+                    sendMeterState();
                     return;
                 }
                 const amps = getComponentCurrentFromSolution(meterCurrentTarget, lastDCSolution);
                 if (readingEl) readingEl.textContent = Number.isFinite(amps) ? `${amps.toFixed(6)} A` : '—';
                 if (subEl) subEl.textContent = meterCurrentTarget?.id ? `Target: ${meterCurrentTarget.type}:${meterCurrentTarget.id}` : '';
+                sendMeterState();
                 return;
             }
 
@@ -9976,6 +10033,7 @@ body.android-optimized.menu-visible .status {
                 if (!meterProbeA) {
                     if (readingEl) readingEl.textContent = 'Pick a terminal…';
                     stopScope();
+                    sendMeterState();
                     return;
                 }
                 startScope();
@@ -9983,11 +10041,13 @@ body.android-optimized.menu-visible .status {
                     const latest = scopeBuffer.length ? scopeBuffer[scopeBuffer.length - 1] : null;
                     readingEl.textContent = Number.isFinite(latest) ? `${latest.toFixed(3)} V` : '—';
                 }
+                sendMeterState();
                 return;
             }
 
             if (!meterProbeA || !meterProbeB) {
                 if (readingEl) readingEl.textContent = 'Pick two terminals…';
+                sendMeterState();
                 return;
             }
 
@@ -9997,6 +10057,7 @@ body.android-optimized.menu-visible .status {
                 if (subEl && lastDCSolution?.status && lastDCSolution.status !== 'solved') {
                     subEl.textContent = `Solver: ${lastDCSolution.status}${lastDCSolution.reason ? ' — ' + lastDCSolution.reason : ''}`;
                 }
+                sendMeterState();
                 return;
             }
 
@@ -10006,8 +10067,11 @@ body.android-optimized.menu-visible .status {
                     if (ohms === Infinity) readingEl.textContent = '∞ Ω';
                     else readingEl.textContent = Number.isFinite(ohms) ? `${ohms.toFixed(2)} Ω` : '—';
                 }
+                sendMeterState();
                 return;
             }
+
+            sendMeterState();
         }
 
         // State management functions

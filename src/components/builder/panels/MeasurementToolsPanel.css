@@ -1,0 +1,251 @@
+.measurement-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 28px 28px;
+  color: var(--builder-text);
+}
+
+.measurement-panel__header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.measurement-panel__title {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--builder-cyan);
+  letter-spacing: 0.02em;
+}
+
+.measurement-panel__subtitle {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: var(--builder-muted);
+}
+
+.measurement-panel__status {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  font-weight: 700;
+}
+
+.measurement-panel__status--armed {
+  background: rgba(0, 255, 136, 0.16);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #0b1a2f;
+}
+
+.measurement-panel__status--disarmed {
+  background: rgba(255, 136, 68, 0.12);
+  border-color: rgba(255, 136, 68, 0.35);
+  color: #ffe3d0;
+}
+
+.measurement-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.measurement-panel__section-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(200, 220, 255, 0.7);
+}
+
+.measurement-panel__mode-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.measurement-panel__mode-btn {
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--builder-text);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.measurement-panel__mode-btn[data-active="true"] {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: rgba(0, 255, 136, 0.5);
+  color: #0a1a2f;
+}
+
+.measurement-panel__mode-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.measurement-panel__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.measurement-panel__action-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(0, 255, 136, 0.18);
+  color: #0b1a2f;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.measurement-panel__action-btn--secondary {
+  background: rgba(136, 204, 255, 0.15);
+  color: var(--builder-text);
+}
+
+.measurement-panel__action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.measurement-panel__instructions {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.measurement-panel__probe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.measurement-panel__probe {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.measurement-panel__probe-title {
+  font-weight: 700;
+}
+
+.measurement-panel__probe-title--red {
+  color: #ff6666;
+}
+
+.measurement-panel__probe-title--black {
+  color: #aab0b8;
+}
+
+.measurement-panel__probe-value {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 0.8rem;
+}
+
+.measurement-panel__reading {
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.measurement-panel__reading-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.measurement-panel__reading-label {
+  font-weight: 700;
+  color: var(--builder-green);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.measurement-panel__reading-value {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 1.05rem;
+  color: #e8f6ff;
+}
+
+.measurement-panel__subreading {
+  margin-top: 6px;
+  color: rgba(220, 234, 255, 0.72);
+  font-size: 0.8rem;
+}
+
+.measurement-panel__scope {
+  border: 1px solid rgba(136, 204, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 14px;
+  gap: 12px;
+}
+
+.measurement-panel__scope-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.measurement-panel__scope-title {
+  font-weight: 700;
+  color: #88ccff;
+  letter-spacing: 0.04em;
+}
+
+.measurement-panel__scope-readout {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: 0.8rem;
+}
+
+.measurement-panel__scope-canvas {
+  width: 100%;
+  height: 160px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.measurement-panel__scope-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(220, 234, 255, 0.7);
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .measurement-panel {
+    padding: 20px;
+  }
+
+  .measurement-panel__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

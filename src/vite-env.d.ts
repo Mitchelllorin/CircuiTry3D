@@ -30,3 +30,7 @@ declare module "*.gif" {
   export default src;
 }
 
+declare const __BUILD_SHA__: string;
+declare const __BUILD_REF__: string;
+declare const __BUILD_TIME__: string;
+

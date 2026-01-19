@@ -12,6 +12,7 @@ import Classroom from "../pages/Classroom";
 import UnifiedNav from "../components/UnifiedNav";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
+import BuildStamp from "../components/BuildStamp";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
 
@@ -102,6 +103,7 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
+      {!isLanding && <BuildStamp />}
     </div>
   );
 }
