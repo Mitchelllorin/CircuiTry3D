@@ -120,10 +120,12 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         {/* Wire from battery to corner */}
         <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
-        {/* Battery symbol - per style guide: longer plate = positive */}
+        {/* Battery symbol and polarity markers are brand-critical; do not remove without explicit instruction. */}
         <g transform="translate(55, 80)">
-          <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
-          <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
+          <line x1="-10" y1="-10" x2="10" y2="-10" stroke="url(#componentGradient)" strokeWidth="3.2" />
+          <line x1="-6" y1="6" x2="6" y2="6" stroke="url(#componentGradient)" strokeWidth="2.4" />
+          <text x="0" y="-22" fontSize="11" fill={LOGO_COLORS.wireGradientEnd} fontWeight="700" textAnchor="middle">+</text>
+          <text x="0" y="26" fontSize="11" fill={LOGO_COLORS.labelPrimary} fontWeight="700" textAnchor="middle">-</text>
         </g>
 
         <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
