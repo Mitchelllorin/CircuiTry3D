@@ -43,6 +43,19 @@ export const UNIQUE_COMPLETION_BONUS = 12;
 export const REPEAT_COMPLETION_BONUS = 4;
 export const STREAK_STEP_BONUS = 6;
 export const HISTORY_LIMIT = 25;
+export const CLEAN_SOLVE_BONUS = 14;
+
+export const SPRINT_TARGET_MS_BY_DIFFICULTY: Record<PracticeDifficulty, number> = {
+  intro: 180000,
+  standard: 240000,
+  challenge: 360000,
+};
+
+export const SPRINT_BONUS_BY_DIFFICULTY: Record<PracticeDifficulty, number> = {
+  intro: 12,
+  standard: 18,
+  challenge: 26,
+};
 
 export const GAMIFICATION_BADGES: GamificationBadge[] = [
   {
