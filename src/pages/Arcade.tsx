@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
+import CurrentRunner from "../components/arcade/CurrentRunner";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../context/GamificationContext";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
@@ -200,6 +201,8 @@ export default function Arcade() {
           ))}
         </div>
       </header>
+
+      <CurrentRunner />
 
       <section className="arcade-panel">
         <div className="arcade-panel-header">

@@ -29,6 +29,12 @@ type CompletionRewardMeta = {
   usedAssist?: boolean;
 };
 
+type ArcadeRewardMeta = {
+  xp: number;
+  label: string;
+  bonusLabels?: string[];
+};
+
 type GamificationHistoryEntry = {
   id: string;
   timestamp: number;
@@ -52,6 +58,8 @@ export type GamificationReward = {
   streak: number;
   timestamp: number;
   elapsedMs?: number;
+  source?: "practice" | "arcade";
+  primaryLabel?: string;
 };
 
 type GamificationState = {
@@ -94,6 +102,7 @@ type GamificationContextValue = {
     remainingXp: number;
   };
   recordCompletion(problem: PracticeProblem, meta?: CompletionRewardMeta): GamificationReward | null;
+  grantArcadeReward(meta: ArcadeRewardMeta): GamificationReward | null;
 };
 
 const STORAGE_KEY = "circuiTry3d.gamification.v1";
@@ -407,6 +416,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
             streak,
             timestamp,
             elapsedMs,
+            source: "practice",
           },
         };
 
@@ -477,6 +487,51 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     unlockedComponentsDetailed,
     nextComponentUnlock,
     recordCompletion,
+    grantArcadeReward: (meta) => {
+      let reward: GamificationReward | null = null;
+      setState((previous) => {
+        const timestamp = Date.now();
+        const xpEarned = Math.max(0, Math.round(meta.xp));
+        const bonusLabels = meta.bonusLabels ?? [];
+
+        if (!xpEarned) {
+          return previous;
+        }
+
+        const unlockedComponents = new Set(previous.unlockedComponents);
+        const newlyUnlockedComponents: string[] = [];
+        COMPONENT_UNLOCKS.forEach((unlock) => {
+          if (unlockedComponents.has(unlock.id)) {
+            return;
+          }
+          if (previous.xp + xpEarned >= unlock.xpThreshold) {
+            unlockedComponents.add(unlock.id);
+            newlyUnlockedComponents.push(unlock.id);
+          }
+        });
+
+        const nextState: GamificationState = {
+          ...previous,
+          xp: previous.xp + xpEarned,
+          unlockedComponents: Array.from(unlockedComponents),
+          lastReward: {
+            xpEarned,
+            bonusXp: 0,
+            bonusLabels,
+            badgeIds: [],
+            unlockedComponents: newlyUnlockedComponents,
+            streak: previous.streak,
+            timestamp,
+            source: "arcade",
+            primaryLabel: meta.label,
+          },
+        };
+
+        reward = nextState.lastReward ?? null;
+        return nextState;
+      });
+      return reward;
+    },
   };
 
   return <GamificationContext.Provider value={value}>{children}</GamificationContext.Provider>;

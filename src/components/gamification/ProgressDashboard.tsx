@@ -31,11 +31,13 @@ export function ProgressDashboard() {
     { label: "Streak", value: state.streak, suffix: "d" },
   ];
   const rewardPrimary = state.lastReward
-    ? state.lastReward.badgeIds.length
-      ? `Unlocked ${state.lastReward.badgeIds.length} badge${state.lastReward.badgeIds.length > 1 ? "s" : ""}`
-      : state.lastReward.unlockedComponents.length
-        ? "New component added to your lab"
-        : "Worksheet mastered"
+    ? state.lastReward.source === "arcade"
+      ? state.lastReward.primaryLabel ?? "Arcade reward"
+      : state.lastReward.badgeIds.length
+        ? `Unlocked ${state.lastReward.badgeIds.length} badge${state.lastReward.badgeIds.length > 1 ? "s" : ""}`
+        : state.lastReward.unlockedComponents.length
+          ? "New component added to your lab"
+          : "Worksheet mastered"
     : null;
   const rewardBonus =
     state.lastReward?.bonusLabels?.length && state.lastReward.bonusXp
