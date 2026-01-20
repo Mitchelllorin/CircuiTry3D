@@ -30,6 +30,17 @@ export function ProgressDashboard() {
     { label: "Unique", value: Object.keys(state.completionIndex).length },
     { label: "Streak", value: state.streak, suffix: "d" },
   ];
+  const rewardPrimary = state.lastReward
+    ? state.lastReward.badgeIds.length
+      ? `Unlocked ${state.lastReward.badgeIds.length} badge${state.lastReward.badgeIds.length > 1 ? "s" : ""}`
+      : state.lastReward.unlockedComponents.length
+        ? "New component added to your lab"
+        : "Worksheet mastered"
+    : null;
+  const rewardBonus =
+    state.lastReward?.bonusLabels?.length && state.lastReward.bonusXp
+      ? `+${state.lastReward.bonusXp} XP ${state.lastReward.bonusLabels.join(" + ")} bonus`
+      : null;
 
   const featuredBadges = useMemo(() => {
     const nextBadge = lockedBadges[0];
@@ -62,16 +73,10 @@ export function ProgressDashboard() {
       {state.lastReward && (
         <div className="challenge-reward-banner">
           <span>+{state.lastReward.xpEarned} XP</span>
-          {state.lastReward.badgeIds.length ? (
-            <small>
-              Unlocked {state.lastReward.badgeIds.length} badge
-              {state.lastReward.badgeIds.length > 1 ? "s" : ""}
-            </small>
-          ) : state.lastReward.unlockedComponents.length ? (
-            <small>New component added to your lab</small>
-          ) : (
-            <small>Worksheet mastered</small>
-          )}
+          <small>
+            {rewardPrimary}
+            {rewardBonus ? ` | ${rewardBonus}` : ""}
+          </small>
         </div>
       )}
 

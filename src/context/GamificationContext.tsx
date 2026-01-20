@@ -2,11 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from "react";
 import type { PracticeDifficulty, PracticeProblem, PracticeTopology } from "../model/practice";
 import {
+  CLEAN_SOLVE_BONUS,
   COMPONENT_UNLOCKS,
   GAMIFICATION_BADGES,
   HISTORY_LIMIT,
   LEADERBOARD_SEEDS,
   REPEAT_COMPLETION_BONUS,
+  SPRINT_BONUS_BY_DIFFICULTY,
+  SPRINT_TARGET_MS_BY_DIFFICULTY,
   STREAK_STEP_BONUS,
   UNIQUE_COMPLETION_BONUS,
   XP_REWARD_BY_DIFFICULTY,
@@ -19,6 +22,11 @@ import { useAuth } from "./AuthContext";
 type CompletionMeta = {
   count: number;
   lastCompletedAt: number;
+};
+
+type CompletionRewardMeta = {
+  elapsedMs?: number;
+  usedAssist?: boolean;
 };
 
 type GamificationHistoryEntry = {
@@ -37,10 +45,13 @@ type BadgeState = {
 
 export type GamificationReward = {
   xpEarned: number;
+  bonusXp: number;
+  bonusLabels: string[];
   badgeIds: string[];
   unlockedComponents: string[];
   streak: number;
   timestamp: number;
+  elapsedMs?: number;
 };
 
 type GamificationState = {
@@ -50,6 +61,9 @@ type GamificationState = {
   byTopology: Record<PracticeTopology, number>;
   byDifficulty: Record<PracticeDifficulty, number>;
   masteryCounts: Record<string, number>;
+  bestTimes: Record<string, number>;
+  cleanSolves: number;
+  speedSolves: number;
   streak: number;
   lastCompletionDay?: string;
   unlockedComponents: string[];
@@ -79,7 +93,7 @@ type GamificationContextValue = {
     xpThreshold: number;
     remainingXp: number;
   };
-  recordCompletion(problem: PracticeProblem): GamificationReward | null;
+  recordCompletion(problem: PracticeProblem, meta?: CompletionRewardMeta): GamificationReward | null;
 };
 
 const STORAGE_KEY = "circuiTry3d.gamification.v1";
@@ -106,6 +120,9 @@ const DEFAULT_STATE: GamificationState = {
   byTopology: createTopologyBaseline(),
   byDifficulty: createDifficultyBaseline(),
   masteryCounts: {},
+  bestTimes: {},
+  cleanSolves: 0,
+  speedSolves: 0,
   streak: 0,
   unlockedComponents: [],
   badges: {},
@@ -202,6 +219,10 @@ const readStoredState = (): GamificationState => {
       },
       completionIndex: parsed.completionIndex ?? {},
       masteryCounts: parsed.masteryCounts ?? {},
+      bestTimes:
+        parsed.bestTimes && typeof parsed.bestTimes === "object" ? parsed.bestTimes : {},
+      cleanSolves: parsed.cleanSolves ?? 0,
+      speedSolves: parsed.speedSolves ?? 0,
       unlockedComponents: parsed.unlockedComponents ?? [],
       badges: parsed.badges ?? {},
       history: Array.isArray(parsed.history) ? parsed.history.slice(0, HISTORY_LIMIT) : [],
@@ -233,7 +254,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const recordCompletion = useCallback<GamificationContextValue["recordCompletion"]>(
-    (problem) => {
+    (problem, meta) => {
       let reward: GamificationReward | null = null;
       setState((previous) => {
         const timestamp = Date.now();
@@ -265,6 +286,35 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
           masteryCounts[tag] = (masteryCounts[tag] ?? 0) + 1;
         });
         const masterySpread = Object.keys(masteryCounts).length;
+        const bestTimes = { ...previous.bestTimes };
+        let cleanSolves = previous.cleanSolves;
+        let speedSolves = previous.speedSolves;
+        const bonusLabels: string[] = [];
+        let bonusXp = 0;
+        const cleanSolve = meta?.usedAssist === false;
+        if (cleanSolve) {
+          bonusXp += CLEAN_SOLVE_BONUS;
+          bonusLabels.push("Clean run");
+          cleanSolves += 1;
+        }
+
+        const elapsedMs =
+          typeof meta?.elapsedMs === "number" && Number.isFinite(meta.elapsedMs) && meta.elapsedMs > 0
+            ? meta.elapsedMs
+            : undefined;
+        if (elapsedMs !== undefined) {
+          const bestTime = bestTimes[problem.id];
+          if (bestTime === undefined || elapsedMs < bestTime) {
+            bestTimes[problem.id] = elapsedMs;
+          }
+          const sprintTarget = SPRINT_TARGET_MS_BY_DIFFICULTY[problem.difficulty];
+          if (elapsedMs <= sprintTarget) {
+            const sprintBonus = SPRINT_BONUS_BY_DIFFICULTY[problem.difficulty];
+            bonusXp += sprintBonus;
+            bonusLabels.push("Speed sprint");
+            speedSolves += 1;
+          }
+        }
 
         const totalCompletions = previous.totalCompletions + 1;
         const uniqueCompletions = Object.keys(completionIndex).length;
@@ -310,6 +360,8 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
           }
         });
 
+        xpEarned += bonusXp;
+
         const unlockedComponents = new Set(previous.unlockedComponents);
         const newlyUnlockedComponents: string[] = [];
         COMPONENT_UNLOCKS.forEach((unlock) => {
@@ -338,6 +390,9 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
           byTopology,
           byDifficulty,
           masteryCounts,
+          bestTimes,
+          cleanSolves,
+          speedSolves,
           streak,
           lastCompletionDay: dayKey,
           unlockedComponents: Array.from(unlockedComponents),
@@ -345,10 +400,13 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
           history: [historyEntry, ...previous.history].slice(0, HISTORY_LIMIT),
           lastReward: {
             xpEarned,
+            bonusXp,
+            bonusLabels,
             badgeIds: unlockedBadges,
             unlockedComponents: newlyUnlockedComponents,
             streak,
             timestamp,
+            elapsedMs,
           },
         };
 

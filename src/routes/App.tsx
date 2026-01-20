@@ -9,6 +9,7 @@ import Community from "../pages/Community";
 import Account from "../pages/Account";
 import SchematicMode from "../pages/SchematicMode";
 import Classroom from "../pages/Classroom";
+import Arcade from "../pages/Arcade";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/community" element={<Community />} />
           <Route path="/account" element={<Account />} />
           <Route path="/classroom" element={<Classroom />} />
+          <Route path="/arcade" element={<Arcade />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

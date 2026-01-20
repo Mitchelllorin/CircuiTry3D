@@ -4,7 +4,13 @@ import { createPortal } from "react-dom";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
+  getRandomPracticeProblem,
 } from "../data/practiceProblems";
+import {
+  CLEAN_SOLVE_BONUS,
+  SPRINT_BONUS_BY_DIFFICULTY,
+  SPRINT_TARGET_MS_BY_DIFFICULTY,
+} from "../data/gamification";
 import type { PracticeProblem } from "../model/practice";
 import type { PracticeTopology } from "../model/practice";
 import type { WireMetricKey } from "../utils/electrical";
@@ -28,6 +34,7 @@ import KirchhoffLaws from "../components/practice/KirchhoffLaws";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import ResistorColorCode from "../components/practice/ResistorColorCode";
 import { ProgressDashboard } from "../components/gamification/ProgressDashboard";
+import CircuitGamesPanel from "../components/gamification/CircuitGamesPanel";
 import { useGamification } from "../context/GamificationContext";
 import { PracticeViewport } from "./SchematicMode";
 import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
@@ -371,13 +378,17 @@ export default function Practice({
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
+  const [assistUsed, setAssistUsed] = useState(false);
+  const [sprintActive, setSprintActive] = useState(false);
+  const [sprintElapsedMs, setSprintElapsedMs] = useState(0);
+  const [sprintLastMs, setSprintLastMs] = useState<number | null>(null);
   const [activeHint, setActiveHint] = useState<"target" | "worksheet" | null>(
     null,
   );
   const [symbolStandard, setSymbolStandard] = useState<SymbolStandard>(
     DEFAULT_SYMBOL_STANDARD,
   );
-  const { recordCompletion } = useGamification();
+  const { recordCompletion, state: gamificationState } = useGamification();
   const lastControlledProblemId = useRef<string | null | undefined>(
     selectedProblemId,
   );
@@ -392,6 +403,7 @@ export default function Practice({
   } | null>(null);
   const diagramAnchorRef = useRef<HTMLDivElement | null>(null);
   const ohmsWheelRef = useRef<HTMLDivElement | null>(null);
+  const sprintStartRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (selectedProblemId === undefined) {
@@ -412,8 +424,9 @@ export default function Practice({
       setStepsVisible(false);
       setAnswerRevealed(false);
       setActiveHint(null);
+      resetArcade();
     }
-  }, [internalProblemId, selectedProblemId]);
+  }, [internalProblemId, resetArcade, selectedProblemId]);
 
   const grouped = useMemo(() => groupProblems(practiceProblems), []);
   const selectedProblem = useMemo(
@@ -487,6 +500,29 @@ export default function Practice({
     setActiveHint((previous) => (previous === hint ? null : hint));
   }, []);
 
+  const resetSprint = useCallback(() => {
+    sprintStartRef.current = null;
+    setSprintActive(false);
+    setSprintElapsedMs(0);
+    setSprintLastMs(null);
+  }, []);
+
+  const resetArcade = useCallback(() => {
+    setAssistUsed(false);
+    resetSprint();
+  }, [resetSprint]);
+
+  const handleStartSprint = useCallback(() => {
+    sprintStartRef.current = Date.now();
+    setSprintElapsedMs(0);
+    setSprintLastMs(null);
+    setSprintActive(true);
+  }, []);
+
+  const handleResetSprint = useCallback(() => {
+    resetSprint();
+  }, [resetSprint]);
+
   const selectProblemById = useCallback((problemId: string) => {
     const next = findProblem(problemId);
     setInternalProblemId(next.id);
@@ -494,7 +530,38 @@ export default function Practice({
     setStepsVisible(false);
     setAnswerRevealed(false);
     setActiveHint(null);
-  }, []);
+    resetArcade();
+  }, [resetArcade]);
+
+  const handleToggleTable = useCallback(() => {
+    setTableRevealed((value) => {
+      const next = !value;
+      if (next && !worksheetComplete) {
+        setAssistUsed(true);
+      }
+      return next;
+    });
+  }, [worksheetComplete]);
+
+  const handleToggleSteps = useCallback(() => {
+    setStepsVisible((value) => {
+      const next = !value;
+      if (next && !worksheetComplete) {
+        setAssistUsed(true);
+      }
+      return next;
+    });
+  }, [worksheetComplete]);
+
+  const handleToggleAnswer = useCallback(() => {
+    setAnswerRevealed((value) => {
+      const next = !value;
+      if (next && !worksheetComplete) {
+        setAssistUsed(true);
+      }
+      return next;
+    });
+  }, [worksheetComplete]);
 
   const targetHintOpen = activeHint === "target";
   const worksheetHintOpen = activeHint === "worksheet";
@@ -559,6 +626,18 @@ export default function Practice({
   }, [baselineWorksheet, selectedProblem?.id]);
 
   useEffect(() => {
+    if (!sprintActive || worksheetComplete || !sprintStartRef.current) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      if (sprintStartRef.current) {
+        setSprintElapsedMs(Date.now() - sprintStartRef.current);
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [sprintActive, worksheetComplete]);
+
+  useEffect(() => {
     if (!selectedProblem) {
       return;
     }
@@ -579,12 +658,24 @@ export default function Practice({
       return;
     }
 
-    recordCompletion(selectedProblem);
+    let elapsedMs: number | undefined;
+    if (sprintStartRef.current) {
+      elapsedMs = Date.now() - sprintStartRef.current;
+      sprintStartRef.current = null;
+      setSprintActive(false);
+      setSprintElapsedMs(elapsedMs);
+      setSprintLastMs(elapsedMs);
+    }
+
+    recordCompletion(selectedProblem, {
+      usedAssist: assistUsed,
+      elapsedMs,
+    });
     lastChallengeReport.current = {
       problemId: currentProblemId,
       complete: true,
     };
-  }, [recordCompletion, selectedProblem, worksheetComplete]);
+  }, [assistUsed, recordCompletion, selectedProblem, worksheetComplete]);
 
   useEffect(() => {
     if (worksheetComplete && !answerRevealed) {
@@ -649,6 +740,14 @@ export default function Practice({
   })();
 
   const highlightKey = selectedProblem ? (selectedProblem.targetMetric.key as WireMetricKey) : null;
+
+  const sprintTargetMs = selectedProblem
+    ? SPRINT_TARGET_MS_BY_DIFFICULTY[selectedProblem.difficulty]
+    : SPRINT_TARGET_MS_BY_DIFFICULTY.intro;
+  const sprintBonusXp = selectedProblem
+    ? SPRINT_BONUS_BY_DIFFICULTY[selectedProblem.difficulty]
+    : 0;
+  const sprintBestMs = selectedProblem ? gamificationState.bestTimes[selectedProblem.id] : undefined;
 
   const activeStandardLabel = useMemo(
     () =>
@@ -762,6 +861,26 @@ export default function Practice({
       selectProblemById(nextProblem.id);
     }
   };
+
+  const handleShuffleProblem = useCallback(() => {
+    if (!practiceProblems.length) {
+      return;
+    }
+    let next = getRandomPracticeProblem();
+    if (!next) {
+      return;
+    }
+    if (selectedProblem && practiceProblems.length > 1) {
+      let attempts = 0;
+      while (next && next.id === selectedProblem.id && attempts < 5) {
+        next = getRandomPracticeProblem();
+        attempts += 1;
+      }
+    }
+    if (next) {
+      selectProblemById(next.id);
+    }
+  }, [selectedProblem, selectProblemById]);
 
   if (!selectedProblem || !solution) {
     return (
@@ -974,6 +1093,24 @@ export default function Practice({
 
           <ProgressDashboard />
 
+          <CircuitGamesPanel
+            problem={selectedProblem}
+            worksheetComplete={worksheetComplete}
+            assistUsed={assistUsed}
+            sprintActive={sprintActive}
+            sprintElapsedMs={sprintElapsedMs}
+            sprintTargetMs={sprintTargetMs}
+            sprintBonusXp={sprintBonusXp}
+            cleanBonusXp={CLEAN_SOLVE_BONUS}
+            sprintBestMs={sprintBestMs}
+            sprintLastMs={sprintLastMs}
+            cleanSolves={gamificationState.cleanSolves}
+            speedSolves={gamificationState.speedSolves}
+            onStartSprint={handleStartSprint}
+            onResetSprint={handleResetSprint}
+            onShuffleProblem={handleShuffleProblem}
+          />
+
           <section className="adaptive-card" aria-live="polite">
             <div className="adaptive-card-header">
               <div>
@@ -1070,19 +1207,19 @@ export default function Practice({
             <div className="worksheet-controls">
               <button
                 type="button"
-                onClick={() => setTableRevealed((value) => !value)}
+                onClick={handleToggleTable}
               >
                 {tableRevealed ? "Hide Worksheet Answers" : "Reveal Worksheet"}
               </button>
               <button
                 type="button"
-                onClick={() => setStepsVisible((value) => !value)}
+                onClick={handleToggleSteps}
               >
                 {stepsVisible ? "Hide Steps" : "Show Solving Steps"}
               </button>
               <button
                 type="button"
-                onClick={() => setAnswerRevealed((value) => !value)}
+                onClick={handleToggleAnswer}
               >
                 {answerRevealed ? "Hide Final Answer" : "Reveal Final Answer"}
               </button>
