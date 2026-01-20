@@ -25,6 +25,7 @@ export function GlobalModeBar() {
   const isCommunityPage = location.pathname === "/community";
   const isAccountPage = location.pathname === "/account";
   const isClassroomPage = location.pathname === "/classroom";
+  const isArcadePage = location.pathname === "/arcade";
 
   // Don't show on landing page
   if (isLandingPage) {
@@ -170,6 +171,17 @@ export function GlobalModeBar() {
         >
           <span className="mode-icon" aria-hidden="true">📚</span>
           <span className="mode-label">Learn</span>
+        </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={isArcadePage ? "true" : undefined}
+          onClick={() => handleNavigateTo("/arcade")}
+          aria-label="Arcade"
+          title="Circuit Arcade"
+        >
+          <span className="mode-icon" aria-hidden="true">🎯</span>
+          <span className="mode-label">Arcade</span>
         </button>
         <button
           type="button"

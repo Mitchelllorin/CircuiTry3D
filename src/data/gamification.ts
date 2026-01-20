@@ -33,6 +33,20 @@ export type LeaderboardSeed = {
   location: string;
 };
 
+export type ArcadeSprintSeed = {
+  id: string;
+  name: string;
+  bestMs: number;
+  location: string;
+};
+
+export type ArcadeCleanSeed = {
+  id: string;
+  name: string;
+  clears: number;
+  location: string;
+};
+
 export const XP_REWARD_BY_DIFFICULTY: Record<PracticeDifficulty, number> = {
   intro: 20,
   standard: 32,
@@ -160,5 +174,19 @@ export const LEADERBOARD_SEEDS: LeaderboardSeed[] = [
   { id: "builder-ben", name: "Builder Ben", xp: 520, location: "Denver Makerspace" },
   { id: "student-sky", name: "Student Sky", xp: 305, location: "STEM Charter" },
   { id: "coach-lia", name: "Coach Lia", xp: 450, location: "Robotics Club" },
+];
+
+export const ARCADE_SPRINT_SEEDS: ArcadeSprintSeed[] = [
+  { id: "sprinter-sage", name: "Sprinter Sage", bestMs: 148000, location: "Rapid Lab" },
+  { id: "volt-vic", name: "Volt Vic", bestMs: 172000, location: "Mobile Workshop" },
+  { id: "flux-faye", name: "Flux Faye", bestMs: 189000, location: "Circuit Camp" },
+  { id: "relay-rio", name: "Relay Rio", bestMs: 205000, location: "Design Studio" },
+];
+
+export const ARCADE_CLEAN_SEEDS: ArcadeCleanSeed[] = [
+  { id: "clean-clio", name: "Clean Clio", clears: 18, location: "STEM Lab" },
+  { id: "steady-sam", name: "Steady Sam", clears: 14, location: "Community College" },
+  { id: "quiet-quinn", name: "Quiet Quinn", clears: 11, location: "After School Hub" },
+  { id: "orderly-ori", name: "Orderly Ori", clears: 9, location: "Circuit Studio" },
 ];
 

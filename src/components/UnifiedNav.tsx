@@ -24,6 +24,7 @@ export default function UnifiedNav() {
       <div className="unified-nav-links">
         <Link to="/app" className="unified-nav-link">Workspace</Link>
         <Link to="/pricing" className="unified-nav-link">Pricing</Link>
+        <Link to="/arcade" className="unified-nav-link">Arcade</Link>
         <Link to="/classroom" className="unified-nav-link">Classroom</Link>
         <Link to="/community" className="unified-nav-link">Community</Link>
         <Link to="/account" className="unified-nav-link unified-nav-account">
