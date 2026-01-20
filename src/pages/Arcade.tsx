@@ -140,8 +140,8 @@ export default function Arcade() {
   const rewardSummary = state.lastReward
     ? {
         xp: state.lastReward.xpEarned,
-        bonus: state.lastReward.bonusXp,
-        labels: state.lastReward.bonusLabels,
+        bonus: state.lastReward.bonusXp ?? 0,
+        labels: state.lastReward.bonusLabels ?? [],
       }
     : null;
 
@@ -213,10 +213,10 @@ export default function Arcade() {
           {rewardSummary ? (
             <div className="arcade-reward-pill">
               <strong>Last reward:</strong> +{rewardSummary.xp} XP
-              {rewardSummary.bonus ? (
+            {rewardSummary.bonus ? (
                 <span>
                   +{rewardSummary.bonus} bonus
-                  {rewardSummary.labels.length ? ` (${rewardSummary.labels.join(" + ")})` : ""}
+                {rewardSummary.labels.length ? ` (${rewardSummary.labels.join(" + ")})` : ""}
                 </span>
               ) : null}
             </div>
