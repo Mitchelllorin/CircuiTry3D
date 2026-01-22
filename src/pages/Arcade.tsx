@@ -140,8 +140,11 @@ export default function Arcade() {
   const rewardSummary = state.lastReward
     ? {
         xp: state.lastReward.xpEarned,
-        bonus: state.lastReward.bonusXp ?? 0,
-        labels: state.lastReward.bonusLabels ?? [],
+        bonus:
+          typeof state.lastReward.bonusXp === "number" && Number.isFinite(state.lastReward.bonusXp)
+            ? state.lastReward.bonusXp
+            : 0,
+        labels: Array.isArray(state.lastReward.bonusLabels) ? state.lastReward.bonusLabels : [],
       }
     : null;
 

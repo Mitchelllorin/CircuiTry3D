@@ -215,6 +215,23 @@ const readStoredState = (): GamificationState => {
       return DEFAULT_STATE;
     }
 
+    const parsedReward = parsed.lastReward;
+    const normalizedReward =
+      parsedReward && typeof parsedReward === "object"
+        ? {
+            ...parsedReward,
+            bonusXp:
+              typeof parsedReward.bonusXp === "number" && Number.isFinite(parsedReward.bonusXp)
+                ? parsedReward.bonusXp
+                : 0,
+            bonusLabels: Array.isArray(parsedReward.bonusLabels) ? parsedReward.bonusLabels : [],
+            badgeIds: Array.isArray(parsedReward.badgeIds) ? parsedReward.badgeIds : [],
+            unlockedComponents: Array.isArray(parsedReward.unlockedComponents)
+              ? parsedReward.unlockedComponents
+              : [],
+          }
+        : undefined;
+
     return {
       ...DEFAULT_STATE,
       ...parsed,
@@ -235,6 +252,7 @@ const readStoredState = (): GamificationState => {
       unlockedComponents: parsed.unlockedComponents ?? [],
       badges: parsed.badges ?? {},
       history: Array.isArray(parsed.history) ? parsed.history.slice(0, HISTORY_LIMIT) : [],
+      lastReward: normalizedReward,
       streak: parsed.streak ?? 0,
     };
   } catch (error) {
@@ -492,7 +510,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       setState((previous) => {
         const timestamp = Date.now();
         const xpEarned = Math.max(0, Math.round(meta.xp));
-        const bonusLabels = meta.bonusLabels ?? [];
+        const bonusLabels = Array.isArray(meta.bonusLabels) ? meta.bonusLabels : [];
 
         if (!xpEarned) {
           return previous;
