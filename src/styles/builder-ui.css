@@ -32,6 +32,9 @@
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-ticker-height: 32px;
   --builder-ticker-gap: 8px;
+  --builder-floating-action-offset: 140px;
+  --builder-floating-button-size: 46px;
+  --builder-edge-actions-gap: 12px;
 }
 
 body.builder-body {
@@ -304,8 +307,15 @@ body.builder-body {
 /* Edge-positioned workspace action buttons (Undo, Redo, Open, Save) */
 .workspace-edge-actions {
   position: fixed;
-  top: calc(72px + var(--builder-safe-area-top) + var(--builder-ticker-height, 0px) + var(--builder-ticker-gap, 0px));
-  right: clamp(12px, 3vw, 24px);
+  top: auto;
+  bottom: calc(
+    var(--builder-floating-action-offset) +
+    var(--builder-floating-button-size) +
+    var(--builder-edge-actions-gap) +
+    var(--builder-safe-area-bottom)
+  );
+  right: auto;
+  left: auto;
   z-index: 940;
   display: flex;
   flex-direction: column;
@@ -316,13 +326,27 @@ body.builder-body {
   border-radius: 12px;
   backdrop-filter: blur(12px);
   box-shadow: 0 4px 16px rgba(3, 12, 32, 0.45);
-  opacity: 0.7;
-  transition: opacity 0.2s ease, background 0.2s ease;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
 .workspace-edge-actions:hover {
   opacity: 1;
   background: rgba(10, 24, 48, 0.88);
+  transform: translateY(0);
+}
+
+.workspace-edge-actions:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .workspace-edge-actions {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .edge-action-btn {
@@ -385,10 +409,7 @@ body.builder-body {
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
 .workspace-edge-actions--right {
   right: calc(
-    env(safe-area-inset-right, 0px) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-menu-toggle-hit-width) +
-    8px
+    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
   );
   left: auto;
 }
@@ -396,10 +417,7 @@ body.builder-body {
 /* Left edge positioning (Wire, Rotate, Edit tools) */
 .workspace-edge-actions--left {
   left: calc(
-    env(safe-area-inset-left, 0px) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-menu-toggle-hit-width) +
-    8px
+    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
   );
   right: auto;
 }
@@ -426,26 +444,26 @@ body.builder-body {
 
 @media (max-width: 720px) {
   .workspace-edge-actions {
-    top: calc(64px + var(--builder-safe-area-top) + var(--builder-ticker-height, 0px) + var(--builder-ticker-gap, 0px));
+    top: auto;
+    bottom: calc(
+      var(--builder-floating-action-offset) +
+      var(--builder-floating-button-size) +
+      var(--builder-edge-actions-gap) +
+      var(--builder-safe-area-bottom)
+    );
     padding: 4px;
     gap: 4px;
   }
 
   .workspace-edge-actions--right {
     right: calc(
-      env(safe-area-inset-right, 0px) +
-      8px +
-      var(--builder-menu-toggle-hit-width) +
-      6px
+      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
     );
   }
 
   .workspace-edge-actions--left {
     left: calc(
-      env(safe-area-inset-left, 0px) +
-      8px +
-      var(--builder-menu-toggle-hit-width) +
-      6px
+      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
     );
   }
 
@@ -480,16 +498,18 @@ body.builder-body {
 @media (max-width: 480px) {
   .workspace-edge-actions {
     top: auto;
-    bottom: clamp(80px, 18vh, 140px);
+    bottom: calc(
+      var(--builder-floating-action-offset) +
+      var(--builder-floating-button-size) +
+      var(--builder-edge-actions-gap) +
+      var(--builder-safe-area-bottom)
+    );
     flex-direction: column;
   }
 
   .workspace-edge-actions--right {
     right: calc(
-      env(safe-area-inset-right, 0px) +
-      8px +
-      var(--builder-menu-toggle-hit-width) +
-      6px
+      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
     );
     left: auto;
     transform: none;
@@ -497,10 +517,7 @@ body.builder-body {
 
   .workspace-edge-actions--left {
     left: calc(
-      env(safe-area-inset-left, 0px) +
-      8px +
-      var(--builder-menu-toggle-hit-width) +
-      6px
+      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
     );
     right: auto;
     transform: none;
@@ -2389,7 +2406,7 @@ body.builder-body {
 .builder-floating-action {
   position: fixed;
   top: auto;
-  bottom: calc(140px + var(--builder-safe-area-bottom));
+  bottom: calc(var(--builder-floating-action-offset) + var(--builder-safe-area-bottom));
   z-index: 800;
   pointer-events: none;
   display: flex;
@@ -2405,8 +2422,8 @@ body.builder-body {
 
 .builder-floating-button {
   pointer-events: auto;
-  width: 46px;
-  height: 46px;
+  width: var(--builder-floating-button-size);
+  height: var(--builder-floating-button-size);
   border-radius: 999px;
   border: 1px solid rgba(136, 204, 255, 0.38);
   background: rgba(14, 32, 64, 0.92);
@@ -2487,12 +2504,12 @@ body.builder-body {
 
 @media (max-width: 720px) {
   .builder-floating-action {
-    bottom: calc(120px + var(--builder-safe-area-bottom));
+    bottom: calc(var(--builder-floating-action-offset) + var(--builder-safe-area-bottom));
   }
 
   .builder-floating-button {
-    width: 40px;
-    height: 40px;
+    width: var(--builder-floating-button-size);
+    height: var(--builder-floating-button-size);
   }
 
   .builder-floating-icon {
@@ -3104,6 +3121,8 @@ body.builder-body {
     --builder-menu-toggle-width: 20px;
     --builder-menu-toggle-height: 48px;
     --builder-ticker-height: 26px;
+    --builder-floating-action-offset: 120px;
+    --builder-floating-button-size: 40px;
   }
 
   .builder-menu-stage-left,
@@ -3252,7 +3271,12 @@ body.builder-body {
 
   .workspace-edge-actions {
     top: auto;
-    bottom: calc(14px + var(--builder-safe-area-bottom));
+    bottom: calc(
+      var(--builder-floating-action-offset) +
+      var(--builder-floating-button-size) +
+      var(--builder-edge-actions-gap) +
+      var(--builder-safe-area-bottom)
+    );
     padding: 4px;
     gap: 4px;
   }
