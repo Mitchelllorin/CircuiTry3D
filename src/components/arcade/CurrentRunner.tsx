@@ -117,6 +117,11 @@ type Obstacle = {
 
 const LANE_COUNT = 3;
 const PLAYER_Y = 0.82;
+const BASE_SPEED = 0.00024;
+const SPEED_RAMP_DENOMINATOR = 14000000;
+const OBSTACLE_DRIFT = 5.2;
+const SPAWN_MIN_MS = 900;
+const SPAWN_VARIANCE_MS = 800;
 
 export default function CurrentRunner() {
   const { grantArcadeReward } = useGamification();
@@ -208,6 +213,12 @@ export default function CurrentRunner() {
 
     // Track lanes
     const laneWidth = renderWidth / LANE_COUNT;
+    for (let i = 0; i < LANE_COUNT; i += 1) {
+      if (i % 2 === 0) {
+        context.fillStyle = "rgba(12, 24, 44, 0.4)";
+        context.fillRect(laneWidth * i, 0, laneWidth, renderHeight);
+      }
+    }
     context.strokeStyle = "rgba(120, 200, 255, 0.2)";
     context.lineWidth = 2;
     for (let i = 1; i < LANE_COUNT; i += 1) {
@@ -218,37 +229,63 @@ export default function CurrentRunner() {
       context.stroke();
     }
 
-    // Flow lines
-    context.strokeStyle = "rgba(120, 220, 255, 0.35)";
-    context.setLineDash([6, 10]);
-    context.lineWidth = 1.5;
-    obstaclesRef.current.forEach((obstacle) => {
-      const centerX = laneWidth * obstacle.lane + laneWidth / 2;
+    // Flow markers
+    const flowOffset = (distanceRef.current * 0.02) % 1;
+    context.strokeStyle = "rgba(120, 220, 255, 0.25)";
+    context.setLineDash([4, 12]);
+    context.lineWidth = 1.2;
+    for (let i = 0; i < LANE_COUNT; i += 1) {
+      const centerX = laneWidth * i + laneWidth / 2;
       context.beginPath();
       context.moveTo(centerX, 0);
       context.lineTo(centerX, renderHeight);
       context.stroke();
-    });
+    }
     context.setLineDash([]);
+
+    context.fillStyle = "rgba(120, 220, 255, 0.45)";
+    for (let i = 0; i < 16; i += 1) {
+      const y = ((i / 16 + flowOffset) % 1) * renderHeight;
+      for (let laneIndex = 0; laneIndex < LANE_COUNT; laneIndex += 1) {
+        const x = laneWidth * laneIndex + laneWidth / 2 + ((i % 2) * 12 - 6);
+        context.beginPath();
+        context.arc(x, y, 3, 0, Math.PI * 2);
+        context.fill();
+      }
+    }
 
     // Player
     const playerWidth = laneWidth * 0.38;
     const playerHeight = renderHeight * 0.08;
     const playerX = laneWidth * laneRef.current + laneWidth / 2 - playerWidth / 2;
     const playerY = renderHeight * PLAYER_Y;
+    context.save();
+    context.shadowColor = "rgba(120, 220, 255, 0.45)";
+    context.shadowBlur = 18;
     context.fillStyle = "rgba(120, 220, 255, 0.9)";
     context.fillRect(playerX, playerY, playerWidth, playerHeight);
+    context.restore();
     context.fillStyle = "rgba(0, 255, 170, 0.8)";
     context.fillRect(playerX + 6, playerY + 6, playerWidth - 12, playerHeight - 12);
 
     // Obstacles
-    context.fillStyle = "rgba(255, 120, 120, 0.9)";
     obstaclesRef.current.forEach((obstacle) => {
       const obstacleWidth = laneWidth * 0.42;
       const obstacleHeight = renderHeight * obstacle.size;
       const obstacleX = laneWidth * obstacle.lane + laneWidth / 2 - obstacleWidth / 2;
       const obstacleY = renderHeight * obstacle.y;
+      const obstacleGradient = context.createLinearGradient(
+        obstacleX,
+        obstacleY,
+        obstacleX + obstacleWidth,
+        obstacleY + obstacleHeight,
+      );
+      obstacleGradient.addColorStop(0, "rgba(255, 120, 120, 0.95)");
+      obstacleGradient.addColorStop(1, "rgba(255, 80, 120, 0.7)");
+      context.fillStyle = obstacleGradient;
       context.fillRect(obstacleX, obstacleY, obstacleWidth, obstacleHeight);
+      context.fillStyle = "rgba(255, 200, 200, 0.6)";
+      context.fillRect(obstacleX + 6, obstacleY + 6, obstacleWidth - 12, obstacleHeight * 0.2);
     });
 
     context.restore();
@@ -311,7 +348,7 @@ export default function CurrentRunner() {
     }
 
     const elapsed = timestamp - startTimeRef.current;
-    const speed = 0.00032 + elapsed / 9000000;
+    const speed = BASE_SPEED + elapsed / SPEED_RAMP_DENOMINATOR;
     speedRef.current = speed;
     distanceRef.current += speed * delta * 150;
 
@@ -321,21 +358,24 @@ export default function CurrentRunner() {
       obstaclesRef.current.push({
         lane,
         y: -0.1,
-        size: 0.08 + Math.random() * 0.06,
+        size: 0.06 + Math.random() * 0.05,
       });
-      spawnTimerRef.current = 700 + Math.random() * 600;
+      spawnTimerRef.current = SPAWN_MIN_MS + Math.random() * SPAWN_VARIANCE_MS;
     }
 
     obstaclesRef.current = obstaclesRef.current
       .map((obstacle) => ({
         ...obstacle,
-        y: obstacle.y + speed * delta * 6.5,
+        y: obstacle.y + speed * delta * OBSTACLE_DRIFT,
       }))
       .filter((obstacle) => obstacle.y < 1.2);
 
     const playerLane = laneRef.current;
     const collision = obstaclesRef.current.some(
-      (obstacle) => obstacle.lane === playerLane && obstacle.y > PLAYER_Y - 0.06 && obstacle.y < PLAYER_Y + 0.04,
+      (obstacle) =>
+        obstacle.lane === playerLane &&
+        obstacle.y > PLAYER_Y - 0.05 &&
+        obstacle.y < PLAYER_Y + 0.03,
     );
 
     drawScene();
@@ -357,8 +397,8 @@ export default function CurrentRunner() {
   const startRun = useCallback(() => {
     obstaclesRef.current = [];
     distanceRef.current = 0;
-    speedRef.current = 0.00032;
-    spawnTimerRef.current = 0;
+    speedRef.current = BASE_SPEED;
+    spawnTimerRef.current = 1200;
     startTimeRef.current = null;
     lastFrameRef.current = null;
     lastUiUpdateRef.current = null;
