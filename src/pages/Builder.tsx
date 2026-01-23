@@ -1018,13 +1018,13 @@ export default function Builder() {
     };
 
     const handleTouchStart = (event: TouchEvent) => {
-      // Prevent iOS Safari bounce/rubber-banding effect on workspace
-      if (event.touches.length > 0) {
+      // Keep multi-touch gestures from triggering browser zoom/scroll.
+      if (event.touches.length > 1) {
         event.preventDefault();
       }
     };
 
-    // Use passive: false to allow preventDefault() for better touch control
+    // Use passive: false to allow preventDefault() for multi-touch gestures.
     iframe.addEventListener("touchmove", handleTouchMove, { passive: false });
     iframe.addEventListener("touchstart", handleTouchStart, { passive: false });
 
