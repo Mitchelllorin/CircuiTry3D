@@ -2610,7 +2610,7 @@
 
 .wire-library-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(120px, auto));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
   padding: 12px 16px;
   border-radius: 14px;
@@ -2724,6 +2724,14 @@
   color: rgba(148, 163, 184, 0.9);
 }
 
+.wire-library-table tr[data-selected="true"] {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.wire-library-table tr[data-selected="true"] .wire-gauge-label {
+  color: #bbf7d0;
+}
+
 .wire-library-table tbody th {
   font-size: 0.95rem;
   color: #e2e8f0;
@@ -2761,6 +2769,35 @@
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 0.74rem;
+}
+
+.wire-library-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.12);
+  color: rgba(219, 234, 254, 0.95);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.wire-library-select:disabled {
+  cursor: default;
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.2);
+  color: #bbf7d0;
+}
+
+.wire-library-select:not(:disabled):hover {
+  background: rgba(59, 130, 246, 0.24);
+  border-color: rgba(147, 197, 253, 0.9);
+  color: #ffffff;
 }
 
 @media (max-width: 960px) {

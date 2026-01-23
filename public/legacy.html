@@ -4080,6 +4080,16 @@ body.android-optimized.menu-visible .status {
                             case 'toggle-labels':
                                 if (typeof toggleLabels === 'function') toggleLabels();
                                 break;
+                            case 'set-wire-library':
+                                if (Array.isArray(data.library)) {
+                                    setWireLibrary(data.library, { defaultWireId: data.defaultWireId });
+                                }
+                                break;
+                            case 'set-wire-type':
+                                if (typeof data.wireId === 'string') {
+                                    setActiveWireSpecById(data.wireId);
+                                }
+                                break;
                             case 'set-tool':
                                 if (typeof data.tool === 'string' && typeof setBuilderTool === 'function') {
                                     setBuilderTool(data.tool);
@@ -4766,6 +4776,211 @@ body.android-optimized.menu-visible .status {
             minSpeedFactor: 0.25,
             maxSpeedFactor: 1.0
         };
+
+        const WIRE_LENGTH_METERS_PER_UNIT = 0.1;
+
+        const DEFAULT_WIRE_SPEC = {
+            id: 'awg-18-cu-pvc105',
+            label: '18 AWG control wire',
+            materialId: 'annealedCopper',
+            materialLabel: 'Annealed Copper (Cu-ETP)',
+            insulationLabel: 'PVC 105 °C',
+            resistanceOhmPerMeter: 0.021,
+            ampacityChassisA: 2.3,
+            ampacityBundleA: 1.5,
+            maxVoltageV: 300,
+            category: 'conductor'
+        };
+
+        let wireLibrary = [DEFAULT_WIRE_SPEC];
+        let activeWireSpec = DEFAULT_WIRE_SPEC;
+
+        const WIRE_COLOR_PRESETS = {
+            copper: { core: 0xd2691e, emissive: 0x4a1d05 },
+            aluminum: { core: 0xb8c0cc, emissive: 0x2f333a },
+            silver: { core: 0xdfe5ee, emissive: 0x4d525b },
+            resistance: { core: 0x8a8a8a, emissive: 0x2c2c2c },
+            specialty: { core: 0x8fc7ff, emissive: 0x1b3b5c }
+        };
+
+        function normalizeWireSpec(raw) {
+            if (!raw || typeof raw !== 'object') {
+                return null;
+            }
+            const id = typeof raw.id === 'string' ? raw.id : null;
+            if (!id) {
+                return null;
+            }
+            const label =
+                typeof raw.label === 'string'
+                    ? raw.label
+                    : (typeof raw.gaugeLabel === 'string' ? raw.gaugeLabel : id);
+            const resistance = Number(raw.resistanceOhmPerMeter);
+            const ampacityChassis = Number(raw.ampacityChassisA);
+            const ampacityBundle = Number(raw.ampacityBundleA);
+            const maxVoltage = Number(raw.maxVoltageV);
+            return {
+                id,
+                label,
+                materialId: typeof raw.materialId === 'string' ? raw.materialId : DEFAULT_WIRE_SPEC.materialId,
+                materialLabel: typeof raw.materialLabel === 'string' ? raw.materialLabel : DEFAULT_WIRE_SPEC.materialLabel,
+                insulationLabel: typeof raw.insulationLabel === 'string' ? raw.insulationLabel : DEFAULT_WIRE_SPEC.insulationLabel,
+                resistanceOhmPerMeter: Number.isFinite(resistance) ? resistance : DEFAULT_WIRE_SPEC.resistanceOhmPerMeter,
+                ampacityChassisA: Number.isFinite(ampacityChassis) ? ampacityChassis : DEFAULT_WIRE_SPEC.ampacityChassisA,
+                ampacityBundleA: Number.isFinite(ampacityBundle) ? ampacityBundle : DEFAULT_WIRE_SPEC.ampacityBundleA,
+                maxVoltageV: Number.isFinite(maxVoltage) ? maxVoltage : DEFAULT_WIRE_SPEC.maxVoltageV,
+                category: typeof raw.category === 'string' ? raw.category : DEFAULT_WIRE_SPEC.category
+            };
+        }
+
+        function getWireSpecById(id) {
+            if (!id || !Array.isArray(wireLibrary)) {
+                return null;
+            }
+            return wireLibrary.find(spec => spec.id === id) || null;
+        }
+
+        function resolveWireSpec(input) {
+            if (!input) {
+                return activeWireSpec || DEFAULT_WIRE_SPEC;
+            }
+            if (typeof input === 'string') {
+                return getWireSpecById(input) || activeWireSpec || DEFAULT_WIRE_SPEC;
+            }
+            const normalized = normalizeWireSpec(input);
+            return normalized || activeWireSpec || DEFAULT_WIRE_SPEC;
+        }
+
+        function getWireColorPreset(spec) {
+            const token = String(spec?.materialId || spec?.id || '').toLowerCase();
+            if (token.includes('silver')) {
+                return WIRE_COLOR_PRESETS.silver;
+            }
+            if (token.includes('aluminum')) {
+                return WIRE_COLOR_PRESETS.aluminum;
+            }
+            if (token.includes('nichrome') || token.includes('kanthal') || token.includes('constantan') || token.includes('stainless')) {
+                return WIRE_COLOR_PRESETS.resistance;
+            }
+            if (spec?.category === 'resistance') {
+                return WIRE_COLOR_PRESETS.resistance;
+            }
+            if (spec?.category === 'specialty') {
+                return WIRE_COLOR_PRESETS.specialty;
+            }
+            return WIRE_COLOR_PRESETS.copper;
+        }
+
+        function setActiveWireSpecById(id, options = {}) {
+            const next = getWireSpecById(id);
+            if (!next) {
+                return;
+            }
+            activeWireSpec = next;
+            refreshWireTypeUI();
+            if (options.announce) {
+                setStatus(`⚡ Default wire set to ${next.label}`);
+            }
+        }
+
+        function setWireLibrary(rawLibrary, options = {}) {
+            if (!Array.isArray(rawLibrary) || rawLibrary.length === 0) {
+                return;
+            }
+            const normalized = rawLibrary.map(normalizeWireSpec).filter(Boolean);
+            if (normalized.length === 0) {
+                return;
+            }
+            wireLibrary = normalized;
+            const desiredId = typeof options.defaultWireId === 'string'
+                ? options.defaultWireId
+                : activeWireSpec?.id;
+            const fallback = getWireSpecById(desiredId) || wireLibrary[0] || DEFAULT_WIRE_SPEC;
+            activeWireSpec = fallback;
+            wires.forEach(wire => {
+                if (!wire) return;
+                const spec = wire.wireSpecId ? getWireSpecById(wire.wireSpecId) : null;
+                if (spec && typeof wire.setWireSpec === 'function') {
+                    wire.setWireSpec(spec);
+                }
+            });
+            if (wires.length > 0) {
+                analyzeCircuit();
+            }
+            refreshWireTypeUI();
+        }
+
+        function getActiveWireSpec() {
+            return activeWireSpec || DEFAULT_WIRE_SPEC;
+        }
+
+        function getWireLengthMeters(wire) {
+            if (!wire) return 0;
+            if (Array.isArray(wire.segments) && wire.segments.length) {
+                let lengthUnits = 0;
+                wire.segments.forEach(segment => {
+                    if (segment?.start && segment?.end && typeof segment.start.distanceTo === 'function') {
+                        lengthUnits += segment.start.distanceTo(segment.end);
+                    }
+                });
+                return lengthUnits * WIRE_LENGTH_METERS_PER_UNIT;
+            }
+            try {
+                const start = wire.getStartPosition ? wire.getStartPosition() : wire.startObj?.position;
+                const end = wire.getEndPosition ? wire.getEndPosition() : wire.endObj?.position;
+                if (start && end && typeof start.distanceTo === 'function') {
+                    return start.distanceTo(end) * WIRE_LENGTH_METERS_PER_UNIT;
+                }
+            } catch (error) {
+                console.warn('Wire length estimate failed', error);
+            }
+            return 0;
+        }
+
+        function getWireResistance(wire) {
+            if (!wire) return FLOW_CONSTANTS.wireResistance;
+            const spec = wire.wireSpec || activeWireSpec || DEFAULT_WIRE_SPEC;
+            const lengthMeters = getWireLengthMeters(wire);
+            if (Number.isFinite(spec?.resistanceOhmPerMeter) && lengthMeters > 0) {
+                return spec.resistanceOhmPerMeter * lengthMeters;
+            }
+            return FLOW_CONSTANTS.wireResistance;
+        }
+
+        function renderWireSpecMeta(spec) {
+            if (!spec) return '';
+            const ohmsPerM = Number.isFinite(spec.resistanceOhmPerMeter)
+                ? `${spec.resistanceOhmPerMeter.toFixed(4)} Ω/m`
+                : '— Ω/m';
+            const amps = Number.isFinite(spec.ampacityBundleA)
+                ? `${spec.ampacityBundleA.toFixed(1)} A bundled`
+                : '— A';
+            return `${ohmsPerM} · ${amps}`;
+        }
+
+        function refreshWireTypeUI() {
+            const popup = document.getElementById('wire-edit-popup');
+            if (popup && popup.style.display === 'block') {
+                hydrateWireEditPopup();
+                return;
+            }
+            const select = document.getElementById('wire-type-select');
+            if (!select) {
+                return;
+            }
+            select.innerHTML = '';
+            wireLibrary.forEach(spec => {
+                const option = document.createElement('option');
+                option.value = spec.id;
+                option.textContent = spec.label;
+                select.appendChild(option);
+            });
+            select.value = activeWireSpec?.id || wireLibrary[0]?.id || DEFAULT_WIRE_SPEC.id;
+            const meta = document.getElementById('wire-type-meta');
+            if (meta) {
+                meta.textContent = renderWireSpecMeta(getWireSpecById(select.value) || activeWireSpec);
+            }
+        }
 
         let currentFlowState = null;
         
@@ -6486,13 +6701,15 @@ body.android-optimized.menu-visible .status {
 
         // Wire class
         class Wire {
-            constructor(startObj, startSide, endObj, endSide) {
+            constructor(startObj, startSide, endObj, endSide, wireSpec) {
                 this.startObj = startObj;
                 this.startSide = startSide;
                 this.endObj = endObj;
                 this.endSide = endSide;
                 this.id = 'wire_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 this.segments = [];
+                this.wireSpec = resolveWireSpec(wireSpec);
+                this.wireSpecId = this.wireSpec?.id || null;
                 
                 this.createMesh();
                 this.createCurve();
@@ -6524,9 +6741,10 @@ body.android-optimized.menu-visible .status {
                     
                     if (distance > 0.1) {
                         const wireGeometry = new THREE.CylinderGeometry(0.08, 0.08, distance, isMobile ? 8 : 12);
-                        
+                        const colors = getWireColorPreset(this.wireSpec);
                         const material = new THREE.MeshPhongMaterial({ 
-                            color: 0xd2691e,
+                            color: colors.core,
+                            emissive: colors.emissive,
                             shininess: 150,
                             transparent: true,
                             opacity: 0.9
@@ -6556,6 +6774,39 @@ body.android-optimized.menu-visible .status {
                 this.wireGroup.userData = { wire: this };
                 this.mesh = this.wireGroup;
                 scene.add(this.wireGroup);
+            }
+
+            applyWireStyle() {
+                const colors = getWireColorPreset(this.wireSpec);
+                if (!colors || !Array.isArray(this.segments)) {
+                    return;
+                }
+                this.segments.forEach(segment => {
+                    const material = segment?.mesh?.material;
+                    if (!material) {
+                        return;
+                    }
+                    if (material.color && typeof material.color.setHex === 'function') {
+                        material.color.setHex(colors.core);
+                    }
+                    if (material.emissive && typeof material.emissive.setHex === 'function') {
+                        material.emissive.setHex(colors.emissive);
+                    }
+                });
+            }
+
+            setWireSpec(spec) {
+                const resolved = resolveWireSpec(spec);
+                if (!resolved) {
+                    return;
+                }
+                this.wireSpec = resolved;
+                this.wireSpecId = resolved.id;
+                this.applyWireStyle();
+            }
+
+            getResistance() {
+                return getWireResistance(this);
             }
 
             getStartPosition() {
@@ -8605,6 +8856,7 @@ body.android-optimized.menu-visible .status {
             
             currentEditWire = wire;
             popup.style.display = 'block';
+            hydrateWireEditPopup();
             
             setStatus('⚡ Wire selected - Choose action');
         }
@@ -8620,6 +8872,14 @@ body.android-optimized.menu-visible .status {
                         <h3>Edit Wire</h3>
                         <button onclick="closeWireEditPopup()" class="edit-close">X</button>
                     </div>
+                    <div class="edit-row">
+                        <label for="wire-type-select">Wire type</label>
+                        <select id="wire-type-select"></select>
+                        <div id="wire-type-meta" style="margin-top: 8px; font-size: 12px; color: rgba(203, 224, 255, 0.75);"></div>
+                        <button onclick="setDefaultWireTypeFromPopup()" class="edit-action-btn" style="margin-top: 12px;">
+                            Set as default wire
+                        </button>
+                    </div>
                     <div class="edit-actions">
                         <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">Delete Wire</button>
                         <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">Change Routing</button>
@@ -8627,6 +8887,49 @@ body.android-optimized.menu-visible .status {
                 </div>
             `;
             document.body.appendChild(popup);
+        }
+
+        function hydrateWireEditPopup() {
+            const select = document.getElementById('wire-type-select');
+            if (!select) {
+                return;
+            }
+            select.innerHTML = '';
+            wireLibrary.forEach(spec => {
+                const option = document.createElement('option');
+                option.value = spec.id;
+                option.textContent = spec.label;
+                select.appendChild(option);
+            });
+            const preferredId = currentEditWire?.wireSpecId || activeWireSpec?.id || wireLibrary[0]?.id;
+            select.value = getWireSpecById(preferredId) ? preferredId : (wireLibrary[0]?.id || DEFAULT_WIRE_SPEC.id);
+            select.onchange = () => {
+                const spec = getWireSpecById(select.value);
+                if (spec && currentEditWire) {
+                    currentEditWire.setWireSpec(spec);
+                    analyzeCircuit();
+                    setStatus(`✓ Wire set to ${spec.label}`);
+                }
+                updateWireTypeMeta(select.value);
+            };
+            updateWireTypeMeta(select.value);
+        }
+
+        function updateWireTypeMeta(specId) {
+            const meta = document.getElementById('wire-type-meta');
+            if (!meta) {
+                return;
+            }
+            const spec = getWireSpecById(specId) || activeWireSpec;
+            meta.textContent = renderWireSpecMeta(spec);
+        }
+
+        function setDefaultWireTypeFromPopup() {
+            const select = document.getElementById('wire-type-select');
+            if (!select) {
+                return;
+            }
+            setActiveWireSpecById(select.value, { announce: true });
         }
         
         function closeWireEditPopup() {
@@ -9018,7 +9321,7 @@ body.android-optimized.menu-visible .status {
             
             try {
                 saveState(); // Save for undo
-                const wire = new Wire(startObj, startPoint.side, endObj, endPoint.side);
+                const wire = new Wire(startObj, startPoint.side, endObj, endPoint.side, getActiveWireSpec());
                 wires.push(wire);
                 
                 const startType = startObj.type || 'junction';
@@ -10030,7 +10333,8 @@ body.android-optimized.menu-visible .status {
                     startSide: wire.startSide,
                     endId: wire.endObj.id,
                     endSide: wire.endSide,
-                    id: wire.id
+                    id: wire.id,
+                    wireSpecId: wire.wireSpecId || wire.wireSpec?.id || null
                 })),
                 componentCounters: { ...componentCounters }
             };
@@ -10096,7 +10400,8 @@ body.android-optimized.menu-visible .status {
                     startSide: wire.startSide,
                     endId: wire.endObj.id,
                     endSide: wire.endSide,
-                    id: wire.id
+                    id: wire.id,
+                    wireSpecId: wire.wireSpecId || wire.wireSpec?.id || null
                 })),
                 componentCounters: { ...componentCounters }
             };
@@ -10144,7 +10449,7 @@ body.android-optimized.menu-visible .status {
                 const endObj = [...components, ...junctions].find(obj => obj.id === wireData.endId);
                 
                 if (startObj && endObj) {
-                    const wire = new Wire(startObj, wireData.startSide, endObj, wireData.endSide);
+                    const wire = new Wire(startObj, wireData.startSide, endObj, wireData.endSide, wireData.wireSpecId);
                     wire.id = wireData.id;
                     wires.push(wire);
                 }
@@ -10189,7 +10494,8 @@ body.android-optimized.menu-visible .status {
                     startSide: wire.startSide,
                     endId: wire.endObj.id,
                     endSide: wire.endSide,
-                    id: wire.id
+                    id: wire.id,
+                    wireSpecId: wire.wireSpecId || wire.wireSpec?.id || null
                 })),
                 componentCounters: { ...componentCounters },
                 metadata: {
@@ -11607,12 +11913,13 @@ Made with ? for visual learners everywhere!
                 const startKey = getTerminalKey(wire.startObj, wire.startSide || 'center');
                 const endKey = getTerminalKey(wire.endObj, wire.endSide || 'center');
                 if (!startKey || !endKey) return;
+                const wireResistance = getWireResistance(wire);
 
                 addEdge(startKey, {
                     to: endKey,
                     type: 'wire',
                     wire,
-                    resistance: FLOW_CONSTANTS.wireResistance,
+                    resistance: wireResistance,
                     direction: 1,
                     fromSide: wire.startSide || 'center',
                     toSide: wire.endSide || 'center'
@@ -11622,7 +11929,7 @@ Made with ? for visual learners everywhere!
                     to: startKey,
                     type: 'wire',
                     wire,
-                    resistance: FLOW_CONSTANTS.wireResistance,
+                    resistance: wireResistance,
                     direction: -1,
                     fromSide: wire.endSide || 'center',
                     toSide: wire.startSide || 'center'
@@ -11767,6 +12074,7 @@ Made with ? for visual learners everywhere!
 
         function buildElectricalNodesLegacy(options = {}) {
             const includeBatteryShorts = Boolean(options.includeBatteryShorts);
+            const includeWireShorts = options.includeWireShorts !== false;
             const uf = buildUnionFind();
 
             // Ensure terminals exist
@@ -11781,12 +12089,14 @@ Made with ? for visual learners everywhere!
                 uf.ensure(getTerminalKey(w.endObj, w.endSide || 'center'));
             });
 
-            // Wires are ideal shorts
-            wires.forEach(wire => {
-                const a = getTerminalKey(wire.startObj, wire.startSide || 'center');
-                const b = getTerminalKey(wire.endObj, wire.endSide || 'center');
-                if (a && b) uf.union(a, b);
-            });
+            // Wires are ideal shorts when requested (legacy mode)
+            if (includeWireShorts) {
+                wires.forEach(wire => {
+                    const a = getTerminalKey(wire.startObj, wire.startSide || 'center');
+                    const b = getTerminalKey(wire.endObj, wire.endSide || 'center');
+                    if (a && b) uf.union(a, b);
+                });
+            }
 
             // For resistance measurements we "deactivate" sources (short ideal voltage sources)
             if (includeBatteryShorts) {
@@ -11854,6 +12164,24 @@ Made with ? for visual learners everywhere!
                 });
             });
 
+            wires.forEach(wire => {
+                const aKey = getTerminalKey(wire.startObj, wire.startSide || 'center');
+                const bKey = getTerminalKey(wire.endObj, wire.endSide || 'center');
+                const a = aKey ? nodeOf(aKey) : null;
+                const b = bKey ? nodeOf(bKey) : null;
+                if (!a || !b || a === b) return;
+                const ohms = getWireResistance(wire);
+                if (!Number.isFinite(ohms) || ohms <= 0) return;
+                resistors.push({
+                    elementId: wire.id,
+                    kind: 'wire',
+                    a,
+                    b,
+                    ohms,
+                    wire
+                });
+            });
+
             return { resistors, sources };
         }
 
@@ -11869,7 +12197,7 @@ Made with ? for visual learners everywhere!
         }
 
         function solveDCCircuitLegacy() {
-            const { terminalToNode, nodeIds } = buildElectricalNodesLegacy();
+            const { terminalToNode, nodeIds } = buildElectricalNodesLegacy({ includeWireShorts: false });
             const { resistors, sources } = buildNetlistLegacy(terminalToNode);
 
             const globalRef = pickReferenceNodeLegacy(terminalToNode, nodeIds);
@@ -12065,7 +12393,7 @@ Made with ? for visual learners everywhere!
             if (aKey === bKey) return 0;
 
             // Build nodes with wires + (deactivated) battery shorts merged
-            const { terminalToNode, nodeIds } = buildElectricalNodesLegacy({ includeBatteryShorts: true });
+            const { terminalToNode, nodeIds } = buildElectricalNodesLegacy({ includeBatteryShorts: true, includeWireShorts: false });
 
             const nodeA = terminalToNode.get(aKey);
             const nodeB = terminalToNode.get(bKey);
@@ -12664,12 +12992,22 @@ Made with ? for visual learners everywhere!
                 return null;
             }
 
+            const spec = wire.wireSpec || null;
+            const estimatedResistance = getWireResistance(wire);
+
             return {
                 id: wire.id,
                 startComponentId: wire.startObj?.id || null,
                 startSide: wire.startSide || null,
                 endComponentId: wire.endObj?.id || null,
                 endSide: wire.endSide || null,
+                wireSpecId: wire.wireSpecId || spec?.id || null,
+                wireLabel: spec?.label || null,
+                resistanceOhmPerMeter: spec?.resistanceOhmPerMeter || null,
+                estimatedResistanceOhms: Number.isFinite(estimatedResistance) ? estimatedResistance : null,
+                ampacityChassisA: spec?.ampacityChassisA || null,
+                ampacityBundleA: spec?.ampacityBundleA || null,
+                maxVoltageV: spec?.maxVoltageV || null,
                 segments: (wire.segments || []).map(segment => ({
                     start: {
                         x: segment?.start?.x || 0,

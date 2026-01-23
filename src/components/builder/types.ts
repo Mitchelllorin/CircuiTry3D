@@ -12,6 +12,8 @@ export type BuilderInvokeAction =
   | "cycle-wire-routing"
   | "toggle-grid"
   | "toggle-labels"
+  | "set-wire-type"
+  | "set-wire-library"
   | "load-preset"
   | "generate-practice"
   | "practice-help"
