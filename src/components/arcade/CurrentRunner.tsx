@@ -153,12 +153,19 @@ export default function CurrentRunner() {
     if (!canvas || !container) {
       return;
     }
-    const rect = container.getBoundingClientRect();
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (!width || !height) {
+      return;
+    }
     const ratio = window.devicePixelRatio || 1;
-    canvas.width = Math.floor(rect.width * ratio);
-    canvas.height = Math.floor(rect.height * ratio);
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    const targetWidth = Math.floor(width * ratio);
+    const targetHeight = Math.floor(height * ratio);
+    if (canvas.width === targetWidth && canvas.height === targetHeight) {
+      return;
+    }
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
   }, []);
 
   useEffect(() => {
