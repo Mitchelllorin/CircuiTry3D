@@ -1572,6 +1572,8 @@ export default function Builder() {
   const wireRoutingNames: Record<string, string> = {
     freeform: "Freeform",
     manhattan: "Manhattan (90-deg)",
+    offset: "Offset",
+    arc: "Arc",
     simple: "Simple",
     perimeter: "Perimeter",
     astar: "A* Auto",
