@@ -1441,11 +1441,6 @@ export default function Builder() {
   const isArenaSyncing = arenaExportStatus === "exporting";
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
-  const leftFloatingOffset =
-    `calc(clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px))`;
-  const rightFloatingOffset =
-    `calc(clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px))`;
-
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isOverlayActive =
     isArenaPanelOpen ||
@@ -1459,13 +1454,6 @@ export default function Builder() {
     workspaceMode === "build" ||
     workspaceMode === "practice" ||
     workspaceMode === "troubleshoot";
-  const shouldShowFloatingActions =
-    isActiveCircuitBuildMode &&
-    !isWorksheetVisible &&
-    !isOverlayActive &&
-    !isBottomMenuOpen &&
-    !isLeftMenuOpen &&
-    !isRightMenuOpen;
   const shouldShowEdgeActions =
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
@@ -1685,6 +1673,18 @@ export default function Builder() {
           <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
             <button
               type="button"
+              className="edge-action-btn edge-action-btn--simulate"
+              onClick={handleRunSimulationClick}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              data-pulse={isSimulatePulsing ? "true" : undefined}
+              aria-label="Run simulation"
+              title="Run the current circuit simulation"
+            >
+              <IconPlay className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
               className="edge-action-btn"
               onClick={() => triggerBuilderAction("undo")}
               disabled={controlsDisabled}
@@ -1730,6 +1730,17 @@ export default function Builder() {
 
           {/* Workspace Quick Action Buttons - Tool actions on left edge */}
           <div className="workspace-edge-actions workspace-edge-actions--left" aria-label="Tool quick actions">
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--clear"
+              onClick={handleClearWorkspace}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Clear workspace"
+              title="Clear all components, wires, and analysis data"
+            >
+              <IconTrash className="edge-action-icon-svg" />
+            </button>
             <button
               type="button"
               className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
@@ -2393,54 +2404,6 @@ export default function Builder() {
           sandbox="allow-scripts allow-same-origin allow-popups"
         />
       </div>
-
-      {shouldShowFloatingActions && (
-        <Fragment>
-          <div
-            className="builder-floating-action builder-floating-action--left"
-            style={{ left: leftFloatingOffset }}
-          >
-            <button
-              type="button"
-              className="builder-floating-button"
-              data-variant="clear"
-              onClick={handleClearWorkspace}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Clear workspace"
-              title={
-                controlsDisabled
-                  ? controlDisabledTitle
-                  : "Clear all components, wires, and analysis data"
-              }
-            >
-              <IconTrash className="builder-floating-icon" />
-            </button>
-          </div>
-          <div
-            className="builder-floating-action builder-floating-action--right"
-            style={{ right: rightFloatingOffset }}
-          >
-            <button
-              type="button"
-              className="builder-floating-button"
-              data-variant="simulate"
-              onClick={handleRunSimulationClick}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              data-pulse={isSimulatePulsing ? "true" : undefined}
-              aria-label="Run simulation"
-              title={
-                controlsDisabled
-                  ? controlDisabledTitle
-                  : "Run the current circuit simulation"
-              }
-            >
-              <IconPlay className="builder-floating-icon" />
-            </button>
-          </div>
-        </Fragment>
-      )}
 
       <div
         ref={floatingLogoRef}
