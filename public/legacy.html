@@ -7576,7 +7576,7 @@ body.android-optimized.menu-visible .status {
         }
         
         function cycleRoutingMode() {
-            const modes = ['freeform', 'manhattan', 'simple', 'perimeter', 'astar'];
+            const modes = ['freeform', 'manhattan', 'offset', 'arc', 'simple', 'perimeter', 'astar'];
             const current = getRouterMode();
             const currentIndex = modes.indexOf(current);
             const nextIndex = (currentIndex + 1) % modes.length;
@@ -7596,6 +7596,8 @@ body.android-optimized.menu-visible .status {
                 const modeNames = {
                     'freeform': 'Free-form',
                     'manhattan': 'Manhattan',
+                    'offset': 'Offset',
+                    'arc': 'Arc',
                     'simple': 'Simple',
                     'perimeter': 'Perimeter',
                     'astar': 'A*'
@@ -7671,6 +7673,61 @@ body.android-optimized.menu-visible .status {
                 // More vertical distance - go vertical first
                 return [A, new THREE.Vector3(A.x, 0, B.z), B];
             }
+        }
+
+        function routeOffset(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const dx = B.x - A.x;
+            const dz = B.z - A.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            if (distance < 0.1) {
+                return [A, B];
+            }
+
+            const horizontal = Math.abs(dx) >= Math.abs(dz);
+            const offset = Math.min(Math.max(distance * 0.25, GRID * 2), GRID * 6);
+
+            if (horizontal) {
+                const direction = Math.sign(dz || 1);
+                const midZ = (A.z + B.z) / 2 + direction * offset;
+                const p1 = snapToGrid(new THREE.Vector3(A.x, 0, midZ));
+                const p2 = snapToGrid(new THREE.Vector3(B.x, 0, midZ));
+                return compressPath([A, p1, p2, B]);
+            }
+
+            const direction = Math.sign(dx || 1);
+            const midX = (A.x + B.x) / 2 + direction * offset;
+            const p1 = snapToGrid(new THREE.Vector3(midX, 0, A.z));
+            const p2 = snapToGrid(new THREE.Vector3(midX, 0, B.z));
+            return compressPath([A, p1, p2, B]);
+        }
+
+        function routeArc(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const dx = B.x - A.x;
+            const dz = B.z - A.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            if (distance < 0.1) {
+                return [A, B];
+            }
+
+            const midX = (A.x + B.x) / 2;
+            const midZ = (A.z + B.z) / 2;
+            const normX = -dz / distance;
+            const normZ = dx / distance;
+            const bend = Math.min(Math.max(distance * 0.3, GRID * 3), GRID * 8);
+            const control = new THREE.Vector3(midX + normX * bend, 0, midZ + normZ * bend);
+
+            const segments = Math.max(5, Math.min(14, Math.round(distance / GRID) + 4));
+            const points = [];
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const inv = 1 - t;
+                const x = inv * inv * A.x + 2 * inv * t * control.x + t * t * B.x;
+                const z = inv * inv * A.z + 2 * inv * t * control.z + t * t * B.z;
+                points.push(new THREE.Vector3(x, 0, z));
+            }
+            return points;
         }
 
         function routeSimple(A, B, startSide, endSide) {
@@ -8007,6 +8064,14 @@ body.android-optimized.menu-visible .status {
             // Support free-form routing
             if (mode === 'freeform') {
                 return routeFreeform(A, B, startSide, endSide);
+            }
+
+            if (mode === 'offset') {
+                return routeOffset(A, B, startSide, endSide);
+            }
+
+            if (mode === 'arc') {
+                return routeArc(A, B, startSide, endSide);
             }
             
             // Use enhanced Manhattan routing for textbook-style circuits
@@ -10572,6 +10637,8 @@ body.android-optimized.menu-visible .status {
 ?? ROUTING MODES (??? Tools menu):
    ? Free-form: Natural connections
    ? Manhattan: Textbook right-angles
+   ? Offset: Parallel detours
+   ? Arc: Smooth sweeps
    ? Toggle: Tools ? ?? Route
 
 ? JUNCTIONS (for parallel circuits):
@@ -10850,6 +10917,8 @@ Fast circuit building with keyboard shortcuts!
 ?? FLEXIBLE WIRING:
    ? Free-form: Natural connections
    ? Manhattan: Textbook right-angles
+   ? Offset: Parallel detours
+   ? Arc: Smooth sweeps
    ? Simple, Perimeter, A*: Advanced routing
    ? Smart junction placement
    ? Long-press wire editing

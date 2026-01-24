@@ -4,7 +4,7 @@ This document describes the robust wire topology system implemented for CircuiTr
 
 ## Overview
 
-The wire system provides deterministic node-and-wire topology with automatic junction creation, selectable wiring modes (Freeform, Schematic, Star, and Routing), snap-to-pin functionality, and connectivity tracking for circuit simulation.
+The wire system provides deterministic node-and-wire topology with automatic junction creation, selectable wiring modes (Freeform, Schematic, Offset, Star, Arc, and Routing), snap-to-pin functionality, and connectivity tracking for circuit simulation.
 
 ## Core Concepts
 
@@ -51,7 +51,9 @@ src/
 | --- | --- |
 | **Freeform** | Draws a straight segment between the chosen endpoints—ideal for quick sketches. |
 | **Schematic** | Generates 90° elbow paths. Hold `Shift` while dragging to flip the elbow orientation on the fly. |
-| **Star** | Inserts a graceful radial bend, useful for hub-and-spoke layouts. |
+| **Offset** | Routes an orthogonal detour offset from the midpoint—useful for parallel runs or avoiding overlap. Hold `Shift` to flip the offset side. |
+| **Star** | Inserts a graceful radial bend, useful for hub-and-spoke layouts. Hold `Shift` to flip the bend side. |
+| **Arc** | Draws a smooth curved sweep by sampling a quadratic arc. Hold `Shift` to flip the arc side. |
 | **Routing** | Uses grid-based A* routing (with node-aware obstacles) to auto-thread a tidy path between endpoints. |
 
 Each mode is available from the left-side Wire Mode panel in the Builder UI and is also exposed via the `WireDrawer` component.
