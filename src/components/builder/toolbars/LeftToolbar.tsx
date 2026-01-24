@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type {
   ComponentAction,
   QuickAction,
@@ -30,10 +31,22 @@ interface LeftToolbarProps {
  * Renders the component icon/schematic symbol for the library
  * Vertical layout: name, description, schematic symbol, 3D thumbnail
  */
-function ComponentIcon({ component }: { component: ComponentAction }) {
-  const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id, {
-    animated: true,
-  });
+type ComponentIconProps = {
+  component: ComponentAction;
+  thumbnailsEnabled: boolean;
+  animateThumbnails: boolean;
+};
+
+function ComponentIcon({
+  component,
+  thumbnailsEnabled,
+  animateThumbnails,
+}: ComponentIconProps) {
+  const builderType = component.builderType ?? component.id;
+  const thumbSrc = useComponent3DThumbnail(
+    thumbnailsEnabled ? builderType : undefined,
+    { animated: animateThumbnails },
+  );
 
   const symbolKey = (() => {
     const type = component.builderType ?? component.id;
@@ -103,6 +116,26 @@ export function LeftToolbar({
   controlsDisabled,
   controlDisabledTitle,
 }: LeftToolbarProps) {
+  const isCoarsePointer = useMemo(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    if (typeof window.matchMedia === "function") {
+      const coarsePointer = window.matchMedia("(pointer: coarse)");
+      if (coarsePointer.matches) {
+        return true;
+      }
+    }
+
+    return (
+      typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 0
+    );
+  }, []);
+
+  const shouldRenderThumbnails = isOpen;
+  const shouldAnimateThumbnails = isOpen && !isCoarsePointer;
+
   return (
     <div
       className={`builder-menu-stage builder-menu-stage-left${isOpen ? " open" : ""}`}
@@ -132,7 +165,11 @@ export function LeftToolbar({
                   data-component-action={component.action}
                   data-category={component.metadata?.category}
                 >
-                  <ComponentIcon component={component} />
+                  <ComponentIcon
+                    component={component}
+                    thumbnailsEnabled={shouldRenderThumbnails}
+                    animateThumbnails={shouldAnimateThumbnails}
+                  />
                 </button>
               ))}
             </div>
