@@ -77,7 +77,7 @@ const NODE_STYLE: Record<Node['type'], NodeVisualStyle> = {
   },
 } as const;
 
-export type WireMode = 'free' | 'schematic' | 'star' | 'routing';
+export type WireMode = 'free' | 'schematic' | 'star' | 'offset' | 'arc' | 'routing';
 
 interface WireDrawerProps {
   width: number;
@@ -181,11 +181,39 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     return grid;
   }, [nodes, cols, rows, toGridPoint]);
 
-  const buildWirePath = useCallback((start: Vec2, end: Vec2, options?: { preferHorizontal?: boolean }): Vec2[] => {
+  const buildWirePath = useCallback((start: Vec2, end: Vec2, options?: { flip?: boolean }): Vec2[] => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const defaultHorizontalFirst = Math.abs(dx) >= Math.abs(dy);
+    const flip = options?.flip ? -1 : 1;
+
+    const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+    const compressPath = (points: Vec2[]) => {
+      if (points.length < 3) {
+        return points;
+      }
+      const cleaned: Vec2[] = [points[0]];
+      for (let i = 1; i < points.length - 1; i += 1) {
+        const prev = cleaned[cleaned.length - 1];
+        const curr = points[i];
+        const next = points[i + 1];
+        if (distance(prev, curr) < 0.01) {
+          continue;
+        }
+        const cross = (curr.x - prev.x) * (next.y - curr.y) - (curr.y - prev.y) * (next.x - curr.x);
+        if (Math.abs(cross) < 0.01) {
+          continue;
+        }
+        cleaned.push(curr);
+      }
+      cleaned.push(points[points.length - 1]);
+      return cleaned;
+    };
+
     const schematicPath = () => {
-      const dx = Math.abs(end.x - start.x);
-      const dy = Math.abs(end.y - start.y);
-      const horizontalFirst = options?.preferHorizontal ?? dx >= dy;
+      const horizontalFirst = options?.flip ? !defaultHorizontalFirst : defaultHorizontalFirst;
       const waypoint = horizontalFirst
         ? { x: end.x, y: start.y }
         : { x: start.x, y: end.y };
@@ -195,6 +223,62 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       }
 
       return [start, waypoint, end];
+    };
+
+    const offsetPath = () => {
+      if (length < 0.01) {
+        return [start, end];
+      }
+      const horizontalFirst = defaultHorizontalFirst;
+      const offsetMagnitude = clamp(length * 0.25, length * 0.15, ROUTING_GRID_SIZE * 2);
+      if (horizontalFirst) {
+        const baseY = (start.y + end.y) / 2;
+        const direction = Math.sign(dy || 1) * flip;
+        const midY = baseY + direction * offsetMagnitude;
+        return compressPath([
+          start,
+          { x: start.x, y: midY },
+          { x: end.x, y: midY },
+          end
+        ]);
+      }
+      const baseX = (start.x + end.x) / 2;
+      const direction = Math.sign(dx || 1) * flip;
+      const midX = baseX + direction * offsetMagnitude;
+      return compressPath([
+        start,
+        { x: midX, y: start.y },
+        { x: midX, y: end.y },
+        end
+      ]);
+    };
+
+    const arcPath = () => {
+      if (length < 0.01) {
+        return [start, end];
+      }
+      const mid = {
+        x: (start.x + end.x) / 2,
+        y: (start.y + end.y) / 2
+      };
+      const normX = -dy / length;
+      const normY = dx / length;
+      const bend = clamp(length * 0.3, length * 0.2, ROUTING_GRID_SIZE * 3);
+      const control = {
+        x: mid.x + normX * bend * flip,
+        y: mid.y + normY * bend * flip
+      };
+      const segments = Math.max(4, Math.min(10, Math.round(length / 80) + 4));
+      const points: Vec2[] = [];
+      for (let i = 0; i <= segments; i += 1) {
+        const t = i / segments;
+        const inv = 1 - t;
+        points.push({
+          x: inv * inv * start.x + 2 * inv * t * control.x + t * t * end.x,
+          y: inv * inv * start.y + 2 * inv * t * control.y + t * t * end.y
+        });
+      }
+      return points;
     };
 
     switch (mode) {
@@ -207,19 +291,21 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
           y: (start.y + end.y) / 2
         };
 
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-
         if (length > 0) {
           const bend = Math.min(80, length / 2);
           const normX = -dy / length;
           const normY = dx / length;
-          mid.x += normX * bend;
-          mid.y += normY * bend;
+          mid.x += normX * bend * flip;
+          mid.y += normY * bend * flip;
         }
 
         return [start, mid, end];
+      }
+      case 'offset': {
+        return offsetPath();
+      }
+      case 'arc': {
+        return arcPath();
       }
       case 'routing': {
         const grid = buildRoutingGrid();
@@ -397,7 +483,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     }
 
     const endPos = snapNode ? snapNode.pos : pos;
-    const options = mode === 'schematic' ? { preferHorizontal: e.shiftKey } : undefined;
+    const options = e.shiftKey ? { flip: true } : undefined;
     const startPoint = currentWire[0];
     const path = buildWirePath(startPoint, endPos, options);
     setCurrentWire(path);
@@ -420,7 +506,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     const endSnapNode = findSnapTarget(pos);
     const endPos = endSnapNode ? endSnapNode.pos : pos;
     const startPos = currentWire[0];
-    const options = mode === 'schematic' ? { preferHorizontal: e.shiftKey } : undefined;
+    const options = e.shiftKey ? { flip: true } : undefined;
 
     const finalPath = buildWirePath(startPos, endPos, options);
     const pathLength = computePathLength(finalPath);
