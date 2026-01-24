@@ -130,9 +130,9 @@
 
   <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill="#88ccff" textAnchor="middle" fontWeight="600">
     <text x="37" y="98">9V</text>
-    <text x="130" y="35">R? = 3 k?</text>
-    <text x="225" y="105">R? = 10 k?</text>
-    <text x="125" y="172">R? = 5 k?</text>
+    <text x="130" y="35">R₁ = 3 kΩ</text>
+    <text x="225" y="105">R₂ = 10 kΩ</text>
+    <text x="125" y="172">R₃ = 5 kΩ</text>
   </g>
 
   <!-- Animated photons (two bright particles with comet tails) -->
