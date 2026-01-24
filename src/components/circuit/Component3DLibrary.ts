@@ -353,26 +353,38 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
   {
     type: 'battery',
     label: 'Battery',
-    description: '9V battery',
+    description: 'Unbranded AA alkaline cell',
     geometry: {
       shapes: [
         {
-          type: 'box',
+          type: 'cylinder',
           position: [0, 0, 0],
-          scale: [0.5, 1.0, 0.3],
-          color: '#2C5F8D',
+          scale: [0.36, 1.7, 0.36],
+          color: '#2B2B2B',
         },
         {
           type: 'cylinder',
-          position: [0, 0.55, 0.1],
-          scale: [0.1, 0.15, 0.1],
-          color: '#FFD700',
+          position: [0, 0.5, 0],
+          scale: [0.375, 0.6, 0.375],
+          color: '#B06A2A',
         },
         {
           type: 'cylinder',
-          position: [0, 0.55, -0.1],
-          scale: [0.1, 0.15, 0.1],
-          color: '#C0C0C0',
+          position: [0, 0.85, 0],
+          scale: [0.38, 0.06, 0.38],
+          color: '#B9B9B9',
+        },
+        {
+          type: 'cylinder',
+          position: [0, 0.91, 0],
+          scale: [0.12, 0.1, 0.12],
+          color: '#E0E0E0',
+        },
+        {
+          type: 'cylinder',
+          position: [0, -0.85, 0],
+          scale: [0.38, 0.06, 0.38],
+          color: '#A7A7A7',
         },
       ],
       leads: [],
