@@ -1,7 +1,7 @@
 <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="CircuiTry3D Logo - Three Resistor Circuit">
   <defs>
     <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#88ccff;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="componentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -80,15 +80,26 @@
 
   <g stroke="url(#wireGradient)" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
 
+    <!-- Wire from bottom junction to battery negative terminal -->
     <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
+    <!-- Standard two-line battery symbol (vertical orientation) -->
+    <!-- Positive terminal (longer line) on top, negative (shorter line) on bottom -->
     <g transform="translate(55, 80)">
-      <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
-      <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
-      <text x="0" y="-18" fontSize="9" fill="#00ff88" fontWeight="bold" textAnchor="middle">+</text>
-      <text x="-3" y="20" fontSize="9" fill="#64748b" fontWeight="bold" textAnchor="middle">-</text>
+      <!-- Positive plate (longer line at top) -->
+      <line x1="-12" y1="-8" x2="12" y2="-8" stroke="url(#componentGradient)" strokeWidth="3.5" />
+      <!-- Negative plate (shorter line at bottom) -->
+      <line x1="-7" y1="8" x2="7" y2="8" stroke="url(#componentGradient)" strokeWidth="2.5" />
+      <!-- Vertical connection lines (battery body) -->
+      <line x1="0" y1="-8" x2="0" y2="-15" stroke="url(#wireGradient)" strokeWidth="3.5" />
+      <line x1="0" y1="8" x2="0" y2="15" stroke="url(#wireGradient)" strokeWidth="3.5" />
     </g>
 
+    <!-- Polarity markers: + above battery, - below battery -->
+    <text x="70" y="62" fontSize="12" fill="#00ff88" fontWeight="bold" textAnchor="middle">+</text>
+    <text x="70" y="103" fontSize="12" fill="#ff6666" fontWeight="bold" textAnchor="middle">−</text>
+
+    <!-- Wire from battery positive terminal to top junction -->
     <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
     <line x1="55" y1="50" x2="90" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
@@ -129,10 +140,10 @@
   </g>
 
   <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill="#88ccff" textAnchor="middle" fontWeight="600">
-    <text x="37" y="98">9V</text>
+    <text x="30" y="83">9V</text>
     <text x="130" y="35">R₁ = 3 kΩ</text>
     <text x="225" y="105">R₂ = 10 kΩ</text>
-    <text x="125" y="172">R₃ = 5 kΩ</text>
+    <text x="125" y="172">R₃ = ? kΩ</text>
   </g>
 
   <!-- Animated photons (two bright particles with comet tails) -->
