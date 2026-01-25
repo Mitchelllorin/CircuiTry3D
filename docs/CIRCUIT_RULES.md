@@ -48,6 +48,7 @@ or equivalently:
 - Applied at every junction and wire intersection
 - Ensures current conservation throughout the circuit
 - Prevents physically impossible current distributions
+- **Junction nodes (amber dots) serve as explicit KCL application points for educational clarity**
 
 ### Kirchhoff's Voltage Law (KVL)
 
@@ -170,6 +171,30 @@ function areConnected(p1: Vec2, p2: Vec2): boolean {
 1. Model wire segments as 0V voltage sources for current tracking
 2. Maintain current continuity across junctions
 3. Track per-segment current for animation purposes
+
+### Rule C3D-007a: Junction Node Standard
+
+> **"Junction nodes are the CircuiTry3D standard for creating branch points in wire runs. Users can drop a junction anywhere on an existing wire to start new branches."**
+
+**Node Types and Visual Indicators:**
+
+| Node Type | Color | Priority | Purpose |
+|-----------|-------|----------|---------|
+| `componentPin` | Green | 3 (highest) | Fixed terminal on components |
+| `junction` | Amber/Orange | 2 | Branch point for parallel/series-parallel circuits |
+| `wireAnchor` | Cyan | 1 (lowest) | Free wire endpoint |
+
+**Implementation Requirements:**
+1. Clicking/tapping on any wire run creates a junction node at that point
+2. Hovering over a wire shows a pulsing '+' indicator where a junction can be placed
+3. Junctions can connect unlimited wires for multi-branch topologies
+4. Nearby nodes merge automatically within MERGE_RADIUS (6px)
+5. Node priority determines which type is preserved during merge
+
+**Educational Purpose:**
+- Junctions make KCL (Kirchhoff's Current Law) application points explicit
+- Critical for "squares within squares" series-parallel circuit problems
+- Enables step-by-step decomposition: identify series sections, then parallel sections
 
 ### Rule C3D-008: Floating Component Detection
 

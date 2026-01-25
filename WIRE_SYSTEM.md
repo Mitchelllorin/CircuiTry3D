@@ -11,9 +11,28 @@ The wire system provides deterministic node-and-wire topology with automatic jun
 ### Nodes
 Nodes are connection points in the circuit. There are three types:
 
-1. **Component Pins** (`componentPin`): Fixed connection points on circuit components
-2. **Junctions** (`junction`): Auto-created when wires cross within tolerance or when the builder clicks any point along an existing wire
-3. **Wire Anchors** (`wireAnchor`): Free endpoints of wires not connected to anything
+1. **Component Pins** (`componentPin`): Fixed connection points on circuit components (green indicators)
+2. **Junctions** (`junction`): Connection points for branching wires (amber/orange indicators) - **the key to parallel and series-parallel circuit problems**
+3. **Wire Anchors** (`wireAnchor`): Free endpoints of wires not connected to anything (cyan indicators)
+
+### Junction Nodes: The CircuiTry3D Standard
+
+**Junctions are critical for solving complex circuit problems.** They enable:
+
+- **Parallel branches**: Drop a junction on any wire run to create parallel paths
+- **Series-parallel decomposition**: Break "squares within squares" layouts into manageable sections
+- **Current division analysis**: Junctions serve as nodes where Kirchhoff's Current Law (KCL) applies
+
+**How to create junctions:**
+1. Enable Wire Mode
+2. Hover over an existing wire - look for the pulsing '+' indicator
+3. Click/tap to drop a junction node (amber dot appears)
+4. Draw new wires from the junction in any direction
+
+**Visual feedback:**
+- Hovering over a wire shows a pulsing cyan ring with a '+' crosshair
+- Junction nodes display as amber/orange dots (priority 2, between component pins and wire anchors)
+- Multiple wires can connect to a single junction for branching
 
 ### Wires
 Wires are polylines connecting nodes. Each wire:

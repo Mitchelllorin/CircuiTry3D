@@ -167,6 +167,19 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
   },
   {
+    title: "Junction Nodes: The Key to Complex Circuits",
+    paragraphs: [
+      "Junctions (amber dots) let you branch wires anywhere along an existing run. Click any point on a wire to drop a junction, then draw new wires from it.",
+      "This is critical for parallel and series-parallel circuit problems—think 'squares within squares' layouts where branches contain both series and parallel elements.",
+    ],
+    bullets: [
+      "Hover over a wire to see the pulsing '+' indicator where you can add a junction.",
+      "From a junction, draw wires in any direction to create parallel paths.",
+      "Use junctions to break complex problems into series sections and parallel sections for step-by-step solving.",
+      "Junctions automatically merge nearby nodes and maintain circuit connectivity.",
+    ],
+  },
+  {
     title: "Visual Learning",
     paragraphs: [
       "CircuiTry3D leans on the W.I.R.E. colour system so you always know which value you are adjusting.",
