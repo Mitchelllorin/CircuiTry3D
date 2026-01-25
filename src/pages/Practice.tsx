@@ -122,6 +122,61 @@ const ELECTRICAL_FORMULAS: ElectricalFormula[] = [
       { symbol: "R", name: "Resistance (Ω)" },
     ],
   },
+  {
+    id: "series-rt",
+    category: "derived",
+    formula: "R_T = R_1 + R_2 + …",
+    description: "Total resistance in series is the sum of resistances",
+    variables: [
+      { symbol: "R_T", name: "Total resistance (Ω)" },
+      { symbol: "R_n", name: "Individual resistance (Ω)" },
+    ],
+  },
+  {
+    id: "series-voltage-divider",
+    category: "derived",
+    formula: "E_x = E_T × (R_x / R_T)",
+    description: "Voltage divider for a series resistor",
+    variables: [
+      { symbol: "E_x", name: "Voltage drop across resistor x (V)" },
+      { symbol: "E_T", name: "Source voltage (V)" },
+      { symbol: "R_x", name: "Resistor x (Ω)" },
+      { symbol: "R_T", name: "Total resistance (Ω)" },
+    ],
+  },
+  {
+    id: "parallel-rt",
+    category: "derived",
+    formula: "1 / R_T = 1 / R_1 + 1 / R_2 + …",
+    description: "Reciprocal rule for total resistance in parallel",
+    variables: [
+      { symbol: "R_T", name: "Equivalent resistance (Ω)" },
+      { symbol: "R_n", name: "Branch resistance (Ω)" },
+    ],
+  },
+  {
+    id: "parallel-product-sum",
+    category: "derived",
+    formula: "R_T = (R_1 × R_2) / (R_1 + R_2)",
+    description: "Product-over-sum shortcut (exactly two parallel resistors)",
+    variables: [
+      { symbol: "R_T", name: "Equivalent resistance (Ω)" },
+      { symbol: "R_1", name: "Resistor 1 (Ω)" },
+      { symbol: "R_2", name: "Resistor 2 (Ω)" },
+    ],
+  },
+  {
+    id: "parallel-current-divider",
+    category: "derived",
+    formula: "I_1 = I_T × (R_2 / (R_1 + R_2))",
+    description: "Current divider (exactly two parallel resistors)",
+    variables: [
+      { symbol: "I_1", name: "Current through branch 1 (A)" },
+      { symbol: "I_T", name: "Total current into parallel (A)" },
+      { symbol: "R_1", name: "Branch 1 resistance (Ω)" },
+      { symbol: "R_2", name: "Branch 2 resistance (Ω)" },
+    ],
+  },
 ];
 
 const TOPOLOGY_ORDER: PracticeTopology[] = [
@@ -376,6 +431,7 @@ export default function Practice({
   const [tableRevealed, setTableRevealed] = useState(false);
   const [stepsVisible, setStepsVisible] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
+  const [visualMode, setVisualMode] = useState<"2d" | "3d" | "both">("2d");
   const [worksheetEntries, setWorksheetEntries] = useState<WorksheetState>({});
   const [worksheetComplete, setWorksheetComplete] = useState(false);
   const [assistUsed, setAssistUsed] = useState(false);
@@ -1058,35 +1114,73 @@ export default function Practice({
             </div>
 
             <div className="problem-overview-diagram" ref={diagramAnchorRef}>
-              <div className="practice-diagram-inline">
-                <CircuitDiagram problem={selectedProblem} />
-              </div>
-              <div className="practice-schematic-controls">
-                <div
-                  className="practice-standard-control-compact"
-                  role="group"
-                  aria-label="Schematic symbol standard"
-                >
-                  <span className="practice-standard-label">3D Standard</span>
-                  <div className="practice-standard-buttons">
-                    {SYMBOL_STANDARD_OPTIONS.map((option) => (
-                      <button
-                        key={option.key}
-                        type="button"
-                        data-active={
-                          symbolStandard === option.key ? "true" : undefined
-                        }
-                        onClick={() => setSymbolStandard(option.key)}
-                        title={option.description}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+              <div className="practice-visual-toolbar-compact" role="group" aria-label="Diagram display controls">
+                <div className="practice-visual-toggle" role="tablist" aria-label="Choose 2D or 3D diagram">
+                  {(
+                    [
+                      { key: "2d" as const, label: "2D" },
+                      { key: "3d" as const, label: "3D" },
+                      { key: "both" as const, label: "Both" },
+                    ] as const
+                  ).map((mode) => (
+                    <button
+                      key={mode.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={visualMode === mode.key}
+                      data-active={visualMode === mode.key ? "true" : undefined}
+                      onClick={() => setVisualMode(mode.key)}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
                 </div>
+
+                {visualMode !== "2d" ? (
+                  <div
+                    className="practice-standard-control-compact"
+                    role="group"
+                    aria-label="3D schematic symbol standard"
+                  >
+                    <span className="practice-standard-label">3D Standard</span>
+                    <div className="practice-standard-buttons">
+                      {SYMBOL_STANDARD_OPTIONS.map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          data-active={
+                            symbolStandard === option.key ? "true" : undefined
+                          }
+                          onClick={() => setSymbolStandard(option.key)}
+                          title={option.description}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
+
+              {visualMode === "2d" || visualMode === "both" ? (
+                <div className="practice-diagram-inline">
+                  <CircuitDiagram problem={selectedProblem} />
+                </div>
+              ) : null}
+
+              {visualMode === "3d" || visualMode === "both" ? (
+                <div className="practice-visual-stage-compact is-schematic">
+                  <PracticeViewport
+                    problem={selectedProblem}
+                    symbolStandard={symbolStandard}
+                  />
+                </div>
+              ) : null}
+
               <p className="practice-visual-caption">
-                Rendering {activeStandardLabel} symbols in the 3D workspace.
+                {visualMode === "2d"
+                  ? "Textbook-style 2D schematic view."
+                  : `3D schematic view (${activeStandardLabel} symbols).`}
               </p>
             </div>
           </section>
