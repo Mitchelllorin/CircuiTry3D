@@ -120,10 +120,17 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         {/* Wire from battery to corner */}
         <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
 
-        {/* Battery symbol - per style guide: longer plate = positive */}
-        <g transform="translate(55, 80)">
-          <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
-          <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
+        {/* Battery symbol and polarity markers are brand-critical; do not remove without explicit instruction. */}
+        <g transform="translate(55, 80)" data-battery="true" data-polarity="true">
+          <line x1="-18" y1="-12" x2="18" y2="-12" stroke="url(#componentGradient)" strokeWidth="4" />
+          <line x1="-12" y1="12" x2="12" y2="12" stroke="url(#componentGradient)" strokeWidth="2.8" />
+          <g stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="2.4" strokeLinecap="round">
+            <line x1="-36" y1="-12" x2="-20" y2="-12" />
+            <line x1="-28" y1="-20" x2="-28" y2="-4" />
+          </g>
+          <g stroke={LOGO_COLORS.labelPrimary} strokeWidth="2.4" strokeLinecap="round">
+            <line x1="-36" y1="12" x2="-20" y2="12" />
+          </g>
         </g>
 
         <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
@@ -160,6 +167,18 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
 
         {/* Return wire to battery */}
         <line x1="55" y1="150" x2="55" y2="115" stroke="url(#wireGradient)" strokeWidth="3.5" />
+
+        <g stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.2" opacity="0.9">
+          <line x1="55" y1="115" x2="55" y2="95" />
+          <line x1="55" y1="65" x2="55" y2="50" />
+          <line x1="55" y1="50" x2="100" y2="50" />
+          <line x1="160" y1="50" x2="205" y2="50" />
+          <line x1="205" y1="50" x2="205" y2="75" />
+          <line x1="205" y1="135" x2="205" y2="150" />
+          <line x1="205" y1="150" x2="155" y2="150" />
+          <line x1="95" y1="150" x2="55" y2="150" />
+          <line x1="55" y1="150" x2="55" y2="115" />
+        </g>
 
         {/* Junction nodes at corners per style guide (filled circles at T-junctions) */}
         <circle cx="55" cy="50" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
