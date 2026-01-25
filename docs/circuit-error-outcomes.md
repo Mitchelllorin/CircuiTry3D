@@ -1,6 +1,12 @@
 ## Circuit build errors: standard rules & outcomes
 
-This project uses `src/sim/circuitValidator.ts` to classify “incorrect build” situations into consistent **issue types**, and the UI uses those types to decide **outcomes** (what the circuit does) and **animations** (what the learner sees).
+This project uses `src/sim/circuitValidator.ts` to classify "incorrect build" situations into consistent **issue types**, and the UI uses those types to decide **outcomes** (what the circuit does) and **animations** (what the learner sees).
+
+**Theory Foundation:** [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Electrical theory reference
+
+**Related Documentation:**
+- [CIRCUIT_RULES.md](./CIRCUIT_RULES.md) — Full rule specifications
+- [COMPONENT_REFERENCE.md](./COMPONENT_REFERENCE.md) — Component behavior
 
 ### Core rules
 
