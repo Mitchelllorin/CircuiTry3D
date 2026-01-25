@@ -113,10 +113,27 @@ export function BuilderInteractiveTutorial(props: {
         isComplete: () => true,
       },
       {
-        id: "done",
-        title: "Done — next: try an LED + resistor",
+        id: "junction-intro",
+        title: "Step 7 — Junctions: branch your circuit",
         body:
-          "You’ve built a working circuit. Next, add an LED in series with a resistor and compare how the W.I.R.E. values change.",
+          "Click anywhere on an existing wire to drop a junction node (amber dot). From that junction, draw a new wire to create parallel branches—essential for solving complex series-parallel problems. Look for the pulsing '+' indicator when hovering over a wire.",
+        canSkipRequirement: true,
+        isComplete: ({ circuit }) =>
+          Boolean((circuit?.counts.junctions ?? 0) > 0),
+      },
+      {
+        id: "junction-parallel",
+        title: "Step 8 — Build a parallel path",
+        body:
+          "Add a second resistor and wire it in parallel using junctions. With parallel paths, current divides and total resistance drops. This is the foundation for analyzing 'squares within squares' circuit layouts.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "done",
+        title: "Done — you're ready for complex circuits",
+        body:
+          "You've mastered the basics: components, wires, junctions, and W.I.R.E. metrics. Use junctions to break down series-parallel problems into manageable sections—analyze each branch, then combine for the total.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -210,6 +227,7 @@ export function BuilderInteractiveTutorial(props: {
   const batteryCount = circuitState?.counts.byType?.battery ?? 0;
   const resistorCount = circuitState?.counts.byType?.resistor ?? 0;
   const wireCount = circuitState?.counts.wires ?? 0;
+  const junctionCount = circuitState?.counts.junctions ?? 0;
   const isComplete = Boolean(circuitState?.metrics.isComplete);
 
   return (
@@ -255,6 +273,9 @@ export function BuilderInteractiveTutorial(props: {
             </span>
             <span className="builder-tutorial-status-item">
               Wires: <strong>{wireCount}</strong>
+            </span>
+            <span className="builder-tutorial-status-item">
+              Junctions: <strong>{junctionCount}</strong>
             </span>
             <span className="builder-tutorial-status-item">
               Loop: <strong>{isComplete ? "Closed" : "Open"}</strong>
