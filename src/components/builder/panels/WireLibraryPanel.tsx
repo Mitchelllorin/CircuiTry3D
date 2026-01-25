@@ -3,9 +3,16 @@ import WireLibrary from "../../practice/WireLibrary";
 interface WireLibraryPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  onSelectWire?: (wireId: string) => void;
+  selectedWireId?: string;
 }
 
-export function WireLibraryPanel({ isOpen, onClose }: WireLibraryPanelProps) {
+export function WireLibraryPanel({
+  isOpen,
+  onClose,
+  onSelectWire,
+  selectedWireId,
+}: WireLibraryPanelProps) {
   const handleOverlayClick = () => {
     onClose();
   };
@@ -35,7 +42,7 @@ export function WireLibraryPanel({ isOpen, onClose }: WireLibraryPanelProps) {
           X
         </button>
         <div className="builder-panel-body builder-panel-body--wire-library">
-          <WireLibrary />
+          <WireLibrary onSelectWire={onSelectWire} selectedWireId={selectedWireId} />
         </div>
       </div>
     </div>

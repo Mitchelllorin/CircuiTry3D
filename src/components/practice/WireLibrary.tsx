@@ -74,12 +74,18 @@ const getCategoryDescription = (category: WireMaterialSpec["category"]): string 
   }
 };
 
-export default function WireLibrary() {
+type WireLibraryProps = {
+  onSelectWire?: (wireId: string) => void;
+  selectedWireId?: string;
+};
+
+export default function WireLibrary({ onSelectWire, selectedWireId }: WireLibraryProps) {
   const [material, setMaterial] = useState<MaterialOption>("any");
   const [insulation, setInsulation] = useState<InsulationOption>("any");
   const [category, setCategory] = useState<CategoryOption>("any");
   const [minAmpacity, setMinAmpacity] = useState(0);
   const [search, setSearch] = useState("");
+  const canSelect = typeof onSelectWire === "function";
 
   // Filter materials based on selected category
   const availableMaterials = useMemo(() => getMaterialsByCategory(category), [category]);
@@ -144,6 +150,13 @@ export default function WireLibrary() {
   const sliderMax = Math.ceil(WIRE_LIBRARY_SUMMARY.maxAmpacity);
   const filtersActive = filterIsDirty(material, insulation, category, minAmpacity, search);
 
+  const selectedWire = useMemo(() => {
+    if (!selectedWireId) {
+      return null;
+    }
+    return WIRE_LIBRARY.find((spec) => spec.id === selectedWireId) ?? null;
+  }, [selectedWireId]);
+
   // Count wires by category for display
   const categoryCounts = useMemo(() => {
     const counts = { conductor: 0, resistance: 0, specialty: 0 };
@@ -187,6 +200,14 @@ export default function WireLibrary() {
               {typeof highestAmpacity === "number" ? `${formatNumber(highestAmpacity, 0)} A` : "—"}
             </strong>
           </div>
+          {canSelect && (
+            <div>
+              <span className="summary-label">Active wire</span>
+              <strong className="summary-value">
+                {selectedWire ? selectedWire.gaugeLabel : "Choose a wire"}
+              </strong>
+            </div>
+          )}
         </div>
       </header>
 
@@ -277,14 +298,16 @@ export default function WireLibrary() {
                 <th scope="col">Ampacity (free / bundled)</th>
                 <th scope="col">Thermal · Voltage</th>
                 <th scope="col">Use cases</th>
+                {canSelect ? <th scope="col">Use</th> : null}
               </tr>
             </thead>
             <tbody>
               {filtered.map((spec) => {
                 const manufacturer = getManufacturerForWire(spec.id);
                 const materialSpec = WIRE_MATERIALS[spec.material as WireMaterialId];
+                const isSelected = Boolean(selectedWireId && spec.id === selectedWireId);
                 return (
-                  <tr key={spec.id} data-category={materialSpec?.category}>
+                  <tr key={spec.id} data-category={materialSpec?.category} data-selected={isSelected ? "true" : undefined}>
                     <th scope="row">
                       <div className="wire-gauge-label">{spec.gaugeLabel}</div>
                       <div className="wire-gauge-meta">
@@ -327,6 +350,19 @@ export default function WireLibrary() {
                       </ul>
                       {spec.notes ? <p className="wire-notes">{spec.notes}</p> : null}
                     </td>
+                    {canSelect ? (
+                      <td>
+                        <button
+                          type="button"
+                          className="wire-library-select"
+                          onClick={() => onSelectWire?.(spec.id)}
+                          aria-pressed={isSelected}
+                          disabled={isSelected}
+                        >
+                          {isSelected ? "Active" : "Use"}
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}
