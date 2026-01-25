@@ -5,6 +5,7 @@ import { XP_REWARD_BY_DIFFICULTY } from "./gamification";
 const SERIES_IDS = ["R1", "R2", "R3"] as const;
 const SERIES_IDS_2 = ["R1", "R2"] as const;
 const SERIES_IDS_4 = ["R1", "R2", "R3", "R4"] as const;
+const SERIES_IDS_5 = ["R1", "R2", "R3", "R4", "R5"] as const;
 
 const practiceProblemSeeds: PracticeProblem[] = [
   {
@@ -1768,6 +1769,796 @@ const practiceProblemSeeds: PracticeProblem[] = [
         title: "Current through R3 equals total current",
         detail: `I_{R3} = I_T = ${formatMetricValue(totals.current, "current")}\n(Branch currents from R1 and R2 recombine: ${formatMetricValue(components.R1.current, "current")} + ${formatMetricValue(components.R2.current, "current")} = ${formatMetricValue(totals.current, "current")})`,
         formula: "I_{series} = I_T",
+      }),
+    ],
+  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TEXTBOOK-STYLE SERIES PROBLEMS
+  // Single continuous path for current - one loop, no branches
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: "textbook-series-basic-01",
+    title: "Textbook Series · Basic Loop",
+    topology: "series",
+    difficulty: "intro",
+    prompt:
+      "A simple series circuit consists of a 9V battery connected to two resistors: R1 = 100 Ω and R2 = 200 Ω. Since there is only ONE path for current, the same current flows through every component. Calculate the circuit current and voltage drops.",
+    targetQuestion: "What is the current flowing through this series circuit?",
+    targetMetric: { componentId: "totals", key: "current" },
+    conceptTags: ["series", "ohms-law", "single-path", "textbook"],
+    diagram: "seriesRect",
+    learningObjective: "Understand that series circuits have ONE path for current - like beads on a string.",
+    hints: [
+      { text: "Series circuit = ONE continuous path", formula: "I_{total} = I_{R1} = I_{R2}" },
+      { text: "Add resistances in series directly", formula: "R_T = R_1 + R_2" },
+      { text: "Use Ohm's Law for current", formula: "I = E / R_T" },
+    ],
+    tips: [
+      "Think of series like a single-lane road - all traffic must go through the same path",
+      "Current is the same everywhere in a series circuit",
+      "Voltage 'drops' as it passes through each resistor",
+    ],
+    facts: [
+      "Old Christmas lights were wired in series - one bulb out meant ALL bulbs out!",
+      "Series circuits are used in voltage dividers for sensors and controls",
+    ],
+    realWorldExample: "A flashlight: battery → switch → bulb → back to battery. One path, one current.",
+    source: {
+      id: "battery",
+      label: "Battery",
+      role: "source",
+      givens: { voltage: 9 },
+      values: { voltage: 9 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 100 },
+        values: { resistance: 100 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 200 },
+        values: { resistance: 200 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "textbook-series-basic",
+      children: SERIES_IDS_2.map((componentId) => ({ kind: "component", componentId })),
+    },
+    totalsGivens: {},
+    presetHint: "textbook_series_basic",
+    steps: [
+      ({ components, totals }) => ({
+        title: "Add resistances (series = direct sum)",
+        detail: `R_T = R_1 + R_2 = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+        formula: "R_T = R_1 + R_2",
+      }),
+      ({ totals }) => ({
+        title: "Calculate circuit current (same everywhere)",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
+      }),
+      ({ components, totals }) => ({
+        title: "Find voltage drops (V = I × R)",
+        detail: `V_{R1} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R1.resistance, 0)}Ω = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{R2} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(components.R2.voltage, "voltage")}`,
+        formula: "V = I × R",
+      }),
+      ({ components, totals }) => ({
+        title: "Verify: Voltage drops sum to source (KVL)",
+        detail: `${formatMetricValue(components.R1.voltage, "voltage")} + ${formatMetricValue(components.R2.voltage, "voltage")} = ${formatMetricValue(totals.voltage, "voltage")} ✓`,
+        formula: "E_T = V_{R1} + V_{R2}",
+      }),
+    ],
+  },
+  {
+    id: "textbook-series-chain-02",
+    title: "Textbook Series · Three Resistor Chain",
+    topology: "series",
+    difficulty: "standard",
+    prompt:
+      "Three resistors are connected in series forming a single current path: R1 = 220 Ω, R2 = 330 Ω, R3 = 450 Ω. The circuit is powered by a 12V supply. Find the voltage drop across R2.",
+    targetQuestion: "What is the voltage drop across resistor R2?",
+    targetMetric: { componentId: "R2", key: "voltage" },
+    conceptTags: ["series", "voltage-divider", "kvl", "textbook"],
+    diagram: "seriesRect",
+    learningObjective: "Apply the voltage divider concept in a series chain - larger resistance gets larger voltage drop.",
+    hints: [
+      { text: "Total resistance is the sum", formula: "R_T = R_1 + R_2 + R_3" },
+      { text: "Same current through all three", formula: "I = E / R_T" },
+      { text: "Voltage divides by resistance ratio", formula: "V_x = E × (R_x / R_T)" },
+    ],
+    tips: [
+      "The resistor with the largest value gets the largest voltage drop",
+      "Voltage drops always sum to the source voltage (Kirchhoff's Voltage Law)",
+      "Check: 220Ω is about 22% of 1000Ω total, so V_R1 should be about 22% of 12V",
+    ],
+    facts: [
+      "Voltage dividers are used in potentiometers (volume knobs)",
+      "Many sensors output a voltage that's divided down for microcontroller inputs",
+    ],
+    realWorldExample: "A volume knob is a variable voltage divider - turning it changes the resistance ratio.",
+    source: {
+      id: "supply",
+      label: "Supply",
+      role: "source",
+      givens: { voltage: 12 },
+      values: { voltage: 12 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 220 },
+        values: { resistance: 220 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 330 },
+        values: { resistance: 330 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 450 },
+        values: { resistance: 450 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "textbook-series-chain",
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
+    },
+    totalsGivens: {},
+    presetHint: "textbook_series_chain",
+    steps: [
+      ({ components, totals }) => ({
+        title: "Sum all series resistances",
+        detail: `R_T = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(components.R2.resistance, 0)}Ω + ${formatNumber(components.R3.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+        formula: "R_T = R_1 + R_2 + R_3",
+      }),
+      ({ totals }) => ({
+        title: "Find circuit current",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
+      }),
+      ({ components, totals }) => ({
+        title: "Calculate voltage drop across R2",
+        detail: `V_{R2} = I_T × R_2 = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(components.R2.voltage, "voltage")}`,
+        formula: "V = I × R",
+      }),
+      ({ components, totals }) => ({
+        title: "Verify with voltage divider formula",
+        detail: `V_{R2} = E × (R_2 / R_T) = ${formatMetricValue(totals.voltage, "voltage")} × (${formatNumber(components.R2.resistance, 0)} / ${formatNumber(totals.resistance, 0)}) = ${formatMetricValue(components.R2.voltage, "voltage")} ✓`,
+        formula: "V_x = E × (R_x / R_T)",
+      }),
+    ],
+  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TEXTBOOK-STYLE PARALLEL PROBLEMS
+  // Multiple paths for current - branches that share voltage
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: "textbook-parallel-basic-01",
+    title: "Textbook Parallel · Two Branches",
+    topology: "parallel",
+    difficulty: "intro",
+    prompt:
+      "Two resistors are connected in PARALLEL across a 10V battery: R1 = 50 Ω and R2 = 100 Ω. In parallel circuits, current has MULTIPLE paths to choose from. Each branch gets the full voltage. Find the current through each branch.",
+    targetQuestion: "What is the current through resistor R1?",
+    targetMetric: { componentId: "R1", key: "current" },
+    conceptTags: ["parallel", "kcl", "branch-currents", "textbook"],
+    diagram: "parallelRect",
+    learningObjective: "Understand that parallel circuits provide MULTIPLE paths - current divides, voltage stays same.",
+    hints: [
+      { text: "Parallel = same voltage across all branches" },
+      { text: "Current takes BOTH paths simultaneously" },
+      { text: "More current flows through LOWER resistance", formula: "I = V / R" },
+    ],
+    tips: [
+      "Think of parallel like a fork in a river - water splits but pressure (voltage) is same",
+      "Lower resistance = easier path = MORE current",
+      "Total current = sum of all branch currents (KCL)",
+    ],
+    facts: [
+      "Household outlets are wired in parallel - each device gets 120V",
+      "If one device fails in parallel, others keep working",
+    ],
+    realWorldExample: "Your home electrical system: all outlets have the same voltage (120V), but each device draws its own current.",
+    source: {
+      id: "battery",
+      label: "Battery",
+      role: "source",
+      givens: { voltage: 10 },
+      values: { voltage: 10 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 50 },
+        values: { resistance: 50 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 100 },
+        values: { resistance: 100 },
+      },
+    ],
+    network: {
+      kind: "parallel",
+      id: "textbook-parallel-basic",
+      children: SERIES_IDS_2.map((componentId) => ({ kind: "component", componentId })),
+    },
+    totalsGivens: {},
+    presetHint: "textbook_parallel_basic",
+    steps: [
+      ({ components }) => ({
+        title: "Voltage is SAME across all parallel branches",
+        detail: `V_{R1} = V_{R2} = E = ${formatMetricValue(components.R1.voltage, "voltage")}`,
+        formula: "V_{branch} = E_T (parallel rule)",
+      }),
+      ({ components }) => ({
+        title: "Calculate current through R1",
+        detail: `I_{R1} = V / R_1 = ${formatMetricValue(components.R1.voltage, "voltage")} ÷ ${formatNumber(components.R1.resistance, 0)}Ω = ${formatMetricValue(components.R1.current, "current")}`,
+        formula: "I = V / R",
+      }),
+      ({ components }) => ({
+        title: "Calculate current through R2",
+        detail: `I_{R2} = V / R_2 = ${formatMetricValue(components.R2.voltage, "voltage")} ÷ ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(components.R2.current, "current")}`,
+        formula: "I = V / R",
+      }),
+      ({ components, totals }) => ({
+        title: "Total current = sum of branches (KCL)",
+        detail: `I_T = I_{R1} + I_{R2} = ${formatMetricValue(components.R1.current, "current")} + ${formatMetricValue(components.R2.current, "current")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I_T = I_1 + I_2",
+      }),
+    ],
+  },
+  {
+    id: "textbook-parallel-three-branch-02",
+    title: "Textbook Parallel · Three Branch Network",
+    topology: "parallel",
+    difficulty: "standard",
+    prompt:
+      "Three resistors form a parallel network across a 24V supply: R1 = 80 Ω, R2 = 120 Ω, R3 = 60 Ω. The current from the source SPLITS into three separate paths at the first junction, then RECOMBINES at the second junction. Find the equivalent resistance.",
+    targetQuestion: "What is the total equivalent resistance of the parallel network?",
+    targetMetric: { componentId: "totals", key: "resistance" },
+    conceptTags: ["parallel", "equivalent-resistance", "kcl", "textbook"],
+    diagram: "parallelRect",
+    learningObjective: "Calculate equivalent resistance in parallel - it's always LESS than the smallest branch resistance.",
+    hints: [
+      { text: "Parallel equivalent uses reciprocal formula", formula: "1/R_T = 1/R_1 + 1/R_2 + 1/R_3" },
+      { text: "Total R is LESS than the smallest individual R" },
+      { text: "More paths = less total resistance (easier for current to flow)" },
+    ],
+    tips: [
+      "Parallel resistance is like adding more lanes to a highway - more flow capacity",
+      "R_T will be less than 60Ω (the smallest resistor)",
+      "Check your math: if R_T > smallest R, you made an error",
+    ],
+    facts: [
+      "Adding resistors in parallel always DECREASES total resistance",
+      "This is why high-current applications use multiple parallel conductors",
+    ],
+    realWorldExample: "Two garden hoses connected to one faucet - water flows more easily than through one hose alone.",
+    source: {
+      id: "supply",
+      label: "Supply",
+      role: "source",
+      givens: { voltage: 24 },
+      values: { voltage: 24 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 80 },
+        values: { resistance: 80 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 120 },
+        values: { resistance: 120 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 60 },
+        values: { resistance: 60 },
+      },
+    ],
+    network: {
+      kind: "parallel",
+      id: "textbook-parallel-three",
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
+    },
+    totalsGivens: {},
+    presetHint: "textbook_parallel_three",
+    steps: [
+      ({ components }) => ({
+        title: "Set up the reciprocal equation",
+        detail: `1/R_T = 1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω`,
+        formula: "1/R_T = 1/R_1 + 1/R_2 + 1/R_3",
+      }),
+      ({ components, totals }) => {
+        const recip = 1/components.R1.resistance + 1/components.R2.resistance + 1/components.R3.resistance;
+        return {
+          title: "Calculate the sum of reciprocals",
+          detail: `1/R_T = ${formatNumber(1/components.R1.resistance, 5)} + ${formatNumber(1/components.R2.resistance, 5)} + ${formatNumber(1/components.R3.resistance, 5)} = ${formatNumber(recip, 5)} Ω⁻¹`,
+          formula: "Sum the fractions",
+        };
+      },
+      ({ totals }) => ({
+        title: "Invert to find R_T",
+        detail: `R_T = 1 / (1/R_T) = ${formatMetricValue(totals.resistance, "resistance")}\n(Note: This is less than 60Ω, the smallest individual resistor ✓)`,
+        formula: "R_T = 1 / (Σ 1/R)",
+      }),
+      ({ totals }) => ({
+        title: "Calculate total current",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
+      }),
+    ],
+  },
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TEXTBOOK-STYLE COMBINATION PROBLEMS
+  // "Boxes within boxes" - nested structures mixing series and parallel
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: "textbook-combo-basic-01",
+    title: "Textbook Combination · Series-Parallel",
+    topology: "combination",
+    difficulty: "intro",
+    prompt:
+      "A combination circuit has R1 = 100 Ω in SERIES with a PARALLEL branch containing R2 = 200 Ω and R3 = 200 Ω. Think of it as a 'box within a box': the parallel section is one 'box' inside the main series 'box'. Power supply is 12V. Find the total resistance.",
+    targetQuestion: "What is the total equivalent resistance of this combination circuit?",
+    targetMetric: { componentId: "totals", key: "resistance" },
+    conceptTags: ["combination", "series-parallel", "equivalent-resistance", "textbook"],
+    diagram: "comboRect",
+    learningObjective: "Solve combination circuits by collapsing inner 'boxes' first - parallel section becomes one equivalent resistor.",
+    hints: [
+      { text: "Collapse the parallel 'box' first", formula: "R_{2||3} = R/2 = 100Ω" },
+      { text: "Then add in series", formula: "R_T = R_1 + R_{2||3}" },
+      { text: "Work from the inside out, like unwrapping nested boxes" },
+    ],
+    tips: [
+      "Draw the circuit as nested boxes to visualize the structure",
+      "Two equal resistors in parallel = half of one resistor",
+      "The parallel section 'looks like' a single 100Ω resistor to R1",
+    ],
+    facts: [
+      "Combination circuits are everywhere in electronics - audio, power supplies, sensors",
+      "Understanding how to collapse networks is essential for circuit analysis",
+    ],
+    realWorldExample: "A car's headlight circuit: main switch in series with two parallel headlights.",
+    source: {
+      id: "battery",
+      label: "Battery",
+      role: "source",
+      givens: { voltage: 12 },
+      values: { voltage: 12 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 100 },
+        values: { resistance: 100 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 200 },
+        values: { resistance: 200 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 200 },
+        values: { resistance: 200 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "textbook-combo-basic",
+      children: [
+        { kind: "component", componentId: "R1" },
+        {
+          kind: "parallel",
+          id: "textbook-combo-parallel",
+          children: [
+            { kind: "component", componentId: "R2" },
+            { kind: "component", componentId: "R3" },
+          ],
+        },
+      ],
+    },
+    totalsGivens: {},
+    presetHint: "textbook_combo_basic",
+    steps: [
+      ({ components }) => {
+        const eq23 = components.R2.resistance / 2;
+        return {
+          title: "Collapse the parallel 'box' (R2 || R3)",
+          detail: `R_{2||3} = ${formatNumber(components.R2.resistance, 0)}Ω / 2 = ${formatNumber(eq23, 0)}Ω\n(Equal resistors in parallel: R/n = 200Ω/2)`,
+          formula: "R_{eq} = R / n (for n equal resistors)",
+        };
+      },
+      ({ components, totals }) => ({
+        title: "Add the series resistances",
+        detail: `R_T = R_1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + 100Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+        formula: "R_T = R_1 + R_{parallel}",
+      }),
+      ({ totals }) => ({
+        title: "Calculate total current",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
+      }),
+      ({ components, totals }) => ({
+        title: "Find voltage drops",
+        detail: `V_{R1} = I_T × R_1 = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R1.resistance, 0)}Ω = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{parallel} = E - V_{R1} = ${formatMetricValue(components.R2.voltage, "voltage")}`,
+        formula: "V = I × R",
+      }),
+    ],
+  },
+  {
+    id: "textbook-combo-ladder-02",
+    title: "Textbook Combination · Ladder Network",
+    topology: "combination",
+    difficulty: "standard",
+    prompt:
+      "A 'ladder' combination circuit: R1 = 150 Ω in series, then a parallel branch with R2 = 300 Ω and R3 = 600 Ω, then R4 = 50 Ω back to series. Visualize it as: [R1]─┬─[R2]─┬─[R4] where R3 is the parallel branch. Power supply is 24V.",
+    targetQuestion: "What is the current through the parallel branch (R2 or the R2||R3 section)?",
+    targetMetric: { componentId: "R2", key: "voltage" },
+    conceptTags: ["combination", "ladder-network", "kvl", "textbook"],
+    diagram: "comboRect",
+    learningObjective: "Navigate through a ladder circuit by collapsing parallel sections step-by-step.",
+    hints: [
+      { text: "Collapse R2||R3 first", formula: "R_{2||3} = (R_2 × R_3)/(R_2 + R_3)" },
+      { text: "Then add R1 + R_{2||3} + R4" },
+      { text: "Current through R1 and R4 = total current (series)" },
+    ],
+    tips: [
+      "The 'ladder' is just series-parallel-series",
+      "R2 and R3 share the same voltage but different currents",
+      "Total current flows through R1, splits at parallel, recombines at R4",
+    ],
+    facts: [
+      "Ladder networks are used in filters and attenuators",
+      "The R-2R ladder is the basis for digital-to-analog converters (DACs)",
+    ],
+    realWorldExample: "Audio crossover networks use ladder structures to split frequencies between speakers.",
+    source: {
+      id: "source",
+      label: "Source",
+      role: "source",
+      givens: { voltage: 24 },
+      values: { voltage: 24 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 150 },
+        values: { resistance: 150 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 300 },
+        values: { resistance: 300 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 600 },
+        values: { resistance: 600 },
+      },
+      {
+        id: "R4",
+        label: "R4",
+        role: "load",
+        givens: { resistance: 50 },
+        values: { resistance: 50 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "textbook-combo-ladder",
+      children: [
+        { kind: "component", componentId: "R1" },
+        {
+          kind: "parallel",
+          id: "textbook-ladder-parallel",
+          children: [
+            { kind: "component", componentId: "R2" },
+            { kind: "component", componentId: "R3" },
+          ],
+        },
+        { kind: "component", componentId: "R4" },
+      ],
+    },
+    totalsGivens: {},
+    presetHint: "textbook_combo_ladder",
+    steps: [
+      ({ components }) => {
+        const eq23 = (components.R2.resistance * components.R3.resistance) / (components.R2.resistance + components.R3.resistance);
+        return {
+          title: "Collapse the parallel section (R2 || R3)",
+          detail: `R_{2||3} = (${formatNumber(components.R2.resistance, 0)} × ${formatNumber(components.R3.resistance, 0)}) / (${formatNumber(components.R2.resistance, 0)} + ${formatNumber(components.R3.resistance, 0)}) = ${formatNumber(eq23, 0)}Ω`,
+          formula: "R_{eq} = (R_2 × R_3) / (R_2 + R_3)",
+        };
+      },
+      ({ components, totals }) => {
+        const eq23 = (components.R2.resistance * components.R3.resistance) / (components.R2.resistance + components.R3.resistance);
+        return {
+          title: "Sum the series chain",
+          detail: `R_T = R_1 + R_{2||3} + R_4 = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(eq23, 0)}Ω + ${formatNumber(components.R4.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+          formula: "R_T = R_1 + R_{eq} + R_4",
+        };
+      },
+      ({ totals }) => ({
+        title: "Calculate total current (flows through R1 and R4)",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
+      }),
+      ({ components, totals }) => ({
+        title: "Find voltage across the parallel section",
+        detail: `V_{R1} = I_T × R_1 = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{R4} = I_T × R_4 = ${formatMetricValue(components.R4.voltage, "voltage")}\nV_{parallel} = E - V_{R1} - V_{R4} = ${formatMetricValue(components.R2.voltage, "voltage")}`,
+        formula: "KVL: V_{parallel} = E - V_{R1} - V_{R4}",
+      }),
+    ],
+  },
+  {
+    id: "textbook-combo-nested-03",
+    title: "Textbook Combination · Nested Boxes",
+    topology: "combination",
+    difficulty: "challenge",
+    prompt:
+      "A complex combination with nested structure: Two parallel branches where one branch contains R1=100Ω and R2=100Ω in series, and the other branch is just R3=100Ω. This whole parallel section is in series with R4=50Ω. Think: [Parallel Box containing [R1─R2] and [R3]] in series with [R4]. Supply is 15V.",
+    targetQuestion: "What is the total equivalent resistance?",
+    targetMetric: { componentId: "totals", key: "resistance" },
+    conceptTags: ["combination", "nested", "equivalent-resistance", "textbook"],
+    diagram: "comboRect",
+    learningObjective: "Handle nested 'boxes within boxes' - collapse innermost first, work outward.",
+    hints: [
+      { text: "First: R1+R2 = 200Ω (series in one branch)" },
+      { text: "Then: 200Ω || 100Ω (parallel)", formula: "R_{eq} = (200 × 100)/(200 + 100)" },
+      { text: "Finally: Add R4 in series" },
+    ],
+    tips: [
+      "Draw nested boxes to visualize the hierarchy",
+      "Innermost box first: R1 and R2 are in series within one parallel branch",
+      "That 200Ω is then in parallel with the 100Ω of R3",
+    ],
+    facts: [
+      "Nested circuits are common in filter design and impedance matching",
+      "Complex electronics often have many levels of nesting",
+    ],
+    realWorldExample: "A speaker crossover network with nested L-C combinations for different frequency bands.",
+    source: {
+      id: "supply",
+      label: "Supply",
+      role: "source",
+      givens: { voltage: 15 },
+      values: { voltage: 15 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 100 },
+        values: { resistance: 100 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 100 },
+        values: { resistance: 100 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 100 },
+        values: { resistance: 100 },
+      },
+      {
+        id: "R4",
+        label: "R4",
+        role: "load",
+        givens: { resistance: 50 },
+        values: { resistance: 50 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "textbook-combo-nested-outer",
+      children: [
+        {
+          kind: "parallel",
+          id: "textbook-nested-parallel",
+          children: [
+            {
+              kind: "series",
+              id: "textbook-nested-inner-series",
+              children: [
+                { kind: "component", componentId: "R1" },
+                { kind: "component", componentId: "R2" },
+              ],
+            },
+            { kind: "component", componentId: "R3" },
+          ],
+        },
+        { kind: "component", componentId: "R4" },
+      ],
+    },
+    totalsGivens: {},
+    presetHint: "textbook_combo_nested",
+    steps: [
+      ({ components }) => ({
+        title: "Step 1: Collapse innermost series (R1 + R2)",
+        detail: `R_{12} = R_1 + R_2 = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(components.R2.resistance, 0)}Ω = 200Ω\n(This is ONE branch of the parallel section)`,
+        formula: "R_{series} = R_1 + R_2",
+      }),
+      ({ components }) => {
+        const r12 = components.R1.resistance + components.R2.resistance;
+        const parallel = (r12 * components.R3.resistance) / (r12 + components.R3.resistance);
+        return {
+          title: "Step 2: Collapse the parallel section (R12 || R3)",
+          detail: `R_{parallel} = (200Ω × ${formatNumber(components.R3.resistance, 0)}Ω) / (200Ω + ${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(parallel, 2)}Ω`,
+          formula: "R_{eq} = (R_{12} × R_3) / (R_{12} + R_3)",
+        };
+      },
+      ({ components, totals }) => {
+        const r12 = components.R1.resistance + components.R2.resistance;
+        const parallel = (r12 * components.R3.resistance) / (r12 + components.R3.resistance);
+        return {
+          title: "Step 3: Add the final series element (R4)",
+          detail: `R_T = R_{parallel} + R_4 = ${formatNumber(parallel, 2)}Ω + ${formatNumber(components.R4.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+          formula: "R_T = R_{parallel} + R_4",
+        };
+      },
+      ({ totals }) => ({
+        title: "Calculate circuit current and verify",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
+      }),
+    ],
+  },
+  {
+    id: "textbook-combo-double-parallel-04",
+    title: "Textbook Combination · Double Parallel",
+    topology: "combination",
+    difficulty: "challenge",
+    prompt:
+      "Two separate parallel 'boxes' in series: First box has R1=120Ω || R2=120Ω. Second box has R3=80Ω || R4=80Ω. These two boxes are connected in series. Supply is 20V. This is like: [Box1] ─── [Box2] where each box contains parallel resistors.",
+    targetQuestion: "What is the total current drawn from the supply?",
+    targetMetric: { componentId: "totals", key: "current" },
+    conceptTags: ["combination", "double-parallel", "equivalent-resistance", "textbook"],
+    diagram: "comboRect",
+    learningObjective: "Collapse multiple parallel sections independently, then add them in series.",
+    hints: [
+      { text: "Box 1: Two equal 120Ω in parallel = 60Ω" },
+      { text: "Box 2: Two equal 80Ω in parallel = 40Ω" },
+      { text: "Total: 60Ω + 40Ω = 100Ω in series" },
+    ],
+    tips: [
+      "Equal resistors in parallel: R/2",
+      "Treat each 'box' as a single resistor after collapsing",
+      "Series connection of boxes means add their equivalent resistances",
+    ],
+    facts: [
+      "This topology is used in power resistor banks to share load",
+      "Audio amplifiers use similar structures for impedance matching",
+    ],
+    realWorldExample: "Parallel speaker pairs connected in series to match amplifier impedance.",
+    source: {
+      id: "supply",
+      label: "Supply",
+      role: "source",
+      givens: { voltage: 20 },
+      values: { voltage: 20 },
+    },
+    components: [
+      {
+        id: "R1",
+        label: "R1",
+        role: "load",
+        givens: { resistance: 120 },
+        values: { resistance: 120 },
+      },
+      {
+        id: "R2",
+        label: "R2",
+        role: "load",
+        givens: { resistance: 120 },
+        values: { resistance: 120 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 80 },
+        values: { resistance: 80 },
+      },
+      {
+        id: "R4",
+        label: "R4",
+        role: "load",
+        givens: { resistance: 80 },
+        values: { resistance: 80 },
+      },
+    ],
+    network: {
+      kind: "series",
+      id: "textbook-combo-double",
+      children: [
+        {
+          kind: "parallel",
+          id: "textbook-double-parallel-1",
+          children: [
+            { kind: "component", componentId: "R1" },
+            { kind: "component", componentId: "R2" },
+          ],
+        },
+        {
+          kind: "parallel",
+          id: "textbook-double-parallel-2",
+          children: [
+            { kind: "component", componentId: "R3" },
+            { kind: "component", componentId: "R4" },
+          ],
+        },
+      ],
+    },
+    totalsGivens: {},
+    presetHint: "textbook_combo_double",
+    steps: [
+      ({ components }) => ({
+        title: "Collapse Box 1 (R1 || R2)",
+        detail: `R_{Box1} = ${formatNumber(components.R1.resistance, 0)}Ω / 2 = 60Ω\n(Two equal resistors in parallel = R/2)`,
+        formula: "R_{eq} = R / n",
+      }),
+      ({ components }) => ({
+        title: "Collapse Box 2 (R3 || R4)",
+        detail: `R_{Box2} = ${formatNumber(components.R3.resistance, 0)}Ω / 2 = 40Ω\n(Two equal resistors in parallel = R/2)`,
+        formula: "R_{eq} = R / n",
+      }),
+      ({ totals }) => ({
+        title: "Add the boxes in series",
+        detail: `R_T = R_{Box1} + R_{Box2} = 60Ω + 40Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+        formula: "R_T = R_{eq1} + R_{eq2}",
+      }),
+      ({ totals }) => ({
+        title: "Calculate total current",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        formula: "I = E / R",
       }),
     ],
   },

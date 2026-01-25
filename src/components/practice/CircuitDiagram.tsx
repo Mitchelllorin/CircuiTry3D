@@ -534,10 +534,14 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   );
 
   // Analyze network structure to determine layout
-  // Default: R1 series top, R2||R3 parallel, R4 series bottom (standard combo)
+  // Standard layouts:
   // 3-component: R1 series, R2||R3 parallel (no bottom series)
-  // 4-component: Full standard layout
-  const hasBottomSeries = componentCount >= 4;
+  // 4-component (ladder): R1 series, R2||R3 parallel, R4 series
+  // 4-component (nested): (R1+R2)||R3, then R4 series
+  // 4-component (double-parallel): (R1||R2) + (R3||R4) series
+
+  const hasBottomSeries = componentCount >= 4 && isStandardLadder(problem.network);
+  const isDoubleParallel = componentCount === 4 && isDoubleParallelNetwork(problem.network);
 
   // Layout dimensions
   const leftX = 80;
@@ -552,11 +556,17 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   const batteryTopY = batteryCenterY - batteryHalfSpan;
   const batteryBottomY = batteryCenterY + batteryHalfSpan;
 
+  // For double-parallel circuits, render two separate parallel sections
+  if (isDoubleParallel) {
+    return renderDoubleParallelDiagram(problem, sourceData, componentData, componentIds, {
+      leftX, rightX, topY, bottomY, batteryScale, batteryHalfSpan, batteryCenterY, batteryTopY, batteryBottomY
+    });
+  }
+
   // Parallel branch center position
   const branchCenterX = hasBottomSeries ? 420 : 460;
 
   // Identify series vs parallel components based on problem network
-  // Standard layout: first component is series (top), middle components are parallel, last is series (bottom)
   const seriesTopId = componentIds[0]; // R1
   const seriesBottomId = hasBottomSeries ? componentIds[componentCount - 1] : null; // R4 if exists
   const parallelIds = hasBottomSeries
@@ -583,8 +593,37 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   const branchResTop = topY + 26;
   const branchResBottom = bottomY - 28;
 
+  // Calculate parallel box dimensions for visual indicator
+  const parallelBoxLeft = Math.min(...branchXs) - 18;
+  const parallelBoxRight = Math.max(...branchXs) + 18;
+  const parallelBoxTop = topY - 8;
+  const parallelBoxBottom = bottomY + 8;
+
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Combination circuit diagram" preserveAspectRatio="xMidYMid meet">
+      {/* Parallel section indicator box (textbook "box within box" style) */}
+      <rect
+        x={parallelBoxLeft}
+        y={parallelBoxTop}
+        width={parallelBoxRight - parallelBoxLeft}
+        height={parallelBoxBottom - parallelBoxTop}
+        fill="none"
+        stroke="rgba(162, 212, 255, 0.25)"
+        strokeWidth={1.5}
+        strokeDasharray="6 4"
+        rx={6}
+        ry={6}
+      />
+      <text
+        x={parallelBoxRight + 8}
+        y={parallelBoxTop + 14}
+        fill="rgba(162, 212, 255, 0.5)"
+        fontSize={9}
+        fontStyle="italic"
+      >
+        parallel
+      </text>
+
       {/* Left side with battery (vertical) */}
       <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
       <BatterySymbol
@@ -686,14 +725,187 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
           {sourceData.value}
         </text>
       )}
-
-      {/* Parallel section indicator bracket */}
-      <text x={branchCenterX + 60} y={(topY + bottomY) / 2} fill={VALUE_COLOR} fontSize={10} textAnchor="start" opacity={0.7}>
-        {"‖"}
-      </text>
     </svg>
   );
 };
+
+// Helper function to determine if network is a standard ladder (series-parallel-series)
+function isStandardLadder(network: PracticeProblem["network"]): boolean {
+  if (network.kind !== "series") return false;
+  const children = network.children;
+  // Standard ladder: component, parallel, component
+  return children.length === 3 &&
+    children[0].kind === "component" &&
+    children[1].kind === "parallel" &&
+    children[2].kind === "component";
+}
+
+// Helper function to detect double-parallel network: (R1||R2) + (R3||R4)
+function isDoubleParallelNetwork(network: PracticeProblem["network"]): boolean {
+  if (network.kind !== "series") return false;
+  const children = network.children;
+  // Double parallel: parallel, parallel
+  return children.length === 2 &&
+    children[0].kind === "parallel" &&
+    children[1].kind === "parallel";
+}
+
+// Render double-parallel combination diagram with two separate parallel boxes
+function renderDoubleParallelDiagram(
+  problem: PracticeProblem,
+  sourceData: { label: string; value: string | null },
+  componentData: Map<string, { label: string; value: string | null }>,
+  componentIds: string[],
+  layout: {
+    leftX: number; rightX: number; topY: number; bottomY: number;
+    batteryScale: number; batteryHalfSpan: number; batteryCenterY: number;
+    batteryTopY: number; batteryBottomY: number;
+  }
+) {
+  const { leftX, rightX, topY, bottomY, batteryScale, batteryCenterY, batteryTopY, batteryBottomY } = layout;
+
+  // For double-parallel: R1||R2 in first box, R3||R4 in second box
+  const box1Ids = [componentIds[0], componentIds[1]];
+  const box2Ids = [componentIds[2], componentIds[3]];
+
+  // Box positions
+  const box1CenterX = 230;
+  const box2CenterX = 420;
+  const branchSpacing = 50;
+
+  const branchResTop = topY + 26;
+  const branchResBottom = bottomY - 28;
+
+  return (
+    <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Double parallel combination circuit diagram" preserveAspectRatio="xMidYMid meet">
+      {/* Box 1 indicator */}
+      <rect
+        x={box1CenterX - branchSpacing - 18}
+        y={topY - 8}
+        width={branchSpacing * 2 + 36}
+        height={bottomY - topY + 16}
+        fill="none"
+        stroke="rgba(162, 212, 255, 0.25)"
+        strokeWidth={1.5}
+        strokeDasharray="6 4"
+        rx={6}
+        ry={6}
+      />
+      <text x={box1CenterX} y={topY - 16} fill="rgba(162, 212, 255, 0.5)" fontSize={9} textAnchor="middle" fontStyle="italic">
+        Box 1
+      </text>
+
+      {/* Box 2 indicator */}
+      <rect
+        x={box2CenterX - branchSpacing - 18}
+        y={topY - 8}
+        width={branchSpacing * 2 + 36}
+        height={bottomY - topY + 16}
+        fill="none"
+        stroke="rgba(162, 212, 255, 0.25)"
+        strokeWidth={1.5}
+        strokeDasharray="6 4"
+        rx={6}
+        ry={6}
+      />
+      <text x={box2CenterX} y={topY - 16} fill="rgba(162, 212, 255, 0.5)" fontSize={9} textAnchor="middle" fontStyle="italic">
+        Box 2
+      </text>
+
+      {/* Series connection indicator between boxes */}
+      <text x={(box1CenterX + box2CenterX) / 2} y={topY - 3} fill="rgba(162, 212, 255, 0.4)" fontSize={10} textAnchor="middle">
+        series
+      </text>
+
+      {/* Left side with battery (vertical) */}
+      <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <BatterySymbol
+        x={leftX}
+        y={batteryCenterY}
+        rotation={-90}
+        scale={batteryScale}
+        label=""
+        showLabel={false}
+        color={WIRE_COLOR}
+        strokeWidth={3}
+      />
+      <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+
+      {/* Top rail */}
+      <line x1={leftX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      {/* Bottom rail */}
+      <line x1={leftX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      {/* Right side connection */}
+      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+
+      {/* Box 1 branches */}
+      {box1Ids.map((id, index) => {
+        const x = box1CenterX + (index === 0 ? -branchSpacing / 2 : branchSpacing / 2);
+        const data = componentData.get(id) ?? { label: id, value: null };
+        const start: Point = { x, y: branchResTop };
+        const end: Point = { x, y: branchResBottom };
+        const labelSide = index === 0 ? "left" : "right";
+        return (
+          <g key={`box1-${id}`}>
+            <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {drawResistor({
+              key: `box1-resistor-${id}`,
+              start, end,
+              label: data.label,
+              value: data.value,
+              orientation: "vertical",
+              labelSide,
+            })}
+            <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {drawNode({ x, y: topY }, `box1-node-top-${id}`)}
+            {drawNode({ x, y: bottomY }, `box1-node-bottom-${id}`)}
+          </g>
+        );
+      })}
+
+      {/* Box 2 branches */}
+      {box2Ids.map((id, index) => {
+        const x = box2CenterX + (index === 0 ? -branchSpacing / 2 : branchSpacing / 2);
+        const data = componentData.get(id) ?? { label: id, value: null };
+        const start: Point = { x, y: branchResTop };
+        const end: Point = { x, y: branchResBottom };
+        const labelSide = index === 0 ? "left" : "right";
+        return (
+          <g key={`box2-${id}`}>
+            <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {drawResistor({
+              key: `box2-resistor-${id}`,
+              start, end,
+              label: data.label,
+              value: data.value,
+              orientation: "vertical",
+              labelSide,
+            })}
+            <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {drawNode({ x, y: topY }, `box2-node-top-${id}`)}
+            {drawNode({ x, y: bottomY }, `box2-node-bottom-${id}`)}
+          </g>
+        );
+      })}
+
+      {/* Corner nodes */}
+      {drawNode({ x: leftX, y: topY }, "double-node-source-top")}
+      {drawNode({ x: leftX, y: bottomY }, "double-node-source-bottom")}
+      {drawNode({ x: rightX, y: topY }, "double-node-right-top")}
+      {drawNode({ x: rightX, y: bottomY }, "double-node-right-bottom")}
+
+      {/* Battery label */}
+      <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
+        {sourceData.label}
+      </text>
+      {sourceData.value && (
+        <text x={leftX - 28} y={batteryCenterY + 12} fill={VALUE_COLOR} fontSize={LABEL_SPECS.valueLabelSize} textAnchor="middle">
+          {sourceData.value}
+        </text>
+      )}
+    </svg>
+  );
+}
 
 export default function CircuitDiagram({ problem }: DiagramProps) {
   if (!problem.diagram) {
