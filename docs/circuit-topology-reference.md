@@ -2,6 +2,12 @@
 
 These notes summarise the schematic conventions we are following for the practice diagrams and landing artwork.
 
+**Theory Foundation:** [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Series/parallel circuit theory
+
+**Related Documentation:**
+- [CIRCUIT_RULES.md](./CIRCUIT_RULES.md) — Platform rules
+- [schematic-style-guidelines.md](./schematic-style-guidelines.md) — Symbol standards
+
 **Visual Reference:** See `src/assets/reference-circuits/` for authoritative example images.
 
 ---

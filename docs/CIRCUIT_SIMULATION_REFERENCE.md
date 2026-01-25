@@ -1,11 +1,19 @@
 # Circuit Simulation Reference (DC Wiring Logic)
 
-This project’s wiring logic is split into two layers:
+This project's wiring logic is split into two layers:
 
 - **Topology (wires/nodes/junctions)**: determines *what is connected to what*.
 - **Physics (Ohm + Kirchhoff)**: determines *what current/voltage can exist* given that connectivity.
 
 This document defines the **standard rules** we use so current flow is correct and repeatable.
+
+**Theory Foundation:** [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Complete electrical theory reference
+
+**Related Documentation:**
+- [CIRCUIT_RULES.md](./CIRCUIT_RULES.md) — Platform-specific rules
+- [CIRCUIT_ANALYSIS_METHODS.md](./CIRCUIT_ANALYSIS_METHODS.md) — MNA solver explained
+- [COMPONENT_REFERENCE.md](./COMPONENT_REFERENCE.md) — Component behavior
+- [FORMULAS_QUICK_REFERENCE.md](./FORMULAS_QUICK_REFERENCE.md) — Formula lookup
 
 ## Rule #1 (Standard Direction Convention)
 

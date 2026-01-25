@@ -2,6 +2,14 @@
 
 This document defines the foundational rules that govern circuit behavior in CircuiTry3D. These rules combine standard electrical laws (Kirchhoff's and Ohm's Laws) with CircuiTry3D-specific implementation rules to ensure consistent, physically accurate, and educationally sound circuit simulation.
 
+**Theory Foundation:** [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Complete electrical theory reference
+
+**Related Documentation:**
+- [CIRCUIT_SIMULATION_REFERENCE.md](./CIRCUIT_SIMULATION_REFERENCE.md) — Technical solver documentation
+- [CIRCUIT_ANALYSIS_METHODS.md](./CIRCUIT_ANALYSIS_METHODS.md) — Analysis techniques
+- [COMPONENT_REFERENCE.md](./COMPONENT_REFERENCE.md) — Component specifications
+- [FORMULAS_QUICK_REFERENCE.md](./FORMULAS_QUICK_REFERENCE.md) — Formula lookup
+
 ## Part 1: Standard Electrical Laws
 
 ### Ohm's Law
@@ -348,6 +356,10 @@ interface ValidationIssue {
 
 ## References
 
-- [CIRCUIT_SIMULATION_REFERENCE.md](./CIRCUIT_SIMULATION_REFERENCE.md) - Technical solver documentation
-- [circuit-topology-reference.md](./circuit-topology-reference.md) - Topology detection algorithms
-- [schematic-style-guidelines.md](./schematic-style-guidelines.md) - Symbol and layout standards
+- [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Complete electrical theory foundation
+- [CIRCUIT_SIMULATION_REFERENCE.md](./CIRCUIT_SIMULATION_REFERENCE.md) — Technical solver documentation
+- [CIRCUIT_ANALYSIS_METHODS.md](./CIRCUIT_ANALYSIS_METHODS.md) — MNA and advanced techniques
+- [COMPONENT_REFERENCE.md](./COMPONENT_REFERENCE.md) — Component specifications
+- [FORMULAS_QUICK_REFERENCE.md](./FORMULAS_QUICK_REFERENCE.md) — Formula lookup
+- [circuit-topology-reference.md](./circuit-topology-reference.md) — Topology detection algorithms
+- [schematic-style-guidelines.md](./schematic-style-guidelines.md) — Symbol and layout standards

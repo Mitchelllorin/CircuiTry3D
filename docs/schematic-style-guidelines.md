@@ -2,6 +2,13 @@
 
 Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every component must read exactly like the textbook references when viewed from above, while still offering depth cues and hover interactions. A global symbol standard selector (ANSI/IEEE or IEC) is available in the header; geometry must respect the active standard at all times.
 
+**Theory Foundation:** [ELECTRICAL_THEORY_FUNDAMENTALS.md](./ELECTRICAL_THEORY_FUNDAMENTALS.md) — Electrical theory reference
+
+**Related Documentation:**
+- [COMPONENT_REFERENCE.md](./COMPONENT_REFERENCE.md) — Component theory and specifications
+- [circuit-topology-reference.md](./circuit-topology-reference.md) — Layout conventions
+- [CIRCUIT_RULES.md](./CIRCUIT_RULES.md) — Platform rules
+
 **Reference Images:** See `src/assets/reference-circuits/` for canonical visual examples of circuit layouts.
 
 **Centralized Constants:** All visual specifications are defined in `src/schematic/visualConstants.ts`. Import from `src/schematic/index.ts` for consistent styling across the app.
