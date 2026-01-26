@@ -47,6 +47,13 @@ export type ArcadeCleanSeed = {
   location: string;
 };
 
+export type ArcadeRunnerSeed = {
+  id: string;
+  name: string;
+  distance: number;
+  location: string;
+};
+
 export const XP_REWARD_BY_DIFFICULTY: Record<PracticeDifficulty, number> = {
   intro: 20,
   standard: 32,
@@ -188,5 +195,12 @@ export const ARCADE_CLEAN_SEEDS: ArcadeCleanSeed[] = [
   { id: "steady-sam", name: "Steady Sam", clears: 14, location: "Community College" },
   { id: "quiet-quinn", name: "Quiet Quinn", clears: 11, location: "After School Hub" },
   { id: "orderly-ori", name: "Orderly Ori", clears: 9, location: "Circuit Studio" },
+];
+
+export const ARCADE_RUNNER_SEEDS: ArcadeRunnerSeed[] = [
+  { id: "runner-ray", name: "Runner Ray", distance: 4200, location: "Voltage Track" },
+  { id: "dash-dina", name: "Dash Dina", distance: 3600, location: "Prototype Lab" },
+  { id: "loop-lex", name: "Loop Lex", distance: 3200, location: "Test Bench" },
+  { id: "track-tia", name: "Track Tia", distance: 2900, location: "Circuit Court" },
 ];
 

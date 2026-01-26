@@ -78,6 +78,12 @@ window.addEventListener("error", (event) => {
   }
 
   const message = event.error instanceof Error ? event.error.message : event.message;
+  if (
+    message?.includes("ResizeObserver loop limit exceeded") ||
+    message?.includes("ResizeObserver loop completed with undelivered notifications")
+  ) {
+    return;
+  }
   const stack = event.error instanceof Error ? event.error.stack : undefined;
   renderFatalOverlay({
     title: "Application Error",
