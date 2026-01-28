@@ -506,27 +506,36 @@ const buildBatteryElement = (three: any, element: TwoTerminalElement, options: B
   }
 
   if (!options.preview && profile.battery.showPolarityMarkers) {
-    const labelHeight = COMPONENT_HEIGHT + 0.12;
+    // Position polarity markers centered above (+) and below (-) the battery (our standard)
+    const batteryMidpoint = new three.Vector3().addVectors(
+      toVec3(three, positiveCenter, 0),
+      toVec3(three, negativeCenter, 0)
+    ).multiplyScalar(0.5);
+
+    const markerHeight = COMPONENT_HEIGHT + 0.12;
+    const markerOffset = Math.max(positiveWidth, negativeWidth) / 2 + 0.25;
+
     const plusSprite = createLabelSprite(three, "+", "#0f172a");
     const minusSprite = createLabelSprite(three, "−", "#0f172a");
+
     if (plusSprite) {
-      const pos = toVec3(three, positiveCenter, 0);
-      plusSprite.position.set(pos.x, labelHeight, pos.z);
+      plusSprite.position.set(batteryMidpoint.x, markerHeight, batteryMidpoint.z);
+      // Position above the battery (in the +z direction for horizontal, +x for vertical)
       if (metrics.orientation === "horizontal") {
-        plusSprite.position.z += positiveWidth / 2 + 0.2;
+        plusSprite.position.z += markerOffset;
       } else {
-        plusSprite.position.x += positiveWidth / 2 + 0.2;
+        plusSprite.position.x += markerOffset;
       }
       plusSprite.scale.set(0.9, 0.9, 1);
       group.add(plusSprite);
     }
     if (minusSprite) {
-      const pos = toVec3(three, negativeCenter, 0);
-      minusSprite.position.set(pos.x, labelHeight, pos.z);
+      minusSprite.position.set(batteryMidpoint.x, markerHeight, batteryMidpoint.z);
+      // Position below the battery (in the -z direction for horizontal, -x for vertical)
       if (metrics.orientation === "horizontal") {
-        minusSprite.position.z -= negativeWidth / 2 + 0.2;
+        minusSprite.position.z -= markerOffset;
       } else {
-        minusSprite.position.x -= negativeWidth / 2 + 0.2;
+        minusSprite.position.x -= markerOffset;
       }
       minusSprite.scale.set(0.9, 0.9, 1);
       group.add(minusSprite);

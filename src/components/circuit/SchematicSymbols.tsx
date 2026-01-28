@@ -663,15 +663,11 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
   // Counter-rotate the markers so text remains upright and readable
   const markerRotation = -rotation;
 
-  // Polarity marker positions in local (pre-rotation) coordinates
-  // Negative plate is at x=-7, positive plate is at x=7
-  // Place markers just outside the plates so they're clearly visible
-  // These positions are relative to the component's local coordinate system
-  // and will rotate WITH the component, keeping markers next to their respective plates
-  const negMarkerX = -7;
-  const negMarkerY = 16;  // Below the negative plate
-  const posMarkerX = 7;
-  const posMarkerY = -24; // Above the positive plate
+  // Polarity marker positions - centered above and below the battery symbol (our standard)
+  // Positioned at the center of the battery (x=0), with + above and - below
+  const polarityMarkerX = 0;
+  const posMarkerY = -24; // Above the battery (positive)
+  const negMarkerY = 24;  // Below the battery (negative)
 
   return (
     <g transform={transform}>
@@ -682,28 +678,28 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
       <line x1="-7" y1="-10" x2="-7" y2="10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {/* Positive plate (longer, thicker vertical line on right) per style guide */}
       <line x1="7" y1="-18" x2="7" y2="18" stroke={color} strokeWidth={strokeWidth + BATTERY_SPECS.positiveStrokeExtra} strokeLinecap="round" />
-      {/* Polarity markings per ANSI/IEEE standard - counter-rotated to stay readable */}
+      {/* Polarity markings - centered above (+) and below (-) the battery (our standard) */}
       <text
-        x={negMarkerX}
-        y={negMarkerY}
-        fill={LABEL_COLOR}
-        fontSize={LABEL_SPECS.polarityMarkerSize}
-        textAnchor="middle"
-        fontWeight="bold"
-        transform={`rotate(${markerRotation}, ${negMarkerX}, ${negMarkerY})`}
-      >
-        -
-      </text>
-      <text
-        x={posMarkerX}
+        x={polarityMarkerX}
         y={posMarkerY}
         fill={LABEL_COLOR}
         fontSize={LABEL_SPECS.polarityMarkerSize}
         textAnchor="middle"
         fontWeight="bold"
-        transform={`rotate(${markerRotation}, ${posMarkerX}, ${posMarkerY})`}
+        transform={`rotate(${markerRotation}, ${polarityMarkerX}, ${posMarkerY})`}
       >
         +
+      </text>
+      <text
+        x={polarityMarkerX}
+        y={negMarkerY}
+        fill={LABEL_COLOR}
+        fontSize={LABEL_SPECS.polarityMarkerSize}
+        textAnchor="middle"
+        fontWeight="bold"
+        transform={`rotate(${markerRotation}, ${polarityMarkerX}, ${negMarkerY})`}
+      >
+        −
       </text>
       {showLabel && label && (
         <text

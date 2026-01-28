@@ -22,11 +22,11 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
   ...props
 }) => {
   const width = typeof size === 'number' ? `${size}px` : size;
-  const height = typeof size === 'number' ? `${size * 0.75}px` : size;
+  const height = typeof size === 'number' ? `${size * 0.54}px` : size;
 
   return (
     <svg
-      viewBox="0 0 260 200"
+      viewBox="0 0 240 130"
       xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
       role="img"
@@ -82,141 +82,154 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
         {/* Circuit flow path including resistor zigzags */}
         <path
           id="photonPath"
-          d={`M 55 150
-             L 55 50
-             L 90 50
-             L 100 50
-             L 108 50
-             L 113 40
-             L 123 60
-             L 133 40
-             L 143 60
-             L 148 50
-             L 160 50
-             L 205 50
-             L 205 75
-             L 205 83
-             L 215 88
-             L 195 98
-             L 215 108
-             L 195 118
-             L 205 123
-             L 205 135
-             L 205 150
-             L 160 150
-             L 155 150
-             L 103 150
-             L 108 140
-             L 118 160
-             L 128 140
-             L 138 160
-             L 143 150
-             L 95 150
-             L 55 150`}
+          d={`M 55 110
+             L 55 20
+             L 100 20
+             L 110 20
+             L 118 20
+             L 123 10
+             L 133 30
+             L 143 10
+             L 153 30
+             L 158 20
+             L 170 20
+             L 210 20
+             L 210 45
+             L 210 53
+             L 220 58
+             L 200 68
+             L 220 78
+             L 200 88
+             L 210 93
+             L 210 95
+             L 210 110
+             L 180 110
+             L 175 110
+             L 118 110
+             L 123 100
+             L 133 120
+             L 143 100
+             L 153 120
+             L 158 110
+             L 100 110
+             L 55 110`}
         />
       </defs>
 
-      <g stroke="url(#wireGradient)" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        {/* Wire from battery to corner */}
-        <line x1="55" y1="115" x2="55" y2="95" stroke="url(#wireGradient)" strokeWidth="3.5" />
+      <g stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* Left vertical wire (full height from node 1 to node 4) */}
+        <line x1="55" y1="20" x2="55" y2="110" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        {/* Battery symbol - per style guide: longer plate = positive */}
-        <g transform="translate(55, 80)">
-          <line x1="-5" y1="-8" x2="5" y2="-8" stroke="url(#componentGradient)" strokeWidth="2.5" />
-          <line x1="-8" y1="4" x2="8" y2="4" stroke="url(#componentGradient)" strokeWidth="3.5" />
-        </g>
+        {/* Top horizontal wire from node 1 to R1 */}
+        <line x1="55" y1="20" x2="110" y2="20" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        <line x1="55" y1="65" x2="55" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-        {/* Top horizontal wire to R1 */}
-        <line x1="55" y1="50" x2="90" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
-
-        {/* R1 - Horizontal resistor using zigzag pattern (4-6 peaks per style guide) */}
-        <g transform="translate(130, 50)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+        {/* R1 - Top horizontal resistor */}
+        <g transform="translate(140, 20)" stroke="url(#componentGradient)" strokeWidth="2.5" filter="url(#glow)">
           <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
         </g>
 
-        <line x1="160" y1="50" x2="205" y2="50" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        {/* Wire from R1 to node 2 */}
+        <line x1="170" y1="20" x2="210" y2="20" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        {/* Right vertical wire to R2 */}
-        <line x1="205" y1="50" x2="205" y2="70" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        {/* Right vertical wire from node 2 to R2 */}
+        <line x1="210" y1="20" x2="210" y2="45" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        {/* R2 - Vertical resistor (rotated 90°) */}
-        <g transform="translate(205, 105) rotate(90)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+        {/* R2 - Right vertical resistor */}
+        <g transform="translate(210, 75) rotate(90)" stroke="url(#componentGradient)" strokeWidth="2.5" filter="url(#glow)">
           <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
         </g>
 
-        <line x1="205" y1="135" x2="205" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        {/* Wire from R2 to node 3 */}
+        <line x1="210" y1="105" x2="210" y2="110" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        {/* Bottom horizontal wire to R3 */}
-        <line x1="205" y1="150" x2="160" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        {/* Bottom horizontal wire from node 3 to R3 */}
+        <line x1="210" y1="110" x2="170" y2="110" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        {/* R3 - Horizontal resistor on bottom */}
-        <g transform="translate(125, 150)" stroke="url(#componentGradient)" strokeWidth="3.5" filter="url(#glow)">
+        {/* R3 - Bottom horizontal resistor */}
+        <g transform="translate(140, 110)" stroke="url(#componentGradient)" strokeWidth="2.5" filter="url(#glow)">
           <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
         </g>
 
-        <line x1="95" y1="150" x2="55" y2="150" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        {/* Wire from R3 to node 4 */}
+        <line x1="110" y1="110" x2="55" y2="110" stroke={LOGO_COLORS.wireGradientEnd} strokeWidth="1.75" />
 
-        {/* Return wire to battery */}
-        <line x1="55" y1="150" x2="55" y2="115" stroke="url(#wireGradient)" strokeWidth="3.5" />
+        {/* Junction nodes at corners */}
+        <circle cx="55" cy="20" r="3" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.2" />
+        <circle cx="210" cy="20" r="3" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.2" />
+        <circle cx="210" cy="110" r="3" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.2" />
+        <circle cx="55" cy="110" r="3" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.2" />
 
-        {/* Junction nodes at corners per style guide (filled circles at T-junctions) */}
-        <circle cx="55" cy="50" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
-        <circle cx="205" cy="50" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
-        <circle cx="205" cy="150" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
-        <circle cx="55" cy="150" r="3.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1.5" />
+        {/* Junction nodes at component connections */}
+        <circle cx="110" cy="20" r="2.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1" />
+        <circle cx="170" cy="20" r="2.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1" />
+        <circle cx="210" cy="45" r="2.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1" />
+        <circle cx="210" cy="105" r="2.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1" />
+        <circle cx="170" cy="110" r="2.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1" />
+        <circle cx="110" cy="110" r="2.5" fill={LOGO_COLORS.nodeFill} stroke={LOGO_COLORS.nodeStroke} strokeWidth="1" />
 
         {/* Node number labels */}
-        <text x="35" y="35" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">1</text>
-        <text x="220" y="35" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">2</text>
-        <text x="220" y="165" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">3</text>
-        <text x="35" y="165" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">4</text>
+        <text x="42" y="14" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">1</text>
+        <text x="218" y="14" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">2</text>
+        <text x="218" y="122" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">3</text>
+        <text x="42" y="122" fontSize="8" fill={LOGO_COLORS.labelSecondary} fontWeight="bold">4</text>
       </g>
 
-      {/* Component labels using subscript notation per style guide */}
+      {/* Battery schematic symbol and 9V label - OUTSIDE circuit, centered vertically */}
+      <g transform="translate(25, 65)">
+        {/* Battery symbol (horizontal orientation) */}
+        {/* Positive plate (longer line, top) */}
+        <line x1="-12" y1="-8" x2="12" y2="-8" stroke="url(#componentGradient)" strokeWidth="4" />
+        {/* Negative plate (shorter line, bottom) */}
+        <line x1="-7" y1="8" x2="7" y2="8" stroke="url(#componentGradient)" strokeWidth="2.5" />
+        {/* Polarity markers */}
+        <text x="0" y="-16" fontSize="12" fill={LOGO_COLORS.nodeFill} fontWeight="bold" textAnchor="middle">+</text>
+        <text x="0" y="24" fontSize="12" fill={LOGO_COLORS.labelSecondary} fontWeight="bold" textAnchor="middle">−</text>
+      </g>
+      {/* 9V label centered vertically on circuit side */}
+      <text x="25" y="69" fontSize="13" fill={LOGO_COLORS.labelPrimary} fontWeight="bold" textAnchor="middle">9V</text>
+
+      {/* Component labels */}
       <g fontFamily="system-ui, -apple-system, sans-serif" fontSize="9" fill={LOGO_COLORS.labelPrimary} textAnchor="middle" fontWeight="600">
-        <text x="37" y="98">9V</text>
-        <text x="130" y="35">R₁ = 3 kΩ</text>
-        <text x="225" y="105">R₂ = 10 kΩ</text>
-        <text x="125" y="172">R₃ = 5 kΩ</text>
+        <text x="140" y="10">R₁ = 3 kΩ</text>
+        <text x="232" y="75">R₂</text>
+        <text x="140" y="125">R₃ = 5 kΩ</text>
       </g>
 
       {/* Animated photons (two bright particles with comet tails) */}
       <g aria-hidden="true" filter="url(#photonGlow)">
         {/* Photon A */}
         <g>
-          <circle r="5.05" fill="url(#photonFill)" opacity="1">
+          <circle r="4.5" fill="url(#photonFill)" opacity="1">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="4.05" fill="url(#photonFill)" opacity="0.55">
+          <circle r="3.6" fill="url(#photonFill)" opacity="0.55">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.14s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="3.25" fill="url(#photonFill)" opacity="0.32">
+          <circle r="2.9" fill="url(#photonFill)" opacity="0.32">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.28s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="2.6" fill="url(#photonFill)" opacity="0.2">
+          <circle r="2.3" fill="url(#photonFill)" opacity="0.2">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.42s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="2.1" fill="url(#photonFill)" opacity="0.12">
+          <circle r="1.9" fill="url(#photonFill)" opacity="0.12">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.56s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="1.7" fill="url(#photonFill)" opacity="0.08">
+          <circle r="1.5" fill="url(#photonFill)" opacity="0.08">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.70s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="1.3" fill="url(#photonFill)" opacity="0.06">
+          <circle r="1.2" fill="url(#photonFill)" opacity="0.06">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-0.84s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
@@ -225,37 +238,37 @@ export const CircuitLogo: FC<CircuitLogoProps> = ({
 
         {/* Photon B (phase offset) */}
         <g>
-          <circle r="5.05" fill="url(#photonFill)" opacity="1">
+          <circle r="4.5" fill="url(#photonFill)" opacity="1">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.7s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="4.05" fill="url(#photonFill)" opacity="0.55">
+          <circle r="3.6" fill="url(#photonFill)" opacity="0.55">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.84s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="3.25" fill="url(#photonFill)" opacity="0.32">
+          <circle r="2.9" fill="url(#photonFill)" opacity="0.32">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-1.98s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="2.6" fill="url(#photonFill)" opacity="0.2">
+          <circle r="2.3" fill="url(#photonFill)" opacity="0.2">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.12s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="2.1" fill="url(#photonFill)" opacity="0.12">
+          <circle r="1.9" fill="url(#photonFill)" opacity="0.12">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.26s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="1.7" fill="url(#photonFill)" opacity="0.08">
+          <circle r="1.5" fill="url(#photonFill)" opacity="0.08">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.40s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
           </circle>
-          <circle r="1.3" fill="url(#photonFill)" opacity="0.06">
+          <circle r="1.2" fill="url(#photonFill)" opacity="0.06">
             <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto" begin="-2.54s">
               <mpath href="#photonPath" xlinkHref="#photonPath" />
             </animateMotion>
