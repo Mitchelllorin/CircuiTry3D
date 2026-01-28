@@ -186,6 +186,8 @@ export function useLogoAnimation() {
     let frameId: number;
     let previousTimestamp: number | null = null;
     let angle = 0;
+    // Pre-compute PI constants to avoid repeated calculations
+    const TWO_PI = Math.PI * 2;
 
     const animate = (timestamp: number) => {
       if (previousTimestamp === null) {
@@ -197,8 +199,8 @@ export function useLogoAnimation() {
 
       const orbitDuration = Math.max(logoSettings.speed, 4);
       angle =
-        (angle + (deltaSeconds * (Math.PI * 2)) / orbitDuration) %
-        (Math.PI * 2);
+        (angle + (deltaSeconds * TWO_PI) / orbitDuration) %
+        TWO_PI;
 
       const viewportWidth = window.innerWidth || 1440;
       const viewportHeight = window.innerHeight || 900;
@@ -220,26 +222,33 @@ export function useLogoAnimation() {
       const amplitudeY =
         maxVertical * (clamp(logoSettings.travelY, 10, 100) / 100);
 
-      const orbitX = Math.cos(angle) * amplitudeX;
-      const orbitY = Math.sin(angle) * amplitudeY;
+      // Cache trig calculations - each is used multiple times
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      const sin2Angle = Math.sin(angle * 2);
+
+      const orbitX = cosAngle * amplitudeX;
+      const orbitY = sinAngle * amplitudeY;
 
       const bounceStrength = clamp(logoSettings.bounce, 0, 120);
-      const bounceWave = Math.sin(angle * 2);
-      const bounceOffset = bounceWave * bounceStrength;
-      const tilt = bounceWave * 5.8;
-      const scale = 1 + bounceWave * (bounceStrength / 360);
+      const bounceOffset = sin2Angle * bounceStrength;
+      const tilt = sin2Angle * 5.8;
+      const scale = 1 + sin2Angle * (bounceStrength / 360);
 
       const translateX = orbitX;
       const translateY = orbitY + bounceOffset;
 
-      element.style.transform = `translateX(calc(-50% + ${translateX.toFixed(1)}px)) translateY(calc(-50% + ${translateY.toFixed(
-        1,
-      )}px)) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      // Use Math.round for pixel values (no decimals needed), reduce toFixed precision
+      element.style.transform = `translateX(calc(-50% + ${Math.round(translateX)}px)) translateY(calc(-50% + ${Math.round(translateY)}px)) rotate(${tilt.toFixed(1)}deg) scale(${scale.toFixed(2)})`;
+
+      // Cache trig calculations for glow
+      const sin1_7Angle = Math.sin(angle * 1.7);
+      const sin2_3Angle = Math.sin(angle * 2.3 + Math.PI / 4);
 
       const glowPrimary =
-        (0.34 + Math.sin(angle * 1.7) * 0.12) * normalizedOpacity;
+        (0.34 + sin1_7Angle * 0.12) * normalizedOpacity;
       const glowSecondary =
-        (0.2 + Math.sin(angle * 2.3 + Math.PI / 4) * 0.08) * normalizedOpacity;
+        (0.2 + sin2_3Angle * 0.08) * normalizedOpacity;
       element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, glowPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
         0,
         glowSecondary,

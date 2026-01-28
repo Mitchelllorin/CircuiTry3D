@@ -692,10 +692,57 @@ const IconPlay = ({ className }: IconProps) => (
   </svg>
 );
 
+/**
+ * Hook to detect when an element is visible in the viewport
+ * Used to lazy-load expensive 3D thumbnails only when needed
+ */
+function useIsVisible(ref: React.RefObject<HTMLElement | null>): boolean {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    // Check if IntersectionObserver is available
+    if (typeof IntersectionObserver === 'undefined') {
+      // Fallback: assume visible
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Once visible, stay visible (thumbnails are cached)
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '100px', // Start loading slightly before visible
+        threshold: 0,
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [ref]);
+
+  return isVisible;
+}
+
 function ComponentLibraryCard({ component }: { component: ComponentAction }) {
-  const thumbSrc = useComponent3DThumbnail(component.builderType ?? component.id, {
-    animated: true,
-  });
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const isVisible = useIsVisible(containerRef);
+
+  // Only request thumbnail when visible to avoid blocking main thread
+  const thumbSrc = useComponent3DThumbnail(
+    isVisible ? (component.builderType ?? component.id) : undefined,
+    { animated: true }
+  );
 
   const symbolKey = (() => {
     const type = component.builderType ?? component.id;
@@ -714,7 +761,7 @@ function ComponentLibraryCard({ component }: { component: ComponentAction }) {
   const Symbol = getSchematicSymbol(symbolKey as any);
 
   return (
-    <span className="slider-component-card">
+    <span className="slider-component-card" ref={containerRef}>
       <span className="slider-component-name">{component.label}</span>
 
       {component.description ? (

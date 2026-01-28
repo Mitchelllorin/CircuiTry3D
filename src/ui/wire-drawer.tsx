@@ -1284,7 +1284,19 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     // We avoid React state updates; redraw is local to this effect.
     let raf: number | null = null;
     if (hoveredWireInfo) {
-      const repaint = () => {
+      // Throttle animation to 30fps on mobile to save battery/CPU
+      const isMobile = isTouchDevice();
+      const targetInterval = isMobile ? 33 : 16; // 30fps on mobile, 60fps on desktop
+      let lastFrameTime = 0;
+
+      const repaint = (now: number) => {
+        // Throttle frame rate
+        if (now - lastFrameTime < targetInterval) {
+          raf = requestAnimationFrame(repaint);
+          return;
+        }
+        lastFrameTime = now;
+
         // Re-run this effect's drawing logic by triggering a manual redraw:
         // we do it by re-entering the body via requestAnimationFrame closure.
         ctx.save();

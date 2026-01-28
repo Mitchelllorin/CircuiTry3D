@@ -6,14 +6,49 @@ import {
   buildNodeMesh,
   disposeThreeObject,
 } from "../../../schematic/threeFactory";
+import { getPerformanceTier, isMobile } from "../../../utils/mobilePerformance";
 
-const THUMBNAIL_SIZE_PX = 200;
 const THUMBNAIL_CACHE = new Map<string, string>();
 const THUMBNAIL_IN_FLIGHT = new Map<string, Promise<string>>();
 const THUMBNAIL_ANIMATION_FRAME_MS = 300;
 const THUMBNAIL_ANIMATION_SECONDS_PER_REV = 24;
 const THUMBNAIL_ANIMATION_SPEED =
   (Math.PI * 2) / THUMBNAIL_ANIMATION_SECONDS_PER_REV;
+
+// Performance-aware settings - balanced for visual quality
+const getPerformanceSettings = () => {
+  const tier = getPerformanceTier();
+  const mobile = isMobile();
+
+  // Even on low-end/mobile, maintain decent visual quality
+  if (tier === 'low') {
+    return {
+      segments: 16,          // Increased from 8 - smooth enough to look good
+      thumbnailSize: 150,    // Increased from 100 - visible detail
+      batchSize: 2,
+      renderDelayMs: 0,
+      maxConcurrent: 1,
+    };
+  }
+
+  if (tier === 'medium' || mobile) {
+    return {
+      segments: 22,          // Increased from 16
+      thumbnailSize: 175,    // Increased from 150
+      batchSize: 4,
+      renderDelayMs: 0,
+      maxConcurrent: 2,
+    };
+  }
+
+  return {
+    segments: 28,
+    thumbnailSize: 200,
+    batchSize: 8,
+    renderDelayMs: 0,
+    maxConcurrent: 4,
+  };
+};
 
 type SharedThumbnailRenderer = {
   canvas: HTMLCanvasElement;
@@ -122,7 +157,10 @@ function buildComponentLibraryGroup(kind: ThumbnailKind): THREE.Object3D | null 
 
   const group = new THREE.Group();
   group.name = `thumb-${componentType}`;
-  const segments = 28;
+
+  // Use performance-aware segment count instead of fixed 28
+  const perfSettings = getPerformanceSettings();
+  const segments = perfSettings.segments;
 
   componentDef.geometry.shapes.forEach((shapeDef) => {
     let geometry: THREE.BufferGeometry | null = null;
@@ -234,17 +272,25 @@ function renderComponentThumbnail(
     return "";
   }
 
+  const perfSettings = getPerformanceSettings();
+  const thumbnailSize = perfSettings.thumbnailSize;
+
   // Creating too many WebGL contexts (one per thumbnail) will fail on many devices.
   // Reuse a single renderer/canvas for all thumbnails.
   if (!sharedRenderer) {
     const canvas = document.createElement("canvas");
-    canvas.width = THUMBNAIL_SIZE_PX;
-    canvas.height = THUMBNAIL_SIZE_PX;
+    canvas.width = thumbnailSize;
+    canvas.height = thumbnailSize;
+
+    // Enable antialiasing for smoother edges (even on lower-tier devices)
+    const useAntialias = true; // Always enable for visual quality
+
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: true,
+      antialias: useAntialias,
       preserveDrawingBuffer: true,
+      powerPreference: isMobile() ? 'low-power' : 'default',
     });
     if ("outputColorSpace" in renderer && (THREE as any).SRGBColorSpace) {
       (renderer as any).outputColorSpace = (THREE as any).SRGBColorSpace;
@@ -258,12 +304,19 @@ function renderComponentThumbnail(
     if ("physicallyCorrectLights" in renderer) {
       (renderer as any).physicallyCorrectLights = true;
     }
-    renderer.setSize(THUMBNAIL_SIZE_PX, THUMBNAIL_SIZE_PX, false);
+    renderer.setSize(thumbnailSize, thumbnailSize, false);
     renderer.setPixelRatio(1);
     sharedRenderer = { canvas, renderer };
   }
 
   const { canvas, renderer } = sharedRenderer;
+
+  // Resize canvas if needed (in case performance tier changed)
+  if (canvas.width !== thumbnailSize) {
+    canvas.width = thumbnailSize;
+    canvas.height = thumbnailSize;
+    renderer.setSize(thumbnailSize, thumbnailSize, false);
+  }
 
   const scene = new THREE.Scene();
   const ambient = new THREE.AmbientLight(0xffffff, 1.0);
@@ -271,6 +324,8 @@ function renderComponentThumbnail(
   const key = new THREE.DirectionalLight(0xffffff, 1.25);
   key.position.set(3, 4, 3);
   scene.add(key);
+
+  // Always add fill light for better dimensional appearance
   const fill = new THREE.DirectionalLight(0x88ccff, 0.5);
   fill.position.set(-3, 2, -3);
   scene.add(fill);
@@ -469,15 +524,25 @@ export function useComponent3DThumbnail(
     }
 
     if (THUMBNAIL_IN_FLIGHT.has(kind)) {
+      // Already rendering - wait for completion and then update
+      const inFlightJob = THUMBNAIL_IN_FLIGHT.get(kind);
+      if (inFlightJob) {
+        inFlightJob.then((dataUrl) => {
+          if (dataUrl) setSrc(dataUrl);
+        });
+      }
       return;
     }
 
     let cancelled = false;
 
-    // Defer the expensive WebGL work off the click path.
-    const schedule =
-      typeof (window as any).requestIdleCallback === "function"
-        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 350 })
+    // Use immediate scheduling on mobile to avoid artificial delays
+    // On desktop, use requestIdleCallback with a shorter timeout
+    const mobile = isMobile();
+    const schedule = mobile
+      ? (cb: () => void) => window.setTimeout(cb, 0)
+      : typeof (window as any).requestIdleCallback === "function"
+        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 50 })
         : (cb: () => void) => window.setTimeout(cb, 0);
 
     const handle = schedule(() => {

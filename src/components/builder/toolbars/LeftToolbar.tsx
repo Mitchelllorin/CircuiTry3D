@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import type {
   ComponentAction,
   QuickAction,
@@ -28,6 +28,48 @@ interface LeftToolbarProps {
 }
 
 /**
+ * Hook to detect when an element is visible in the viewport
+ * Used to lazy-load expensive 3D thumbnails only when needed
+ */
+function useIsVisible(ref: React.RefObject<HTMLElement | null>): boolean {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    // Check if IntersectionObserver is available
+    if (typeof IntersectionObserver === 'undefined') {
+      // Fallback: assume visible
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Once visible, stay visible (thumbnails are cached)
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '100px', // Start loading slightly before visible
+        threshold: 0,
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [ref]);
+
+  return isVisible;
+}
+
+/**
  * Renders the component icon/schematic symbol for the library
  * Vertical layout: name, description, schematic symbol, 3D thumbnail
  */
@@ -42,9 +84,15 @@ function ComponentIcon({
   thumbnailsEnabled,
   animateThumbnails,
 }: ComponentIconProps) {
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const isVisible = useIsVisible(containerRef);
+
+  // Only request thumbnail when both enabled AND visible
+  const shouldLoadThumbnail = thumbnailsEnabled && isVisible;
+
   const builderType = component.builderType ?? component.id;
   const thumbSrc = useComponent3DThumbnail(
-    thumbnailsEnabled ? builderType : undefined,
+    shouldLoadThumbnail ? builderType : undefined,
     { animated: animateThumbnails },
   );
 
@@ -65,7 +113,7 @@ function ComponentIcon({
   const Symbol = getSchematicSymbol(symbolKey as any);
 
   return (
-    <span className="slider-component-card">
+    <span className="slider-component-card" ref={containerRef}>
       {/* Component name at top */}
       <span className="slider-component-name">{component.label}</span>
 
