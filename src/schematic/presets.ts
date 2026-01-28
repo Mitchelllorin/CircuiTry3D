@@ -141,24 +141,74 @@ export function buildPracticeCircuitElements(problem: PracticeProblem): Schemati
       pushResistor(labelFor(component3.id), r3Start, r3End);
       pushWire(r3End, start);
     } else {
-      // 4+ resistors: distribute evenly along top rail
-      const segmentWidth = (topRight.x - topLeft.x) / count;
-      const margin = Math.min(segmentWidth * 0.2, 0.5);
+      // 4+ resistors: distribute around the rectangle (top, right, bottom sides)
+      // Following the same logic as CircuitDiagram.tsx for consistency
+      const topCount = Math.ceil(count / 3);
+      const bottomCount = Math.ceil((count - topCount) / 2);
+      const rightCount = count - topCount - bottomCount;
+
+      const topIds = problem.components.slice(0, topCount).map(c => c.id);
+      const rightIds = problem.components.slice(topCount, topCount + rightCount).map(c => c.id);
+      const bottomIds = problem.components.slice(topCount + rightCount).map(c => c.id);
+
+      // Top row resistors (horizontal)
+      const topWidth = topRight.x - topLeft.x;
+      const topSpacing = topWidth / topIds.length;
+      const topMargin = Math.min(topSpacing * 0.15, 0.4);
 
       let previous = topLeft;
-      problem.components.forEach((component, index) => {
-        const startX = topLeft.x + index * segmentWidth + margin;
-        const endX = topLeft.x + (index + 1) * segmentWidth - margin;
+      topIds.forEach((id, index) => {
+        const startX = topLeft.x + index * topSpacing + topMargin;
+        const endX = topLeft.x + (index + 1) * topSpacing - topMargin;
         const resistorStart = point(startX, top);
         const resistorEnd = point(endX, top);
         pushWire(previous, resistorStart);
-        pushResistor(labelFor(component.id), resistorStart, resistorEnd);
+        pushResistor(labelFor(id), resistorStart, resistorEnd);
         previous = resistorEnd;
       });
-
       pushWire(previous, topRight);
-      pushWire(topRight, bottomRight);
-      pushWire(bottomRight, start);
+
+      // Right side resistors (vertical)
+      if (rightIds.length > 0) {
+        const rightHeight = top - bottom;
+        const rightSpacing = rightHeight / rightIds.length;
+        const rightMargin = Math.min(rightSpacing * 0.15, 0.3);
+
+        let previousRight = topRight;
+        rightIds.forEach((id, index) => {
+          const startZ = top - index * rightSpacing - rightMargin;
+          const endZ = top - (index + 1) * rightSpacing + rightMargin;
+          const resistorStart = point(right, startZ);
+          const resistorEnd = point(right, endZ);
+          pushWire(previousRight, resistorStart);
+          pushResistor(labelFor(id), resistorStart, resistorEnd);
+          previousRight = resistorEnd;
+        });
+        pushWire(previousRight, bottomRight);
+      } else {
+        pushWire(topRight, bottomRight);
+      }
+
+      // Bottom row resistors (horizontal, reversed direction)
+      if (bottomIds.length > 0) {
+        const bottomWidth = topRight.x - topLeft.x;
+        const bottomSpacing = bottomWidth / bottomIds.length;
+        const bottomMargin = Math.min(bottomSpacing * 0.15, 0.4);
+
+        let previousBottom = bottomRight;
+        bottomIds.forEach((id, index) => {
+          const startX = bottomRight.x - index * bottomSpacing - bottomMargin;
+          const endX = bottomRight.x - (index + 1) * bottomSpacing + bottomMargin;
+          const resistorStart = point(startX, bottom);
+          const resistorEnd = point(endX, bottom);
+          pushWire(previousBottom, resistorStart);
+          pushResistor(labelFor(id), resistorStart, resistorEnd);
+          previousBottom = resistorEnd;
+        });
+        pushWire(previousBottom, start);
+      } else {
+        pushWire(bottomRight, start);
+      }
     }
   };
 
