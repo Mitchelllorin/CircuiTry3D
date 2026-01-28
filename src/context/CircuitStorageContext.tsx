@@ -97,27 +97,46 @@ export function CircuitStorageProvider({ children }: { children: ReactNode }) {
   const initializedRef = useRef(false);
   const lastSavedStateRef = useRef<string | null>(null);
 
-  // Initialize on mount
+  // Initialize on mount - defer heavy operations to avoid blocking initial render
   useEffect(() => {
     if (initializedRef.current) {
       return;
     }
     initializedRef.current = true;
 
-    // Load circuits list
-    setSavedCircuits(listCircuits());
-
-    // Check for recovery data
-    if (hasRecoveryData()) {
-      const recovery = loadRecoveryData();
-      if (recovery) {
-        setRecoveryData(recovery);
+    // Use requestIdleCallback or setTimeout to defer heavy localStorage operations
+    // This prevents blocking the main thread during app initialization
+    const scheduleDeferred = (cb: () => void, priority: 'high' | 'low' = 'low') => {
+      if (priority === 'high') {
+        // High priority - run after a microtask
+        Promise.resolve().then(() => setTimeout(cb, 0));
+      } else if (typeof (window as any).requestIdleCallback === 'function') {
+        (window as any).requestIdleCallback(cb, { timeout: 100 });
+      } else {
+        setTimeout(cb, 16); // ~1 frame delay
       }
-    }
+    };
 
-    // Check storage status
-    setStorageWarning(isStorageLow());
-    setStorageUsage(getStorageUsage());
+    // Load circuits list (high priority - needed for UI)
+    scheduleDeferred(() => {
+      setSavedCircuits(listCircuits());
+    }, 'high');
+
+    // Check for recovery data (can be slightly delayed)
+    scheduleDeferred(() => {
+      if (hasRecoveryData()) {
+        const recovery = loadRecoveryData();
+        if (recovery) {
+          setRecoveryData(recovery);
+        }
+      }
+    }, 'high');
+
+    // Check storage status (lowest priority - not immediately visible)
+    scheduleDeferred(() => {
+      setStorageWarning(isStorageLow());
+      setStorageUsage(getStorageUsage());
+    }, 'low');
   }, []);
 
   // Refresh circuit list
@@ -279,13 +298,30 @@ export function CircuitStorageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Trigger auto-save
+  // Use a simple hash-like comparison to avoid expensive JSON.stringify on every call
   const triggerAutoSave = useCallback((state: CircuitState) => {
-    const stateJson = JSON.stringify(state);
+    // Quick shallow comparison first - check array lengths and basic properties
+    // This avoids expensive JSON.stringify for cases where nothing changed
+    const quickHash = `${(state as any).nodes?.length ?? 0}-${(state as any).wires?.length ?? 0}-${(state as any).components?.length ?? 0}`;
+    const lastQuickHash = (lastSavedStateRef.current ? lastSavedStateRef.current.slice(0, 20) : '');
 
-    // Check if state has changed
-    if (lastSavedStateRef.current !== stateJson) {
+    // If quick hash matches, do full comparison only if structure is the same
+    if (quickHash !== lastQuickHash.split('|')[0]) {
+      // Definite change detected via quick hash
       setHasUnsavedChanges(true);
       scheduleAutoSave(state, SESSION_ID, currentCircuit?.metadata.name);
+      // Store quick hash with full JSON for next comparison
+      const stateJson = JSON.stringify(state);
+      lastSavedStateRef.current = `${quickHash}|${stateJson}`;
+    } else {
+      // Quick hash matches, need full comparison
+      const stateJson = JSON.stringify(state);
+      const lastFullJson = lastSavedStateRef.current?.split('|').slice(1).join('|') || '';
+      if (lastFullJson !== stateJson) {
+        setHasUnsavedChanges(true);
+        scheduleAutoSave(state, SESSION_ID, currentCircuit?.metadata.name);
+        lastSavedStateRef.current = `${quickHash}|${stateJson}`;
+      }
     }
   }, [currentCircuit]);
 

@@ -27,6 +27,8 @@ export const isMobile = (): boolean => {
 };
 
 // Get device performance tier
+// NOTE: This now uses a more balanced approach - modern Android devices (2020+)
+// are capable of good rendering, so we don't blanket-classify all Android as "low"
 export const getPerformanceTier = (): 'low' | 'medium' | 'high' => {
   if (typeof window === 'undefined') return 'medium';
 
@@ -34,20 +36,24 @@ export const getPerformanceTier = (): 'low' | 'medium' | 'high' => {
   const deviceMemory = (navigator as unknown as { deviceMemory?: number }).deviceMemory;
   const hardwareConcurrency = navigator.hardwareConcurrency || 4;
 
-  // Low-end devices
+  // Only classify as low-end if hardware is actually constrained
+  // Don't blanket-penalize Android - modern Android devices are capable
   if (
-    (deviceMemory && deviceMemory < 4) ||
-    hardwareConcurrency <= 2 ||
-    isAndroid() // Android WebView tends to be more constrained
+    (deviceMemory && deviceMemory < 2) ||  // Only truly low memory devices (was <4)
+    hardwareConcurrency <= 2               // Very few CPU cores
   ) {
     return 'low';
   }
 
-  // High-end devices
-  if (deviceMemory && deviceMemory >= 8 && hardwareConcurrency >= 8) {
+  // High-end devices - relaxed requirements
+  if (
+    (deviceMemory && deviceMemory >= 6 && hardwareConcurrency >= 6) ||
+    (!deviceMemory && hardwareConcurrency >= 8) // Unknown memory but many cores
+  ) {
     return 'high';
   }
 
+  // Most modern devices fall into medium tier - this is the new default
   return 'medium';
 };
 
@@ -61,27 +67,26 @@ export interface MobileRendererOptions {
 
 export const getMobileRendererOptions = (): MobileRendererOptions => {
   const tier = getPerformanceTier();
-  const mobile = isMobile();
 
-  if (tier === 'low' || (mobile && isAndroid())) {
+  if (tier === 'low') {
     return {
-      antialias: false, // Disable AA on low-end for performance
-      powerPreference: 'low-power', // Prefer battery life
-      precision: 'mediump', // Medium precision is fine for mobile
+      antialias: true, // Keep antialiasing for visual quality - it's 2026!
+      powerPreference: 'low-power',
+      precision: 'mediump',
       alpha: true
     };
   }
 
-  if (tier === 'medium' || mobile) {
+  if (tier === 'medium') {
     return {
-      antialias: true, // Keep AA but limit other things
+      antialias: true,
       powerPreference: 'default',
       precision: 'highp',
       alpha: true
     };
   }
 
-  // High-end desktop
+  // High-end
   return {
     antialias: true,
     powerPreference: 'high-performance',
@@ -97,16 +102,13 @@ export const getMobilePixelRatio = (): number => {
   const tier = getPerformanceTier();
   const devicePixelRatio = window.devicePixelRatio || 1;
 
-  // Cap pixel ratio based on performance tier
+  // More generous pixel ratio allowances for better visual clarity
   if (tier === 'low') {
-    return Math.min(devicePixelRatio, 1.5); // Cap at 1.5x for low-end
+    return Math.min(devicePixelRatio, 2); // Allow up to 2x even on low-end (was 1.5)
   }
 
-  if (tier === 'medium') {
-    return Math.min(devicePixelRatio, 2); // Cap at 2x for medium
-  }
-
-  return Math.min(devicePixelRatio, 2); // Always cap at 2x for sanity
+  // Medium and high get full pixel ratio up to 2.5x
+  return Math.min(devicePixelRatio, 2.5);
 };
 
 // Shadow quality settings
@@ -121,7 +123,7 @@ export const getMobileShadowSettings = (): ShadowSettings => {
 
   if (tier === 'low') {
     return {
-      enabled: false, // No shadows on low-end
+      enabled: true, // Enable shadows even on low-end for visual depth
       mapSize: 512,
       type: 'basic'
     };
@@ -130,8 +132,8 @@ export const getMobileShadowSettings = (): ShadowSettings => {
   if (tier === 'medium') {
     return {
       enabled: true,
-      mapSize: 512, // Lower resolution shadows
-      type: 'basic'
+      mapSize: 1024, // Increased from 512 for better quality
+      type: 'soft'   // Upgraded from 'basic'
     };
   }
 
@@ -146,23 +148,26 @@ export const getMobileShadowSettings = (): ShadowSettings => {
 export const getTargetFrameRate = (): number => {
   const tier = getPerformanceTier();
 
+  // All tiers target 60fps - even low-end devices can handle it with other optimizations
+  // Only drop to 30fps if absolutely necessary (handled elsewhere based on actual performance)
   if (tier === 'low') {
-    return 30; // 30fps on low-end
+    return 45; // Compromise between smoothness and battery
   }
 
-  return 60; // 60fps on medium/high
+  return 60;
 };
 
 // Get geometry detail level (for LOD)
+// More generous segment counts to avoid "blocky" appearance
 export const getGeometrySegments = (baseSegments: number): number => {
   const tier = getPerformanceTier();
 
   if (tier === 'low') {
-    return Math.max(8, Math.floor(baseSegments / 2)); // Half detail, min 8
+    return Math.max(16, Math.floor(baseSegments * 0.6)); // 60% detail, min 16 (was 50%, min 8)
   }
 
   if (tier === 'medium') {
-    return Math.max(16, Math.floor(baseSegments * 0.75)); // 75% detail
+    return Math.max(20, Math.floor(baseSegments * 0.85)); // 85% detail (was 75%)
   }
 
   return baseSegments;

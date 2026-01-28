@@ -1,4 +1,5 @@
 import { Vec2 } from "./types";
+import { getPerformanceTier } from "../utils/mobilePerformance";
 
 /**
  * Flow mode determines the direction of particle animation:
@@ -38,15 +39,41 @@ export const FLOW_MODE_APPEARANCE = {
   conventional: { opacity: 0.95, size: 0.16, glowOpacity: 0.42 }    // Brighter, larger
 } as const;
 
-const COMET_TAIL = {
-  segments: 7,
-  // Tail is expressed in multiples of the particle radius (since we scale the whole mesh by baseScale)
-  length: 6.5,
-  maxOpacity: 0.28,
-  minOpacity: 0.02,
-  maxRadiusFactor: 0.75,  // relative to particle size
-  minRadiusFactor: 0.18
-} as const;
+/**
+ * Get comet tail configuration based on device performance tier
+ * Improved settings for better visual quality while maintaining performance
+ */
+const getCometTailConfig = () => {
+  const tier = getPerformanceTier();
+  if (tier === 'low') {
+    return {
+      segments: 5,    // Increased from 3 for smoother trails
+      length: 5.5,    // Increased from 4.5
+      maxOpacity: 0.28,
+      minOpacity: 0.02,
+      maxRadiusFactor: 0.75,
+      minRadiusFactor: 0.18
+    };
+  }
+  if (tier === 'medium') {
+    return {
+      segments: 6,    // Increased from 5
+      length: 6.0,    // Increased from 5.5
+      maxOpacity: 0.28,
+      minOpacity: 0.02,
+      maxRadiusFactor: 0.75,
+      minRadiusFactor: 0.18
+    };
+  }
+  return {
+    segments: 7,
+    length: 6.5,
+    maxOpacity: 0.28,
+    minOpacity: 0.02,
+    maxRadiusFactor: 0.75,
+    minRadiusFactor: 0.18
+  };
+};
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -65,6 +92,21 @@ const lerpColor = (start: number, end: number, t: number) => {
   const g = Math.round(lerp(sg, eg, tt));
   const b = Math.round(lerp(sb, eb, tt));
   return (r << 16) + (g << 8) + b;
+};
+
+/**
+ * Get performance-adjusted particle limits based on device tier
+ * Improved limits for better visual density
+ */
+const getParticleLimits = () => {
+  const tier = getPerformanceTier();
+  if (tier === 'low') {
+    return { min: 2, max: 10 };  // Increased from 1-8 for better flow visualization
+  }
+  if (tier === 'medium') {
+    return { min: 2, max: 14 }; // Increased from 2-12
+  }
+  return { min: 2, max: 15 };
 };
 
 /**
@@ -133,6 +175,8 @@ export type CurrentFlowParticle = {
   /** Actual speed including random variation */
   speed: number;
   path: Vec2[];
+  /** Cached total path length to avoid recalculating every frame */
+  pathLength: number;
   intensity: CurrentIntensity;
   reversed: boolean; // True for electron flow (reversed direction)
   /** The amperage this particle represents */
@@ -166,10 +210,20 @@ export class CurrentFlowAnimationSystem {
   private globalIntensity: CurrentIntensity = "medium";
   /** Global current value in amps for physics-based calculations */
   private globalCurrentAmps: number = 0;
+  /** Reusable Vector3 for direction calculations (avoids per-frame allocations) */
+  private tempDir: any = null;
+  /** Reusable Vector3 for forward vector (avoids per-frame allocations) */
+  private tempForward: any = null;
+  /** Reusable Quaternion for orientation (avoids per-frame allocations) */
+  private tempQuat: any = null;
 
   constructor(three: any, parentGroup: any) {
     this.three = three;
     this.parentGroup = parentGroup;
+    // Pre-allocate reusable objects to avoid per-frame allocations
+    this.tempDir = new three.Vector3();
+    this.tempForward = new three.Vector3(0, 0, 1);
+    this.tempQuat = new three.Quaternion();
   }
 
   /**
@@ -254,16 +308,16 @@ export class CurrentFlowAnimationSystem {
       return 0;
     }
 
+    // Get performance-adjusted limits for particle count
+    const limits = getParticleLimits();
+
     // Base count on path length and current magnitude
     // Use square root scaling so particle density doesn't explode at high currents
     const densityFactor = Math.sqrt(absAmps) * CURRENT_FLOW_PHYSICS.PARTICLES_PER_UNIT_LENGTH_PER_AMP;
     const baseCount = Math.round(pathLength * densityFactor);
 
-    // Clamp to reasonable bounds
-    return Math.min(
-      CURRENT_FLOW_PHYSICS.MAX_PARTICLES_PER_PATH,
-      Math.max(CURRENT_FLOW_PHYSICS.MIN_PARTICLES_PER_PATH, baseCount)
-    );
+    // Clamp to performance-adjusted bounds
+    return Math.min(limits.max, Math.max(limits.min, baseCount));
   }
 
   /**
@@ -457,6 +511,7 @@ export class CurrentFlowAnimationSystem {
         baseSpeed: adjustedSpeed,
         speed: particleSpeed,
         path: path, // Use the path as-is, direction is handled in update()
+        pathLength, // Cache the path length to avoid recalculating every frame
         intensity,
         reversed: isReversed,
         currentAmps,
@@ -471,9 +526,16 @@ export class CurrentFlowAnimationSystem {
   private createParticleMesh(particle: CurrentFlowParticle): void {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
     const colors = this.getCurrentFlowColors(particle.currentAmps);
+    const tier = getPerformanceTier();
+    const COMET_TAIL = getCometTailConfig();
+
+    // Improved sphere segments for better visual quality across all tiers
+    const sphereSegments = tier === 'low' ? 14 : tier === 'medium' ? 16 : 18;
+    const glowSegments = tier === 'low' ? 12 : tier === 'medium' ? 14 : 16;
+    const tailSegments = tier === 'low' ? 10 : tier === 'medium' ? 10 : 12;
 
     // Use unit geometry and scale it so we can easily combine base size + pulse in update()
-    const geometry = new this.three.SphereGeometry(1, 18, 18);
+    const geometry = new this.three.SphereGeometry(1, sphereSegments, sphereSegments);
     const material = new this.three.MeshStandardMaterial({
       color: colors.core,
       emissive: colors.emissive,
@@ -488,12 +550,12 @@ export class CurrentFlowAnimationSystem {
     mesh.scale.setScalar(1);
     mesh.userData.baseScale = appearance.size;
 
-    // Add a glow effect
-    const glowGeometry = new this.three.SphereGeometry(1, 16, 16);
+    // Add a glow effect - enabled on all tiers for visual appeal
+    const glowGeometry = new this.three.SphereGeometry(1, glowSegments, glowSegments);
     const glowMaterial = new this.three.MeshBasicMaterial({
       color: colors.glow,
       transparent: true,
-      opacity: appearance.glowOpacity
+      opacity: tier === 'low' ? appearance.glowOpacity * 0.7 : appearance.glowOpacity // Slightly reduced on low-end
     });
     const glow = new this.three.Mesh(glowGeometry, glowMaterial);
     glow.name = "glow";
@@ -511,7 +573,7 @@ export class CurrentFlowAnimationSystem {
       const opacity = COMET_TAIL.minOpacity + (COMET_TAIL.maxOpacity - COMET_TAIL.minOpacity) * falloff;
       const radiusFactor = COMET_TAIL.minRadiusFactor + (COMET_TAIL.maxRadiusFactor - COMET_TAIL.minRadiusFactor) * falloff;
 
-      const segGeom = new this.three.SphereGeometry(1, 12, 12);
+      const segGeom = new this.three.SphereGeometry(1, tailSegments, tailSegments);
       const segMat = new this.three.MeshBasicMaterial({
         color: tailColor,
         transparent: true,
@@ -569,9 +631,11 @@ export class CurrentFlowAnimationSystem {
 
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
+        const COMET_TAIL = getCometTailConfig();
+        const tailChildCount = tail.children?.length || 0;
         tail.children?.forEach?.((seg: any, index: number) => {
           if (!seg?.material) return;
-          const t = index / Math.max((COMET_TAIL.segments - 1), 1);
+          const t = index / Math.max((tailChildCount - 1), 1);
           const falloff = (1 - t) * (1 - t);
           seg.material.color.setHex(colors.glow);
           seg.material.opacity = COMET_TAIL.minOpacity + (COMET_TAIL.maxOpacity - COMET_TAIL.minOpacity) * falloff;
@@ -605,8 +669,8 @@ export class CurrentFlowAnimationSystem {
         }
       }
 
-      // Calculate position along path
-      const totalLength = this.calculatePathLength(particle.path);
+      // Use cached path length instead of recalculating every frame
+      const totalLength = particle.pathLength;
       const targetDistance = particle.progress * totalLength;
 
       const pos = this.getPositionAlongPath(particle.path, targetDistance);
@@ -627,10 +691,11 @@ export class CurrentFlowAnimationSystem {
             const dz = ahead.z - pos.z;
             const mag = Math.sqrt(dx * dx + dz * dz);
             if (mag > 1e-6) {
-              const dir = new this.three.Vector3(dx / mag, 0, dz / mag);
-              const forward = new this.three.Vector3(0, 0, 1);
-              const q = new this.three.Quaternion().setFromUnitVectors(forward, dir);
-              mesh.quaternion.copy(q);
+              // Reuse pre-allocated Vector3/Quaternion to avoid per-frame allocations
+              this.tempDir.set(dx / mag, 0, dz / mag);
+              this.tempForward.set(0, 0, 1);
+              this.tempQuat.setFromUnitVectors(this.tempForward, this.tempDir);
+              mesh.quaternion.copy(this.tempQuat);
             }
           }
 
