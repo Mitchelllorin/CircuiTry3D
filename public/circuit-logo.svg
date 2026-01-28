@@ -41,12 +41,10 @@
       <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
     </radialGradient>
 
-    <!-- Circuit flow path including resistor zigzags and battery -->
+    <!-- Circuit flow path - flows along main wire, battery is a side branch -->
     <path
       id="photonPath"
       d="M 55 110
-         L 55 72
-         L 55 55
          L 55 20
          L 100 20
          L 110 20
@@ -82,11 +80,12 @@
 
   <g stroke="#00ff88" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round">
 
-    <!-- Left vertical wire - top segment (from node 1 down to battery positive plate) -->
-    <line x1="55" y1="20" x2="55" y2="55" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Left vertical wire - runs straight from node 1 to node 4 -->
+    <line x1="55" y1="20" x2="55" y2="110" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- Left vertical wire - bottom segment (from battery negative plate to node 4) -->
-    <line x1="55" y1="72" x2="55" y2="110" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Battery connection stubs - horizontal wires branching to the battery -->
+    <line x1="55" y1="55" x2="38" y2="55" stroke="#00ff88" stroke-width="1.75" />
+    <line x1="55" y1="72" x2="38" y2="72" stroke="#00ff88" stroke-width="1.75" />
 
     <!-- Top horizontal wire from node 1 to R1 -->
     <line x1="55" y1="20" x2="110" y2="20" stroke="#00ff88" stroke-width="1.75" />
@@ -142,20 +141,19 @@
     <text x="42" y="122" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
   </g>
 
-  <!-- Battery schematic symbol - RED as shown in the reference screenshot -->
-  <!-- Layout: 9V to the left, battery plates centered on wire, + above top plate, - below bottom plate -->
+  <!-- Battery schematic symbol - RED, positioned in open space to the left of the vertical wire -->
   <g>
-    <!-- Positive plate (longer line, top) - RED color -->
-    <line x1="40" y1="55" x2="70" y2="55" stroke="#ff0000" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)" />
-    <!-- Negative plate (shorter line, bottom) - RED color -->
-    <line x1="45" y1="72" x2="65" y2="72" stroke="#ff0000" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)" />
+    <!-- Positive plate (longer line, top) - RED color, at x=38 to the left -->
+    <line x1="22" y1="55" x2="38" y2="55" stroke="#ff0000" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)" />
+    <!-- Negative plate (shorter line, bottom) - RED color, at x=38 to the left -->
+    <line x1="26" y1="72" x2="38" y2="72" stroke="#ff0000" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)" />
   </g>
   <!-- Polarity marker + above positive plate -->
-  <text x="55" y="48" font-size="10" fill="#00ff88" font-weight="bold" text-anchor="middle">+</text>
+  <text x="30" y="48" font-size="10" fill="#00ff88" font-weight="bold" text-anchor="middle">+</text>
   <!-- 9V label to the left of the battery -->
-  <text x="22" y="66" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
+  <text x="10" y="66" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
   <!-- Polarity marker - below negative plate -->
-  <text x="55" y="86" font-size="10" fill="#94a3b8" font-weight="bold" text-anchor="middle">−</text>
+  <text x="30" y="86" font-size="10" fill="#94a3b8" font-weight="bold" text-anchor="middle">−</text>
 
   <!-- Component labels -->
   <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600">
