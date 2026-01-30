@@ -83,6 +83,10 @@
     <!-- Left vertical wire (full height from node 1 to node 4) -->
     <line x1="55" y1="20" x2="55" y2="110" stroke="#00ff88" stroke-width="1.75" />
 
+    <!-- Battery connection stubs - horizontal wires branching to the battery -->
+    <line x1="55" y1="55" x2="38" y2="55" stroke="#00ff88" stroke-width="1.75" />
+    <line x1="55" y1="72" x2="38" y2="72" stroke="#00ff88" stroke-width="1.75" />
+
     <!-- Top horizontal wire from node 1 to R1 -->
     <line x1="55" y1="20" x2="110" y2="20" stroke="#00ff88" stroke-width="1.75" />
 
@@ -130,6 +134,12 @@
     <circle cx="170" cy="110" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
     <circle cx="110" cy="110" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
 
+    <!-- Junction nodes at battery wire connections -->
+    <circle cx="55" cy="55" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="55" cy="72" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="170" cy="110" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="110" cy="110" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+
     <!-- Node number labels -->
     <text x="42" y="14" font-size="8" fill="#94a3b8" font-weight="bold">1</text>
     <text x="218" y="14" font-size="8" fill="#94a3b8" font-weight="bold">2</text>
@@ -137,19 +147,20 @@
     <text x="42" y="122" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
   </g>
 
-  <!-- Battery schematic symbol and 9V label - OUTSIDE circuit, centered vertically -->
-  <g transform="translate(25, 65)">
-    <!-- Battery symbol (horizontal orientation) -->
-    <!-- Positive plate (longer line, top) -->
-    <line x1="-12" y1="-8" x2="12" y2="-8" stroke="url(#componentGradient)" stroke-width="4" />
-    <!-- Negative plate (shorter line, bottom) -->
-    <line x1="-7" y1="8" x2="7" y2="8" stroke="url(#componentGradient)" stroke-width="2.5" />
-    <!-- Polarity markers -->
-    <text x="0" y="-16" font-size="12" fill="#00ff88" font-weight="bold" text-anchor="middle">+</text>
-    <text x="0" y="24" font-size="12" fill="#94a3b8" font-weight="bold" text-anchor="middle">−</text>
+  <!-- Battery schematic symbol - RED VERTICAL PLATES at the end of wire stubs -->
+  <!-- Standard schematic battery: VERTICAL long plate (positive) at top, VERTICAL short plate (negative) at bottom -->
+  <g>
+    <!-- Positive plate (longer VERTICAL line) at x=38, centered around y=55 -->
+    <line x1="38" y1="49" x2="38" y2="61" stroke="#ff0000" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)" />
+    <!-- Negative plate (shorter VERTICAL line) at x=38, centered around y=72 -->
+    <line x1="38" y1="67" x2="38" y2="77" stroke="#ff0000" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)" />
   </g>
-  <!-- 9V label centered vertically on circuit side -->
-  <text x="25" y="69" font-size="13" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
+  <!-- Polarity marker + to the left of positive plate -->
+  <text x="28" y="58" font-size="10" fill="#00ff88" font-weight="bold" text-anchor="end">+</text>
+  <!-- 9V label further to the left, centered between plates -->
+  <text x="18" y="67" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="end">9V</text>
+  <!-- Polarity marker − to the left of negative plate -->
+  <text x="28" y="76" font-size="10" fill="#94a3b8" font-weight="bold" text-anchor="end">−</text>
 
   <!-- Component labels -->
   <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600">
