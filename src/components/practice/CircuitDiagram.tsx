@@ -8,6 +8,10 @@ import {
   LAYOUT_SPECS,
   LABEL_SPECS,
   RESISTOR_SPECS,
+  SERIES_LAYOUT,
+  PARALLEL_LAYOUT,
+  COMBINATION_LAYOUT,
+  BATTERY_LAYOUT,
   formatResistance,
   formatVoltage,
 } from "../../schematic/visualConstants";
@@ -210,15 +214,12 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
     componentIds.map(id => [id, getComponentLabelWithValue(problem, id)])
   );
 
-  // Layout matching CircuitLogo reference: battery on left, resistors distributed around circuit
-  const leftX = 80;
-  const rightX = 520;
-  const topY = 55;
-  const bottomY = 185;
+  // Layout from centralized standards
+  const { leftX, rightX, topY, bottomY } = SERIES_LAYOUT.frame2D;
 
-  // Battery on left side (vertical orientation)
-  const batteryScale = 0.9;
-  const batteryHalfSpan = 30 * batteryScale;
+  // Battery on left side (vertical orientation) - USE CENTRALIZED CONSTANTS
+  const batteryScale = BATTERY_LAYOUT.scale;
+  const batteryHalfSpan = BATTERY_LAYOUT.halfSpan2D;
   const batteryCenterY = (topY + bottomY) / 2;
   const batteryTopY = batteryCenterY - batteryHalfSpan;
   const batteryBottomY = batteryCenterY + batteryHalfSpan;
@@ -230,22 +231,25 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
   const bottomLeft: Point = { x: leftX, y: bottomY };
 
   // Distribute resistors around the circuit based on count
+  // Following centralized layout standards:
   // 2 components: R1 top, R2 bottom
   // 3 components: R1 top, R2 right side, R3 bottom
-  // 4 components: R1 top, R2 right top, R3 right bottom, R4 bottom
-  // 5+ components: distributed evenly
+  // 4+ components: distributed evenly (top: ceil(n/3), right: middle, bottom: rest)
 
   const renderResistors = () => {
     const elements: JSX.Element[] = [];
+    // Use centralized margin constants
+    const margins = SERIES_LAYOUT.margins;
 
     if (componentCount === 2) {
       // Two resistors: top and bottom
       const r1Data = componentData.get(componentIds[0]) ?? { label: componentIds[0], value: null };
       const r2Data = componentData.get(componentIds[1]) ?? { label: componentIds[1], value: null };
+      const horizontalMargin = margins.twoComponent.horizontal;
 
-      // R1 on top (horizontal)
-      const r1Start: Point = { x: leftX + 60, y: topY };
-      const r1End: Point = { x: rightX - 60, y: topY };
+      // R1 on top (horizontal) - centered with equal margins
+      const r1Start: Point = { x: leftX + horizontalMargin, y: topY };
+      const r1End: Point = { x: rightX - horizontalMargin, y: topY };
       elements.push(
         <g key="series-r1-group">
           <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -254,9 +258,9 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         </g>
       );
 
-      // R2 on bottom (horizontal)
-      const r2Start: Point = { x: rightX - 60, y: bottomY };
-      const r2End: Point = { x: leftX + 60, y: bottomY };
+      // R2 on bottom (horizontal) - centered with equal margins
+      const r2Start: Point = { x: rightX - horizontalMargin, y: bottomY };
+      const r2End: Point = { x: leftX + horizontalMargin, y: bottomY };
       elements.push(
         <g key="series-r2-group">
           <line x1={rightX} y1={bottomY} x2={r2Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -274,10 +278,12 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
       const r1Data = componentData.get(componentIds[0]) ?? { label: componentIds[0], value: null };
       const r2Data = componentData.get(componentIds[1]) ?? { label: componentIds[1], value: null };
       const r3Data = componentData.get(componentIds[2]) ?? { label: componentIds[2], value: null };
+      const horizontalMargin = margins.threeComponent.horizontal;
+      const verticalMargin = margins.threeComponent.vertical;
 
-      // R1 on top (horizontal)
-      const r1Start: Point = { x: leftX + 40, y: topY };
-      const r1End: Point = { x: rightX - 40, y: topY };
+      // R1 on top (horizontal) - centered
+      const r1Start: Point = { x: leftX + horizontalMargin, y: topY };
+      const r1End: Point = { x: rightX - horizontalMargin, y: topY };
       elements.push(
         <g key="series-r1-group">
           <line x1={leftX} y1={topY} x2={r1Start.x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -286,9 +292,9 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         </g>
       );
 
-      // R2 on right side (vertical)
-      const r2Start: Point = { x: rightX, y: topY + 30 };
-      const r2End: Point = { x: rightX, y: bottomY - 30 };
+      // R2 on right side (vertical) - centered vertically with margins
+      const r2Start: Point = { x: rightX, y: topY + verticalMargin };
+      const r2End: Point = { x: rightX, y: bottomY - verticalMargin };
       elements.push(
         <g key="series-r2-group">
           <line x1={rightX} y1={topY} x2={rightX} y2={r2Start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -297,9 +303,9 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         </g>
       );
 
-      // R3 on bottom (horizontal)
-      const r3Start: Point = { x: rightX - 40, y: bottomY };
-      const r3End: Point = { x: leftX + 40, y: bottomY };
+      // R3 on bottom (horizontal) - centered
+      const r3Start: Point = { x: rightX - horizontalMargin, y: bottomY };
+      const r3End: Point = { x: leftX + horizontalMargin, y: bottomY };
       elements.push(
         <g key="series-r3-group">
           <line x1={rightX} y1={bottomY} x2={r3Start.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
@@ -308,23 +314,29 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         </g>
       );
     } else {
-      // 4+ resistors: distribute around the rectangle
-      // Top row: first half, Right side: middle, Bottom row: second half
-      const topCount = Math.ceil(componentCount / 3);
-      const bottomCount = Math.ceil((componentCount - topCount) / 2);
-      const rightCount = componentCount - topCount - bottomCount;
+      // 4+ resistors: distribute around the rectangle using centralized distribution formula
+      // Top row: ceil(n/3), Right side: middle, Bottom row: remaining
+      const { getTopCount, getBottomCount, getRightCount } = SERIES_LAYOUT.distribution;
+      const topCount = getTopCount(componentCount);
+      const bottomCount = getBottomCount(componentCount, topCount);
+      const rightCount = getRightCount(componentCount, topCount, bottomCount);
 
       const topIds = componentIds.slice(0, topCount);
       const rightIds = componentIds.slice(topCount, topCount + rightCount);
       const bottomIds = componentIds.slice(topCount + rightCount);
 
-      // Top row resistors (horizontal)
+      // Component margin constraints from centralized standards
+      const { marginRatio, maxHorizontal2D } = margins.multiComponent;
+
+      // Top row resistors (horizontal) - evenly distributed
       const topWidth = rightX - leftX - 80;
       const topSpacing = topWidth / topCount;
+      const topMargin = Math.min(topSpacing * marginRatio, maxHorizontal2D);
       topIds.forEach((id, index) => {
         const data = componentData.get(id) ?? { label: id, value: null };
-        const startX = leftX + 40 + index * topSpacing;
-        const endX = leftX + 40 + (index + 1) * topSpacing - 10;
+        // Apply even distribution with margins
+        const startX = leftX + 40 + index * topSpacing + topMargin;
+        const endX = leftX + 40 + (index + 1) * topSpacing - topMargin;
         const start: Point = { x: startX, y: topY };
         const end: Point = { x: endX, y: topY };
         elements.push(
@@ -336,14 +348,16 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         );
       });
 
-      // Right side resistors (vertical)
+      // Right side resistors (vertical) - evenly distributed
       if (rightIds.length > 0) {
         const rightHeight = bottomY - topY - 60;
         const rightSpacing = rightHeight / rightIds.length;
+        const rightMargin = Math.min(rightSpacing * marginRatio, maxHorizontal2D);
         rightIds.forEach((id, index) => {
           const data = componentData.get(id) ?? { label: id, value: null };
-          const startY = topY + 30 + index * rightSpacing;
-          const endY = topY + 30 + (index + 1) * rightSpacing - 10;
+          // Apply even distribution with margins
+          const startY = topY + 30 + index * rightSpacing + rightMargin;
+          const endY = topY + 30 + (index + 1) * rightSpacing - rightMargin;
           const start: Point = { x: rightX, y: startY };
           const end: Point = { x: rightX, y: endY };
           elements.push(
@@ -361,13 +375,15 @@ const SeriesRectDiagram = ({ problem }: DiagramProps) => {
         );
       }
 
-      // Bottom row resistors (horizontal, reversed direction)
+      // Bottom row resistors (horizontal, reversed direction) - evenly distributed
       const bottomWidth = rightX - leftX - 80;
       const bottomSpacing = bottomWidth / bottomIds.length;
+      const bottomMargin = Math.min(bottomSpacing * marginRatio, maxHorizontal2D);
       bottomIds.forEach((id, index) => {
         const data = componentData.get(id) ?? { label: id, value: null };
-        const startX = rightX - 40 - index * bottomSpacing;
-        const endX = rightX - 40 - (index + 1) * bottomSpacing + 10;
+        // Apply even distribution with margins (reversed direction)
+        const startX = rightX - 40 - index * bottomSpacing - bottomMargin;
+        const endX = rightX - 40 - (index + 1) * bottomSpacing + bottomMargin;
         const start: Point = { x: startX, y: bottomY };
         const end: Point = { x: endX, y: bottomY };
         elements.push(
@@ -432,28 +448,28 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
   );
   const sourceData = getComponentLabelWithValue(problem, problem.source.id);
 
-  // Layout with battery on left side (vertical orientation)
-  // Adjust layout based on number of branches
-  const leftX = 80;
-  const rightX = branchCount <= 3 ? 520 : 560;
-  const topY = 55;
-  const bottomY = 185;
+  // Layout from centralized standards - battery on left side (vertical orientation)
+  const { leftX, rightXDefault, rightXExtended, topY, bottomY } = PARALLEL_LAYOUT.frame2D;
+  const rightX = branchCount <= 3 ? rightXDefault : rightXExtended;
 
-  // Battery on left side (vertical)
-  const batteryScale = 0.85;
-  const batteryHalfSpan = 30 * batteryScale;
+  // Battery using centralized constants
+  const batteryScale = BATTERY_LAYOUT.scale;
+  const batteryHalfSpan = BATTERY_LAYOUT.halfSpan2D;
   const batteryCenterY = (topY + bottomY) / 2;
   const batteryTopY = batteryCenterY - batteryHalfSpan;
   const batteryBottomY = batteryCenterY + batteryHalfSpan;
 
-  // Calculate branch spacing based on count
-  const totalBranchWidth = rightX - leftX - 100;
+  // Calculate branch spacing using centralized formula
+  // Branches are evenly distributed across the available width
+  const { marginOffset2D, startOffset2D } = PARALLEL_LAYOUT.spacing;
+  const totalBranchWidth = rightX - leftX - marginOffset2D;
   const branchSpacing = totalBranchWidth / (branchCount + 1);
-  const branchStart = leftX + branchSpacing + 50;
+  const branchStart = leftX + branchSpacing + startOffset2D;
   const branchXs = branchIds.map((_, index) => branchStart + index * branchSpacing);
 
-  const branchResTop = topY + 26;
-  const branchResBottom = bottomY - 26;
+  // Resistor vertical offsets from centralized standards
+  const branchResTop = topY + PARALLEL_LAYOUT.branches.topOffset2D;
+  const branchResBottom = bottomY - PARALLEL_LAYOUT.branches.bottomOffset2D;
 
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Parallel circuit diagram" preserveAspectRatio="xMidYMid meet">
@@ -543,15 +559,12 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   const hasBottomSeries = componentCount >= 4 && isStandardLadder(problem.network);
   const isDoubleParallel = componentCount === 4 && isDoubleParallelNetwork(problem.network);
 
-  // Layout dimensions
-  const leftX = 80;
-  const topY = 55;
-  const bottomY = 185;
-  const rightX = 540;
+  // Layout from centralized standards
+  const { leftX, rightX, topY, bottomY } = COMBINATION_LAYOUT.frame2D;
 
-  // Battery on left side (vertical)
-  const batteryScale = 0.85;
-  const batteryHalfSpan = 30 * batteryScale;
+  // Battery using centralized constants
+  const batteryScale = BATTERY_LAYOUT.scale;
+  const batteryHalfSpan = BATTERY_LAYOUT.halfSpan2D;
   const batteryCenterY = (topY + bottomY) / 2;
   const batteryTopY = batteryCenterY - batteryHalfSpan;
   const batteryBottomY = batteryCenterY + batteryHalfSpan;
@@ -563,8 +576,9 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
     });
   }
 
-  // Parallel branch center position
-  const branchCenterX = hasBottomSeries ? 420 : 460;
+  // Parallel branch center position from centralized standards
+  const { branchCenterXWithBottom, branchCenterXNoBottom, startOffset2D, endOffsetFromCenter2D } = COMBINATION_LAYOUT.seriesResistor;
+  const branchCenterX = hasBottomSeries ? branchCenterXWithBottom : branchCenterXNoBottom;
 
   // Identify series vs parallel components based on problem network
   const seriesTopId = componentIds[0]; // R1
@@ -576,22 +590,23 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   const seriesTopData = componentData.get(seriesTopId) ?? { label: seriesTopId, value: null };
   const seriesBottomData = seriesBottomId ? (componentData.get(seriesBottomId) ?? { label: seriesBottomId, value: null }) : null;
 
-  // Series resistor positions (horizontal)
-  const r1Start: Point = { x: leftX + 50, y: topY };
-  const r1End: Point = { x: branchCenterX - 80, y: topY };
+  // Series resistor positions (horizontal) - using centralized offsets
+  const r1Start: Point = { x: leftX + startOffset2D, y: topY };
+  const r1End: Point = { x: branchCenterX - endOffsetFromCenter2D, y: topY };
 
-  const r4Start: Point = hasBottomSeries ? { x: leftX + 50, y: bottomY } : { x: 0, y: 0 };
-  const r4End: Point = hasBottomSeries ? { x: branchCenterX - 80, y: bottomY } : { x: 0, y: 0 };
+  const r4Start: Point = hasBottomSeries ? { x: leftX + startOffset2D, y: bottomY } : { x: 0, y: 0 };
+  const r4End: Point = hasBottomSeries ? { x: branchCenterX - endOffsetFromCenter2D, y: bottomY } : { x: 0, y: 0 };
 
-  // Parallel branch positions (vertical)
+  // Parallel branch positions (vertical) - using centralized spacing
   const parallelCount = parallelIds.length;
-  const branchSpacing = Math.min(72, 140 / parallelCount);
+  const { maxSpacing2D, spacingDivisor2D, topOffset2D, bottomOffset2D } = COMBINATION_LAYOUT.parallelSection;
+  const branchSpacing = Math.min(maxSpacing2D, spacingDivisor2D / parallelCount);
   const totalBranchWidth = branchSpacing * (parallelCount - 1);
   const branchStartX = branchCenterX - totalBranchWidth / 2;
   const branchXs = parallelIds.map((_, index) => branchStartX + index * branchSpacing);
 
-  const branchResTop = topY + 26;
-  const branchResBottom = bottomY - 28;
+  const branchResTop = topY + topOffset2D;
+  const branchResBottom = bottomY - bottomOffset2D;
 
   // Calculate parallel box dimensions for visual indicator
   const parallelBoxLeft = Math.min(...branchXs) - 18;
@@ -768,13 +783,12 @@ function renderDoubleParallelDiagram(
   const box1Ids = [componentIds[0], componentIds[1]];
   const box2Ids = [componentIds[2], componentIds[3]];
 
-  // Box positions
-  const box1CenterX = 230;
-  const box2CenterX = 420;
-  const branchSpacing = 50;
+  // Box positions from centralized standards
+  const { box1CenterX, box2CenterX, branchSpacing } = COMBINATION_LAYOUT.doubleParallel;
 
-  const branchResTop = topY + 26;
-  const branchResBottom = bottomY - 28;
+  // Resistor offsets from centralized parallel layout standards
+  const branchResTop = topY + PARALLEL_LAYOUT.branches.topOffset2D;
+  const branchResBottom = bottomY - PARALLEL_LAYOUT.branches.bottomOffset2D;
 
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Double parallel combination circuit diagram" preserveAspectRatio="xMidYMid meet">
