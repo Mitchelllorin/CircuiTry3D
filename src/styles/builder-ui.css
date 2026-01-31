@@ -2593,19 +2593,27 @@ body.builder-body {
 }
 
 .builder-floating-logo {
+  --logo-x: 0px;
+  --logo-y: 0px;
+  --logo-rotate: 0deg;
+  --logo-scale: 1;
+  --logo-opacity: 0.25;
+  --logo-glow-primary: 0.34;
+  --logo-glow-secondary: 0.2;
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translateX(-50%) translateY(-50%);
+  transform: translate(calc(-50% + var(--logo-x)), calc(-50% + var(--logo-y))) rotate(var(--logo-rotate)) scale(var(--logo-scale));
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
   z-index: 650;
   user-select: none;
-  opacity: 1;
-  transition: filter 0.2s ease;
-  will-change: transform;
+  opacity: var(--logo-opacity);
+  text-shadow: 0 0 44px rgba(0, 255, 136, var(--logo-glow-primary)), 0 0 68px rgba(136, 204, 255, var(--logo-glow-secondary));
+  contain: layout style;
+  will-change: transform, opacity;
 }
 
 .builder-floating-logo .builder-logo-text {
