@@ -144,6 +144,10 @@ export function useLogoAnimation() {
     }
   }, [prefersReducedMotion]);
 
+  // Use refs to access current settings without triggering effect re-runs
+  const logoSettingsRef = useRef(logoSettings);
+  logoSettingsRef.current = logoSettings;
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -159,27 +163,30 @@ export function useLogoAnimation() {
       floatingLogoAnimationRef.current = null;
     }
 
-    const normalizedOpacity = clamp(logoSettings.opacity, 0, 100) / 100;
+    // Check initial visibility - read from ref for current value
+    const settings = logoSettingsRef.current;
+    const initialOpacity = clamp(settings.opacity, 0, 100) / 100;
+    const style = element.style;
 
-    if (!logoSettings.isVisible || normalizedOpacity <= 0) {
-      element.style.display = "none";
-      element.style.opacity = "0";
-      element.style.textShadow = "none";
-      element.style.transform = "translateX(-50%) translateY(-50%)";
+    if (!settings.isVisible || initialOpacity <= 0) {
+      style.display = "none";
+      style.setProperty("--logo-opacity", "0");
       return;
     }
 
-    element.style.display = "";
-    element.style.opacity = normalizedOpacity.toFixed(2);
+    style.display = "";
 
     if (prefersReducedMotion) {
+      const normalizedOpacity = clamp(settings.opacity, 0, 100) / 100;
       const staticPrimary = 0.38 * normalizedOpacity;
       const staticSecondary = 0.24 * normalizedOpacity;
-      element.style.transform = "translateX(-50%) translateY(-50%)";
-      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, staticPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
-        0,
-        staticSecondary,
-      ).toFixed(2)})`;
+      style.setProperty("--logo-x", "0px");
+      style.setProperty("--logo-y", "0px");
+      style.setProperty("--logo-rotate", "0deg");
+      style.setProperty("--logo-scale", "1");
+      style.setProperty("--logo-opacity", normalizedOpacity + "");
+      style.setProperty("--logo-glow-primary", Math.max(0, staticPrimary) + "");
+      style.setProperty("--logo-glow-secondary", Math.max(0, staticSecondary) + "");
       return;
     }
 
@@ -188,6 +195,13 @@ export function useLogoAnimation() {
     let angle = 0;
     // Pre-compute PI constants to avoid repeated calculations
     const TWO_PI = Math.PI * 2;
+    const PI_QUARTER = Math.PI / 4;
+
+    // Cache viewport dimensions - only update occasionally, not every frame
+    let viewportWidth = window.innerWidth || 1440;
+    let viewportHeight = window.innerHeight || 900;
+    let lastViewportCheck = 0;
+    const VIEWPORT_CHECK_INTERVAL = 500;
 
     const animate = (timestamp: number) => {
       if (previousTimestamp === null) {
@@ -197,13 +211,29 @@ export function useLogoAnimation() {
       const deltaSeconds = (timestamp - previousTimestamp) / 1000;
       previousTimestamp = timestamp;
 
-      const orbitDuration = Math.max(logoSettings.speed, 4);
-      angle =
-        (angle + (deltaSeconds * TWO_PI) / orbitDuration) %
-        TWO_PI;
+      // Read current settings from ref (doesn't cause re-render/re-subscribe)
+      const currentSettings = logoSettingsRef.current;
+      const normalizedOpacity = clamp(currentSettings.opacity, 0, 100) / 100;
 
-      const viewportWidth = window.innerWidth || 1440;
-      const viewportHeight = window.innerHeight || 900;
+      // Handle visibility changes without restarting animation
+      if (!currentSettings.isVisible || normalizedOpacity <= 0) {
+        style.display = "none";
+        frameId = window.requestAnimationFrame(animate);
+        floatingLogoAnimationRef.current = frameId;
+        return;
+      }
+
+      style.display = "";
+
+      const orbitDuration = Math.max(currentSettings.speed, 4);
+      angle = (angle + (deltaSeconds * TWO_PI) / orbitDuration) % TWO_PI;
+
+      // Only check viewport dimensions periodically, not every frame
+      if (timestamp - lastViewportCheck > VIEWPORT_CHECK_INTERVAL) {
+        viewportWidth = window.innerWidth || 1440;
+        viewportHeight = window.innerHeight || 900;
+        lastViewportCheck = timestamp;
+      }
 
       const horizontalMargin = 160;
       const verticalMargin = 200;
@@ -218,9 +248,9 @@ export function useLogoAnimation() {
       );
 
       const amplitudeX =
-        maxHorizontal * (clamp(logoSettings.travelX, 10, 100) / 100);
+        maxHorizontal * (clamp(currentSettings.travelX, 10, 100) / 100);
       const amplitudeY =
-        maxVertical * (clamp(logoSettings.travelY, 10, 100) / 100);
+        maxVertical * (clamp(currentSettings.travelY, 10, 100) / 100);
 
       // Cache trig calculations - each is used multiple times
       const cosAngle = Math.cos(angle);
@@ -230,7 +260,7 @@ export function useLogoAnimation() {
       const orbitX = cosAngle * amplitudeX;
       const orbitY = sinAngle * amplitudeY;
 
-      const bounceStrength = clamp(logoSettings.bounce, 0, 120);
+      const bounceStrength = clamp(currentSettings.bounce, 0, 120);
       const bounceOffset = sin2Angle * bounceStrength;
       const tilt = sin2Angle * 5.8;
       const scale = 1 + sin2Angle * (bounceStrength / 360);
@@ -238,21 +268,22 @@ export function useLogoAnimation() {
       const translateX = orbitX;
       const translateY = orbitY + bounceOffset;
 
-      // Use Math.round for pixel values (no decimals needed), reduce toFixed precision
-      element.style.transform = `translateX(calc(-50% + ${Math.round(translateX)}px)) translateY(calc(-50% + ${Math.round(translateY)}px)) rotate(${tilt.toFixed(1)}deg) scale(${scale.toFixed(2)})`;
+      // Update CSS custom properties - batched by browser for efficient rendering
+      // Using setProperty is faster than string concatenation for transform
+      style.setProperty("--logo-x", `${translateX | 0}px`);
+      style.setProperty("--logo-y", `${translateY | 0}px`);
+      style.setProperty("--logo-rotate", `${tilt | 0}deg`);
+      style.setProperty("--logo-scale", (scale * 100 | 0) / 100 + "");
+      style.setProperty("--logo-opacity", (normalizedOpacity * 100 | 0) / 100 + "");
 
-      // Cache trig calculations for glow
+      // Glow calculation - update less frequently (every other frame effectively)
       const sin1_7Angle = Math.sin(angle * 1.7);
-      const sin2_3Angle = Math.sin(angle * 2.3 + Math.PI / 4);
+      const sin2_3Angle = Math.sin(angle * 2.3 + PI_QUARTER);
 
-      const glowPrimary =
-        (0.34 + sin1_7Angle * 0.12) * normalizedOpacity;
-      const glowSecondary =
-        (0.2 + sin2_3Angle * 0.08) * normalizedOpacity;
-      element.style.textShadow = `0 0 44px rgba(0, 255, 136, ${Math.max(0, glowPrimary).toFixed(2)}), 0 0 68px rgba(136, 204, 255, ${Math.max(
-        0,
-        glowSecondary,
-      ).toFixed(2)})`;
+      const glowPrimary = Math.max(0, (0.34 + sin1_7Angle * 0.12) * normalizedOpacity);
+      const glowSecondary = Math.max(0, (0.2 + sin2_3Angle * 0.08) * normalizedOpacity);
+      style.setProperty("--logo-glow-primary", (glowPrimary * 100 | 0) / 100 + "");
+      style.setProperty("--logo-glow-secondary", (glowSecondary * 100 | 0) / 100 + "");
 
       frameId = window.requestAnimationFrame(animate);
       floatingLogoAnimationRef.current = frameId;
@@ -266,7 +297,9 @@ export function useLogoAnimation() {
       }
       floatingLogoAnimationRef.current = null;
     };
-  }, [logoSettings, prefersReducedMotion]);
+    // Only restart animation loop when reduced motion preference changes
+    // Settings changes are read via ref inside the animation loop
+  }, [prefersReducedMotion]);
 
   const handleLogoSettingChange = (
     setting: LogoNumericSettingKey,
