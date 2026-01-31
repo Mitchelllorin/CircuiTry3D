@@ -1934,6 +1934,7 @@
             position: fixed;
             top: 0;
             left: 0;
+            background-color: #0a0a1a;
         }
         
         .loading {
@@ -6752,6 +6753,7 @@ body.android-optimized.menu-visible .status {
                 });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+                renderer.setClearColor(0x0a0a1a, 1);
                 
                 raycaster = new THREE.Raycaster();
                 raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;
