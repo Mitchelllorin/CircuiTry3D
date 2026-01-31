@@ -10,6 +10,40 @@ These notes summarise the schematic conventions we are following for the practic
 
 **Visual Reference:** See `src/assets/reference-circuits/` for authoritative example images.
 
+**Centralized Layout Constants:** All layout specifications are defined in `src/schematic/visualConstants.ts`:
+- `SERIES_LAYOUT` - Series circuit positioning and component distribution
+- `PARALLEL_LAYOUT` - Parallel circuit branch spacing and rail positioning
+- `COMBINATION_LAYOUT` - Series-parallel combination circuit layout
+- `BATTERY_LAYOUT` - Unified battery positioning (scale: 0.85)
+
+---
+
+### Layout Standards - Critical Pillar
+
+The following rules define how components are positioned in circuit diagrams. These standards ensure consistency across the entire application.
+
+#### Component Centering
+- All components are centered within their allocated space
+- Use `centerComponent(start, end)` utility for center position calculation
+- Symmetric margins on both sides of each component
+
+#### Even Distribution
+- Components are distributed evenly around the circuit path
+- For N components on a segment: spacing = segmentLength / N
+- Use `distributeEvenly()` utility for position calculations
+
+#### Series Circuit Distribution (4+ components)
+```
+topCount = ceil(componentCount / 3)
+bottomCount = ceil((componentCount - topCount) / 2)
+rightCount = componentCount - topCount - bottomCount
+```
+
+#### Parallel Branch Distribution
+- Branches are evenly spaced across available width
+- Formula: branchX = railStart + spacing * (index + 1)
+- Where spacing = (railEnd - railStart) / (branchCount + 1)
+
 ---
 
 ### Series Circuits

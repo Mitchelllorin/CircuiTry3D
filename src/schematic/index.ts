@@ -29,8 +29,17 @@ export {
   BATTERY_SPECS,
   CAPACITOR_SPECS,
 
-  // Layout specifications
+  // Layout specifications - CORE STANDARDS
   LAYOUT_SPECS,
+  SERIES_LAYOUT,
+  PARALLEL_LAYOUT,
+  COMBINATION_LAYOUT,
+  BATTERY_LAYOUT,
+
+  // Layout utility functions
+  centerComponent,
+  distributeEvenly,
+  calculateBranchPositions,
 
   // Label specifications
   LABEL_SPECS,

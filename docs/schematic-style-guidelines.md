@@ -13,6 +13,34 @@ Schematic Mode renders classic 2D circuit symbols as thin 3D extrusions. Every c
 
 **Centralized Constants:** All visual specifications are defined in `src/schematic/visualConstants.ts`. Import from `src/schematic/index.ts` for consistent styling across the app.
 
+**CRITICAL: Circuit Layout Standards**
+The following layout constants are the authoritative source for ALL circuit rendering:
+- `LAYOUT_SPECS` - Base SVG dimensions and frame positioning
+- `SERIES_LAYOUT` - Series circuit bounds, margins, and distribution formulas
+- `PARALLEL_LAYOUT` - Parallel circuit bounds and branch spacing rules
+- `COMBINATION_LAYOUT` - Combination circuit positioning and parallel section rules
+- `BATTERY_LAYOUT` - Unified battery scale and positioning (USE EVERYWHERE)
+
+```typescript
+// Correct usage - import from centralized module:
+import {
+  LAYOUT_SPECS,
+  SERIES_LAYOUT,
+  PARALLEL_LAYOUT,
+  COMBINATION_LAYOUT,
+  BATTERY_LAYOUT
+} from '../schematic';
+
+// Battery scale - ALWAYS use this constant:
+const batteryScale = BATTERY_LAYOUT.scale;  // 0.85
+
+// Series distribution - use centralized formula:
+const { getTopCount, getBottomCount, getRightCount } = SERIES_LAYOUT.distribution;
+
+// Parallel branch spacing - use centralized constants:
+const { marginOffset2D, startOffset2D } = PARALLEL_LAYOUT.spacing;
+```
+
 ---
 
 ### Visual Reference Guide

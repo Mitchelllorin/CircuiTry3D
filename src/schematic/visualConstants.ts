@@ -217,30 +217,310 @@ export const CAPACITOR_SPECS = {
 /**
  * Circuit layout specifications for practice diagrams
  * Reference: docs/circuit-topology-reference.md
+ *
+ * CRITICAL PILLAR: These constants define the canonical layout rules for ALL
+ * circuit diagrams throughout CircuiTry3D. Consistency is paramount.
+ *
+ * Layout Principles:
+ * 1. Component Centering: Components are centered within their allocated space
+ * 2. Even Distribution: Components distributed evenly around the circuit path
+ * 3. Uniform Spacing: Consistent gaps between adjacent components
+ * 4. Orthogonal Routing: All wires use 90° angles only
  */
 export const LAYOUT_SPECS = {
   // SVG viewBox standard
   viewBoxWidth: 600,
   viewBoxHeight: 240,
 
-  // Circuit frame positioning
+  // Circuit frame positioning (2D SVG)
   leftMargin: 80,             // Battery position (left side)
-  rightMargin: 520,           // Right side of circuit frame
+  rightMargin: 520,           // Right side of circuit frame (default)
+  rightMarginExtended: 560,   // Extended right margin for 4+ parallel branches
   topMargin: 55,
   bottomMargin: 185,
 
-  // Battery positioning
-  batteryScale: 0.85,         // Scale factor for battery symbol
+  // Battery positioning - UNIFIED across all circuit types
+  batteryScale: 0.85,         // Scale factor for battery symbol (USE THIS EVERYWHERE)
+  batteryHalfSpan: 25.5,      // batteryScale * 30 = actual half-span
   batteryLabelOffset: 28,     // Label distance from battery
 
   // Component spacing
   resistorMinGap: 30,         // Minimum gap between resistors
   branchSpacing: 72,          // Default spacing between parallel branches
+  branchSpacingMin: 50,       // Minimum branch spacing for dense layouts
 
   // Wire routing
   wireCornerRadius: 0,        // 90° angles only (orthogonal routing)
   orthogonalOnly: true,       // Enforce 90° angles per style guide
 } as const;
+
+/**
+ * Series Circuit Layout Standards
+ *
+ * Series circuits form a single continuous loop with no branching nodes.
+ * Components are distributed evenly around the rectangular frame.
+ *
+ * Layout Pattern:
+ * - Battery on left side (vertical orientation)
+ * - Components distributed across top, right, and bottom sides
+ * - Corner nodes at each turn of the rectangular path
+ *
+ * Distribution Rules:
+ * - 2 components: top and bottom
+ * - 3 components: top, right, bottom
+ * - 4+ components: divided among top (ceil(n/3)), right, and bottom
+ */
+export const SERIES_LAYOUT = {
+  // 3D coordinate bounds (for presets.ts)
+  bounds3D: {
+    left: -4.4,
+    right: 4.4,
+    top: 2.7,
+    bottom: -2.7,
+  },
+
+  // 2D SVG coordinate frame (for CircuitDiagram.tsx)
+  frame2D: {
+    leftX: LAYOUT_SPECS.leftMargin,
+    rightX: LAYOUT_SPECS.rightMargin,
+    topY: LAYOUT_SPECS.topMargin,
+    bottomY: LAYOUT_SPECS.bottomMargin,
+  },
+
+  // Component distribution margins
+  margins: {
+    // Margin from corner for 2-component layout
+    twoComponent: {
+      horizontal: 60,  // SVG units
+      horizontal3D: 0.8,  // 3D units
+    },
+    // Margin from corner for 3-component layout
+    threeComponent: {
+      horizontal: 40,  // SVG units
+      horizontal3D: 0.8,  // 3D units
+      vertical: 30,    // SVG units (right side resistor)
+      vertical3D: 0.6,  // 3D units
+    },
+    // Dynamic margins for 4+ components (proportional to spacing)
+    multiComponent: {
+      marginRatio: 0.15,     // 15% of available spacing
+      maxHorizontal: 0.4,    // Max margin for top/bottom (3D)
+      maxVertical: 0.3,      // Max margin for right side (3D)
+      maxHorizontal2D: 10,   // Max margin gap in SVG units
+    },
+  },
+
+  // Component count distribution formula for 4+ resistors
+  distribution: {
+    // topCount = Math.ceil(count / 3)
+    // rightCount = count - topCount - bottomCount
+    // bottomCount = Math.ceil((count - topCount) / 2)
+    getTopCount: (total: number) => Math.ceil(total / 3),
+    getBottomCount: (total: number, topCount: number) => Math.ceil((total - topCount) / 2),
+    getRightCount: (total: number, topCount: number, bottomCount: number) => total - topCount - bottomCount,
+  },
+} as const;
+
+/**
+ * Parallel Circuit Layout Standards
+ *
+ * Parallel circuits have two common nodes (supply and return rails)
+ * with branches extending vertically between them.
+ *
+ * Layout Pattern:
+ * - Battery on left side
+ * - Horizontal rails on top and bottom
+ * - Vertical branches evenly distributed between rails
+ * - Junction nodes at every branch connection point
+ *
+ * Distribution Rules:
+ * - Branches spaced evenly across available width
+ * - Branch spacing formula: totalWidth / (branchCount + 1)
+ * - Labels alternate left/right for clarity when branches are close
+ */
+export const PARALLEL_LAYOUT = {
+  // 3D coordinate bounds
+  bounds3D: {
+    left: -2.6,
+    right: 3.8,
+    top: 2.5,
+    bottom: -2.5,
+  },
+
+  // 2D SVG positioning
+  frame2D: {
+    leftX: LAYOUT_SPECS.leftMargin,
+    rightXDefault: LAYOUT_SPECS.rightMargin,
+    rightXExtended: LAYOUT_SPECS.rightMarginExtended,  // For 4+ branches
+    topY: LAYOUT_SPECS.topMargin,
+    bottomY: LAYOUT_SPECS.bottomMargin,
+  },
+
+  // Branch positioning
+  branches: {
+    // Resistor vertical offset from rail (SVG)
+    topOffset2D: 26,
+    bottomOffset2D: 26,
+    // 3D offset calculation
+    minVerticalSpan3D: 4.2,  // Max span for branch resistor
+    minOffset3D: 0.6,        // Minimum offset from rail
+  },
+
+  // Spacing calculation
+  spacing: {
+    // Formula: (railEnd - railStart - margin) / (branchCount + 1)
+    marginOffset2D: 100,  // Total margin from left rail edge
+    startOffset2D: 50,    // Offset for first branch position
+  },
+} as const;
+
+/**
+ * Combination (Series-Parallel) Circuit Layout Standards
+ *
+ * Combination circuits have both series and parallel sections.
+ * The canonical layout is the "ladder" pattern.
+ *
+ * Standard Ladder Pattern:
+ * - R1 in series on top rail
+ * - Parallel section (R2 || R3) in middle
+ * - R4 in series on bottom rail (optional)
+ *
+ * Alternative: Double Parallel
+ * - (R1 || R2) section followed by (R3 || R4) section in series
+ */
+export const COMBINATION_LAYOUT = {
+  // 3D coordinate bounds
+  bounds3D: {
+    left: -4.2,
+    right: 3.8,
+    top: 2.3,
+    bottom: -2.3,
+  },
+
+  // 2D SVG positioning
+  frame2D: {
+    leftX: LAYOUT_SPECS.leftMargin,
+    rightX: 540,  // Slightly narrower for combination
+    topY: LAYOUT_SPECS.topMargin,
+    bottomY: LAYOUT_SPECS.bottomMargin,
+  },
+
+  // Series resistor positioning
+  seriesResistor: {
+    // Standard ladder: center X for parallel section
+    branchCenterXWithBottom: 420,    // When R4 exists on bottom
+    branchCenterXNoBottom: 460,      // When no bottom series resistor
+    // Series resistor endpoints
+    startOffset2D: 50,               // From left margin
+    endOffsetFromCenter2D: 80,       // Gap before parallel section
+    // 3D positioning
+    series3DStart: -2.4,
+    series3DEnd: -0.4,
+  },
+
+  // Parallel section
+  parallelSection: {
+    // Branch spacing calculation
+    maxSpacing2D: 72,                // Maximum branch spacing (matches LAYOUT_SPECS)
+    spacingDivisor2D: 140,           // For formula: Math.min(maxSpacing, divisor / count)
+    maxSpacing3D: 1.8,
+    spacingDivisor3D: 3.6,
+    // Branch center X position (3D)
+    branchCenterX3D: 1.4,
+    // Vertical resistor offsets
+    topOffset2D: 26,
+    bottomOffset2D: 28,
+    topOffset3D: 0.6,
+    bottomOffset3D: 0.6,
+    // Connection points (when bottom series exists)
+    bottomConnectionY3D: -0.3,
+  },
+
+  // Double-parallel layout (two parallel boxes in series)
+  doubleParallel: {
+    box1CenterX: 230,
+    box2CenterX: 420,
+    branchSpacing: 50,  // Fixed spacing within each box
+  },
+} as const;
+
+/**
+ * Centralized battery rendering parameters
+ * Use these constants instead of local values
+ */
+export const BATTERY_LAYOUT = {
+  // Scale factor - USE THIS SINGLE VALUE everywhere
+  scale: LAYOUT_SPECS.batteryScale,
+  // Half-span in SVG units (30 * scale)
+  halfSpan2D: 30 * LAYOUT_SPECS.batteryScale,
+  // 3D positioning offsets
+  offset3D: {
+    fromCorner: 0.9,  // Gap from corner to battery terminal
+  },
+  // Label positioning
+  labelOffset: LAYOUT_SPECS.batteryLabelOffset,
+  // Polarity marker display
+  showPolarity: true,
+} as const;
+
+/**
+ * Calculate component centering position
+ * Centers a component between two points
+ */
+export const centerComponent = (start: number, end: number): number => {
+  return (start + end) / 2;
+};
+
+/**
+ * Calculate even distribution positions for N components
+ * Returns array of center positions for each component
+ */
+export const distributeEvenly = (
+  start: number,
+  end: number,
+  count: number,
+  marginRatio: number = 0.15,
+  maxMargin: number = Infinity
+): number[] => {
+  if (count <= 0) return [];
+  if (count === 1) return [centerComponent(start, end)];
+
+  const totalSpan = end - start;
+  const spacing = totalSpan / count;
+  const margin = Math.min(spacing * marginRatio, maxMargin);
+
+  const positions: number[] = [];
+  for (let i = 0; i < count; i++) {
+    // Center position for component i
+    const componentStart = start + i * spacing + margin;
+    const componentEnd = start + (i + 1) * spacing - margin;
+    positions.push(centerComponent(componentStart, componentEnd));
+  }
+  return positions;
+};
+
+/**
+ * Calculate parallel branch positions
+ * Distributes branches evenly across available width
+ */
+export const calculateBranchPositions = (
+  railStart: number,
+  railEnd: number,
+  branchCount: number,
+  marginOffset: number = 0
+): number[] => {
+  if (branchCount <= 0) return [];
+
+  const availableWidth = railEnd - railStart - marginOffset;
+  const spacing = availableWidth / (branchCount + 1);
+  const startPosition = railStart + spacing + marginOffset / 2;
+
+  const positions: number[] = [];
+  for (let i = 0; i < branchCount; i++) {
+    positions.push(startPosition + i * spacing);
+  }
+  return positions;
+};
 
 // =============================================================================
 // LABEL SPECIFICATIONS
