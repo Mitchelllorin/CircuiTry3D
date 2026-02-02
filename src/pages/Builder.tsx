@@ -73,6 +73,7 @@ import {
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
+import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -1811,7 +1812,7 @@ export default function Builder() {
               aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
-              <span className="edge-action-icon" aria-hidden="true">🔌</span>
+              <img src={wireStrippersIcon} alt="" className="edge-action-icon edge-action-icon-svg" aria-hidden="true" />
             </button>
             <button
               type="button"

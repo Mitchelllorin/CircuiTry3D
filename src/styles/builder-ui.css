@@ -207,6 +207,12 @@ body.builder-body {
   line-height: 1;
 }
 
+.mode-icon--svg {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+
 .mode-label {
   font-family: inherit;
 }

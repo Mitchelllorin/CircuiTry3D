@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import type { WorkspaceMode } from "./builder/types";
 import "../styles/builder-ui.css";
+import wireResourceLogo from "../assets/wire-resource-logo.svg";
 
 type ModeBarScrollState = {
   canScrollLeft: boolean;
@@ -235,7 +236,7 @@ export function GlobalModeBar() {
           aria-label="Wire gauge library"
           title="Wire gauge library and specifications"
         >
-          <span className="mode-icon" aria-hidden="true">🔌</span>
+          <img src={wireResourceLogo} alt="" className="mode-icon mode-icon--svg" aria-hidden="true" />
         </button>
         {modeBarScrollState.canScrollRight && (
           <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
