@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
+import CurrentRunner from "../components/arcade/CurrentRunner";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../context/GamificationContext";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
@@ -139,8 +140,11 @@ export default function Arcade() {
   const rewardSummary = state.lastReward
     ? {
         xp: state.lastReward.xpEarned,
-        bonus: state.lastReward.bonusXp,
-        labels: state.lastReward.bonusLabels,
+        bonus:
+          typeof state.lastReward.bonusXp === "number" && Number.isFinite(state.lastReward.bonusXp)
+            ? state.lastReward.bonusXp
+            : 0,
+        labels: Array.isArray(state.lastReward.bonusLabels) ? state.lastReward.bonusLabels : [],
       }
     : null;
 
@@ -200,6 +204,8 @@ export default function Arcade() {
           ))}
         </div>
       </header>
+
+      <CurrentRunner />
 
       <section className="arcade-panel">
         <div className="arcade-panel-header">
