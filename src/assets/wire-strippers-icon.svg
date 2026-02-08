@@ -1,37 +1,53 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <!-- Wire strippers tool icon -->
+  <!-- Wire Snips / Diagonal Cutters icon -->
+  <defs>
+    <linearGradient id="metalBlade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D0D8E0"/>
+      <stop offset="40%" stop-color="#A8B8C8"/>
+      <stop offset="100%" stop-color="#7888A0"/>
+    </linearGradient>
+    <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#DD3030"/>
+      <stop offset="50%" stop-color="#FF4444"/>
+      <stop offset="100%" stop-color="#BB2020"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left blade -->
+  <path d="M9.5 3 L12 10.5 L10.5 11.5 L7.5 4 Z" fill="url(#metalBlade)" stroke="#667788" stroke-width="0.4"/>
+  <!-- Cutting edge highlight left -->
+  <line x1="9.5" y1="3" x2="12" y2="10.5" stroke="#E8EEF4" stroke-width="0.3"/>
+
+  <!-- Right blade -->
+  <path d="M14.5 3 L12 10.5 L13.5 11.5 L16.5 4 Z" fill="url(#metalBlade)" stroke="#667788" stroke-width="0.4"/>
+  <!-- Cutting edge highlight right -->
+  <line x1="14.5" y1="3" x2="12" y2="10.5" stroke="#E8EEF4" stroke-width="0.3"/>
+
+  <!-- Blade tips - sharp angled cutting edges -->
+  <path d="M9.5 3 L12 2.5 L14.5 3" fill="none" stroke="#8899AA" stroke-width="0.5" stroke-linejoin="round"/>
+
+  <!-- Pivot bolt -->
+  <circle cx="12" cy="11" r="1.4" fill="#8899AA" stroke="#556677" stroke-width="0.5"/>
+  <circle cx="12" cy="11" r="0.5" fill="#445566"/>
+
   <!-- Left handle -->
-  <path d="M3 20 L7 12 L8 12.5 L4.5 20.5 Z" fill="#FF6B35" stroke="#CC4422" stroke-width="0.5"/>
-  <path d="M3.5 20.5 L4.5 20.5 L4.5 22 L3.5 22 Z" fill="#E55A2B" stroke="#CC4422" stroke-width="0.3" rx="0.5"/>
+  <path d="M10.5 11.5 L6 19 Q5.5 20 6 20.5 L7.5 21 Q8.5 21.2 8.5 20 L12 12.5" fill="url(#handleGrad)" stroke="#AA2020" stroke-width="0.4"/>
+  <!-- Handle grip texture left -->
+  <line x1="7.8" y1="16" x2="9.2" y2="16" stroke="#BB2020" stroke-width="0.3"/>
+  <line x1="7.4" y1="17" x2="8.8" y2="17" stroke="#BB2020" stroke-width="0.3"/>
+  <line x1="7" y1="18" x2="8.4" y2="18" stroke="#BB2020" stroke-width="0.3"/>
+  <line x1="6.6" y1="19" x2="8" y2="19" stroke="#BB2020" stroke-width="0.3"/>
 
   <!-- Right handle -->
-  <path d="M21 20 L17 12 L16 12.5 L19.5 20.5 Z" fill="#FF6B35" stroke="#CC4422" stroke-width="0.5"/>
-  <path d="M19.5 20.5 L20.5 20.5 L20.5 22 L19.5 22 Z" fill="#E55A2B" stroke="#CC4422" stroke-width="0.3" rx="0.5"/>
+  <path d="M13.5 11.5 L18 19 Q18.5 20 18 20.5 L16.5 21 Q15.5 21.2 15.5 20 L12 12.5" fill="url(#handleGrad)" stroke="#AA2020" stroke-width="0.4"/>
+  <!-- Handle grip texture right -->
+  <line x1="14.8" y1="16" x2="16.2" y2="16" stroke="#BB2020" stroke-width="0.3"/>
+  <line x1="15.2" y1="17" x2="16.6" y2="17" stroke="#BB2020" stroke-width="0.3"/>
+  <line x1="15.6" y1="18" x2="17" y2="18" stroke="#BB2020" stroke-width="0.3"/>
+  <line x1="16" y1="19" x2="17.4" y2="19" stroke="#BB2020" stroke-width="0.3"/>
 
-  <!-- Metal jaw - left side -->
-  <path d="M7 12 L10 6 L11 6 L8 12.5 Z" fill="#B8C4CE" stroke="#8899AA" stroke-width="0.4"/>
-
-  <!-- Metal jaw - right side -->
-  <path d="M17 12 L14 6 L13 6 L16 12.5 Z" fill="#B8C4CE" stroke="#8899AA" stroke-width="0.4"/>
-
-  <!-- Stripping notches (center jaws with wire gauge holes) -->
-  <rect x="10.5" y="5" width="3" height="4" fill="#A0AEBA" stroke="#7788AA" stroke-width="0.3" rx="0.3"/>
-  <!-- Notch holes for different wire gauges -->
-  <circle cx="11.2" cy="5.8" r="0.35" fill="#445566"/>
-  <circle cx="12" cy="5.8" r="0.4" fill="#445566"/>
-  <circle cx="12.8" cy="5.8" r="0.35" fill="#445566"/>
-  <circle cx="11.2" cy="6.8" r="0.5" fill="#445566"/>
-  <circle cx="12" cy="6.8" r="0.55" fill="#445566"/>
-  <circle cx="12.8" cy="6.8" r="0.5" fill="#445566"/>
-  <circle cx="11.5" cy="7.8" r="0.6" fill="#445566"/>
-  <circle cx="12.5" cy="7.8" r="0.6" fill="#445566"/>
-
-  <!-- Pivot point -->
-  <circle cx="12" cy="11" r="1.2" fill="#778899" stroke="#556677" stroke-width="0.5"/>
-  <circle cx="12" cy="11" r="0.4" fill="#445566"/>
-
-  <!-- Wire being stripped (showing copper exposed) -->
-  <line x1="6" y1="4" x2="10" y2="4" stroke="#3388DD" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="14" y1="4" x2="18" y2="4" stroke="#3388DD" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="10" y1="4" x2="14" y2="4" stroke="#E8A050" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Small cut wire piece flying off (detail) -->
+  <line x1="10" y1="2" x2="8" y2="1" stroke="#E8A050" stroke-width="1" stroke-linecap="round"/>
+  <line x1="14" y1="2" x2="16" y2="1" stroke="#3388DD" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="16" y1="1" x2="17.5" y2="1" stroke="#E8A050" stroke-width="0.8" stroke-linecap="round"/>
 </svg>
