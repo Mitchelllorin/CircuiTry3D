@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useDemoMode } from "../context/DemoModeContext";
 import BrandSignature from "../components/BrandSignature";
 import type { FormEvent } from "react";
 import "../styles/account.css";
@@ -8,12 +9,25 @@ type Mode = "signin" | "signup" | "profile";
 
 export default function Account() {
   const { currentUser, loading, signIn, signUp, signOut, updateProfile } = useAuth();
+  const { isDemoMode, upgradeToPremium } = useDemoMode();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
   const [profileForm, setProfileForm] = useState({ displayName: currentUser?.displayName ?? "", bio: currentUser?.bio ?? "" });
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Handle Stripe checkout success redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split("?")[1] ?? "");
+    if (params.get("upgrade") === "success" && isDemoMode) {
+      upgradeToPremium();
+      setStatus({ type: "success", message: "Payment successful! Full version unlocked. All premium features are now available." });
+      // Clean the URL
+      const cleanHash = window.location.hash.split("?")[0];
+      window.history.replaceState(null, "", cleanHash);
+    }
+  }, [isDemoMode, upgradeToPremium]);
 
   useEffect(() => {
     if (currentUser) {

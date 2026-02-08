@@ -129,6 +129,28 @@
   backdrop-filter: blur(8px);
 }
 
+.plan-card.plan-popular {
+  border-color: var(--pricing-accent);
+  box-shadow: 0 28px 60px var(--pricing-glow), 0 0 0 1px var(--pricing-accent);
+  position: relative;
+}
+
+.plan-popular-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--bg-dark);
+  background: linear-gradient(135deg, var(--pricing-accent), var(--pricing-highlight));
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  align-self: flex-start;
+  margin-bottom: 0.15rem;
+}
+
 .plan-header h2 {
   font-size: 1.6rem;
   margin: 0 0 0.35rem 0;
@@ -685,7 +707,7 @@
 
 @media (min-width: 960px) {
   .plan-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .addon-grid {

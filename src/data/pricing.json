@@ -21,7 +21,7 @@
         "monthly": 0,
         "annual": 0
       },
-      "unit": "per educator",
+      "unit": "forever free",
       "features": [
         "3 active circuits",
         "Core component library",
@@ -32,6 +32,30 @@
         "label": "Start Free",
         "type": "link",
         "href": "/app"
+      }
+    },
+    {
+      "id": "student",
+      "name": "Student / Personal",
+      "tagline": "Unlock the full toolkit for your own learning",
+      "popular": true,
+      "price": {
+        "monthly": 900,
+        "annual": 8900
+      },
+      "unit": "per person",
+      "features": [
+        "Unlimited saved circuits",
+        "Full component library",
+        "W.I.R.E. analysis & coaching",
+        "Save, load & export projects",
+        "All practice difficulties"
+      ],
+      "renewal": "Auto-renews, cancel anytime",
+      "cta": {
+        "label": "Subscribe",
+        "type": "stripeCheckout",
+        "sku": "student-license"
       }
     },
     {
@@ -107,7 +131,7 @@
     }
   ],
   "stripe": {
-    "status": "pending",
-    "note": "Stripe checkout links will populate sku-based buttons"
+    "status": "active",
+    "note": "Web checkout powered by Stripe. Configure STRIPE_SECRET_KEY and price IDs in environment variables."
   }
 }

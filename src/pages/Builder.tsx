@@ -73,6 +73,7 @@ import {
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
+import { useDemoMode } from "../context/DemoModeContext";
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -1057,6 +1058,9 @@ export default function Builder() {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
 
+  // Demo/Full mode feature gating
+  const { isDemoMode, isFeatureLocked, showUpgradePrompt } = useDemoMode();
+
   // Create a mock circuit state for demo (in production, extract from iframe)
   const currentCircuitState = useMemo(() => ({
     nodes: [],
@@ -1141,6 +1145,10 @@ export default function Builder() {
       // Ctrl+S or Cmd+S for Save
       if ((event.ctrlKey || event.metaKey) && event.key === "s") {
         event.preventDefault();
+        if (isFeatureLocked("save")) {
+          showUpgradePrompt("save");
+          return;
+        }
         if (circuitStorage.currentCircuit) {
           // Quick save if circuit already exists
           circuitStorage.updateCurrentCircuit(currentCircuitState);
@@ -1153,6 +1161,10 @@ export default function Builder() {
       // Ctrl+O or Cmd+O for Open/Load
       if ((event.ctrlKey || event.metaKey) && event.key === "o") {
         event.preventDefault();
+        if (isFeatureLocked("load")) {
+          showUpgradePrompt("load");
+          return;
+        }
         setIsLoadModalOpen(true);
         return;
       }
@@ -1335,6 +1347,10 @@ export default function Builder() {
         return;
       }
       if (action.action === "generate-practice") {
+        if (isDemoMode) {
+          showUpgradePrompt("advanced-practice");
+          return;
+        }
         triggerBuilderAction(action.action, action.data);
         const randomProblem = getRandomPracticeProblem();
         if (randomProblem) {
@@ -1350,6 +1366,8 @@ export default function Builder() {
       openPracticeWorkspace,
       setArenaPanelOpen,
       triggerBuilderAction,
+      isDemoMode,
+      showUpgradePrompt,
     ],
   );
 
@@ -1768,18 +1786,31 @@ export default function Builder() {
             <button
               type="button"
               className="edge-action-btn"
-              onClick={() => setIsLoadModalOpen(true)}
+              onClick={() => {
+                if (isFeatureLocked("load")) {
+                  showUpgradePrompt("load");
+                } else {
+                  setIsLoadModalOpen(true);
+                }
+              }}
               aria-label="Open circuit"
-              title="Open saved circuit (Ctrl+O)"
+              title={isDemoMode ? "Open circuit — Full Version" : "Open saved circuit (Ctrl+O)"}
             >
               <span className="edge-action-icon" aria-hidden="true">📂</span>
+              {isDemoMode && <span className="locked-indicator" aria-hidden="true">🔒</span>}
             </button>
             <button
               type="button"
               className="edge-action-btn"
-              onClick={() => setIsSaveModalOpen(true)}
+              onClick={() => {
+                if (isFeatureLocked("save")) {
+                  showUpgradePrompt("save");
+                } else {
+                  setIsSaveModalOpen(true);
+                }
+              }}
               aria-label="Save circuit"
-              title="Save circuit (Ctrl+S)"
+              title={isDemoMode ? "Save circuit — Full Version" : "Save circuit (Ctrl+S)"}
             >
               <span className="edge-action-icon" aria-hidden="true">💾</span>
               {circuitStorage.hasUnsavedChanges && (
@@ -2248,26 +2279,36 @@ export default function Builder() {
                 >
                   <span className="slider-chip-label">Practice Worksheets</span>
                 </button>
-                {PRACTICE_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => {
-                      const problem = scenario.problemId
-                        ? findPracticeProblemById(scenario.problemId)
-                        : findPracticeProblemByPreset(scenario.preset);
-                      openPracticeWorkspace(problem, scenario.preset);
-                    }}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={
-                      controlsDisabled ? controlDisabledTitle : scenario.question
-                    }
-                  >
-                    <span className="slider-chip-label">{scenario.label}</span>
-                  </button>
-                ))}
+                {PRACTICE_SCENARIOS.map((scenario, index) => {
+                  const isLockedScenario = isDemoMode && index > 0;
+                  return (
+                    <button
+                      key={scenario.id}
+                      type="button"
+                      className={`slider-chip${isLockedScenario ? " slider-chip--locked" : ""}`}
+                      onClick={() => {
+                        if (isLockedScenario) {
+                          showUpgradePrompt("advanced-practice");
+                          return;
+                        }
+                        const problem = scenario.problemId
+                          ? findPracticeProblemById(scenario.problemId)
+                          : findPracticeProblemByPreset(scenario.preset);
+                        openPracticeWorkspace(problem, scenario.preset);
+                      }}
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled || isLockedScenario}
+                      title={
+                        isLockedScenario
+                          ? `${scenario.label} — Full Version`
+                          : controlsDisabled ? controlDisabledTitle : scenario.question
+                      }
+                    >
+                      <span className="slider-chip-label">{scenario.label}</span>
+                      {isLockedScenario && <span className="slider-chip-lock" aria-hidden="true">🔒</span>}
+                    </button>
+                  );
+                })}
                 <button
                   type="button"
                   className="slider-chip"
@@ -2309,8 +2350,14 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => setEnvironmentalPanelOpen(true)}
-                  title="Open Environmental Conditions panel to simulate different operating environments"
+                  onClick={() => {
+                    if (isFeatureLocked("environmental-panel")) {
+                      showUpgradePrompt("environmental-panel");
+                    } else {
+                      setEnvironmentalPanelOpen(true);
+                    }
+                  }}
+                  title={isDemoMode ? "Environmental Conditions — Full Version" : "Open Environmental Conditions panel to simulate different operating environments"}
                   data-active={activeEnvironment.id !== "standard" ? "true" : undefined}
                 >
                   <span className="slider-chip-label">Configure Environment</span>
@@ -2934,8 +2981,20 @@ export default function Builder() {
         onDelete={(id) => circuitStorage.deleteCircuitById(id)}
         onDuplicate={(id) => circuitStorage.duplicateCircuitById(id)}
         onRename={(id, newName) => circuitStorage.renameCircuitById(id, newName)}
-        onExport={(format) => circuitStorage.exportCurrentCircuit(format)}
-        onImport={(file) => circuitStorage.importCircuitFile(file)}
+        onExport={(format) => {
+          if (isFeatureLocked("export")) {
+            showUpgradePrompt("export");
+            return { success: false, error: "Feature locked in Demo Mode" } as any;
+          }
+          return circuitStorage.exportCurrentCircuit(format);
+        }}
+        onImport={(file) => {
+          if (isFeatureLocked("import")) {
+            showUpgradePrompt("import");
+            return { success: false, error: "Feature locked in Demo Mode" } as any;
+          }
+          return circuitStorage.importCircuitFile(file);
+        }}
         onNewCircuit={() => {
           circuitStorage.clearCurrentCircuit();
           triggerBuilderAction("clear-workspace");

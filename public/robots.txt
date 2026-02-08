@@ -1,0 +1,7 @@
+# CircuiTry3D
+# https://circuitry3d.net
+
+User-agent: *
+Allow: /
+
+Sitemap: https://circuitry3d.net/sitemap.xml

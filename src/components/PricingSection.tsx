@@ -30,6 +30,7 @@ type Plan = {
   id: string;
   name: string;
   tagline?: string;
+  popular?: boolean;
   price: PriceMap;
   unit?: string;
   features: string[];
@@ -118,10 +119,27 @@ export default function PricingSection() {
     setBillingCycle(cycle);
   };
 
-  const handleStripeClick = (sku: string) => {
-    // Placeholder for future Stripe integration
-    console.info("Stripe checkout pending integration", { sku });
-    window.alert?.("Stripe checkout coming soon. Contact us to activate your subscription.");
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  const handleStripeClick = async (sku: string) => {
+    setCheckoutLoading(sku);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sku, billingCycle: activeCycle }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        window.alert?.(data.error ?? "Unable to start checkout. Please try again or contact us.");
+      }
+    } catch {
+      window.alert?.("Unable to connect to checkout. Please try again later or contact us at info@circuitry3d.net.");
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   const renderCTA = (cta: CallToAction) => {
@@ -153,9 +171,10 @@ export default function PricingSection() {
         type="button"
         className="pricing-cta"
         data-cta-type="stripe"
+        disabled={checkoutLoading === cta.sku}
         onClick={() => handleStripeClick(cta.sku)}
       >
-        {cta.label}
+        {checkoutLoading === cta.sku ? "Redirecting..." : cta.label}
       </button>
     );
   };
@@ -166,7 +185,7 @@ export default function PricingSection() {
         <BrandSignature size="sm" decorative className="pricing-brand" />
         <h1 id="pricing-title">Plans &amp; Pricing</h1>
         <p className="pricing-subtitle">
-          Choose the subscription that powers your classroom. Upgrade any time as your program grows.
+          Whether you're learning on your own or teaching a class, there's a plan that fits. Upgrade any time as you grow.
         </p>
         <div className="billing-toggle" role="group" aria-label="Billing cycle selector">
           {cycles.map((cycleId) => {
@@ -197,8 +216,9 @@ export default function PricingSection() {
           const priceLabel = formatPrice(amount, pricingData.currency);
           const unit = getDisplayUnit(plan);
           return (
-            <article key={plan.id} className={`plan-card plan-${plan.id}`}>
+            <article key={plan.id} className={`plan-card plan-${plan.id}${plan.popular ? " plan-popular" : ""}`}>
               <header className="plan-header">
+                {plan.popular && <span className="plan-popular-badge">Most Popular</span>}
                 <h2>{plan.name}</h2>
                 {plan.tagline && <p className="plan-tagline">{plan.tagline}</p>}
               </header>
@@ -263,13 +283,8 @@ export default function PricingSection() {
       )}
 
       <footer className="pricing-footer">
-        {pricingData.stripe && (
-          <p className="pricing-stripe-note" data-stripe-status={pricingData.stripe.status}>
-            Stripe integration status: {pricingData.stripe.status}. {pricingData.stripe.note ?? ""}
-          </p>
-        )}
         <p className="pricing-contact-help">
-          Need a custom package? <a href="mailto:hello@circuitry3d.com">Contact our team</a> for tailored pricing.
+          Need a custom package? <a href="mailto:info@circuitry3d.net">Contact our team</a> for tailored pricing.
         </p>
       </footer>
     </section>

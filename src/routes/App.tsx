@@ -13,7 +13,9 @@ import Arcade from "../pages/Arcade";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
+import { UpgradePromptModal } from "../components/builder/modals/UpgradePromptModal";
 import "../styles/layout.css";
+import "../styles/demo-mode.css";
 
 export default function App() {
   return (
@@ -94,6 +96,8 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
+      {/* Global upgrade prompt modal */}
+      <UpgradePromptModal />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
+import { DemoModeProvider } from "./context/DemoModeContext";
 
 function renderFatalOverlay(payload: {
   title: string;
@@ -126,17 +127,19 @@ try {
   createRoot(container).render(
     <React.StrictMode>
       <HashRouter>
-        <AuthProvider>
-          <EngagementProvider>
-            <CircuitStorageProvider>
-              <GamificationProvider>
-                <ClassroomProvider>
-                  <App />
-                </ClassroomProvider>
-              </GamificationProvider>
-            </CircuitStorageProvider>
-          </EngagementProvider>
-        </AuthProvider>
+        <DemoModeProvider>
+          <AuthProvider>
+            <EngagementProvider>
+              <CircuitStorageProvider>
+                <GamificationProvider>
+                  <ClassroomProvider>
+                    <App />
+                  </ClassroomProvider>
+                </GamificationProvider>
+              </CircuitStorageProvider>
+            </EngagementProvider>
+          </AuthProvider>
+        </DemoModeProvider>
       </HashRouter>
     </React.StrictMode>
   );

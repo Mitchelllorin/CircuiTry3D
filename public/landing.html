@@ -146,6 +146,48 @@
       transform: translateY(-2px);
       box-shadow: 0 12px 32px rgba(136, 204, 255, 0.3), 0 0 60px rgba(136, 204, 255, 0.2);
     }
+    .demo-badge {
+      display: inline-block;
+      padding: 4px 16px;
+      border-radius: 999px;
+      background: rgba(255, 170, 0, 0.12);
+      border: 1px solid rgba(255, 170, 0, 0.3);
+      color: #ffaa00;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+    }
+    .demo-info {
+      font-size: 0.82rem;
+      color: rgba(156, 182, 220, 0.85);
+      line-height: 1.6;
+      max-width: 460px;
+      text-align: center;
+    }
+    .demo-info strong {
+      color: #88ccff;
+    }
+    .upgrade-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(136, 204, 255, 0.25);
+      background: rgba(136, 204, 255, 0.08);
+      color: #88ccff;
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      transition: all 0.25s ease;
+    }
+    .upgrade-link:hover {
+      background: rgba(136, 204, 255, 0.18);
+      border-color: rgba(136, 204, 255, 0.45);
+      transform: translateY(-1px);
+    }
     @keyframes sweep-once {
       0% { transform: translateX(-100%); }
       100% { transform: translateX(100%); }
@@ -168,9 +210,15 @@
       </div>
       <div class="subtitle">Professional Circuit Design</div>
     <div class="status-wrapper">
+      <span class="demo-badge">Free Demo</span>
       <div class="status-text">3D Circuit Environment Ready</div>
       <div class="status-bar"></div>
-      <a class="launch-button" href="/app" id="launch-btn">Launch</a>
+      <a class="launch-button" href="/app" id="launch-btn">Launch Demo</a>
+      <p class="demo-info">
+        Try the <strong>Arena</strong>, build with basic components, and explore guided practice problems.
+        Upgrade to the <strong>Full Version</strong> to unlock all components, save/load, export, advanced lessons, and more.
+      </p>
+      <a class="upgrade-link" href="/pricing" id="upgrade-link">Get the Full Version</a>
     </div>
   </div>
   <script>
@@ -209,6 +257,22 @@
       if (launchButton) {
         launchButton.addEventListener('click', (event) => {
           const href = launchButton.getAttribute('href');
+          if (!href) {
+            return;
+          }
+
+          const pathTarget = normalisePath(href);
+          const handled = sendNavigationMessage(pathTarget);
+          if (handled) {
+            event.preventDefault();
+          }
+        });
+      }
+
+      const upgradeLink = document.getElementById('upgrade-link');
+      if (upgradeLink) {
+        upgradeLink.addEventListener('click', (event) => {
+          const href = upgradeLink.getAttribute('href');
           if (!href) {
             return;
           }
