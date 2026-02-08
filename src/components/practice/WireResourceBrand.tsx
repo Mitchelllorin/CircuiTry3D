@@ -1,4 +1,4 @@
-import wireResourceLogo from "../../assets/wire-resource-logo.svg";
+import wireResourceLogo from "../../assets/wire-resource-logo.jpg";
 
 interface WireResourceBrandProps {
   size?: "sm" | "md" | "lg";

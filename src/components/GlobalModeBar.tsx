@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import type { WorkspaceMode } from "./builder/types";
 import "../styles/builder-ui.css";
-import wireResourceLogo from "../assets/wire-resource-logo.svg";
+import wireResourceLogo from "../assets/wire-resource-logo.jpg";
 
 type ModeBarScrollState = {
   canScrollLeft: boolean;
