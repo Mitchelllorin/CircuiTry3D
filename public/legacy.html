@@ -4940,10 +4940,28 @@ body.android-optimized.menu-visible .status {
         function worldToScreen(worldPosition) {
             const vector = worldPosition.clone();
             vector.project(camera);
-            
-            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-            const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
-            
+
+            // Use the actual canvas dimensions and position, not window dimensions
+            // This fixes polarity markers appearing in wrong positions in embedded mode
+            const canvas = renderer?.domElement;
+            let width, height, offsetX, offsetY;
+
+            if (canvas) {
+                const rect = canvas.getBoundingClientRect();
+                width = rect.width;
+                height = rect.height;
+                offsetX = rect.left;
+                offsetY = rect.top;
+            } else {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                offsetX = 0;
+                offsetY = 0;
+            }
+
+            const x = (vector.x * 0.5 + 0.5) * width + offsetX;
+            const y = (-vector.y * 0.5 + 0.5) * height + offsetY;
+
             return { x, y, z: vector.z };
         }
 
@@ -6785,9 +6803,9 @@ body.android-optimized.menu-visible .status {
                 document.getElementById('menu-bar').style.display = 'none';
                 document.getElementById('status').style.display = 'none';
                 document.getElementById('canvas').style.display = 'none';
-                
-                animate();
-                
+
+                requestAnimationFrame(animate);
+
                 updateCircuitInfo();
 
                 // Prevent context menu on long press
@@ -6816,10 +6834,34 @@ body.android-optimized.menu-visible .status {
             }
         }
 
-        function animate() {
+        // Track frame timing for performance optimization
+        let lastFrameTime = 0;
+        const TARGET_FRAME_INTERVAL = 1000 / 60; // Target 60fps
+        let labelUpdateCounter = 0;
+        const LABEL_UPDATE_INTERVAL = 3; // Update labels every 3 frames to reduce overhead
+
+        function animate(currentTime) {
             requestAnimationFrame(animate);
+
+            // Handle first call where currentTime might be undefined
+            if (!currentTime) currentTime = performance.now();
+
+            // Throttle to target FPS to reduce CPU/GPU load on slower devices
+            const elapsed = currentTime - lastFrameTime;
+            if (elapsed < TARGET_FRAME_INTERVAL * 0.9) {
+                return; // Skip frame if we're running faster than target
+            }
+            lastFrameTime = currentTime;
+
             updateFlowParticles();
-            updateComponentLabels();
+
+            // Only update labels every few frames to reduce DOM manipulation overhead
+            labelUpdateCounter++;
+            if (labelUpdateCounter >= LABEL_UPDATE_INTERVAL) {
+                labelUpdateCounter = 0;
+                updateComponentLabels();
+            }
+
             if (renderer) {
                 renderer.render(scene, camera);
             }
@@ -6827,35 +6869,40 @@ body.android-optimized.menu-visible .status {
 
         function updateComponentLabels() {
             // Update all component label positions
-            components.forEach(component => {
+            // Cache the length to avoid re-evaluation each iteration
+            const componentCount = components.length;
+            for (let i = 0; i < componentCount; i++) {
+                const component = components[i];
                 if (component.updateLabelPosition) {
                     component.updateLabelPosition();
                 }
-                // Update polarity indicator positions
-                if (component.updatePolarityPositions) {
+                // Update polarity indicator positions only if indicators are visible
+                if (showPolarityIndicators && component.updatePolarityPositions) {
                     component.updatePolarityPositions();
                 }
-            });
+            }
         }
 
         function updateFlowParticles() {
-            currentFlowParticles.forEach((particle, index) => {
+            // Iterate backwards when removing items to avoid index issues
+            for (let i = currentFlowParticles.length - 1; i >= 0; i--) {
+                const particle = currentFlowParticles[i];
                 try {
                     if (!particle?.userData?.wire || !particle.userData.isFlowing) {
                         scene.remove(particle);
-                        currentFlowParticles.splice(index, 1);
-                        return;
+                        currentFlowParticles.splice(i, 1);
+                        continue;
                     }
-                    
+
                     const wireData = particle.userData;
                     const wire = wireData.wire;
-                    
+
                     if (!wire || !wire.curve) {
                         scene.remove(particle);
-                        currentFlowParticles.splice(index, 1);
-                        return;
+                        currentFlowParticles.splice(i, 1);
+                        continue;
                     }
-                    
+
                     const step = (wireData.speed || 0.01) * (wireData.direction || 1);
                     wireData.progress += step;
 
@@ -6864,18 +6911,18 @@ body.android-optimized.menu-visible .status {
                     } else if (wireData.progress < 0) {
                         wireData.progress += 1;
                     }
-                    
+
                     const position = wire.curve.getPoint(wireData.progress);
                     if (position && position.isVector3) {
                         particle.position.copy(position);
                     }
-                    
+
                 } catch (error) {
-                    console.error(`Error updating particle ${index}:`, error);
+                    console.error(`Error updating particle ${i}:`, error);
                     scene.remove(particle);
-                    currentFlowParticles.splice(index, 1);
+                    currentFlowParticles.splice(i, 1);
                 }
-            });
+            }
         }
 
         function updateCameraPosition() {
@@ -11610,11 +11657,15 @@ Made with ? for visual learners everywhere!
             }
 
             if (component.type === 'resistor') {
-                return Number(component.properties?.resistance) || 0;
+                // Ensure resistors always have some resistance - default to 100 ohms if not set
+                const r = Number(component.properties?.resistance);
+                return isFinite(r) && r > 0 ? r : 100;
             }
 
             if (component.type === 'led') {
-                return Number(component.properties?.resistance) || 0;
+                // LEDs have internal resistance, default to 10 ohms for current limiting
+                const r = Number(component.properties?.resistance);
+                return isFinite(r) && r > 0 ? r : 10;
             }
 
             if (component.type === 'switch') {
@@ -11625,7 +11676,8 @@ Made with ? for visual learners everywhere!
             }
 
             if (component.type === 'thermistor') {
-                return Number(component.properties?.resistance) || 0;
+                const r = Number(component.properties?.resistance);
+                return isFinite(r) && r > 0 ? r : 10000;
             }
 
             if (component.type === 'battery') {
@@ -11634,6 +11686,25 @@ Made with ? for visual learners everywhere!
 
             if (component.type === 'diode' || component.type === 'zener-diode' || component.type === 'photodiode') {
                 return Number(component.properties?.forwardResistance) || 0.2;
+            }
+
+            if (component.type === 'lamp') {
+                const r = Number(component.properties?.resistance);
+                return isFinite(r) && r > 0 ? r : 10;
+            }
+
+            if (component.type === 'motor' || component.type === 'speaker') {
+                const r = Number(component.properties?.resistance);
+                return isFinite(r) && r > 0 ? r : 10;
+            }
+
+            if (component.type === 'inductor') {
+                // Inductors have very low DC resistance
+                return Number(component.properties?.dcResistance) || 0.1;
+            }
+
+            if (component.type === 'fuse') {
+                return Number(component.properties?.resistance) || 0.05;
             }
 
             return FLOW_CONSTANTS.wireResistance;
@@ -13126,14 +13197,14 @@ Made with ? for visual learners everywhere!
                 addEdge(startKey, endKey);
             });
 
-            // For two-terminal components (resistors, LEDs, switches), their internal
-            // connection allows current flow from one terminal to the other.
+            // For two-terminal components, their internal connection allows current flow from one terminal to the other.
             // Components may be wired using different terminal naming conventions:
             // - 'positive'/'negative' (polarity-based)
             // - 'left'/'right' (position-based)
             // We create internal paths for ALL terminal pairs to handle both conventions.
+            const conductingTypes = ['resistor', 'led', 'switch', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker'];
             allComponents.forEach(comp => {
-                if (comp.type === 'resistor' || comp.type === 'led' || comp.type === 'switch') {
+                if (conductingTypes.includes(comp.type)) {
                     // Only conduct if switch is ON
                     if (comp.type === 'switch' && !comp.properties?.isOn) return;
 
