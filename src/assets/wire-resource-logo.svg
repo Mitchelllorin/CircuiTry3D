@@ -1,78 +1,158 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
   <defs>
-    <!-- Copper gradient for conductor cores -->
-    <radialGradient id="copperCore" cx="30%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#FFB366"/>
-      <stop offset="40%" stop-color="#E87D2B"/>
-      <stop offset="100%" stop-color="#B8621B"/>
-    </radialGradient>
-
-    <!-- Black rubber insulation -->
-    <radialGradient id="blackInsulation" cx="40%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#4A4A4A"/>
-      <stop offset="60%" stop-color="#2A2A2A"/>
-      <stop offset="100%" stop-color="#1A1A1A"/>
-    </radialGradient>
-
-    <!-- Red insulation -->
-    <radialGradient id="redInsulation" cx="40%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#E04040"/>
-      <stop offset="60%" stop-color="#B82020"/>
-      <stop offset="100%" stop-color="#901818"/>
-    </radialGradient>
-
-    <!-- Blue insulation -->
-    <radialGradient id="blueInsulation" cx="40%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#4488DD"/>
-      <stop offset="60%" stop-color="#2266AA"/>
-      <stop offset="100%" stop-color="#184080"/>
-    </radialGradient>
-
-    <!-- Green/Yellow ground insulation -->
-    <linearGradient id="groundInsulation" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#40B040"/>
-      <stop offset="45%" stop-color="#40B040"/>
-      <stop offset="50%" stop-color="#E8D820"/>
-      <stop offset="55%" stop-color="#E8D820"/>
-      <stop offset="100%" stop-color="#40B040"/>
+    <!-- Copper gradient for exposed wire ends -->
+    <linearGradient id="copperShine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B87333"/>
+      <stop offset="40%" stop-color="#E8A050"/>
+      <stop offset="70%" stop-color="#FFD699"/>
+      <stop offset="100%" stop-color="#CD7F32"/>
     </linearGradient>
-
-    <!-- Subtle glow filter -->
-    <filter id="wireGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.5" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
+    <linearGradient id="copperDark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B5E3C"/>
+      <stop offset="50%" stop-color="#B87333"/>
+      <stop offset="100%" stop-color="#A0622E"/>
+    </linearGradient>
+    <!-- Outer jacket -->
+    <linearGradient id="jacket" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#555"/>
+      <stop offset="50%" stop-color="#333"/>
+      <stop offset="100%" stop-color="#222"/>
+    </linearGradient>
   </defs>
 
-  <!-- Wire 1: Large black (6 AWG) - leftmost -->
-  <g filter="url(#wireGlow)">
-    <circle cx="35" cy="50" r="28" fill="url(#blackInsulation)"/>
-    <circle cx="35" cy="50" r="18" fill="url(#copperCore)"/>
-    <!-- Highlight on copper -->
-    <ellipse cx="29" cy="44" rx="5" ry="4" fill="#FFD699" opacity="0.5"/>
-  </g>
+  <!-- Dark background -->
+  <rect width="200" height="200" fill="#0a0a0a"/>
 
-  <!-- Wire 2: Medium red (12 AWG) -->
-  <g filter="url(#wireGlow)">
-    <circle cx="85" cy="50" r="22" fill="url(#redInsulation)"/>
-    <circle cx="85" cy="50" r="13" fill="url(#copperCore)"/>
-    <!-- Highlight on copper -->
-    <ellipse cx="80" cy="45" rx="4" ry="3" fill="#FFD699" opacity="0.5"/>
-  </g>
+  <!-- Outer cable jacket coming from bottom-left -->
+  <ellipse cx="60" cy="170" rx="42" ry="42" fill="url(#jacket)" stroke="#444" stroke-width="1"/>
+  <rect x="18" y="170" width="84" height="40" fill="url(#jacket)"/>
 
-  <!-- Wire 3: Medium blue (14 AWG) -->
-  <g filter="url(#wireGlow)">
-    <circle cx="125" cy="50" r="18" fill="url(#blueInsulation)"/>
-    <circle cx="125" cy="50" r="10" fill="url(#copperCore)"/>
-    <!-- Highlight on copper -->
-    <ellipse cx="121" cy="46" rx="3" ry="2.5" fill="#FFD699" opacity="0.5"/>
-  </g>
+  <!-- Inner bundle area - slightly lighter -->
+  <ellipse cx="60" cy="170" rx="36" ry="36" fill="#1a1a1a"/>
 
-  <!-- Wire 4: Small ground (18 AWG) - rightmost -->
-  <g filter="url(#wireGlow)">
-    <circle cx="160" cy="50" r="14" fill="url(#groundInsulation)"/>
-    <circle cx="160" cy="50" r="7" fill="url(#copperCore)"/>
-    <!-- Highlight on copper -->
-    <ellipse cx="157" cy="47" rx="2" ry="1.8" fill="#FFD699" opacity="0.4"/>
-  </g>
+  <!-- === 45 individual wires bundled tightly, fanning out with staggered copper ends === -->
+  <!-- Row 1: Reds -->
+  <line x1="42" y1="170" x2="130" y2="22" stroke="#CC2222" stroke-width="2.8" stroke-linecap="round"/>
+  <line x1="130" y1="22" x2="146" y2="10" stroke="url(#copperShine)" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="44" y1="168" x2="136" y2="28" stroke="#DD3333" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="136" y1="28" x2="148" y2="20" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="46" y1="166" x2="125" y2="36" stroke="#EE2222" stroke-width="2.3" stroke-linecap="round"/>
+  <line x1="125" y1="36" x2="134" y2="26" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Row 2: Blues -->
+  <line x1="48" y1="172" x2="140" y2="35" stroke="#2255CC" stroke-width="2.8" stroke-linecap="round"/>
+  <line x1="140" y1="35" x2="158" y2="22" stroke="url(#copperShine)" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="50" y1="170" x2="145" y2="42" stroke="#3366DD" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="145" y1="42" x2="160" y2="34" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="52" y1="168" x2="138" y2="48" stroke="#4477EE" stroke-width="2.3" stroke-linecap="round"/>
+  <line x1="138" y1="48" x2="150" y2="38" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Row 3: Greens -->
+  <line x1="54" y1="174" x2="150" y2="40" stroke="#228B22" stroke-width="2.8" stroke-linecap="round"/>
+  <line x1="150" y1="40" x2="170" y2="28" stroke="url(#copperShine)" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="56" y1="172" x2="148" y2="50" stroke="#33AA33" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="148" y1="50" x2="164" y2="40" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="58" y1="170" x2="142" y2="56" stroke="#44BB44" stroke-width="2.3" stroke-linecap="round"/>
+  <line x1="142" y1="56" x2="155" y2="46" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Row 4: Yellows -->
+  <line x1="60" y1="175" x2="155" y2="48" stroke="#CCAA00" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="155" y1="48" x2="175" y2="38" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="62" y1="173" x2="152" y2="56" stroke="#DDBB22" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="152" y1="56" x2="168" y2="48" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="64" y1="171" x2="148" y2="62" stroke="#EECC33" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="148" y1="62" x2="160" y2="54" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 5: Whites -->
+  <line x1="55" y1="178" x2="158" y2="55" stroke="#DDDDDD" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="158" y1="55" x2="178" y2="44" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="57" y1="176" x2="155" y2="63" stroke="#CCCCCC" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="155" y1="63" x2="172" y2="55" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="59" y1="174" x2="150" y2="68" stroke="#EEEEEE" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="150" y1="68" x2="163" y2="60" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 6: Oranges -->
+  <line x1="66" y1="176" x2="160" y2="60" stroke="#DD6600" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="160" y1="60" x2="182" y2="50" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="68" y1="174" x2="157" y2="68" stroke="#EE7711" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="157" y1="68" x2="175" y2="60" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="70" y1="172" x2="153" y2="74" stroke="#FF8822" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="153" y1="74" x2="167" y2="66" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 7: Purples -->
+  <line x1="50" y1="180" x2="142" y2="72" stroke="#7722AA" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="142" y1="72" x2="156" y2="62" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="52" y1="178" x2="146" y2="78" stroke="#8833BB" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="146" y1="78" x2="162" y2="70" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="54" y1="176" x2="140" y2="84" stroke="#9944CC" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="140" y1="84" x2="153" y2="76" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 8: Black wires -->
+  <line x1="62" y1="180" x2="152" y2="78" stroke="#333333" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="152" y1="78" x2="168" y2="68" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="64" y1="178" x2="156" y2="84" stroke="#444444" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="156" y1="84" x2="174" y2="76" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="66" y1="176" x2="148" y2="88" stroke="#2a2a2a" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="148" y1="88" x2="162" y2="80" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 9: Browns -->
+  <line x1="46" y1="180" x2="135" y2="80" stroke="#8B4513" stroke-width="2.6" stroke-linecap="round"/>
+  <line x1="135" y1="80" x2="148" y2="70" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="48" y1="178" x2="140" y2="86" stroke="#A0522D" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="140" y1="86" x2="155" y2="78" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="50" y1="176" x2="135" y2="92" stroke="#6B3410" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="135" y1="92" x2="148" y2="84" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 10: Pinks/Light reds -->
+  <line x1="68" y1="180" x2="162" y2="72" stroke="#DD5577" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="162" y1="72" x2="180" y2="62" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="70" y1="178" x2="160" y2="80" stroke="#EE6688" stroke-width="2.3" stroke-linecap="round"/>
+  <line x1="160" y1="80" x2="176" y2="72" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="72" y1="176" x2="155" y2="86" stroke="#FF7799" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="155" y1="86" x2="168" y2="78" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 11: Gray/Silver -->
+  <line x1="56" y1="182" x2="148" y2="90" stroke="#888888" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="148" y1="90" x2="162" y2="82" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="58" y1="180" x2="152" y2="96" stroke="#999999" stroke-width="2.3" stroke-linecap="round"/>
+  <line x1="152" y1="96" x2="168" y2="88" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="60" y1="178" x2="145" y2="100" stroke="#777777" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="145" y1="100" x2="158" y2="92" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 12: Teal/Cyan -->
+  <line x1="72" y1="180" x2="165" y2="82" stroke="#008B8B" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="165" y1="82" x2="184" y2="74" stroke="url(#copperShine)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="74" y1="178" x2="162" y2="90" stroke="#00AAAA" stroke-width="2.3" stroke-linecap="round"/>
+  <line x1="162" y1="90" x2="178" y2="82" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="76" y1="176" x2="158" y2="96" stroke="#00CCCC" stroke-width="2.1" stroke-linecap="round"/>
+  <line x1="158" y1="96" x2="172" y2="88" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+
+  <!-- Row 13: More reds/dark reds for density -->
+  <line x1="44" y1="182" x2="128" y2="88" stroke="#AA1111" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="128" y1="88" x2="140" y2="78" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="46" y1="180" x2="132" y2="94" stroke="#BB2222" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="132" y1="94" x2="145" y2="86" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="48" y1="178" x2="126" y2="98" stroke="#CC3333" stroke-width="2.0" stroke-linecap="round"/>
+  <line x1="126" y1="98" x2="138" y2="90" stroke="url(#copperShine)" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- Row 14: More blues for density -->
+  <line x1="74" y1="182" x2="168" y2="92" stroke="#1144BB" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="168" y1="92" x2="186" y2="84" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="76" y1="180" x2="165" y2="98" stroke="#2255CC" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="165" y1="98" x2="180" y2="92" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="78" y1="178" x2="160" y2="104" stroke="#3366DD" stroke-width="2.0" stroke-linecap="round"/>
+  <line x1="160" y1="104" x2="174" y2="96" stroke="url(#copperShine)" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- Row 15: Green/Yellow striped (ground wires) -->
+  <line x1="60" y1="184" x2="155" y2="100" stroke="#228B22" stroke-width="2.4" stroke-linecap="round"/>
+  <line x1="155" y1="100" x2="170" y2="92" stroke="url(#copperShine)" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="62" y1="182" x2="158" y2="106" stroke="#33AA33" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="158" y1="106" x2="174" y2="98" stroke="url(#copperShine)" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="64" y1="180" x2="152" y2="110" stroke="#44BB44" stroke-width="2.0" stroke-linecap="round"/>
+  <line x1="152" y1="110" x2="166" y2="102" stroke="url(#copperShine)" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- Subtle glow on copper ends -->
+  <circle cx="160" cy="60" r="50" fill="none" opacity="0.08">
+    <animate attributeName="opacity" values="0.05;0.12;0.05" dur="3s" repeatCount="indefinite"/>
+  </circle>
 </svg>
