@@ -1,53 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <!-- Wire Snips / Diagonal Cutters icon -->
+  <!-- Wire Mode icon: a wire route with connection nodes -->
   <defs>
-    <linearGradient id="metalBlade" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D0D8E0"/>
-      <stop offset="40%" stop-color="#A8B8C8"/>
-      <stop offset="100%" stop-color="#7888A0"/>
+    <linearGradient id="wireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="100%" stop-color="#0288D1"/>
     </linearGradient>
-    <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#DD3030"/>
-      <stop offset="50%" stop-color="#FF4444"/>
-      <stop offset="100%" stop-color="#BB2020"/>
+    <linearGradient id="copperEnd" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E8A050"/>
+      <stop offset="100%" stop-color="#D4873A"/>
     </linearGradient>
   </defs>
 
-  <!-- Left blade -->
-  <path d="M9.5 3 L12 10.5 L10.5 11.5 L7.5 4 Z" fill="url(#metalBlade)" stroke="#667788" stroke-width="0.4"/>
-  <!-- Cutting edge highlight left -->
-  <line x1="9.5" y1="3" x2="12" y2="10.5" stroke="#E8EEF4" stroke-width="0.3"/>
+  <!-- Wire path: routed wire going from top-left node down and across to bottom-right node -->
+  <path d="M5 5 L5 12 L12 12 L12 19" stroke="url(#wireGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Right blade -->
-  <path d="M14.5 3 L12 10.5 L13.5 11.5 L16.5 4 Z" fill="url(#metalBlade)" stroke="#667788" stroke-width="0.4"/>
-  <!-- Cutting edge highlight right -->
-  <line x1="14.5" y1="3" x2="12" y2="10.5" stroke="#E8EEF4" stroke-width="0.3"/>
+  <!-- Exposed copper end at start (top) -->
+  <line x1="5" y1="3" x2="5" y2="5.5" stroke="url(#copperEnd)" stroke-width="2" stroke-linecap="round"/>
 
-  <!-- Blade tips - sharp angled cutting edges -->
-  <path d="M9.5 3 L12 2.5 L14.5 3" fill="none" stroke="#8899AA" stroke-width="0.5" stroke-linejoin="round"/>
+  <!-- Exposed copper end at finish (bottom) -->
+  <line x1="12" y1="18.5" x2="12" y2="21" stroke="url(#copperEnd)" stroke-width="2" stroke-linecap="round"/>
 
-  <!-- Pivot bolt -->
-  <circle cx="12" cy="11" r="1.4" fill="#8899AA" stroke="#556677" stroke-width="0.5"/>
-  <circle cx="12" cy="11" r="0.5" fill="#445566"/>
+  <!-- Connection node at start -->
+  <circle cx="5" cy="5" r="2.2" fill="#0288D1" stroke="#B3E5FC" stroke-width="0.8"/>
+  <circle cx="5" cy="5" r="0.9" fill="#B3E5FC"/>
 
-  <!-- Left handle -->
-  <path d="M10.5 11.5 L6 19 Q5.5 20 6 20.5 L7.5 21 Q8.5 21.2 8.5 20 L12 12.5" fill="url(#handleGrad)" stroke="#AA2020" stroke-width="0.4"/>
-  <!-- Handle grip texture left -->
-  <line x1="7.8" y1="16" x2="9.2" y2="16" stroke="#BB2020" stroke-width="0.3"/>
-  <line x1="7.4" y1="17" x2="8.8" y2="17" stroke="#BB2020" stroke-width="0.3"/>
-  <line x1="7" y1="18" x2="8.4" y2="18" stroke="#BB2020" stroke-width="0.3"/>
-  <line x1="6.6" y1="19" x2="8" y2="19" stroke="#BB2020" stroke-width="0.3"/>
+  <!-- Junction node at bend -->
+  <circle cx="5" cy="12" r="1.5" fill="#0288D1" stroke="#B3E5FC" stroke-width="0.6"/>
+  <circle cx="12" cy="12" r="1.5" fill="#0288D1" stroke="#B3E5FC" stroke-width="0.6"/>
 
-  <!-- Right handle -->
-  <path d="M13.5 11.5 L18 19 Q18.5 20 18 20.5 L16.5 21 Q15.5 21.2 15.5 20 L12 12.5" fill="url(#handleGrad)" stroke="#AA2020" stroke-width="0.4"/>
-  <!-- Handle grip texture right -->
-  <line x1="14.8" y1="16" x2="16.2" y2="16" stroke="#BB2020" stroke-width="0.3"/>
-  <line x1="15.2" y1="17" x2="16.6" y2="17" stroke="#BB2020" stroke-width="0.3"/>
-  <line x1="15.6" y1="18" x2="17" y2="18" stroke="#BB2020" stroke-width="0.3"/>
-  <line x1="16" y1="19" x2="17.4" y2="19" stroke="#BB2020" stroke-width="0.3"/>
+  <!-- Connection node at end -->
+  <circle cx="12" cy="19" r="2.2" fill="#0288D1" stroke="#B3E5FC" stroke-width="0.8"/>
+  <circle cx="12" cy="19" r="0.9" fill="#B3E5FC"/>
 
-  <!-- Small cut wire piece flying off (detail) -->
-  <line x1="10" y1="2" x2="8" y2="1" stroke="#E8A050" stroke-width="1" stroke-linecap="round"/>
-  <line x1="14" y1="2" x2="16" y2="1" stroke="#3388DD" stroke-width="1.2" stroke-linecap="round"/>
-  <line x1="16" y1="1" x2="17.5" y2="1" stroke="#E8A050" stroke-width="0.8" stroke-linecap="round"/>
+  <!-- Small "routing in progress" cursor hint: a small plus/crosshair near the end node -->
+  <line x1="17" y1="5" x2="21" y2="5" stroke="#81D4FA" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="19" y1="3" x2="19" y2="7" stroke="#81D4FA" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Small wire segment being "placed" from the cursor -->
+  <path d="M19 7 L19 9.5" stroke="#4FC3F7" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="1.5 1.5"/>
 </svg>
