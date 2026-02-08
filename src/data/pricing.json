@@ -107,6 +107,79 @@
       }
     }
   ],
+  "manufacturerTiers": [
+    {
+      "id": "component-spotlight",
+      "name": "Component Spotlight",
+      "tagline": "Feature your real-world components inside the Arena",
+      "price": {
+        "monthly": 49900,
+        "annual": 499900
+      },
+      "unit": "per brand",
+      "features": [
+        "Branded component card in the Arena",
+        "Logo & part number on component info panels",
+        "Link to datasheet or product page",
+        "Monthly placement analytics report"
+      ],
+      "renewal": "Auto-renews, cancel anytime",
+      "cta": {
+        "label": "Get Started",
+        "type": "link",
+        "href": "mailto:partnerships@circuitry3d.net?subject=Component%20Spotlight%20Inquiry"
+      }
+    },
+    {
+      "id": "arena-partner",
+      "name": "Arena Partner",
+      "tagline": "Dedicated brand presence across the Component Arena",
+      "popular": true,
+      "price": {
+        "monthly": 149900,
+        "annual": 1499900
+      },
+      "unit": "per brand",
+      "features": [
+        "Everything in Component Spotlight",
+        "Branded component category in the Arena",
+        "Interactive 3D models of your parts",
+        "\"Powered by\" badge on compatible circuits",
+        "Priority placement in search & suggestions",
+        "Quarterly engagement & reach report"
+      ],
+      "renewal": "Auto-renews, cancel anytime",
+      "cta": {
+        "label": "Become a Partner",
+        "type": "link",
+        "href": "mailto:partnerships@circuitry3d.net?subject=Arena%20Partner%20Inquiry"
+      }
+    },
+    {
+      "id": "platform-sponsor",
+      "name": "Platform Sponsor",
+      "tagline": "Full-platform integration and co-branded learning experiences",
+      "price": {
+        "monthly": null,
+        "annual": null
+      },
+      "unit": "custom",
+      "features": [
+        "Everything in Arena Partner",
+        "Co-branded lesson plans & practice circuits",
+        "Sponsored challenge events & competitions",
+        "Custom 3D component library development",
+        "Homepage & loading screen brand placement",
+        "Dedicated account manager & API access"
+      ],
+      "renewal": "Custom agreements with annual review",
+      "cta": {
+        "label": "Contact Partnerships",
+        "type": "link",
+        "href": "mailto:partnerships@circuitry3d.net?subject=Platform%20Sponsor%20Inquiry"
+      }
+    }
+  ],
   "addons": [
     {
       "id": "certification-bundle",
