@@ -1,4 +1,4 @@
-import { mergeMetrics, solveWireMetrics, type PartialWireMetrics, type WireMetrics } from "./electrical";
+import { mergeMetrics, solveWireMetrics, type WireMetrics } from "./electrical";
 import type {
   CircuitNode,
   PracticeComponent,

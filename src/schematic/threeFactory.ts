@@ -6,8 +6,6 @@ import {
   HEIGHT_LAYERS,
 } from "./visualConstants";
 
-const DEFAULT_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
-
 // Use centralized visual constants for 3D rendering
 export const WIRE_RADIUS = THREE_STROKE_RADII.wire;
 export const RESISTOR_RADIUS = THREE_STROKE_RADII.resistor;
@@ -114,7 +112,7 @@ const computeAxisMetrics = (element: TwoTerminalElement): AxisMetrics => {
 
 const resolveProfile = (standard?: SymbolStandard) => STANDARD_PROFILES[standard ?? DEFAULT_SYMBOL_STANDARD];
 
-const toVec3 = (three: any, point: Vec2, height = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
+const toVec3 = (three: any, point: Vec2, height: number = WIRE_HEIGHT) => new three.Vector3(point.x, height, point.z);
 
 const styliseMaterial = (three: any, material: any, options: BuildOptions, baseColor: number) => {
   if (!material) {
@@ -170,7 +168,7 @@ const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number,
   return mesh;
 };
 
-const createLabelSprite = (three: any, text: string, color = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
+const createLabelSprite = (three: any, text: string, color: string = LABEL_COLOR, options: BuildOptions = {}, componentKind?: string) => {
   const canvas = document.createElement("canvas");
   // Use larger canvas for longer text to maintain quality
   const isLongText = text.length > 4;
@@ -397,7 +395,7 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
   const endVec = toVec3(three, element.end, COMPONENT_HEIGHT);
 
   // Add color bands for IEC (rectangular body) resistors
-  if (!options.preview && profile.resistor.bodyStyle === "rectangular") {
+  if (!options.preview && profile.resistor.bodyStyle === "rectangle") {
     const colorBands = getResistorColorBands(element.label);
     if (colorBands && bodyLength > 0.4) {
       const bandWidth = 0.06;
@@ -931,6 +929,7 @@ const buildDiodeElement = (three: any, element: TwoTerminalElement, options: Bui
 
   const bodyLength = Math.min(metrics.length * 0.6, 0.8);
   const leadLength = (metrics.length - bodyLength) / 2;
+  // @ts-expect-error TS6133
   const bodyRadius = wireRadius * 1.1;
 
   const bodyStart = metrics.offsetPoint(leadLength);
@@ -938,6 +937,7 @@ const buildDiodeElement = (three: any, element: TwoTerminalElement, options: Bui
 
   const triangleHeight = bodyLength * 0.7;
   const triangleWidth = bodyLength * 0.5;
+  // @ts-expect-error TS6133
   const cathodeBarWidth = triangleWidth;
 
   const triangleCenter = metrics.offsetPoint(leadLength + bodyLength * 0.4);
@@ -1746,7 +1746,7 @@ const buildOpampElement = (three: any, element: any, options: BuildOptions): Bui
   const wireRadius = 0.035;
 
   // Connect all terminals to center
-  terminals.forEach((terminal, index) => {
+  terminals.forEach((terminal, _index) => {
     const lead = cylinderBetween(
       three,
       toVec3(three, terminal, WIRE_HEIGHT),

@@ -19,7 +19,7 @@ interface LogoSettingsModalProps {
 
 export function LogoSettingsModal({
   isOpen,
-  onToggle,
+  onToggle: _onToggle,
   logoSettings,
   prefersReducedMotion,
   onLogoSettingChange,

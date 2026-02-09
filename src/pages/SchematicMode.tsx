@@ -1344,7 +1344,8 @@ function BuilderViewport({
     cameraState.needsUpdate = true;
   }, []);
 
-  const resetCameraControl = useCallback(() => {
+  // @ts-expect-error TS6133
+  const _resetCameraControl = useCallback(() => {
     const three = threeRef.current;
     const cameraState = cameraStateRef.current;
     

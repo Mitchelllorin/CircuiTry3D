@@ -36,7 +36,6 @@ import ResistorColorCode from "../components/practice/ResistorColorCode";
 import { ProgressDashboard } from "../components/gamification/ProgressDashboard";
 import CircuitGamesPanel from "../components/gamification/CircuitGamesPanel";
 import { useGamification } from "../context/GamificationContext";
-import { PracticeViewport } from "./SchematicMode";
 import { useAdaptivePractice } from "../hooks/practice/useAdaptivePractice";
 import {
   DEFAULT_SYMBOL_STANDARD,
@@ -368,7 +367,7 @@ export default function Practice({
   const [internalProblemId, setInternalProblemId] = useState<string | null>(
     () => {
       if (selectedProblemId !== undefined && selectedProblemId !== null) {
-        return findProblem(selectedProblemId).id;
+        return findProblem(selectedProblemId)?.id ?? fallbackProblemId;
       }
       return fallbackProblemId;
     },
@@ -405,6 +404,18 @@ export default function Practice({
   const ohmsWheelRef = useRef<HTMLDivElement | null>(null);
   const sprintStartRef = useRef<number | null>(null);
 
+  const resetSprint = useCallback(() => {
+    sprintStartRef.current = null;
+    setSprintActive(false);
+    setSprintElapsedMs(0);
+    setSprintLastMs(null);
+  }, []);
+
+  const resetArcade = useCallback(() => {
+    setAssistUsed(false);
+    resetSprint();
+  }, [resetSprint]);
+
   useEffect(() => {
     if (selectedProblemId === undefined) {
       lastControlledProblemId.current = undefined;
@@ -418,7 +429,7 @@ export default function Practice({
     lastControlledProblemId.current = selectedProblemId;
 
     const resolved = findProblem(selectedProblemId);
-    if (resolved.id !== internalProblemId) {
+    if (resolved && resolved.id !== internalProblemId) {
       setInternalProblemId(resolved.id);
       setTableRevealed(false);
       setStepsVisible(false);
@@ -500,18 +511,6 @@ export default function Practice({
     setActiveHint((previous) => (previous === hint ? null : hint));
   }, []);
 
-  const resetSprint = useCallback(() => {
-    sprintStartRef.current = null;
-    setSprintActive(false);
-    setSprintElapsedMs(0);
-    setSprintLastMs(null);
-  }, []);
-
-  const resetArcade = useCallback(() => {
-    setAssistUsed(false);
-    resetSprint();
-  }, [resetSprint]);
-
   const handleStartSprint = useCallback(() => {
     sprintStartRef.current = Date.now();
     setSprintElapsedMs(0);
@@ -525,6 +524,7 @@ export default function Practice({
 
   const selectProblemById = useCallback((problemId: string) => {
     const next = findProblem(problemId);
+    if (!next) return;
     setInternalProblemId(next.id);
     setTableRevealed(false);
     setStepsVisible(false);

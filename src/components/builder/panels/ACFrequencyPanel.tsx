@@ -49,7 +49,7 @@ export function ACFrequencyPanel({
     error,
     isACMode,
     updateACMetrics,
-    updateFrequency,
+    updateFrequency: _updateFrequency,
     toggleCircuitMode,
     formatACMetrics,
   } = useACMetricsSync();

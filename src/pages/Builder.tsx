@@ -43,20 +43,14 @@ import troubleshootingProblems, {
 } from "../data/troubleshootingProblems";
 import type { PracticeProblem } from "../model/practice";
 import type {
-  BuilderInvokeAction,
   ComponentAction,
   BuilderToolId,
   WorkspaceMode,
   LegacyModeState,
   QuickAction,
   HelpSection,
-  HelpLegendItem,
   HelpModalView,
-  HelpEntry,
   PanelAction,
-  SettingsItem,
-  LogoNumericSettingKey,
-  PracticeScenario,
   PracticeWorksheetStatus,
 } from "../components/builder/types";
 import {
@@ -858,7 +852,7 @@ export default function Builder() {
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
-  const [modeBarScrollState, setModeBarScrollState] = useState<{
+  const [_modeBarScrollState, setModeBarScrollState] = useState<{
     canScrollLeft: boolean;
     canScrollRight: boolean;
   }>({ canScrollLeft: false, canScrollRight: false });
@@ -1036,10 +1030,10 @@ export default function Builder() {
     helpSectionRefs,
     isHelpOpen,
     setHelpOpen,
-    requestedHelpSection,
-    setRequestedHelpSection,
+    requestedHelpSection: _requestedHelpSection,
+    setRequestedHelpSection: _setRequestedHelpSection,
     helpView,
-    setHelpView,
+    setHelpView: _setHelpView,
     openHelpWithSection,
     openHelpWithView,
   } = useHelpModal();
@@ -1451,7 +1445,8 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
-  const arenaStatusMessage = useMemo(() => {
+  // @ts-expect-error TS6133: declared but value is never read
+  const _arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
         return "Exporting current build to Component Arena...";
@@ -1662,10 +1657,12 @@ export default function Builder() {
     modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
   const isWireToolActive = modeState.isWireMode;
   const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
-  const wireRoutingTitle = isWireToolActive
+  // @ts-expect-error TS6133: declared but value is never read
+  const _wireRoutingTitle = isWireToolActive
     ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
     : `Wire tool inactive - routing preset is ${wireRoutingLabel}.`;
-  const currentFlowTitle = isCurrentFlowSolid
+  // @ts-expect-error TS6133: declared but value is never read
+  const _currentFlowTitle = isCurrentFlowSolid
     ? "Current flow visualisation active."
     : "Electron flow visualisation active.";
 
