@@ -109,6 +109,9 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   const hoverPulseFrameRef = useRef<number | null>(null);
   const backgroundCacheRef = useRef<{ key: string; canvas: HTMLCanvasElement } | null>(null);
   const pathCacheRef = useRef<Map<string, { key: string; path: Path2D }>>(new Map());
+  // RAF-based throttle: only process one move event per animation frame
+  const pendingMoveRef = useRef<{ pos: Vec2; shiftKey?: boolean } | null>(null);
+  const moveRafRef = useRef<number | null>(null);
 
   // Animate the hovered-wire pulse *without* causing React re-renders.
   // We drive animation via requestAnimationFrame and redraw only the canvas.
@@ -458,12 +461,13 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   }, [getMousePos, findSnapTarget, nodes, wires, findWireHit, cloneWire, onNodesChange, onWiresChange]);
 
   /**
-   * Handle mouse move - update wire preview and show snap target
+   * Core move-processing logic shared by mouse and touch handlers.
+   * Batched via requestAnimationFrame so the browser only processes
+   * one move per frame regardless of how fast events fire.
    */
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const pos = getMousePos(e);
+  const processMove = useCallback((pos: Vec2, shiftKey?: boolean) => {
     const snapNode = findSnapTarget(pos);
-    
+
     setHoveredNode(snapNode);
 
     if (!isDrawing) {
@@ -483,12 +487,44 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     }
 
     const endPos = snapNode ? snapNode.pos : pos;
-    const options = e.shiftKey ? { flip: true } : undefined;
+    const options = shiftKey ? { flip: true } : undefined;
     const startPoint = currentWire[0];
     const path = buildWirePath(startPoint, endPos, options);
     setCurrentWire(path);
     setSnapTarget(snapNode);
-  }, [getMousePos, findSnapTarget, isDrawing, currentWire, findWireHit, mode, buildWirePath]);
+  }, [findSnapTarget, isDrawing, currentWire, findWireHit, buildWirePath]);
+
+  const scheduleMoveUpdate = useCallback((pos: Vec2, shiftKey?: boolean) => {
+    pendingMoveRef.current = { pos, shiftKey };
+    if (moveRafRef.current === null) {
+      moveRafRef.current = requestAnimationFrame(() => {
+        moveRafRef.current = null;
+        const pending = pendingMoveRef.current;
+        if (pending) {
+          pendingMoveRef.current = null;
+          processMove(pending.pos, pending.shiftKey);
+        }
+      });
+    }
+  }, [processMove]);
+
+  // Clean up RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (moveRafRef.current !== null) {
+        cancelAnimationFrame(moveRafRef.current);
+        moveRafRef.current = null;
+      }
+    };
+  }, []);
+
+  /**
+   * Handle mouse move - update wire preview and show snap target
+   */
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const pos = getMousePos(e);
+    scheduleMoveUpdate(pos, e.shiftKey);
+  }, [getMousePos, scheduleMoveUpdate]);
 
   /**
    * Handle mouse up - complete wire drawing
@@ -700,32 +736,8 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
   const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const pos = getTouchPos(e);
-    const snapNode = findSnapTarget(pos);
-
-    setHoveredNode(snapNode);
-
-    if (!isDrawing) {
-      if (!snapNode) {
-        const hit = findWireHit(pos);
-        setHoveredWireInfo(hit ? { wireId: hit.wire.id, point: hit.point } : null);
-      } else {
-        setHoveredWireInfo(null);
-      }
-      return;
-    }
-
-    setHoveredWireInfo(null);
-
-    if (currentWire.length === 0) {
-      return;
-    }
-
-    const endPos = snapNode ? snapNode.pos : pos;
-    const startPoint = currentWire[0];
-    const path = buildWirePath(startPoint, endPos);
-    setCurrentWire(path);
-    setSnapTarget(snapNode);
-  }, [getTouchPos, findSnapTarget, isDrawing, currentWire, findWireHit, buildWirePath]);
+    scheduleMoveUpdate(pos);
+  }, [getTouchPos, scheduleMoveUpdate]);
 
   /**
    * Handle touch end - complete wire drawing (mobile support)

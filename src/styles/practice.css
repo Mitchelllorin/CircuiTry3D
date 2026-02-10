@@ -3283,3 +3283,37 @@
   line-height: 1.5;
 }
 
+/* ============================================================
+   PRACTICE MODE PERFORMANCE OPTIMIZATIONS
+   ============================================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  .practice-shell {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  .practice-viewport-container {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .practice-shell *:active {
+    transition-duration: 0s !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+.practice-viewport-container {
+  contain: layout style;
+}
+

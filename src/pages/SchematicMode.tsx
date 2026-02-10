@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/schematic.css";
 import "../styles/practice.css";
+import {
+  isMobile,
+  getMobileRendererOptions,
+  getMobilePixelRatio,
+  getMobileShadowSettings,
+} from "../utils/mobilePerformance";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
@@ -790,13 +796,20 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
   const [elements, setElements] = useState<SchematicElement[]>([]);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [draft, setDraft] = useState<PlacementDraft | null>(null);
+  const draftRef = useRef<PlacementDraft | null>(null);
+  draftRef.current = draft;
   const [hoverPoint, setHoverPoint] = useState<Vec2 | null>(null);
+  const lastHoverSnapRef = useRef<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [labelCounters, setLabelCounters] = useState<Record<string, number>>({});
+  const labelCountersRef = useRef<Record<string, number>>({});
+  labelCountersRef.current = labelCounters;
   const [singleNodeOrientation, setSingleNodeOrientation] = useState<Orientation>("horizontal");
+  const singleNodeOrientationRef = useRef<Orientation>("horizontal");
+  singleNodeOrientationRef.current = singleNodeOrientation;
   const [isCatalogOpen, setCatalogOpen] = useState(true);
   const [isValidationCollapsed, setValidationCollapsed] = useState(false);
-  const [highlightedElements, setHighlightedElements] = useState<Set<string>>(new Set());
+  const [highlightedElements, setHighlightedElements] = useState<Set<string>>(EMPTY_HIGHLIGHT_SET);
 
   // Circuit validation - runs automatically when elements change
   const validationResult = useMemo<ValidationResult>(
@@ -812,13 +825,15 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
       setSelectedElementId(issue.affectedElements[0]);
     }
     // Clear highlight after 3 seconds
-    setTimeout(() => setHighlightedElements(new Set()), 3000);
+    setTimeout(() => setHighlightedElements(EMPTY_HIGHLIGHT_SET), 3000);
   }, []);
 
   const selectedCatalogEntry = useMemo(() => {
     const entry = COMPONENT_CATALOG.find((item) => item.id === selectedCatalogId);
     return entry ?? COMPONENT_CATALOG[0];
   }, [selectedCatalogId]);
+  const selectedCatalogEntryRef = useRef(selectedCatalogEntry);
+  selectedCatalogEntryRef.current = selectedCatalogEntry;
 
   const selectedElement = useMemo(
     () => elements.find((element) => element.id === selectedElementId) ?? null,
@@ -846,10 +861,17 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
 
   const handleBoardHover = useCallback((point: Vec2 | null) => {
     if (!point) {
-      setHoverPoint(null);
+      if (lastHoverSnapRef.current !== null) {
+        lastHoverSnapRef.current = null;
+        setHoverPoint(null);
+      }
       return;
     }
     const snapped = clampPoint(point);
+    // Skip state updates when the snapped grid cell hasn't changed
+    const key = `${snapped.x},${snapped.z}`;
+    if (key === lastHoverSnapRef.current) return;
+    lastHoverSnapRef.current = key;
     setHoverPoint(snapped);
     setDraft((prev) => {
       if (!prev) {
@@ -902,7 +924,7 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
 
   const handleBoardClick = useCallback(
     (point: Vec2) => {
-      const entry = selectedCatalogEntry;
+      const entry = selectedCatalogEntryRef.current;
       if (!entry) {
         return;
       }
@@ -914,7 +936,7 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
           id: createId(),
           kind: "ground",
           position: snapped,
-          orientation: singleNodeOrientation,
+          orientation: singleNodeOrientationRef.current,
         };
         setElements((prev) => [...prev, newElement]);
         setSelectedElementId(newElement.id);
@@ -922,14 +944,14 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
         return;
       }
 
-      if (!draft || draft.entry.id !== entry.id) {
+      if (!draftRef.current || draftRef.current.entry.id !== entry.id) {
         setDraft({ mode: "two-point", entry, start: snapped, current: snapped });
         setSelectedElementId(null);
         setFeedbackMessage("Anchor set. Choose a second point to complete placement.");
         return;
       }
 
-      const resolved = resolveAxisPlacement(draft.start, snapped);
+      const resolved = resolveAxisPlacement(draftRef.current.start, snapped);
       if (resolved.length < MIN_SEGMENT_LENGTH) {
         setFeedbackMessage("Segment too short. Extend the component before placing.");
         return;
@@ -948,7 +970,7 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
         const prefix = entry.defaultLabelPrefix;
         let label = entry.name;
         if (prefix) {
-          const nextIndex = (labelCounters[prefix] ?? 0) + 1;
+          const nextIndex = (labelCountersRef.current[prefix] ?? 0) + 1;
           label = `${prefix}${nextIndex}`;
           setLabelCounters((prev) => ({
             ...prev,
@@ -973,7 +995,7 @@ export function BuilderModeView({ symbolStandard }: { symbolStandard: SymbolStan
 
       setDraft(null);
     },
-    [selectedCatalogEntry, draft, labelCounters, singleNodeOrientation]
+    [] // Stable: all mutable values read via refs
   );
 
   const handleElementClick = useCallback((elementId: string) => {
@@ -1208,11 +1230,13 @@ type BuilderViewportProps = {
   symbolStandard: SymbolStandard;
 };
 
+const EMPTY_HIGHLIGHT_SET = new Set<string>();
+
 function BuilderViewport({
   elements,
   previewElement,
   selectedElementId,
-  highlightedElementIds = new Set(),
+  highlightedElementIds = EMPTY_HIGHLIGHT_SET,
   validationIssues,
   draftAnchor,
   hoverPoint,
@@ -1254,6 +1278,9 @@ function BuilderViewport({
   const allMaterialsRef = useRef<Set<any>>(new Set());
   const faultFxGroupRef = useRef<any>(null);
   const sparkAccumulatorRef = useRef<number>(0);
+  // Reusable Vector3 objects to avoid per-frame allocations in updateCamera / applyPan
+  const _tempVec3A = useRef<any>(null);
+  const _tempVec3B = useRef<any>(null);
 
   // Camera control state refs
   const cameraStateRef = useRef<any>(null);
@@ -1295,10 +1322,12 @@ function BuilderViewport({
     cameraState.target.z = Math.max(-CAMERA_PAN_LIMITS.z,
       Math.min(CAMERA_PAN_LIMITS.z, cameraState.target.z));
 
-    // Update camera position from spherical coordinates
-    const offset = new threeInstance.Vector3().setFromSpherical(cameraState.spherical);
-    cameraInstance.position.copy(new threeInstance.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z)).add(offset);
-    cameraInstance.lookAt(new threeInstance.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    // Update camera position from spherical coordinates (reuse Vector3 to avoid GC pressure)
+    if (!_tempVec3A.current) _tempVec3A.current = new threeInstance.Vector3();
+    if (!_tempVec3B.current) _tempVec3B.current = new threeInstance.Vector3();
+    const offset = _tempVec3A.current.set(0, 0, 0).setFromSpherical(cameraState.spherical);
+    cameraInstance.position.set(cameraState.target.x, cameraState.target.y, cameraState.target.z).add(offset);
+    cameraInstance.lookAt(_tempVec3B.current.set(cameraState.target.x, cameraState.target.y, cameraState.target.z));
     cameraInstance.updateMatrix();
     cameraInstance.updateMatrixWorld(true);
     cameraState.needsUpdate = false;
@@ -1316,7 +1345,9 @@ function BuilderViewport({
     if (!element || element.clientHeight === 0) return;
 
     cameraInstance.updateMatrix();
-    const offset = new threeInstance.Vector3().copy(cameraInstance.position).sub(new threeInstance.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    if (!_tempVec3A.current) _tempVec3A.current = new threeInstance.Vector3();
+    if (!_tempVec3B.current) _tempVec3B.current = new threeInstance.Vector3();
+    const offset = _tempVec3A.current.copy(cameraInstance.position).sub(_tempVec3B.current.set(cameraState.target.x, cameraState.target.y, cameraState.target.z));
     let targetDistance = offset.length();
     targetDistance *= Math.tan((cameraInstance.fov / 2) * (Math.PI / 180));
 
@@ -1327,8 +1358,9 @@ function BuilderViewport({
     const moveX = (2 * deltaX * targetDistance) / element.clientHeight;
     const moveY = (2 * deltaY * targetDistance) / element.clientHeight;
 
-    const panOffset = new threeInstance.Vector3();
-    const panVector = new threeInstance.Vector3();
+    // Reuse _tempVec3A as panOffset, _tempVec3B as panVector
+    const panOffset = _tempVec3A.current.set(0, 0, 0);
+    const panVector = _tempVec3B.current;
 
     panVector.setFromMatrixColumn(cameraInstance.matrix, 0);
     panVector.multiplyScalar(-moveX * cameraState.panSpeed);
@@ -1502,25 +1534,45 @@ function BuilderViewport({
       anchorGroupRef.current = anchorGroup;
     }
 
-    if (hoverPoint) {
-      const geometry = new three.RingGeometry(0.18, 0.26, 36);
-      const material = new three.MeshBasicMaterial({
-        color: 0x7dd3fc,
-        transparent: true,
-        opacity: 0.65,
-        side: three.DoubleSide,
-      });
-      const hoverMesh = new three.Mesh(geometry, material);
-      hoverMesh.rotation.x = -Math.PI / 2;
-      hoverMesh.position.set(hoverPoint.x, 0.02, hoverPoint.z);
-      scene.add(hoverMesh);
-      hoverMarkerRef.current = hoverMesh;
-    }
-  }, [elements, previewElement, selectedElementId, highlightedElementIds, draftAnchor, hoverPoint, symbolStandard]);
+    // Hover marker is now updated separately via a lightweight effect to avoid
+    // triggering a full scene rebuild on every pointer move.
+  }, [elements, previewElement, selectedElementId, highlightedElementIds, draftAnchor, symbolStandard]);
 
   useEffect(() => {
     rebuildSceneContent();
   }, [rebuildSceneContent]);
+
+  // Lightweight hover marker update — moves or creates/removes the ring
+  // without tearing down the whole scene graph.
+  useEffect(() => {
+    const three = threeRef.current;
+    const scene = sceneRef.current;
+    if (!three || !scene) return;
+
+    if (hoverPoint) {
+      if (hoverMarkerRef.current) {
+        // Just reposition the existing mesh
+        hoverMarkerRef.current.position.set(hoverPoint.x, 0.02, hoverPoint.z);
+      } else {
+        const geometry = new three.RingGeometry(0.18, 0.26, 36);
+        const material = new three.MeshBasicMaterial({
+          color: 0x7dd3fc,
+          transparent: true,
+          opacity: 0.65,
+          side: three.DoubleSide,
+        });
+        const hoverMesh = new three.Mesh(geometry, material);
+        hoverMesh.rotation.x = -Math.PI / 2;
+        hoverMesh.position.set(hoverPoint.x, 0.02, hoverPoint.z);
+        scene.add(hoverMesh);
+        hoverMarkerRef.current = hoverMesh;
+      }
+    } else if (hoverMarkerRef.current) {
+      scene.remove(hoverMarkerRef.current);
+      disposeThreeObject(hoverMarkerRef.current);
+      hoverMarkerRef.current = null;
+    }
+  }, [hoverPoint]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1539,13 +1591,25 @@ function BuilderViewport({
 
         setLoading(false);
 
-        const renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
+        const rendererOpts = getMobileRendererOptions();
+        const shadowSettings = getMobileShadowSettings();
+        const optimalPixelRatio = getMobilePixelRatio();
+        const onMobile = isMobile();
+
+        const renderer = new three.WebGLRenderer({
+          antialias: rendererOpts.antialias,
+          alpha: rendererOpts.alpha,
+          powerPreference: rendererOpts.powerPreference,
+          precision: rendererOpts.precision,
+        });
         configureRendererForBestQuality(three, renderer);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setPixelRatio(optimalPixelRatio);
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setClearColor(0xfdfdfd, 1);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = three.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = shadowSettings.enabled;
+        renderer.shadowMap.type = shadowSettings.type === "soft"
+          ? three.PCFSoftShadowMap
+          : three.BasicShadowMap;
         container.appendChild(renderer.domElement);
 
         const scene = new three.Scene();
@@ -1569,9 +1633,9 @@ function BuilderViewport({
 
         const key = new three.DirectionalLight(0x6bb7ff, 0.7);
         key.position.set(8, 12, 6);
-        key.castShadow = true;
-        key.shadow.mapSize.width = 1024;
-        key.shadow.mapSize.height = 1024;
+        key.castShadow = shadowSettings.enabled;
+        key.shadow.mapSize.width = shadowSettings.mapSize;
+        key.shadow.mapSize.height = shadowSettings.mapSize;
         key.shadow.camera.near = 0.5;
         key.shadow.camera.far = 30;
         key.shadow.camera.left = -10;
@@ -1954,8 +2018,30 @@ function BuilderViewport({
 
         rebuildSceneContent();
 
-        const animate = () => {
+        // Frame-rate throttle for mobile: skip every other frame when
+        // nothing is actively changing (no camera movement, no pointer
+        // interaction) to cut GPU/CPU workload roughly in half.
+        let lastFrameTime = 0;
+        const targetInterval = onMobile ? 1000 / 30 : 0; // 30fps cap on mobile, uncapped on desktop
+
+        const animate = (now: number) => {
           animationFrameRef.current = window.requestAnimationFrame(animate);
+
+          // On mobile, throttle to ~30fps unless something needs updating
+          if (targetInterval > 0) {
+            const cameraState = cameraStateRef.current;
+            const hasActivePointers = activePointersRef.current.size > 0;
+            const cameraMoving = cameraState?.needsUpdate;
+            const issues = validationIssuesRef.current ?? [];
+            const hasActiveAnimation = issues.some((i) => i.severity === "error" || i.severity === "warning");
+            const idle = !hasActivePointers && !cameraMoving && !hasActiveAnimation;
+
+            if (idle && now - lastFrameTime < targetInterval) {
+              return; // skip this frame
+            }
+            lastFrameTime = now;
+          }
+
           // Lightweight fault animations (short circuit sparks / polarity pulsing).
           const sceneNow = sceneRef.current;
           const threeNow = threeRef.current;
@@ -2090,7 +2176,7 @@ function BuilderViewport({
           renderer.render(scene, camera);
         };
 
-        animate();
+        animate(0);
 
         window.addEventListener("resize", handleResize);
 
@@ -2141,7 +2227,12 @@ function BuilderViewport({
         cleanup();
       }
     };
-  }, [onBoardPointClick, onBoardPointMove, onElementClick, rebuildSceneContent]);
+    // rebuildSceneContent is invoked via its own dedicated useEffect and should
+    // NOT appear here — otherwise the entire WebGL renderer, scene, camera,
+    // lights, and event listeners are torn down and recreated on every element
+    // selection or placement, which is the primary source of lag and choppiness.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onBoardPointClick, onBoardPointMove, onElementClick]);
 
   return (
     <div className="schematic-viewport">
@@ -2186,6 +2277,10 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
   const standardRef = useRef<SymbolStandard>(symbolStandard);
   standardRef.current = symbolStandard;
 
+  // Reusable Vector3 objects to avoid per-frame allocations
+  const _pvTempVec3A = useRef<any>(null);
+  const _pvTempVec3B = useRef<any>(null);
+
   const applyProblemRef = useRef<((nextProblem: PracticeProblem, activeStandard: SymbolStandard) => void) | null>(null);
 
   // Camera control utility functions
@@ -2217,10 +2312,12 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
     cameraState.target.z = Math.max(-CAMERA_PAN_LIMITS.z,
       Math.min(CAMERA_PAN_LIMITS.z, cameraState.target.z));
 
-    // Update camera position from spherical coordinates
-    const offset = new three.Vector3().setFromSpherical(cameraState.spherical);
-    camera.position.copy(new three.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z)).add(offset);
-    camera.lookAt(new three.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    // Update camera position from spherical coordinates (reuse Vector3 to avoid GC pressure)
+    if (!_pvTempVec3A.current) _pvTempVec3A.current = new three.Vector3();
+    if (!_pvTempVec3B.current) _pvTempVec3B.current = new three.Vector3();
+    const offset = _pvTempVec3A.current.set(0, 0, 0).setFromSpherical(cameraState.spherical);
+    camera.position.set(cameraState.target.x, cameraState.target.y, cameraState.target.z).add(offset);
+    camera.lookAt(_pvTempVec3B.current.set(cameraState.target.x, cameraState.target.y, cameraState.target.z));
     camera.updateMatrix();
     camera.updateMatrixWorld(true);
     cameraState.needsUpdate = false;
@@ -2235,7 +2332,9 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
     if (!element || element.clientHeight === 0) return;
 
     camera.updateMatrix();
-    const offset = new three.Vector3().copy(camera.position).sub(new three.Vector3(cameraState.target.x, cameraState.target.y, cameraState.target.z));
+    if (!_pvTempVec3A.current) _pvTempVec3A.current = new three.Vector3();
+    if (!_pvTempVec3B.current) _pvTempVec3B.current = new three.Vector3();
+    const offset = _pvTempVec3A.current.copy(camera.position).sub(_pvTempVec3B.current.set(cameraState.target.x, cameraState.target.y, cameraState.target.z));
     let targetDistance = offset.length();
     targetDistance *= Math.tan((camera.fov / 2) * (Math.PI / 180));
 
@@ -2246,8 +2345,9 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
     const moveX = (2 * deltaX * targetDistance) / element.clientHeight;
     const moveY = (2 * deltaY * targetDistance) / element.clientHeight;
 
-    const panOffset = new three.Vector3();
-    const panVector = new three.Vector3();
+    // Reuse temp vectors as panOffset / panVector
+    const panOffset = _pvTempVec3A.current.set(0, 0, 0);
+    const panVector = _pvTempVec3B.current;
 
     panVector.setFromMatrixColumn(camera.matrix, 0);
     panVector.multiplyScalar(-moveX * cameraState.panSpeed);
@@ -2280,13 +2380,25 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
 
         setLoading(false);
 
-        const renderer = new three.WebGLRenderer({ antialias: true, alpha: true });
+        const rendererOpts = getMobileRendererOptions();
+        const shadowSettings = getMobileShadowSettings();
+        const optimalPixelRatio = getMobilePixelRatio();
+        const onMobile = isMobile();
+
+        const renderer = new three.WebGLRenderer({
+          antialias: rendererOpts.antialias,
+          alpha: rendererOpts.alpha,
+          powerPreference: rendererOpts.powerPreference,
+          precision: rendererOpts.precision,
+        });
         configureRendererForBestQuality(three, renderer);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setPixelRatio(optimalPixelRatio);
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setClearColor(0xfdfdfd, 1);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = three.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = shadowSettings.enabled;
+        renderer.shadowMap.type = shadowSettings.type === "soft"
+          ? three.PCFSoftShadowMap
+          : three.BasicShadowMap;
         container.appendChild(renderer.domElement);
 
         const scene = new three.Scene();
@@ -2310,9 +2422,9 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
 
         const key = new three.DirectionalLight(0x6bb7ff, 0.7);
         key.position.set(8, 12, 6);
-        key.castShadow = true;
-        key.shadow.mapSize.width = 1024;
-        key.shadow.mapSize.height = 1024;
+        key.castShadow = shadowSettings.enabled;
+        key.shadow.mapSize.width = shadowSettings.mapSize;
+        key.shadow.mapSize.height = shadowSettings.mapSize;
         key.shadow.camera.near = 0.5;
         key.shadow.camera.far = 30;
         key.shadow.camera.left = -10;
@@ -2673,9 +2785,23 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
 
         const clock = new three.Clock();
         let animationFrame = 0;
+        let pvLastFrameTime = 0;
+        const pvTargetInterval = onMobile ? 1000 / 30 : 0;
 
-        const animate = () => {
+        const animate = (now: number) => {
           animationFrame = window.requestAnimationFrame(animate);
+
+          // Throttle to 30fps on mobile when no camera movement is active
+          if (pvTargetInterval > 0) {
+            const cameraState = cameraStateRef.current;
+            const hasActivePointers = activePointersRef.current.size > 0;
+            const cameraMoving = cameraState?.needsUpdate;
+            if (!hasActivePointers && !cameraMoving && now - pvLastFrameTime < pvTargetInterval) {
+              return;
+            }
+            pvLastFrameTime = now;
+          }
+
           const elapsed = clock.getElapsedTime();
           const deltaTime = clock.getDelta();
           updateCamera(false, three, camera);
@@ -2690,7 +2816,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           renderer.render(scene, camera);
         };
 
-        animate();
+        animate(0);
 
         const handleResize = () => {
           if (!container) {

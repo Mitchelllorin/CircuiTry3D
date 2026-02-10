@@ -3432,3 +3432,43 @@ body.builder-body .arena-page {
     font-size: 0.7rem;
   }
 }
+
+/* ============================================================
+   ARENA PERFORMANCE OPTIMIZATIONS
+   ============================================================ */
+
+/* Reduce blur on mobile/touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .arena-shell::before {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Honour reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .arena-grid-glow,
+  .arena-logo-mark,
+  .arena-title,
+  .arena-scenario-icon,
+  .arena-scenario-notice-dot,
+  .arena-split-line,
+  .arena-scan-line,
+  .arena-pulse-ring,
+  .arena-platform-ring,
+  .arena-energy-ring,
+  .arena-led-dot,
+  .arena-spark,
+  .arena-energy-wave,
+  .arena-lightning-bolt,
+  .arena-arc-flash,
+  .arena-crackle-bar {
+    animation: none !important;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

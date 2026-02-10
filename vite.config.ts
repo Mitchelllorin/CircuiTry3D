@@ -15,7 +15,8 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom']
+          'router': ['react-router-dom'],
+          'three-vendor': ['three']
         }
       }
     }

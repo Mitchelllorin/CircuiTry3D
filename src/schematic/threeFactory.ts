@@ -153,18 +153,44 @@ const styliseMaterial = (three: any, material: any, options: BuildOptions, baseC
   material.needsUpdate = true;
 };
 
+// ---------------------------------------------------------------------------
+// Shared geometry cache — avoids re-creating identical Three.js buffer
+// geometries for every component on every scene rebuild.  The cache is keyed
+// by a short string describing the geometry parameters (type+dimensions) and
+// stores the geometry once.  Geometries in the cache are never disposed so
+// they survive across rebuilds; the memory cost is negligible (a handful of
+// small BufferGeometry instances).
+// ---------------------------------------------------------------------------
+const _geometryCache = new Map<string, any>();
+const _cachedGeometries = new Set<any>();
+
+const getCachedGeometry = (key: string, factory: () => any): any => {
+  let geom = _geometryCache.get(key);
+  if (!geom) {
+    geom = factory();
+    _geometryCache.set(key, geom);
+    _cachedGeometries.add(geom);
+  }
+  return geom;
+};
+
 const cylinderBetween = (three: any, startVec: any, endVec: any, radius: number, material: any) => {
   const direction = new three.Vector3().subVectors(endVec, startVec);
   const length = direction.length();
   if (length <= SNAP_EPSILON) {
     return null;
   }
-  const geometry = new three.CylinderGeometry(radius, radius, length, 24, 1, true);
-  const mesh = new three.Mesh(geometry, material);
+  // Use a cached unit-height cylinder geometry; scale mesh to actual length.
+  const geoKey = `cyl:${radius.toFixed(4)}`;
+  const unitGeom = getCachedGeometry(geoKey, () =>
+    new three.CylinderGeometry(radius, radius, 1, 24, 1, true)
+  );
+  const mesh = new three.Mesh(unitGeom, material);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   const midpoint = new three.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
   mesh.position.copy(midpoint);
+  mesh.scale.set(1, length, 1);
   const quaternion = new three.Quaternion().setFromUnitVectors(new three.Vector3(0, 1, 0), direction.clone().normalize());
   mesh.setRotationFromQuaternion(quaternion);
   return mesh;
@@ -2429,7 +2455,11 @@ export const buildNodeMesh = (three: any, point: Vec2, options: BuildOptions) =>
     color: COLOR_HELPERS.nodeFill
   });
   styliseMaterial(three, material, options, COLOR_HELPERS.nodeFill);
-  const geometry = new three.SphereGeometry(profile.general.nodeRadius, 28, 20);
+  const nodeRadius = profile.general.nodeRadius;
+  const geoKey = `sphere:${nodeRadius.toFixed(4)}`;
+  const geometry = getCachedGeometry(geoKey, () =>
+    new three.SphereGeometry(nodeRadius, 28, 20)
+  );
   const mesh = new three.Mesh(geometry, material);
   mesh.position.copy(toVec3(three, point, COMPONENT_HEIGHT + 0.08));
   return mesh;
@@ -2453,7 +2483,8 @@ export const disposeThreeObject = (root: any) => {
   };
 
   root.traverse((child: any) => {
-    if (child.geometry && typeof child.geometry.dispose === "function") {
+    // Skip cached geometries — they are reused across scene rebuilds.
+    if (child.geometry && typeof child.geometry.dispose === "function" && !_cachedGeometries.has(child.geometry)) {
       child.geometry.dispose();
     }
     if (child.material) {

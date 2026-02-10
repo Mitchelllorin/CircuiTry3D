@@ -201,6 +201,8 @@
   height: clamp(360px, 60vh, 640px);
   border-radius: 20px;
   overflow: hidden;
+  contain: layout style;
+  will-change: transform;
   background:
     radial-gradient(
       circle at 20% 20%,
@@ -219,6 +221,11 @@
   height: 100%;
   border-radius: 20px;
   overflow: hidden;
+  contain: strict;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .schematic-status {
