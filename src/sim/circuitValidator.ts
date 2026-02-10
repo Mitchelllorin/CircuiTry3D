@@ -33,7 +33,8 @@ export type ValidationIssueType =
   | 'reverse_polarity'
   | 'diode_reverse_bias'
   | 'led_reverse_bias'
-  | 'capacitor_reverse_polarity';
+  | 'capacitor_reverse_polarity'
+  | 'insufficient_components';
 
 /**
  * Single validation issue
@@ -381,6 +382,63 @@ function detectMissingPowerSource(elements: SchematicElement[]): ValidationIssue
 }
 
 /**
+ * CircuiTry3D Rule C3D-011: Minimum Component Count (No Empty Circuit Sides)
+ *
+ * In a series circuit following the standard square loop layout, EVERY SIDE of the
+ * circuit must have a component. There should be no side without a component.
+ *
+ * Standard Square Loop Layout:
+ * - LEFT:   Battery (always)
+ * - TOP:    First component (horizontal)
+ * - RIGHT:  Second component (vertical)
+ * - BOTTOM: Third component (horizontal)
+ *
+ * This rule ensures:
+ * 1. Educational consistency - students see complete circuit layouts
+ * 2. Visual balance - no empty wires without purpose
+ * 3. Realistic simulation - actual circuits have components on all paths
+ *
+ * @param elements - All schematic elements
+ * @returns ValidationIssue[] - Issues for insufficient components
+ */
+function detectInsufficientComponents(elements: SchematicElement[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  const batteries = elements.filter(e => e.kind === 'battery');
+  const loadComponents = elements.filter(e =>
+    e.kind !== 'wire' && e.kind !== 'battery' && e.kind !== 'ground'
+  );
+
+  // Only validate if we have a battery (circuit is being built)
+  if (batteries.length === 0) return issues;
+
+  // CircuiTry3D Standard: Series circuits must have exactly 4 components
+  // (1 battery on left + 3 load components on top, right, bottom)
+  const REQUIRED_LOAD_COMPONENTS = 3;
+
+  if (loadComponents.length < REQUIRED_LOAD_COMPONENTS) {
+    const missingCount = REQUIRED_LOAD_COMPONENTS - loadComponents.length;
+    const sideNames = ['top', 'right', 'bottom'];
+    const missingSides = sideNames.slice(loadComponents.length).join(', ');
+
+    issues.push({
+      type: 'insufficient_components',
+      severity: 'warning',
+      message: `Missing ${missingCount} Component${missingCount > 1 ? 's' : ''} (No Empty Sides)`,
+      description:
+        `CircuiTry3D Standard: Every side of a circuit must have a component. ` +
+        `A series circuit requires 4 components (battery + 3 others) to fill the ` +
+        `standard square loop layout. Missing component${missingCount > 1 ? 's' : ''} on: ${missingSides}. ` +
+        `Add resistor(s), LED(s), switch(es), or other components to complete the circuit.`,
+      affectedElements: batteries.map(b => b.id),
+      affectedPositions: batteries.flatMap(b => getElementTerminals(b))
+    });
+  }
+
+  return issues;
+}
+
+/**
  * Check for floating wire endpoints (wires not connected to anything)
  */
 function detectFloatingWireEndpoints(
@@ -565,6 +623,7 @@ export function validateCircuit(elements: SchematicElement[]): ValidationResult 
   issues.push(...detectMissingGround(elements));
   issues.push(...detectMissingPowerSource(elements));
   issues.push(...detectFloatingWireEndpoints(elements, graph));
+  issues.push(...detectInsufficientComponents(elements));
 
   // Physics-backed sanity checks (Ohm + Kirchhoff):
   // - enforce that ideal shorts across a battery are flagged

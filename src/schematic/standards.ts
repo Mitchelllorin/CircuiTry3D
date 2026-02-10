@@ -61,7 +61,7 @@ export const STANDARD_PROFILES: Record<SymbolStandard, SymbolStandardProfile> = 
   "ansi-ieee": {
     resistor: {
       bodyStyle: "zigzag",
-      zigzagSegments: 6,
+      zigzagSegments: 3,        // CircuiTry3D standard: 3 tight zig-zags
       zigzagAmplitude: 0.30,
       leadFraction: 0.22,
       minBodyLength: 1.1,
@@ -115,7 +115,7 @@ export const STANDARD_PROFILES: Record<SymbolStandard, SymbolStandardProfile> = 
   iec: {
     resistor: {
       bodyStyle: "rectangle",
-      zigzagSegments: 6,
+      zigzagSegments: 3,        // CircuiTry3D standard (not used for IEC rectangle style)
       zigzagAmplitude: 0.30,
       leadFraction: 0.25,
       minBodyLength: 0.9,

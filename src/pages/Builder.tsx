@@ -19,6 +19,7 @@ import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
+import { TroubleshootPanel } from "../components/builder/panels/TroubleshootPanel";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
@@ -1235,7 +1236,7 @@ export default function Builder() {
         setTroubleshootStatus(null);
         setTroubleshootCheckPending(false);
         setTroubleshootPendingCheckProblemId(null);
-        setCircuitLocked(false);
+        setCircuitLocked(true);
         const nextProblem =
           troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
           troubleshootingProblems[0] ??
@@ -2544,220 +2545,75 @@ export default function Builder() {
         </div>
       </div>
 
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--troubleshoot${isTroubleshootPanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isTroubleshootPanelOpen}
-        onClick={exitTroubleshootMode}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--troubleshoot"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="builder-panel-brand" aria-hidden="true">
-            <BrandMark size="sm" decorative />
-          </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={exitTroubleshootMode}
-            aria-label="Close troubleshooting mode"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--troubleshoot">
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div>
-                <h2 style={{ margin: 0 }}>Troubleshooting Mode</h2>
-                <p style={{ margin: "6px 0 0", opacity: 0.85, fontSize: 13 }}>
-                  Load a broken circuit, find the fault, then restore current flow.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <label style={{ fontSize: 12, opacity: 0.8 }}>
-                  Problem
-                  <select
-                    value={activeTroubleshootId ?? ""}
-                    onChange={(event) => {
-                      const nextId = event.target.value || null;
-                      setTroubleshootCheckPending(false);
-                      setTroubleshootPendingCheckProblemId(null);
-                      setActiveTroubleshootId(nextId);
-                      setTroubleshootStatus(null);
-                      const next =
-                        troubleshootingProblems.find((p) => p.id === nextId) ??
-                        null;
-                      if (next) {
-                        triggerBuilderAction("load-preset", { preset: next.preset });
-                        setWorkspaceModeWithGlobalSync("troubleshoot");
-                        setTroubleshootPanelOpen(true);
-                        setCircuitLocked(false);
-                      }
-                    }}
-                    style={{
-                      marginLeft: 8,
-                      padding: "6px 8px",
-                      borderRadius: 8,
-                      background: "rgba(0,0,0,0.25)",
-                      color: "var(--text-primary)",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                    }}
-                  >
-                    {troubleshootingProblems.map((problem) => (
-                      <option key={problem.id} value={problem.id}>
-                        {problem.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span style={{ fontSize: 12, opacity: 0.8 }}>
-                  Progress:{" "}
-                  <strong>
-                    {troubleshootSolvedIds.length}/{troubleshootingProblems.length}
-                  </strong>
-                </span>
-              </div>
-
-              {activeTroubleshootProblem ? (
-                <div
-                  style={{
-                    padding: 12,
-                    borderRadius: 12,
-                    border: "1px solid rgba(136, 204, 255, 0.18)",
-                    background: "rgba(14, 30, 58, 0.42)",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                    <h3 style={{ margin: 0 }}>{activeTroubleshootProblem.title}</h3>
-                    {troubleshootSolvedIds.includes(activeTroubleshootProblem.id) && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          border: "1px solid rgba(130, 255, 170, 0.35)",
-                          background: "rgba(40, 120, 70, 0.25)",
-                          color: "rgba(170, 255, 210, 0.92)",
-                        }}
-                      >
-                        Solved
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {activeTroubleshootProblem.prompt}
-                  </p>
-                  {activeTroubleshootProblem.hints?.length ? (
-                    <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.9 }}>
-                      {activeTroubleshootProblem.hints.map((hint) => (
-                        <li key={hint}>{hint}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  No troubleshooting problems available.
-                </div>
-              )}
-
-              {troubleshootStatus && (
-                <div
-                  role="status"
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    background: "rgba(0,0,0,0.22)",
-                    fontSize: 13,
-                  }}
-                >
-                  {troubleshootStatus}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!activeTroubleshootProblem) return;
-                    setWorkspaceModeWithGlobalSync("troubleshoot");
-                    setTroubleshootPanelOpen(true);
-                    setTroubleshootCheckPending(false);
-                    setTroubleshootPendingCheckProblemId(null);
-                    triggerBuilderAction("load-preset", {
-                      preset: activeTroubleshootProblem.preset,
-                    });
-                    setCircuitLocked(false);
-                    setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
-                  }}
-                >
-                  <span className="slider-chip-label">Reset Circuit</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!activeTroubleshootProblem) return;
-                    setWorkspaceModeWithGlobalSync("troubleshoot");
-                    setTroubleshootPanelOpen(true);
-                    setTroubleshootStatus("Checking…");
-                    setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
-                    setTroubleshootCheckPending(true);
-                    triggerBuilderAction("run-simulation");
-                  }}
-                  disabled={!isFrameReady}
-                  aria-disabled={!isFrameReady}
-                  title={!isFrameReady ? "Workspace is still loading" : "Run simulation and check if current flows"}
-                >
-                  <span className="slider-chip-label">
-                    {isTroubleshootCheckPending ? "Checking…" : "Check Fix"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!troubleshootingProblems.length) return;
-                    const index = activeTroubleshootProblem
-                      ? troubleshootingProblems.findIndex((p) => p.id === activeTroubleshootProblem.id)
-                      : -1;
-                    const next =
-                      troubleshootingProblems[(index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length] ??
-                      troubleshootingProblems[0] ??
-                      null;
-                    if (!next) return;
-                    setWorkspaceModeWithGlobalSync("troubleshoot");
-                    setTroubleshootPanelOpen(true);
-                    setTroubleshootCheckPending(false);
-                    setTroubleshootPendingCheckProblemId(null);
-                    setActiveTroubleshootId(next.id);
-                    setTroubleshootStatus(null);
-                    triggerBuilderAction("load-preset", { preset: next.preset });
-                    setCircuitLocked(false);
-                  }}
-                >
-                  <span className="slider-chip-label">Next Problem</span>
-                </button>
-              </div>
-
-              <div style={{ fontSize: 12, opacity: 0.75 }}>
-                Tip: You can also tap the floating ▶ button to run a simulation anytime.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Troubleshoot Panel - Compact floating panel following Practice pattern */}
+      {workspaceMode === "troubleshoot" && (
+        <TroubleshootPanel
+          isOpen={isTroubleshootPanelOpen}
+          onToggle={() => setTroubleshootPanelOpen(!isTroubleshootPanelOpen)}
+          activeProblemId={activeTroubleshootId}
+          onProblemChange={(nextId) => {
+            setTroubleshootCheckPending(false);
+            setTroubleshootPendingCheckProblemId(null);
+            setActiveTroubleshootId(nextId);
+            setTroubleshootStatus(null);
+            const next = troubleshootingProblems.find((p) => p.id === nextId) ?? null;
+            if (next) {
+              triggerBuilderAction("load-preset", { preset: next.preset });
+              setWorkspaceModeWithGlobalSync("troubleshoot");
+              setTroubleshootPanelOpen(true);
+              setCircuitLocked(true);
+            }
+          }}
+          solvedIds={troubleshootSolvedIds}
+          status={troubleshootStatus}
+          isChecking={isTroubleshootCheckPending}
+          onReset={() => {
+            if (!activeTroubleshootProblem) return;
+            setWorkspaceModeWithGlobalSync("troubleshoot");
+            setTroubleshootPanelOpen(true);
+            setTroubleshootCheckPending(false);
+            setTroubleshootPendingCheckProblemId(null);
+            triggerBuilderAction("load-preset", { preset: activeTroubleshootProblem.preset });
+            setCircuitLocked(true);
+            setTroubleshootStatus("Circuit reset. Study the schematic, then click Start Fixing.");
+          }}
+          onCheck={() => {
+            if (!activeTroubleshootProblem) return;
+            setWorkspaceModeWithGlobalSync("troubleshoot");
+            setTroubleshootPanelOpen(true);
+            setTroubleshootStatus("Checking…");
+            setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
+            setTroubleshootCheckPending(true);
+            triggerBuilderAction("run-simulation");
+          }}
+          onNext={() => {
+            if (!troubleshootingProblems.length) return;
+            const index = activeTroubleshootProblem
+              ? troubleshootingProblems.findIndex((p) => p.id === activeTroubleshootProblem.id)
+              : -1;
+            const next =
+              troubleshootingProblems[(index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length] ??
+              troubleshootingProblems[0] ??
+              null;
+            if (!next) return;
+            setWorkspaceModeWithGlobalSync("troubleshoot");
+            setTroubleshootPanelOpen(true);
+            setTroubleshootCheckPending(false);
+            setTroubleshootPendingCheckProblemId(null);
+            setActiveTroubleshootId(next.id);
+            setTroubleshootStatus(null);
+            triggerBuilderAction("load-preset", { preset: next.preset });
+            setCircuitLocked(true);
+          }}
+          onClose={exitTroubleshootMode}
+          isFrameReady={isFrameReady}
+          isCircuitLocked={isCircuitLocked}
+          onUnlockCircuit={() => {
+            setCircuitLocked(false);
+            setTroubleshootStatus("Circuit unlocked! Fix the fault, then tap Check Fix.");
+          }}
+        />
+      )}
 
       <div
         className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}

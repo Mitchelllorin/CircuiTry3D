@@ -66,7 +66,7 @@ function createSplashSVG(width, height) {
                 <line x1="50" y1="50" x2="80" y2="50" stroke="url(#wireGradient)" stroke-width="3.5" />
                 
                 <g transform="translate(120, 50)" stroke="url(#componentGradient)" stroke-width="3.5" filter="url(#glow)">
-                    <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+                    <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
                 </g>
                 
                 <line x1="150" y1="50" x2="190" y2="50" stroke="url(#wireGradient)" stroke-width="3.5" />
@@ -74,7 +74,7 @@ function createSplashSVG(width, height) {
                 <line x1="190" y1="50" x2="190" y2="80" stroke="url(#wireGradient)" stroke-width="3.5" />
                 
                 <g transform="translate(190, 120) rotate(90)" stroke="url(#componentGradient)" stroke-width="3.5" filter="url(#glow)">
-                    <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+                    <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
                 </g>
                 
                 <line x1="190" y1="160" x2="190" y2="130" stroke="url(#wireGradient)" stroke-width="3.5" />
@@ -82,7 +82,7 @@ function createSplashSVG(width, height) {
                 <line x1="190" y1="160" x2="150" y2="160" stroke="url(#wireGradient)" stroke-width="3.5" />
                 
                 <g transform="translate(120, 160)" stroke="url(#componentGradient)" stroke-width="3.5" filter="url(#glow)">
-                    <polyline points="-30,0 -20,0 -15,-12 -5,12 5,-12 15,12 20,0 30,0" />
+                    <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
                 </g>
                 
                 <line x1="90" y1="160" x2="50" y2="160" stroke="url(#wireGradient)" stroke-width="3.5" />

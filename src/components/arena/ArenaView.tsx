@@ -669,11 +669,10 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
   const renderShape = () => {
     switch (glyphKey) {
       case "resistor":
+        // CircuiTry3D standard: 3-peak zigzag with lead wires (proportional to RESISTOR_SPECS.integratedPoints)
         return (
           <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="6" y1="30" x2="26" y2="30" />
-            <polyline points="26,30 36,18 46,42 56,18 66,42 76,18 86,30" />
-            <line x1="86" y1="30" x2="114" y2="30" />
+            <polyline points="6,30 20,30 29,12 47,48 65,12 83,48 92,30 114,30" />
           </g>
         );
       case "capacitor":
@@ -686,22 +685,27 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
           </g>
         );
       case "battery":
+        // CircuiTry3D standard: short plate (negative) + long plate (positive) with polarity markers
         return (
-          <g stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round">
-            <rect x="20" y="14" width="24" height="32" rx="6" />
-            <rect x="52" y="18" width="24" height="24" rx="4" />
-            <line x1="84" y1="24" x2="84" y2="36" />
-            <line x1="96" y1="18" x2="96" y2="42" />
+          <g stroke="currentColor" fill="none" strokeLinecap="round">
+            <line x1="10" y1="30" x2="42" y2="30" strokeWidth="5" />
+            <line x1="42" y1="16" x2="42" y2="44" strokeWidth="5" />
+            <line x1="58" y1="10" x2="58" y2="50" strokeWidth="7" />
+            <line x1="58" y1="30" x2="110" y2="30" strokeWidth="5" />
+            <text x="36" y="54" fontSize="12" fill="currentColor" textAnchor="middle" fontWeight="bold">−</text>
+            <text x="64" y="10" fontSize="12" fill="currentColor" textAnchor="middle" fontWeight="bold">+</text>
           </g>
         );
       case "led":
+        // CircuiTry3D standard: filled diode triangle + cathode bar + light emission arrows
         return (
           <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="34,12 74,30 34,48" fill="currentColor" opacity="0.2" />
             <line x1="10" y1="30" x2="34" y2="30" />
-            <line x1="74" y1="30" x2="110" y2="30" />
-            <polyline points="58,16 72,4 80,10" />
-            <polyline points="62,42 76,30 84,36" />
+            <polygon points="34,14 34,46 62,30" fill="currentColor" />
+            <line x1="62" y1="14" x2="62" y2="46" />
+            <line x1="62" y1="30" x2="110" y2="30" />
+            <polyline points="56,12 68,0 74,6" strokeWidth="3" />
+            <polyline points="66,8 78,-4 84,2" strokeWidth="3" />
           </g>
         );
       case "inductor":
@@ -713,12 +717,14 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
           </g>
         );
       case "switch":
+        // CircuiTry3D standard: two contact circles + blade + lead wires
         return (
-          <g stroke="currentColor" strokeWidth="6" fill="none" strokeLinecap="round">
-            <line x1="10" y1="36" x2="46" y2="36" />
-            <line x1="46" y1="36" x2="86" y2="16" />
-            <line x1="86" y1="16" x2="110" y2="16" />
-            <circle cx="46" cy="36" r="6" fill="currentColor" />
+          <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+            <line x1="10" y1="34" x2="38" y2="34" />
+            <circle cx="42" cy="34" r="5" fill="currentColor" />
+            <line x1="42" y1="34" x2="78" y2="14" />
+            <circle cx="78" cy="34" r="5" fill="currentColor" />
+            <line x1="82" y1="34" x2="110" y2="34" />
           </g>
         );
       case "transistor":
@@ -742,22 +748,23 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
           </g>
         );
       case "diode":
+        // CircuiTry3D standard: filled triangle (anode) + cathode bar + lead wires
         return (
           <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="10" y1="30" x2="40" y2="30" />
-            <polygon points="40,18 40,42 60,30" fill="currentColor" opacity="0.3" />
-            <line x1="60" y1="18" x2="60" y2="42" />
-            <line x1="60" y1="30" x2="110" y2="30" />
+            <line x1="10" y1="30" x2="36" y2="30" />
+            <polygon points="36,14 36,46 64,30" fill="currentColor" />
+            <line x1="64" y1="14" x2="64" y2="46" />
+            <line x1="64" y1="30" x2="110" y2="30" />
           </g>
         );
       case "motor":
+        // CircuiTry3D standard: circle with "M" letter + lead wires
         return (
           <g stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="46" cy="30" r="20" />
-            <line x1="10" y1="12" x2="22" y2="24" />
-            <line x1="10" y1="48" x2="22" y2="36" />
-            <line x1="66" y1="30" x2="110" y2="30" />
-            <polyline points="78,18 94,18 94,42 78,42" />
+            <line x1="10" y1="30" x2="30" y2="30" />
+            <circle cx="60" cy="30" r="22" />
+            <line x1="82" y1="30" x2="110" y2="30" />
+            <text x="60" y="37" textAnchor="middle" fill="currentColor" fontSize="22" fontWeight="800" style={{ userSelect: "none" }}>M</text>
           </g>
         );
       default:
@@ -2226,6 +2233,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.7)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px'}}>{tag}</div>
             <h3 style={{margin: '0 0 4px', fontSize: '1.1rem', fontWeight: '600'}}>{profile?.name ?? "No component"}</h3>
             <div style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)'}}>{profile?.type ?? "—"}</div>
+            {profile?.type && <ComponentGlyph type={profile.type} />}
             {isChampion && <div style={{marginTop: '8px', padding: '4px 12px', background: 'var(--brand-primary-dim)', borderRadius: '999px', display: 'inline-block', fontSize: '0.7rem', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase'}}>🏆 CHAMPION</div>}
           </div>
 

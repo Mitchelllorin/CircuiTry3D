@@ -215,6 +215,19 @@ export function useBuilderFrame({
       return;
     }
 
+    // Flush any pending messages that were queued before the frame was ready
+    const frameWindow = iframeRef.current?.contentWindow;
+    if (frameWindow && pendingMessages.current.length > 0) {
+      const messagesToSend = pendingMessages.current.splice(0);
+      messagesToSend.forEach((message) => {
+        try {
+          frameWindow.postMessage(message, "*");
+        } catch (error) {
+          console.warn("Failed to flush pending message", message, error);
+        }
+      });
+    }
+
     postToBuilder(
       { type: "builder:request-mode-state" },
       { allowQueue: false },

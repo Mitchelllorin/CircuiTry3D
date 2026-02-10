@@ -49,12 +49,13 @@ import { SCHEMATIC_COLORS, STROKE_WIDTHS, RESISTOR_SPECS, formatResistance } fro
 #### Battery (Voltage Source)
 - Two flat plates of unequal length: **longer plate = positive (+)**, **shorter plate = negative (−)**.
 - Plate spacing follows the selected template; leads terminate on the outer faces.
+- **Plates are PERPENDICULAR to the wire path** (horizontal plates for vertical battery orientation).
 - Polarity markers (+ and −) displayed when the standard calls for them (ANSI/IEEE default).
 - Position: typically on the left side of the circuit for series/parallel layouts.
 - Label format: voltage value with unit (e.g., "24 V", "12 V", "5V").
 
-#### Resistor (ANSI/IEEE Standard)
-- **Zigzag pattern**: 4–6 complete peaks forming a sawtooth wave.
+#### Resistor (ANSI/IEEE Standard - CircuiTry3D)
+- **Zigzag pattern**: 3 tight, complete peaks forming a sawtooth wave.
 - The zigzag is drawn as a continuous polyline with sharp vertices.
 - Stroke thickness matches connected wires exactly.
 - Horizontal leads extend from both ends of the zigzag body.
@@ -144,13 +145,49 @@ Based on the reference image, combination circuits follow this pattern:
 
 When rendering any circuit in CircuiTry3D, verify:
 
-1. **Resistor zigzags** have 4–6 peaks, clearly visible and uniform
-2. **Battery plates** show correct polarity (long = +, short = −)
+1. **Resistor zigzags** have 3 tight peaks, clearly visible and uniform (CircuiTry3D standard)
+2. **Battery plates** are perpendicular to the wire path (long = +, short = −)
 3. **Junction dots** appear at all electrical connection points
 4. **Wire routing** uses orthogonal (90°) paths only
 5. **Labels** include subscript identifiers (R₁, R₂) and values with units (100Ω)
 6. **Component spacing** is even and symmetric where the topology allows
 7. **Overall layout** matches the canonical patterns shown in reference images
+8. **All circuits have 4 components** (battery + 3 others) for the standard square loop
+9. **No empty sides** - EVERY side of the circuit must have a component (Rule C3D-011)
+
+---
+
+### CircuiTry3D Standard: No Empty Circuit Sides (Rule C3D-011)
+
+**This is a mandatory rule for all circuit designs in CircuiTry3D.**
+
+Every side of a series circuit must have a component. There should be no side in a circuit where there is no component - wires-only paths are not allowed in the standard layout.
+
+**Standard Square Loop (4 components minimum):**
+```
+        TL ●────────[TOP]────────● TR
+           │                       │
+           │                       │
+    (+)────┤                     [RIGHT]  ← Component required
+   Battery │                       │
+    (−)────┤                       │
+           │                       │
+        BL ●───────[BOTTOM]──────● BR
+                   ↑
+           Component required
+```
+
+**Required Components by Position:**
+- **LEFT (Battery)**: Always present - power source
+- **TOP**: Load component (resistor, switch, LED, etc.) - horizontal
+- **RIGHT**: Load component - vertical orientation
+- **BOTTOM**: Load component - horizontal (return path)
+
+**Why this rule matters:**
+1. **Educational clarity**: Students understand that every path in a circuit has purpose
+2. **Visual consistency**: All diagrams follow the same balanced layout
+3. **Real-world relevance**: Actual circuits have components on all paths
+4. **Simulation accuracy**: Empty sides can create ambiguous analysis scenarios
 
 ---
 

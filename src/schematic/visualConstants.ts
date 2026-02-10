@@ -133,13 +133,16 @@ export const NODE_DIMENSIONS = {
 // =============================================================================
 
 /**
- * Resistor rendering specifications (ANSI/IEEE zigzag style)
+ * Resistor rendering specifications (CircuiTry3D / ANSI-inspired zigzag style)
  * Reference: docs/schematic-style-guidelines.md
+ *
+ * CircuiTry3D Standard: "Three zig-zag schematic resistor body with labelled leads"
+ * (Per component catalog description)
  */
 export const RESISTOR_SPECS = {
   // Zigzag pattern
-  zigzagSegments: 6,          // Number of complete peaks (4-6 per style guide)
-  zigzagAmplitude: 8,         // Peak height in 2D SVG units
+  zigzagSegments: 3,          // CircuiTry3D standard: 3 tight zig-zags
+  zigzagAmplitude: 10,        // Peak height in 2D SVG units (tight zigzags)
   zigzagAmplitude3D: 0.30,    // Peak height in 3D units
 
   // Body dimensions
@@ -149,9 +152,12 @@ export const RESISTOR_SPECS = {
   // Lead wire fractions
   leadFraction: 0.22,         // Fraction of total length for leads (3D)
 
-  // SVG polyline points for standard zigzag
-  // Creates 4 complete peaks: -20,0 to 20,0
-  zigzagPoints: "-20,0 -16,-8 -10,8 -4,-8 2,8 8,-8 14,8 20,0",
+  // SVG polyline points for standard 3-peak zigzag: -20,0 to 20,0
+  zigzagPoints: "-20,0 -10,-10 0,10 10,-10 20,0",
+
+  // Integrated polyline (leads + zigzag in one stroke) for static SVG contexts (logo, favicon, splash)
+  // Same 3-peak zigzag with lead wires baked into the single polyline path
+  integratedPoints: "-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0",
 } as const;
 
 /**
@@ -241,6 +247,186 @@ export const LAYOUT_SPECS = {
   wireCornerRadius: 0,        // 90° angles only (orthogonal routing)
   orthogonalOnly: true,       // Enforce 90° angles per style guide
 } as const;
+
+// =============================================================================
+// STANDARD CIRCUIT LAYOUT (Educational Square Loop)
+// =============================================================================
+
+/**
+ * CircuiTry3D Standard Circuit Layout
+ * ===================================
+ *
+ * This is the canonical layout format used throughout the application for
+ * rendering circuits in both 2D and 3D views. It follows the standard
+ * educational format used in schools, textbooks, and industry.
+ *
+ * LAYOUT RULES (must be followed for ALL circuit designs):
+ * --------------------------------------------------------
+ * 1. BATTERY on the LEFT SIDE (vertical orientation)
+ *    - Positive terminal at top-left corner
+ *    - Negative terminal at bottom-left corner
+ *
+ * 2. Components arranged around a SQUARE LOOP:
+ *    - TOP RAIL: First component(s) after battery positive
+ *    - RIGHT SIDE: Second component (if needed), vertical orientation
+ *    - BOTTOM RAIL: Third/return component (if needed)
+ *
+ * 3. CORNERS (junction nodes) at standard positions:
+ *    - Top-Left (TL): Connection from battery+ to top rail
+ *    - Top-Right (TR): Connection from top rail to right side
+ *    - Bottom-Right (BR): Connection from right side to bottom rail
+ *    - Bottom-Left (BL): Connection from bottom rail to battery-
+ *
+ * 4. CURRENT FLOW direction (conventional):
+ *    Battery+ → TL → TOP → TR → RIGHT → BR → BOTTOM → BL → Battery-
+ *
+ * 5. NO EMPTY SIDES (Rule C3D-011):
+ *    - EVERY side of the circuit MUST have a component
+ *    - Wires-only paths are NOT allowed in the standard layout
+ *    - Series circuits require exactly 4 components (battery + 3 loads)
+ *    - This rule is enforced by the circuit validator
+ *
+ * This format provides visual consistency and reinforces the mental model
+ * of current flow for educational purposes.
+ */
+
+/**
+ * Standard square loop layout dimensions for 3D rendering
+ * Used in legacy.html PRESET_CIRCUITS and presets.ts
+ */
+export const CIRCUIT_LAYOUT_3D = {
+  // Square loop corner coordinates (XZ plane, Y=0)
+  corners: {
+    topLeft: { x: -10, z: 6 },
+    topRight: { x: 10, z: 6 },
+    bottomRight: { x: 10, z: -6 },
+    bottomLeft: { x: -10, z: -6 },
+  },
+
+  // Standard component positions
+  positions: {
+    // Battery: LEFT SIDE, centered vertically
+    battery: { x: -10, y: 0, z: 0 },
+    batteryRotation: Math.PI / 2, // 90° = vertical orientation
+
+    // TOP RAIL component (switch, LED, R1)
+    top: { x: 0, y: 0, z: 6 },
+    topRotation: 0, // horizontal orientation
+
+    // RIGHT SIDE component (R1 or R2)
+    right: { x: 10, y: 0, z: 0 },
+    rightRotation: Math.PI / 2, // vertical orientation
+
+    // BOTTOM RAIL component (R2 or R3)
+    bottom: { x: 0, y: 0, z: -6 },
+    bottomRotation: 0, // horizontal orientation
+  },
+
+  // Junction positions (for wiring connections)
+  junctions: {
+    J_TL: { x: -10, y: 0, z: 6 },
+    J_TR: { x: 10, y: 0, z: 6 },
+    J_BR: { x: 10, y: 0, z: -6 },
+    J_BL: { x: -10, y: 0, z: -6 },
+  },
+} as const;
+
+/**
+ * Standard square loop layout dimensions for 2D SVG rendering
+ * Used in TroubleshootDiagram.tsx and CircuitDiagram.tsx
+ */
+export const CIRCUIT_LAYOUT_2D = {
+  // SVG viewBox dimensions
+  viewBox: {
+    width: 280,
+    height: 180,
+    padding: 20,
+  },
+
+  // Square loop corner coordinates
+  corners: {
+    topLeft: { x: 50, y: 40 },
+    topRight: { x: 230, y: 40 },
+    bottomRight: { x: 230, y: 140 },
+    bottomLeft: { x: 50, y: 140 },
+  },
+
+  // Standard component positions
+  positions: {
+    // Battery: LEFT SIDE, centered vertically between TL and BL
+    battery: { x: 50, y: 90 },
+
+    // TOP RAIL component (horizontal, centered between TL and TR)
+    top: { x: 140, y: 40 },
+
+    // RIGHT SIDE component (vertical, centered between TR and BR)
+    right: { x: 230, y: 90 },
+
+    // BOTTOM RAIL component (horizontal, centered between BR and BL)
+    bottom: { x: 140, y: 140 },
+  },
+
+  // Component dimensions for layout calculations
+  componentWidth: 60,  // Width of horizontal components
+  componentHeight: 40, // Height of vertical components
+
+  // Wire segment endpoints (for standard 3-component layout)
+  wireSegments: {
+    // Battery+ to top-left corner
+    batteryToTL: { start: { x: 50, y: 82 }, end: { x: 50, y: 40 } },
+    // Top-left corner to top component
+    tlToTop: { start: { x: 50, y: 40 }, end: { x: 110, y: 40 } },
+    // Top component to top-right corner
+    topToTR: { start: { x: 170, y: 40 }, end: { x: 230, y: 40 } },
+    // Top-right corner to right component
+    trToRight: { start: { x: 230, y: 40 }, end: { x: 230, y: 70 } },
+    // Right component to bottom-right corner
+    rightToBR: { start: { x: 230, y: 110 }, end: { x: 230, y: 140 } },
+    // Bottom-right to bottom-left corner
+    brToBL: { start: { x: 230, y: 140 }, end: { x: 50, y: 140 } },
+    // Bottom-left corner to battery-
+    blToBattery: { start: { x: 50, y: 140 }, end: { x: 50, y: 98 } },
+  },
+} as const;
+
+/**
+ * Component placement helper for standard layouts
+ * Maps component count to their positions in the square loop
+ */
+export type ComponentPlacement = {
+  position: "left" | "top" | "right" | "bottom";
+  orientation: "horizontal" | "vertical";
+};
+
+/**
+ * CircuiTry3D Standard: No Empty Circuit Sides (Rule C3D-011)
+ *
+ * EVERY side of a series circuit must have a component. There should be no
+ * side in a circuit where there is no component - this is the CircuiTry3D standard.
+ *
+ * Standard Square Loop Layout (4 components minimum):
+ * - LEFT:   Battery (always present)
+ * - TOP:    First load component (horizontal orientation)
+ * - RIGHT:  Second load component (vertical orientation)
+ * - BOTTOM: Third load component (horizontal orientation)
+ *
+ * This function ALWAYS returns 3 placements because the CircuiTry3D standard
+ * requires components on all sides. Circuits with fewer than 3 load components
+ * will be flagged by the circuit validator (C3D-011: insufficient_components).
+ *
+ * @param componentCount Number of non-battery components (should be 3 for standard circuits)
+ * @returns Array of placements for all 3 positions (top, right, bottom)
+ */
+export function getStandardPlacements(componentCount: number): ComponentPlacement[] {
+  // CircuiTry3D Standard: Always return all 3 positions
+  // Every side of the circuit must have a component - no empty sides allowed
+  // This is enforced by rule C3D-011 in the circuit validator
+  return [
+    { position: "top", orientation: "horizontal" },
+    { position: "right", orientation: "vertical" },
+    { position: "bottom", orientation: "horizontal" },
+  ];
+}
 
 // =============================================================================
 // LABEL SPECIFICATIONS

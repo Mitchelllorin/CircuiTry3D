@@ -1,0 +1,644 @@
+/* Troubleshoot Panel - Compact floating panel for troubleshooting mode */
+
+.troubleshoot-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(10, 20, 35, 0.82);
+  border-top: 2px solid rgba(255, 136, 102, 0.5);
+  z-index: 100;
+  max-height: 55vh;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform: translateY(calc(100% - 52px));
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.troubleshoot-panel.open {
+  transform: translateY(0);
+  z-index: 1200;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.75);
+}
+
+/* Header */
+.troubleshoot-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 16px;
+  height: 52px;
+  background: linear-gradient(
+    180deg,
+    rgba(30, 45, 65, 0.95) 0%,
+    rgba(20, 35, 55, 0.9) 100%
+  );
+  border-bottom: 1px solid rgba(255, 136, 102, 0.25);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.troubleshoot-panel-brand {
+  display: flex;
+  align-items: center;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.troubleshoot-panel-brand .circuitry-wordmark {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  filter: drop-shadow(0 4px 12px rgba(2, 6, 23, 0.28));
+}
+
+.troubleshoot-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: rgba(255, 180, 140, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.troubleshoot-panel-toggle:hover {
+  background: rgba(255, 136, 102, 0.12);
+  color: rgba(255, 200, 160, 1);
+}
+
+.troubleshoot-panel-toggle .toggle-icon {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.troubleshoot-panel.open .troubleshoot-panel-toggle .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.troubleshoot-panel-toggle .toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.troubleshoot-panel-toggle .toggle-label-icon {
+  font-size: 16px;
+}
+
+.troubleshoot-panel-progress {
+  margin-left: auto;
+}
+
+.troubleshoot-panel-progress .progress-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(136, 204, 255, 0.9);
+  background: rgba(136, 204, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 204, 255, 0.25);
+}
+
+.troubleshoot-panel-close {
+  background: rgba(255, 100, 80, 0.15);
+  border: 1px solid rgba(255, 100, 80, 0.4);
+  color: rgba(255, 160, 140, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.troubleshoot-panel-close:hover {
+  background: rgba(255, 100, 80, 0.25);
+  border-color: rgba(255, 100, 80, 0.6);
+  color: #fff;
+}
+
+/* Body */
+.troubleshoot-panel-body {
+  padding: 16px 20px;
+  padding-bottom: calc(24px + var(--builder-safe-area-bottom, 0px));
+  max-height: calc(55vh - 52px);
+  overflow-y: auto;
+  background: linear-gradient(
+    160deg,
+    rgba(8, 18, 38, 0.95) 0%,
+    rgba(4, 12, 28, 0.92) 100%
+  );
+}
+
+.troubleshoot-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Problem Selector */
+.troubleshoot-problem-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.troubleshoot-select-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(200, 220, 240, 0.85);
+}
+
+.troubleshoot-select {
+  padding: 8px 12px;
+  padding-right: 32px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-primary, #e8f4ff);
+  border: 1px solid rgba(255, 136, 102, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FF8866' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.troubleshoot-select:hover {
+  border-color: rgba(255, 136, 102, 0.5);
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.troubleshoot-select:focus {
+  outline: none;
+  border-color: rgba(255, 136, 102, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 136, 102, 0.15);
+}
+
+.troubleshoot-select option {
+  background: #0a1a2f;
+  color: #e8f4ff;
+  padding: 8px;
+}
+
+/* Problem Card */
+.troubleshoot-problem-card {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 136, 102, 0.22);
+  background: rgba(20, 35, 58, 0.55);
+}
+
+.troubleshoot-problem-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.troubleshoot-problem-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 200, 170, 0.95);
+}
+
+.troubleshoot-solved-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(130, 255, 170, 0.4);
+  background: rgba(40, 120, 70, 0.3);
+  color: rgba(170, 255, 210, 0.95);
+}
+
+.troubleshoot-problem-prompt {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(200, 220, 240, 0.85);
+}
+
+/* Hints */
+.troubleshoot-hints {
+  margin-top: 10px;
+}
+
+.troubleshoot-hints-toggle {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 200, 140, 0.85);
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.2s ease;
+}
+
+.troubleshoot-hints-toggle:hover {
+  color: rgba(255, 220, 170, 1);
+}
+
+.troubleshoot-hints-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.troubleshoot-hint-item {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(180, 200, 220, 0.8);
+  margin-bottom: 4px;
+}
+
+/* Status */
+.troubleshoot-status {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+  color: rgba(200, 220, 240, 0.9);
+  text-align: center;
+}
+
+.troubleshoot-status--success {
+  border-color: rgba(130, 255, 170, 0.4);
+  background: rgba(40, 120, 70, 0.25);
+  color: rgba(170, 255, 210, 0.95);
+}
+
+.troubleshoot-status--warning {
+  border-color: rgba(255, 200, 100, 0.35);
+  background: rgba(120, 80, 20, 0.25);
+  color: rgba(255, 220, 150, 0.95);
+}
+
+.troubleshoot-status--checking {
+  border-color: rgba(136, 204, 255, 0.35);
+  background: rgba(40, 80, 120, 0.25);
+  color: rgba(180, 220, 255, 0.95);
+}
+
+/* Actions */
+.troubleshoot-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.troubleshoot-action-btn {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.troubleshoot-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.troubleshoot-action-btn--reset {
+  background: rgba(100, 120, 140, 0.25);
+  border: 1px solid rgba(136, 170, 200, 0.3);
+  color: rgba(180, 210, 240, 0.9);
+}
+
+.troubleshoot-action-btn--reset:hover:not(:disabled) {
+  background: rgba(100, 120, 140, 0.35);
+  border-color: rgba(136, 170, 200, 0.5);
+}
+
+.troubleshoot-action-btn--check {
+  background: linear-gradient(135deg, rgba(255, 180, 100, 0.9) 0%, rgba(255, 136, 102, 0.95) 100%);
+  color: #0a1a2f;
+  box-shadow: 0 2px 12px rgba(255, 136, 102, 0.3);
+}
+
+.troubleshoot-action-btn--check:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 136, 102, 0.45);
+}
+
+.troubleshoot-action-btn--next {
+  background: linear-gradient(135deg, rgba(136, 204, 255, 0.95) 0%, rgba(88, 142, 255, 0.9) 100%);
+  color: #0a1a2f;
+  box-shadow: 0 2px 12px rgba(88, 142, 255, 0.3);
+}
+
+.troubleshoot-action-btn--next:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(88, 142, 255, 0.45);
+}
+
+/* Tip */
+.troubleshoot-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(136, 204, 255, 0.08);
+  border: 1px solid rgba(136, 204, 255, 0.15);
+}
+
+.troubleshoot-tip .tip-icon {
+  font-size: 14px;
+}
+
+.troubleshoot-tip .tip-text {
+  font-size: 11px;
+  color: rgba(136, 204, 255, 0.8);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .troubleshoot-panel-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .troubleshoot-panel-brand {
+    display: none;
+  }
+
+  .troubleshoot-panel-toggle {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .troubleshoot-panel-body {
+    padding: 12px 14px;
+  }
+
+  .troubleshoot-actions {
+    gap: 8px;
+  }
+
+  .troubleshoot-action-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    flex: 1 1 auto;
+    min-width: 90px;
+  }
+}
+
+/* Integration with builder canvas - prevent overlap with bottom toolbars */
+.troubleshoot-panel.open ~ .builder-bottom-toolbar,
+.builder-workspace:has(.troubleshoot-panel.open) .builder-bottom-toolbar {
+  transform: translateY(-100%);
+}
+
+/* Two-column overview layout - similar to Practice mode */
+.troubleshoot-overview-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.troubleshoot-description-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.troubleshoot-schematic-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Schematic description text */
+.troubleshoot-schematic-description {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(180, 200, 220, 0.7);
+  line-height: 1.4;
+}
+
+/* Schematic card styling */
+.troubleshoot-schematic-card {
+  background: rgba(15, 25, 45, 0.65);
+  border: 1px solid rgba(255, 136, 102, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.troubleshoot-schematic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 136, 102, 0.15);
+}
+
+.troubleshoot-schematic-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 180, 140, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.troubleshoot-schematic-topology {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(136, 204, 255, 0.8);
+  background: rgba(136, 204, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 8px;
+  text-transform: capitalize;
+}
+
+.troubleshoot-schematic-diagram {
+  background: rgba(8, 16, 32, 0.6);
+  border-radius: 8px;
+  padding: 8px;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.troubleshoot-schematic-diagram .troubleshoot-diagram {
+  width: 100%;
+  height: auto;
+  max-height: 160px;
+}
+
+.troubleshoot-schematic-hint {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(255, 107, 107, 0.7);
+  text-align: center;
+  font-style: italic;
+}
+
+/* Workspace tip styling */
+.troubleshoot-workspace-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 136, 102, 0.1);
+  border: 1px solid rgba(255, 136, 102, 0.2);
+}
+
+.troubleshoot-workspace-tip .tip-icon {
+  font-size: 16px;
+}
+
+.troubleshoot-workspace-tip .tip-text {
+  font-size: 12px;
+  color: rgba(255, 180, 140, 0.85);
+  line-height: 1.4;
+}
+
+/* Mobile adjustments for two-column layout */
+@media (max-width: 700px) {
+  .troubleshoot-overview-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .troubleshoot-schematic-column {
+    order: -1; /* Show schematic first on mobile */
+  }
+
+  .troubleshoot-schematic-diagram {
+    min-height: 120px;
+  }
+
+  .troubleshoot-schematic-diagram .troubleshoot-diagram {
+    max-height: 130px;
+  }
+}
+
+/* Lock banner - displayed when circuit is locked for analysis */
+.troubleshoot-lock-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 200, 100, 0.15) 0%,
+    rgba(255, 136, 102, 0.12) 100%
+  );
+  border: 1px solid rgba(255, 200, 100, 0.35);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.lock-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.lock-banner-content .lock-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.lock-banner-content .lock-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lock-banner-content .lock-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 220, 170, 0.95);
+}
+
+.lock-banner-content .lock-text span {
+  font-size: 12px;
+  color: rgba(200, 190, 170, 0.85);
+  line-height: 1.4;
+}
+
+/* Unlock button styling */
+.troubleshoot-action-btn--unlock {
+  background: linear-gradient(
+    135deg,
+    rgba(130, 255, 170, 0.9) 0%,
+    rgba(80, 200, 120, 0.95) 100%
+  );
+  color: #0a1a2f;
+  box-shadow: 0 2px 12px rgba(80, 200, 120, 0.35);
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.troubleshoot-action-btn--unlock:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(80, 200, 120, 0.5);
+}
+
+.troubleshoot-action-btn--unlock:disabled {
+  opacity: 0.5;
+}
+
+/* Mobile adjustments for lock banner */
+@media (max-width: 600px) {
+  .troubleshoot-lock-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .lock-banner-content {
+    gap: 10px;
+  }
+
+  .lock-banner-content .lock-icon {
+    font-size: 20px;
+  }
+
+  .lock-banner-content .lock-text strong {
+    font-size: 13px;
+  }
+
+  .lock-banner-content .lock-text span {
+    font-size: 11px;
+  }
+
+  .troubleshoot-action-btn--unlock {
+    width: 100%;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}

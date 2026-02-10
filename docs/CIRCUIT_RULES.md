@@ -218,6 +218,44 @@ if (validation.circuitStatus === 'complete') {
 }
 ```
 
+### Rule C3D-011: No Empty Circuit Sides (Minimum Component Count)
+
+> **"Every side of a series circuit must have a component. There shall be no side in a circuit where there is no component - this is the CircuiTry3D standard."**
+
+**Rationale:** Educational consistency requires that all circuit layouts show components on every path. Empty sides (wires-only) create visual ambiguity and do not reflect real-world circuit design where every conductive path serves a purpose.
+
+**Standard Square Loop Layout (4 components minimum):**
+
+| Position | Component Type | Orientation | Required |
+|----------|---------------|-------------|----------|
+| LEFT | Battery | Vertical | Always |
+| TOP | Load (resistor, switch, LED, etc.) | Horizontal | Always |
+| RIGHT | Load (resistor, switch, LED, etc.) | Vertical | Always |
+| BOTTOM | Load (resistor, switch, LED, etc.) | Horizontal | Always |
+
+**Visual Reference:**
+```
+        TL ●────────[TOP]────────● TR
+           │                       │
+           │                       │
+    (+)────┤                     [RIGHT]
+   Battery │                       │
+    (−)────┤                       │
+           │                       │
+        BL ●───────[BOTTOM]──────● BR
+```
+
+**Implementation Requirements:**
+1. Series circuits MUST have exactly 4 components (battery + 3 load components)
+2. Validate component count during circuit validation
+3. Flag circuits with fewer than 3 load components as having `insufficient_components`
+4. The `getStandardPlacements()` function always returns all 3 positions (top, right, bottom)
+
+**Error Condition:** `INSUFFICIENT_COMPONENTS`
+- Severity: WARNING
+- Message: "Missing N Component(s) (No Empty Sides)"
+- Description: Identifies which sides are missing components
+
 ---
 
 ## Part 3: DC Steady-State Simplifications
@@ -266,6 +304,10 @@ The circuit validator runs checks in this order:
 
 6. **Missing Power Source** (WARNING)
    - Components present but no battery
+
+7. **Insufficient Components / No Empty Sides** (WARNING)
+   - Series circuits with fewer than 4 components (battery + 3 loads)
+   - Any side of the square loop without a component
 
 ---
 
