@@ -1,35 +1,47 @@
-import { useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import Home from "../pages/Home";
-import Builder from "../pages/Builder";
-import Arena from "../pages/Arena";
-import WireDemo from "../pages/WireDemo";
-import Pricing from "../pages/Pricing";
-import Community from "../pages/Community";
-import Account from "../pages/Account";
-import SchematicMode from "../pages/SchematicMode";
-import Classroom from "../pages/Classroom";
-import Arcade from "../pages/Arcade";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
 
+// Lazy-load heavy pages so they are code-split into separate chunks.
+// This drastically reduces the initial JS bundle size — the Builder page
+// alone pulls in Three.js, the schematic engine, wire routing, etc.
+const Builder = lazy(() => import("../pages/Builder"));
+const Arena = lazy(() => import("../pages/Arena"));
+const Pricing = lazy(() => import("../pages/Pricing"));
+const Community = lazy(() => import("../pages/Community"));
+const Account = lazy(() => import("../pages/Account"));
+const Classroom = lazy(() => import("../pages/Classroom"));
+const Arcade = lazy(() => import("../pages/Arcade"));
+
+function PageFallback() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "40vh", color: "rgba(200,220,255,0.7)" }}>
+      <span>Loading…</span>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <WorkspaceModeProvider>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/app" element={<Builder />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/classroom" element={<Classroom />} />
-          <Route path="/arcade" element={<Arcade />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/app" element={<Builder />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/classroom" element={<Classroom />} />
+            <Route path="/arcade" element={<Arcade />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </WorkspaceModeProvider>
   );
 }

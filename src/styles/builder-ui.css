@@ -3574,3 +3574,93 @@ body.builder-body {
   background: var(--builder-navy);
   color: var(--builder-text);
 }
+
+/* ============================================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================================ */
+
+/* Reduce expensive backdrop-filter blur on mobile/touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .builder-logo-header {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .builder-menu-left,
+  .builder-menu-right,
+  .builder-menu-bottom {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .builder-mode-bar {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* Prevent accidental text selection and highlight on touch */
+  .builder-shell {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Disable CSS transitions during touch for snappier interaction feel */
+  .builder-shell *:active {
+    transition-duration: 0s !important;
+  }
+
+  /* Ensure touch targets are large enough (44px minimum) */
+  .builder-shell button,
+  .builder-shell [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Honour reduced-motion preference — kill continuous animations */
+@media (prefers-reduced-motion: reduce) {
+  .builder-logo-mark,
+  .builder-logo-mark .circuitry-brandmark__img {
+    animation: none !important;
+  }
+
+  .builder-mode-scroll-hint-right,
+  .builder-mode-scroll-hint-left {
+    animation: none !important;
+  }
+
+  .builder-quick-pulse,
+  .builder-ticker-track {
+    animation: none !important;
+  }
+
+  .builder-pulsing-dot {
+    animation: none !important;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* GPU-promote frequently animated / scrollable containers */
+.builder-menu-left,
+.builder-menu-right,
+.builder-menu-bottom {
+  will-change: transform;
+  contain: layout style;
+}
+
+.builder-mode-bar {
+  contain: layout style;
+}
+
+/* Ensure canvas/viewport containers don't trigger parent reflows */
+.schematic-viewport,
+.schematic-canvas {
+  contain: strict;
+}

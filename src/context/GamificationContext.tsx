@@ -465,7 +465,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     }));
   }, [currentUser?.displayName, currentUser?.bio, state.xp]);
 
-  const value: GamificationContextValue = {
+  const value = useMemo<GamificationContextValue>(() => ({
     state,
     level: levelInfo.level,
     xpIntoLevel: levelInfo.xpIntoLevel,
@@ -477,7 +477,16 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     unlockedComponentsDetailed,
     nextComponentUnlock,
     recordCompletion,
-  };
+  }), [
+    state,
+    levelInfo,
+    unlockedBadges,
+    lockedBadges,
+    leaderboard,
+    unlockedComponentsDetailed,
+    nextComponentUnlock,
+    recordCompletion,
+  ]);
 
   return <GamificationContext.Provider value={value}>{children}</GamificationContext.Provider>;
 }
