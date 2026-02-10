@@ -17,6 +17,7 @@ import "../styles/interactive-tutorial.css";
 import { getSchematicSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
+import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTroubleshootPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
@@ -40,6 +41,7 @@ import practiceProblems, {
 import troubleshootingProblems, {
   getAnalyzeCircuitResult,
   isTroubleshootingSolved,
+  type TroubleshootingProblem,
 } from "../data/troubleshootingProblems";
 import type { PracticeProblem } from "../model/practice";
 import type {
@@ -855,6 +857,8 @@ export default function Builder() {
     useState<PracticeWorksheetStatus | null>(null);
   const [isCompactWorksheetOpen, setCompactWorksheetOpen] = useState(false);
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
+  const [isTroubleshootWorkspaceMode, setTroubleshootWorkspaceMode] =
+    useState(false);
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
@@ -914,9 +918,11 @@ export default function Builder() {
 
   const exitTroubleshootMode = useCallback(() => {
     setTroubleshootPanelOpen(false);
+    setTroubleshootWorkspaceMode(false);
     setTroubleshootStatus(null);
     setTroubleshootCheckPending(false);
     setTroubleshootPendingCheckProblemId(null);
+    setCircuitLocked(false);
     // Ensure global mode bar stays consistent and the panel can be reopened.
     if (
       workspaceMode === "troubleshoot" ||
@@ -1253,6 +1259,8 @@ export default function Builder() {
       setWorkspaceModeWithGlobalSync("practice");
       setPracticeWorkspaceMode(true);
       setCompactWorksheetOpen(true);
+      setTroubleshootWorkspaceMode(false);
+      setTroubleshootPanelOpen(false);
       setCircuitLocked(true);
       setArenaPanelOpen(false);
     },
@@ -1261,6 +1269,41 @@ export default function Builder() {
       assignPracticeProblem,
       setArenaPanelOpen,
       setWorkspaceModeWithGlobalSync,
+    ],
+  );
+
+  const openTroubleshootWorkspace = useCallback(
+    (problemOverride?: TroubleshootingProblem | null) => {
+      const nextProblem =
+        problemOverride ??
+        troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+        troubleshootingProblems[0] ??
+        null;
+
+      if (!nextProblem) {
+        return;
+      }
+
+      if (nextProblem.id !== activeTroubleshootId) {
+        setActiveTroubleshootId(nextProblem.id);
+      }
+
+      setWorkspaceModeWithGlobalSync("troubleshoot");
+      setTroubleshootWorkspaceMode(true);
+      setTroubleshootPanelOpen(true);
+      setPracticeWorkspaceMode(false);
+      setCompactWorksheetOpen(false);
+      setArenaPanelOpen(false);
+      setTroubleshootStatus(null);
+      setTroubleshootCheckPending(false);
+      setTroubleshootPendingCheckProblemId(null);
+      setCircuitLocked(true);
+      triggerBuilderAction("load-preset", { preset: nextProblem.preset });
+    },
+    [
+      activeTroubleshootId,
+      setWorkspaceModeWithGlobalSync,
+      triggerBuilderAction,
     ],
   );
 
@@ -1273,55 +1316,45 @@ export default function Builder() {
       if (pendingMode === "build") {
         setWorkspaceMode("build");
         setPracticeWorkspaceMode(false);
+        setTroubleshootWorkspaceMode(false);
         setCompactWorksheetOpen(false);
         setCircuitLocked(false);
         setArenaPanelOpen(false);
         setTroubleshootPanelOpen(false);
+        setTroubleshootStatus(null);
       } else if (pendingMode === "practice") {
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
         setWorkspaceMode("arena");
+        setTroubleshootWorkspaceMode(false);
         setTroubleshootPanelOpen(false);
+        setCircuitLocked(false);
         setArenaPanelOpen(true);
         if (arenaExportStatus !== "ready") {
           handleArenaSync({ openWindow: false });
         }
       } else if (pendingMode === "learn") {
         setWorkspaceMode("learn");
+        setTroubleshootWorkspaceMode(false);
         setTroubleshootPanelOpen(false);
+        setCircuitLocked(false);
         openHelpCenter("overview");
       } else if (pendingMode === "troubleshoot") {
-        setWorkspaceMode("troubleshoot");
-        setTroubleshootPanelOpen(true);
-        setTroubleshootStatus(null);
-        setTroubleshootCheckPending(false);
-        setTroubleshootPendingCheckProblemId(null);
-        setCircuitLocked(false);
-        const nextProblem =
-          troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
-          troubleshootingProblems[0] ??
-          null;
-        if (nextProblem) {
-          if (nextProblem.id !== activeTroubleshootId) {
-            setActiveTroubleshootId(nextProblem.id);
-          }
-          triggerBuilderAction("load-preset", { preset: nextProblem.preset });
-        }
+        openTroubleshootWorkspace();
       }
 
       // Sync back to global context
       globalModeContext.setWorkspaceMode(pendingMode);
     }
   }, [
-    activeTroubleshootId,
     globalModeContext.workspaceMode,
     workspaceMode,
     openPracticeWorkspace,
+    openTroubleshootWorkspace,
     handleArenaSync,
     openHelpCenter,
     arenaExportStatus,
     globalModeContext,
-    triggerBuilderAction,
   ]);
 
   const handlePracticeAction = useCallback(
@@ -1425,6 +1458,75 @@ export default function Builder() {
     openPracticeWorkspace(nextProblem);
   }, [activePracticeProblemId, openPracticeWorkspace]);
 
+  const handleSelectTroubleshootProblem = useCallback(
+    (problemId: string) => {
+      const nextProblem =
+        troubleshootingProblems.find((problem) => problem.id === problemId) ?? null;
+      if (!nextProblem) {
+        return;
+      }
+      setActiveTroubleshootId(nextProblem.id);
+      openTroubleshootWorkspace(nextProblem);
+    },
+    [openTroubleshootWorkspace],
+  );
+
+  const handleResetTroubleshootProblem = useCallback(() => {
+    const activeProblem =
+      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+      troubleshootingProblems[0] ??
+      null;
+    if (!activeProblem) {
+      return;
+    }
+    openTroubleshootWorkspace(activeProblem);
+    setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
+  }, [activeTroubleshootId, openTroubleshootWorkspace]);
+
+  const handleCheckTroubleshootFix = useCallback(() => {
+    const activeProblem =
+      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+      troubleshootingProblems[0] ??
+      null;
+    if (!activeProblem) {
+      return;
+    }
+    setWorkspaceModeWithGlobalSync("troubleshoot");
+    setTroubleshootWorkspaceMode(true);
+    setTroubleshootPanelOpen(true);
+    setTroubleshootStatus("Checking...");
+    setTroubleshootPendingCheckProblemId(activeProblem.id);
+    setTroubleshootCheckPending(true);
+    triggerBuilderAction("run-simulation");
+  }, [activeTroubleshootId, setWorkspaceModeWithGlobalSync, triggerBuilderAction]);
+
+  const handleAdvanceTroubleshootProblem = useCallback(() => {
+    if (!troubleshootingProblems.length) {
+      return;
+    }
+    const index = activeTroubleshootId
+      ? troubleshootingProblems.findIndex(
+          (problem) => problem.id === activeTroubleshootId,
+        )
+      : -1;
+    const nextProblem =
+      troubleshootingProblems[
+        (index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length
+      ] ??
+      troubleshootingProblems[0] ??
+      null;
+    if (!nextProblem) {
+      return;
+    }
+    setActiveTroubleshootId(nextProblem.id);
+    openTroubleshootWorkspace(nextProblem);
+  }, [activeTroubleshootId, openTroubleshootWorkspace]);
+
+  const handleUnlockTroubleshootEditing = useCallback(() => {
+    setCircuitLocked(false);
+    setTroubleshootStatus("Fix verified. Editing unlocked for this circuit.");
+  }, []);
+
   const handleClearWorkspace = useCallback(() => {
     triggerBuilderAction("clear-workspace");
   }, [triggerBuilderAction]);
@@ -1503,12 +1605,13 @@ export default function Builder() {
   const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
+  const isTroubleshootVisible =
+    isTroubleshootWorkspaceMode && isTroubleshootPanelOpen;
   const isOverlayActive =
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
     isLogoSettingsOpen ||
-    isTroubleshootPanelOpen ||
     isSaveModalOpen ||
     isLoadModalOpen;
   const isActiveCircuitBuildMode =
@@ -1518,13 +1621,14 @@ export default function Builder() {
   const shouldShowEdgeActions =
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
+    !isTroubleshootVisible &&
     !isOverlayActive;
 
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
     ? "Workspace is still loading"
     : isCircuitLocked
-      ? "Complete the worksheet to unlock editing"
+      ? "Complete the active challenge to unlock editing"
       : undefined;
 
   const activeTroubleshootProblem = useMemo(() => {
@@ -1534,6 +1638,10 @@ export default function Builder() {
       null
     );
   }, [activeTroubleshootId]);
+  const isActiveTroubleshootSolved = Boolean(
+    activeTroubleshootProblem &&
+      troubleshootSolvedIds.includes(activeTroubleshootProblem.id),
+  );
 
   useEffect(() => {
     try {
@@ -2606,221 +2714,6 @@ export default function Builder() {
       </div>
 
       <div
-        className={`builder-panel-overlay builder-panel-overlay--troubleshoot${isTroubleshootPanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isTroubleshootPanelOpen}
-        onClick={exitTroubleshootMode}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--troubleshoot"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="builder-panel-brand" aria-hidden="true">
-            <BrandMark size="sm" decorative />
-          </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={exitTroubleshootMode}
-            aria-label="Close troubleshooting mode"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--troubleshoot">
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div>
-                <h2 style={{ margin: 0 }}>Troubleshooting Mode</h2>
-                <p style={{ margin: "6px 0 0", opacity: 0.85, fontSize: 13 }}>
-                  Load a broken circuit, find the fault, then restore current flow.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <label style={{ fontSize: 12, opacity: 0.8 }}>
-                  Problem
-                  <select
-                    value={activeTroubleshootId ?? ""}
-                    onChange={(event) => {
-                      const nextId = event.target.value || null;
-                      setTroubleshootCheckPending(false);
-                      setTroubleshootPendingCheckProblemId(null);
-                      setActiveTroubleshootId(nextId);
-                      setTroubleshootStatus(null);
-                      const next =
-                        troubleshootingProblems.find((p) => p.id === nextId) ??
-                        null;
-                      if (next) {
-                        triggerBuilderAction("load-preset", { preset: next.preset });
-                        setWorkspaceModeWithGlobalSync("troubleshoot");
-                        setTroubleshootPanelOpen(true);
-                        setCircuitLocked(false);
-                      }
-                    }}
-                    style={{
-                      marginLeft: 8,
-                      padding: "6px 8px",
-                      borderRadius: 8,
-                      background: "rgba(0,0,0,0.25)",
-                      color: "var(--text-primary)",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                    }}
-                  >
-                    {troubleshootingProblems.map((problem) => (
-                      <option key={problem.id} value={problem.id}>
-                        {problem.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <span style={{ fontSize: 12, opacity: 0.8 }}>
-                  Progress:{" "}
-                  <strong>
-                    {troubleshootSolvedIds.length}/{troubleshootingProblems.length}
-                  </strong>
-                </span>
-              </div>
-
-              {activeTroubleshootProblem ? (
-                <div
-                  style={{
-                    padding: 12,
-                    borderRadius: 12,
-                    border: "1px solid rgba(136, 204, 255, 0.18)",
-                    background: "rgba(14, 30, 58, 0.42)",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                    <h3 style={{ margin: 0 }}>{activeTroubleshootProblem.title}</h3>
-                    {troubleshootSolvedIds.includes(activeTroubleshootProblem.id) && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          border: "1px solid rgba(130, 255, 170, 0.35)",
-                          background: "rgba(40, 120, 70, 0.25)",
-                          color: "rgba(170, 255, 210, 0.92)",
-                        }}
-                      >
-                        Solved
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {activeTroubleshootProblem.prompt}
-                  </p>
-                  {activeTroubleshootProblem.hints?.length ? (
-                    <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.9 }}>
-                      {activeTroubleshootProblem.hints.map((hint) => (
-                        <li key={hint}>{hint}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-              ) : (
-                <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  No troubleshooting problems available.
-                </div>
-              )}
-
-              {troubleshootStatus && (
-                <div
-                  role="status"
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    background: "rgba(0,0,0,0.22)",
-                    fontSize: 13,
-                  }}
-                >
-                  {troubleshootStatus}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!activeTroubleshootProblem) return;
-                    setWorkspaceModeWithGlobalSync("troubleshoot");
-                    setTroubleshootPanelOpen(true);
-                    setTroubleshootCheckPending(false);
-                    setTroubleshootPendingCheckProblemId(null);
-                    triggerBuilderAction("load-preset", {
-                      preset: activeTroubleshootProblem.preset,
-                    });
-                    setCircuitLocked(false);
-                    setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
-                  }}
-                >
-                  <span className="slider-chip-label">Reset Circuit</span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!activeTroubleshootProblem) return;
-                    setWorkspaceModeWithGlobalSync("troubleshoot");
-                    setTroubleshootPanelOpen(true);
-                    setTroubleshootStatus("Checking…");
-                    setTroubleshootPendingCheckProblemId(activeTroubleshootProblem.id);
-                    setTroubleshootCheckPending(true);
-                    triggerBuilderAction("run-simulation");
-                  }}
-                  disabled={!isFrameReady}
-                  aria-disabled={!isFrameReady}
-                  title={!isFrameReady ? "Workspace is still loading" : "Run simulation and check if current flows"}
-                >
-                  <span className="slider-chip-label">
-                    {isTroubleshootCheckPending ? "Checking…" : "Check Fix"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => {
-                    if (!troubleshootingProblems.length) return;
-                    const index = activeTroubleshootProblem
-                      ? troubleshootingProblems.findIndex((p) => p.id === activeTroubleshootProblem.id)
-                      : -1;
-                    const next =
-                      troubleshootingProblems[(index + 1 + troubleshootingProblems.length) % troubleshootingProblems.length] ??
-                      troubleshootingProblems[0] ??
-                      null;
-                    if (!next) return;
-                    setWorkspaceModeWithGlobalSync("troubleshoot");
-                    setTroubleshootPanelOpen(true);
-                    setTroubleshootCheckPending(false);
-                    setTroubleshootPendingCheckProblemId(null);
-                    setActiveTroubleshootId(next.id);
-                    setTroubleshootStatus(null);
-                    triggerBuilderAction("load-preset", { preset: next.preset });
-                    setCircuitLocked(false);
-                  }}
-                >
-                  <span className="slider-chip-label">Next Problem</span>
-                </button>
-              </div>
-
-              <div style={{ fontSize: 12, opacity: 0.75 }}>
-                Tip: You can also tap the floating ▶ button to run a simulation anytime.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
         className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}
         role="dialog"
         aria-modal="true"
@@ -2873,6 +2766,28 @@ export default function Builder() {
             setCompactWorksheetOpen(false);
           }}
           onAdvance={handleAdvancePracticeProblem}
+        />
+      )}
+
+      {isTroubleshootWorkspaceMode && (
+        <CompactTroubleshootPanel
+          problems={troubleshootingProblems}
+          activeProblemId={activeTroubleshootId}
+          solvedIds={troubleshootSolvedIds}
+          status={troubleshootStatus}
+          isOpen={isTroubleshootPanelOpen}
+          isChecking={isTroubleshootCheckPending}
+          isFrameReady={isFrameReady}
+          isCircuitLocked={isCircuitLocked}
+          onToggle={() => setTroubleshootPanelOpen(!isTroubleshootPanelOpen)}
+          onExitMode={exitTroubleshootMode}
+          onSelectProblem={handleSelectTroubleshootProblem}
+          onResetCircuit={handleResetTroubleshootProblem}
+          onCheckFix={handleCheckTroubleshootFix}
+          onNextProblem={handleAdvanceTroubleshootProblem}
+          onUnlockEditing={
+            isActiveTroubleshootSolved ? handleUnlockTroubleshootEditing : undefined
+          }
         />
       )}
 

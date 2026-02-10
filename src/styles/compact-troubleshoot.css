@@ -1,0 +1,337 @@
+.compact-troubleshoot-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1180;
+  max-height: 56vh;
+  background: rgba(8, 18, 36, 0.9);
+  border-top: 2px solid rgba(136, 204, 255, 0.36);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.58);
+  transform: translateY(calc(100% - 50px));
+  transition: transform 0.26s ease;
+}
+
+.compact-troubleshoot-panel.open {
+  transform: translateY(0);
+  z-index: 1250;
+}
+
+.compact-troubleshoot-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 0 14px;
+  background: rgba(18, 36, 62, 0.94);
+  border-bottom: 1px solid rgba(136, 204, 255, 0.22);
+}
+
+.compact-troubleshoot-brand {
+  display: flex;
+  align-items: center;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.compact-troubleshoot-brand .circuitry-wordmark {
+  font-size: 15px;
+}
+
+.compact-troubleshoot-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.compact-troubleshoot-toggle:hover,
+.compact-troubleshoot-toggle:focus-visible {
+  background: rgba(136, 204, 255, 0.1);
+  outline: none;
+}
+
+.compact-troubleshoot-toggle .toggle-icon {
+  font-size: 12px;
+}
+
+.compact-troubleshoot-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compact-troubleshoot-exit-btn {
+  border: 1px solid rgba(255, 190, 130, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 140, 70, 0.18);
+  color: rgba(255, 225, 200, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.compact-troubleshoot-exit-btn:hover,
+.compact-troubleshoot-exit-btn:focus-visible {
+  background: rgba(255, 140, 70, 0.3);
+  border-color: rgba(255, 200, 150, 0.72);
+  outline: none;
+}
+
+.compact-troubleshoot-body {
+  max-height: calc(56vh - 50px);
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: calc(24px + var(--builder-safe-area-bottom));
+  display: grid;
+  gap: 14px;
+  background: rgba(8, 18, 36, 0.94);
+}
+
+.compact-troubleshoot-empty {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(12, 30, 58, 0.44);
+  color: rgba(214, 238, 255, 0.86);
+  padding: 12px;
+  font-size: 13px;
+}
+
+.troubleshoot-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.troubleshoot-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(206, 232, 255, 0.85);
+}
+
+.troubleshoot-select select {
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(10, 24, 48, 0.9);
+  color: rgba(228, 244, 255, 0.95);
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.troubleshoot-progress {
+  font-size: 12px;
+  color: rgba(206, 232, 255, 0.85);
+}
+
+.troubleshoot-lock-chip {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 5px 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(136, 204, 255, 0.08);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.troubleshoot-lock-chip.locked {
+  color: rgba(255, 208, 168, 0.95);
+  border-color: rgba(255, 186, 126, 0.42);
+  background: rgba(80, 42, 16, 0.45);
+}
+
+.troubleshoot-lock-chip.unlocked {
+  color: rgba(168, 255, 212, 0.92);
+  border-color: rgba(120, 255, 188, 0.42);
+  background: rgba(20, 72, 46, 0.42);
+}
+
+.troubleshoot-problem-card {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(260px, 1fr);
+  gap: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  background: rgba(14, 30, 58, 0.5);
+}
+
+.troubleshoot-copy-column {
+  display: grid;
+  gap: 10px;
+}
+
+.troubleshoot-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.troubleshoot-title-row h3 {
+  margin: 0;
+  font-size: 16px;
+  color: rgba(225, 243, 255, 0.96);
+}
+
+.troubleshoot-solved-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(120, 255, 188, 0.42);
+  background: rgba(20, 72, 46, 0.42);
+  color: rgba(168, 255, 212, 0.95);
+}
+
+.troubleshoot-prompt {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(225, 241, 255, 0.86);
+}
+
+.troubleshoot-hints {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(205, 230, 255, 0.85);
+}
+
+.troubleshoot-diagram-column {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  background: rgba(6, 14, 28, 0.72);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.troubleshoot-diagram-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.troubleshoot-diagram-svg {
+  width: 100%;
+  max-width: 620px;
+  height: auto;
+}
+
+.troubleshoot-diagram-svg text {
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.troubleshoot-status {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  background: rgba(10, 24, 48, 0.75);
+  color: rgba(222, 240, 255, 0.92);
+}
+
+.troubleshoot-status--success {
+  border-color: rgba(120, 255, 188, 0.44);
+  background: rgba(20, 72, 46, 0.42);
+  color: rgba(183, 255, 221, 0.95);
+}
+
+.troubleshoot-status--warning {
+  border-color: rgba(255, 186, 126, 0.44);
+  background: rgba(80, 42, 16, 0.45);
+  color: rgba(255, 224, 194, 0.95);
+}
+
+.troubleshoot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.troubleshoot-action-btn {
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(12, 34, 62, 0.8);
+  color: rgba(228, 244, 255, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.troubleshoot-action-btn:hover,
+.troubleshoot-action-btn:focus-visible {
+  background: rgba(30, 64, 108, 0.9);
+  border-color: rgba(160, 220, 255, 0.75);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.troubleshoot-action-btn:disabled,
+.troubleshoot-action-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.troubleshoot-action-btn--unlock {
+  border-color: rgba(120, 255, 188, 0.5);
+  background: rgba(24, 84, 56, 0.78);
+  color: rgba(180, 255, 220, 0.95);
+}
+
+.troubleshoot-action-btn--unlock:hover,
+.troubleshoot-action-btn--unlock:focus-visible {
+  border-color: rgba(160, 255, 210, 0.8);
+  background: rgba(30, 100, 66, 0.92);
+}
+
+@media (max-width: 960px) {
+  .troubleshoot-problem-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .compact-troubleshoot-panel {
+    max-height: 62vh;
+  }
+
+  .compact-troubleshoot-body {
+    max-height: calc(62vh - 50px);
+    padding: 12px;
+  }
+
+  .troubleshoot-lock-chip {
+    margin-left: 0;
+  }
+}
+
