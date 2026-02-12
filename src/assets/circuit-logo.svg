@@ -141,12 +141,12 @@
     <text x="42" y="122" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
   </g>
 
-  <!-- Battery schematic symbol - red standard 2D symbol on left side -->
+  <!-- Battery schematic symbol - clear 2D plate convention -->
   <g>
-    <!-- Positive plate (longer line, top) -->
-    <line x1="24" y1="56" x2="42" y2="56" stroke="#ff2b2b" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)" />
-    <!-- Negative plate (shorter line, bottom) -->
-    <line x1="29" y1="74" x2="42" y2="74" stroke="#ff2b2b" stroke-width="2.6" stroke-linecap="round" filter="url(#glow)" />
+    <!-- Positive plate (longer + thicker, top) -->
+    <line x1="20" y1="56" x2="42" y2="56" stroke="#ff2b2b" stroke-width="4" stroke-linecap="square" />
+    <!-- Negative plate (shorter + thinner, bottom) -->
+    <line x1="31" y1="74" x2="42" y2="74" stroke="#ff2b2b" stroke-width="2.2" stroke-linecap="square" />
   </g>
   <!-- Polarity marker + above positive plate -->
   <text x="33" y="48" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
