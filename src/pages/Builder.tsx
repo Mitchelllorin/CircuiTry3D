@@ -737,14 +737,29 @@ function useIsVisible(ref: React.RefObject<HTMLElement | null>): boolean {
   return isVisible;
 }
 
-function ComponentLibraryCard({ component }: { component: ComponentAction }) {
+type ComponentLibraryCardProps = {
+  component: ComponentAction;
+  thumbnailsEnabled: boolean;
+  animateThumbnails: boolean;
+};
+
+function ComponentLibraryCard({
+  component,
+  thumbnailsEnabled,
+  animateThumbnails,
+}: ComponentLibraryCardProps) {
   const containerRef = useRef<HTMLSpanElement>(null);
   const isVisible = useIsVisible(containerRef);
+  const [isPreviewActive, setPreviewActive] = useState(false);
 
-  // Only request thumbnail when visible to avoid blocking main thread
+  // Only request thumbnails while the library is open and the card is visible.
+  const shouldLoadThumbnail = thumbnailsEnabled && isVisible;
+  const shouldAnimateThumbnail =
+    shouldLoadThumbnail && animateThumbnails && isPreviewActive;
+
   const thumbSrc = useComponent3DThumbnail(
-    isVisible ? (component.builderType ?? component.id) : undefined,
-    { animated: true }
+    shouldLoadThumbnail ? (component.builderType ?? component.id) : undefined,
+    { animated: shouldAnimateThumbnail }
   );
 
   const symbolKey = (() => {
@@ -764,7 +779,16 @@ function ComponentLibraryCard({ component }: { component: ComponentAction }) {
   const Symbol = getSchematicSymbol(symbolKey as any);
 
   return (
-    <span className="slider-component-card" ref={containerRef}>
+    <span
+      className="slider-component-card"
+      ref={containerRef}
+      onPointerEnter={
+        animateThumbnails ? () => setPreviewActive(true) : undefined
+      }
+      onPointerLeave={
+        animateThumbnails ? () => setPreviewActive(false) : undefined
+      }
+    >
       <span className="slider-component-name">{component.label}</span>
 
       {component.description ? (
@@ -1058,6 +1082,23 @@ export default function Builder() {
     isBottomMenuOpen,
     setBottomMenuOpen,
   } = useResponsiveLayout();
+  const isCoarsePointer = useMemo(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    if (typeof window.matchMedia === "function") {
+      const coarsePointer = window.matchMedia("(pointer: coarse)");
+      if (coarsePointer.matches) {
+        return true;
+      }
+    }
+
+    return (
+      typeof navigator !== "undefined" && (navigator.maxTouchPoints ?? 0) > 0
+    );
+  }, []);
+  const shouldAnimateLibraryThumbnails = isLeftMenuOpen && !isCoarsePointer;
 
   // Circuit storage for save/load functionality
   const circuitStorage = useCircuitStorage();
@@ -2008,7 +2049,11 @@ export default function Builder() {
                           : undefined
                     }
                   >
-                    <ComponentLibraryCard component={component} />
+                    <ComponentLibraryCard
+                      component={component}
+                      thumbnailsEnabled={isLeftMenuOpen}
+                      animateThumbnails={shouldAnimateLibraryThumbnails}
+                    />
                   </button>
                 ))}
               </div>

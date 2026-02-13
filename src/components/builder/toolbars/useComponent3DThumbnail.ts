@@ -536,14 +536,23 @@ export function useComponent3DThumbnail(
 
     let cancelled = false;
 
-    // Use immediate scheduling on mobile to avoid artificial delays
-    // On desktop, use requestIdleCallback with a shorter timeout
-    const mobile = isMobile();
-    const schedule = mobile
-      ? (cb: () => void) => window.setTimeout(cb, 0)
-      : typeof (window as any).requestIdleCallback === "function"
-        ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 50 })
-        : (cb: () => void) => window.setTimeout(cb, 0);
+    const hasIdleCallback =
+      typeof (window as any).requestIdleCallback === "function" &&
+      typeof (window as any).cancelIdleCallback === "function";
+    const fallbackDelayMs = isMobile() ? 80 : 32;
+    const schedule = (cb: () => void) => {
+      if (hasIdleCallback) {
+        return {
+          kind: "idle" as const,
+          id: (window as any).requestIdleCallback(cb, { timeout: 1200 }),
+        };
+      }
+
+      return {
+        kind: "timeout" as const,
+        id: window.setTimeout(cb, fallbackDelayMs),
+      };
+    };
 
     const handle = schedule(() => {
       const existing = THUMBNAIL_IN_FLIGHT.get(kind);
@@ -585,10 +594,11 @@ export function useComponent3DThumbnail(
 
     return () => {
       cancelled = true;
-      if (typeof handle === "number") {
-        window.clearTimeout(handle);
+      if (handle.kind === "timeout") {
+        window.clearTimeout(handle.id);
+      } else if (hasIdleCallback) {
+        (window as any).cancelIdleCallback(handle.id);
       }
-      // requestIdleCallback cancellation is best-effort; ignore if unsupported.
     };
   }, [kind]);
 
