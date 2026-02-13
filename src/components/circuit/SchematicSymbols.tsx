@@ -25,6 +25,44 @@ const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
 const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
 const DEFAULT_STROKE_WIDTH = STROKE_WIDTHS.wireSvgSymbol;
 
+type SymbolPoint = { x: number; y: number };
+
+const pointOnSegment = (start: SymbolPoint, end: SymbolPoint, t: number): SymbolPoint => ({
+  x: start.x + (end.x - start.x) * t,
+  y: start.y + (end.y - start.y) * t,
+});
+
+const arrowTrianglePoints = (
+  tip: SymbolPoint,
+  direction: SymbolPoint,
+  length: number,
+  width: number,
+): string => {
+  const magnitude = Math.hypot(direction.x, direction.y);
+  if (magnitude <= 1e-6) {
+    const halfWidth = width / 2;
+    return `${tip.x},${tip.y} ${tip.x - length},${tip.y - halfWidth} ${tip.x - length},${tip.y + halfWidth}`;
+  }
+
+  const ux = direction.x / magnitude;
+  const uy = direction.y / magnitude;
+  const baseCenterX = tip.x - ux * length;
+  const baseCenterY = tip.y - uy * length;
+  const halfWidth = width / 2;
+  const perpX = -uy;
+  const perpY = ux;
+
+  const leftX = baseCenterX + perpX * halfWidth;
+  const leftY = baseCenterY + perpY * halfWidth;
+  const rightX = baseCenterX - perpX * halfWidth;
+  const rightY = baseCenterY - perpY * halfWidth;
+
+  return `${tip.x.toFixed(2)},${tip.y.toFixed(2)} ${leftX.toFixed(2)},${leftY.toFixed(2)} ${rightX.toFixed(2)},${rightY.toFixed(2)}`;
+};
+
+const BJT_ARROW_LENGTH = 7.5;
+const BJT_ARROW_WIDTH = 6.2;
+
 export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   x,
   y,
@@ -446,6 +484,19 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterStart: SymbolPoint = { x: -8, y: 8 };
+  const emitterEnd: SymbolPoint = { x: 10, y: 20 };
+  const emitterDirection: SymbolPoint = {
+    x: emitterEnd.x - emitterStart.x,
+    y: emitterEnd.y - emitterStart.y,
+  };
+  const npnArrowTip = pointOnSegment(emitterStart, emitterEnd, 0.8);
+  const npnArrowPoints = arrowTrianglePoints(
+    npnArrowTip,
+    emitterDirection,
+    BJT_ARROW_LENGTH,
+    BJT_ARROW_WIDTH,
+  );
 
   return (
     <g transform={transform}>
@@ -461,9 +512,11 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
       <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points="10,20 5,14 2,22"
+        points={npnArrowPoints}
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.45}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -494,6 +547,19 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterStart: SymbolPoint = { x: -8, y: 8 };
+  const emitterEnd: SymbolPoint = { x: 10, y: 20 };
+  const emitterDirection: SymbolPoint = {
+    x: emitterEnd.x - emitterStart.x,
+    y: emitterEnd.y - emitterStart.y,
+  };
+  const pnpArrowTip = pointOnSegment(emitterStart, emitterEnd, 0.42);
+  const pnpArrowPoints = arrowTrianglePoints(
+    pnpArrowTip,
+    { x: -emitterDirection.x, y: -emitterDirection.y },
+    BJT_ARROW_LENGTH,
+    BJT_ARROW_WIDTH,
+  );
 
   return (
     <g transform={transform}>
@@ -514,9 +580,11 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
 
       {/* PNP arrow points inward (toward base) */}
       <polygon
-        points="-5,10 0,16 -3,4"
+        points={pnpArrowPoints}
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.45}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -547,6 +615,28 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const firstEmitterStart: SymbolPoint = { x: -14, y: 4 };
+  const firstEmitterEnd: SymbolPoint = { x: 0, y: 12 };
+  const secondEmitterStart: SymbolPoint = { x: 0, y: 9 };
+  const secondEmitterEnd: SymbolPoint = { x: 14, y: 22 };
+  const firstEmitterArrow = arrowTrianglePoints(
+    pointOnSegment(firstEmitterStart, firstEmitterEnd, 0.78),
+    {
+      x: firstEmitterEnd.x - firstEmitterStart.x,
+      y: firstEmitterEnd.y - firstEmitterStart.y,
+    },
+    6.3,
+    5.4,
+  );
+  const secondEmitterArrow = arrowTrianglePoints(
+    pointOnSegment(secondEmitterStart, secondEmitterEnd, 0.8),
+    {
+      x: secondEmitterEnd.x - secondEmitterStart.x,
+      y: secondEmitterEnd.y - secondEmitterStart.y,
+    },
+    6.3,
+    5.4,
+  );
 
   return (
     <g transform={transform}>
@@ -563,10 +653,11 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
 
       {/* Arrow on first emitter (pointing outward - NPN) */}
       <polygon
-        points="0,12 -4,7 -6,13"
+        points={firstEmitterArrow}
         fill={color}
         stroke={color}
-        strokeWidth={1}
+        strokeWidth={strokeWidth * 0.4}
+        strokeLinejoin="round"
       />
 
       {/* Second transistor (output stage) - base connects to first emitter */}
@@ -577,10 +668,11 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
 
       {/* Arrow on second emitter (pointing outward - NPN) */}
       <polygon
-        points="14,22 9,17 7,23"
+        points={secondEmitterArrow}
         fill={color}
         stroke={color}
-        strokeWidth={1}
+        strokeWidth={strokeWidth * 0.4}
+        strokeLinejoin="round"
       />
 
       {/* Collector lead (from first transistor collector, joined) */}
@@ -621,16 +713,16 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
 
   return (
     <g transform={transform}>
-      <line x1="-30" y1="0" x2="-25" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-30" y1="0" x2="-24" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <path
-        d="M-25,0 Q-25,-10 -18,-10 Q-11,-10 -11,0 Q-11,10 -4,10 Q3,10 3,0 Q3,-10 10,-10 Q17,-10 17,0 Q17,10 25,10"
+        d="M-24,0 Q-21,-10 -18,0 Q-15,10 -12,0 Q-9,-10 -6,0 Q-3,10 0,0 Q3,-10 6,0 Q9,10 12,0 Q15,-10 18,0 Q21,10 24,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
         strokeLinecap="round"
-        transform="translate(0,-5)"
+        strokeLinejoin="round"
       />
-      <line x1="25" y1="-5" x2="30" y2="-5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="24" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {showLabel && label && (
         <text
           x={0}
