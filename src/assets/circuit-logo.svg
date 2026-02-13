@@ -145,22 +145,22 @@
     <!-- Negative plate (shorter + thinner, bottom) -->
     <line x1="50" y1="74" x2="60" y2="74" stroke="#ff2b2b" stroke-width="2.2" stroke-linecap="square" />
   </g>
-  <!-- Polarity marker + above positive plate -->
-  <text x="55" y="48" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
+  <!-- Polarity marker + beside positive plate -->
+  <text x="40" y="54" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
   <!-- 9V label to the left of the battery -->
   <text x="34" y="67" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
-  <!-- Polarity marker - below negative plate -->
-  <text x="55" y="88" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">−</text>
+  <!-- Polarity marker - beside negative plate -->
+  <text x="40" y="80" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">-</text>
 
   <!-- Component labels -->
   <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600" stroke="#050b1f" stroke-width="2" paint-order="stroke fill">
-    <text x="140" y="5">R₁ = 3 kΩ</text>
-    <text x="226" y="77" text-anchor="end">R₂ =</text>
+    <text x="146" y="9">R₁ = 3 kΩ</text>
+    <text x="229" y="77" text-anchor="end">R₂ =</text>
     <text x="140" y="129">R₃ = 5 kΩ</text>
   </g>
 
   <!-- Unknown-value prompt for R2 -->
-  <text x="232" y="77" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
+  <text x="235" y="77" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
   <!-- Animated photons (two bright particles with comet tails) -->
   <g aria-hidden="true" filter="url(#photonGlow)">
