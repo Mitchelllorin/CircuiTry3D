@@ -1314,7 +1314,10 @@ export default function Builder() {
   );
 
   const openTroubleshootWorkspace = useCallback(
-    (problemOverride?: TroubleshootingProblem | null) => {
+    (
+      problemOverride?: TroubleshootingProblem | null,
+      options?: { forceLock?: boolean },
+    ) => {
       const nextProblem =
         problemOverride ??
         troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
@@ -1329,6 +1332,9 @@ export default function Builder() {
         setActiveTroubleshootId(nextProblem.id);
       }
 
+      const shouldLock =
+        options?.forceLock ?? !troubleshootSolvedIds.includes(nextProblem.id);
+
       setWorkspaceModeWithGlobalSync("troubleshoot");
       setTroubleshootWorkspaceMode(true);
       setTroubleshootPanelOpen(true);
@@ -1338,12 +1344,13 @@ export default function Builder() {
       setTroubleshootStatus(null);
       setTroubleshootCheckPending(false);
       setTroubleshootPendingCheckProblemId(null);
-      setCircuitLocked(true);
+      setCircuitLocked(shouldLock);
       triggerBuilderAction("load-preset", { preset: nextProblem.preset });
     },
     [
       activeTroubleshootId,
       setWorkspaceModeWithGlobalSync,
+      troubleshootSolvedIds,
       triggerBuilderAction,
     ],
   );
@@ -1520,7 +1527,7 @@ export default function Builder() {
     if (!activeProblem) {
       return;
     }
-    openTroubleshootWorkspace(activeProblem);
+    openTroubleshootWorkspace(activeProblem, { forceLock: true });
     setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
   }, [activeTroubleshootId, openTroubleshootWorkspace]);
 
@@ -1683,6 +1690,9 @@ export default function Builder() {
     activeTroubleshootProblem &&
       troubleshootSolvedIds.includes(activeTroubleshootProblem.id),
   );
+  const isCurrentTroubleshootFixVerified = Boolean(
+    troubleshootStatus?.trim().toLowerCase().startsWith("solved"),
+  );
 
   useEffect(() => {
     try {
@@ -1731,7 +1741,8 @@ export default function Builder() {
       lastSimulation,
     );
     if (solved) {
-      setTroubleshootStatus("Solved! Current is flowing.");
+      setCircuitLocked(false);
+      setTroubleshootStatus("Solved! Current is flowing. Circuit unlocked for editing.");
       setTroubleshootSolvedIds((previous) => {
         if (previous.includes(activeTroubleshootProblem.id)) return previous;
         return [...previous, activeTroubleshootProblem.id];
@@ -1739,6 +1750,7 @@ export default function Builder() {
       return;
     }
 
+    setCircuitLocked(true);
     const analyzeResult = getAnalyzeCircuitResult(lastSimulation);
     const reason = analyzeResult?.flow?.reason;
     if (reason === "polarity") {
@@ -2819,6 +2831,7 @@ export default function Builder() {
           problems={troubleshootingProblems}
           activeProblemId={activeTroubleshootId}
           solvedIds={troubleshootSolvedIds}
+          isFixVerified={isCurrentTroubleshootFixVerified}
           status={troubleshootStatus}
           isOpen={isTroubleshootPanelOpen}
           isChecking={isTroubleshootCheckPending}
@@ -2831,7 +2844,9 @@ export default function Builder() {
           onCheckFix={handleCheckTroubleshootFix}
           onNextProblem={handleAdvanceTroubleshootProblem}
           onUnlockEditing={
-            isActiveTroubleshootSolved ? handleUnlockTroubleshootEditing : undefined
+            isActiveTroubleshootSolved && isCurrentTroubleshootFixVerified
+              ? handleUnlockTroubleshootEditing
+              : undefined
           }
         />
       )}

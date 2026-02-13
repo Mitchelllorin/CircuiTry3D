@@ -17,6 +17,7 @@ export type SchematicSymbolProps = {
   labelOffset?: number;
   color?: string;
   strokeWidth?: number;
+  isOpen?: boolean;
 };
 
 // Use centralized visual constants

@@ -5,7 +5,7 @@
   right: 0;
   z-index: 1180;
   max-height: 56vh;
-  background: rgba(8, 18, 36, 0.9);
+  background: rgba(10, 20, 35, 0.78);
   border-top: 2px solid rgba(136, 204, 255, 0.36);
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.58);
   transform: translateY(calc(100% - 50px));
@@ -23,7 +23,7 @@
   gap: 12px;
   min-height: 50px;
   padding: 0 14px;
-  background: rgba(18, 36, 62, 0.94);
+  background: rgba(20, 35, 55, 0.85);
   border-bottom: 1px solid rgba(136, 204, 255, 0.22);
 }
 
@@ -96,7 +96,7 @@
   padding-bottom: calc(24px + var(--builder-safe-area-bottom));
   display: grid;
   gap: 14px;
-  background: rgba(8, 18, 36, 0.94);
+  background: rgba(8, 18, 36, 0.84);
 }
 
 .compact-troubleshoot-empty {
@@ -267,6 +267,28 @@
   border-color: rgba(255, 186, 126, 0.44);
   background: rgba(80, 42, 16, 0.45);
   color: rgba(255, 224, 194, 0.95);
+}
+
+.troubleshoot-workspace-sync {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(16, 32, 58, 0.68);
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.troubleshoot-workspace-sync strong {
+  font-size: 12px;
+  color: rgba(168, 220, 255, 0.95);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.troubleshoot-workspace-sync span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(216, 236, 255, 0.9);
 }
 
 .troubleshoot-actions {
