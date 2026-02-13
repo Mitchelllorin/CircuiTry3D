@@ -155,12 +155,12 @@
   <!-- Component labels -->
   <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600" stroke="#050b1f" stroke-width="2" paint-order="stroke fill">
     <text x="140" y="5">R₁ = 3 kΩ</text>
-    <text x="228" y="77">R₂</text>
+    <text x="226" y="77" text-anchor="end">R₂ =</text>
     <text x="140" y="129">R₃ = 5 kΩ</text>
   </g>
 
-  <!-- Unknown-value prompt on R2 side for contrast -->
-  <text x="228" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.8" paint-order="stroke fill">?</text>
+  <!-- Unknown-value prompt for R2 -->
+  <text x="232" y="77" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
   <!-- Animated photons (two bright particles with comet tails) -->
   <g aria-hidden="true" filter="url(#photonGlow)">
