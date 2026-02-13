@@ -25,6 +25,66 @@ const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
 const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
 const DEFAULT_STROKE_WIDTH = STROKE_WIDTHS.wireSvgSymbol;
 
+type SymbolPoint = { x: number; y: number };
+type ArrowDirection = "toward-end" | "toward-start";
+
+const formatSvgPoint = ({ x, y }: SymbolPoint): string => `${x.toFixed(1)},${y.toFixed(1)}`;
+
+const buildArrowheadPoints = (
+  from: SymbolPoint,
+  to: SymbolPoint,
+  direction: ArrowDirection,
+  options?: {
+    tipInset?: number;
+    headLength?: number;
+    headWidth?: number;
+  },
+): string => {
+  const tipInset = options?.tipInset ?? 2.5;
+  const headLength = options?.headLength ?? 6;
+  const headWidth = options?.headWidth ?? 5.2;
+
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 1e-6) {
+    return "";
+  }
+
+  const ux = dx / length;
+  const uy = dy / length;
+
+  const tip =
+    direction === "toward-end"
+      ? { x: to.x - ux * tipInset, y: to.y - uy * tipInset }
+      : { x: from.x + ux * tipInset, y: from.y + uy * tipInset };
+
+  const dir =
+    direction === "toward-end"
+      ? { x: ux, y: uy }
+      : { x: -ux, y: -uy };
+
+  const baseCenter = {
+    x: tip.x - dir.x * headLength,
+    y: tip.y - dir.y * headLength,
+  };
+
+  const nx = -dir.y;
+  const ny = dir.x;
+  const halfWidth = headWidth / 2;
+
+  const wingA = {
+    x: baseCenter.x + nx * halfWidth,
+    y: baseCenter.y + ny * halfWidth,
+  };
+  const wingB = {
+    x: baseCenter.x - nx * halfWidth,
+    y: baseCenter.y - ny * halfWidth,
+  };
+
+  return [tip, wingA, wingB].map(formatSvgPoint).join(" ");
+};
+
 export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   x,
   y,
@@ -446,6 +506,13 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterInner = { x: -8, y: 8 };
+  const emitterOuter = { x: 10, y: 20 };
+  const emitterArrowPoints = buildArrowheadPoints(emitterInner, emitterOuter, "toward-end", {
+    tipInset: 1.8,
+    headLength: 6.2,
+    headWidth: 5.4,
+  });
 
   return (
     <g transform={transform}>
@@ -457,13 +524,15 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
       <line x1="-8" y1="-8" x2="10" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="-20" x2="10" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <line x1="-8" y1="8" x2="10" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={emitterInner.x} y1={emitterInner.y} x2={emitterOuter.x} y2={emitterOuter.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points="10,20 5,14 2,22"
+        points={emitterArrowPoints}
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.45}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -494,6 +563,13 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterInner = { x: -8, y: 8 };
+  const emitterOuter = { x: 10, y: 20 };
+  const emitterArrowPoints = buildArrowheadPoints(emitterInner, emitterOuter, "toward-start", {
+    tipInset: 3.2,
+    headLength: 6.2,
+    headWidth: 5.4,
+  });
 
   return (
     <g transform={transform}>
@@ -509,14 +585,16 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
       <line x1="10" y1="-20" x2="10" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Emitter (bottom) - arrow points INWARD for PNP */}
-      <line x1="-8" y1="8" x2="10" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={emitterInner.x} y1={emitterInner.y} x2={emitterOuter.x} y2={emitterOuter.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* PNP arrow points inward (toward base) */}
       <polygon
-        points="-5,10 0,16 -3,4"
+        points={emitterArrowPoints}
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.45}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -623,14 +701,13 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
     <g transform={transform}>
       <line x1="-30" y1="0" x2="-25" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <path
-        d="M-25,0 Q-25,-10 -18,-10 Q-11,-10 -11,0 Q-11,10 -4,10 Q3,10 3,0 Q3,-10 10,-10 Q17,-10 17,0 Q17,10 25,10"
+        d="M-25,0 C-25,-10 -15,-10 -15,0 C-15,10 -5,10 -5,0 C-5,-10 5,-10 5,0 C5,10 15,10 15,0 C15,-10 25,-10 25,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
         strokeLinecap="round"
-        transform="translate(0,-5)"
       />
-      <line x1="25" y1="-5" x2="30" y2="-5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="25" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {showLabel && label && (
         <text
           x={0}
