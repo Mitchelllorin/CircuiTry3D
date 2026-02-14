@@ -2,7 +2,6 @@ import type { LogoNumericSettingKey } from "../types";
 
 interface LogoSettingsModalProps {
   isOpen: boolean;
-  onToggle: () => void;
   logoSettings: {
     isVisible: boolean;
     speed: number;
@@ -19,7 +18,6 @@ interface LogoSettingsModalProps {
 
 export function LogoSettingsModal({
   isOpen,
-  onToggle,
   logoSettings,
   prefersReducedMotion,
   onLogoSettingChange,

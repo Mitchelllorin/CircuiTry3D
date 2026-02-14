@@ -174,7 +174,6 @@ export function useWorkspaceBackground() {
         window.localStorage.getItem(WORKSPACE_SKIN_STORAGE_KEY),
       );
     });
-  const [isWorkspaceSkinOpen, setWorkspaceSkinOpen] = useState(false);
   const [workspaceSkinError, setWorkspaceSkinError] = useState<string | null>(
     null,
   );
@@ -294,8 +293,6 @@ export function useWorkspaceBackground() {
   return {
     workspaceSkinOptions: WORKSPACE_SKIN_OPTIONS,
     workspaceSkinStyle,
-    isWorkspaceSkinOpen,
-    setWorkspaceSkinOpen,
     activeWorkspaceSkinId: workspaceBackgroundState.activeSkinId,
     customWorkspaceSkinName: workspaceBackgroundState.customImageName,
     customWorkspaceSkinOpacity: workspaceBackgroundState.customImageOpacity,

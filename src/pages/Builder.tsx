@@ -26,12 +26,14 @@ import {
   getDefaultScenario,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
-import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
-import { WorkspaceSkinModal } from "../components/builder/modals/WorkspaceSkinModal";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
 import { BuilderInteractiveTutorial } from "../components/builder/tutorial/BuilderInteractiveTutorial";
+import {
+  CompactSettingsPanel,
+  type SettingsPanelTab,
+} from "../components/builder/panels/CompactSettingsPanel";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
 import practiceProblems, {
@@ -1057,8 +1059,6 @@ export default function Builder() {
   const {
     floatingLogoRef,
     logoSettings,
-    isLogoSettingsOpen,
-    setLogoSettingsOpen,
     prefersReducedMotion,
     handleLogoSettingChange,
     toggleLogoVisibility,
@@ -1066,8 +1066,6 @@ export default function Builder() {
   const {
     workspaceSkinOptions,
     workspaceSkinStyle,
-    isWorkspaceSkinOpen,
-    setWorkspaceSkinOpen,
     activeWorkspaceSkinId,
     customWorkspaceSkinName,
     customWorkspaceSkinOpacity,
@@ -1079,6 +1077,9 @@ export default function Builder() {
     clearCustomWorkspaceSkin,
     resetWorkspaceSkin,
   } = useWorkspaceBackground();
+  const [isSettingsPanelOpen, setSettingsPanelOpen] = useState(false);
+  const [activeSettingsPanelTab, setActiveSettingsPanelTab] =
+    useState<SettingsPanelTab>("workspace-skins");
 
   const {
     helpSectionRefs,
@@ -1670,8 +1671,6 @@ export default function Builder() {
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
-    isLogoSettingsOpen ||
-    isWorkspaceSkinOpen ||
     isSaveModalOpen ||
     isLoadModalOpen;
   const isActiveCircuitBuildMode =
@@ -1682,7 +1681,14 @@ export default function Builder() {
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
     !isTroubleshootVisible &&
+    !isSettingsPanelOpen &&
     !isOverlayActive;
+
+  useEffect(() => {
+    if (!isActiveCircuitBuildMode || isWorksheetVisible || isTroubleshootVisible) {
+      setSettingsPanelOpen(false);
+    }
+  }, [isActiveCircuitBuildMode, isTroubleshootVisible, isWorksheetVisible]);
 
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
@@ -2497,7 +2503,14 @@ export default function Builder() {
                   const description = setting.getDescription(modeState, {
                     currentFlowLabel,
                   });
-                  const isActive = setting.isActive?.(modeState) ?? false;
+                  const isSettingPanelTabActive =
+                    isSettingsPanelOpen &&
+                    ((setting.action === "open-logo-settings" &&
+                      activeSettingsPanelTab === "logo-motion") ||
+                      (setting.action === "open-workspace-skins" &&
+                        activeSettingsPanelTab === "workspace-skins"));
+                  const isActive =
+                    (setting.isActive?.(modeState) ?? false) || isSettingPanelTabActive;
                   return (
                     <button
                       key={setting.id}
@@ -2505,18 +2518,22 @@ export default function Builder() {
                       className="slider-btn slider-btn-stacked"
                       onClick={() => {
                         if (setting.action === "open-logo-settings") {
-                          setLogoSettingsOpen(!isLogoSettingsOpen);
+                          setActiveSettingsPanelTab("logo-motion");
+                          setSettingsPanelOpen(true);
+                          setRightMenuOpen(true);
                         } else if (setting.action === "open-workspace-skins") {
-                          setWorkspaceSkinOpen(!isWorkspaceSkinOpen);
+                          setActiveSettingsPanelTab("workspace-skins");
+                          setSettingsPanelOpen(true);
+                          setRightMenuOpen(true);
                         } else {
                           triggerBuilderAction(setting.action, setting.data);
                         }
                       }}
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
-                      aria-pressed={setting.isActive ? isActive : undefined}
+                      aria-pressed={isActive}
                       data-active={
-                        setting.isActive && isActive ? "true" : undefined
+                        isActive ? "true" : undefined
                       }
                       title={
                         controlsDisabled ? controlDisabledTitle : description
@@ -2784,78 +2801,30 @@ export default function Builder() {
         </div>
       </div>
 
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isLogoSettingsOpen}
-        onClick={() => setLogoSettingsOpen(false)}
-      >
-        <div
-          className="builder-panel builder-panel--logo-settings"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="builder-panel-brand" aria-hidden="true">
-            <BrandMark size="sm" decorative />
-          </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setLogoSettingsOpen(false)}
-            aria-label="Close logo motion settings"
-          >
-            ×
-          </button>
-          <LogoSettingsModal
-            isOpen={isLogoSettingsOpen}
-            onToggle={() => setLogoSettingsOpen(!isLogoSettingsOpen)}
-            logoSettings={logoSettings}
-            prefersReducedMotion={prefersReducedMotion}
-            onLogoSettingChange={handleLogoSettingChange}
-            onToggleLogoVisibility={toggleLogoVisibility}
-            onResetLogoSettings={resetLogoSettings}
-          />
-        </div>
-      </div>
-
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--workspace-skins${isWorkspaceSkinOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isWorkspaceSkinOpen}
-        onClick={() => setWorkspaceSkinOpen(false)}
-      >
-        <div
-          className="builder-panel builder-panel--workspace-skins"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="builder-panel-brand" aria-hidden="true">
-            <BrandMark size="sm" decorative />
-          </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setWorkspaceSkinOpen(false)}
-            aria-label="Close workspace skin settings"
-          >
-            ×
-          </button>
-          <WorkspaceSkinModal
-            isOpen={isWorkspaceSkinOpen}
-            skinOptions={workspaceSkinOptions}
-            activeSkinId={activeWorkspaceSkinId}
-            hasCustomSkin={hasCustomWorkspaceSkin}
-            customSkinName={customWorkspaceSkinName}
-            customSkinOpacity={customWorkspaceSkinOpacity}
-            error={workspaceSkinError}
-            onSelectSkin={selectWorkspaceSkin}
-            onImportCustomSkin={importWorkspaceSkinFromFile}
-            onCustomSkinOpacityChange={setCustomWorkspaceSkinOpacity}
-            onClearCustomSkin={clearCustomWorkspaceSkin}
-            onResetWorkspaceSkin={resetWorkspaceSkin}
-          />
-        </div>
-      </div>
+      {isSettingsPanelOpen && (
+        <CompactSettingsPanel
+          isOpen={isSettingsPanelOpen}
+          activeTab={activeSettingsPanelTab}
+          onToggle={() => setSettingsPanelOpen(false)}
+          onChangeTab={setActiveSettingsPanelTab}
+          logoSettings={logoSettings}
+          prefersReducedMotion={prefersReducedMotion}
+          onLogoSettingChange={handleLogoSettingChange}
+          onToggleLogoVisibility={toggleLogoVisibility}
+          onResetLogoSettings={resetLogoSettings}
+          skinOptions={workspaceSkinOptions}
+          activeSkinId={activeWorkspaceSkinId}
+          hasCustomSkin={hasCustomWorkspaceSkin}
+          customSkinName={customWorkspaceSkinName}
+          customSkinOpacity={customWorkspaceSkinOpacity}
+          workspaceSkinError={workspaceSkinError}
+          onSelectSkin={selectWorkspaceSkin}
+          onImportCustomSkin={importWorkspaceSkinFromFile}
+          onCustomSkinOpacityChange={setCustomWorkspaceSkinOpacity}
+          onClearCustomSkin={clearCustomWorkspaceSkin}
+          onResetWorkspaceSkin={resetWorkspaceSkin}
+        />
+      )}
 
       {isPracticeWorkspaceMode && activePracticeProblemId && (
         <CompactWorksheetPanel
