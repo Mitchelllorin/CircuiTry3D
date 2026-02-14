@@ -21,10 +21,6 @@ import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorks
 import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTroubleshootPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
-import {
-  type EnvironmentalScenario,
-  getDefaultScenario,
-} from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
@@ -895,9 +891,6 @@ export default function Builder() {
     canScrollRight: boolean;
   }>({ canScrollLeft: false, canScrollRight: false });
   const modeBarRef = useRef<HTMLDivElement>(null);
-  const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
-    getDefaultScenario()
-  );
   const [circuitBaseMetrics, setCircuitBaseMetrics] = useState({
     watts: 0,
     current: 0,
@@ -1460,10 +1453,6 @@ export default function Builder() {
     }
     setArenaPanelOpen(true);
   }, [lastArenaExport, setArenaPanelOpen]);
-
-  const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
-    setActiveEnvironment(scenario);
-  }, []);
 
   const resetLogoSettings = useCallback(() => {
     handleLogoSettingChange("speed", DEFAULT_LOGO_SETTINGS.speed);
@@ -2476,39 +2465,6 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Environmental Conditions</span>
-              <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    justifyContent: "center",
-                  }}
-                >
-                  <span style={{ fontSize: "16px" }}>{activeEnvironment.icon}</span>
-                  <span>Active: {activeEnvironment.name}</span>
-                </div>
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => setEnvironmentalPanelOpen(true)}
-                  title="Open Environmental Conditions panel to simulate different operating environments"
-                  data-active={activeEnvironment.id !== "standard" ? "true" : undefined}
-                >
-                  <span className="slider-chip-label">Configure Environment</span>
-                </button>
-              </div>
-            </div>
-            <div className="slider-section">
               <span className="slider-heading">Settings</span>
               <div className="slider-stack">
                 {SETTINGS_ITEMS.map((setting) => {
@@ -2910,7 +2866,6 @@ export default function Builder() {
           <div className="builder-panel-body builder-panel-body--environment">
             <EnvironmentalPanel
               baseMetrics={circuitBaseMetrics}
-              onScenarioChange={handleEnvironmentChange}
             />
           </div>
         </div>
