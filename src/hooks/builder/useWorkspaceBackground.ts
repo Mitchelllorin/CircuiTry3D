@@ -29,6 +29,8 @@ type WorkspaceBackgroundState = {
 
 const WORKSPACE_SKIN_STORAGE_KEY = "builder:workspace-skin";
 const MAX_CUSTOM_SKIN_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+const WORKSPACE_BASE_GRADIENT =
+  "linear-gradient(135deg, #0f1b3d, #16213e 45%, #0a1028)";
 
 const DEFAULT_WORKSPACE_BACKGROUND_STATE: WorkspaceBackgroundState = {
   activeSkinId: "default",
@@ -207,17 +209,29 @@ export function useWorkspaceBackground() {
       workspaceBackgroundState.activeSkinId === "custom" &&
       workspaceBackgroundState.customImageDataUrl
     ) {
+      const normalizedStrength =
+        clamp(workspaceBackgroundState.customImageOpacity, 20, 100) / 100;
+      const topScrimOpacity = clamp(0.76 - normalizedStrength * 0.52, 0.2, 0.6);
+      const bottomScrimOpacity = clamp(topScrimOpacity + 0.08, 0.26, 0.7);
       return {
-        backgroundImage: `url("${workspaceBackgroundState.customImageDataUrl}")`,
+        backgroundImage: `linear-gradient(165deg, rgba(4, 12, 30, ${topScrimOpacity}), rgba(4, 12, 30, ${bottomScrimOpacity})), url("${workspaceBackgroundState.customImageDataUrl}")`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
         mixBlendMode: "normal",
-        opacity: clamp(workspaceBackgroundState.customImageOpacity, 20, 100) / 100,
+        opacity: 1,
       };
     }
 
+    const presetBackground =
+      activePreset.overlay === "none"
+        ? WORKSPACE_BASE_GRADIENT
+        : `${activePreset.overlay}, ${WORKSPACE_BASE_GRADIENT}`;
+
     return {
-      backgroundImage: activePreset.overlay,
-      mixBlendMode: activePreset.blendMode,
-      opacity: activePreset.opacity,
+      backgroundImage: presetBackground,
+      mixBlendMode: "normal",
+      opacity: 1,
     };
   }, [activePreset, workspaceBackgroundState]);
 
