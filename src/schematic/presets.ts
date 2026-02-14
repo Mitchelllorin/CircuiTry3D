@@ -264,6 +264,97 @@ export function buildPracticeCircuitElements(problem: PracticeProblem): Schemati
   };
 
   const buildCombination = () => {
+    const extractDoubleParallelGroups = (): string[][] | null => {
+      const network = problem.network;
+      if (network.kind !== "series" || network.children.length !== 2) {
+        return null;
+      }
+
+      const groups: string[][] = [];
+      for (const child of network.children) {
+        if (child.kind !== "parallel") {
+          return null;
+        }
+        const ids = child.children
+          .filter((node): node is { kind: "component"; componentId: string } => node.kind === "component")
+          .map((node) => node.componentId);
+        if (ids.length === 0) {
+          return null;
+        }
+        groups.push(ids);
+      }
+      return groups;
+    };
+
+    const doubleParallelGroups = extractDoubleParallelGroups();
+    if (doubleParallelGroups) {
+      const [topGroupIds, bottomGroupIds] = doubleParallelGroups;
+      const { left, top, bottom } = COMBINATION_LAYOUT.bounds3D;
+      const {
+        centerX3D,
+        branchSpacing3D,
+        topNodeZ3D,
+        midNodeZ3D,
+        bottomNodeZ3D,
+        leadInset3D,
+      } = COMBINATION_LAYOUT.doubleParallel;
+
+      const start = point(left, bottom);
+      const batteryOffset = BATTERY_LAYOUT.offset3D.fromCorner - 0.1;
+      const batteryStart = point(left, bottom + batteryOffset);
+      const batteryEnd = point(left, top - batteryOffset);
+
+      const topSourceNode = point(left, topNodeZ3D);
+      const bottomSourceNode = point(left, bottomNodeZ3D);
+      const topCenter = point(centerX3D, topNodeZ3D);
+      const midCenter = point(centerX3D, midNodeZ3D);
+      const bottomCenter = point(centerX3D, bottomNodeZ3D);
+
+      const branchCount = Math.max(topGroupIds.length, bottomGroupIds.length, 1);
+      const width = branchSpacing3D * Math.max(branchCount - 1, 0);
+      const branchStartX = centerX3D - width / 2;
+      const branchXs = Array.from({ length: branchCount }, (_, index) => branchStartX + index * branchSpacing3D);
+
+      pushWire(start, batteryStart);
+      pushBattery(batteryStart, batteryEnd, sourceLabel);
+      pushWire(batteryEnd, topSourceNode);
+      pushWire(topSourceNode, topCenter);
+      pushWire(bottomCenter, bottomSourceNode);
+      pushWire(bottomSourceNode, start);
+
+      // Top parallel group
+      topGroupIds.forEach((id, index) => {
+        const x = branchXs[index] ?? centerX3D;
+        const topNode = point(x, topNodeZ3D);
+        const midNode = point(x, midNodeZ3D);
+        const resistorStart = point(x, topNodeZ3D - leadInset3D);
+        const resistorEnd = point(x, midNodeZ3D + leadInset3D);
+
+        pushWire(topCenter, topNode);
+        pushWire(topNode, resistorStart);
+        pushResistor(labelFor(id), resistorStart, resistorEnd);
+        pushWire(resistorEnd, midNode);
+        pushWire(midNode, midCenter);
+      });
+
+      // Bottom parallel group
+      bottomGroupIds.forEach((id, index) => {
+        const x = branchXs[index] ?? centerX3D;
+        const midNode = point(x, midNodeZ3D);
+        const bottomNode = point(x, bottomNodeZ3D);
+        const resistorStart = point(x, midNodeZ3D - leadInset3D);
+        const resistorEnd = point(x, bottomNodeZ3D + leadInset3D);
+
+        pushWire(midCenter, midNode);
+        pushWire(midNode, resistorStart);
+        pushResistor(labelFor(id), resistorStart, resistorEnd);
+        pushWire(resistorEnd, bottomNode);
+        pushWire(bottomNode, bottomCenter);
+      });
+
+      return;
+    }
+
     const componentCount = problem.components.length;
     const hasBottomSeries = componentCount >= 4;
 

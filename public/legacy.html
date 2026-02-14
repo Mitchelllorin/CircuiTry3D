@@ -8295,6 +8295,70 @@ body.android-optimized.menu-visible .status {
         }
 
         function createCombinationFallbackLayout(battery, otherComponents) {
+            // Canonical screenshot-style fallback:
+            // two parallel branches in series (top pair and bottom pair).
+            if (otherComponents.length === 4) {
+                const centerX = GRID_SIZE * 2;
+                const branchDx = GRID_SIZE * 2;
+                const leftBranchX = centerX - branchDx;
+                const rightBranchX = centerX + branchDx;
+                const topNodeZ = GRID_SIZE * 3;
+                const midNodeZ = 0;
+                const bottomNodeZ = -GRID_SIZE * 3;
+                const topCompZ = (topNodeZ + midNodeZ) / 2;
+                const bottomCompZ = (midNodeZ + bottomNodeZ) / 2;
+                const sourceX = -GRID_SIZE * 5;
+
+                // Top parallel pair
+                positionComponent(otherComponents[0], leftBranchX, topCompZ, Math.PI / 2);
+                positionComponent(otherComponents[1], rightBranchX, topCompZ, Math.PI / 2);
+
+                // Bottom parallel pair
+                positionComponent(otherComponents[2], leftBranchX, bottomCompZ, Math.PI / 2);
+                positionComponent(otherComponents[3], rightBranchX, bottomCompZ, Math.PI / 2);
+
+                const topSource = new Junction(snapToGrid(new THREE.Vector3(sourceX, 0, topNodeZ)));
+                const topCenter = new Junction(snapToGrid(new THREE.Vector3(centerX, 0, topNodeZ)));
+                const midCenter = new Junction(snapToGrid(new THREE.Vector3(centerX, 0, midNodeZ)));
+                const bottomCenter = new Junction(snapToGrid(new THREE.Vector3(centerX, 0, bottomNodeZ)));
+                const bottomSource = new Junction(snapToGrid(new THREE.Vector3(sourceX, 0, bottomNodeZ)));
+
+                const topLeft = new Junction(snapToGrid(new THREE.Vector3(leftBranchX, 0, topNodeZ)));
+                const topRight = new Junction(snapToGrid(new THREE.Vector3(rightBranchX, 0, topNodeZ)));
+                const midLeft = new Junction(snapToGrid(new THREE.Vector3(leftBranchX, 0, midNodeZ)));
+                const midRight = new Junction(snapToGrid(new THREE.Vector3(rightBranchX, 0, midNodeZ)));
+                const bottomLeft = new Junction(snapToGrid(new THREE.Vector3(leftBranchX, 0, bottomNodeZ)));
+                const bottomRight = new Junction(snapToGrid(new THREE.Vector3(rightBranchX, 0, bottomNodeZ)));
+
+                junctions.push(
+                    topSource, topCenter, midCenter, bottomCenter, bottomSource,
+                    topLeft, topRight, midLeft, midRight, bottomLeft, bottomRight
+                );
+
+                connectTerminals(battery, 'positive', topSource, 'center');
+                connectTerminals(topSource, 'center', topCenter, 'center');
+                connectTerminals(bottomCenter, 'center', bottomSource, 'center');
+                connectTerminals(bottomSource, 'center', battery, 'negative');
+
+                connectTerminals(topCenter, 'center', topLeft, 'center');
+                connectTerminals(topCenter, 'center', topRight, 'center');
+                connectTerminals(midCenter, 'center', midLeft, 'center');
+                connectTerminals(midCenter, 'center', midRight, 'center');
+                connectTerminals(bottomCenter, 'center', bottomLeft, 'center');
+                connectTerminals(bottomCenter, 'center', bottomRight, 'center');
+
+                connectTerminals(topLeft, 'center', otherComponents[0], 'right');
+                connectTerminals(otherComponents[0], 'left', midLeft, 'center');
+                connectTerminals(topRight, 'center', otherComponents[1], 'right');
+                connectTerminals(otherComponents[1], 'left', midRight, 'center');
+
+                connectTerminals(midLeft, 'center', otherComponents[2], 'right');
+                connectTerminals(otherComponents[2], 'left', bottomLeft, 'center');
+                connectTerminals(midRight, 'center', otherComponents[3], 'right');
+                connectTerminals(otherComponents[3], 'left', bottomRight, 'center');
+                return;
+            }
+
             const spacing = GRID_SIZE * 4;
             const halfCount = Math.max(1, Math.ceil(otherComponents.length / 2));
 
