@@ -8135,23 +8135,216 @@ body.android-optimized.menu-visible .status {
             return routeManhattan(A, B, startSide, endSide);
         }
 
+        function positionComponent(component, x, z, rotation) {
+            const point = snapToGrid(new THREE.Vector3(x, 0, z));
+            component.position.copy(point);
+            component.mesh.position.copy(component.position);
+            component.rotation = normalizeAngle(rotation || 0);
+            component.mesh.rotation.y = component.rotation;
+        }
+
+        function clearCircuitRouting() {
+            wires.forEach(wire => wire.remove());
+            wires = [];
+            junctions.forEach(junction => {
+                if (junction.mesh) {
+                    scene.remove(junction.mesh);
+                }
+            });
+            junctions.length = 0;
+        }
+
+        function connectTerminals(startObj, startSide, endObj, endSide) {
+            const wire = new Wire(startObj, startSide, endObj, endSide);
+            wires.push(wire);
+            return wire;
+        }
+
+        function createSeriesSquareLayout(battery, sideComponents) {
+            if (!battery || !Array.isArray(sideComponents) || sideComponents.length === 0) {
+                return false;
+            }
+
+            const halfWidth = GRID_SIZE * 5;
+            const halfHeight = GRID_SIZE * 3;
+            const componentCount = sideComponents.length;
+
+            const topCount = componentCount === 1 ? 1 : Math.ceil(componentCount / 3);
+            const bottomCount = componentCount === 1 ? 0 : Math.ceil((componentCount - topCount) / 2);
+            const rightCount = componentCount - topCount - bottomCount;
+
+            const topComponents = sideComponents.slice(0, topCount);
+            const rightComponents = sideComponents.slice(topCount, topCount + rightCount);
+            const bottomComponents = sideComponents.slice(topCount + rightCount);
+
+            const placeTopSide = () => {
+                const span = halfWidth * 2;
+                const step = span / topComponents.length;
+                topComponents.forEach((comp, index) => {
+                    const x = -halfWidth + step * (index + 0.5);
+                    positionComponent(comp, x, halfHeight, 0);
+                });
+            };
+
+            const placeRightSide = () => {
+                if (rightComponents.length === 0) return;
+                const span = halfHeight * 2;
+                const step = span / rightComponents.length;
+                rightComponents.forEach((comp, index) => {
+                    const z = halfHeight - step * (index + 0.5);
+                    positionComponent(comp, halfWidth, z, Math.PI / 2);
+                });
+            };
+
+            const placeBottomSide = () => {
+                if (bottomComponents.length === 0) return;
+                const span = halfWidth * 2;
+                const step = span / bottomComponents.length;
+                bottomComponents.forEach((comp, index) => {
+                    const x = halfWidth - step * (index + 0.5);
+                    positionComponent(comp, x, -halfHeight, 0);
+                });
+            };
+
+            placeTopSide();
+            placeRightSide();
+            placeBottomSide();
+
+            const topLeft = new Junction(snapToGrid(new THREE.Vector3(-halfWidth, 0, halfHeight)));
+            const topRight = new Junction(snapToGrid(new THREE.Vector3(halfWidth, 0, halfHeight)));
+            const bottomRight = new Junction(snapToGrid(new THREE.Vector3(halfWidth, 0, -halfHeight)));
+            const bottomLeft = new Junction(snapToGrid(new THREE.Vector3(-halfWidth, 0, -halfHeight)));
+            junctions.push(topLeft, topRight, bottomRight, bottomLeft);
+
+            const connectSide = (startNode, endNode, laneComponents, entrySide, exitSide) => {
+                if (laneComponents.length === 0) {
+                    connectTerminals(startNode, 'center', endNode, 'center');
+                    return;
+                }
+                let previous = startNode;
+                let previousSide = 'center';
+                laneComponents.forEach((comp) => {
+                    connectTerminals(previous, previousSide, comp, entrySide);
+                    previous = comp;
+                    previousSide = exitSide;
+                });
+                connectTerminals(previous, previousSide, endNode, 'center');
+            };
+
+            connectTerminals(battery, 'positive', topLeft, 'center');
+            connectSide(topLeft, topRight, topComponents, 'left', 'right');
+            connectSide(topRight, bottomRight, rightComponents, 'right', 'left');
+            connectSide(bottomRight, bottomLeft, bottomComponents, 'right', 'left');
+            connectTerminals(bottomLeft, 'center', battery, 'negative');
+
+            return true;
+        }
+
+        function createParallelRailLayout(battery, branchComponents) {
+            if (!battery || !Array.isArray(branchComponents) || branchComponents.length === 0) {
+                return false;
+            }
+
+            const branchCount = branchComponents.length;
+            const leftRailX = -GRID_SIZE * 5;
+            const railTopZ = GRID_SIZE * 3;
+            const railBottomZ = -GRID_SIZE * 3;
+            const rightRailX = GRID_SIZE * 5 + Math.max(0, branchCount - 3) * GRID_SIZE * 2;
+            const spacing = (rightRailX - leftRailX) / (branchCount + 1);
+
+            const branchNodesTop = [];
+            const branchNodesBottom = [];
+
+            branchComponents.forEach((comp, index) => {
+                const x = leftRailX + spacing * (index + 1);
+                positionComponent(comp, x, 0, Math.PI / 2);
+                const topNode = new Junction(snapToGrid(new THREE.Vector3(x, 0, railTopZ)));
+                const bottomNode = new Junction(snapToGrid(new THREE.Vector3(x, 0, railBottomZ)));
+                branchNodesTop.push(topNode);
+                branchNodesBottom.push(bottomNode);
+                junctions.push(topNode, bottomNode);
+            });
+
+            const sourceTop = new Junction(snapToGrid(new THREE.Vector3(leftRailX, 0, railTopZ)));
+            const sourceBottom = new Junction(snapToGrid(new THREE.Vector3(leftRailX, 0, railBottomZ)));
+            const returnTop = new Junction(snapToGrid(new THREE.Vector3(rightRailX, 0, railTopZ)));
+            const returnBottom = new Junction(snapToGrid(new THREE.Vector3(rightRailX, 0, railBottomZ)));
+            junctions.push(sourceTop, sourceBottom, returnTop, returnBottom);
+
+            connectTerminals(battery, 'positive', sourceTop, 'center');
+            connectTerminals(sourceBottom, 'center', battery, 'negative');
+
+            const topRail = [sourceTop, ...branchNodesTop, returnTop];
+            const bottomRail = [sourceBottom, ...branchNodesBottom, returnBottom];
+
+            for (let i = 0; i < topRail.length - 1; i++) {
+                connectTerminals(topRail[i], 'center', topRail[i + 1], 'center');
+            }
+            for (let i = 0; i < bottomRail.length - 1; i++) {
+                connectTerminals(bottomRail[i], 'center', bottomRail[i + 1], 'center');
+            }
+
+            connectTerminals(returnTop, 'center', returnBottom, 'center');
+
+            branchComponents.forEach((comp, index) => {
+                connectTerminals(branchNodesTop[index], 'center', comp, 'right');
+                connectTerminals(comp, 'left', branchNodesBottom[index], 'center');
+            });
+
+            return true;
+        }
+
+        function createCombinationFallbackLayout(battery, otherComponents) {
+            const spacing = GRID_SIZE * 4;
+            const halfCount = Math.max(1, Math.ceil(otherComponents.length / 2));
+
+            otherComponents.forEach((comp, index) => {
+                const row = index % halfCount;
+                const col = Math.floor(index / halfCount);
+                const x = spacing * (2 + col * 2);
+                const z = (row - halfCount / 2) * spacing;
+                positionComponent(comp, x, z, Math.PI / 2);
+            });
+
+            createParallelBus(battery, otherComponents);
+
+            const returnX = spacing * 6;
+            const returnJunctions = [];
+            otherComponents.forEach((comp) => {
+                const z = comp.position.z;
+                const junctionPoint = new Junction(snapToGrid(new THREE.Vector3(returnX, 0, z)));
+                junctions.push(junctionPoint);
+                returnJunctions.push(junctionPoint);
+                connectTerminals(comp, 'right', junctionPoint, 'center');
+            });
+
+            for (let i = 0; i < returnJunctions.length - 1; i++) {
+                connectTerminals(returnJunctions[i], 'center', returnJunctions[i + 1], 'center');
+            }
+
+            const middleReturn = returnJunctions[Math.floor(returnJunctions.length / 2)];
+            connectTerminals(middleReturn, 'center', battery, 'negative');
+        }
+
             // Auto-arrange circuit for professional schematic layout
         function arrangeCircuitSchematic() {
             if (components.length === 0) return;
-            
+
             saveState(); // Save for undo
-            
-            // Find batteries (power sources)
+
             const batteries = components.filter(c => c.type === 'battery');
             const otherComponents = components.filter(c => c.type !== 'battery');
-            
             if (batteries.length === 0) {
                 setStatus('⚡ Add a battery first for schematic arrangement');
                 return;
             }
+            if (otherComponents.length === 0) {
+                fitToScreen();
+                setStatus('⚡ Add components to arrange');
+                return;
+            }
 
             // Detect branching BEFORE we clear wires/junctions.
-            // The previous heuristic ("many components => parallel") caused incorrect layouts for long series chains.
             const terminalFanout = new Map();
             const bumpFanout = (key) => {
                 if (!key) return;
@@ -8162,107 +8355,44 @@ body.android-optimized.menu-visible .status {
                 bumpFanout(getTerminalKey(wire.endObj, wire.endSide || 'center'));
             });
             const hasBranching = (junctions && junctions.length > 0) || Array.from(terminalFanout.values()).some((count) => count > 1);
-            
-            // Clear existing wires for clean re-routing
-            wires.forEach(wire => wire.remove());
-            wires = [];
-            
-            // Clear existing junctions
-            junctions.forEach(junction => {
-                if (junction.mesh) scene.remove(junction.mesh);
-            });
-            junctions.length = 0;
-            
-            // Arrange components in schematic style
-            const SPACING = GRID_SIZE * 4;
-            const battery = batteries[0];
-            
-            // Position battery on the left aligned to grid
-            battery.position.set(-SPACING * 2, 0, 0);
-            battery.mesh.position.copy(battery.position);
-            // Orient battery vertically like textbook schematics.
-            battery.rotation = normalizeAngle(Math.PI / 2);
-            battery.mesh.rotation.y = battery.rotation;
-            
-            // Arrange as series unless the existing circuit shows branching/junctions.
-            if (!hasBranching) {
-                if (otherComponents.length === 0) {
-                    fitToScreen();
-                    setStatus('⚡ Add components to arrange');
-                    return;
-                }
 
-                // Series chain - lay components in a clean line (router handles the orthogonal loop).
-                otherComponents.forEach((comp, index) => {
-                    const x = index * SPACING;
-                    const p = snapToGrid(new THREE.Vector3(x, 0, 0));
-                    comp.position.copy(p);
-                    comp.mesh.position.copy(comp.position);
-                    comp.rotation = 0;
-                    comp.mesh.rotation.y = 0;
-                });
-
-                const firstWire = new Wire(battery, 'positive', otherComponents[0], 'left');
-                wires.push(firstWire);
-
-                for (let i = 0; i < otherComponents.length - 1; i++) {
-                    const wire = new Wire(otherComponents[i], 'right', otherComponents[i + 1], 'left');
-                    wires.push(wire);
-                }
-
-                const lastWire = new Wire(otherComponents[otherComponents.length - 1], 'right', battery, 'negative');
-                wires.push(lastWire);
-            } else {
-                // Parallel / combination layout: hang branches between supply and return rails.
-                const halfCount = Math.max(1, Math.ceil(otherComponents.length / 2));
-
-                otherComponents.forEach((comp, index) => {
-                    const row = index % halfCount;
-                    const col = Math.floor(index / halfCount);
-                    const x = SPACING * (2 + col * 2);
-                    const z = (row - halfCount / 2) * SPACING;
-                    const p = snapToGrid(new THREE.Vector3(x, 0, z));
-                    comp.position.copy(p);
-                    comp.mesh.position.copy(comp.position);
-                    comp.rotation = Math.PI / 2;
-                    comp.mesh.rotation.y = comp.rotation;
-                });
-
-                // Create parallel circuit with intelligent splitting
-                createParallelBus(battery, otherComponents);
-
-                // Return path - create return junctions and connect back to battery
-                const returnX = SPACING * 6;
-                const returnJunctions = [];
-
-                otherComponents.forEach((comp) => {
-                    const z = comp.position.z;
-                    const jPos = snapToGrid(new THREE.Vector3(returnX, 0, z));
-                    const junction = new Junction(jPos);
-                    junctions.push(junction);
-                    returnJunctions.push(junction);
-
-                    // Connect component to return junction
-                    const wire = new Wire(comp, 'right', junction, 'center');
-                    wires.push(wire);
-                });
-
-                // Connect return junctions vertically
-                for (let i = 0; i < returnJunctions.length - 1; i++) {
-                    const wire = new Wire(returnJunctions[i], 'center', returnJunctions[i + 1], 'center');
-                    wires.push(wire);
-                }
-
-                // Connect middle return junction back to battery
-                const midReturn = returnJunctions[Math.floor(returnJunctions.length / 2)];
-                const finalWire = new Wire(midReturn, 'center', battery, 'negative');
-                wires.push(finalWire);
+            const topologyGuess = detectCircuitTopology(otherComponents, wires, junctions);
+            let layoutTopology = topologyGuess?.type;
+            if (layoutTopology !== 'series' && layoutTopology !== 'parallel' && layoutTopology !== 'combination') {
+                layoutTopology = hasBranching ? 'parallel' : 'series';
             }
-            
-            // Center the view on the circuit
+
+            clearCircuitRouting();
+
+            const battery = batteries[0];
+            positionComponent(battery, -GRID_SIZE * 5, 0, Math.PI / 2);
+
+            let layoutApplied = false;
+            if (layoutTopology === 'parallel') {
+                layoutApplied = createParallelRailLayout(battery, otherComponents);
+            } else if (layoutTopology === 'series') {
+                layoutApplied = createSeriesSquareLayout(battery, otherComponents);
+            } else {
+                createCombinationFallbackLayout(battery, otherComponents);
+                layoutApplied = true;
+            }
+
+            if (!layoutApplied) {
+                fitToScreen();
+                setStatus('⚡ Could not apply layout - add valid circuit components');
+                return;
+            }
+
             fitToScreen();
             analyzeCircuit();
-            setStatus('⚡ Circuit arranged in textbook-style layout with intelligent Manhattan routing!');
+
+            if (layoutTopology === 'parallel') {
+                setStatus('⚡ Applied standardized parallel layout: horizontal rails, centered vertical branches.');
+            } else if (layoutTopology === 'series') {
+                setStatus('⚡ Applied standardized series layout: one centered component per side run.');
+            } else {
+                setStatus('⚡ Applied combination layout with standardized branch routing.');
+            }
         }
         
         // Linear/Tree layout with battery at top
@@ -13953,31 +14083,40 @@ Made with ? for visual learners everywhere!
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 12 } },
-                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 100 } },
-                    { id: 'R2', type: 'resistor', position: [0, 0, 0], properties: { resistance: 220 } },
-                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
+                    { id: 'R1', type: 'resistor', position: [-4, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 100 } },
+                    { id: 'R2', type: 'resistor', position: [0, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
+                    { id: 'R3', type: 'resistor', position: [4, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 330 } }
                 ],
                 junctions: [
-                    { id: 'J_POS_TOP', position: [-10, 0, 6] },
-                    { id: 'J_POS_MID', position: [-10, 0, 0] },
-                    { id: 'J_POS_BOTTOM', position: [-10, 0, -6] },
-                    { id: 'J_NEG_TOP', position: [10, 0, 6] },
-                    { id: 'J_NEG_MID', position: [10, 0, 0] },
-                    { id: 'J_NEG_BOTTOM', position: [10, 0, -6] }
+                    { id: 'J_LEFT_TOP', position: [-10, 0, 6] },
+                    { id: 'J_BRANCH_1_TOP', position: [-4, 0, 6] },
+                    { id: 'J_BRANCH_2_TOP', position: [0, 0, 6] },
+                    { id: 'J_BRANCH_3_TOP', position: [4, 0, 6] },
+                    { id: 'J_RIGHT_TOP', position: [10, 0, 6] },
+                    { id: 'J_LEFT_BOTTOM', position: [-10, 0, -6] },
+                    { id: 'J_BRANCH_1_BOTTOM', position: [-4, 0, -6] },
+                    { id: 'J_BRANCH_2_BOTTOM', position: [0, 0, -6] },
+                    { id: 'J_BRANCH_3_BOTTOM', position: [4, 0, -6] },
+                    { id: 'J_RIGHT_BOTTOM', position: [10, 0, -6] }
                 ],
                 wires: [
-                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_POS_MID', side: 'center' } },
-                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'J_POS_TOP', side: 'center' } },
-                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'J_POS_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_POS_TOP', side: 'center' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'J_POS_MID', side: 'center' }, to: { ref: 'R2', side: 'left' } },
-                    { from: { ref: 'J_POS_BOTTOM', side: 'center' }, to: { ref: 'R3', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_NEG_TOP', side: 'center' } },
-                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_NEG_MID', side: 'center' } },
-                    { from: { ref: 'R3', side: 'right' }, to: { ref: 'J_NEG_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_NEG_TOP', side: 'center' }, to: { ref: 'J_NEG_MID', side: 'center' } },
-                    { from: { ref: 'J_NEG_MID', side: 'center' }, to: { ref: 'J_NEG_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_NEG_MID', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_LEFT_TOP', side: 'center' } },
+                    { from: { ref: 'B1', side: 'negative' }, to: { ref: 'J_LEFT_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_LEFT_TOP', side: 'center' }, to: { ref: 'J_BRANCH_1_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_1_TOP', side: 'center' }, to: { ref: 'J_BRANCH_2_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_2_TOP', side: 'center' }, to: { ref: 'J_BRANCH_3_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_3_TOP', side: 'center' }, to: { ref: 'J_RIGHT_TOP', side: 'center' } },
+                    { from: { ref: 'J_LEFT_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' }, to: { ref: 'J_RIGHT_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_RIGHT_TOP', side: 'center' }, to: { ref: 'J_RIGHT_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_1_TOP', side: 'center' }, to: { ref: 'R1', side: 'right' } },
+                    { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_2_TOP', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_3_TOP', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' } }
                 ]
             },
             mixed_circuit: {
@@ -14215,18 +14354,40 @@ Made with ? for visual learners everywhere!
                 combo_simple: 'mixed_circuit'
             };
 
-            // Resolve the actual preset name (use alias if defined)
-            const resolvedPresetName = PRESET_ALIASES[presetName] || presetName;
+            const inferPresetFromTopology = (name) => {
+                if (!name) return null;
+                if (name.startsWith('series') || name.startsWith('textbook_series')) {
+                    return 'series_basic';
+                }
+                if (name.startsWith('parallel') || name.startsWith('textbook_parallel')) {
+                    return 'parallel_basic';
+                }
+                if (
+                    name.startsWith('combo') ||
+                    name.startsWith('mixed') ||
+                    name.startsWith('combination') ||
+                    name.startsWith('textbook_combo')
+                ) {
+                    return 'mixed_circuit';
+                }
+                return null;
+            };
+
+            const lookupName = typeof presetName === 'string' ? presetName.trim().toLowerCase() : '';
+            const aliasedPreset = PRESET_ALIASES[lookupName] || inferPresetFromTopology(lookupName);
+            const resolvedPresetName = PRESET_CIRCUITS[lookupName]
+                ? lookupName
+                : (aliasedPreset && PRESET_CIRCUITS[aliasedPreset] ? aliasedPreset : lookupName);
             const preset = PRESET_CIRCUITS[resolvedPresetName];
             if (!preset) {
-                setStatus('Preset circuit not found!');
+                setStatus(`Preset circuit not found: ${presetName || 'unknown'}`);
                 return;
             }
 
             clearAll(false);
-            currentPracticeCircuit = presetName;
+            currentPracticeCircuit = resolvedPresetName;
 
-            const index = practiceProblems.indexOf(presetName);
+            const index = practiceProblems.indexOf(resolvedPresetName);
             if (index !== -1) {
                 currentProblemIndex = index;
             }
@@ -14321,7 +14482,7 @@ Made with ? for visual learners everywhere!
             const helpTextEl = document.getElementById('practice-help-text');
             const objList = document.getElementById('objectives-list');
 
-            const practiceInfo = practiceQuestions[presetName];
+            const practiceInfo = practiceQuestions[lookupName] || practiceQuestions[resolvedPresetName];
 
             if (questionEl && practiceInfo) {
                 questionEl.textContent = `Problem: ${practiceInfo.question}`;
@@ -14344,7 +14505,7 @@ Made with ? for visual learners everywhere!
                 objList.innerHTML = preset.objectives.map(obj => `<li>${obj}</li>`).join('');
             }
 
-            renderWireWorksheetFromPreset(presetName, preset);
+            renderWireWorksheetFromPreset(resolvedPresetName, preset);
 
             document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
             const buttonIds = {
@@ -14353,7 +14514,7 @@ Made with ? for visual learners everywhere!
                 'mixed_circuit': 'btn-mixed',
                 'combination_advanced': 'btn-combination'
             };
-            const buttonId = buttonIds[presetName];
+            const buttonId = buttonIds[resolvedPresetName];
             if (buttonId) {
                 const button = document.getElementById(buttonId);
                 if (button) button.classList.add('active');
