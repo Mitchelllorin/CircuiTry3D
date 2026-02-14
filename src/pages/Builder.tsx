@@ -2316,9 +2316,6 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Practice</span>
-            </div>
-            <div className="slider-section">
               <span className="slider-heading">Environmental Conditions</span>
               <div className="menu-track menu-track-chips">
                 <div
