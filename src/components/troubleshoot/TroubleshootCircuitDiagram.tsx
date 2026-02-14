@@ -4,6 +4,7 @@ import {
   BatterySymbol,
   LEDSymbol,
   ResistorSymbol,
+  SwitchSymbol,
 } from "../circuit/SchematicSymbols";
 import { SCHEMATIC_COLORS, STROKE_WIDTHS } from "../../schematic/visualConstants";
 
@@ -23,9 +24,38 @@ const LEFT_X = 82;
 const RIGHT_X = 518;
 const TOP_Y = 58;
 const BOTTOM_Y = 162;
+const TOP_COMPONENT_X = (LEFT_X + RIGHT_X) / 2;
+const RIGHT_COMPONENT_Y = (TOP_Y + BOTTOM_Y) / 2;
+const BOTTOM_COMPONENT_X = TOP_COMPONENT_X;
+const COMPONENT_HALF_SPAN = 30;
+const TOP_COMPONENT_LEFT_X = TOP_COMPONENT_X - COMPONENT_HALF_SPAN;
+const TOP_COMPONENT_RIGHT_X = TOP_COMPONENT_X + COMPONENT_HALF_SPAN;
+const RIGHT_COMPONENT_TOP_Y = RIGHT_COMPONENT_Y - COMPONENT_HALF_SPAN;
+const RIGHT_COMPONENT_BOTTOM_Y = RIGHT_COMPONENT_Y + COMPONENT_HALF_SPAN;
+const BOTTOM_COMPONENT_LEFT_X = BOTTOM_COMPONENT_X - COMPONENT_HALF_SPAN;
+const BOTTOM_COMPONENT_RIGHT_X = BOTTOM_COMPONENT_X + COMPONENT_HALF_SPAN;
 const BATTERY_CENTER_Y = (TOP_Y + BOTTOM_Y) / 2;
 const BATTERY_TOP_Y = BATTERY_CENTER_Y - 26;
 const BATTERY_BOTTOM_Y = BATTERY_CENTER_Y + 26;
+
+const drawWire = (
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  key?: string,
+) => (
+  <line
+    key={key}
+    x1={x1}
+    y1={y1}
+    x2={x2}
+    y2={y2}
+    stroke={WIRE_COLOR}
+    strokeWidth={WIRE_STROKE}
+    strokeLinecap="round"
+  />
+);
 
 const drawNode = (x: number, y: number, key: string) => (
   <circle
@@ -41,15 +71,7 @@ const drawNode = (x: number, y: number, key: string) => (
 
 const baseBattery = (
   <>
-    <line
-      x1={LEFT_X}
-      y1={TOP_Y}
-      x2={LEFT_X}
-      y2={BATTERY_TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(LEFT_X, TOP_Y, LEFT_X, BATTERY_TOP_Y, "battery-top-wire")}
     <BatterySymbol
       x={LEFT_X}
       y={BATTERY_CENTER_Y}
@@ -59,15 +81,7 @@ const baseBattery = (
       color={WIRE_COLOR}
       strokeWidth={2.8}
     />
-    <line
-      x1={LEFT_X}
-      y1={BATTERY_BOTTOM_Y}
-      x2={LEFT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(LEFT_X, BATTERY_BOTTOM_Y, LEFT_X, BOTTOM_Y, "battery-bottom-wire")}
     <text
       x={LEFT_X - 28}
       y={BATTERY_CENTER_Y + 4}
@@ -80,87 +94,114 @@ const baseBattery = (
   </>
 );
 
-const OpenSwitchDiagram = () => (
+const drawRightResistor = (label: string, keyPrefix: string) => (
   <>
-    {baseBattery}
-
-    <line
-      x1={LEFT_X}
-      y1={TOP_Y}
-      x2={188}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-
-    <circle cx={190} cy={TOP_Y} r={3} fill={COMPONENT_COLOR} />
-    <circle cx={236} cy={TOP_Y} r={3} fill={COMPONENT_COLOR} />
-    <line
-      x1={190}
-      y1={TOP_Y}
-      x2={226}
-      y2={TOP_Y - 18}
-      stroke={COMPONENT_COLOR}
-      strokeWidth={2.4}
-      strokeLinecap="round"
-    />
-
-    <line
-      x1={236}
-      y1={TOP_Y}
-      x2={322}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(
+      RIGHT_X,
+      TOP_Y,
+      RIGHT_X,
+      RIGHT_COMPONENT_TOP_Y,
+      `${keyPrefix}-right-wire-top`,
+    )}
     <ResistorSymbol
-      x={352}
-      y={TOP_Y}
+      x={RIGHT_X}
+      y={RIGHT_COMPONENT_Y}
+      rotation={90}
       scale={1}
       showLabel={false}
       color={COMPONENT_COLOR}
       strokeWidth={2.2}
     />
-    <line
-      x1={382}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(
+      RIGHT_X,
+      RIGHT_COMPONENT_BOTTOM_Y,
+      RIGHT_X,
+      BOTTOM_Y,
+      `${keyPrefix}-right-wire-bottom`,
+    )}
+    <text
+      x={RIGHT_X + 26}
+      y={RIGHT_COMPONENT_Y + 4}
+      textAnchor="start"
+      fill={LABEL_COLOR}
+      fontSize={11}
+    >
+      {label}
+    </text>
+  </>
+);
 
-    <line
-      x1={RIGHT_X}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
+const drawBottomResistor = (
+  label: string,
+  keyPrefix: string,
+  leftReturnX = LEFT_X,
+) => (
+  <>
+    {drawWire(
+      RIGHT_X,
+      BOTTOM_Y,
+      BOTTOM_COMPONENT_RIGHT_X,
+      BOTTOM_Y,
+      `${keyPrefix}-bottom-wire-right`,
+    )}
+    <ResistorSymbol
+      x={BOTTOM_COMPONENT_X}
+      y={BOTTOM_Y}
+      scale={1}
+      showLabel={false}
+      color={COMPONENT_COLOR}
+      strokeWidth={2.2}
     />
-    <line
-      x1={RIGHT_X}
-      y1={BOTTOM_Y}
-      x2={LEFT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(
+      BOTTOM_COMPONENT_LEFT_X,
+      BOTTOM_Y,
+      leftReturnX,
+      BOTTOM_Y,
+      `${keyPrefix}-bottom-wire-left`,
+    )}
+    <text
+      x={BOTTOM_COMPONENT_X}
+      y={186}
+      textAnchor="middle"
+      fill={LABEL_COLOR}
+      fontSize={11}
+    >
+      {label}
+    </text>
+  </>
+);
 
-    {drawNode(LEFT_X, TOP_Y, "os-tl")}
-    {drawNode(RIGHT_X, TOP_Y, "os-tr")}
-    {drawNode(RIGHT_X, BOTTOM_Y, "os-br")}
-    {drawNode(LEFT_X, BOTTOM_Y, "os-bl")}
+const drawCornerNodes = (prefix: string) => (
+  <>
+    {drawNode(LEFT_X, TOP_Y, `${prefix}-tl`)}
+    {drawNode(RIGHT_X, TOP_Y, `${prefix}-tr`)}
+    {drawNode(RIGHT_X, BOTTOM_Y, `${prefix}-br`)}
+    {drawNode(LEFT_X, BOTTOM_Y, `${prefix}-bl`)}
+  </>
+);
+
+const OpenSwitchDiagram = () => (
+  <>
+    {baseBattery}
+    {drawWire(LEFT_X, TOP_Y, TOP_COMPONENT_LEFT_X, TOP_Y, "os-top-wire-left")}
+    <SwitchSymbol
+      x={TOP_COMPONENT_X}
+      y={TOP_Y}
+      scale={1}
+      showLabel={false}
+      color={COMPONENT_COLOR}
+      strokeWidth={2.2}
+      isOpen
+    />
+    {drawWire(TOP_COMPONENT_RIGHT_X, TOP_Y, RIGHT_X, TOP_Y, "os-top-wire-right")}
+    {drawRightResistor("R1", "os")}
+    {drawBottomResistor("R2", "os")}
+    {drawCornerNodes("os")}
 
     <rect
-      x={176}
-      y={26}
-      width={74}
+      x={256}
+      y={24}
+      width={88}
       height={52}
       rx={8}
       fill="none"
@@ -168,15 +209,12 @@ const OpenSwitchDiagram = () => (
       strokeDasharray="6 4"
       strokeWidth={1.6}
     />
-    <text x={213} y={21} textAnchor="middle" fill={FAULT_COLOR} fontSize={10}>
+    <text x={300} y={20} textAnchor="middle" fill={FAULT_COLOR} fontSize={10}>
       Fault: switch open
     </text>
 
-    <text x={213} y={88} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
+    <text x={TOP_COMPONENT_X} y={88} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
       SW1
-    </text>
-    <text x={352} y={38} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
-      R1
     </text>
   </>
 );
@@ -184,103 +222,37 @@ const OpenSwitchDiagram = () => (
 const MissingWireDiagram = () => (
   <>
     {baseBattery}
-
-    <line
-      x1={LEFT_X}
-      y1={TOP_Y}
-      x2={270}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(LEFT_X, TOP_Y, TOP_COMPONENT_LEFT_X, TOP_Y, "mw-top-wire-left")}
     <ResistorSymbol
-      x={300}
+      x={TOP_COMPONENT_X}
       y={TOP_Y}
       scale={1}
       showLabel={false}
       color={COMPONENT_COLOR}
       strokeWidth={2.2}
     />
-    <line
-      x1={330}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(TOP_COMPONENT_RIGHT_X, TOP_Y, RIGHT_X, TOP_Y, "mw-top-wire-right")}
+    {drawRightResistor("R2", "mw")}
+    {drawBottomResistor("R3", "mw", 136)}
 
     <line
-      x1={RIGHT_X}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-
-    <line
-      x1={RIGHT_X}
-      y1={BOTTOM_Y}
-      x2={330}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <ResistorSymbol
-      x={300}
-      y={BOTTOM_Y}
-      scale={1}
-      showLabel={false}
-      color={COMPONENT_COLOR}
-      strokeWidth={2.2}
-    />
-    <line
-      x1={270}
-      y1={BOTTOM_Y}
-      x2={150}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <line
-      x1={100}
+      x1={136}
       y1={BOTTOM_Y}
       x2={LEFT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <line
-      x1={100}
-      y1={BOTTOM_Y}
-      x2={150}
       y2={BOTTOM_Y}
       stroke={FAULT_COLOR}
       strokeWidth={2}
       strokeDasharray="6 4"
       strokeLinecap="round"
     />
-    <text x={124} y={147} textAnchor="middle" fill={FAULT_COLOR} fontSize={10}>
+    <text x={108} y={148} textAnchor="middle" fill={FAULT_COLOR} fontSize={10}>
       Missing wire
     </text>
 
-    {drawNode(LEFT_X, TOP_Y, "mw-tl")}
-    {drawNode(RIGHT_X, TOP_Y, "mw-tr")}
-    {drawNode(RIGHT_X, BOTTOM_Y, "mw-br")}
-    {drawNode(LEFT_X, BOTTOM_Y, "mw-bl")}
+    {drawCornerNodes("mw")}
 
-    <text x={300} y={38} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
+    <text x={TOP_COMPONENT_X} y={38} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
       R1
-    </text>
-    <text x={300} y={186} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
-      R2
     </text>
   </>
 );
@@ -288,51 +260,18 @@ const MissingWireDiagram = () => (
 const ShortCircuitDiagram = () => (
   <>
     {baseBattery}
-
-    <line
-      x1={LEFT_X}
-      y1={TOP_Y}
-      x2={286}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(LEFT_X, TOP_Y, TOP_COMPONENT_LEFT_X, TOP_Y, "sc-top-wire-left")}
     <ResistorSymbol
-      x={316}
+      x={TOP_COMPONENT_X}
       y={TOP_Y}
       scale={1}
       showLabel={false}
       color={COMPONENT_COLOR}
       strokeWidth={2.2}
     />
-    <line
-      x1={346}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <line
-      x1={RIGHT_X}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <line
-      x1={RIGHT_X}
-      y1={BOTTOM_Y}
-      x2={LEFT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(TOP_COMPONENT_RIGHT_X, TOP_Y, RIGHT_X, TOP_Y, "sc-top-wire-right")}
+    {drawRightResistor("R2", "sc")}
+    {drawBottomResistor("R3", "sc")}
 
     <line
       x1={LEFT_X + 18}
@@ -344,20 +283,17 @@ const ShortCircuitDiagram = () => (
       strokeLinecap="round"
     />
     <text
-      x={LEFT_X + 32}
-      y={BATTERY_CENTER_Y}
+      x={LEFT_X + 34}
+      y={BATTERY_CENTER_Y + 2}
       fill={FAULT_COLOR}
       fontSize={10}
     >
       Short path
     </text>
 
-    {drawNode(LEFT_X, TOP_Y, "sc-tl")}
-    {drawNode(RIGHT_X, TOP_Y, "sc-tr")}
-    {drawNode(RIGHT_X, BOTTOM_Y, "sc-br")}
-    {drawNode(LEFT_X, BOTTOM_Y, "sc-bl")}
+    {drawCornerNodes("sc")}
 
-    <text x={316} y={38} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
+    <text x={TOP_COMPONENT_X} y={38} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
       R1
     </text>
   </>
@@ -366,19 +302,10 @@ const ShortCircuitDiagram = () => (
 const ReversedLedDiagram = () => (
   <>
     {baseBattery}
-
-    <line
-      x1={LEFT_X}
-      y1={TOP_Y}
-      x2={210}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(LEFT_X, TOP_Y, TOP_COMPONENT_LEFT_X, TOP_Y, "rl-top-wire-left")}
 
     <LEDSymbol
-      x={240}
+      x={TOP_COMPONENT_X}
       y={TOP_Y}
       rotation={180}
       scale={0.95}
@@ -386,56 +313,14 @@ const ReversedLedDiagram = () => (
       color={COMPONENT_COLOR}
       strokeWidth={2.2}
     />
-    <line
-      x1={270}
-      y1={TOP_Y}
-      x2={340}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <ResistorSymbol
-      x={370}
-      y={TOP_Y}
-      scale={1}
-      showLabel={false}
-      color={COMPONENT_COLOR}
-      strokeWidth={2.2}
-    />
-    <line
-      x1={400}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={TOP_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-
-    <line
-      x1={RIGHT_X}
-      y1={TOP_Y}
-      x2={RIGHT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
-    <line
-      x1={RIGHT_X}
-      y1={BOTTOM_Y}
-      x2={LEFT_X}
-      y2={BOTTOM_Y}
-      stroke={WIRE_COLOR}
-      strokeWidth={WIRE_STROKE}
-      strokeLinecap="round"
-    />
+    {drawWire(TOP_COMPONENT_RIGHT_X, TOP_Y, RIGHT_X, TOP_Y, "rl-top-wire-right")}
+    {drawRightResistor("R1", "rl")}
+    {drawBottomResistor("R2", "rl")}
 
     <rect
-      x={205}
+      x={256}
       y={22}
-      width={70}
+      width={88}
       height={56}
       rx={8}
       fill="none"
@@ -443,20 +328,14 @@ const ReversedLedDiagram = () => (
       strokeDasharray="6 4"
       strokeWidth={1.6}
     />
-    <text x={240} y={16} textAnchor="middle" fill={FAULT_COLOR} fontSize={10}>
+    <text x={TOP_COMPONENT_X} y={16} textAnchor="middle" fill={FAULT_COLOR} fontSize={10}>
       Fault: LED reversed
     </text>
 
-    {drawNode(LEFT_X, TOP_Y, "rl-tl")}
-    {drawNode(RIGHT_X, TOP_Y, "rl-tr")}
-    {drawNode(RIGHT_X, BOTTOM_Y, "rl-br")}
-    {drawNode(LEFT_X, BOTTOM_Y, "rl-bl")}
+    {drawCornerNodes("rl")}
 
-    <text x={240} y={90} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
+    <text x={TOP_COMPONENT_X} y={90} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
       LED1
-    </text>
-    <text x={370} y={38} textAnchor="middle" fill={LABEL_COLOR} fontSize={11}>
-      R1
     </text>
   </>
 );

@@ -119,7 +119,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
     topology: "series",
     difficulty: "standard",
     prompt:
-      "Two resistors (R1 = 470 Ω, R2 = 330 Ω) are connected in series to a 12 V power supply. Complete the W.I.R.E. table to find all circuit values.",
+      "Three resistors (R1 = 470 Ω, R2 = 330 Ω, R3 = 200 Ω) are connected in series to a 12 V power supply. Complete the W.I.R.E. table to find all circuit values.",
     targetQuestion: "What is the voltage drop across R1?",
     targetMetric: { componentId: "R1", key: "voltage" },
     conceptTags: ["series", "voltage-divider", "kvl"],
@@ -128,7 +128,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
     hints: [
       { text: "Voltage divides proportionally based on resistance values", formula: "E_x = I × R_x" },
       { text: "The larger resistor gets the larger voltage drop" },
-      { text: "All voltage drops must equal the source voltage (KVL)", formula: "E_T = E_1 + E_2" },
+      { text: "All voltage drops must equal the source voltage (KVL)", formula: "E_T = E_1 + E_2 + E_3" },
     ],
     tips: [
       "Larger resistance = larger voltage drop in series",
@@ -162,21 +162,28 @@ const practiceProblemSeeds: PracticeProblem[] = [
         givens: { resistance: 330 },
         values: { resistance: 330 },
       },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 200 },
+        values: { resistance: 200 },
+      },
     ],
     network: {
       kind: "series",
       id: "series-voltage",
-      children: SERIES_IDS_2.map((componentId) => ({ kind: "component", componentId })),
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
     },
     totalsGivens: {},
     presetHint: "series_voltage_drop",
     steps: [
       ({ components, totals }) => {
-        const sumLine = SERIES_IDS_2.map((id) => `${formatNumber(components[id].resistance, 0)}Ω`).join(" + ");
+        const sumLine = SERIES_IDS.map((id) => `${formatNumber(components[id].resistance, 0)}Ω`).join(" + ");
         return {
           title: "Sum the series resistances",
           detail: `R_T = ${sumLine} = ${formatMetricValue(totals.resistance, "resistance")}`,
-          formula: "R_T = R_1 + R_2",
+          formula: "R_T = R_1 + R_2 + R_3",
         };
       },
       ({ totals }) => ({
@@ -185,7 +192,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         formula: "I = E / R",
       }),
       ({ components, totals }) => {
-        const detailLines = SERIES_IDS_2.map((id) => {
+        const detailLines = SERIES_IDS.map((id) => {
           const voltage = formatMetricValue(components[id].voltage, "voltage");
           const resistance = formatMetricValue(components[id].resistance, "resistance");
           return `${id}: V = I × R = ${formatMetricValue(totals.current, "current")} × ${resistance} = ${voltage}`;
@@ -197,7 +204,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         };
       },
       ({ components }) => {
-        const detailLines = SERIES_IDS_2.map((id) => {
+        const detailLines = SERIES_IDS.map((id) => {
           const volts = formatMetricValue(components[id].voltage, "voltage");
           const amps = formatMetricValue(components[id].current, "current");
           const watts = formatMetricValue(components[id].watts, "watts");
@@ -296,23 +303,23 @@ const practiceProblemSeeds: PracticeProblem[] = [
   // New Series Problems
   {
     id: "series-four-resistor-04",
-    title: "Series Circuit · Four Resistor Chain",
+    title: "Series Circuit · Three Resistor Chain",
     topology: "series",
     difficulty: "standard",
     prompt:
-      "A series circuit has four resistors (R1 = 120 Ω, R2 = 180 Ω, R3 = 220 Ω, R4 = 80 Ω) connected to a 48 V power supply. Calculate all circuit values including current and individual voltage drops.",
+      "A series circuit has three resistors (R1 = 120 Ω, R2 = 180 Ω, R3 = 300 Ω) connected to a 48 V power supply. Calculate all circuit values including current and individual voltage drops.",
     targetQuestion: "What is the voltage drop across R3?",
     targetMetric: { componentId: "R3", key: "voltage" },
     conceptTags: ["series", "ohms-law", "kvl", "voltage-divider"],
     diagram: "seriesRect",
     learningObjective: "Apply Ohm's Law and KVL to analyze a longer series chain with multiple voltage drops.",
     hints: [
-      { text: "In series, resistances add directly", formula: "R_T = R_1 + R_2 + R_3 + R_4" },
-      { text: "Same current flows through all four resistors", formula: "I_T = I_1 = I_2 = I_3 = I_4" },
+      { text: "In series, resistances add directly", formula: "R_T = R_1 + R_2 + R_3" },
+      { text: "Same current flows through all resistors", formula: "I_T = I_1 = I_2 = I_3" },
       { text: "Voltage drop is proportional to resistance", formula: "V_x = I × R_x" },
     ],
     tips: [
-      "The largest resistor (R3 = 220Ω) will have the largest voltage drop",
+      "The largest resistor (R3 = 300Ω) will have the largest voltage drop",
       "Check your work: all voltage drops should sum to 48V",
       "Current is constant throughout a series circuit",
     ],
@@ -320,7 +327,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
       "Long series chains are used in LED strip lights where each LED needs a specific voltage",
       "Series resistance is the basis for voltage sensing in automotive systems",
     ],
-    realWorldExample: "String lights with 4 bulbs in series - if one bulb is removed, the circuit opens and all lights go out.",
+    realWorldExample: "String lights with bulbs in series - if one bulb is removed, the circuit opens and all lights go out.",
     source: {
       id: "supply",
       label: "Supply",
@@ -347,31 +354,24 @@ const practiceProblemSeeds: PracticeProblem[] = [
         id: "R3",
         label: "R3",
         role: "load",
-        givens: { resistance: 220 },
-        values: { resistance: 220 },
-      },
-      {
-        id: "R4",
-        label: "R4",
-        role: "load",
-        givens: { resistance: 80 },
-        values: { resistance: 80 },
+        givens: { resistance: 300 },
+        values: { resistance: 300 },
       },
     ],
     network: {
       kind: "series",
       id: "series-four",
-      children: SERIES_IDS_4.map((componentId) => ({ kind: "component", componentId })),
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
     },
     totalsGivens: {},
     presetHint: "series_four_resistor",
     steps: [
       ({ components, totals }) => {
-        const sumLine = SERIES_IDS_4.map((id) => `${formatNumber(components[id].resistance, 0)}Ω`).join(" + ");
+        const sumLine = SERIES_IDS.map((id) => `${formatNumber(components[id].resistance, 0)}Ω`).join(" + ");
         return {
           title: "Sum all series resistances",
           detail: `R_T = ${sumLine} = ${formatMetricValue(totals.resistance, "resistance")}`,
-          formula: "R_T = R_1 + R_2 + R_3 + R_4",
+          formula: "R_T = R_1 + R_2 + R_3",
         };
       },
       ({ totals }) => ({
@@ -380,7 +380,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         formula: "I = E / R",
       }),
       ({ components, totals }) => {
-        const detailLines = SERIES_IDS_4.map((id) => {
+        const detailLines = SERIES_IDS.map((id) => {
           const voltage = formatMetricValue(components[id].voltage, "voltage");
           const resistance = formatMetricValue(components[id].resistance, "resistance");
           return `${id}: V = I × R = ${formatMetricValue(totals.current, "current")} × ${resistance} = ${voltage}`;
@@ -392,7 +392,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         };
       },
       ({ components }) => {
-        const detailLines = SERIES_IDS_4.map((id) => {
+        const detailLines = SERIES_IDS.map((id) => {
           const volts = formatMetricValue(components[id].voltage, "voltage");
           const amps = formatMetricValue(components[id].current, "current");
           const watts = formatMetricValue(components[id].watts, "watts");
@@ -412,7 +412,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
     topology: "series",
     difficulty: "challenge",
     prompt:
-      "A series circuit with two resistors (R1 = 330 Ω, R2 = unknown) is powered by an 18 V source. A meter reads 30 mA of current. Complete the W.I.R.E. table to find R2.",
+      "A series circuit with three resistors (R1 = 330 Ω, R2 = unknown, R3 = 180 Ω) is powered by an 18 V source. A meter reads 30 mA of current. Complete the W.I.R.E. table to find R2.",
     targetQuestion: "What is the resistance value of R2?",
     targetMetric: { componentId: "R2", key: "resistance" },
     conceptTags: ["series", "ohms-law", "problem-solving"],
@@ -420,7 +420,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
     learningObjective: "Solve for an unknown resistance using Ohm's Law and given current measurements.",
     hints: [
       { text: "First find total resistance using Ohm's Law", formula: "R_T = E / I" },
-      { text: "Then subtract the known resistance", formula: "R_2 = R_T - R_1" },
+      { text: "Then subtract the known resistances", formula: "R_2 = R_T - R_1 - R_3" },
       { text: "Convert mA to A: 30 mA = 0.030 A" },
     ],
     tips: [
@@ -453,13 +453,20 @@ const practiceProblemSeeds: PracticeProblem[] = [
         label: "R2",
         role: "load",
         givens: {},
-        values: { resistance: 270 },
+        values: { resistance: 90 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 180 },
+        values: { resistance: 180 },
       },
     ],
     network: {
       kind: "series",
       id: "series-unknown",
-      children: SERIES_IDS_2.map((componentId) => ({ kind: "component", componentId })),
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
     },
     totalsGivens: { current: 0.03 },
     presetHint: "series_unknown_resistance",
@@ -470,12 +477,12 @@ const practiceProblemSeeds: PracticeProblem[] = [
         formula: "R = E / I",
       }),
       ({ components, totals }) => ({
-        title: "Find R2 by subtracting R1",
-        detail: `R_2 = R_T - R_1 = ${formatMetricValue(totals.resistance, "resistance")} - ${formatMetricValue(components.R1.resistance, "resistance")} = ${formatMetricValue(components.R2.resistance, "resistance")}`,
-        formula: "R_2 = R_T - R_1",
+        title: "Find R2 by subtracting R1 and R3",
+        detail: `R_2 = R_T - R_1 - R_3 = ${formatMetricValue(totals.resistance, "resistance")} - ${formatMetricValue(components.R1.resistance, "resistance")} - ${formatMetricValue(components.R3.resistance, "resistance")} = ${formatMetricValue(components.R2.resistance, "resistance")}`,
+        formula: "R_2 = R_T - R_1 - R_3",
       }),
       ({ components, totals }) => {
-        const detailLines = SERIES_IDS_2.map((id) => {
+        const detailLines = SERIES_IDS.map((id) => {
           const voltage = formatMetricValue(components[id].voltage, "voltage");
           const resistance = formatMetricValue(components[id].resistance, "resistance");
           return `${id}: V = I × R = ${formatMetricValue(totals.current, "current")} × ${resistance} = ${voltage}`;
@@ -487,7 +494,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         };
       },
       ({ components }) => {
-        const detailLines = SERIES_IDS_2.map((id) => {
+        const detailLines = SERIES_IDS.map((id) => {
           const volts = formatMetricValue(components[id].voltage, "voltage");
           const amps = formatMetricValue(components[id].current, "current");
           const watts = formatMetricValue(components[id].watts, "watts");
@@ -507,27 +514,27 @@ const practiceProblemSeeds: PracticeProblem[] = [
     topology: "series",
     difficulty: "intro",
     prompt:
-      "An LED (which drops 2V when lit) is in series with a current-limiting resistor (R1 = 220 Ω) connected to a 9V battery. Calculate the current flowing through the LED and the power dissipated by the resistor.",
-    targetQuestion: "What current flows through the LED and resistor?",
+      "An LED (which drops about 2V when lit) is in series with two resistors (R1 = 220 Ω and R3 = 130 Ω) connected to a 9V battery. Calculate the current flowing through the full series path and the power dissipated by each component.",
+    targetQuestion: "What current flows through the LED and series resistors?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "led", "practical"],
     diagram: "seriesRect",
     learningObjective: "Understand how current-limiting resistors protect LEDs in series circuits.",
     hints: [
-      { text: "The LED acts like a fixed 2V drop", formula: "V_{resistor} = V_{source} - V_{LED}" },
-      { text: "Current through resistor = Current through LED (series circuit)" },
-      { text: "Use voltage across resistor to find current", formula: "I = V_{R1} / R_1" },
+      { text: "The LED acts like an approximately fixed 2V drop", formula: "V_{R path} = V_{source} - V_{LED}" },
+      { text: "All components in series carry the same current", formula: "I_T = I_{R1} = I_{LED} = I_{R3}" },
+      { text: "Add series resistors before applying Ohm's Law", formula: "I = V_{R path} / (R_1 + R_3)" },
     ],
     tips: [
       "LEDs have a forward voltage drop (typically 1.8V - 3.3V depending on color)",
-      "The resistor protects the LED by limiting current flow",
+      "Series resistors protect the LED by limiting current flow",
       "Too much current will burn out the LED instantly",
     ],
     facts: [
       "Red LEDs typically drop 1.8-2V, while blue/white LEDs drop 3-3.3V",
       "This circuit is the basis for nearly every LED indicator light in electronics",
     ],
-    realWorldExample: "The power indicator light on your TV or computer monitor uses exactly this circuit - an LED in series with a resistor.",
+    realWorldExample: "Indicator circuits often include an LED plus one or more series resistors to set a safe operating current.",
     source: {
       id: "battery",
       label: "Battery",
@@ -548,30 +555,44 @@ const practiceProblemSeeds: PracticeProblem[] = [
         label: "LED",
         role: "load",
         givens: { voltage: 2 },
-        values: { resistance: 62.86, voltage: 2 },
+        values: { resistance: 100, voltage: 2 },
+      },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 130 },
+        values: { resistance: 130 },
       },
     ],
     network: {
       kind: "series",
       id: "series-led",
-      children: SERIES_IDS_2.map((componentId) => ({ kind: "component", componentId })),
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
     },
     totalsGivens: {},
     presetHint: "series_led_resistor",
     steps: [
-      ({ components, totals }) => ({
-        title: "Find voltage across the resistor",
-        detail: `V_{R1} = V_{source} - V_{LED} = ${formatMetricValue(totals.voltage, "voltage")} - ${formatMetricValue(components.R2.voltage, "voltage")} = ${formatMetricValue(components.R1.voltage, "voltage")}`,
-        formula: "V_{R1} = E_T - V_{LED}",
-      }),
+      ({ components, totals }) => {
+        const resistorPathVoltage = components.R1.voltage + components.R3.voltage;
+        return {
+          title: "Find voltage across the resistor path",
+          detail: `V_{R path} = V_{source} - V_{LED} = ${formatMetricValue(totals.voltage, "voltage")} - ${formatMetricValue(components.R2.voltage, "voltage")} = ${formatMetricValue(resistorPathVoltage, "voltage")}`,
+          formula: "V_{R path} = E_T - V_{LED}",
+        };
+      },
+      ({ components }) => {
+        const resistorPathVoltage = components.R1.voltage + components.R3.voltage;
+        const seriesResistance = components.R1.resistance + components.R3.resistance;
+        return {
+          title: "Calculate current through the full series path",
+          detail: `I = V_{R path} / (R_1 + R_3) = ${formatMetricValue(resistorPathVoltage, "voltage")} ÷ ${formatMetricValue(seriesResistance, "resistance")} = ${formatMetricValue(components.R1.current, "current")}`,
+          formula: "I = V / R",
+        };
+      },
       ({ components }) => ({
-        title: "Calculate current through circuit",
-        detail: `I = V_{R1} / R_1 = ${formatMetricValue(components.R1.voltage, "voltage")} ÷ ${formatMetricValue(components.R1.resistance, "resistance")} = ${formatMetricValue(components.R1.current, "current")}`,
-        formula: "I = V / R",
-      }),
-      ({ components }) => ({
-        title: "Power dissipated by resistor",
-        detail: `P_{R1} = V_{R1} × I = ${formatMetricValue(components.R1.voltage, "voltage")} × ${formatMetricValue(components.R1.current, "current")} = ${formatMetricValue(components.R1.watts, "watts")}`,
+        title: "Power dissipated by the series resistors",
+        detail: `P_{R1} = ${formatMetricValue(components.R1.voltage, "voltage")} × ${formatMetricValue(components.R1.current, "current")} = ${formatMetricValue(components.R1.watts, "watts")}\nP_{R3} = ${formatMetricValue(components.R3.voltage, "voltage")} × ${formatMetricValue(components.R3.current, "current")} = ${formatMetricValue(components.R3.watts, "watts")}`,
         formula: "P = V × I",
       }),
       ({ components }) => ({
@@ -1782,15 +1803,15 @@ const practiceProblemSeeds: PracticeProblem[] = [
     topology: "series",
     difficulty: "intro",
     prompt:
-      "A simple series circuit consists of a 9V battery connected to two resistors: R1 = 100 Ω and R2 = 200 Ω. Since there is only ONE path for current, the same current flows through every component. Calculate the circuit current and voltage drops.",
+      "A simple series circuit consists of a 9V battery connected to three resistors: R1 = 100 Ω, R2 = 200 Ω, and R3 = 150 Ω. Since there is only ONE path for current, the same current flows through every component. Calculate the circuit current and voltage drops.",
     targetQuestion: "What is the current flowing through this series circuit?",
     targetMetric: { componentId: "totals", key: "current" },
     conceptTags: ["series", "ohms-law", "single-path", "textbook"],
     diagram: "seriesRect",
     learningObjective: "Understand that series circuits have ONE path for current - like beads on a string.",
     hints: [
-      { text: "Series circuit = ONE continuous path", formula: "I_{total} = I_{R1} = I_{R2}" },
-      { text: "Add resistances in series directly", formula: "R_T = R_1 + R_2" },
+      { text: "Series circuit = ONE continuous path", formula: "I_{total} = I_{R1} = I_{R2} = I_{R3}" },
+      { text: "Add resistances in series directly", formula: "R_T = R_1 + R_2 + R_3" },
       { text: "Use Ohm's Law for current", formula: "I = E / R_T" },
     ],
     tips: [
@@ -1825,19 +1846,26 @@ const practiceProblemSeeds: PracticeProblem[] = [
         givens: { resistance: 200 },
         values: { resistance: 200 },
       },
+      {
+        id: "R3",
+        label: "R3",
+        role: "load",
+        givens: { resistance: 150 },
+        values: { resistance: 150 },
+      },
     ],
     network: {
       kind: "series",
       id: "textbook-series-basic",
-      children: SERIES_IDS_2.map((componentId) => ({ kind: "component", componentId })),
+      children: SERIES_IDS.map((componentId) => ({ kind: "component", componentId })),
     },
     totalsGivens: {},
     presetHint: "textbook_series_basic",
     steps: [
       ({ components, totals }) => ({
         title: "Add resistances (series = direct sum)",
-        detail: `R_T = R_1 + R_2 = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
-        formula: "R_T = R_1 + R_2",
+        detail: `R_T = R_1 + R_2 + R_3 = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(components.R2.resistance, 0)}Ω + ${formatNumber(components.R3.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+        formula: "R_T = R_1 + R_2 + R_3",
       }),
       ({ totals }) => ({
         title: "Calculate circuit current (same everywhere)",
@@ -1846,13 +1874,13 @@ const practiceProblemSeeds: PracticeProblem[] = [
       }),
       ({ components, totals }) => ({
         title: "Find voltage drops (V = I × R)",
-        detail: `V_{R1} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R1.resistance, 0)}Ω = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{R2} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(components.R2.voltage, "voltage")}`,
+        detail: `V_{R1} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R1.resistance, 0)}Ω = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{R2} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R2.resistance, 0)}Ω = ${formatMetricValue(components.R2.voltage, "voltage")}\nV_{R3} = ${formatMetricValue(totals.current, "current")} × ${formatNumber(components.R3.resistance, 0)}Ω = ${formatMetricValue(components.R3.voltage, "voltage")}`,
         formula: "V = I × R",
       }),
       ({ components, totals }) => ({
         title: "Verify: Voltage drops sum to source (KVL)",
-        detail: `${formatMetricValue(components.R1.voltage, "voltage")} + ${formatMetricValue(components.R2.voltage, "voltage")} = ${formatMetricValue(totals.voltage, "voltage")} ✓`,
-        formula: "E_T = V_{R1} + V_{R2}",
+        detail: `${formatMetricValue(components.R1.voltage, "voltage")} + ${formatMetricValue(components.R2.voltage, "voltage")} + ${formatMetricValue(components.R3.voltage, "voltage")} = ${formatMetricValue(totals.voltage, "voltage")} ✓`,
+        formula: "E_T = V_{R1} + V_{R2} + V_{R3}",
       }),
     ],
   },

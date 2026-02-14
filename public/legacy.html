@@ -4120,7 +4120,7 @@ body.android-optimized.menu-visible .status {
                                 break;
                             case 'lock-circuit':
                                 isCircuitEditLocked = true;
-                                setStatus('🔒 Circuit locked - complete the worksheet to edit');
+                                setStatus('🔒 Circuit locked - complete the active challenge to edit');
                                 break;
                             case 'unlock-circuit':
                                 isCircuitEditLocked = false;
@@ -14137,11 +14137,11 @@ Made with ? for visual learners everywhere!
                 ]
             },
             parallel_basic: {
-                name: "Parallel Bus",
-                description: "12 V supply feeding three resistors on a classic parallel bus.",
+                name: "Parallel Branch Rectangle",
+                description: "12 V source feeding three vertical branches between shared top and bottom rails.",
                 objectives: [
-                    "Visualize how parallel branches hang between common positive and negative rails.",
-                    "Capture W.I.R.E. data (branch resistors and shared voltage) before solving reciprocals.",
+                    "Visualize a textbook branch network: one source and multiple resistor paths between the same two nodes.",
+                    "Capture W.I.R.E. data (shared branch voltage, individual branch currents, and total current).",
                     "Compute R_T with 1 / (1/R1 + 1/R2 + 1/R3) and find each branch current with I = E / R_branch.",
                     "Check Kirchhoff's Current Law by summing branch currents and compare branch power with W = I * E."
                 ],
@@ -14174,7 +14174,6 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' } },
                     { from: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' } },
                     { from: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' }, to: { ref: 'J_RIGHT_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_RIGHT_TOP', side: 'center' }, to: { ref: 'J_RIGHT_BOTTOM', side: 'center' } },
                     { from: { ref: 'J_BRANCH_1_TOP', side: 'center' }, to: { ref: 'R1', side: 'right' } },
                     { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' } },
                     { from: { ref: 'J_BRANCH_2_TOP', side: 'center' }, to: { ref: 'R2', side: 'right' } },
@@ -14185,9 +14184,9 @@ Made with ? for visual learners everywhere!
             },
             mixed_circuit: {
                 name: "Series-Parallel Ladder",
-                description: "Series input resistor feeding two vertical branches with a return leg.",
+                description: "Textbook ladder: top series resistor, middle parallel branch box, bottom series return resistor.",
                 objectives: [
-                    "Practice collapsing a series element followed by a parallel pair in a spatial layout.",
+                    "Practice reducing a true ladder network: R1 + (R2 || R3) + R4.",
                     "Track W.I.R.E. values (R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm, E=18 V).",
                     "Reduce the network step by step, using I = E / R_T and W = I^2 * R for branch power.",
                     "Verify both Kirchhoff's Voltage Law and Current Law at key nodes."
@@ -14202,31 +14201,38 @@ Made with ? for visual learners everywhere!
                 junctions: [
                     { id: 'J_SOURCE_TOP', position: [-12, 0, 6] },
                     { id: 'J_BRANCH_FEED', position: [0, 0, 6] },
-                    { id: 'J_BRANCH_TOP_RIGHT', position: [12, 0, 6] },
-                    { id: 'J_BRANCH_RETURN_RIGHT', position: [12, 0, -6] },
-                    { id: 'J_BRANCH_RETURN', position: [4, 0, -6] },
+                    { id: 'J_BRANCH_TOP_1', position: [2, 0, 6] },
+                    { id: 'J_BRANCH_TOP_2', position: [6, 0, 6] },
+                    { id: 'J_BRANCH_BOTTOM_1', position: [2, 0, -2] },
+                    { id: 'J_BRANCH_BOTTOM_2', position: [6, 0, -2] },
+                    { id: 'J_BRANCH_MERGE', position: [0, 0, -2] },
+                    { id: 'J_RETURN', position: [0, 0, -6] },
                     { id: 'J_SOURCE_BOTTOM', position: [-12, 0, -6] }
                 ],
                 wires: [
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_SOURCE_TOP', side: 'center' } },
                     { from: { ref: 'J_SOURCE_TOP', side: 'center' }, to: { ref: 'R1', side: 'left' } },
                     { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_BRANCH_FEED', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'R2', side: 'right' } },
-                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'J_BRANCH_TOP_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_TOP_RIGHT', side: 'center' }, to: { ref: 'R3', side: 'right' } },
-                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_RETURN', side: 'center' } },
-                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_RETURN_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_RETURN_RIGHT', side: 'center' }, to: { ref: 'J_BRANCH_RETURN', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_RETURN', side: 'center' }, to: { ref: 'R4', side: 'right' } },
+                    { from: { ref: 'J_BRANCH_FEED', side: 'center' }, to: { ref: 'J_BRANCH_TOP_1', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_1', side: 'center' }, to: { ref: 'J_BRANCH_TOP_2', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_1', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM_1', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_2', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM_2', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM_1', side: 'center' }, to: { ref: 'J_BRANCH_BOTTOM_2', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM_1', side: 'center' }, to: { ref: 'J_BRANCH_MERGE', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM_2', side: 'center' }, to: { ref: 'J_BRANCH_MERGE', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_MERGE', side: 'center' }, to: { ref: 'J_RETURN', side: 'center' } },
+                    { from: { ref: 'J_RETURN', side: 'center' }, to: { ref: 'R4', side: 'right' } },
                     { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_SOURCE_BOTTOM', side: 'center' } },
                     { from: { ref: 'J_SOURCE_BOTTOM', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             combination_advanced: {
                 name: "Combo Challenge Network",
-                description: "Nested series-parallel network with dual branches and a lighting load.",
+                description: "Textbook series-parallel chain with a dedicated branch box and LED return load.",
                 objectives: [
-                    "Interpret a multi-loop textbook problem inside the 3D workspace.",
+                    "Interpret a multi-section network arranged as top series, middle parallel box, and bottom return chain.",
                     "Track W.I.R.E. entries for R1=120 ohm, R2=150 ohm, R3=180 ohm, R4=270 ohm, R5=220 ohm, LED=60 ohm, E=24 V.",
                     "Jump between Ohm's Law and power identities (I = E / R, W = I * E, W = I^2 * R, W = E^2 / R).",
                     "Validate results with Kirchhoff's Voltage Law on each loop and Current Law at every junction."
@@ -14242,11 +14248,15 @@ Made with ? for visual learners everywhere!
                 ],
                 junctions: [
                     { id: 'J_TOP_LEFT', position: [-14, 0, 6] },
-                    { id: 'J_AFTER_R1', position: [-2, 0, 6] },
-                    { id: 'J_BRANCH_TOP', position: [6, 0, 6] },
-                    { id: 'J_TOP_RIGHT', position: [14, 0, 6] },
-                    { id: 'J_BRANCH_BOTTOM', position: [6, 0, -6] },
-                    { id: 'J_BOTTOM_RIGHT', position: [14, 0, -6] },
+                    { id: 'J_AFTER_R1', position: [-5, 0, 6] },
+                    { id: 'J_AFTER_R2', position: [1, 0, 6] },
+                    { id: 'J_BRANCH_TOP_A', position: [6, 0, 6] },
+                    { id: 'J_BRANCH_TOP_B', position: [10, 0, 6] },
+                    { id: 'J_BRANCH_BOTTOM_A', position: [6, 0, -2] },
+                    { id: 'J_BRANCH_BOTTOM_B', position: [10, 0, -2] },
+                    { id: 'J_BRANCH_MERGE', position: [1, 0, -2] },
+                    { id: 'J_DROP', position: [1, 0, -6] },
+                    { id: 'J_AFTER_R5', position: [-7, 0, -6] },
                     { id: 'J_BOTTOM_LEFT', position: [-14, 0, -6] }
                 ],
                 wires: [
@@ -14254,30 +14264,36 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'J_TOP_LEFT', side: 'center' }, to: { ref: 'R1', side: 'left' } },
                     { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_AFTER_R1', side: 'center' } },
                     { from: { ref: 'J_AFTER_R1', side: 'center' }, to: { ref: 'R2', side: 'left' } },
-                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_BRANCH_TOP', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_TOP', side: 'center' }, to: { ref: 'R3', side: 'right' } },
-                    { from: { ref: 'J_BRANCH_TOP', side: 'center' }, to: { ref: 'J_TOP_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_TOP_RIGHT', side: 'center' }, to: { ref: 'R4', side: 'right' } },
-                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM', side: 'center' } },
-                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_BOTTOM_RIGHT', side: 'center' } },
-                    { from: { ref: 'J_BOTTOM_RIGHT', side: 'center' }, to: { ref: 'J_BRANCH_BOTTOM', side: 'center' } },
-                    { from: { ref: 'J_BRANCH_BOTTOM', side: 'center' }, to: { ref: 'R5', side: 'right' } },
-                    { from: { ref: 'R5', side: 'left' }, to: { ref: 'LED1', side: 'right' } },
+                    { from: { ref: 'R2', side: 'right' }, to: { ref: 'J_AFTER_R2', side: 'center' } },
+                    { from: { ref: 'J_AFTER_R2', side: 'center' }, to: { ref: 'J_BRANCH_TOP_A', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_A', side: 'center' }, to: { ref: 'J_BRANCH_TOP_B', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_A', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM_A', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_TOP_B', side: 'center' }, to: { ref: 'R4', side: 'right' } },
+                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_BRANCH_BOTTOM_B', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM_A', side: 'center' }, to: { ref: 'J_BRANCH_BOTTOM_B', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM_A', side: 'center' }, to: { ref: 'J_BRANCH_MERGE', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_BOTTOM_B', side: 'center' }, to: { ref: 'J_BRANCH_MERGE', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_MERGE', side: 'center' }, to: { ref: 'J_DROP', side: 'center' } },
+                    { from: { ref: 'J_DROP', side: 'center' }, to: { ref: 'R5', side: 'right' } },
+                    { from: { ref: 'R5', side: 'left' }, to: { ref: 'J_AFTER_R5', side: 'center' } },
+                    { from: { ref: 'J_AFTER_R5', side: 'center' }, to: { ref: 'LED1', side: 'right' } },
                     { from: { ref: 'LED1', side: 'left' }, to: { ref: 'J_BOTTOM_LEFT', side: 'center' } },
                     { from: { ref: 'J_BOTTOM_LEFT', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             troubleshoot_switch_off: {
                 name: "Troubleshooting: Open Switch",
-                description: "A complete-looking loop with one hidden break: the switch is OFF.",
+                description: "Standard four-side series loop with an open switch fault on the top leg.",
                 objectives: [
                     "Identify why the circuit has no current flow.",
                     "Fix the fault and restore current flow."
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
-                    { id: 'SW1', type: 'switch', position: [-2, 0, 6], properties: { resistance: 0.1, isOn: false } },
-                    { id: 'R1', type: 'resistor', position: [6, 0, 6], properties: { resistance: 220 } }
+                    { id: 'SW1', type: 'switch', position: [0, 0, 6], properties: { resistance: 0.1, isOn: false } },
+                    { id: 'R1', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
+                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 180 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },
@@ -14288,16 +14304,17 @@ Made with ? for visual learners everywhere!
                 wires: [
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
                     { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'SW1', side: 'left' } },
-                    { from: { ref: 'SW1', side: 'right' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
-                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
-                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'J_BL', side: 'center' } },
+                    { from: { ref: 'SW1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R1', side: 'right' } },
+                    { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
                     { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             troubleshoot_missing_wire: {
                 name: "Troubleshooting: Missing Return Wire",
-                description: "A series circuit that is almost complete, but the loop is open.",
+                description: "Standard four-side series loop with one missing return connection.",
                 objectives: [
                     "Find the missing connection that prevents current flow.",
                     "Add the missing wire and restore current flow."
@@ -14305,7 +14322,8 @@ Made with ? for visual learners everywhere!
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 12 } },
                     { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 150 } },
-                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
+                    { id: 'R2', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
+                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },
@@ -14317,21 +14335,24 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
                     { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'R1', side: 'left' } },
                     { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
-                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
-                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
-                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BL', side: 'center' } }
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             troubleshoot_short_circuit: {
                 name: "Troubleshooting: Short Circuit",
-                description: "A dangerous direct path exists from the battery positive to negative.",
+                description: "Standard four-side series loop with an added battery bypass short.",
                 objectives: [
                     "Identify the short circuit path.",
                     "Fix it so current flows without short-circuit warnings."
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
-                    { id: 'R1', type: 'resistor', position: [6, 0, 6], properties: { resistance: 220 } }
+                    { id: 'R1', type: 'resistor', position: [0, 0, 6], properties: { resistance: 220 } },
+                    { id: 'R2', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R3', type: 'resistor', position: [0, 0, -6], properties: { resistance: 330 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },
@@ -14343,15 +14364,17 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
                     { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'R1', side: 'left' } },
                     { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
-                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
-                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'J_BL', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
                     { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } },
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             },
             troubleshoot_led_reverse: {
                 name: "Troubleshooting: Reversed LED",
-                description: "The LED is wired backwards, blocking current flow.",
+                description: "Standard four-side series loop with reversed LED polarity on the top leg.",
                 objectives: [
                     "Identify the polarity mismatch.",
                     "Reverse the LED wiring/orientation to restore current flow."
@@ -14359,7 +14382,8 @@ Made with ? for visual learners everywhere!
                 components: [
                     { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 9 } },
                     { id: 'LED1', type: 'led', position: [0, 0, 6], properties: { resistance: 60 } },
-                    { id: 'R1', type: 'resistor', position: [8, 0, 6], properties: { resistance: 220 } }
+                    { id: 'R1', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 220 } },
+                    { id: 'R2', type: 'resistor', position: [0, 0, -6], properties: { resistance: 180 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },
@@ -14370,10 +14394,11 @@ Made with ? for visual learners everywhere!
                 wires: [
                     { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TL', side: 'center' } },
                     { from: { ref: 'J_TL', side: 'center' }, to: { ref: 'LED1', side: 'right' } },
-                    { from: { ref: 'LED1', side: 'left' }, to: { ref: 'R1', side: 'left' } },
-                    { from: { ref: 'R1', side: 'right' }, to: { ref: 'J_TR', side: 'center' } },
-                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'J_BR', side: 'center' } },
-                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'J_BL', side: 'center' } },
+                    { from: { ref: 'LED1', side: 'left' }, to: { ref: 'J_TR', side: 'center' } },
+                    { from: { ref: 'J_TR', side: 'center' }, to: { ref: 'R1', side: 'right' } },
+                    { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BR', side: 'center' } },
+                    { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
                     { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             }
@@ -14412,10 +14437,27 @@ Made with ? for visual learners everywhere!
             const PRESET_ALIASES = {
                 series_voltage_drop: 'series_basic',
                 series_power: 'series_basic',
+                series_four_resistor: 'series_basic',
+                series_unknown_resistance: 'series_basic',
+                series_led_resistor: 'series_basic',
+                textbook_series_basic: 'series_basic',
+                textbook_series_chain: 'series_basic',
                 parallel_current: 'parallel_basic',
                 parallel_power: 'parallel_basic',
+                parallel_four_branch: 'parallel_basic',
+                parallel_equal_resistors: 'parallel_basic',
+                parallel_product_sum: 'parallel_basic',
+                textbook_parallel_basic: 'parallel_basic',
+                textbook_parallel_three: 'parallel_basic',
                 combo_sp: 'mixed_circuit',
-                combo_simple: 'mixed_circuit'
+                combo_simple: 'mixed_circuit',
+                combo_parallel_first: 'mixed_circuit',
+                textbook_combo_basic: 'mixed_circuit',
+                textbook_combo_ladder: 'mixed_circuit',
+                combo_double_parallel: 'combination_advanced',
+                combo_nested: 'combination_advanced',
+                textbook_combo_nested: 'combination_advanced',
+                textbook_combo_double: 'combination_advanced'
             };
 
             const inferPresetFromTopology = (name) => {

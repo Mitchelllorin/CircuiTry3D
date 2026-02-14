@@ -8,6 +8,7 @@ type CompactTroubleshootPanelProps = {
   problems: TroubleshootingProblem[];
   activeProblemId: string | null;
   solvedIds: string[];
+  isFixVerified?: boolean;
   status: string | null;
   isOpen: boolean;
   isChecking: boolean;
@@ -34,6 +35,7 @@ export function CompactTroubleshootPanel({
   problems,
   activeProblemId,
   solvedIds,
+  isFixVerified = false,
   status,
   isOpen,
   isChecking,
@@ -56,12 +58,13 @@ export function CompactTroubleshootPanel({
     [problems, solvedIds],
   );
   const isActiveSolved = activeProblem ? solvedIds.includes(activeProblem.id) : false;
+  const isCurrentFixVerified = Boolean(isFixVerified);
   const statusTone = getStatusTone(status);
   const statusText =
     status ??
     (isCircuitLocked
-      ? "3D problem loaded in workspace. Pan, zoom, and rotate to inspect while editing stays locked."
-      : "Circuit is unlocked. You can now edit this solved troubleshooting problem.");
+      ? "3D troubleshooting circuit is loaded and locked. Pan, zoom, and rotate while you diagnose the fault."
+      : "Fix verified. This troubleshooting circuit is unlocked for full editing.");
 
   return (
     <div className={`compact-troubleshoot-panel${isOpen ? " open" : ""}`}>
@@ -77,7 +80,7 @@ export function CompactTroubleshootPanel({
         >
           <span className="toggle-icon">{isOpen ? "▼" : "▲"}</span>
           <span className="toggle-label">
-            {isActiveSolved ? "Fix Verified" : "Troubleshooting Problem"}
+            {isCurrentFixVerified ? "Fix Verified" : "Troubleshooting Problem"}
           </span>
         </button>
         <div className="compact-troubleshoot-header-actions">
@@ -150,6 +153,15 @@ export function CompactTroubleshootPanel({
                 {statusText}
               </div>
 
+              <div className="troubleshoot-workspace-sync" role="status" aria-live="polite">
+                <strong>Synced to 3D workspace</strong>
+                <span>
+                  {isCircuitLocked
+                    ? "This challenge circuit is inspection-only. Use pan, rotate, and zoom until the fix is verified."
+                    : "Editing is unlocked. You can now wire, move, and modify this circuit freely."}
+                </span>
+              </div>
+
               <div className="troubleshoot-actions">
                 <button
                   type="button"
@@ -179,7 +191,7 @@ export function CompactTroubleshootPanel({
                 >
                   Next Problem
                 </button>
-                {isActiveSolved && isCircuitLocked && onUnlockEditing && (
+                {isCurrentFixVerified && isCircuitLocked && onUnlockEditing && (
                   <button
                     type="button"
                     className="troubleshoot-action-btn troubleshoot-action-btn--unlock"
