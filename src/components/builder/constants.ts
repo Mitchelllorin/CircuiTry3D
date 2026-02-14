@@ -649,6 +649,13 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
     isActive: () => false,
   },
   {
+    id: "workspace-skins",
+    label: "Workspace Skin",
+    action: "open-workspace-skins",
+    getDescription: () => "Choose a skin or import your own background",
+    isActive: () => false,
+  },
+  {
     id: "flow-visualisation",
     label: "Flow Visualisation",
     action: "toggle-current-flow",

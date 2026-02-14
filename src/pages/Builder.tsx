@@ -10,6 +10,7 @@ import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
+import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
@@ -26,6 +27,7 @@ import {
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
 import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
+import { WorkspaceSkinModal } from "../components/builder/modals/WorkspaceSkinModal";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
@@ -1061,6 +1063,22 @@ export default function Builder() {
     handleLogoSettingChange,
     toggleLogoVisibility,
   } = useLogoAnimation();
+  const {
+    workspaceSkinOptions,
+    workspaceSkinStyle,
+    isWorkspaceSkinOpen,
+    setWorkspaceSkinOpen,
+    activeWorkspaceSkinId,
+    customWorkspaceSkinName,
+    customWorkspaceSkinOpacity,
+    hasCustomWorkspaceSkin,
+    workspaceSkinError,
+    selectWorkspaceSkin,
+    importWorkspaceSkinFromFile,
+    setCustomWorkspaceSkinOpacity,
+    clearCustomWorkspaceSkin,
+    resetWorkspaceSkin,
+  } = useWorkspaceBackground();
 
   const {
     helpSectionRefs,
@@ -1653,6 +1671,7 @@ export default function Builder() {
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
     isLogoSettingsOpen ||
+    isWorkspaceSkinOpen ||
     isSaveModalOpen ||
     isLoadModalOpen;
   const isActiveCircuitBuildMode =
@@ -2487,6 +2506,8 @@ export default function Builder() {
                       onClick={() => {
                         if (setting.action === "open-logo-settings") {
                           setLogoSettingsOpen(!isLogoSettingsOpen);
+                        } else if (setting.action === "open-workspace-skins") {
+                          setWorkspaceSkinOpen(!isWorkspaceSkinOpen);
                         } else {
                           triggerBuilderAction(setting.action, setting.data);
                         }
@@ -2616,6 +2637,11 @@ export default function Builder() {
           title="CircuiTry3D Builder"
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
+        />
+        <div
+          className="builder-workspace-skin-layer"
+          aria-hidden="true"
+          style={workspaceSkinStyle}
         />
       </div>
 
@@ -2788,6 +2814,45 @@ export default function Builder() {
             onLogoSettingChange={handleLogoSettingChange}
             onToggleLogoVisibility={toggleLogoVisibility}
             onResetLogoSettings={resetLogoSettings}
+          />
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--workspace-skins${isWorkspaceSkinOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isWorkspaceSkinOpen}
+        onClick={() => setWorkspaceSkinOpen(false)}
+      >
+        <div
+          className="builder-panel builder-panel--workspace-skins"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="builder-panel-brand" aria-hidden="true">
+            <BrandMark size="sm" decorative />
+          </div>
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={() => setWorkspaceSkinOpen(false)}
+            aria-label="Close workspace skin settings"
+          >
+            ×
+          </button>
+          <WorkspaceSkinModal
+            isOpen={isWorkspaceSkinOpen}
+            skinOptions={workspaceSkinOptions}
+            activeSkinId={activeWorkspaceSkinId}
+            hasCustomSkin={hasCustomWorkspaceSkin}
+            customSkinName={customWorkspaceSkinName}
+            customSkinOpacity={customWorkspaceSkinOpacity}
+            error={workspaceSkinError}
+            onSelectSkin={selectWorkspaceSkin}
+            onImportCustomSkin={importWorkspaceSkinFromFile}
+            onCustomSkinOpacityChange={setCustomWorkspaceSkinOpacity}
+            onClearCustomSkin={clearCustomWorkspaceSkin}
+            onResetWorkspaceSkin={resetWorkspaceSkin}
           />
         </div>
       </div>
