@@ -14,12 +14,23 @@
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      min-height: 100%;
+    }
     body {
       margin: 0;
       min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding:
+        max(16px, env(safe-area-inset-top, 0px))
+        max(12px, env(safe-area-inset-right, 0px))
+        max(16px, env(safe-area-inset-bottom, 0px))
+        max(12px, env(safe-area-inset-left, 0px));
       background: radial-gradient(125% 125% at 50% 10%, rgba(47,84,235,0.25) 0%, rgba(9,17,43,0.85) 45%, #050b1f 100%);
       color: #f9fafc;
       font-family: "Inter", "Poppins", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -37,8 +48,10 @@
     .landing-page {
       position: relative;
       z-index: 1;
-      width: min(960px, calc(100vw - 32px));
-      padding: clamp(32px, 6vw, 56px) 12px clamp(40px, 8vw, 72px);
+      width: min(960px, 100%);
+      max-width: calc(100vw - 24px);
+      padding: clamp(32px, 6vw, 56px) 12px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -51,6 +64,7 @@
       letter-spacing: -0.015em;
       display: inline-flex;
       gap: 6px;
+      margin-inline: auto;
       filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
     }
     .wordmark span { display: inline-block; }
@@ -71,6 +85,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-inline: auto;
       filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.45));
     }
     .logo-mark img {
@@ -93,7 +108,8 @@
       flex-direction: column;
       gap: 16px;
       align-items: center;
-      width: min(420px, 90vw);
+      width: min(420px, 100%);
+      margin-inline: auto;
     }
     .status-bar {
       width: 100%;
@@ -151,7 +167,11 @@
       100% { transform: translateX(100%); }
     }
     @media (max-height: 640px) {
-      body { align-items: flex-start; padding-top: 48px; }
+      body {
+        justify-content: flex-start;
+        align-items: flex-start;
+        padding-top: max(48px, env(safe-area-inset-top, 0px));
+      }
       .landing-page { gap: 22px; }
     }
   </style>
