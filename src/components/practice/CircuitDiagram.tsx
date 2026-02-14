@@ -765,9 +765,9 @@ function isDoubleParallelNetwork(network: PracticeProblem["network"]): boolean {
     children[1].kind === "parallel";
 }
 
-// Render double-parallel combination diagram with two separate parallel boxes
+// Render textbook double-parallel diagram: two parallel boxes stacked in series.
 function renderDoubleParallelDiagram(
-  problem: PracticeProblem,
+  _problem: PracticeProblem,
   sourceData: { label: string; value: string | null },
   componentData: Map<string, { label: string; value: string | null }>,
   componentIds: string[],
@@ -777,27 +777,48 @@ function renderDoubleParallelDiagram(
     batteryTopY: number; batteryBottomY: number;
   }
 ) {
-  const { leftX, rightX, topY, bottomY, batteryScale, batteryCenterY, batteryTopY, batteryBottomY } = layout;
+  const { leftX, batteryScale, batteryCenterY, batteryTopY, batteryBottomY } = layout;
 
-  // For double-parallel: R1||R2 in first box, R3||R4 in second box
-  const box1Ids = [componentIds[0], componentIds[1]];
-  const box2Ids = [componentIds[2], componentIds[3]];
+  const topIds = [componentIds[0], componentIds[1]];
+  const bottomIds = [componentIds[2], componentIds[3]];
+  const {
+    centerX2D,
+    branchSpacing2D,
+    topNodeY2D,
+    midNodeY2D,
+    bottomNodeY2D,
+    leadInset2D,
+  } = COMBINATION_LAYOUT.doubleParallel;
 
-  // Box positions from centralized standards
-  const { box1CenterX, box2CenterX, branchSpacing } = COMBINATION_LAYOUT.doubleParallel;
+  const leftBranchX = centerX2D - branchSpacing2D / 2;
+  const rightBranchX = centerX2D + branchSpacing2D / 2;
+  const nodeTopY = topNodeY2D;
+  const nodeMidY = midNodeY2D;
+  const nodeBottomY = bottomNodeY2D;
 
-  // Resistor offsets from centralized parallel layout standards
-  const branchResTop = topY + PARALLEL_LAYOUT.branches.topOffset2D;
-  const branchResBottom = bottomY - PARALLEL_LAYOUT.branches.bottomOffset2D;
+  const topResStartY = nodeTopY + leadInset2D;
+  const topResEndY = nodeMidY - leadInset2D;
+  const bottomResStartY = nodeMidY + leadInset2D;
+  const bottomResEndY = nodeBottomY - leadInset2D;
+
+  const topBoxLeft = leftBranchX - 18;
+  const topBoxWidth = rightBranchX - leftBranchX + 36;
+  const topBoxTop = nodeTopY - 8;
+  const topBoxHeight = nodeMidY - nodeTopY + 16;
+
+  const bottomBoxTop = nodeMidY - 8;
+  const bottomBoxHeight = nodeBottomY - nodeMidY + 16;
+
+  const branchXs = [leftBranchX, rightBranchX];
 
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Double parallel combination circuit diagram" preserveAspectRatio="xMidYMid meet">
-      {/* Box 1 indicator */}
+      {/* Parallel box indicators (stacked textbook pattern) */}
       <rect
-        x={box1CenterX - branchSpacing - 18}
-        y={topY - 8}
-        width={branchSpacing * 2 + 36}
-        height={bottomY - topY + 16}
+        x={topBoxLeft}
+        y={topBoxTop}
+        width={topBoxWidth}
+        height={topBoxHeight}
         fill="none"
         stroke="rgba(162, 212, 255, 0.25)"
         strokeWidth={1.5}
@@ -805,16 +826,11 @@ function renderDoubleParallelDiagram(
         rx={6}
         ry={6}
       />
-      <text x={box1CenterX} y={topY - 16} fill="rgba(162, 212, 255, 0.5)" fontSize={9} textAnchor="middle" fontStyle="italic">
-        Box 1
-      </text>
-
-      {/* Box 2 indicator */}
       <rect
-        x={box2CenterX - branchSpacing - 18}
-        y={topY - 8}
-        width={branchSpacing * 2 + 36}
-        height={bottomY - topY + 16}
+        x={topBoxLeft}
+        y={bottomBoxTop}
+        width={topBoxWidth}
+        height={bottomBoxHeight}
         fill="none"
         stroke="rgba(162, 212, 255, 0.25)"
         strokeWidth={1.5}
@@ -822,17 +838,9 @@ function renderDoubleParallelDiagram(
         rx={6}
         ry={6}
       />
-      <text x={box2CenterX} y={topY - 16} fill="rgba(162, 212, 255, 0.5)" fontSize={9} textAnchor="middle" fontStyle="italic">
-        Box 2
-      </text>
-
-      {/* Series connection indicator between boxes */}
-      <text x={(box1CenterX + box2CenterX) / 2} y={topY - 3} fill="rgba(162, 212, 255, 0.4)" fontSize={10} textAnchor="middle">
-        series
-      </text>
 
       {/* Left side with battery (vertical) */}
-      <line x1={leftX} y1={bottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={leftX} y1={nodeBottomY} x2={leftX} y2={batteryBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
       <BatterySymbol
         x={leftX}
         y={batteryCenterY}
@@ -843,70 +851,68 @@ function renderDoubleParallelDiagram(
         color={WIRE_COLOR}
         strokeWidth={3}
       />
-      <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={leftX} y1={batteryTopY} x2={leftX} y2={nodeTopY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-      {/* Top rail */}
-      <line x1={leftX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {/* Bottom rail */}
-      <line x1={leftX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {/* Right side connection */}
-      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      {/* Series feed and return wires */}
+      <line x1={leftX} y1={nodeTopY} x2={centerX2D} y2={nodeTopY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={centerX2D} y1={nodeBottomY} x2={leftX} y2={nodeBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-      {/* Box 1 branches */}
-      {box1Ids.map((id, index) => {
-        const x = box1CenterX + (index === 0 ? -branchSpacing / 2 : branchSpacing / 2);
+      {/* Top/mid/bottom rails */}
+      <line x1={leftBranchX} y1={nodeTopY} x2={rightBranchX} y2={nodeTopY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={leftBranchX} y1={nodeMidY} x2={rightBranchX} y2={nodeMidY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={leftBranchX} y1={nodeBottomY} x2={rightBranchX} y2={nodeBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+
+      {/* Top parallel pair (R1 || R2) */}
+      {topIds.map((id, index) => {
+        const x = branchXs[index];
         const data = componentData.get(id) ?? { label: id, value: null };
-        const start: Point = { x, y: branchResTop };
-        const end: Point = { x, y: branchResBottom };
-        const labelSide = index === 0 ? "left" : "right";
         return (
-          <g key={`box1-${id}`}>
-            <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          <g key={`double-top-${id}`}>
+            <line x1={x} y1={nodeTopY} x2={x} y2={topResStartY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {drawResistor({
-              key: `box1-resistor-${id}`,
-              start, end,
+              key: `double-top-resistor-${id}`,
+              start: { x, y: topResStartY },
+              end: { x, y: topResEndY },
               label: data.label,
               value: data.value,
               orientation: "vertical",
-              labelSide,
+              labelSide: index === 0 ? "left" : "right",
             })}
-            <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            {drawNode({ x, y: topY }, `box1-node-top-${id}`)}
-            {drawNode({ x, y: bottomY }, `box1-node-bottom-${id}`)}
+            <line x1={x} y1={topResEndY} x2={x} y2={nodeMidY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {drawNode({ x, y: nodeTopY }, `double-top-node-top-${id}`)}
+            {drawNode({ x, y: nodeMidY }, `double-top-node-mid-${id}`)}
           </g>
         );
       })}
 
-      {/* Box 2 branches */}
-      {box2Ids.map((id, index) => {
-        const x = box2CenterX + (index === 0 ? -branchSpacing / 2 : branchSpacing / 2);
+      {/* Bottom parallel pair (R3 || R4) */}
+      {bottomIds.map((id, index) => {
+        const x = branchXs[index];
         const data = componentData.get(id) ?? { label: id, value: null };
-        const start: Point = { x, y: branchResTop };
-        const end: Point = { x, y: branchResBottom };
-        const labelSide = index === 0 ? "left" : "right";
         return (
-          <g key={`box2-${id}`}>
-            <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          <g key={`double-bottom-${id}`}>
+            <line x1={x} y1={nodeMidY} x2={x} y2={bottomResStartY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {drawResistor({
-              key: `box2-resistor-${id}`,
-              start, end,
+              key: `double-bottom-resistor-${id}`,
+              start: { x, y: bottomResStartY },
+              end: { x, y: bottomResEndY },
               label: data.label,
               value: data.value,
               orientation: "vertical",
-              labelSide,
+              labelSide: index === 0 ? "left" : "right",
             })}
-            <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            {drawNode({ x, y: topY }, `box2-node-top-${id}`)}
-            {drawNode({ x, y: bottomY }, `box2-node-bottom-${id}`)}
+            <line x1={x} y1={bottomResEndY} x2={x} y2={nodeBottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            {drawNode({ x, y: nodeBottomY }, `double-bottom-node-bottom-${id}`)}
           </g>
         );
       })}
 
-      {/* Corner nodes */}
-      {drawNode({ x: leftX, y: topY }, "double-node-source-top")}
-      {drawNode({ x: leftX, y: bottomY }, "double-node-source-bottom")}
-      {drawNode({ x: rightX, y: topY }, "double-node-right-top")}
-      {drawNode({ x: rightX, y: bottomY }, "double-node-right-bottom")}
+      {/* Series nodes between source and stacked boxes */}
+      {drawNode({ x: leftX, y: nodeTopY }, "double-node-source-top")}
+      {drawNode({ x: centerX2D, y: nodeTopY }, "double-node-top-feed")}
+      {drawNode({ x: centerX2D, y: nodeMidY }, "double-node-mid-series")}
+      {drawNode({ x: centerX2D, y: nodeBottomY }, "double-node-bottom-return")}
+      {drawNode({ x: leftX, y: nodeBottomY }, "double-node-source-bottom")}
 
       {/* Battery label */}
       <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">

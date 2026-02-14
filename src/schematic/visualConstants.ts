@@ -436,11 +436,23 @@ export const COMBINATION_LAYOUT = {
     bottomConnectionY3D: -0.3,
   },
 
-  // Double-parallel layout (two parallel boxes in series)
+  // Double-parallel layout (two parallel boxes stacked in series)
   doubleParallel: {
-    box1CenterX: 230,
-    box2CenterX: 420,
-    branchSpacing: 50,  // Fixed spacing within each box
+    // 2D layout (matches textbook screenshot: stacked top/bottom boxes)
+    centerX2D: 420,
+    branchSpacing2D: 56,           // Horizontal spacing between left/right branch resistors
+    topNodeY2D: LAYOUT_SPECS.topMargin,
+    midNodeY2D: (LAYOUT_SPECS.topMargin + LAYOUT_SPECS.bottomMargin) / 2,
+    bottomNodeY2D: LAYOUT_SPECS.bottomMargin,
+    leadInset2D: 24,               // Gap from node rail to resistor body
+
+    // 3D layout (same topology as 2D)
+    centerX3D: 1.4,
+    branchSpacing3D: 1.6,
+    topNodeZ3D: 2.3,
+    midNodeZ3D: 0,
+    bottomNodeZ3D: -2.3,
+    leadInset3D: 0.6,
   },
 } as const;
 
