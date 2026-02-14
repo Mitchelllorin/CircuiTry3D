@@ -434,8 +434,6 @@ const ParallelRectDiagram = ({ problem }: DiagramProps) => {
       <line x1={leftX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
       {/* Bottom rail */}
       <line x1={leftX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {/* Right side connection */}
-      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {branchXs.map((x, index) => {
         const id = branchIds[index];
@@ -503,7 +501,7 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
   const isDoubleParallel = componentCount === 4 && isDoubleParallelNetwork(problem.network);
 
   // Layout from centralized standards
-  const { leftX, rightX, topY, bottomY } = COMBINATION_LAYOUT.frame2D;
+  const { leftX, topY, bottomY } = COMBINATION_LAYOUT.frame2D;
 
   // Battery using centralized constants
   const batteryScale = BATTERY_LAYOUT.scale;
@@ -514,8 +512,8 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
 
   // For double-parallel circuits, render two separate parallel sections
   if (isDoubleParallel) {
-    return renderDoubleParallelDiagram(problem, sourceData, componentData, componentIds, {
-      leftX, rightX, topY, bottomY, batteryScale, batteryHalfSpan, batteryCenterY, batteryTopY, batteryBottomY
+    return renderDoubleParallelDiagram(sourceData, componentData, componentIds, {
+      leftX, topY, bottomY, batteryScale, batteryCenterY, batteryTopY, batteryBottomY
     });
   }
 
@@ -550,6 +548,8 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
 
   const branchResTop = topY + topOffset2D;
   const branchResBottom = bottomY - bottomOffset2D;
+  const branchLeftX = Math.min(...branchXs);
+  const branchRightX = Math.max(...branchXs);
 
   // Calculate parallel box dimensions for visual indicator
   const parallelBoxLeft = Math.min(...branchXs) - 18;
@@ -606,7 +606,8 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
         value: seriesTopData.value,
         orientation: "horizontal",
       })}
-      <line x1={r1End.x} y1={topY} x2={branchCenterX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={r1End.x} y1={topY} x2={branchLeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={branchLeftX} y1={topY} x2={branchRightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Parallel branches section */}
       {branchXs.map((x, index) => {
@@ -619,7 +620,6 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
         return (
           <g key={`combo-parallel-${id}`}>
             {/* Wire from top rail to branch */}
-            <line x1={branchCenterX} y1={topY} x2={x} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {/* Parallel resistor */}
             {drawResistor({
@@ -633,7 +633,6 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
             })}
             {/* Wire from branch to bottom rail */}
             <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            <line x1={x} y1={bottomY} x2={branchCenterX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {/* Junction nodes */}
             {drawNode({ x, y: topY }, `combo-parallel-node-top-${id}`)}
             {drawNode({ x, y: bottomY }, `combo-parallel-node-bottom-${id}`)}
@@ -641,10 +640,12 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
         );
       })}
 
+      <line x1={branchLeftX} y1={bottomY} x2={branchRightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+
       {/* Bottom run with series R4 (if present) */}
       {hasBottomSeries && seriesBottomData ? (
         <>
-          <line x1={branchCenterX} y1={bottomY} x2={r4End.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+          <line x1={branchLeftX} y1={bottomY} x2={r4End.x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
           {drawResistor({
             key: "combo-series-bottom",
             start: r4Start,
@@ -658,21 +659,16 @@ const CombinationRectDiagram = ({ problem }: DiagramProps) => {
         </>
       ) : (
         /* Direct connection from parallel section back to source */
-        <line x1={branchCenterX} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+        <line x1={branchLeftX} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
       )}
-
-      {/* Right side closing wire (for proper circuit completion) */}
-      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      <line x1={branchCenterX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      <line x1={branchCenterX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Corner nodes */}
       {drawNode({ x: leftX, y: topY }, "combo-node-source-top")}
       {drawNode({ x: leftX, y: bottomY }, "combo-node-source-bottom")}
-      {drawNode({ x: branchCenterX, y: topY }, "combo-node-branch-top")}
-      {drawNode({ x: branchCenterX, y: bottomY }, "combo-node-branch-bottom")}
-      {drawNode({ x: rightX, y: topY }, "combo-node-right-top")}
-      {drawNode({ x: rightX, y: bottomY }, "combo-node-right-bottom")}
+      {drawNode({ x: branchLeftX, y: topY }, "combo-node-branch-top-left")}
+      {drawNode({ x: branchRightX, y: topY }, "combo-node-branch-top-right")}
+      {drawNode({ x: branchLeftX, y: bottomY }, "combo-node-branch-bottom-left")}
+      {drawNode({ x: branchRightX, y: bottomY }, "combo-node-branch-bottom-right")}
 
       {/* Battery label on left, outside the circuit */}
       <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
@@ -710,17 +706,16 @@ function isDoubleParallelNetwork(network: PracticeProblem["network"]): boolean {
 
 // Render double-parallel combination diagram with two separate parallel boxes
 function renderDoubleParallelDiagram(
-  problem: PracticeProblem,
   sourceData: { label: string; value: string | null },
   componentData: Map<string, { label: string; value: string | null }>,
   componentIds: string[],
   layout: {
-    leftX: number; rightX: number; topY: number; bottomY: number;
-    batteryScale: number; batteryHalfSpan: number; batteryCenterY: number;
+    leftX: number; topY: number; bottomY: number;
+    batteryScale: number; batteryCenterY: number;
     batteryTopY: number; batteryBottomY: number;
   }
 ) {
-  const { leftX, rightX, topY, bottomY, batteryScale, batteryCenterY, batteryTopY, batteryBottomY } = layout;
+  const { leftX, topY, bottomY, batteryScale, batteryCenterY, batteryTopY, batteryBottomY } = layout;
 
   // For double-parallel: R1||R2 in first box, R3||R4 in second box
   const box1Ids = [componentIds[0], componentIds[1]];
@@ -729,9 +724,17 @@ function renderDoubleParallelDiagram(
   // Box positions from centralized standards
   const { box1CenterX, box2CenterX, branchSpacing } = COMBINATION_LAYOUT.doubleParallel;
 
-  // Resistor offsets from centralized parallel layout standards
-  const branchResTop = topY + PARALLEL_LAYOUT.branches.topOffset2D;
-  const branchResBottom = bottomY - PARALLEL_LAYOUT.branches.bottomOffset2D;
+  // Render the two parallel sections in series:
+  // source+ -> (R1 || R2) -> (R3 || R4) -> source-
+  const middleY = (topY + bottomY) / 2;
+  const branchResTopBox1 = topY + PARALLEL_LAYOUT.branches.topOffset2D * 0.75;
+  const branchResBottomBox1 = middleY - PARALLEL_LAYOUT.branches.bottomOffset2D * 0.75;
+  const branchResTopBox2 = middleY + PARALLEL_LAYOUT.branches.topOffset2D * 0.75;
+  const branchResBottomBox2 = bottomY - PARALLEL_LAYOUT.branches.bottomOffset2D * 0.75;
+  const box1LeftX = box1CenterX - branchSpacing / 2;
+  const box1RightX = box1CenterX + branchSpacing / 2;
+  const box2LeftX = box2CenterX - branchSpacing / 2;
+  const box2RightX = box2CenterX + branchSpacing / 2;
 
   return (
     <svg className="diagram-svg" viewBox="0 0 600 240" role="img" aria-label="Double parallel combination circuit diagram" preserveAspectRatio="xMidYMid meet">
@@ -740,7 +743,7 @@ function renderDoubleParallelDiagram(
         x={box1CenterX - branchSpacing - 18}
         y={topY - 8}
         width={branchSpacing * 2 + 36}
-        height={bottomY - topY + 16}
+        height={middleY - topY + 16}
         fill="none"
         stroke="rgba(162, 212, 255, 0.25)"
         strokeWidth={1.5}
@@ -755,9 +758,9 @@ function renderDoubleParallelDiagram(
       {/* Box 2 indicator */}
       <rect
         x={box2CenterX - branchSpacing - 18}
-        y={topY - 8}
+        y={middleY - 8}
         width={branchSpacing * 2 + 36}
-        height={bottomY - topY + 16}
+        height={bottomY - middleY + 16}
         fill="none"
         stroke="rgba(162, 212, 255, 0.25)"
         strokeWidth={1.5}
@@ -765,12 +768,12 @@ function renderDoubleParallelDiagram(
         rx={6}
         ry={6}
       />
-      <text x={box2CenterX} y={topY - 16} fill="rgba(162, 212, 255, 0.5)" fontSize={9} textAnchor="middle" fontStyle="italic">
+      <text x={box2CenterX} y={middleY - 16} fill="rgba(162, 212, 255, 0.5)" fontSize={9} textAnchor="middle" fontStyle="italic">
         Box 2
       </text>
 
       {/* Series connection indicator between boxes */}
-      <text x={(box1CenterX + box2CenterX) / 2} y={topY - 3} fill="rgba(162, 212, 255, 0.4)" fontSize={10} textAnchor="middle">
+      <text x={(box1CenterX + box2CenterX) / 2} y={middleY - 3} fill="rgba(162, 212, 255, 0.4)" fontSize={10} textAnchor="middle">
         series
       </text>
 
@@ -788,19 +791,21 @@ function renderDoubleParallelDiagram(
       />
       <line x1={leftX} y1={batteryTopY} x2={leftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
-      {/* Top rail */}
-      <line x1={leftX} y1={topY} x2={rightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {/* Bottom rail */}
-      <line x1={leftX} y1={bottomY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-      {/* Right side connection */}
-      <line x1={rightX} y1={topY} x2={rightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      {/* Source feed to first parallel section */}
+      <line x1={leftX} y1={topY} x2={box1LeftX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={box1LeftX} y1={topY} x2={box1RightX} y2={topY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={box1LeftX} y1={middleY} x2={box1RightX} y2={middleY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={box1RightX} y1={middleY} x2={box2LeftX} y2={middleY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={box2LeftX} y1={middleY} x2={box2RightX} y2={middleY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={box2LeftX} y1={bottomY} x2={box2RightX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+      <line x1={box2RightX} y1={bottomY} x2={leftX} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
 
       {/* Box 1 branches */}
       {box1Ids.map((id, index) => {
         const x = box1CenterX + (index === 0 ? -branchSpacing / 2 : branchSpacing / 2);
         const data = componentData.get(id) ?? { label: id, value: null };
-        const start: Point = { x, y: branchResTop };
-        const end: Point = { x, y: branchResBottom };
+        const start: Point = { x, y: branchResTopBox1 };
+        const end: Point = { x, y: branchResBottomBox1 };
         const labelSide = index === 0 ? "left" : "right";
         return (
           <g key={`box1-${id}`}>
@@ -813,9 +818,9 @@ function renderDoubleParallelDiagram(
               orientation: "vertical",
               labelSide,
             })}
-            <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            <line x1={x} y1={end.y} x2={x} y2={middleY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {drawNode({ x, y: topY }, `box1-node-top-${id}`)}
-            {drawNode({ x, y: bottomY }, `box1-node-bottom-${id}`)}
+            {drawNode({ x, y: middleY }, `box1-node-bottom-${id}`)}
           </g>
         );
       })}
@@ -824,12 +829,12 @@ function renderDoubleParallelDiagram(
       {box2Ids.map((id, index) => {
         const x = box2CenterX + (index === 0 ? -branchSpacing / 2 : branchSpacing / 2);
         const data = componentData.get(id) ?? { label: id, value: null };
-        const start: Point = { x, y: branchResTop };
-        const end: Point = { x, y: branchResBottom };
+        const start: Point = { x, y: branchResTopBox2 };
+        const end: Point = { x, y: branchResBottomBox2 };
         const labelSide = index === 0 ? "left" : "right";
         return (
           <g key={`box2-${id}`}>
-            <line x1={x} y1={topY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
+            <line x1={x} y1={middleY} x2={x} y2={start.y} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
             {drawResistor({
               key: `box2-resistor-${id}`,
               start, end,
@@ -839,7 +844,7 @@ function renderDoubleParallelDiagram(
               labelSide,
             })}
             <line x1={x} y1={end.y} x2={x} y2={bottomY} stroke={WIRE_COLOR} strokeWidth={WIRE_STROKE_WIDTH} strokeLinecap="round" />
-            {drawNode({ x, y: topY }, `box2-node-top-${id}`)}
+            {drawNode({ x, y: middleY }, `box2-node-top-${id}`)}
             {drawNode({ x, y: bottomY }, `box2-node-bottom-${id}`)}
           </g>
         );
@@ -848,8 +853,8 @@ function renderDoubleParallelDiagram(
       {/* Corner nodes */}
       {drawNode({ x: leftX, y: topY }, "double-node-source-top")}
       {drawNode({ x: leftX, y: bottomY }, "double-node-source-bottom")}
-      {drawNode({ x: rightX, y: topY }, "double-node-right-top")}
-      {drawNode({ x: rightX, y: bottomY }, "double-node-right-bottom")}
+      {drawNode({ x: box1RightX, y: middleY }, "double-node-mid-left")}
+      {drawNode({ x: box2LeftX, y: middleY }, "double-node-mid-right")}
 
       {/* Battery label */}
       <text x={leftX - 28} y={batteryCenterY - 2} fill={LABEL_COLOR} fontSize={LABEL_SPECS.componentLabelSize} textAnchor="middle">
