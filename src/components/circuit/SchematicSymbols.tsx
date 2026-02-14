@@ -461,9 +461,11 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
       <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points="10,20 5,14 2,22"
+        points="10,20 4,20 8,14"
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -514,9 +516,11 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
 
       {/* PNP arrow points inward (toward base) */}
       <polygon
-        points="-5,10 0,16 -3,4"
+        points="-3,11 0,17 4,12"
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.5}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -621,16 +625,15 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
 
   return (
     <g transform={transform}>
-      <line x1="-30" y1="0" x2="-25" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-30" y1="0" x2="-24" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <path
-        d="M-25,0 Q-25,-10 -18,-10 Q-11,-10 -11,0 Q-11,10 -4,10 Q3,10 3,0 Q3,-10 10,-10 Q17,-10 17,0 Q17,10 25,10"
+        d="M-24,0 Q-20,-10 -16,0 Q-12,10 -8,0 Q-4,-10 0,0 Q4,10 8,0 Q12,-10 16,0 Q20,10 24,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
         strokeLinecap="round"
-        transform="translate(0,-5)"
       />
-      <line x1="25" y1="-5" x2="30" y2="-5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="24" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {showLabel && label && (
         <text
           x={0}
