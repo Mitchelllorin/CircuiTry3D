@@ -25,6 +25,59 @@ const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
 const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
 const DEFAULT_STROKE_WIDTH = STROKE_WIDTHS.wireSvgSymbol;
 
+type SvgPoint = {
+  x: number;
+  y: number;
+};
+
+const TRANSISTOR_GEOMETRY = {
+  bodyRadius: 20,
+  baseLeadStartX: -30,
+  baseLeadEndX: -8,
+  baseBarTopY: -12,
+  baseBarBottomY: 12,
+  collectorInner: { x: -8, y: -8 },
+  collectorOuter: { x: 10, y: -20 },
+  collectorLeadY: -30,
+  emitterInner: { x: -8, y: 8 },
+  emitterOuter: { x: 10, y: 20 },
+  emitterLeadY: 30,
+} as const;
+
+const pointOnLine = (start: SvgPoint, end: SvgPoint, t: number): SvgPoint => ({
+  x: start.x + (end.x - start.x) * t,
+  y: start.y + (end.y - start.y) * t,
+});
+
+const formatSvgNumber = (value: number): string => Number(value.toFixed(2)).toString();
+
+const buildArrowHeadPoints = (
+  tail: SvgPoint,
+  tip: SvgPoint,
+  length = 6,
+  width = 4
+): string => {
+  const dx = tip.x - tail.x;
+  const dy = tip.y - tail.y;
+  const magnitude = Math.hypot(dx, dy) || 1;
+  const ux = dx / magnitude;
+  const uy = dy / magnitude;
+  const perpendicularX = -uy;
+  const perpendicularY = ux;
+  const baseX = tip.x - ux * length;
+  const baseY = tip.y - uy * length;
+  const leftX = baseX + perpendicularX * (width / 2);
+  const leftY = baseY + perpendicularY * (width / 2);
+  const rightX = baseX - perpendicularX * (width / 2);
+  const rightY = baseY - perpendicularY * (width / 2);
+
+  return [
+    `${formatSvgNumber(tip.x)},${formatSvgNumber(tip.y)}`,
+    `${formatSvgNumber(leftX)},${formatSvgNumber(leftY)}`,
+    `${formatSvgNumber(rightX)},${formatSvgNumber(rightY)}`,
+  ].join(" ");
+};
+
 export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   x,
   y,
@@ -205,6 +258,10 @@ export const PhotodiodeSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const incomingArrow1Start = { x: -16, y: -32 };
+  const incomingArrow1End = { x: -5, y: -21 };
+  const incomingArrow2Start = { x: -8, y: -28 };
+  const incomingArrow2End = { x: 3, y: -17 };
 
   return (
     <g transform={transform}>
@@ -221,20 +278,36 @@ export const PhotodiodeSymbol: FC<SchematicSymbolProps> = ({
       <line x1="10" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Incoming light arrows */}
-      <polyline
-        points="-2,-20 -12,-30 -10,-26"
+      <line
+        x1={incomingArrow1Start.x}
+        y1={incomingArrow1Start.y}
+        x2={incomingArrow1End.x}
+        y2={incomingArrow1End.y}
         stroke={color}
         strokeWidth={strokeWidth * 0.6}
-        fill="none"
         strokeLinecap="round"
+      />
+      <polygon
+        points={buildArrowHeadPoints(incomingArrow1Start, incomingArrow1End, 4.5, 4)}
+        fill={color}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.2}
         strokeLinejoin="round"
       />
-      <polyline
-        points="6,-16 -4,-26 -2,-22"
+      <line
+        x1={incomingArrow2Start.x}
+        y1={incomingArrow2Start.y}
+        x2={incomingArrow2End.x}
+        y2={incomingArrow2End.y}
         stroke={color}
         strokeWidth={strokeWidth * 0.6}
-        fill="none"
         strokeLinecap="round"
+      />
+      <polygon
+        points={buildArrowHeadPoints(incomingArrow2Start, incomingArrow2End, 4.5, 4)}
+        fill={color}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.2}
         strokeLinejoin="round"
       />
 
@@ -266,6 +339,10 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const outgoingArrow1Start = { x: 8, y: -14 };
+  const outgoingArrow1End = { x: 20, y: -26 };
+  const outgoingArrow2Start = { x: 14, y: -10 };
+  const outgoingArrow2End = { x: 26, y: -22 };
 
   return (
     <g transform={transform}>
@@ -280,20 +357,36 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
       <line x1="10" y1="-12" x2="10" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="10" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <polyline
-        points="8,-14 18,-24 22,-20"
+      <line
+        x1={outgoingArrow1Start.x}
+        y1={outgoingArrow1Start.y}
+        x2={outgoingArrow1End.x}
+        y2={outgoingArrow1End.y}
         stroke={color}
         strokeWidth={strokeWidth * 0.6}
-        fill="none"
         strokeLinecap="round"
+      />
+      <polygon
+        points={buildArrowHeadPoints(outgoingArrow1Start, outgoingArrow1End, 4.5, 4)}
+        fill={color}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.2}
         strokeLinejoin="round"
       />
-      <polyline
-        points="14,-10 24,-20 28,-16"
+      <line
+        x1={outgoingArrow2Start.x}
+        y1={outgoingArrow2Start.y}
+        x2={outgoingArrow2End.x}
+        y2={outgoingArrow2End.y}
         stroke={color}
         strokeWidth={strokeWidth * 0.6}
-        fill="none"
         strokeLinecap="round"
+      />
+      <polygon
+        points={buildArrowHeadPoints(outgoingArrow2Start, outgoingArrow2End, 4.5, 4)}
+        fill={color}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.2}
         strokeLinejoin="round"
       />
 
@@ -446,24 +539,28 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterArrowTail = pointOnLine(TRANSISTOR_GEOMETRY.emitterInner, TRANSISTOR_GEOMETRY.emitterOuter, 0.5);
+  const emitterArrowTip = pointOnLine(TRANSISTOR_GEOMETRY.emitterInner, TRANSISTOR_GEOMETRY.emitterOuter, 0.8);
 
   return (
     <g transform={transform}>
-      <circle cx="0" cy="0" r="20" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+      <circle cx="0" cy="0" r={TRANSISTOR_GEOMETRY.bodyRadius} stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
 
-      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-8" y1="-12" x2="-8" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.baseLeadStartX} y1="0" x2={TRANSISTOR_GEOMETRY.baseLeadEndX} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.baseLeadEndX} y1={TRANSISTOR_GEOMETRY.baseBarTopY} x2={TRANSISTOR_GEOMETRY.baseLeadEndX} y2={TRANSISTOR_GEOMETRY.baseBarBottomY} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <line x1="-8" y1="-8" x2="10" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="10" y1="-20" x2="10" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.collectorInner.x} y1={TRANSISTOR_GEOMETRY.collectorInner.y} x2={TRANSISTOR_GEOMETRY.collectorOuter.x} y2={TRANSISTOR_GEOMETRY.collectorOuter.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.collectorOuter.x} y1={TRANSISTOR_GEOMETRY.collectorOuter.y} x2={TRANSISTOR_GEOMETRY.collectorOuter.x} y2={TRANSISTOR_GEOMETRY.collectorLeadY} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <line x1="-8" y1="8" x2="10" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.emitterInner.x} y1={TRANSISTOR_GEOMETRY.emitterInner.y} x2={TRANSISTOR_GEOMETRY.emitterOuter.x} y2={TRANSISTOR_GEOMETRY.emitterOuter.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.emitterOuter.x} y1={TRANSISTOR_GEOMETRY.emitterOuter.y} x2={TRANSISTOR_GEOMETRY.emitterOuter.x} y2={TRANSISTOR_GEOMETRY.emitterLeadY} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points="10,20 5,14 2,22"
+        points={buildArrowHeadPoints(emitterArrowTail, emitterArrowTip, 5.5, 5)}
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.25}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -494,29 +591,33 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterArrowTail = pointOnLine(TRANSISTOR_GEOMETRY.emitterInner, TRANSISTOR_GEOMETRY.emitterOuter, 0.78);
+  const emitterArrowTip = pointOnLine(TRANSISTOR_GEOMETRY.emitterInner, TRANSISTOR_GEOMETRY.emitterOuter, 0.52);
 
   return (
     <g transform={transform}>
       {/* Outer circle */}
-      <circle cx="0" cy="0" r="20" stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
+      <circle cx="0" cy="0" r={TRANSISTOR_GEOMETRY.bodyRadius} stroke={color} strokeWidth={strokeWidth * 0.7} fill="none" />
 
       {/* Base lead and vertical bar */}
-      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-8" y1="-12" x2="-8" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.baseLeadStartX} y1="0" x2={TRANSISTOR_GEOMETRY.baseLeadEndX} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.baseLeadEndX} y1={TRANSISTOR_GEOMETRY.baseBarTopY} x2={TRANSISTOR_GEOMETRY.baseLeadEndX} y2={TRANSISTOR_GEOMETRY.baseBarBottomY} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Collector (top) - no arrow */}
-      <line x1="-8" y1="-8" x2="10" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="10" y1="-20" x2="10" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.collectorInner.x} y1={TRANSISTOR_GEOMETRY.collectorInner.y} x2={TRANSISTOR_GEOMETRY.collectorOuter.x} y2={TRANSISTOR_GEOMETRY.collectorOuter.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.collectorOuter.x} y1={TRANSISTOR_GEOMETRY.collectorOuter.y} x2={TRANSISTOR_GEOMETRY.collectorOuter.x} y2={TRANSISTOR_GEOMETRY.collectorLeadY} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Emitter (bottom) - arrow points INWARD for PNP */}
-      <line x1="-8" y1="8" x2="10" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="10" y1="20" x2="10" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.emitterInner.x} y1={TRANSISTOR_GEOMETRY.emitterInner.y} x2={TRANSISTOR_GEOMETRY.emitterOuter.x} y2={TRANSISTOR_GEOMETRY.emitterOuter.y} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={TRANSISTOR_GEOMETRY.emitterOuter.x} y1={TRANSISTOR_GEOMETRY.emitterOuter.y} x2={TRANSISTOR_GEOMETRY.emitterOuter.x} y2={TRANSISTOR_GEOMETRY.emitterLeadY} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* PNP arrow points inward (toward base) */}
       <polygon
-        points="-5,10 0,16 -3,4"
+        points={buildArrowHeadPoints(emitterArrowTail, emitterArrowTip, 5.5, 5)}
         fill={color}
         stroke={color}
+        strokeWidth={strokeWidth * 0.25}
+        strokeLinejoin="round"
       />
 
       {showLabel && label && (
@@ -621,16 +722,15 @@ export const InductorSymbol: FC<SchematicSymbolProps> = ({
 
   return (
     <g transform={transform}>
-      <line x1="-30" y1="0" x2="-25" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-30" y1="0" x2="-24" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <path
-        d="M-25,0 Q-25,-10 -18,-10 Q-11,-10 -11,0 Q-11,10 -4,10 Q3,10 3,0 Q3,-10 10,-10 Q17,-10 17,0 Q17,10 25,10"
+        d="M-24,0 Q-20,-8 -16,0 Q-12,8 -8,0 Q-4,-8 0,0 Q4,8 8,0 Q12,-8 16,0 Q20,8 24,0"
         stroke={color}
         strokeWidth={strokeWidth}
         fill="none"
         strokeLinecap="round"
-        transform="translate(0,-5)"
       />
-      <line x1="25" y1="-5" x2="30" y2="-5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="24" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {showLabel && label && (
         <text
           x={0}
