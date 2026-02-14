@@ -68,7 +68,6 @@
         body.embedded,
         html.embedded body {
             overflow: hidden;
-            background: transparent !important;
         }
 
         body.embedded #menu-bar,
@@ -97,7 +96,6 @@
         body.embedded #canvas,
         html.embedded #canvas {
             display: block !important;
-            background-color: transparent !important;
         }
         
         .menu-bar {
@@ -6759,11 +6757,8 @@ body.android-optimized.menu-visible .status {
         // Initialize the scene
         function init() {
             try {
-                const shouldUseTransparentBackground = isEmbedded;
                 scene = new THREE.Scene();
-                scene.background = shouldUseTransparentBackground
-                    ? null
-                    : new THREE.Color(0x0a0a1a);
+                scene.background = new THREE.Color(0x0a0a1a);
                 
                 camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
                 updateCameraPosition();
@@ -6771,14 +6766,12 @@ body.android-optimized.menu-visible .status {
                 const canvas = document.getElementById('canvas');
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas,
-                    alpha: shouldUseTransparentBackground,
-                    premultipliedAlpha: false,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
                     powerPreference: isMobile ? "low-power" : "high-performance"
                 });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
-                renderer.setClearColor(0x0a0a1a, shouldUseTransparentBackground ? 0 : 1);
+                renderer.setClearColor(0x0a0a1a, 1);
                 
                 raycaster = new THREE.Raycaster();
                 raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;

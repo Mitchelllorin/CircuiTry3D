@@ -29,8 +29,6 @@ type WorkspaceBackgroundState = {
 
 const WORKSPACE_SKIN_STORAGE_KEY = "builder:workspace-skin";
 const MAX_CUSTOM_SKIN_FILE_SIZE_BYTES = 2 * 1024 * 1024;
-const WORKSPACE_BASE_GRADIENT =
-  "linear-gradient(135deg, #0f1b3d, #16213e 45%, #0a1028)";
 
 const DEFAULT_WORKSPACE_BACKGROUND_STATE: WorkspaceBackgroundState = {
   activeSkinId: "default",
@@ -209,29 +207,39 @@ export function useWorkspaceBackground() {
       workspaceBackgroundState.activeSkinId === "custom" &&
       workspaceBackgroundState.customImageDataUrl
     ) {
-      const normalizedStrength =
-        clamp(workspaceBackgroundState.customImageOpacity, 20, 100) / 100;
-      const topScrimOpacity = clamp(0.76 - normalizedStrength * 0.52, 0.2, 0.6);
-      const bottomScrimOpacity = clamp(topScrimOpacity + 0.08, 0.26, 0.7);
+      const normalizedStrength = clamp(
+        workspaceBackgroundState.customImageOpacity,
+        20,
+        100,
+      ) / 100;
+      const topScrimOpacity = clamp(0.5 - normalizedStrength * 0.2, 0.24, 0.46);
+      const bottomScrimOpacity = clamp(topScrimOpacity + 0.1, 0.3, 0.56);
+      const overlayOpacity = clamp(0.2 + normalizedStrength * 0.45, 0.28, 0.68);
       return {
         backgroundImage: `linear-gradient(165deg, rgba(4, 12, 30, ${topScrimOpacity}), rgba(4, 12, 30, ${bottomScrimOpacity})), url("${workspaceBackgroundState.customImageDataUrl}")`,
         backgroundSize: "cover, cover",
         backgroundPosition: "center, center",
         backgroundRepeat: "no-repeat, no-repeat",
         mixBlendMode: "normal",
-        opacity: 1,
+        opacity: overlayOpacity,
       };
     }
 
-    const presetBackground =
-      activePreset.overlay === "none"
-        ? WORKSPACE_BASE_GRADIENT
-        : `${activePreset.overlay}, ${WORKSPACE_BASE_GRADIENT}`;
+    if (activePreset.overlay === "none") {
+      return {
+        backgroundImage: "none",
+        mixBlendMode: "normal",
+        opacity: 0,
+      };
+    }
 
     return {
-      backgroundImage: presetBackground,
+      backgroundImage: activePreset.overlay,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
       mixBlendMode: "normal",
-      opacity: 1,
+      opacity: clamp(activePreset.opacity + 0.1, 0.25, 0.75),
     };
   }, [activePreset, workspaceBackgroundState]);
 
