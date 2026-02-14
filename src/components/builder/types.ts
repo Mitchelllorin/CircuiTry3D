@@ -22,6 +22,7 @@ export type BuilderInvokeAction =
   | "open-arena"
   | "export-arena"
   | "open-logo-settings"
+  | "open-workspace-skins"
   | "set-tool"
   | "undo"
   | "redo"

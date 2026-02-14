@@ -92,7 +92,6 @@ export function useLogoAnimation() {
     }
   });
 
-  const [isLogoSettingsOpen, setLogoSettingsOpen] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(
     () => {
       if (
@@ -137,12 +136,6 @@ export function useLogoAnimation() {
       // Ignore
     }
   }, [logoSettings]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      setLogoSettingsOpen(false);
-    }
-  }, [prefersReducedMotion]);
 
   // Use refs to access current settings without triggering effect re-runs
   const logoSettingsRef = useRef(logoSettings);
@@ -321,8 +314,6 @@ export function useLogoAnimation() {
   return {
     floatingLogoRef,
     logoSettings,
-    isLogoSettingsOpen,
-    setLogoSettingsOpen,
     prefersReducedMotion,
     handleLogoSettingChange,
     toggleLogoVisibility,

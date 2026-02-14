@@ -10,6 +10,7 @@ import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
+import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
@@ -25,11 +26,14 @@ import {
   getDefaultScenario,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
-import { LogoSettingsModal } from "../components/builder/modals/LogoSettingsModal";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
 import { BuilderInteractiveTutorial } from "../components/builder/tutorial/BuilderInteractiveTutorial";
+import {
+  CompactSettingsPanel,
+  type SettingsPanelTab,
+} from "../components/builder/panels/CompactSettingsPanel";
 import { useCircuitStorage } from "../context/CircuitStorageContext";
 import "../styles/circuit-storage.css";
 import practiceProblems, {
@@ -1055,12 +1059,27 @@ export default function Builder() {
   const {
     floatingLogoRef,
     logoSettings,
-    isLogoSettingsOpen,
-    setLogoSettingsOpen,
     prefersReducedMotion,
     handleLogoSettingChange,
     toggleLogoVisibility,
   } = useLogoAnimation();
+  const {
+    workspaceSkinOptions,
+    workspaceSkinStyle,
+    activeWorkspaceSkinId,
+    customWorkspaceSkinName,
+    customWorkspaceSkinOpacity,
+    hasCustomWorkspaceSkin,
+    workspaceSkinError,
+    selectWorkspaceSkin,
+    importWorkspaceSkinFromFile,
+    setCustomWorkspaceSkinOpacity,
+    clearCustomWorkspaceSkin,
+    resetWorkspaceSkin,
+  } = useWorkspaceBackground();
+  const [isSettingsPanelOpen, setSettingsPanelOpen] = useState(false);
+  const [activeSettingsPanelTab, setActiveSettingsPanelTab] =
+    useState<SettingsPanelTab>("workspace-skins");
 
   const {
     helpSectionRefs,
@@ -1659,7 +1678,6 @@ export default function Builder() {
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
-    isLogoSettingsOpen ||
     isSaveModalOpen ||
     isLoadModalOpen;
   const isActiveCircuitBuildMode =
@@ -1670,7 +1688,14 @@ export default function Builder() {
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
     !isTroubleshootVisible &&
+    !isSettingsPanelOpen &&
     !isOverlayActive;
+
+  useEffect(() => {
+    if (!isActiveCircuitBuildMode || isWorksheetVisible || isTroubleshootVisible) {
+      setSettingsPanelOpen(false);
+    }
+  }, [isActiveCircuitBuildMode, isTroubleshootVisible, isWorksheetVisible]);
 
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
@@ -2490,7 +2515,14 @@ export default function Builder() {
                   const description = setting.getDescription(modeState, {
                     currentFlowLabel,
                   });
-                  const isActive = setting.isActive?.(modeState) ?? false;
+                  const isSettingPanelTabActive =
+                    isSettingsPanelOpen &&
+                    ((setting.action === "open-logo-settings" &&
+                      activeSettingsPanelTab === "logo-motion") ||
+                      (setting.action === "open-workspace-skins" &&
+                        activeSettingsPanelTab === "workspace-skins"));
+                  const isActive =
+                    (setting.isActive?.(modeState) ?? false) || isSettingPanelTabActive;
                   return (
                     <button
                       key={setting.id}
@@ -2498,16 +2530,22 @@ export default function Builder() {
                       className="slider-btn slider-btn-stacked"
                       onClick={() => {
                         if (setting.action === "open-logo-settings") {
-                          setLogoSettingsOpen(!isLogoSettingsOpen);
+                          setActiveSettingsPanelTab("logo-motion");
+                          setSettingsPanelOpen(true);
+                          setRightMenuOpen(true);
+                        } else if (setting.action === "open-workspace-skins") {
+                          setActiveSettingsPanelTab("workspace-skins");
+                          setSettingsPanelOpen(true);
+                          setRightMenuOpen(true);
                         } else {
                           triggerBuilderAction(setting.action, setting.data);
                         }
                       }}
                       disabled={controlsDisabled}
                       aria-disabled={controlsDisabled}
-                      aria-pressed={setting.isActive ? isActive : undefined}
+                      aria-pressed={isActive}
                       data-active={
-                        setting.isActive && isActive ? "true" : undefined
+                        isActive ? "true" : undefined
                       }
                       title={
                         controlsDisabled ? controlDisabledTitle : description
@@ -2628,6 +2666,11 @@ export default function Builder() {
           title="CircuiTry3D Builder"
           src={builderFrameSrc}
           sandbox="allow-scripts allow-same-origin allow-popups"
+        />
+        <div
+          className="builder-workspace-skin-layer"
+          aria-hidden="true"
+          style={workspaceSkinStyle}
         />
       </div>
 
@@ -2770,39 +2813,30 @@ export default function Builder() {
         </div>
       </div>
 
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--logo-settings${isLogoSettingsOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isLogoSettingsOpen}
-        onClick={() => setLogoSettingsOpen(false)}
-      >
-        <div
-          className="builder-panel builder-panel--logo-settings"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <div className="builder-panel-brand" aria-hidden="true">
-            <BrandMark size="sm" decorative />
-          </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setLogoSettingsOpen(false)}
-            aria-label="Close logo motion settings"
-          >
-            ×
-          </button>
-          <LogoSettingsModal
-            isOpen={isLogoSettingsOpen}
-            onToggle={() => setLogoSettingsOpen(!isLogoSettingsOpen)}
-            logoSettings={logoSettings}
-            prefersReducedMotion={prefersReducedMotion}
-            onLogoSettingChange={handleLogoSettingChange}
-            onToggleLogoVisibility={toggleLogoVisibility}
-            onResetLogoSettings={resetLogoSettings}
-          />
-        </div>
-      </div>
+      {isSettingsPanelOpen && (
+        <CompactSettingsPanel
+          isOpen={isSettingsPanelOpen}
+          activeTab={activeSettingsPanelTab}
+          onToggle={() => setSettingsPanelOpen(false)}
+          onChangeTab={setActiveSettingsPanelTab}
+          logoSettings={logoSettings}
+          prefersReducedMotion={prefersReducedMotion}
+          onLogoSettingChange={handleLogoSettingChange}
+          onToggleLogoVisibility={toggleLogoVisibility}
+          onResetLogoSettings={resetLogoSettings}
+          skinOptions={workspaceSkinOptions}
+          activeSkinId={activeWorkspaceSkinId}
+          hasCustomSkin={hasCustomWorkspaceSkin}
+          customSkinName={customWorkspaceSkinName}
+          customSkinOpacity={customWorkspaceSkinOpacity}
+          workspaceSkinError={workspaceSkinError}
+          onSelectSkin={selectWorkspaceSkin}
+          onImportCustomSkin={importWorkspaceSkinFromFile}
+          onCustomSkinOpacityChange={setCustomWorkspaceSkinOpacity}
+          onClearCustomSkin={clearCustomWorkspaceSkin}
+          onResetWorkspaceSkin={resetWorkspaceSkin}
+        />
+      )}
 
       {isPracticeWorkspaceMode && activePracticeProblemId && (
         <CompactWorksheetPanel
