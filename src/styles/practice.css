@@ -285,6 +285,11 @@
   align-items: baseline;
 }
 
+.practice-brand {
+  flex-basis: 100%;
+  margin-bottom: -8px;
+}
+
 .practice-header h1 {
   margin: 0;
   font-size: 2rem;
@@ -2831,6 +2836,10 @@
   .practice-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .practice-brand {
+    margin-bottom: 0;
   }
 
   .practice-main {

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { APP_BRAND_NAME } from "../constants/branding";
 
 type LandingMessage = {
   type?: string;
@@ -33,7 +34,7 @@ export default function Home() {
     <div className="home-page">
       <iframe
         ref={iframeRef}
-        title="CircuiTry3D Landing"
+        title={`${APP_BRAND_NAME} Landing`}
         src="landing.html"
         style={{ width: "100%", height: "100%", border: 0 }}
         sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
