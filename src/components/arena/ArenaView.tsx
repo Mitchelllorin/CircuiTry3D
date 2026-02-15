@@ -5,7 +5,7 @@ import "../../styles/arena.css";
 import { Component3DViewer } from "./Component3DViewer";
 
 type ArenaViewProps = {
-  variant?: "page" | "embedded";
+  variant?: "page" | "embedded" | "workspace";
   onNavigateBack?: () => void;
   onOpenBuilder?: () => void;
 };
@@ -1315,6 +1315,7 @@ function formatTimestamp(timestamp?: number): string {
 
 export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuilder }: ArenaViewProps) {
   const isEmbedded = variant === "embedded";
+  const isWorkspace = variant === "workspace";
   const handleBackClick = useCallback(() => {
     if (typeof onNavigateBack === "function") {
       onNavigateBack();
@@ -1325,7 +1326,8 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       onOpenBuilder();
     }
   }, [onOpenBuilder]);
-  const showOpenBuilderButton = typeof onOpenBuilder === "function";
+  const showOpenBuilderButton =
+    typeof onOpenBuilder === "function" && !isWorkspace;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sampleFallbackAppliedRef = useRef(false);
@@ -2265,10 +2267,12 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   };
 
   return (
-    <div className="arena-page">
+    <div
+      className={`arena-page${isEmbedded ? " arena-page--embedded" : ""}${isWorkspace ? " arena-page--workspace" : ""}`}
+    >
       <header className="arena-header">
         <div className="arena-header-left">
-          {!isEmbedded && (
+          {!isEmbedded && !isWorkspace && (
             <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
               ← Back
             </button>
@@ -2288,7 +2292,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         </div>
       </header>
 
-      <div className="arena-body">
+      <div className={`arena-body${isWorkspace ? " arena-body--workspace-split" : ""}`}>
 
         <section className="arena-import-section">
           <div className="arena-card">
