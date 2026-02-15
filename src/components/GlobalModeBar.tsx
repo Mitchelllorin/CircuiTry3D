@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import type { WorkspaceMode } from "./builder/types";
+import {
+  isWorkspaceSectionId,
+  type WorkspaceSectionId,
+} from "./workspaceSections";
 import "../styles/builder-ui.css";
 import wireResourceLogo from "../assets/wire-resource-logo.svg";
 
@@ -14,13 +18,22 @@ export function GlobalModeBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { workspaceMode, setWorkspaceMode, isWireLibraryPanelOpen, setWireLibraryPanelOpen } = useWorkspaceMode();
+  const activeWorkspaceSectionParam = new URLSearchParams(location.search).get(
+    "section",
+  );
+  const activeWorkspaceSection = isWorkspaceSectionId(
+    activeWorkspaceSectionParam,
+  )
+    ? activeWorkspaceSectionParam
+    : null;
   const modeBarRef = useRef<HTMLDivElement>(null);
   const [modeBarScrollState, setModeBarScrollState] = useState<ModeBarScrollState>({
     canScrollLeft: false,
     canScrollRight: false,
   });
 
-  const isWorkspacePage = location.pathname === "/app";
+  const isWorkspaceRoute = location.pathname === "/app";
+  const isWorkspacePage = isWorkspaceRoute && !activeWorkspaceSection;
   const isLandingPage = location.pathname === "/";
   const isPricingPage = location.pathname === "/pricing";
   const isCommunityPage = location.pathname === "/community";
@@ -60,17 +73,32 @@ export function GlobalModeBar() {
 
   const handleModeClick = useCallback((mode: WorkspaceMode) => {
     setWorkspaceMode(mode);
-    // Navigate to workspace if not already there
-    if (!isWorkspacePage) {
+    // Navigate to workspace if not already there or clear section overlays.
+    if (!isWorkspaceRoute || activeWorkspaceSection) {
       navigate("/app");
     }
-  }, [setWorkspaceMode, navigate, isWorkspacePage]);
+  }, [
+    activeWorkspaceSection,
+    isWorkspaceRoute,
+    navigate,
+    setWorkspaceMode,
+  ]);
 
   const handleNavigateTo = useCallback((path: string) => {
     // If leaving the workspace, ensure any workspace-only panels don't stay "active".
     setWireLibraryPanelOpen(false);
     navigate(path);
   }, [navigate, setWireLibraryPanelOpen]);
+
+  const handleWorkspaceSectionClick = useCallback(
+    (section: WorkspaceSectionId) => {
+      // Keep a single, unified workflow: open all major sections inside /app.
+      setWireLibraryPanelOpen(false);
+      setWorkspaceMode("build");
+      navigate(`/app?section=${section}`);
+    },
+    [navigate, setWireLibraryPanelOpen, setWorkspaceMode],
+  );
 
   const handleBuildClick = useCallback(() => {
     handleModeClick("build");
@@ -94,11 +122,16 @@ export function GlobalModeBar() {
 
   const handleWireLibraryClick = useCallback(() => {
     setWireLibraryPanelOpen(true);
-    // Navigate to workspace if not already there
-    if (!isWorkspacePage) {
+    // Navigate to workspace if not already there or clear section overlays.
+    if (!isWorkspaceRoute || activeWorkspaceSection) {
       navigate("/app");
     }
-  }, [setWireLibraryPanelOpen, navigate, isWorkspacePage]);
+  }, [
+    activeWorkspaceSection,
+    isWorkspaceRoute,
+    navigate,
+    setWireLibraryPanelOpen,
+  ]);
 
   return (
     <>
@@ -121,7 +154,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "build" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "build"
+              ? "true"
+              : undefined
+          }
           onClick={handleBuildClick}
           aria-label="Build mode"
           title="Component builder and circuit designer"
@@ -132,7 +171,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "practice" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "practice"
+              ? "true"
+              : undefined
+          }
           onClick={handlePracticeClick}
           aria-label="Practice mode"
           title="Guided worksheets and W.I.R.E. problems"
@@ -143,7 +188,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "troubleshoot"
+              ? "true"
+              : undefined
+          }
           onClick={handleTroubleshootClick}
           aria-label="Troubleshoot mode"
           title="Fix broken circuits and restore current flow"
@@ -154,7 +205,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "arena" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "arena"
+              ? "true"
+              : undefined
+          }
           onClick={handleArenaClick}
           aria-label="Arena mode"
           title="Component testing and advanced simulation"
@@ -165,7 +222,13 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "learn" ? "true" : undefined}
+          data-active={
+            isWorkspaceRoute &&
+            !activeWorkspaceSection &&
+            workspaceMode === "learn"
+              ? "true"
+              : undefined
+          }
           onClick={handleLearnClick}
           aria-label="Learn mode"
           title="Tutorials, guides, and help resources"
@@ -176,8 +239,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={isArcadePage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/arcade")}
+          data-active={
+            isArcadePage || activeWorkspaceSection === "arcade"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("arcade")}
           aria-label="Arcade"
           title="Circuit Arcade"
         >
@@ -187,8 +254,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={isClassroomPage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/classroom")}
+          data-active={
+            isClassroomPage || activeWorkspaceSection === "classroom"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("classroom")}
           aria-label="Classroom"
           title="Classroom"
         >
@@ -198,8 +269,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={isCommunityPage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/community")}
+          data-active={
+            isCommunityPage || activeWorkspaceSection === "community"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("community")}
           aria-label="Community"
           title="Community"
         >
@@ -209,8 +284,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={isAccountPage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/account")}
+          data-active={
+            isAccountPage || activeWorkspaceSection === "account"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("account")}
           aria-label="Account"
           title="Account"
         >
@@ -220,8 +299,12 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={isPricingPage ? "true" : undefined}
-          onClick={() => handleNavigateTo("/pricing")}
+          data-active={
+            isPricingPage || activeWorkspaceSection === "pricing"
+              ? "true"
+              : undefined
+          }
+          onClick={() => handleWorkspaceSectionClick("pricing")}
           aria-label="Pricing"
           title="Pricing"
         >
