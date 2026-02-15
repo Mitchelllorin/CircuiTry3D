@@ -52,7 +52,7 @@
 |---|---:|---|---|
 | Dependency vulnerability scan | ✅ | `npm audit` now reports **0 vulnerabilities** after lockfile remediation. | Keep audit as a required CI gate. |
 | Authentication data handling | ⚠️ | `src/context/AuthContext.tsx` now stores PBKDF2 password hashes (no plaintext defaults/new users). Legacy plaintext records are upgraded on successful sign-in. | Still migrate to server-side auth/session for production-grade security. |
-| Classroom API authorization model | ⚠️ | `api/classroom.ts` now validates teacherId format, requires matching `X-Classroom-Teacher-Id`, and no longer uses wildcard CORS by default. | Replace client-asserted teacher identity with true token/session auth. |
+| Classroom API authorization model | ⚠️ | Classroom writes are now bound to a **server-signed, HttpOnly session cookie** (`/api/classroom-session` + signature validation in `api/classroom.ts`) with CORS allowlist support. | Bind session issuance to a server-authenticated account identity for full production assurance. |
 | Keystore secret hygiene | ✅ | Build script enforces local-only keystore and warns not to commit secrets. | Keep keystore + key.properties out of git; verify secret backup procedure. |
 
 **Section summary:** Dependency risk is cleared and baseline API/auth hardening is in place, but production-grade authentication/authorization is still required before broad launch.
@@ -101,7 +101,7 @@
 ## **CONDITIONAL NO-GO (broad launch)**
 
 ### P0 Blockers
-1. Implement real authentication/authorization for Classroom and account flows (server-side identity).
+1. Bind classroom session issuance to server-authenticated account identity (current bootstrap still accepts client preferred teacher ID).
 2. Install/configure Android SDK and produce a verified `bundleRelease` artifact in target build environment.
 
 ### P1 (should complete before public launch)

@@ -10,7 +10,10 @@ import {
 } from "./classroomMutations";
 
 const FUNCTION_ENDPOINT = "/api/classroom";
+const SESSION_ENDPOINT = "/api/classroom-session";
 const LOCAL_STORAGE_KEY = "circuiTry3d.classrooms.fallback.v2";
+let activeSessionTeacherId: string | null = null;
+let pendingSessionRequest: Promise<string> | null = null;
 
 type ClassroomRequest =
   | { action: "load"; teacherId: string }
@@ -94,13 +97,13 @@ async function mutateWithFallback(
 }
 
 async function callFunction(request: ClassroomRequest, teacherId: string): Promise<ClassroomDocument> {
+  const sessionTeacherId = await ensureClassroomSession(teacherId);
+  const payload: ClassroomRequest = { ...request, teacherId: sessionTeacherId };
+
   const response = await fetch(FUNCTION_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Classroom-Teacher-Id": teacherId,
-    },
-    body: JSON.stringify(request),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -108,8 +111,42 @@ async function callFunction(request: ClassroomRequest, teacherId: string): Promi
     throw new Error(message || "Classroom function error");
   }
 
-  const payload = (await response.json()) as ClassroomDocument;
-  return payload;
+  const responsePayload = (await response.json()) as ClassroomDocument;
+  return responsePayload;
+}
+
+async function ensureClassroomSession(preferredTeacherId: string): Promise<string> {
+  if (activeSessionTeacherId && activeSessionTeacherId === preferredTeacherId) {
+    return activeSessionTeacherId;
+  }
+
+  if (!pendingSessionRequest) {
+    pendingSessionRequest = (async () => {
+      const response = await fetch(SESSION_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferredTeacherId }),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Failed to create classroom session");
+      }
+
+      const payload = (await response.json()) as { teacherId?: string };
+      if (!payload.teacherId || typeof payload.teacherId !== "string") {
+        throw new Error("Classroom session response missing teacherId");
+      }
+      activeSessionTeacherId = payload.teacherId;
+      return payload.teacherId;
+    })();
+  }
+
+  try {
+    return await pendingSessionRequest;
+  } finally {
+    pendingSessionRequest = null;
+  }
 }
 
 const localKey = (teacherId: string) => `${LOCAL_STORAGE_KEY}.${teacherId}`;
