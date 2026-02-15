@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates favicon + PWA icon PNGs (and favicon.ico) from the app logo.
+ * Generates favicon + PWA icon PNGs (and favicon.ico) from the landing logo.
  *
  * Uses Playwright (already in devDependencies) to render the SVG into a square
  * icon canvas with a solid background, then screenshots at required sizes.
@@ -14,11 +14,61 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
  
 const ROOT = join(__dirname, '..');
-const LOGO_SVG_PATH = join(ROOT, 'src', 'assets', 'circuit-logo.svg');
+const LOGO_SVG_PATH = join(ROOT, 'public', 'circuit-logo.svg');
 const PUBLIC_DIR = join(ROOT, 'public');
 const PUBLIC_ICONS_DIR = join(PUBLIC_DIR, 'icons');
  
 const BG = '#0f172a';
+const FALLBACK_VIEWBOX = { minX: 0, minY: 0, width: 240, height: 130 };
+
+function parseViewBox(svg) {
+  const match = svg.match(/viewBox\s*=\s*["']([^"']+)["']/i);
+  if (!match) {
+    return FALLBACK_VIEWBOX;
+  }
+
+  const parts = match[1]
+    .trim()
+    .split(/[\s,]+/)
+    .map((part) => Number.parseFloat(part));
+
+  if (
+    parts.length !== 4
+    || parts.some((value) => Number.isNaN(value))
+    || parts[2] <= 0
+    || parts[3] <= 0
+  ) {
+    return FALLBACK_VIEWBOX;
+  }
+
+  return {
+    minX: parts[0],
+    minY: parts[1],
+    width: parts[2],
+    height: parts[3],
+  };
+}
+
+function stripOuterSvg(svg) {
+  return svg
+    .replace(/^[\s\S]*?<svg[^>]*>/i, '')
+    .replace(/<\/svg>\s*$/i, '')
+    .trim();
+}
+
+function computeRenderSize({ size, fitRatio, aspectRatio }) {
+  const maxW = Math.max(1, Math.round(size * fitRatio));
+  const maxH = Math.max(1, Math.round(size * fitRatio));
+  let width = maxW;
+  let height = Math.max(1, Math.round(width / aspectRatio));
+
+  if (height > maxH) {
+    height = maxH;
+    width = Math.max(1, Math.round(height * aspectRatio));
+  }
+
+  return { width, height };
+}
  
 function normalizeSvg(svg) {
   // The stored logo SVG uses React-style camelCase attributes (strokeWidth, etc).
@@ -37,8 +87,13 @@ function normalizeSvg(svg) {
     .replaceAll('letterSpacing=', 'letter-spacing=');
 }
  
-function makeIconHtml({ svg, size, paddingRatio }) {
-  const inner = Math.max(1, Math.round(size * (1 - paddingRatio * 2)));
+function makeIconHtml({ svg, size, fitRatio, aspectRatio }) {
+  const { width, height } = computeRenderSize({
+    size,
+    fitRatio,
+    aspectRatio,
+  });
+
   return `<!doctype html>
 <html>
   <head>
@@ -47,8 +102,8 @@ function makeIconHtml({ svg, size, paddingRatio }) {
       html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
       body { background: ${BG}; display: grid; place-items: center; }
       .frame {
-        width: ${inner}px;
-        height: ${inner}px;
+        width: ${width}px;
+        height: ${height}px;
         display: grid;
         place-items: center;
       }
@@ -111,6 +166,9 @@ async function main() {
  
   const rawLogoSvg = await readFile(LOGO_SVG_PATH, 'utf8');
   const logoSvg = normalizeSvg(rawLogoSvg);
+  const logoViewBox = parseViewBox(logoSvg);
+  const logoAspectRatio = logoViewBox.width / logoViewBox.height;
+  const logoInnerSvg = stripOuterSvg(logoSvg);
  
   await mkdir(PUBLIC_DIR, { recursive: true });
   await mkdir(PUBLIC_ICONS_DIR, { recursive: true });
@@ -118,18 +176,25 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
  
-  const renderPng = async (size, { paddingRatio }) => {
+  const renderPng = async (size, { fitRatio }) => {
     await page.setViewportSize({ width: size, height: size });
-    await page.setContent(makeIconHtml({ svg: logoSvg, size, paddingRatio }));
+    await page.setContent(
+      makeIconHtml({
+        svg: logoSvg,
+        size,
+        fitRatio,
+        aspectRatio: logoAspectRatio,
+      }),
+    );
     // Small wait to ensure SVG filters/gradients are painted.
     await page.waitForTimeout(80);
     return await page.screenshot({ type: 'png' });
   };
  
   // Favicons
-  const favicon16 = await renderPng(16, { paddingRatio: 0.12 });
-  const favicon32 = await renderPng(32, { paddingRatio: 0.14 });
-  const favicon48 = await renderPng(48, { paddingRatio: 0.16 });
+  const favicon16 = await renderPng(16, { fitRatio: 0.92 });
+  const favicon32 = await renderPng(32, { fitRatio: 0.94 });
+  const favicon48 = await renderPng(48, { fitRatio: 0.94 });
  
   await writeFile(join(PUBLIC_DIR, 'favicon-16x16.png'), favicon16);
   await writeFile(join(PUBLIC_DIR, 'favicon-32x32.png'), favicon32);
@@ -143,27 +208,33 @@ async function main() {
   await writeFile(join(PUBLIC_DIR, 'favicon.ico'), ico);
  
   // SVG favicon (scales crisply in modern browsers)
+  const faviconCanvas = 512;
+  const faviconRender = computeRenderSize({
+    size: faviconCanvas,
+    fitRatio: 0.94,
+    aspectRatio: logoAspectRatio,
+  });
+  const faviconX = Math.round((faviconCanvas - faviconRender.width) / 2);
+  const faviconY = Math.round((faviconCanvas - faviconRender.height) / 2);
+  const faviconViewBox = `${logoViewBox.minX} ${logoViewBox.minY} ${logoViewBox.width} ${logoViewBox.height}`;
   const faviconSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${BG}"/>
-  <svg x="64" y="96" width="384" height="320" viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
-    ${normalizeSvg(rawLogoSvg)
-      .replace(/^<svg[^>]*>/i, '')
-      .replace(/<\/svg>\s*$/i, '')
-      .trim()}
+  <svg x="${faviconX}" y="${faviconY}" width="${faviconRender.width}" height="${faviconRender.height}" viewBox="${faviconViewBox}" xmlns="http://www.w3.org/2000/svg">
+    ${logoInnerSvg}
   </svg>
 </svg>
 `;
   await writeFile(join(PUBLIC_DIR, 'favicon.svg'), faviconSvg);
  
   // Apple touch icon
-  const apple180 = await renderPng(180, { paddingRatio: 0.18 });
+  const apple180 = await renderPng(180, { fitRatio: 0.9 });
   await writeFile(join(PUBLIC_DIR, 'apple-touch-icon.png'), apple180);
  
   // PWA icons (keep existing filenames referenced by manifest.json)
   const pwaSizes = [72, 96, 128, 144, 152, 192, 384, 512];
   for (const size of pwaSizes) {
-    const png = await renderPng(size, { paddingRatio: size >= 192 ? 0.20 : 0.18 });
+    const png = await renderPng(size, { fitRatio: size >= 192 ? 0.84 : 0.88 });
     await writeFile(join(PUBLIC_ICONS_DIR, `icon-${size}.png`), png);
   }
  
