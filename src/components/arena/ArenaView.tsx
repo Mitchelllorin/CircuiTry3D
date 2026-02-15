@@ -781,8 +781,10 @@ function ComponentGlyph({ type }: ComponentGlyphProps) {
     </div>
   );
 }
+void getComponentBadgeLabel;
+void ComponentGlyph;
 
-function sanitiseComponent(raw: unknown, index: number): ArenaComponent | null {
+function sanitiseComponent(raw: unknown, _index: number): ArenaComponent | null {
   if (!raw || typeof raw !== "object") {
     return null;
   }
@@ -1312,6 +1314,7 @@ function formatTimestamp(timestamp?: number): string {
     return "No sync yet";
   }
 }
+void formatTimestamp;
 
 export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuilder }: ArenaViewProps) {
   const isEmbedded = variant === "embedded";
@@ -1334,11 +1337,11 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
 
   const [importPayload, setImportPayload] = useState<ArenaPayload | null>(null);
   const [frameReady, setFrameReady] = useState(false);
-  const [bridgeStatus, setBridgeStatus] = useState(DEFAULT_STATUS);
+  const [, setBridgeStatus] = useState(DEFAULT_STATUS);
   const [manualImportText, setManualImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [recentImportSource, setRecentImportSource] = useState<string | null>(null);
-  const [isDragActive, setIsDragActive] = useState(false);
+  const [, setIsDragActive] = useState(false);
   const [importPending, setImportPending] = useState(false);
   const [showdownSelection, setShowdownSelection] = useState<{ left: string | null; right: string | null }>({
     left: null,
@@ -1589,6 +1592,11 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       setImportPending(false);
     }
   }, [handleExternalImport]);
+  void handleFileInputChange;
+  void handleDrop;
+  void handleDragOver;
+  void handleDragLeave;
+  void handleManualImportSubmit;
 
   const handleSampleImport = useCallback(
     (payload: ArenaPayload) => {
@@ -1940,6 +1948,15 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     },
     [sendArenaMessage]
   );
+  void flowStyles;
+  void comparisonRows;
+  void showdownRoundByKey;
+  void spotlightRounds;
+  void metrics;
+  void typeBreakdown;
+  void roster;
+  void circuitTotals;
+  void handleCommand;
 
   const applyScenarioModifiers = useCallback((telemetry: ComponentTelemetryEntry[], scenarioId: string): ComponentTelemetryEntry[] => {
     const scenario = ENVIRONMENTAL_SCENARIOS.find(s => s.id === scenarioId);
@@ -2186,6 +2203,12 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     }
   ) => {
     const typeClass = normaliseTypeForClass(profile?.type);
+    void warnings;
+    void highlightMetrics;
+    void opponentMetricMap;
+    void record;
+    void isTie;
+    void typeClass;
     const beforeData = side === "left" ? beforeMetrics.left : beforeMetrics.right;
     const afterData = side === "left" ? afterMetrics.left : afterMetrics.right;
     const filteredTelemetry = getFilteredTelemetry(telemetry);

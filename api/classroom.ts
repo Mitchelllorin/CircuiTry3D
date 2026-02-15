@@ -9,28 +9,28 @@ import {
   type CreateClassroomPayload,
   type RecordProgressPayload,
 } from "../src/services/classroomMutations";
+import {
+  corsHeadersForRequest,
+  parseTeacherId,
+  readSessionTeacherId,
+} from "./_classroomSession";
 
 export const config = {
   runtime: "edge",
 };
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 const keyForTeacher = (teacherId: string) => `classroom:${teacherId}`;
 
 type ClassroomRequest =
-  | { action: "load"; teacherId: string }
-  | { action: "createClass"; teacherId: string; payload: CreateClassroomPayload }
-  | { action: "addStudent"; teacherId: string; payload: AddStudentPayload }
-  | { action: "createAssignment"; teacherId: string; payload: CreateAssignmentPayload }
-  | { action: "recordProgress"; teacherId: string; payload: RecordProgressPayload }
-  | { action: "refreshAnalytics"; teacherId: string; payload: { classId: string } };
+  | { action: "load"; teacherId?: string }
+  | { action: "createClass"; teacherId?: string; payload: CreateClassroomPayload }
+  | { action: "addStudent"; teacherId?: string; payload: AddStudentPayload }
+  | { action: "createAssignment"; teacherId?: string; payload: CreateAssignmentPayload }
+  | { action: "recordProgress"; teacherId?: string; payload: RecordProgressPayload }
+  | { action: "refreshAnalytics"; teacherId?: string; payload: { classId: string } };
 
 export default async function handler(request: Request): Promise<Response> {
+  const corsHeaders = corsHeadersForRequest(request);
   if (request.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
   }
@@ -41,23 +41,36 @@ export default async function handler(request: Request): Promise<Response> {
 
   try {
     const payload = (await request.json()) as ClassroomRequest | null;
-    if (!payload?.teacherId) {
-      return new Response("Missing teacherId", { status: 400, headers: corsHeaders });
+    if (!payload?.action) {
+      return new Response("Missing classroom action", { status: 400, headers: corsHeaders });
     }
 
-    const document = await readDocument(payload.teacherId);
+    const sessionTeacherId = await readSessionTeacherId(request);
+    if (!sessionTeacherId) {
+      return new Response("Missing classroom session", { status: 401, headers: corsHeaders });
+    }
+
+    const requestedTeacherId = parseTeacherId(payload.teacherId);
+    if (requestedTeacherId && requestedTeacherId !== sessionTeacherId) {
+      return new Response("Teacher mismatch for active session", {
+        status: 403,
+        headers: corsHeaders,
+      });
+    }
+
+    const document = await readDocument(sessionTeacherId);
     if (payload.action === "load") {
-      return respond(document);
+      return respond(document, corsHeaders);
     }
 
-    const action = mapAction(payload);
+    const action = mapAction(payload, sessionTeacherId);
     if (!action) {
       return new Response("Unknown classroom action", { status: 400, headers: corsHeaders });
     }
 
     const updated = applyClassroomAction(document, action);
-    await writeDocument(payload.teacherId, updated);
-    return respond(updated);
+    await writeDocument(sessionTeacherId, updated);
+    return respond(updated, corsHeaders);
   } catch (error) {
     console.error("[Classroom] handler error", error);
     const message = error instanceof Error ? error.message : "Unexpected error";
@@ -84,24 +97,27 @@ const writeDocument = async (teacherId: string, document: ClassroomDocument) => 
   await kv.set(keyForTeacher(teacherId), JSON.stringify(document));
 };
 
-const mapAction = (request: ClassroomRequest): ClassroomAction | null => {
+const mapAction = (
+  request: ClassroomRequest,
+  teacherId: string
+): ClassroomAction | null => {
   switch (request.action) {
     case "createClass":
-      return { type: "createClass", teacherId: request.teacherId, payload: request.payload };
+      return { type: "createClass", teacherId, payload: request.payload };
     case "addStudent":
-      return { type: "addStudent", teacherId: request.teacherId, payload: request.payload };
+      return { type: "addStudent", teacherId, payload: request.payload };
     case "createAssignment":
-      return { type: "createAssignment", teacherId: request.teacherId, payload: request.payload };
+      return { type: "createAssignment", teacherId, payload: request.payload };
     case "recordProgress":
-      return { type: "recordProgress", teacherId: request.teacherId, payload: request.payload };
+      return { type: "recordProgress", teacherId, payload: request.payload };
     case "refreshAnalytics":
-      return { type: "refreshAnalytics", teacherId: request.teacherId, payload: request.payload };
+      return { type: "refreshAnalytics", teacherId, payload: request.payload };
     default:
       return null;
   }
 };
 
-const respond = (document: ClassroomDocument) =>
+const respond = (document: ClassroomDocument, corsHeaders: Record<string, string>) =>
   new Response(JSON.stringify(document), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
