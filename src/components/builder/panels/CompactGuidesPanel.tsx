@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import WordMark from "../../WordMark";
+import BrandSignature from "../../BrandSignature";
 import type { GuideWorkflowId } from "../types";
 import "../../../styles/compact-guides.css";
 
@@ -254,7 +254,7 @@ export function CompactGuidesPanel({
     <div className={`compact-guides-panel${isOpen ? " open" : ""}`}>
       <div className="compact-guides-header">
         <div className="compact-guides-brand" aria-hidden="true">
-          <WordMark size="sm" decorative />
+          <BrandSignature size="xs" decorative />
         </div>
         <button
           type="button"

@@ -38,6 +38,10 @@
   font-size: 15px;
 }
 
+.compact-guides-brand .circuitry-brand-signature {
+  gap: 6px;
+}
+
 .compact-guides-toggle {
   display: inline-flex;
   align-items: center;

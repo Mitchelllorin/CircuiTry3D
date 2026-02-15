@@ -1,3 +1,4 @@
+import BrandSignature from "./BrandSignature";
 import "../styles/section-workflow-strip.css";
 
 export type SectionWorkflowStep = {
@@ -20,9 +21,16 @@ export default function SectionWorkflowStrip({
   return (
     <section className="section-workflow-strip" aria-label={`${sectionLabel} workflow`}>
       <div className="section-workflow-strip__header">
-        <div>
-          <p className="section-workflow-strip__eyebrow">{sectionLabel} section</p>
-          <h2>{sectionLabel} Workflow</h2>
+        <div className="section-workflow-strip__title">
+          <BrandSignature
+            size="xs"
+            decorative
+            className="section-workflow-strip__brand"
+          />
+          <div>
+            <p className="section-workflow-strip__eyebrow">{sectionLabel} section</p>
+            <h2>{sectionLabel} Workflow</h2>
+          </div>
         </div>
         <span className="section-workflow-strip__count">
           {steps.length} step{steps.length === 1 ? "" : "s"}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, CSSProperties } from "react";
-import WordMark from "../WordMark";
+import BrandSignature from "../BrandSignature";
 import SectionWorkflowStrip, {
   type SectionWorkflowStep,
 } from "../SectionWorkflowStrip";
@@ -2285,7 +2285,7 @@ export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaView
     <div className="arena-page">
       <header className="arena-header">
         <div className="arena-header-left">
-          <WordMark size="md" decorative />
+          <BrandSignature size="sm" decorative className="arena-brand" />
           <div className="arena-title-group">
             <h1>Component Arena</h1>
             <p>Test and compare components side-by-side</p>

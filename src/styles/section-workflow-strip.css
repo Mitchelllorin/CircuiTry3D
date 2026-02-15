@@ -18,6 +18,19 @@
   gap: 12px;
 }
 
+.section-workflow-strip__title {
+  display: grid;
+  gap: 6px;
+}
+
+.section-workflow-strip__brand {
+  opacity: 0.94;
+}
+
+.section-workflow-strip__brand .circuitry-brandmark__img {
+  filter: drop-shadow(0 8px 18px rgba(136, 204, 255, 0.24));
+}
+
 .section-workflow-strip__eyebrow {
   margin: 0 0 4px;
   font-size: 11px;

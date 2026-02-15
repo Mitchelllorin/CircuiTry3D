@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { TroubleshootingProblem } from "../../../data/troubleshootingProblems";
 import TroubleshootCircuitDiagram from "../../troubleshoot/TroubleshootCircuitDiagram";
-import WordMark from "../../WordMark";
+import BrandSignature from "../../BrandSignature";
 import "../../../styles/compact-troubleshoot.css";
 
 type CompactTroubleshootPanelProps = {
@@ -68,7 +68,7 @@ export function CompactTroubleshootPanel({
     <div className={`compact-troubleshoot-panel${isOpen ? " open" : ""}`}>
       <div className="compact-troubleshoot-header">
         <div className="compact-troubleshoot-brand" aria-hidden="true">
-          <WordMark size="sm" decorative />
+          <BrandSignature size="xs" decorative />
         </div>
         <button
           type="button"
