@@ -7,7 +7,6 @@ export default function Arena() {
   return (
     <ArenaView
       variant="page"
-      onNavigateBack={() => navigate(-1)}
       onOpenBuilder={() => navigate("/app")}
     />
   );

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import WordMark from "../../WordMark";
+import BrandSignature from "../../BrandSignature";
 import type { GuideWorkflowId } from "../types";
 import "../../../styles/compact-guides.css";
 
@@ -23,7 +23,6 @@ type CompactGuidesPanelProps = {
   isOpen: boolean;
   activeGuide: GuideWorkflowId;
   onToggle: () => void;
-  onExitMode: () => void;
   onSelectGuide: (guide: GuideWorkflowId) => void;
   onLaunchInteractiveTutorial: () => void;
   onOpenPracticeWorksheet: () => void;
@@ -174,7 +173,6 @@ export function CompactGuidesPanel({
   isOpen,
   activeGuide,
   onToggle,
-  onExitMode,
   onSelectGuide,
   onLaunchInteractiveTutorial,
   onOpenPracticeWorksheet,
@@ -256,7 +254,7 @@ export function CompactGuidesPanel({
     <div className={`compact-guides-panel${isOpen ? " open" : ""}`}>
       <div className="compact-guides-header">
         <div className="compact-guides-brand" aria-hidden="true">
-          <WordMark size="sm" decorative />
+          <BrandSignature size="xs" decorative />
         </div>
         <button
           type="button"
@@ -269,15 +267,6 @@ export function CompactGuidesPanel({
             {isComplete ? `${activeWorkflow.label} Complete` : activeWorkflow.label}
           </span>
         </button>
-        <div className="compact-guides-header-actions">
-          <button
-            type="button"
-            className="compact-guides-exit-btn"
-            onClick={onExitMode}
-          >
-            Exit Mode
-          </button>
-        </div>
       </div>
 
       {isOpen && (

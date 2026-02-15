@@ -1,17 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, CSSProperties } from "react";
-import WordMark from "../WordMark";
+import BrandSignature from "../BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../SectionWorkflowStrip";
 import "../../styles/arena.css";
 import { Component3DViewer } from "./Component3DViewer";
 
 type ArenaViewProps = {
   variant?: "page" | "embedded";
-  onNavigateBack?: () => void;
   onOpenBuilder?: () => void;
 };
 
 const ARENA_STORAGE_KEY = "circuiTry3d.arena.import";
 const DEFAULT_STATUS = "Bring in your latest circuit to drill components.";
+const ARENA_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "arena-import",
+    title: "Load a circuit snapshot",
+    detail:
+      "Import components from Builder, clipboard, sample packs, or JSON before running tests.",
+  },
+  {
+    id: "arena-configure",
+    title: "Select battle conditions",
+    detail:
+      "Pick components, choose metrics, and set an environmental scenario to define the test workflow.",
+  },
+  {
+    id: "arena-evaluate",
+    title: "Run comparison and review",
+    detail:
+      "Execute the battle and compare telemetry changes to decide which component profile performs better.",
+  },
+];
 
 type ArenaMetrics = {
   voltage: number | null;
@@ -1313,13 +1335,8 @@ function formatTimestamp(timestamp?: number): string {
   }
 }
 
-export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuilder }: ArenaViewProps) {
+export default function ArenaView({ variant = "page", onOpenBuilder }: ArenaViewProps) {
   const isEmbedded = variant === "embedded";
-  const handleBackClick = useCallback(() => {
-    if (typeof onNavigateBack === "function") {
-      onNavigateBack();
-    }
-  }, [onNavigateBack]);
   const handleOpenBuilderClick = useCallback(() => {
     if (typeof onOpenBuilder === "function") {
       onOpenBuilder();
@@ -2268,12 +2285,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     <div className="arena-page">
       <header className="arena-header">
         <div className="arena-header-left">
-          {!isEmbedded && (
-            <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
-              ← Back
-            </button>
-          )}
-          <WordMark size="md" decorative />
+          <BrandSignature size="sm" decorative className="arena-brand" />
           <div className="arena-title-group">
             <h1>Component Arena</h1>
             <p>Test and compare components side-by-side</p>
@@ -2287,6 +2299,16 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
           ) : null}
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Arena"
+        steps={ARENA_WORKFLOW_STEPS}
+        syncCopy={
+          isEmbedded
+            ? "Use the top navigation bar to switch between Arena, Build, Practice, and other workspace sections."
+            : "Use the top navigation bar to move between Arena, Build, Practice, and the rest of the app workflow."
+        }
+      />
 
       <div className="arena-body">
 

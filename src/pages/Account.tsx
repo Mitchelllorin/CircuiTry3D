@@ -1,10 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import type { FormEvent } from "react";
 import "../styles/account.css";
 
 type Mode = "signin" | "signup" | "profile";
+const ACCOUNT_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "account-auth",
+    title: "Authenticate your account",
+    detail:
+      "Sign in or create a profile so progress, community actions, and preferences stay linked.",
+  },
+  {
+    id: "account-profile",
+    title: "Configure profile details",
+    detail:
+      "Update display name and bio to keep your collaboration identity consistent across sections.",
+  },
+  {
+    id: "account-sync",
+    title: "Continue through app workflows",
+    detail:
+      "Use the global navigation bar to move directly into Classroom, Community, Arcade, and workspace modes.",
+  },
+];
 
 export default function Account() {
   const { currentUser, loading, signIn, signUp, signOut, updateProfile } = useAuth();
@@ -140,6 +163,11 @@ export default function Account() {
           </button>
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Account"
+        steps={ACCOUNT_WORKFLOW_STEPS}
+      />
 
       {status && (
         <div className={`account-status ${status.type === "success" ? "is-success" : "is-error"}`} role="status">

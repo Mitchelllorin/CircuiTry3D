@@ -91,8 +91,8 @@ body.builder-body .arena-page {
   gap: 20px;
 }
 
-.arena-header-left .circuitry-brandmark__img {
-  width: clamp(56px, 10vw, 80px);
+.arena-header-left .arena-brand .circuitry-brandmark__img {
+  width: clamp(18px, 3vw, 24px);
   height: auto;
   filter: drop-shadow(0 10px 22px rgba(0, 245, 255, 0.3))
           drop-shadow(0 0 30px rgba(0, 245, 255, 0.2));
@@ -104,8 +104,8 @@ body.builder-body .arena-page {
   50% { filter: drop-shadow(0 10px 30px rgba(0, 245, 255, 0.5)) drop-shadow(0 0 50px rgba(0, 245, 255, 0.4)); }
 }
 
-.arena-header-left .circuitry-wordmark {
-  font-size: clamp(16px, 4.4vw, 22px);
+.arena-header-left .arena-brand .circuitry-wordmark {
+  font-size: clamp(14px, 2.8vw, 18px);
   letter-spacing: 0.12em;
   filter: drop-shadow(0 10px 22px rgba(2, 6, 23, 0.3));
 }

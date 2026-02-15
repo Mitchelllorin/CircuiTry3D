@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import pricingSource from "../data/pricing.json";
 import BrandSignature from "./BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "./SectionWorkflowStrip";
 import "../styles/pricing.css";
 
 type BillingCycleId = "monthly" | "annual";
@@ -66,6 +69,26 @@ type PricingData = {
 const pricingData = pricingSource as PricingData;
 
 const DEFAULT_CYCLE: BillingCycleId = "annual";
+const PRICING_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "pricing-compare",
+    title: "Compare plan scope",
+    detail:
+      "Review educator tiers, included features, and add-ons before selecting a package.",
+  },
+  {
+    id: "pricing-cycle",
+    title: "Set billing cadence",
+    detail:
+      "Switch monthly vs annual billing to align costs with your classroom or district cycle.",
+  },
+  {
+    id: "pricing-activate",
+    title: "Activate and launch",
+    detail:
+      "Start the sandbox or contact the team to finalize rollout and subscription onboarding.",
+  },
+];
 
 function normalizeCycle(requested: string | undefined): BillingCycleId {
   if (requested === "monthly" || requested === "annual") {
@@ -162,6 +185,11 @@ export default function PricingSection() {
 
   return (
     <section className="pricing-section" aria-labelledby="pricing-title">
+      <SectionWorkflowStrip
+        sectionLabel="Pricing"
+        steps={PRICING_WORKFLOW_STEPS}
+      />
+
       <div className="pricing-hero">
         <BrandSignature size="sm" decorative className="pricing-brand" />
         <h1 id="pricing-title">Plans &amp; Pricing</h1>

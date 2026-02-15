@@ -26,16 +26,8 @@ export function ArenaPanel({ isOpen, onClose }: ArenaPanelProps) {
         className="builder-panel-shell builder-panel-shell--arena"
         onClick={handleShellClick}
       >
-        <button
-          type="button"
-          className="builder-panel-close"
-          onClick={onClose}
-          aria-label="Close component arena"
-        >
-          X
-        </button>
         <div className="builder-panel-body builder-panel-body--arena">
-          <ArenaView variant="embedded" onNavigateBack={onClose} />
+          <ArenaView variant="embedded" />
         </div>
       </div>
     </div>

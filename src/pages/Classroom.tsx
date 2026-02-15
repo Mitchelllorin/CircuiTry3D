@@ -2,10 +2,33 @@ import { useMemo, useState } from "react";
 import practiceProblems from "../data/practiceProblems";
 import type { Classroom } from "../model/classroom";
 import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import { useClassroom } from "../context/ClassroomContext";
 import "../styles/classroom.css";
 
 const gradeLevels = ["8", "9-10", "11-12", "Higher Ed", "CTE / Makerspace"];
+const CLASSROOM_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "classroom-roster",
+    title: "Organize classes and rosters",
+    detail:
+      "Select the active class, maintain join codes, and keep learner rosters current.",
+  },
+  {
+    id: "classroom-assign",
+    title: "Schedule targeted assignments",
+    detail:
+      "Pair practice problems to due dates and notes so classroom pacing stays predictable.",
+  },
+  {
+    id: "classroom-analytics",
+    title: "Review performance signals",
+    detail:
+      "Use completion, score, and misconception analytics to tune instruction and support.",
+  },
+];
 
 const formatPercent = (value: number) => `${Math.round(value * 100)}%`;
 
@@ -149,6 +172,11 @@ export default function Classroom() {
           {error}
         </div>
       )}
+
+      <SectionWorkflowStrip
+        sectionLabel="Classroom"
+        steps={CLASSROOM_WORKFLOW_STEPS}
+      />
 
       <div className="classroom-grid">
         <section className="classroom-panel">
