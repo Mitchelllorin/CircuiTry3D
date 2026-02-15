@@ -292,10 +292,13 @@ function renderComponentThumbnail(
       preserveDrawingBuffer: true,
       powerPreference: isMobile() ? 'low-power' : 'default',
     });
-    if ("outputColorSpace" in renderer && (THREE as any).SRGBColorSpace) {
-      (renderer as any).outputColorSpace = (THREE as any).SRGBColorSpace;
-    } else if ("outputEncoding" in renderer && (THREE as any).sRGBEncoding) {
-      (renderer as any).outputEncoding = (THREE as any).sRGBEncoding;
+    const threeCompat = THREE as unknown as Record<string, unknown>;
+    const srgbColorSpace = threeCompat["SRGBColorSpace"];
+    const legacySrgbEncoding = threeCompat["sRGBEncoding"];
+    if ("outputColorSpace" in renderer && srgbColorSpace) {
+      (renderer as any).outputColorSpace = srgbColorSpace;
+    } else if ("outputEncoding" in renderer && legacySrgbEncoding) {
+      (renderer as any).outputEncoding = legacySrgbEncoding;
     }
     if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
       (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;

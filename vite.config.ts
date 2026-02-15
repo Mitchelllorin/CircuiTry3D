@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Three.js core is intentionally large for the 3D workspace.
+    // Raise the warning threshold so expected chunk sizes don't trigger noise.
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks: {
