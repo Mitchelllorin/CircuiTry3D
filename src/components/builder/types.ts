@@ -152,6 +152,8 @@ export type BuilderToolId = "select" | "wire" | "measure";
 
 export type WorkspaceMode = "build" | "practice" | "troubleshoot" | "arena" | "learn";
 
+export type GuideWorkflowId = "help" | "tutorial" | "wire-guide";
+
 export type LegacyModeState = {
   isWireMode: boolean;
   isRotateMode: boolean;

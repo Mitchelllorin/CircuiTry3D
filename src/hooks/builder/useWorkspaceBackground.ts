@@ -207,17 +207,39 @@ export function useWorkspaceBackground() {
       workspaceBackgroundState.activeSkinId === "custom" &&
       workspaceBackgroundState.customImageDataUrl
     ) {
+      const normalizedStrength = clamp(
+        workspaceBackgroundState.customImageOpacity,
+        20,
+        100,
+      ) / 100;
+      const topScrimOpacity = clamp(0.5 - normalizedStrength * 0.2, 0.24, 0.46);
+      const bottomScrimOpacity = clamp(topScrimOpacity + 0.1, 0.3, 0.56);
+      const overlayOpacity = clamp(0.2 + normalizedStrength * 0.45, 0.28, 0.68);
       return {
-        backgroundImage: `url("${workspaceBackgroundState.customImageDataUrl}")`,
+        backgroundImage: `linear-gradient(165deg, rgba(4, 12, 30, ${topScrimOpacity}), rgba(4, 12, 30, ${bottomScrimOpacity})), url("${workspaceBackgroundState.customImageDataUrl}")`,
+        backgroundSize: "cover, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
         mixBlendMode: "normal",
-        opacity: clamp(workspaceBackgroundState.customImageOpacity, 20, 100) / 100,
+        opacity: overlayOpacity,
+      };
+    }
+
+    if (activePreset.overlay === "none") {
+      return {
+        backgroundImage: "none",
+        mixBlendMode: "normal",
+        opacity: 0,
       };
     }
 
     return {
       backgroundImage: activePreset.overlay,
-      mixBlendMode: activePreset.blendMode,
-      opacity: activePreset.opacity,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      mixBlendMode: "normal",
+      opacity: clamp(activePreset.opacity + 0.1, 0.25, 0.75),
     };
   }, [activePreset, workspaceBackgroundState]);
 

@@ -19,6 +19,7 @@ import { getSchematicSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTroubleshootPanel";
+import { CompactGuidesPanel } from "../components/builder/panels/CompactGuidesPanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
 import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
@@ -39,8 +40,6 @@ import "../styles/circuit-storage.css";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
-  findPracticeProblemByPreset,
-  getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import troubleshootingProblems, {
   getAnalyzeCircuitResult,
@@ -53,16 +52,13 @@ import type {
   ComponentAction,
   BuilderToolId,
   WorkspaceMode,
+  GuideWorkflowId,
   LegacyModeState,
   QuickAction,
   HelpSection,
-  HelpLegendItem,
   HelpModalView,
-  HelpEntry,
-  PanelAction,
   SettingsItem,
   LogoNumericSettingKey,
-  PracticeScenario,
   PracticeWorksheetStatus,
 } from "../components/builder/types";
 import {
@@ -72,10 +68,7 @@ import {
   CURRENT_MODE_ACTIONS,
   VIEW_CONTROL_ACTIONS,
   SETTINGS_ITEMS,
-  PRACTICE_SCENARIOS,
-  PRACTICE_ACTIONS,
   WIRE_LEGEND,
-  HELP_ENTRIES,
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
@@ -887,6 +880,10 @@ export default function Builder() {
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
   const [isTroubleshootWorkspaceMode, setTroubleshootWorkspaceMode] =
     useState(false);
+  const [isGuidesWorkspaceMode, setGuidesWorkspaceMode] = useState(false);
+  const [isGuidesPanelOpen, setGuidesPanelOpen] = useState(false);
+  const [activeGuideWorkflow, setActiveGuideWorkflow] =
+    useState<GuideWorkflowId>("help");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
@@ -969,6 +966,21 @@ export default function Builder() {
     if (
       workspaceMode === "troubleshoot" ||
       globalModeContext.workspaceMode === "troubleshoot"
+    ) {
+      setWorkspaceModeWithGlobalSync("build");
+    }
+  }, [
+    globalModeContext.workspaceMode,
+    setWorkspaceModeWithGlobalSync,
+    workspaceMode,
+  ]);
+
+  const exitGuidesMode = useCallback(() => {
+    setGuidesPanelOpen(false);
+    setGuidesWorkspaceMode(false);
+    if (
+      workspaceMode === "learn" ||
+      globalModeContext.workspaceMode === "learn"
     ) {
       setWorkspaceModeWithGlobalSync("build");
     }
@@ -1121,11 +1133,7 @@ export default function Builder() {
     helpSectionRefs,
     isHelpOpen,
     setHelpOpen,
-    requestedHelpSection,
-    setRequestedHelpSection,
     helpView,
-    setHelpView,
-    openHelpWithSection,
     openHelpWithView,
   } = useHelpModal();
 
@@ -1310,15 +1318,37 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const openHelpCenter = useCallback(
-    (view: HelpModalView = "overview", sectionTitle?: string) => {
-      if (view === "overview" && sectionTitle) {
-        openHelpWithSection(sectionTitle);
-      } else {
-        openHelpWithView(view);
-      }
+  const openGuidesWorkspace = useCallback(
+    (workflow: GuideWorkflowId = "help") => {
+      setActiveGuideWorkflow(workflow);
+      setWorkspaceModeWithGlobalSync("learn");
+      setGuidesWorkspaceMode(true);
+      setGuidesPanelOpen(true);
+      setPracticeWorkspaceMode(false);
+      setCompactWorksheetOpen(false);
+      setTroubleshootWorkspaceMode(false);
+      setTroubleshootPanelOpen(false);
+      setTroubleshootStatus(null);
+      setTroubleshootCheckPending(false);
+      setTroubleshootPendingCheckProblemId(null);
+      setArenaPanelOpen(false);
+      setCircuitLocked(false);
+      setHelpOpen(false);
     },
-    [openHelpWithSection, openHelpWithView],
+    [setHelpOpen, setWorkspaceModeWithGlobalSync],
+  );
+
+  const openHelpCenter = useCallback(
+    (view: HelpModalView = "overview", _sectionTitle?: string) => {
+      if (view === "overview" || view === "tutorial" || view === "wire-guide") {
+        const workflow: GuideWorkflowId =
+          view === "tutorial" || view === "wire-guide" ? view : "help";
+        openGuidesWorkspace(workflow);
+        return;
+      }
+      openHelpWithView(view);
+    },
+    [openGuidesWorkspace, openHelpWithView],
   );
 
   const assignPracticeProblem = useCallback(
@@ -1357,8 +1387,11 @@ export default function Builder() {
       setCompactWorksheetOpen(true);
       setTroubleshootWorkspaceMode(false);
       setTroubleshootPanelOpen(false);
+      setGuidesWorkspaceMode(false);
+      setGuidesPanelOpen(false);
       setCircuitLocked(true);
       setArenaPanelOpen(false);
+      setHelpOpen(false);
     },
     [
       activePracticeProblemId,
@@ -1395,11 +1428,14 @@ export default function Builder() {
       setTroubleshootPanelOpen(true);
       setPracticeWorkspaceMode(false);
       setCompactWorksheetOpen(false);
+      setGuidesWorkspaceMode(false);
+      setGuidesPanelOpen(false);
       setArenaPanelOpen(false);
       setTroubleshootStatus(null);
       setTroubleshootCheckPending(false);
       setTroubleshootPendingCheckProblemId(null);
       setCircuitLocked(shouldLock);
+      setHelpOpen(false);
       triggerBuilderAction("load-preset", { preset: nextProblem.preset });
     },
     [
@@ -1420,21 +1456,20 @@ export default function Builder() {
         setWorkspaceMode("build");
         setPracticeWorkspaceMode(false);
         setTroubleshootWorkspaceMode(false);
+        setGuidesWorkspaceMode(false);
         setCompactWorksheetOpen(false);
+        setGuidesPanelOpen(false);
         setCircuitLocked(false);
         setArenaPanelOpen(false);
         setTroubleshootPanelOpen(false);
         setTroubleshootStatus(null);
+        setHelpOpen(false);
       } else if (pendingMode === "practice") {
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
         openArenaWorkspace({ forceSync: true });
       } else if (pendingMode === "learn") {
-        setWorkspaceMode("learn");
-        setTroubleshootWorkspaceMode(false);
-        setTroubleshootPanelOpen(false);
-        setCircuitLocked(false);
-        openHelpCenter("overview");
+        openGuidesWorkspace("help");
       } else if (pendingMode === "troubleshoot") {
         openTroubleshootWorkspace();
       }
@@ -1448,10 +1483,10 @@ export default function Builder() {
     openPracticeWorkspace,
     openTroubleshootWorkspace,
     openArenaWorkspace,
-    openHelpCenter,
+    openGuidesWorkspace,
     globalModeContext,
   ]);
-
+  
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
@@ -1489,7 +1524,6 @@ export default function Builder() {
     }
     openArenaWorkspace();
   }, [lastArenaExport, openArenaWorkspace]);
-
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
   }, []);
@@ -1669,40 +1703,10 @@ export default function Builder() {
     }
   }, [arenaExportStatus, arenaExportError, lastArenaExport]);
 
-  const practiceWorksheetMessage = useMemo(() => {
-    const currentId =
-      activePracticeProblemId ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null;
-    if (!currentId) {
-      return "Select a practice problem to start the guided worksheet.";
-    }
-
-    const problem = findPracticeProblemById(currentId);
-    if (!problem) {
-      return "Select a practice problem to start the guided worksheet.";
-    }
-
-    if (
-      practiceWorksheetState?.problemId === problem.id &&
-      practiceWorksheetState.complete
-    ) {
-      return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
-    }
-
-    return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
-  }, [activePracticeProblemId, practiceWorksheetState]);
-  const isPracticeWorksheetComplete =
-    Boolean(
-      practiceWorksheetState &&
-        activePracticeProblemId &&
-        practiceWorksheetState.problemId === activePracticeProblemId &&
-        practiceWorksheetState.complete,
-    );
-  const isArenaSyncing = arenaExportStatus === "exporting";
-  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
-
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
     isTroubleshootWorkspaceMode && isTroubleshootPanelOpen;
+  const isGuidesVisible = isGuidesWorkspaceMode && isGuidesPanelOpen;
   const isOverlayActive =
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
@@ -1717,14 +1721,25 @@ export default function Builder() {
     isActiveCircuitBuildMode &&
     !isWorksheetVisible &&
     !isTroubleshootVisible &&
+    !isGuidesVisible &&
     !isSettingsPanelOpen &&
     !isOverlayActive;
 
   useEffect(() => {
-    if (!isActiveCircuitBuildMode || isWorksheetVisible || isTroubleshootVisible) {
+    if (
+      !isActiveCircuitBuildMode ||
+      isWorksheetVisible ||
+      isTroubleshootVisible ||
+      isGuidesVisible
+    ) {
       setSettingsPanelOpen(false);
     }
-  }, [isActiveCircuitBuildMode, isTroubleshootVisible, isWorksheetVisible]);
+  }, [
+    isActiveCircuitBuildMode,
+    isGuidesVisible,
+    isTroubleshootVisible,
+    isWorksheetVisible,
+  ]);
 
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
@@ -2419,92 +2434,6 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Practice</span>
-              <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {practiceWorksheetMessage}
-                </div>
-                {PRACTICE_ACTIONS.map((action) => {
-                  const isOpenArenaAction = action.action === "open-arena";
-                  const actionDisabled =
-                    controlsDisabled ||
-                    (isOpenArenaAction && isArenaSyncing);
-                  const actionTitle = controlsDisabled
-                    ? controlDisabledTitle
-                    : isOpenArenaAction && isArenaSyncing
-                      ? "Preparing Component Arena export…"
-                      : action.description;
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-chip"
-                      onClick={() => handlePracticeAction(action)}
-                      disabled={actionDisabled}
-                      aria-disabled={actionDisabled}
-                      title={actionTitle}
-                    >
-                      <span className="slider-chip-label">{action.label}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => openPracticeWorkspace()}
-                  title={practiceWorksheetMessage}
-                  data-complete={isPracticeWorksheetComplete ? "true" : undefined}
-                >
-                  <span className="slider-chip-label">Practice Worksheets</span>
-                </button>
-                {PRACTICE_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => {
-                      const problem = scenario.problemId
-                        ? findPracticeProblemById(scenario.problemId)
-                        : findPracticeProblemByPreset(scenario.preset);
-                      openPracticeWorkspace(problem, scenario.preset);
-                    }}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={
-                      controlsDisabled ? controlDisabledTitle : scenario.question
-                    }
-                  >
-                    <span className="slider-chip-label">{scenario.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openLastArenaSession}
-                  disabled={!canOpenLastArena}
-                  aria-disabled={!canOpenLastArena}
-                  title={
-                    canOpenLastArena
-                      ? "Open the most recent Component Arena export"
-                      : "Run a Component Arena export first"
-                  }
-                >
-                  <span className="slider-chip-label">Open Last Arena Run</span>
-                </button>
-              </div>
-            </div>
-            <div className="slider-section">
               <span className="slider-heading">Environmental Conditions</span>
               <div className="menu-track menu-track-chips">
                 <div
@@ -2594,22 +2523,71 @@ export default function Builder() {
                 <button
                   type="button"
                   className="slider-chip"
-                  onClick={() => setInteractiveTutorialOpen(true)}
-                  title="Start the interactive tutorial (battery → resistor → wire → simulate)"
+                  onClick={() => openGuidesWorkspace("help")}
+                  data-active={
+                    isGuidesWorkspaceMode && activeGuideWorkflow === "help"
+                      ? "true"
+                      : undefined
+                  }
+                  title="Open the Help workflow aligned with the standard section model."
                 >
-                  <span className="slider-chip-label">Interactive Tutorial</span>
+                  <span className="slider-chip-label">Help Workflow</span>
                 </button>
-                {HELP_ENTRIES.map((entry) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => openHelpCenter(entry.view)}
-                    title={entry.description}
-                  >
-                    <span className="slider-chip-label">{entry.label}</span>
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => openGuidesWorkspace("tutorial")}
+                  data-active={
+                    isGuidesWorkspaceMode && activeGuideWorkflow === "tutorial"
+                      ? "true"
+                      : undefined
+                  }
+                  title="Open the Tutorial workflow with sequenced build steps."
+                >
+                  <span className="slider-chip-label">Tutorial Workflow</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => openGuidesWorkspace("wire-guide")}
+                  data-active={
+                    isGuidesWorkspaceMode && activeGuideWorkflow === "wire-guide"
+                      ? "true"
+                      : undefined
+                  }
+                  title="Open the W.I.R.E. workflow for worksheet-first solving."
+                >
+                  <span className="slider-chip-label">W.I.R.E. Workflow</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => {
+                    openGuidesWorkspace("tutorial");
+                    setInteractiveTutorialOpen(true);
+                  }}
+                  title="Start the interactive tutorial (battery -> resistor -> wire -> simulate)"
+                >
+                  <span className="slider-chip-label">
+                    Launch Interactive Tutorial
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => openHelpCenter("shortcuts")}
+                  title="Open the keyboard and gesture shortcuts reference."
+                >
+                  <span className="slider-chip-label">Keyboard Shortcuts</span>
+                </button>
+                <button
+                  type="button"
+                  className="slider-chip"
+                  onClick={() => openHelpCenter("about")}
+                  title="Open feature notes and platform details."
+                >
+                  <span className="slider-chip-label">About CircuiTry3D</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2899,6 +2877,28 @@ export default function Builder() {
               ? handleUnlockTroubleshootEditing
               : undefined
           }
+        />
+      )}
+
+      {isGuidesWorkspaceMode && (
+        <CompactGuidesPanel
+          isOpen={isGuidesPanelOpen}
+          activeGuide={activeGuideWorkflow}
+          onToggle={() => setGuidesPanelOpen(!isGuidesPanelOpen)}
+          onExitMode={exitGuidesMode}
+          onSelectGuide={(guide) => {
+            setActiveGuideWorkflow(guide);
+            setWorkspaceModeWithGlobalSync("learn");
+            setGuidesWorkspaceMode(true);
+            setGuidesPanelOpen(true);
+          }}
+          onLaunchInteractiveTutorial={() => {
+            setActiveGuideWorkflow("tutorial");
+            setInteractiveTutorialOpen(true);
+          }}
+          onOpenPracticeWorksheet={() => openPracticeWorkspace()}
+          onOpenShortcutsReference={() => openHelpCenter("shortcuts")}
+          onOpenAboutReference={() => openHelpCenter("about")}
         />
       )}
 
