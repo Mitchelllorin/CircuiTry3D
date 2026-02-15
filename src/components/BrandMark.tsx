@@ -1,4 +1,5 @@
 import circuitLogo from "../assets/circuit-logo.svg";
+import { APP_BRAND_NAME } from "../constants/branding";
 
 type BrandMarkSize = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -24,7 +25,7 @@ export default function BrandMark({
   withWordmark = false,
   className,
   imgClassName,
-  label = "CircuiTry3D",
+  label = APP_BRAND_NAME,
   decorative = false,
 }: BrandMarkProps) {
   const pixelSize = SIZE_MAP[size] ?? SIZE_MAP.md;
