@@ -48,7 +48,6 @@ import troubleshootingProblems, {
 } from "../data/troubleshootingProblems";
 import type { PracticeProblem } from "../model/practice";
 import type {
-  BuilderInvokeAction,
   ComponentAction,
   BuilderToolId,
   WorkspaceMode,
@@ -57,8 +56,6 @@ import type {
   QuickAction,
   HelpSection,
   HelpModalView,
-  SettingsItem,
-  LogoNumericSettingKey,
   PracticeWorksheetStatus,
 } from "../components/builder/types";
 import {
@@ -874,7 +871,7 @@ export default function Builder() {
   const [activePracticeProblemId, setActivePracticeProblemId] = useState<
     string | null
   >(DEFAULT_PRACTICE_PROBLEM?.id ?? null);
-  const [practiceWorksheetState, setPracticeWorksheetState] =
+  const [, setPracticeWorksheetState] =
     useState<PracticeWorksheetStatus | null>(null);
   const [isCompactWorksheetOpen, setCompactWorksheetOpen] = useState(false);
   const [isPracticeWorkspaceMode, setPracticeWorkspaceMode] = useState(false);
@@ -887,7 +884,7 @@ export default function Builder() {
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
-  const [modeBarScrollState, setModeBarScrollState] = useState<{
+  const [, setModeBarScrollState] = useState<{
     canScrollLeft: boolean;
     canScrollRight: boolean;
   }>({ canScrollLeft: false, canScrollRight: false });
@@ -1031,8 +1028,6 @@ export default function Builder() {
     iframeRef,
     isFrameReady,
     arenaExportStatus,
-    arenaExportError,
-    lastArenaExport,
     circuitState,
     lastSimulationAt,
     lastSimulation,
@@ -1604,43 +1599,6 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
-  const arenaStatusMessage = useMemo(() => {
-    switch (arenaExportStatus) {
-      case "exporting":
-        return "Exporting current build to Component Arena...";
-      case "ready": {
-        if (!lastArenaExport) {
-          return "Component Arena export is ready.";
-        }
-        const exportedTime = lastArenaExport.exportedAt
-          ? new Date(lastArenaExport.exportedAt)
-          : null;
-        const formattedTime =
-          exportedTime && !Number.isNaN(exportedTime.getTime())
-            ? exportedTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : null;
-        const componentLabel =
-          typeof lastArenaExport.componentCount === "number"
-            ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-            : null;
-        if (componentLabel && formattedTime) {
-          return `Last arena export: ${componentLabel} - ${formattedTime}`;
-        }
-        if (componentLabel) {
-          return `Last arena export: ${componentLabel}`;
-        }
-        return "Component Arena export is ready.";
-      }
-      case "error":
-        return arenaExportError ?? "Component Arena export failed.";
-      default:
-        return "Send this build to the Component Arena for advanced testing.";
-    }
-  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
-
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
     isTroubleshootWorkspaceMode && isTroubleshootPanelOpen;
@@ -1811,15 +1769,6 @@ export default function Builder() {
     "Unknown";
   const currentFlowLabel =
     modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
-  const isWireToolActive = modeState.isWireMode;
-  const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
-  const wireRoutingTitle = isWireToolActive
-    ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
-    : `Wire tool inactive - routing preset is ${wireRoutingLabel}.`;
-  const currentFlowTitle = isCurrentFlowSolid
-    ? "Current flow visualisation active."
-    : "Electron flow visualisation active.";
-
   const wireMetrics = useMemo(() => {
     const volts = circuitState?.metrics.voltage ?? circuitBaseMetrics.voltage;
     const amps = circuitState?.metrics.current ?? circuitBaseMetrics.current;
