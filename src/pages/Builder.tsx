@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
@@ -27,6 +28,11 @@ import {
   getDefaultScenario,
 } from "../data/environmentalScenarios";
 import ArenaView from "../components/arena/ArenaView";
+import ArcadePage from "./Arcade";
+import ClassroomPage from "./Classroom";
+import CommunityPage from "./Community";
+import AccountPage from "./Account";
+import PricingPage from "./Pricing";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
@@ -72,6 +78,10 @@ import {
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
+import {
+  isWorkspaceSectionId,
+  type WorkspaceSectionId,
+} from "../components/workspaceSections";
 import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 
 const HELP_SECTIONS: HelpSection[] = [
@@ -152,6 +162,15 @@ const getNextPracticeProblem = (currentId: string | null) => {
 
   return pool[(index + 1) % pool.length] ?? null;
 };
+
+const WORKSPACE_SECTION_TITLE: Record<WorkspaceSectionId, string> = {
+  arcade: "Arcade",
+  classroom: "Classroom",
+  community: "Community",
+  account: "Account",
+  pricing: "Pricing",
+};
+
 const TUTORIAL_SECTIONS: HelpSection[] = [
   {
     title: "Getting Started",
@@ -820,6 +839,8 @@ function ComponentLibraryCard({
 }
 
 export default function Builder() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
@@ -827,6 +848,10 @@ export default function Builder() {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   }, []);
+  const activeWorkspaceSection = useMemo<WorkspaceSectionId | null>(() => {
+    const sectionParam = new URLSearchParams(location.search).get("section");
+    return isWorkspaceSectionId(sectionParam) ? sectionParam : null;
+  }, [location.search]);
 
   const [activeQuickTool, setActiveQuickTool] =
     useState<BuilderToolId>("select");
@@ -1462,6 +1487,59 @@ export default function Builder() {
     globalModeContext,
   ]);
 
+  const closeWorkspaceSectionOverlay = useCallback(() => {
+    navigate("/app");
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!activeWorkspaceSection) {
+      return;
+    }
+
+    if (workspaceMode !== "build") {
+      setWorkspaceModeWithGlobalSync("build");
+    }
+
+    setPracticeWorkspaceMode(false);
+    setCompactWorksheetOpen(false);
+    setTroubleshootWorkspaceMode(false);
+    setTroubleshootPanelOpen(false);
+    setGuidesWorkspaceMode(false);
+    setGuidesPanelOpen(false);
+    setArenaPanelOpen(false);
+    setEnvironmentalPanelOpen(false);
+    setWireLibraryPanelOpen(false);
+    setTroubleshootStatus(null);
+    setTroubleshootCheckPending(false);
+    setTroubleshootPendingCheckProblemId(null);
+    setCircuitLocked(false);
+    setHelpOpen(false);
+  }, [
+    activeWorkspaceSection,
+    setWorkspaceModeWithGlobalSync,
+    workspaceMode,
+  ]);
+
+  const activeWorkspaceSectionTitle = activeWorkspaceSection
+    ? WORKSPACE_SECTION_TITLE[activeWorkspaceSection]
+    : null;
+  const activeWorkspaceSectionContent = useMemo(() => {
+    switch (activeWorkspaceSection) {
+      case "arcade":
+        return <ArcadePage />;
+      case "classroom":
+        return <ClassroomPage />;
+      case "community":
+        return <CommunityPage />;
+      case "account":
+        return <AccountPage />;
+      case "pricing":
+        return <PricingPage />;
+      default:
+        return null;
+    }
+  }, [activeWorkspaceSection]);
+
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
   }, []);
@@ -1646,6 +1724,7 @@ export default function Builder() {
     isTroubleshootWorkspaceMode && isTroubleshootPanelOpen;
   const isGuidesVisible = isGuidesWorkspaceMode && isGuidesPanelOpen;
   const isOverlayActive =
+    activeWorkspaceSection !== null ||
     isArenaPanelOpen ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
@@ -2655,6 +2734,35 @@ export default function Builder() {
               variant="embedded"
               onNavigateBack={() => setArenaPanelOpen(false)}
             />
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`builder-panel-overlay builder-panel-overlay--workspace-section${activeWorkspaceSection ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!activeWorkspaceSection}
+        onClick={closeWorkspaceSectionOverlay}
+      >
+        <div
+          className="builder-panel-shell builder-panel-shell--workspace-section"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="builder-panel-close"
+            onClick={closeWorkspaceSectionOverlay}
+            aria-label={
+              activeWorkspaceSectionTitle
+                ? `Close ${activeWorkspaceSectionTitle}`
+                : "Close workspace section"
+            }
+          >
+            X
+          </button>
+          <div className="builder-panel-body builder-panel-body--workspace-section">
+            {activeWorkspaceSectionContent}
           </div>
         </div>
       </div>
