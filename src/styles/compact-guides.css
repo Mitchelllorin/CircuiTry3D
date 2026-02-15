@@ -1,0 +1,385 @@
+.compact-guides-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1185;
+  max-height: 58vh;
+  background: rgba(10, 20, 35, 0.8);
+  border-top: 2px solid rgba(136, 204, 255, 0.35);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.58);
+  transform: translateY(calc(100% - 50px));
+  transition: transform 0.26s ease;
+}
+
+.compact-guides-panel.open {
+  transform: translateY(0);
+  z-index: 1250;
+}
+
+.compact-guides-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 0 14px;
+  background: rgba(20, 35, 55, 0.85);
+  border-bottom: 1px solid rgba(136, 204, 255, 0.22);
+}
+
+.compact-guides-brand {
+  display: flex;
+  align-items: center;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.compact-guides-brand .circuitry-wordmark {
+  font-size: 15px;
+}
+
+.compact-guides-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.compact-guides-toggle:hover,
+.compact-guides-toggle:focus-visible {
+  background: rgba(136, 204, 255, 0.1);
+  outline: none;
+}
+
+.compact-guides-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compact-guides-exit-btn {
+  border: 1px solid rgba(255, 190, 130, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 140, 70, 0.18);
+  color: rgba(255, 225, 200, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.compact-guides-exit-btn:hover,
+.compact-guides-exit-btn:focus-visible {
+  background: rgba(255, 140, 70, 0.3);
+  border-color: rgba(255, 200, 150, 0.72);
+  outline: none;
+}
+
+.compact-guides-body {
+  max-height: calc(58vh - 50px);
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: calc(24px + var(--builder-safe-area-bottom));
+  display: grid;
+  gap: 14px;
+  background: rgba(8, 18, 36, 0.84);
+}
+
+.guides-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.guides-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(206, 232, 255, 0.85);
+}
+
+.guides-select select {
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(10, 24, 48, 0.9);
+  color: rgba(228, 244, 255, 0.95);
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.guides-progress {
+  font-size: 12px;
+  color: rgba(206, 232, 255, 0.85);
+}
+
+.guides-state-chip {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 5px 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(136, 204, 255, 0.08);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.guides-state-chip.active {
+  color: rgba(255, 216, 170, 0.95);
+  border-color: rgba(255, 186, 126, 0.42);
+  background: rgba(80, 42, 16, 0.45);
+}
+
+.guides-state-chip.complete {
+  color: rgba(168, 255, 212, 0.92);
+  border-color: rgba(120, 255, 188, 0.42);
+  background: rgba(20, 72, 46, 0.42);
+}
+
+.guides-workflow-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  background: rgba(14, 30, 58, 0.5);
+}
+
+.guides-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.guides-title-row h3 {
+  margin: 0;
+  font-size: 16px;
+  color: rgba(225, 243, 255, 0.96);
+}
+
+.guides-step-counter {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(170, 220, 255, 0.9);
+}
+
+.guides-description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(225, 241, 255, 0.86);
+}
+
+.guides-next-step {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+  background: rgba(10, 24, 48, 0.75);
+}
+
+.guides-next-step strong {
+  font-size: 12px;
+  color: rgba(180, 232, 255, 0.95);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.guides-next-step span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(216, 236, 255, 0.9);
+}
+
+.guides-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.guides-step-btn {
+  width: 100%;
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(12, 34, 62, 0.8);
+  color: inherit;
+  text-align: left;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.guides-step-btn:hover,
+.guides-step-btn:focus-visible {
+  background: rgba(30, 64, 108, 0.9);
+  border-color: rgba(160, 220, 255, 0.75);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.guides-step-btn.complete {
+  border-color: rgba(120, 255, 188, 0.5);
+  background: rgba(24, 84, 56, 0.78);
+}
+
+.guides-step-check {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(136, 204, 255, 0.45);
+  background: rgba(12, 24, 46, 0.84);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(206, 232, 255, 0.95);
+  line-height: 1;
+}
+
+.guides-step-btn.complete .guides-step-check {
+  border-color: rgba(120, 255, 188, 0.8);
+  background: rgba(26, 92, 62, 0.95);
+  color: rgba(188, 255, 224, 0.95);
+}
+
+.guides-step-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.guides-step-copy strong {
+  font-size: 12px;
+  color: rgba(232, 244, 255, 0.95);
+}
+
+.guides-step-copy span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(204, 230, 255, 0.85);
+}
+
+.guides-status {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  background: rgba(10, 24, 48, 0.75);
+  color: rgba(222, 240, 255, 0.92);
+}
+
+.guides-status--active {
+  border-color: rgba(255, 186, 126, 0.44);
+  background: rgba(80, 42, 16, 0.45);
+  color: rgba(255, 224, 194, 0.95);
+}
+
+.guides-status--complete {
+  border-color: rgba(120, 255, 188, 0.44);
+  background: rgba(20, 72, 46, 0.42);
+  color: rgba(183, 255, 221, 0.95);
+}
+
+.guides-workspace-sync {
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(16, 32, 58, 0.68);
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.guides-workspace-sync strong {
+  font-size: 12px;
+  color: rgba(168, 220, 255, 0.95);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.guides-workspace-sync span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(216, 236, 255, 0.9);
+}
+
+.guides-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.guides-action-btn {
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(12, 34, 62, 0.8);
+  color: rgba(228, 244, 255, 0.95);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.guides-action-btn:hover,
+.guides-action-btn:focus-visible {
+  background: rgba(30, 64, 108, 0.9);
+  border-color: rgba(160, 220, 255, 0.75);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.guides-action-btn:disabled,
+.guides-action-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.guides-action-btn--primary {
+  border-color: rgba(120, 255, 188, 0.5);
+  background: rgba(24, 84, 56, 0.78);
+  color: rgba(180, 255, 220, 0.95);
+}
+
+.guides-action-btn--primary:hover,
+.guides-action-btn--primary:focus-visible {
+  border-color: rgba(160, 255, 210, 0.8);
+  background: rgba(30, 100, 66, 0.92);
+}
+
+@media (max-width: 768px) {
+  .compact-guides-panel {
+    max-height: 62vh;
+  }
+
+  .compact-guides-body {
+    max-height: calc(62vh - 50px);
+    padding: 12px;
+  }
+
+  .guides-state-chip {
+    margin-left: 0;
+  }
+}
