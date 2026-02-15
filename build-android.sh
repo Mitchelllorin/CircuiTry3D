@@ -85,6 +85,9 @@ elif [ ! -f "android/local.properties" ]; then
     echo -e "${RED}Error: Android SDK location not configured.${NC}"
     echo "Set ANDROID_SDK_ROOT (or ANDROID_HOME), or create android/local.properties with:"
     echo "sdk.dir=/absolute/path/to/Android/Sdk"
+    echo ""
+    echo "Quick setup helper:"
+    echo "./scripts/setup-android-sdk.sh"
     exit 1
 fi
 

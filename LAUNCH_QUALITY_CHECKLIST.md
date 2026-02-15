@@ -66,7 +66,7 @@
 | Capacitor Android config sanity | ✅ | `capacitor.config.json` has HTTPS scheme, mixed-content disabled, splash/status bar configured. | Keep under version control; validate on release device matrix. |
 | Android manifest permissions surface | ✅ | Manifest currently requests only `INTERNET` and `ACCESS_NETWORK_STATE` (minimal footprint). | Maintain least-privilege as features evolve. |
 | Release build optimization | ⚠️ | `android/app/build.gradle` has `minifyEnabled false` for release. | Enable R8/proguard for production unless a specific blocking issue exists; test thoroughly after enabling. |
-| SDK path setup in build environment | ⚠️ | `build-android.sh` now auto-writes `android/local.properties` from `ANDROID_SDK_ROOT`/`ANDROID_HOME` when available, but this environment still lacks an installed SDK. | Install Android SDK and set env var in local/CI, then rerun `bundleRelease`. |
+| SDK path setup in build environment | ⚠️ | `build-android.sh` now auto-writes `android/local.properties` from `ANDROID_SDK_ROOT`/`ANDROID_HOME` when available; helper script `./scripts/setup-android-sdk.sh` was added to install required SDK components. | Run setup script in local/CI, export `ANDROID_SDK_ROOT`, then rerun `bundleRelease`. |
 
 **Section summary:** Configuration is generally clean, but release packaging and optimization are not yet fully launch-ready.
 
