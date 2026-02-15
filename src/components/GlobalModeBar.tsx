@@ -27,6 +27,8 @@ export function GlobalModeBar() {
   const isAccountPage = location.pathname === "/account";
   const isClassroomPage = location.pathname === "/classroom";
   const isArcadePage = location.pathname === "/arcade";
+  const isWorkspaceModeActive = (mode: WorkspaceMode) =>
+    isWorkspacePage && workspaceMode === mode;
 
   // Don't show on landing page
   if (isLandingPage) {
@@ -121,7 +123,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "build" ? "true" : undefined}
+          data-active={isWorkspaceModeActive("build") ? "true" : undefined}
           onClick={handleBuildClick}
           aria-label="Build mode"
           title="Component builder and circuit designer"
@@ -132,7 +134,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "practice" ? "true" : undefined}
+          data-active={isWorkspaceModeActive("practice") ? "true" : undefined}
           onClick={handlePracticeClick}
           aria-label="Practice mode"
           title="Guided worksheets and W.I.R.E. problems"
@@ -143,7 +145,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "troubleshoot" ? "true" : undefined}
+          data-active={isWorkspaceModeActive("troubleshoot") ? "true" : undefined}
           onClick={handleTroubleshootClick}
           aria-label="Troubleshoot mode"
           title="Fix broken circuits and restore current flow"
@@ -154,7 +156,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "arena" ? "true" : undefined}
+          data-active={isWorkspaceModeActive("arena") ? "true" : undefined}
           onClick={handleArenaClick}
           aria-label="Arena mode"
           title="Component testing and advanced simulation"
@@ -165,7 +167,7 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "learn" ? "true" : undefined}
+          data-active={isWorkspaceModeActive("learn") ? "true" : undefined}
           onClick={handleLearnClick}
           aria-label="Learn mode"
           title="Tutorials, guides, and help resources"

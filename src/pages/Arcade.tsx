@@ -1,6 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../context/GamificationContext";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
@@ -15,6 +18,26 @@ import { findPracticeProblemById } from "../data/practiceProblems";
 import "../styles/arcade.css";
 
 const formatPercent = (value: number) => `${Math.round(Math.min(100, Math.max(0, value * 100)))}%`;
+const ARCADE_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "arcade-missions",
+    title: "Review mission targets",
+    detail:
+      "Check sprint times, clean-clear bonuses, and level goals before starting a run.",
+  },
+  {
+    id: "arcade-launch",
+    title: "Launch a practice sprint",
+    detail:
+      "Jump into Practice mode directly from Arcade so gameplay stays in the same workflow loop.",
+  },
+  {
+    id: "arcade-track",
+    title: "Track leaderboard movement",
+    detail:
+      "Use performance snapshots and badges to validate progress and identify your next objective.",
+  },
+];
 
 const formatDuration = (ms?: number) => {
   const safeMs = typeof ms === "number" && Number.isFinite(ms) && ms > 0 ? ms : 0;
@@ -200,6 +223,11 @@ export default function Arcade() {
           ))}
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Arcade"
+        steps={ARCADE_WORKFLOW_STEPS}
+      />
 
       <section className="arcade-panel">
         <div className="arcade-panel-header">

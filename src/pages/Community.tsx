@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
+import SectionWorkflowStrip, {
+  type SectionWorkflowStep,
+} from "../components/SectionWorkflowStrip";
 import { useAuth } from "../context/AuthContext";
 import { useEngagement } from "../context/EngagementContext";
 import type { FormEvent } from "react";
@@ -8,6 +11,26 @@ import "../styles/community.css";
 
 const PROFILE_COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f97316", "#22d3ee", "#14b8a6", "#facc15", "#4ade80"];
 const DEFAULT_AVATAR_COLOR = PROFILE_COLORS[0];
+const COMMUNITY_WORKFLOW_STEPS: SectionWorkflowStep[] = [
+  {
+    id: "community-chat",
+    title: "Share updates in Lab Chat",
+    detail:
+      "Post short build notes and feedback requests to keep collaboration flowing.",
+  },
+  {
+    id: "community-gallery",
+    title: "Publish circuits for review",
+    detail:
+      "Upload circuit summaries with tags so other builders can discover and react quickly.",
+  },
+  {
+    id: "community-profile",
+    title: "Capture reputation signals",
+    detail:
+      "Maintain your profile and endorsements to track participation across the community workflow.",
+  },
+];
 
 const getInitials = (name?: string | null) => {
   if (!name) {
@@ -264,6 +287,11 @@ export default function Community() {
           </div>
         </div>
       </header>
+
+      <SectionWorkflowStrip
+        sectionLabel="Community"
+        steps={COMMUNITY_WORKFLOW_STEPS}
+      />
 
       <section className="community-grid">
         <article className="community-panel">

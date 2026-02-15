@@ -941,41 +941,6 @@ export default function Builder() {
     }
   }, [globalModeContext]);
 
-  const exitTroubleshootMode = useCallback(() => {
-    setTroubleshootPanelOpen(false);
-    setTroubleshootWorkspaceMode(false);
-    setTroubleshootStatus(null);
-    setTroubleshootCheckPending(false);
-    setTroubleshootPendingCheckProblemId(null);
-    setCircuitLocked(false);
-    // Ensure global mode bar stays consistent and the panel can be reopened.
-    if (
-      workspaceMode === "troubleshoot" ||
-      globalModeContext.workspaceMode === "troubleshoot"
-    ) {
-      setWorkspaceModeWithGlobalSync("build");
-    }
-  }, [
-    globalModeContext.workspaceMode,
-    setWorkspaceModeWithGlobalSync,
-    workspaceMode,
-  ]);
-
-  const exitGuidesMode = useCallback(() => {
-    setGuidesPanelOpen(false);
-    setGuidesWorkspaceMode(false);
-    if (
-      workspaceMode === "learn" ||
-      globalModeContext.workspaceMode === "learn"
-    ) {
-      setWorkspaceModeWithGlobalSync("build");
-    }
-  }, [
-    globalModeContext.workspaceMode,
-    setWorkspaceModeWithGlobalSync,
-    workspaceMode,
-  ]);
-
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
       ...previous,
@@ -1250,21 +1215,6 @@ export default function Builder() {
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
-
-  useEffect(() => {
-    if (!isArenaPanelOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isArenaPanelOpen) {
-        setArenaPanelOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isArenaPanelOpen]);
 
   // Sync circuit lock state to the iframe
   useEffect(() => {
@@ -2636,25 +2586,13 @@ export default function Builder() {
         role="dialog"
         aria-modal="true"
         aria-hidden={!isArenaPanelOpen}
-        onClick={() => setArenaPanelOpen(false)}
       >
         <div
           className="builder-panel-shell builder-panel-shell--arena"
           onClick={(event) => event.stopPropagation()}
         >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setArenaPanelOpen(false)}
-            aria-label="Close component arena"
-          >
-            X
-          </button>
           <div className="builder-panel-body builder-panel-body--arena">
-            <ArenaView
-              variant="embedded"
-              onNavigateBack={() => setArenaPanelOpen(false)}
-            />
+            <ArenaView variant="embedded" />
           </div>
         </div>
       </div>
@@ -2817,7 +2755,6 @@ export default function Builder() {
           isFrameReady={isFrameReady}
           isCircuitLocked={isCircuitLocked}
           onToggle={() => setTroubleshootPanelOpen(!isTroubleshootPanelOpen)}
-          onExitMode={exitTroubleshootMode}
           onSelectProblem={handleSelectTroubleshootProblem}
           onResetCircuit={handleResetTroubleshootProblem}
           onCheckFix={handleCheckTroubleshootFix}
@@ -2835,7 +2772,6 @@ export default function Builder() {
           isOpen={isGuidesPanelOpen}
           activeGuide={activeGuideWorkflow}
           onToggle={() => setGuidesPanelOpen(!isGuidesPanelOpen)}
-          onExitMode={exitGuidesMode}
           onSelectGuide={(guide) => {
             setActiveGuideWorkflow(guide);
             setWorkspaceModeWithGlobalSync("learn");

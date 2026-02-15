@@ -24,6 +24,10 @@
   gap: clamp(2rem, 5vw, 3.5rem);
 }
 
+.pricing-section > .section-workflow-strip {
+  width: min(100%, 72rem);
+}
+
 .pricing-hero {
   max-width: 52rem;
   text-align: center;
