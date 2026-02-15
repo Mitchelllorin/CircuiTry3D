@@ -39,8 +39,6 @@ import "../styles/circuit-storage.css";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
   findPracticeProblemById,
-  findPracticeProblemByPreset,
-  getRandomPracticeProblem,
 } from "../data/practiceProblems";
 import troubleshootingProblems, {
   getAnalyzeCircuitResult,
@@ -59,10 +57,8 @@ import type {
   HelpLegendItem,
   HelpModalView,
   HelpEntry,
-  PanelAction,
   SettingsItem,
   LogoNumericSettingKey,
-  PracticeScenario,
   PracticeWorksheetStatus,
 } from "../components/builder/types";
 import {
@@ -72,8 +68,6 @@ import {
   CURRENT_MODE_ACTIONS,
   VIEW_CONTROL_ACTIONS,
   SETTINGS_ITEMS,
-  PRACTICE_SCENARIOS,
-  PRACTICE_ACTIONS,
   WIRE_LEGEND,
   HELP_ENTRIES,
   DEFAULT_LOGO_SETTINGS,
@@ -1424,43 +1418,6 @@ export default function Builder() {
     globalModeContext,
   ]);
 
-  const handlePracticeAction = useCallback(
-    (action: PanelAction) => {
-      if (action.action === "open-arena") {
-        setArenaPanelOpen(true);
-        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
-        return;
-      }
-      if (action.action === "practice-help") {
-        openHelpCenter("overview");
-        return;
-      }
-      if (action.action === "generate-practice") {
-        triggerBuilderAction(action.action, action.data);
-        const randomProblem = getRandomPracticeProblem();
-        if (randomProblem) {
-          openPracticeWorkspace(randomProblem);
-        }
-        return;
-      }
-      triggerBuilderAction(action.action, action.data);
-    },
-    [
-      handleArenaSync,
-      openHelpCenter,
-      openPracticeWorkspace,
-      setArenaPanelOpen,
-      triggerBuilderAction,
-    ],
-  );
-
-  const openLastArenaSession = useCallback(() => {
-    if (!lastArenaExport?.sessionId) {
-      return;
-    }
-    setArenaPanelOpen(true);
-  }, [lastArenaExport, setArenaPanelOpen]);
-
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
   }, []);
@@ -1639,37 +1596,6 @@ export default function Builder() {
         return "Send this build to the Component Arena for advanced testing.";
     }
   }, [arenaExportStatus, arenaExportError, lastArenaExport]);
-
-  const practiceWorksheetMessage = useMemo(() => {
-    const currentId =
-      activePracticeProblemId ?? DEFAULT_PRACTICE_PROBLEM?.id ?? null;
-    if (!currentId) {
-      return "Select a practice problem to start the guided worksheet.";
-    }
-
-    const problem = findPracticeProblemById(currentId);
-    if (!problem) {
-      return "Select a practice problem to start the guided worksheet.";
-    }
-
-    if (
-      practiceWorksheetState?.problemId === problem.id &&
-      practiceWorksheetState.complete
-    ) {
-      return `Worksheet complete for ${problem.title}. Tap Next Problem to load the next circuit.`;
-    }
-
-    return `Complete the worksheet for ${problem.title} to unlock the next challenge.`;
-  }, [activePracticeProblemId, practiceWorksheetState]);
-  const isPracticeWorksheetComplete =
-    Boolean(
-      practiceWorksheetState &&
-        activePracticeProblemId &&
-        practiceWorksheetState.problemId === activePracticeProblemId &&
-        practiceWorksheetState.complete,
-    );
-  const isArenaSyncing = arenaExportStatus === "exporting";
-  const canOpenLastArena = Boolean(lastArenaExport?.sessionId);
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
@@ -2387,92 +2313,6 @@ export default function Builder() {
                     <span className="metric-label">{metric.label}</span>
                   </div>
                 ))}
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Practice</span>
-              <div className="menu-track menu-track-chips">
-                <div
-                  role="status"
-                  style={{
-                    fontSize: "11px",
-                    color: "rgba(136, 204, 255, 0.78)",
-                    textAlign: "center",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(136, 204, 255, 0.22)",
-                    background: "rgba(14, 30, 58, 0.48)",
-                  }}
-                >
-                  {practiceWorksheetMessage}
-                </div>
-                {PRACTICE_ACTIONS.map((action) => {
-                  const isOpenArenaAction = action.action === "open-arena";
-                  const actionDisabled =
-                    controlsDisabled ||
-                    (isOpenArenaAction && isArenaSyncing);
-                  const actionTitle = controlsDisabled
-                    ? controlDisabledTitle
-                    : isOpenArenaAction && isArenaSyncing
-                      ? "Preparing Component Arena export…"
-                      : action.description;
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-chip"
-                      onClick={() => handlePracticeAction(action)}
-                      disabled={actionDisabled}
-                      aria-disabled={actionDisabled}
-                      title={actionTitle}
-                    >
-                      <span className="slider-chip-label">{action.label}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => openPracticeWorkspace()}
-                  title={practiceWorksheetMessage}
-                  data-complete={isPracticeWorksheetComplete ? "true" : undefined}
-                >
-                  <span className="slider-chip-label">Practice Worksheets</span>
-                </button>
-                {PRACTICE_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    className="slider-chip"
-                    onClick={() => {
-                      const problem = scenario.problemId
-                        ? findPracticeProblemById(scenario.problemId)
-                        : findPracticeProblemByPreset(scenario.preset);
-                      openPracticeWorkspace(problem, scenario.preset);
-                    }}
-                    disabled={controlsDisabled}
-                    aria-disabled={controlsDisabled}
-                    title={
-                      controlsDisabled ? controlDisabledTitle : scenario.question
-                    }
-                  >
-                    <span className="slider-chip-label">{scenario.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={openLastArenaSession}
-                  disabled={!canOpenLastArena}
-                  aria-disabled={!canOpenLastArena}
-                  title={
-                    canOpenLastArena
-                      ? "Open the most recent Component Arena export"
-                      : "Run a Component Arena export first"
-                  }
-                >
-                  <span className="slider-chip-label">Open Last Arena Run</span>
-                </button>
               </div>
             </div>
             <div className="slider-section">
