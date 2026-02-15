@@ -1,0 +1,124 @@
+.workspace-mode-panel {
+  --workspace-mode-panel-top-offset: calc(
+    84px + var(--builder-safe-area-top)
+  );
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1240;
+  height: calc(100vh - var(--workspace-mode-panel-top-offset));
+  height: calc(100dvh - var(--workspace-mode-panel-top-offset));
+  max-height: calc(100vh - var(--workspace-mode-panel-top-offset));
+  max-height: calc(100dvh - var(--workspace-mode-panel-top-offset));
+  background: rgba(10, 20, 35, 0.625);
+  border-top: 2px solid rgba(136, 204, 255, 0.36);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.58);
+  transform: translateY(calc(100% - 52px));
+  transition: transform 0.26s ease;
+}
+
+.workspace-mode-panel.open {
+  transform: translateY(0);
+}
+
+.workspace-mode-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  background: rgba(20, 35, 55, 0.82);
+  border-bottom: 1px solid rgba(136, 204, 255, 0.22);
+}
+
+.workspace-mode-panel-brand {
+  display: flex;
+  align-items: center;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.workspace-mode-panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(136, 204, 255, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.workspace-mode-panel-toggle:hover,
+.workspace-mode-panel-toggle:focus-visible {
+  background: rgba(136, 204, 255, 0.1);
+  outline: none;
+}
+
+.workspace-mode-panel-subtitle {
+  margin-left: auto;
+  font-size: 11px;
+  color: rgba(184, 220, 255, 0.78);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.workspace-mode-panel-body {
+  height: calc(100% - 52px);
+  max-height: calc(100% - 52px);
+  overflow-y: auto;
+  background: rgba(8, 18, 36, 0.72);
+}
+
+.workspace-mode-panel-content {
+  padding: 0;
+}
+
+.workspace-mode-panel-arena-status {
+  margin: 14px 16px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(12, 30, 58, 0.72);
+  color: rgba(214, 238, 255, 0.88);
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.workspace-mode-panel-content .arcade-page,
+.workspace-mode-panel-content .classroom-page,
+.workspace-mode-panel-content .community-page,
+.workspace-mode-panel-content .account-page {
+  background: transparent;
+  padding-top: 18px;
+  padding-bottom: calc(18px + var(--builder-safe-area-bottom));
+}
+
+.workspace-mode-panel-content .pricing-section {
+  background: transparent;
+  min-height: auto;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.workspace-mode-panel-content .subscription-section {
+  background: transparent;
+  padding-top: 1rem;
+  padding-bottom: calc(1.5rem + var(--builder-safe-area-bottom));
+}
+
+@media (max-width: 640px) {
+  .workspace-mode-panel {
+    --workspace-mode-panel-top-offset: calc(
+      72px + var(--builder-safe-area-top)
+    );
+  }
+
+  .workspace-mode-panel-subtitle {
+    display: none;
+  }
+}

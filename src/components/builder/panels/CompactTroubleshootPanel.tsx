@@ -15,7 +15,6 @@ type CompactTroubleshootPanelProps = {
   isFrameReady: boolean;
   isCircuitLocked: boolean;
   onToggle: () => void;
-  onExitMode: () => void;
   onSelectProblem: (problemId: string) => void;
   onResetCircuit: () => void;
   onCheckFix: () => void;
@@ -42,7 +41,6 @@ export function CompactTroubleshootPanel({
   isFrameReady,
   isCircuitLocked,
   onToggle,
-  onExitMode,
   onSelectProblem,
   onResetCircuit,
   onCheckFix,
@@ -83,15 +81,6 @@ export function CompactTroubleshootPanel({
             {isCurrentFixVerified ? "Fix Verified" : "Troubleshooting Problem"}
           </span>
         </button>
-        <div className="compact-troubleshoot-header-actions">
-          <button
-            type="button"
-            className="compact-troubleshoot-exit-btn"
-            onClick={onExitMode}
-          >
-            Exit Mode
-          </button>
-        </div>
       </div>
 
       {isOpen && (
