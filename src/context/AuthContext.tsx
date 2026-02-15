@@ -21,7 +21,7 @@ type PersistedUser = Partial<Omit<StoredUser, "passwordHash">> & {
   password?: unknown;
 };
 
-export type AuthUser = Omit<StoredUser, "password">;
+export type AuthUser = Omit<StoredUser, "passwordHash">;
 
 export type SignUpPayload = {
   email: string;
@@ -137,7 +137,7 @@ const hashPassword = async (password: string): Promise<string> => {
   const derivedBits = await globalThis.crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt: saltBytes,
+      salt: saltBytes as unknown as BufferSource,
       iterations: PASSWORD_HASH_ITERATIONS,
       hash: "SHA-256",
     },
@@ -182,7 +182,7 @@ const verifyPassword = async (inputPassword: string, storedHash: string): Promis
   const derivedBits = await globalThis.crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as unknown as BufferSource,
       iterations,
       hash: "SHA-256",
     },
@@ -210,7 +210,7 @@ const readStorage = (): AuthStorageSchema => {
     if (!parsed || typeof parsed !== "object") {
       return DEFAULT_STORAGE;
     }
-    const users = Array.isArray(parsed.users)
+    const users: StoredUser[] = Array.isArray(parsed.users)
       ? parsed.users
           .map((candidate) => {
             const user = candidate as PersistedUser;
@@ -243,17 +243,20 @@ const readStorage = (): AuthStorageSchema => {
               return null;
             }
 
-            return {
+            const normalized: StoredUser = {
               id,
               email,
               passwordHash,
               displayName,
               avatarColor,
-              bio: typeof user.bio === "string" ? user.bio : undefined,
               createdAt,
-            } satisfies StoredUser;
+            };
+            if (typeof user.bio === "string") {
+              normalized.bio = user.bio;
+            }
+            return normalized;
           })
-          .filter((user): user is StoredUser => Boolean(user))
+          .filter((user): user is StoredUser => user !== null)
       : [];
     const currentUserId = typeof parsed.currentUserId === "string" ? parsed.currentUserId : null;
     return { users: users.length > 0 ? users : DEFAULT_STORAGE.users, currentUserId };
