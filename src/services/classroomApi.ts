@@ -68,7 +68,7 @@ export const classroomApi = {
 
 async function requestWithFallback(request: ClassroomRequest, teacherId: string): Promise<ClassroomDocument> {
   try {
-    return await callFunction(request);
+    return await callFunction(request, teacherId);
   } catch (error) {
     console.warn("[ClassroomAPI] Falling back to local document", error);
     const localDoc = readLocalDocument(teacherId);
@@ -83,7 +83,7 @@ async function mutateWithFallback(
   action: ClassroomAction,
 ): Promise<ClassroomDocument> {
   try {
-    return await callFunction(request);
+    return await callFunction(request, teacherId);
   } catch (error) {
     console.warn("[ClassroomAPI] Mutation fallback", error);
     const localDoc = readLocalDocument(teacherId);
@@ -93,10 +93,13 @@ async function mutateWithFallback(
   }
 }
 
-async function callFunction(request: ClassroomRequest): Promise<ClassroomDocument> {
+async function callFunction(request: ClassroomRequest, teacherId: string): Promise<ClassroomDocument> {
   const response = await fetch(FUNCTION_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Classroom-Teacher-Id": teacherId,
+    },
     body: JSON.stringify(request),
   });
 

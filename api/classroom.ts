@@ -14,13 +14,35 @@ export const config = {
   runtime: "edge",
 };
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
+const baseCorsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, X-Classroom-Teacher-Id",
 };
 
 const keyForTeacher = (teacherId: string) => `classroom:${teacherId}`;
+const TEACHER_ID_PATTERN = /^[a-zA-Z0-9._-]{3,64}$/;
+
+const getAllowedOrigins = (): string[] => {
+  if (typeof process === "undefined" || !process?.env?.CLASSROOM_ALLOWED_ORIGINS) {
+    return [];
+  }
+  return process.env.CLASSROOM_ALLOWED_ORIGINS.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const corsHeadersForRequest = (request: Request): Record<string, string> => {
+  const headers: Record<string, string> = { ...baseCorsHeaders };
+  const requestOrigin = request.headers.get("origin");
+  const allowedOrigins = getAllowedOrigins();
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    headers["Access-Control-Allow-Origin"] = requestOrigin;
+    headers["Vary"] = "Origin";
+  }
+
+  return headers;
+};
 
 type ClassroomRequest =
   | { action: "load"; teacherId: string }
@@ -31,6 +53,7 @@ type ClassroomRequest =
   | { action: "refreshAnalytics"; teacherId: string; payload: { classId: string } };
 
 export default async function handler(request: Request): Promise<Response> {
+  const corsHeaders = corsHeadersForRequest(request);
   if (request.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
   }
@@ -44,10 +67,20 @@ export default async function handler(request: Request): Promise<Response> {
     if (!payload?.teacherId) {
       return new Response("Missing teacherId", { status: 400, headers: corsHeaders });
     }
+    if (!TEACHER_ID_PATTERN.test(payload.teacherId)) {
+      return new Response("Invalid teacherId format", { status: 400, headers: corsHeaders });
+    }
+
+    // Browser callers must provide a matching identity header.
+    // This blocks simple CSRF-style cross-origin posts and enforces a consistent caller identity.
+    const identityHeader = request.headers.get("x-classroom-teacher-id")?.trim();
+    if (!identityHeader || identityHeader !== payload.teacherId) {
+      return new Response("Unauthorized classroom request", { status: 401, headers: corsHeaders });
+    }
 
     const document = await readDocument(payload.teacherId);
     if (payload.action === "load") {
-      return respond(document);
+      return respond(document, corsHeaders);
     }
 
     const action = mapAction(payload);
@@ -57,7 +90,7 @@ export default async function handler(request: Request): Promise<Response> {
 
     const updated = applyClassroomAction(document, action);
     await writeDocument(payload.teacherId, updated);
-    return respond(updated);
+    return respond(updated, corsHeaders);
   } catch (error) {
     console.error("[Classroom] handler error", error);
     const message = error instanceof Error ? error.message : "Unexpected error";
@@ -101,7 +134,7 @@ const mapAction = (request: ClassroomRequest): ClassroomAction | null => {
   }
 };
 
-const respond = (document: ClassroomDocument) =>
+const respond = (document: ClassroomDocument, corsHeaders: Record<string, string>) =>
   new Response(JSON.stringify(document), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

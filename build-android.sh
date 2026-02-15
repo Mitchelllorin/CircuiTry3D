@@ -69,6 +69,25 @@ if [ ! -f "$KEYSTORE_PATH" ]; then
     exit 1
 fi
 
+# Ensure Android SDK location is configured for Gradle.
+# Prefer environment variables, but allow pre-existing android/local.properties.
+SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+if [ -n "$SDK_PATH" ]; then
+    if [ ! -d "$SDK_PATH" ]; then
+        echo -e "${RED}Error: Android SDK path does not exist: $SDK_PATH${NC}"
+        echo "Set ANDROID_SDK_ROOT (or ANDROID_HOME) to a valid SDK directory."
+        exit 1
+    fi
+    SDK_ESCAPED="$(printf '%s\n' "$SDK_PATH" | sed 's/\\/\\\\/g')"
+    printf "sdk.dir=%s\n" "$SDK_ESCAPED" > android/local.properties
+    echo -e "${GREEN}✓ Android SDK configured via local.properties${NC}"
+elif [ ! -f "android/local.properties" ]; then
+    echo -e "${RED}Error: Android SDK location not configured.${NC}"
+    echo "Set ANDROID_SDK_ROOT (or ANDROID_HOME), or create android/local.properties with:"
+    echo "sdk.dir=/absolute/path/to/Android/Sdk"
+    exit 1
+fi
+
 cd android
 
 # Check if gradlew exists
