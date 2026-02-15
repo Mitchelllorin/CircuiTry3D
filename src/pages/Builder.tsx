@@ -944,6 +944,20 @@ export default function Builder() {
     }
   }, [globalModeContext]);
 
+  const closeArenaWorkspace = useCallback(() => {
+    setArenaPanelOpen(false);
+    if (
+      workspaceMode === "arena" ||
+      globalModeContext.workspaceMode === "arena"
+    ) {
+      setWorkspaceModeWithGlobalSync("build");
+    }
+  }, [
+    globalModeContext.workspaceMode,
+    setWorkspaceModeWithGlobalSync,
+    workspaceMode,
+  ]);
+
   const exitTroubleshootMode = useCallback(() => {
     setTroubleshootPanelOpen(false);
     setTroubleshootWorkspaceMode(false);
@@ -1033,6 +1047,28 @@ export default function Builder() {
     onToolChange: setActiveQuickTool,
     onSimulationPulse: handleSimulationPulse,
   });
+
+  const openArenaWorkspace = useCallback(
+    (options?: { sessionName?: string; forceSync?: boolean }) => {
+      setWorkspaceModeWithGlobalSync("arena");
+      setPracticeWorkspaceMode(false);
+      setTroubleshootWorkspaceMode(false);
+      setTroubleshootPanelOpen(false);
+      setCompactWorksheetOpen(false);
+      setCircuitLocked(false);
+      setArenaPanelOpen(true);
+
+      const shouldSync =
+        options?.forceSync === true || arenaExportStatus !== "ready";
+      if (shouldSync) {
+        handleArenaSync({
+          openWindow: false,
+          sessionName: options?.sessionName,
+        });
+      }
+    },
+    [arenaExportStatus, handleArenaSync, setWorkspaceModeWithGlobalSync],
+  );
 
   useEffect(() => {
     if (!circuitState) {
@@ -1250,13 +1286,13 @@ export default function Builder() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isArenaPanelOpen) {
-        setArenaPanelOpen(false);
+        closeArenaWorkspace();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isArenaPanelOpen]);
+  }, [closeArenaWorkspace, isArenaPanelOpen]);
 
   // Sync circuit lock state to the iframe
   useEffect(() => {
@@ -1392,14 +1428,7 @@ export default function Builder() {
       } else if (pendingMode === "practice") {
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
-        setWorkspaceMode("arena");
-        setTroubleshootWorkspaceMode(false);
-        setTroubleshootPanelOpen(false);
-        setCircuitLocked(false);
-        setArenaPanelOpen(true);
-        if (arenaExportStatus !== "ready") {
-          handleArenaSync({ openWindow: false });
-        }
+        openArenaWorkspace({ forceSync: true });
       } else if (pendingMode === "learn") {
         setWorkspaceMode("learn");
         setTroubleshootWorkspaceMode(false);
@@ -1418,17 +1447,18 @@ export default function Builder() {
     workspaceMode,
     openPracticeWorkspace,
     openTroubleshootWorkspace,
-    handleArenaSync,
+    openArenaWorkspace,
     openHelpCenter,
-    arenaExportStatus,
     globalModeContext,
   ]);
 
   const handlePracticeAction = useCallback(
     (action: PanelAction) => {
       if (action.action === "open-arena") {
-        setArenaPanelOpen(true);
-        handleArenaSync({ openWindow: false, sessionName: "Builder Hand-off" });
+        openArenaWorkspace({
+          sessionName: "Builder Hand-off",
+          forceSync: true,
+        });
         return;
       }
       if (action.action === "practice-help") {
@@ -1446,10 +1476,9 @@ export default function Builder() {
       triggerBuilderAction(action.action, action.data);
     },
     [
-      handleArenaSync,
       openHelpCenter,
+      openArenaWorkspace,
       openPracticeWorkspace,
-      setArenaPanelOpen,
       triggerBuilderAction,
     ],
   );
@@ -1458,8 +1487,8 @@ export default function Builder() {
     if (!lastArenaExport?.sessionId) {
       return;
     }
-    setArenaPanelOpen(true);
-  }, [lastArenaExport, setArenaPanelOpen]);
+    openArenaWorkspace();
+  }, [lastArenaExport, openArenaWorkspace]);
 
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
@@ -2686,33 +2715,21 @@ export default function Builder() {
         </span>
       </div>
 
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--arena${isArenaPanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isArenaPanelOpen}
-        onClick={() => setArenaPanelOpen(false)}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--arena"
-          onClick={(event) => event.stopPropagation()}
+      {isArenaPanelOpen && (
+        <section
+          className="builder-arena-workspace"
+          role="region"
+          aria-label="Component Arena workspace"
         >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setArenaPanelOpen(false)}
-            aria-label="Close component arena"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--arena">
+          <div className="builder-arena-shell">
             <ArenaView
-              variant="embedded"
-              onNavigateBack={() => setArenaPanelOpen(false)}
+              variant="workspace"
+              onNavigateBack={closeArenaWorkspace}
+              onOpenBuilder={closeArenaWorkspace}
             />
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
       <div
         className={`builder-help-modal ${isHelpOpen ? "open" : ""}`}
