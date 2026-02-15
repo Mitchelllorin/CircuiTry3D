@@ -993,6 +993,31 @@ body.builder-body {
   overflow: auto;
 }
 
+.builder-panel-shell--workspace-section {
+  width: min(96vw, 1440px);
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+
+.builder-panel-body--workspace-section {
+  overflow: auto;
+  padding: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(6, 16, 34, 0.98),
+    rgba(2, 8, 18, 0.95)
+  );
+}
+
+.builder-panel-body--workspace-section .account-page {
+  max-width: none;
+}
+
+.builder-panel-body--workspace-section .pricing-section,
+.builder-panel-body--workspace-section .subscription-section {
+  min-height: auto;
+}
+
 .mode-action-btn--wire-library:hover {
   background: rgba(45, 212, 191, 0.15);
   color: #6ee7b7;
