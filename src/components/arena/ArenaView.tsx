@@ -2272,9 +2272,9 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     >
       <header className="arena-header">
         <div className="arena-header-left">
-          {!isEmbedded && (
+          {!isEmbedded && !isWorkspace && (
             <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
-              {isWorkspace ? "← Back to Builder" : "← Back"}
+              ← Back
             </button>
           )}
           <WordMark size="md" decorative />
