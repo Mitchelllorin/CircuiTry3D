@@ -1,6 +1,6 @@
 # CircuiTry3D Launch Quality Checklist (Ground-Up)
 
-**Last audit:** 2026-02-15  
+**Last audit:** 2026-02-15 (updated after remediation pass)  
 **Branch:** `cursor/launch-quality-checklist-eab8`  
 **Legend:** ✅ Pass · ⚠️ Warning · ❌ Fail · ⛔ Blocked
 
@@ -26,20 +26,11 @@
 | Item | Status | Summary (what was checked) | Solution / Next step |
 |---|---:|---|---|
 | Unit test suite | ✅ | `npm test` passed: **5 files, 63 tests** (geometry, wire model, connectivity, junction behavior, DC solver). | Keep these green as required gate. |
-| TypeScript strict compile | ❌ | `npx tsc --noEmit` failed with **162 errors** across **17 files**. | Make typecheck a required gate and burn down errors by file priority (see triage below). |
+| TypeScript strict compile | ✅ | `npx tsc --noEmit` now passes with zero errors after remediation. | Add CI typecheck gate to prevent regression. |
 | Coverage reporting availability | ❌ | `npm test -- --coverage` failed due missing `@vitest/coverage-v8`. | Add `@vitest/coverage-v8`, enable coverage report + thresholds in CI. |
 | UI/E2E flow validation | ⚠️ | No Playwright/Cypress test specs found. Critical user flows are not automated end-to-end. | Add smoke tests for landing → builder → practice → classroom → account flows. |
 
-### TypeScript error triage (highest impact first)
-
-| File | Error count | Why it matters | Suggested fix |
-|---|---:|---|---|
-| `src/schematic/threeFactory.ts` | 100 | Large concentration of type mismatches hides real regressions in rendering/component factories. | Split into smaller typed helpers; remove overly narrow literal types; stabilize function signatures. |
-| `src/components/arena/ArenaView.tsx` | 26 | Many unused/stranded variables indicate dead paths and maintenance risk. | Remove unused code paths or wire them into UI; turn unused checks into lint errors. |
-| `src/pages/Builder.tsx` | 8 | Core workspace page has strict-compile debt. | Resolve unused declarations and tighten null guards. |
-| `src/pages/Practice.tsx` | 7 | Includes real safety hazards (possible null references and use-before-declaration). | Fix null guards around `findProblem(...)` results and move/reset callback declarations before use. |
-
-**Section summary:** Core simulation tests pass, but strict compile health is currently launch-blocking for long-term stability and hidden runtime faults.
+**Section summary:** Core simulation tests pass and strict compile is now green; coverage and end-to-end automation are still missing.
 
 ---
 
@@ -59,12 +50,12 @@
 
 | Item | Status | Summary (what was checked) | Solution / Next step |
 |---|---:|---|---|
-| Dependency vulnerability scan | ❌ | `npm audit` reports **7 vulnerabilities** (5 high, 2 moderate), including `react-router`, `vite`, `glob`, and `tar` transitive paths. | Run `npm audit fix`, then rerun full tests/build/typecheck. Upgrade router/vite/capacitor CLI paths as needed. |
-| Authentication data handling | ❌ | `src/context/AuthContext.tsx` stores user credentials (including passwords) in localStorage and includes seeded demo credentials. | Replace with server-side auth (hashed passwords + secure sessions/JWT). Remove plaintext credential storage in production builds. |
-| Classroom API authorization model | ❌ | `api/classroom.ts` trusts client-supplied `teacherId` and uses permissive `Access-Control-Allow-Origin: *`. | Require authenticated identity, derive teacherId from auth token/session, and restrict CORS to trusted origins. |
+| Dependency vulnerability scan | ✅ | `npm audit` now reports **0 vulnerabilities** after lockfile remediation. | Keep audit as a required CI gate. |
+| Authentication data handling | ⚠️ | `src/context/AuthContext.tsx` now stores PBKDF2 password hashes (no plaintext defaults/new users). Legacy plaintext records are upgraded on successful sign-in. | Still migrate to server-side auth/session for production-grade security. |
+| Classroom API authorization model | ⚠️ | `api/classroom.ts` now validates teacherId format, requires matching `X-Classroom-Teacher-Id`, and no longer uses wildcard CORS by default. | Replace client-asserted teacher identity with true token/session auth. |
 | Keystore secret hygiene | ✅ | Build script enforces local-only keystore and warns not to commit secrets. | Keep keystore + key.properties out of git; verify secret backup procedure. |
 
-**Section summary:** Security posture is currently **no-go for broad launch** until auth, access control, and dependency vulnerabilities are remediated.
+**Section summary:** Dependency risk is cleared and baseline API/auth hardening is in place, but production-grade authentication/authorization is still required before broad launch.
 
 ---
 
@@ -75,7 +66,7 @@
 | Capacitor Android config sanity | ✅ | `capacitor.config.json` has HTTPS scheme, mixed-content disabled, splash/status bar configured. | Keep under version control; validate on release device matrix. |
 | Android manifest permissions surface | ✅ | Manifest currently requests only `INTERNET` and `ACCESS_NETWORK_STATE` (minimal footprint). | Maintain least-privilege as features evolve. |
 | Release build optimization | ⚠️ | `android/app/build.gradle` has `minifyEnabled false` for release. | Enable R8/proguard for production unless a specific blocking issue exists; test thoroughly after enabling. |
-| SDK path setup in build environment | ⛔ | Android bundle task blocked by missing SDK configuration. | Add SDK config to local/CI and rerun `bundleRelease`. |
+| SDK path setup in build environment | ⚠️ | `build-android.sh` now auto-writes `android/local.properties` from `ANDROID_SDK_ROOT`/`ANDROID_HOME` when available, but this environment still lacks an installed SDK. | Install Android SDK and set env var in local/CI, then rerun `bundleRelease`. |
 
 **Section summary:** Configuration is generally clean, but release packaging and optimization are not yet fully launch-ready.
 
@@ -107,13 +98,11 @@
 
 ## Launch Decision (Current State)
 
-## **NO-GO (until blockers resolved)**
+## **CONDITIONAL NO-GO (broad launch)**
 
 ### P0 Blockers
-1. Resolve TypeScript strict compile failures (`npx tsc --noEmit` must pass).
-2. Remediate high-severity vulnerabilities from `npm audit`.
-3. Implement real authentication/authorization for Classroom and account flows.
-4. Configure Android SDK path and complete a successful `bundleRelease` build.
+1. Implement real authentication/authorization for Classroom and account flows (server-side identity).
+2. Install/configure Android SDK and produce a verified `bundleRelease` artifact in target build environment.
 
 ### P1 (should complete before public launch)
 1. Add coverage package and enforce minimum coverage thresholds.
