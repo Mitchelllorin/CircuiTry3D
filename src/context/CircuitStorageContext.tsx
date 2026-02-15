@@ -27,7 +27,6 @@ import {
   listCircuits,
   exportCircuitToFile,
   importCircuitFromFile,
-  saveRecoveryData,
   loadRecoveryData,
   clearRecoveryData,
   hasRecoveryData,

@@ -5,7 +5,6 @@ import {
   SCHEMATIC_COLORS,
   STROKE_WIDTHS,
   NODE_DIMENSIONS,
-  LAYOUT_SPECS,
   LABEL_SPECS,
   RESISTOR_SPECS,
   SERIES_LAYOUT,
@@ -59,19 +58,6 @@ const getComponentLabelWithValue = (problem: PracticeProblem, componentId: strin
   }
 
   return { label: componentId, value: null };
-};
-
-const getComponentLabel = (problem: PracticeProblem, componentId: string) => {
-  if (componentId === "totals") {
-    return "Circuit Totals";
-  }
-
-  if (componentId === problem.source.id) {
-    return problem.source.label ?? problem.source.id;
-  }
-
-  const match = problem.components.find((component) => component.id === componentId);
-  return match?.label ?? componentId;
 };
 
 // Junction node drawn per style guide (filled circles at T-junctions)

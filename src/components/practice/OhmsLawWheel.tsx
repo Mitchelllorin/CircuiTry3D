@@ -56,7 +56,7 @@ export default function OhmsLawWheel() {
       <svg viewBox="0 0 360 360" role="img" aria-label="Ohm's law wheel showing W.I.R.E. variables and 12 formulas">
         <defs>
           {/* Gradient backgrounds for each quadrant */}
-          {WIRE_SECTIONS.map((section, index) => (
+          {WIRE_SECTIONS.map((section) => (
             <linearGradient
               key={`gradient-${section.letter}`}
               id={`wheel-gradient-${section.letter}`}

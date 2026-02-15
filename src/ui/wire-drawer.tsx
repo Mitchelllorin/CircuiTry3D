@@ -926,20 +926,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
     ctx.clearRect(0, 0, displayWidth, displayHeight);
     ctx.imageSmoothingEnabled = true;
-    // @ts-expect-error - not present in older CanvasRenderingContext2D typings
     ctx.imageSmoothingQuality = 'high';
-
-    const tracePolyline = (points: Vec2[]) => {
-      if (points.length < 2) {
-        return false;
-      }
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i += 1) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      return true;
-    };
 
     const getWirePath = (wireId: string, points: Vec2[]) => {
       const key = points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join('|');
@@ -1315,7 +1302,6 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
         ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
         ctx.clearRect(0, 0, displayWidth, displayHeight);
         ctx.imageSmoothingEnabled = true;
-        // @ts-expect-error - not present in older CanvasRenderingContext2D typings
         ctx.imageSmoothingQuality = 'high';
 
         drawBackground();

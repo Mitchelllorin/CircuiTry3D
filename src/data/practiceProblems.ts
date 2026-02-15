@@ -5,7 +5,6 @@ import { XP_REWARD_BY_DIFFICULTY } from "./gamification";
 const SERIES_IDS = ["R1", "R2", "R3"] as const;
 const SERIES_IDS_2 = ["R1", "R2"] as const;
 const SERIES_IDS_4 = ["R1", "R2", "R3", "R4"] as const;
-const SERIES_IDS_5 = ["R1", "R2", "R3", "R4", "R5"] as const;
 
 const practiceProblemSeeds: PracticeProblem[] = [
   {
@@ -2125,7 +2124,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         detail: `1/R_T = 1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω`,
         formula: "1/R_T = 1/R_1 + 1/R_2 + 1/R_3",
       }),
-      ({ components, totals }) => {
+      ({ components }) => {
         const recip = 1/components.R1.resistance + 1/components.R2.resistance + 1/components.R3.resistance;
         return {
           title: "Calculate the sum of reciprocals",
@@ -2353,7 +2352,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
         formula: "I = E / R",
       }),
-      ({ components, totals }) => ({
+      ({ components }) => ({
         title: "Find voltage across the parallel section",
         detail: `V_{R1} = I_T × R_1 = ${formatMetricValue(components.R1.voltage, "voltage")}\nV_{R4} = I_T × R_4 = ${formatMetricValue(components.R4.voltage, "voltage")}\nV_{parallel} = E - V_{R1} - V_{R4} = ${formatMetricValue(components.R2.voltage, "voltage")}`,
         formula: "KVL: V_{parallel} = E - V_{R1} - V_{R4}",

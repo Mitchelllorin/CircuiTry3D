@@ -10,7 +10,6 @@ import "../styles/layout.css";
 // This drastically reduces the initial JS bundle size — the Builder page
 // alone pulls in Three.js, the schematic engine, wire routing, etc.
 const Builder = lazy(() => import("../pages/Builder"));
-const Arena = lazy(() => import("../pages/Arena"));
 const Pricing = lazy(() => import("../pages/Pricing"));
 const Community = lazy(() => import("../pages/Community"));
 const Account = lazy(() => import("../pages/Account"));

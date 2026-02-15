@@ -1,5 +1,5 @@
 import type { FC, SVGProps } from "react";
-import { LOGO_COLORS, RESISTOR_SPECS, LABEL_SPECS } from "../../schematic/visualConstants";
+import { LOGO_COLORS } from "../../schematic/visualConstants";
 
 type CircuitLogoProps = SVGProps<SVGSVGElement> & {
   size?: number | string;
