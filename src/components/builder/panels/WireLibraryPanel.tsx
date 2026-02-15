@@ -26,14 +26,6 @@ export function WireLibraryPanel({ isOpen, onClose }: WireLibraryPanelProps) {
         className="builder-panel-shell builder-panel-shell--wire-library"
         onClick={handleShellClick}
       >
-        <button
-          type="button"
-          className="builder-panel-close"
-          onClick={onClose}
-          aria-label="Close wire library"
-        >
-          X
-        </button>
         <div className="builder-panel-body builder-panel-body--wire-library">
           <WireLibrary />
         </div>

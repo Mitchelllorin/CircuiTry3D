@@ -5,8 +5,6 @@ import type { WorkspaceMode } from "../components/builder/types";
 type WorkspaceModeContextValue = {
   workspaceMode: WorkspaceMode;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
-  isWireLibraryPanelOpen: boolean;
-  setWireLibraryPanelOpen: (open: boolean) => void;
   /** Track if currently in the /app workspace route */
   isInWorkspace: boolean;
   setIsInWorkspace: (inWorkspace: boolean) => void;
@@ -19,7 +17,6 @@ const WorkspaceModeContext = createContext<WorkspaceModeContextValue | undefined
 
 export function WorkspaceModeProvider({ children }: { children: ReactNode }) {
   const [workspaceMode, setWorkspaceModeInternal] = useState<WorkspaceMode>("build");
-  const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
   const [isInWorkspace, setIsInWorkspace] = useState(false);
   const [onModeChange, setOnModeChangeInternal] = useState<((mode: WorkspaceMode, source: "global" | "builder") => void) | null>(null);
 
@@ -38,14 +35,12 @@ export function WorkspaceModeProvider({ children }: { children: ReactNode }) {
     () => ({
       workspaceMode,
       setWorkspaceMode,
-      isWireLibraryPanelOpen,
-      setWireLibraryPanelOpen,
       isInWorkspace,
       setIsInWorkspace,
       onModeChange,
       setOnModeChange,
     }),
-    [workspaceMode, setWorkspaceMode, isWireLibraryPanelOpen, isInWorkspace, onModeChange, setOnModeChange]
+    [workspaceMode, setWorkspaceMode, isInWorkspace, onModeChange, setOnModeChange]
   );
 
   return <WorkspaceModeContext.Provider value={value}>{children}</WorkspaceModeContext.Provider>;

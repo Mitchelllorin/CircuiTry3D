@@ -5,7 +5,7 @@
   right: 0;
   z-index: 1180;
   max-height: 56vh;
-  background: rgba(10, 20, 35, 0.78);
+  background: rgba(10, 20, 35, 0.625);
   border-top: 2px solid rgba(136, 204, 255, 0.36);
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.58);
   transform: translateY(calc(100% - 50px));
