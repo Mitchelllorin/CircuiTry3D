@@ -3434,6 +3434,138 @@ body.builder-body .arena-page {
 }
 
 /* ============================================================
+   WORKSPACE SPLIT VARIANT (BUILDER INTEGRATION)
+   ============================================================ */
+
+.arena-page--workspace {
+  height: 100%;
+  max-height: none;
+  background:
+    radial-gradient(ellipse 65% 45% at 18% 16%, rgba(0, 245, 255, 0.1), transparent 58%),
+    radial-gradient(ellipse 50% 30% at 86% 84%, rgba(0, 255, 136, 0.09), transparent 54%),
+    linear-gradient(180deg, rgba(2, 8, 18, 0.9) 0%, rgba(5, 12, 24, 0.96) 100%);
+}
+
+.arena-page--workspace::before {
+  opacity: 0.48;
+  animation-duration: 14s;
+}
+
+.arena-page--workspace .arena-header {
+  padding: 12px 16px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 245, 255, 0.22);
+  background: rgba(8, 18, 36, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+.arena-page--workspace .arena-header-left {
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.arena-page--workspace .arena-header-right {
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.arena-page--workspace .arena-title-group h1 {
+  font-size: clamp(1.05rem, 1.9vw, 1.4rem);
+  letter-spacing: 0.06em;
+}
+
+.arena-page--workspace .arena-title-group p {
+  margin-top: 2px;
+  font-size: 0.72rem;
+}
+
+.arena-page--workspace .arena-btn {
+  padding: 9px 14px;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+.arena-body--workspace-split {
+  max-width: none;
+  margin: 0;
+  padding: 14px 14px calc(22px + var(--builder-safe-area-bottom));
+  gap: 14px;
+}
+
+.arena-page--workspace .arena-card {
+  border-color: rgba(136, 204, 255, 0.25);
+  background: linear-gradient(
+    145deg,
+    rgba(8, 18, 36, 0.9) 0%,
+    rgba(4, 11, 24, 0.95) 100%
+  );
+  box-shadow:
+    0 16px 42px rgba(2, 6, 18, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.arena-page--workspace .arena-frame-wrapper {
+  min-height: clamp(250px, 42vh, 520px);
+}
+
+.arena-page--workspace .arena-battle-stage {
+  min-height: clamp(360px, 54vh, 700px);
+}
+
+@media (max-width: 900px) {
+  .arena-page--workspace .arena-header {
+    padding: 10px 12px;
+  }
+
+  .arena-page--workspace .arena-header-left {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .arena-page--workspace .arena-title-group p {
+    font-size: 0.68rem;
+  }
+
+  .arena-body--workspace-split {
+    padding: 12px 10px calc(16px + var(--builder-safe-area-bottom));
+    gap: 12px;
+  }
+
+  .arena-page--workspace .arena-battle-stage {
+    min-height: clamp(300px, 48vh, 560px);
+  }
+}
+
+@media (max-width: 768px) {
+  .arena-page--workspace .arena-header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .arena-page--workspace .arena-header-right {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .arena-page--workspace .arena-header-left .circuitry-wordmark {
+    display: none;
+  }
+
+  .arena-page--workspace .arena-title-group p {
+    display: none;
+  }
+
+  .arena-page--workspace .arena-btn {
+    padding: 8px 10px;
+    font-size: 0.68rem;
+  }
+}
+
+/* ============================================================
    ARENA PERFORMANCE OPTIMIZATIONS
    ============================================================ */
 
