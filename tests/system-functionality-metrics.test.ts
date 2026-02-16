@@ -44,14 +44,14 @@ describe("System functionality checks", () => {
       const rightBottom = createNode("junction", { x: 10, y: 0 }, "rb");
       const positive = createNode("componentPin", { x: 10, y: 10 }, "pos");
       const leftTop = createNode("junction", { x: 0, y: 10 }, "lt");
-      const dangling = createNode("wireAnchor", { x: 15, y: 0 }, "dangling");
+      const dangling = createNode("wireAnchor", { x: 22, y: 0 }, "dangling");
 
       const wires = [
         createWire([{ x: 0, y: 0 }, { x: 10, y: 0 }], "w1"),
         createWire([{ x: 10, y: 0 }, { x: 10, y: 10 }], "w2"),
         createWire([{ x: 10, y: 10 }, { x: 0, y: 10 }], "w3"),
         createWire([{ x: 0, y: 10 }, { x: 0, y: 0 }], "w4"),
-        createWire([{ x: 10, y: 0 }, { x: 15, y: 0 }], "w5"),
+        createWire([{ x: 10, y: 0 }, { x: 22, y: 0 }], "w5"),
       ];
 
       const result = checkCircuitCompletion(wires, [negative, rightBottom, positive, leftTop, dangling], [
