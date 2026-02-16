@@ -1963,6 +1963,16 @@
             border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.3);
         }
+
+        .component-label.component-label-floating {
+            background: transparent;
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            text-shadow:
+                0 0 2px rgba(0, 0, 0, 0.95),
+                0 0 8px rgba(0, 0, 0, 0.85);
+        }
         
         .branding-overlay {
             position: fixed;
@@ -5020,7 +5030,7 @@ body.android-optimized.menu-visible .status {
             createComponentLabels() {
                 // Create DOM labels that will float above components
                 this.labelDiv = document.createElement('div');
-                this.labelDiv.className = 'component-label';
+                this.labelDiv.className = 'component-label component-label-floating';
                 this.labelDiv.style.fontSize = isMobile ? '16px' : '14px';
                 this.labelDiv.style.fontWeight = 'bold';
                 this.labelDiv.style.textAlign = 'center';
@@ -5066,10 +5076,7 @@ body.android-optimized.menu-visible .status {
             renderNameplateMarkup() {
                 const identifier = this.getComponentIdentifier();
                 const { text, color } = this.getValueTextAndColor();
-                const runtime = this.getRuntimeMetricTextAndColor();
-                const runtimeMarkup = runtime
-                    ? `<div style="color: ${runtime.color}; font-size: ${isMobile ? '11px' : '10px'}; font-weight: 600;">${runtime.text}</div>`
-                    : '';
+                const runtimeMarkup = this.getRuntimeMetricMarkup();
 
                 return `
                     <div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>
@@ -5216,11 +5223,15 @@ body.android-optimized.menu-visible .status {
                 }
             }
 
-            getRuntimeMetricTextAndColor() {
+            getRuntimeMetricMarkup() {
                 const metrics = this.runtimeMetrics;
                 if (!metrics || typeof metrics !== 'object') {
-                    return null;
+                    return '';
                 }
+
+                const fontSize = isMobile ? '11px' : '10px';
+                const valueColor = '#e8f6ff';
+                const separator = '<span style="color: rgba(190, 210, 240, 0.75);"> | </span>';
 
                 if (metrics.state === 'open') {
                     const reason = typeof metrics.reason === 'string' ? metrics.reason : 'open';
@@ -5231,35 +5242,56 @@ body.android-optimized.menu-visible .status {
                             : reason === 'no-source'
                                 ? 'no source'
                                 : 'open';
-                    return { text: `I 0.000 A | ${reasonText}`, color: '#ff8888' };
+                    return `
+                        <div style="font-size: ${fontSize}; font-weight: 600;">
+                            <span style="color: ${WIRE_COLORS.I};">I</span>
+                            <span style="color: ${valueColor};"> ${formatCurrent(0, { allowZero: true })}</span>
+                            <span style="color: #ff8888;"> | ${reasonText}</span>
+                        </div>
+                    `;
                 }
 
                 if (metrics.state === 'idle') {
-                    return { text: 'I 0.000 A | idle', color: '#a0b4c8' };
+                    return `
+                        <div style="font-size: ${fontSize}; font-weight: 600;">
+                            <span style="color: ${WIRE_COLORS.I};">I</span>
+                            <span style="color: ${valueColor};"> ${formatCurrent(0, { allowZero: true })}</span>
+                            <span style="color: #a0b4c8;"> | idle</span>
+                        </div>
+                    `;
                 }
 
                 const parts = [];
 
+                if (isFinite(metrics.power)) {
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.W};">W</span><span style="color: ${valueColor};"> ${formatPower(metrics.power, { allowZero: true })}</span>`
+                    );
+                }
+
                 if (isFinite(metrics.current)) {
-                    parts.push(`I ${formatCurrent(metrics.current, { allowZero: true })}`);
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.I};">I</span><span style="color: ${valueColor};"> ${formatCurrent(metrics.current, { allowZero: true })}</span>`
+                    );
+                }
+
+                if (isFinite(metrics.resistance)) {
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.R};">R</span><span style="color: ${valueColor};"> ${formatResistance(metrics.resistance, { allowOpen: true })}</span>`
+                    );
                 }
 
                 if (isFinite(metrics.voltageDrop)) {
-                    parts.push(`E ${formatVoltage(metrics.voltageDrop, { allowZero: true })}`);
-                }
-
-                if (isFinite(metrics.power)) {
-                    parts.push(`W ${formatPower(metrics.power, { allowZero: true })}`);
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.E};">E</span><span style="color: ${valueColor};"> ${formatVoltage(metrics.voltageDrop, { allowZero: true })}</span>`
+                    );
                 }
 
                 if (parts.length === 0) {
-                    return null;
+                    return '';
                 }
 
-                return {
-                    text: parts.join(' | '),
-                    color: metrics.role === 'source' ? '#ffd27f' : '#8fd8ff'
-                };
+                return `<div style="font-size: ${fontSize}; font-weight: 600;">${parts.join(separator)}</div>`;
             }
 
             updateRuntimeMetrics(runtimeMetrics) {
