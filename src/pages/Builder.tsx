@@ -46,6 +46,7 @@ import troubleshootingProblems, {
   isTroubleshootingSolved,
   type TroubleshootingProblem,
 } from "../data/troubleshootingProblems";
+import type { WireSpec } from "../data/wireLibrary";
 import type { PracticeProblem } from "../model/practice";
 import type {
   BuilderInvokeAction,
@@ -89,6 +90,25 @@ type WorkspacePanelMode =
   | "account"
   | "pricing"
   | "wire-guide";
+
+const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
+
+const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
+  if (!wireProfile) {
+    return null;
+  }
+
+  return {
+    id: wireProfile.id,
+    gaugeLabel: wireProfile.gaugeLabel,
+    materialLabel: wireProfile.materialLabel,
+    insulationLabel: wireProfile.insulationLabel,
+    resistanceOhmPerMeter: wireProfile.resistanceOhmPerMeter,
+    ampacityBundleA: wireProfile.ampacityBundleA,
+    ampacityChassisA: wireProfile.ampacityChassisA,
+    maxVoltageV: wireProfile.maxVoltageV,
+  };
+};
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -907,6 +927,9 @@ export default function Builder() {
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
     getDefaultScenario()
   );
+  const [activeWireProfile, setActiveWireProfile] = useState<WireSpec | null>(
+    null,
+  );
   const [circuitBaseMetrics, setCircuitBaseMetrics] = useState({
     watts: 0,
     current: 0,
@@ -1626,6 +1649,45 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
+  const activeWireProfilePayload = useMemo(
+    () => toWireProfileBridgePayload(activeWireProfile),
+    [activeWireProfile],
+  );
+  const activeWireSegmentResistance =
+    activeWireProfile?.resistanceOhmPerMeter ??
+    DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM;
+  const applyWireProfileToLegacy = useCallback(
+    (
+      payload: ReturnType<typeof toWireProfileBridgePayload>,
+      options: { runSimulation?: boolean } = {},
+    ) => {
+      triggerBuilderAction("set-wire-profile", { wireProfile: payload });
+      if (options.runSimulation !== false) {
+        triggerBuilderAction("run-simulation");
+        triggerSimulationPulse();
+      }
+    },
+    [triggerBuilderAction, triggerSimulationPulse],
+  );
+  const handleApplyWireProfile = useCallback(
+    (wireProfile: WireSpec) => {
+      setActiveWireProfile(wireProfile);
+      applyWireProfileToLegacy(toWireProfileBridgePayload(wireProfile));
+    },
+    [applyWireProfileToLegacy],
+  );
+  const handleClearWireProfile = useCallback(() => {
+    setActiveWireProfile(null);
+    applyWireProfileToLegacy(null);
+  }, [applyWireProfileToLegacy]);
+
+  useEffect(() => {
+    if (!isFrameReady || !activeWireProfilePayload) {
+      return;
+    }
+    applyWireProfileToLegacy(activeWireProfilePayload, { runSimulation: false });
+  }, [activeWireProfilePayload, applyWireProfileToLegacy, isFrameReady]);
+
   const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
@@ -1844,29 +1906,41 @@ export default function Builder() {
     ? "Current flow visualisation active."
     : "Electron flow visualisation active.";
 
+  const liveWireMetricsSnapshot = useMemo(
+    () => ({
+      voltage: circuitState?.metrics.voltage ?? circuitBaseMetrics.voltage,
+      current: circuitState?.metrics.current ?? circuitBaseMetrics.current,
+      power: circuitState?.metrics.power ?? circuitBaseMetrics.watts,
+      resistance:
+        circuitState?.metrics.resistance ?? circuitBaseMetrics.resistance,
+      isOpenCircuit: circuitState?.metrics.resistance === null,
+      wireCount: circuitState?.counts.wires ?? 0,
+    }),
+    [circuitBaseMetrics, circuitState],
+  );
+
   const wireMetrics = useMemo(() => {
-    const volts = circuitState?.metrics.voltage ?? circuitBaseMetrics.voltage;
-    const amps = circuitState?.metrics.current ?? circuitBaseMetrics.current;
-    const watts = circuitState?.metrics.power ?? circuitBaseMetrics.watts;
-    const resistanceValue =
-      circuitState?.metrics.resistance ?? circuitBaseMetrics.resistance;
-    const resistanceDisplay =
-      circuitState?.metrics.resistance === null
-        ? "∞ Ω"
-        : `${Number.isFinite(resistanceValue) ? resistanceValue.toFixed(1) : "0.0"} Ω`;
+    const volts = liveWireMetricsSnapshot.voltage;
+    const amps = liveWireMetricsSnapshot.current;
+    const watts = liveWireMetricsSnapshot.power;
+    const resistanceValue = liveWireMetricsSnapshot.resistance;
+    const resistanceDigits = activeWireProfile ? 3 : 1;
+    const resistanceDisplay = liveWireMetricsSnapshot.isOpenCircuit
+      ? "∞ Ω"
+      : `${Number.isFinite(resistanceValue) ? resistanceValue.toFixed(resistanceDigits) : "0.0"} Ω`;
 
     return [
       {
         id: "watts",
         letter: "W",
         label: "Watts",
-        value: `${Number.isFinite(watts) ? watts.toFixed(2) : "0.00"} W`,
+        value: `${Number.isFinite(watts) ? watts.toFixed(activeWireProfile ? 3 : 2) : "0.00"} W`,
       },
       {
         id: "current",
         letter: "I",
         label: "Current",
-        value: `${Number.isFinite(amps) ? amps.toFixed(3) : "0.000"} A`,
+        value: `${Number.isFinite(amps) ? amps.toFixed(activeWireProfile ? 4 : 3) : "0.000"} A`,
       },
       {
         id: "resistance",
@@ -1881,7 +1955,7 @@ export default function Builder() {
         value: `${Number.isFinite(volts) ? volts.toFixed(1) : "0.0"} V`,
       },
     ];
-  }, [circuitBaseMetrics, circuitState]);
+  }, [activeWireProfile, liveWireMetricsSnapshot]);
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -1921,7 +1995,9 @@ export default function Builder() {
       case "wire-guide":
         return {
           title: "Wire Guide",
-          subtitle: "Wire gauge tables and W.I.R.E. reference data",
+          subtitle: activeWireProfile
+            ? `Active profile: ${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
+            : "Choose a wire profile and apply it to live W.I.R.E. simulation",
         };
       case "community":
         return {
@@ -1951,7 +2027,7 @@ export default function Builder() {
       default:
         return null;
     }
-  }, [activeWorkspacePanelMode]);
+  }, [activeWireProfile, activeWireSegmentResistance, activeWorkspacePanelMode]);
 
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
@@ -1965,7 +2041,22 @@ export default function Builder() {
           </>
         );
       case "wire-guide":
-        return <WireLibrary />;
+        return (
+          <WireLibrary
+            activeWireId={activeWireProfile?.id ?? null}
+            onApplyWire={handleApplyWireProfile}
+            onClearAppliedWire={handleClearWireProfile}
+            liveMetrics={{
+              voltage: liveWireMetricsSnapshot.voltage,
+              current: liveWireMetricsSnapshot.current,
+              resistance: liveWireMetricsSnapshot.isOpenCircuit
+                ? null
+                : liveWireMetricsSnapshot.resistance,
+              power: liveWireMetricsSnapshot.power,
+              wireCount: liveWireMetricsSnapshot.wireCount,
+            }}
+          />
+        );
       case "community":
         return <Community />;
       case "account":
@@ -1984,7 +2075,19 @@ export default function Builder() {
       default:
         return null;
     }
-  }, [activeWorkspacePanelMode, arenaStatusMessage]);
+  }, [
+    activeWireProfile,
+    activeWorkspacePanelMode,
+    arenaStatusMessage,
+    handleApplyWireProfile,
+    handleClearWireProfile,
+    liveWireMetricsSnapshot.current,
+    liveWireMetricsSnapshot.isOpenCircuit,
+    liveWireMetricsSnapshot.power,
+    liveWireMetricsSnapshot.resistance,
+    liveWireMetricsSnapshot.voltage,
+    liveWireMetricsSnapshot.wireCount,
+  ]);
 
   return (
     <div
@@ -2468,6 +2571,23 @@ export default function Builder() {
                     <span className="metric-label">{metric.label}</span>
                   </div>
                 ))}
+                <div
+                  className={`wire-profile-summary${activeWireProfile ? " active" : ""}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="wire-profile-summary-label">Wire Profile</span>
+                  <strong className="wire-profile-summary-value">
+                    {activeWireProfile
+                      ? activeWireProfile.gaugeLabel
+                      : "Default builder wire"}
+                  </strong>
+                  <span className="wire-profile-summary-meta">
+                    {activeWireProfile
+                      ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
+                      : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(2)} Ω/segment`}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="slider-section">
@@ -2658,6 +2778,13 @@ export default function Builder() {
               Wire: {wireRoutingLabel}
             </span>
             <span className="ticker-separator">•</span>
+            <span className="ticker-item ticker-item-wire-profile">
+              Wire Profile:{" "}
+              {activeWireProfile
+                ? `${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
+                : "Default model"}
+            </span>
+            <span className="ticker-separator">•</span>
             <span className="ticker-item">
               Flow: {currentFlowLabel}
             </span>
@@ -2682,6 +2809,13 @@ export default function Builder() {
             <span className="ticker-separator">•</span>
             <span className="ticker-item">
               Wire: {wireRoutingLabel}
+            </span>
+            <span className="ticker-separator">•</span>
+            <span className="ticker-item ticker-item-wire-profile">
+              Wire Profile:{" "}
+              {activeWireProfile
+                ? `${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
+                : "Default model"}
             </span>
             <span className="ticker-separator">•</span>
             <span className="ticker-item">

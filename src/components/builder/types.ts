@@ -28,6 +28,7 @@ export type BuilderInvokeAction =
   | "redo"
   | "clear-workspace"
   | "run-simulation"
+  | "set-wire-profile"
   | "lock-circuit"
   | "unlock-circuit";
 
