@@ -1963,6 +1963,16 @@
             border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.3);
         }
+
+        .component-label.component-label-floating {
+            background: transparent;
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            text-shadow:
+                0 0 2px rgba(0, 0, 0, 0.95),
+                0 0 8px rgba(0, 0, 0, 0.85);
+        }
         
         .branding-overlay {
             position: fixed;
@@ -5020,6 +5030,7 @@ body.android-optimized.menu-visible .status {
                 this.rotation = 0;
                 this.connections = [];
                 this.properties = this.getDefaultProperties(type);
+                this.runtimeMetrics = null;
                 
                 // Assign component number
                 componentCounters[type]++;
@@ -5066,22 +5077,12 @@ body.android-optimized.menu-visible .status {
             createComponentLabels() {
                 // Create DOM labels that will float above components
                 this.labelDiv = document.createElement('div');
-                this.labelDiv.className = 'component-label';
+                this.labelDiv.className = 'component-label component-label-floating';
                 this.labelDiv.style.fontSize = isMobile ? '16px' : '14px';
                 this.labelDiv.style.fontWeight = 'bold';
                 this.labelDiv.style.textAlign = 'center';
                 this.labelDiv.style.lineHeight = '1.2';
-                
-                // Component identifier
-                const identifier = this.getComponentIdentifier();
-                
-                // Component value with color coding
-                const { text, color } = this.getValueTextAndColor();
-                
-                this.labelDiv.innerHTML = `
-                    <div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>
-                    <div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>
-                `;
+                this.labelDiv.innerHTML = this.renderNameplateMarkup();
                 
                 document.body.appendChild(this.labelDiv);
                 this.updateLabelPosition();
@@ -5117,6 +5118,18 @@ body.android-optimized.menu-visible .status {
                     case 'transformer': return `T${this.componentNumber}`;
                     default: return `C${this.componentNumber}`;
                 }
+            }
+
+            renderNameplateMarkup() {
+                const identifier = this.getComponentIdentifier();
+                const { text, color } = this.getValueTextAndColor();
+                const runtimeMarkup = this.getRuntimeMetricMarkup();
+
+                return `
+                    <div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>
+                    <div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>
+                    ${runtimeMarkup}
+                `;
             }
 
             getValueTextAndColor() {
@@ -5257,6 +5270,84 @@ body.android-optimized.menu-visible .status {
                 }
             }
 
+            getRuntimeMetricMarkup() {
+                const metrics = this.runtimeMetrics;
+                if (!metrics || typeof metrics !== 'object') {
+                    return '';
+                }
+
+                const fontSize = isMobile ? '11px' : '10px';
+                const valueColor = '#e8f6ff';
+                const separator = '<span style="color: rgba(190, 210, 240, 0.75);"> | </span>';
+
+                if (metrics.state === 'open') {
+                    const reason = typeof metrics.reason === 'string' ? metrics.reason : 'open';
+                    const reasonText = reason === 'polarity'
+                        ? 'polarity block'
+                        : reason === 'short'
+                            ? 'short path'
+                            : reason === 'no-source'
+                                ? 'no source'
+                                : 'open';
+                    return `
+                        <div style="font-size: ${fontSize}; font-weight: 600;">
+                            <span style="color: ${WIRE_COLORS.I};">I</span>
+                            <span style="color: ${valueColor};"> ${formatCurrent(0, { allowZero: true })}</span>
+                            <span style="color: #ff8888;"> | ${reasonText}</span>
+                        </div>
+                    `;
+                }
+
+                if (metrics.state === 'idle') {
+                    return `
+                        <div style="font-size: ${fontSize}; font-weight: 600;">
+                            <span style="color: ${WIRE_COLORS.I};">I</span>
+                            <span style="color: ${valueColor};"> ${formatCurrent(0, { allowZero: true })}</span>
+                            <span style="color: #a0b4c8;"> | idle</span>
+                        </div>
+                    `;
+                }
+
+                const parts = [];
+
+                if (isFinite(metrics.power)) {
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.W};">W</span><span style="color: ${valueColor};"> ${formatPower(metrics.power, { allowZero: true })}</span>`
+                    );
+                }
+
+                if (isFinite(metrics.current)) {
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.I};">I</span><span style="color: ${valueColor};"> ${formatCurrent(metrics.current, { allowZero: true })}</span>`
+                    );
+                }
+
+                if (isFinite(metrics.resistance)) {
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.R};">R</span><span style="color: ${valueColor};"> ${formatResistance(metrics.resistance, { allowOpen: true })}</span>`
+                    );
+                }
+
+                if (isFinite(metrics.voltageDrop)) {
+                    parts.push(
+                        `<span style="color: ${WIRE_COLORS.E};">E</span><span style="color: ${valueColor};"> ${formatVoltage(metrics.voltageDrop, { allowZero: true })}</span>`
+                    );
+                }
+
+                if (parts.length === 0) {
+                    return '';
+                }
+
+                return `<div style="font-size: ${fontSize}; font-weight: 600;">${parts.join(separator)}</div>`;
+            }
+
+            updateRuntimeMetrics(runtimeMetrics) {
+                this.runtimeMetrics = runtimeMetrics && typeof runtimeMetrics === 'object'
+                    ? runtimeMetrics
+                    : null;
+                this.updateLabels();
+            }
+
             updateLabelPosition() {
                 if (!this.labelDiv || !this.mesh) return;
                 
@@ -5275,14 +5366,7 @@ body.android-optimized.menu-visible .status {
 
             updateLabels() {
                 if (!this.labelDiv) return;
-                
-                const identifier = this.getComponentIdentifier();
-                const { text, color } = this.getValueTextAndColor();
-                
-                this.labelDiv.innerHTML = `
-                    <div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>
-                    <div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>
-                `;
+                this.labelDiv.innerHTML = this.renderNameplateMarkup();
                 
                 this.updateLabelPosition();
             }
@@ -11703,6 +11787,99 @@ Made with ? for visual learners everywhere!
 
 
 
+        function buildComponentRuntimeNameplateMetrics(analysis, flowState) {
+            const result = analysis || {};
+            const hasFlow = Boolean(flowState && flowState.hasFlow);
+            const circuitCurrent = Number.isFinite(result.current) ? result.current : 0;
+            const circuitVoltage = Number.isFinite(result.voltage) ? result.voltage : 0;
+            const metricsByComponentId = new Map();
+            const resistanceByComponentId = new Map();
+
+            if (flowState && Array.isArray(flowState.componentSegments)) {
+                flowState.componentSegments.forEach(segment => {
+                    const component = segment?.component;
+                    if (!component || !component.id) {
+                        return;
+                    }
+
+                    const resistance = Number(segment.resistance);
+                    if (!isFinite(resistance) || resistance < 0) {
+                        return;
+                    }
+
+                    const previous = resistanceByComponentId.get(component.id) || 0;
+                    resistanceByComponentId.set(component.id, previous + resistance);
+                });
+            }
+
+            components.forEach(component => {
+                if (!component || !component.id) {
+                    return;
+                }
+
+                if (!hasFlow) {
+                    metricsByComponentId.set(component.id, {
+                        state: 'open',
+                        reason: flowState?.reason || 'open',
+                        current: 0
+                    });
+                    return;
+                }
+
+                if (component.type === 'battery' || component.type === 'ac_source') {
+                    const sourceVoltage = Number(component.properties?.voltage);
+                    const resolvedVoltage = isFinite(sourceVoltage) ? sourceVoltage : circuitVoltage;
+                    metricsByComponentId.set(component.id, {
+                        state: 'live',
+                        role: 'source',
+                        current: circuitCurrent,
+                        voltageDrop: isFinite(sourceVoltage) ? sourceVoltage : null,
+                        power: isFinite(resolvedVoltage) ? resolvedVoltage * circuitCurrent : null
+                    });
+                    return;
+                }
+
+                const pathResistance = resistanceByComponentId.get(component.id);
+                if (isFinite(pathResistance) && pathResistance >= 0) {
+                    metricsByComponentId.set(component.id, {
+                        state: 'live',
+                        role: 'load',
+                        current: circuitCurrent,
+                        resistance: pathResistance,
+                        voltageDrop: circuitCurrent * pathResistance,
+                        power: circuitCurrent * circuitCurrent * pathResistance
+                    });
+                    return;
+                }
+
+                if (component.type === 'switch' && component.properties?.isOn) {
+                    metricsByComponentId.set(component.id, {
+                        state: 'live',
+                        role: 'control',
+                        current: circuitCurrent
+                    });
+                    return;
+                }
+
+                metricsByComponentId.set(component.id, {
+                    state: 'idle',
+                    current: 0
+                });
+            });
+
+            return metricsByComponentId;
+        }
+
+        function applyComponentRuntimeNameplateMetrics(analysis, flowState) {
+            const metricsByComponentId = buildComponentRuntimeNameplateMetrics(analysis, flowState);
+            components.forEach(component => {
+                if (!component || typeof component.updateRuntimeMetrics !== 'function') {
+                    return;
+                }
+                component.updateRuntimeMetrics(metricsByComponentId.get(component.id) || null);
+            });
+        }
+
         // Circuit analysis
         function analyzeCircuit() {
             const batteries = components.filter(c => c.type === 'battery');
@@ -11710,6 +11887,10 @@ Made with ? for visual learners everywhere!
             if (batteries.length === 0) {
                 updateCircuitDisplay(0, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
+                applyComponentRuntimeNameplateMetrics(
+                    { current: 0, voltage: 0 },
+                    { hasFlow: false, reason: 'no-battery' }
+                );
                 setStatus('⚡ ADD A BATTERY to start W.I.R.E. analysis!');
                 const snapshot = {
                     updatedAt: new Date().toISOString(),
@@ -11748,6 +11929,10 @@ Made with ? for visual learners everywhere!
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
+                applyComponentRuntimeNameplateMetrics(
+                    { current: 0, voltage: totalVoltage },
+                    { hasFlow: false, reason: 'no-wires' }
+                );
                 setStatus('⚡ ADD WIRES to complete the circuit for W.I.R.E. calculations!');
                 const snapshot = {
                     updatedAt: new Date().toISOString(),
@@ -11811,6 +11996,14 @@ Made with ? for visual learners everywhere!
             } else if (flowMeta.warning === 'short') {
                 setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from positive -> negative. Add resistance now!');
             }
+
+            const nameplateFlow = (currentFlowState && typeof currentFlowState === 'object')
+                ? currentFlowState
+                : flowMeta;
+            applyComponentRuntimeNameplateMetrics(
+                { current: result.current, voltage: result.voltage },
+                nameplateFlow
+            );
 
             const circuitResult = {
                 voltage: result.voltage,
