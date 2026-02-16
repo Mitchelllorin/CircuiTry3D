@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
   WIRE_INSULATION_CLASSES,
@@ -11,6 +11,7 @@ import {
   type WireInsulationId,
   type WireMaterialId,
   type WireMaterialSpec,
+  type WireSpec,
 } from "../../data/wireLibrary";
 import { formatNumber } from "../../utils/electrical";
 import { WireResourceBrand } from "./WireResourceBrand";
@@ -18,6 +19,20 @@ import { WireResourceBrand } from "./WireResourceBrand";
 type MaterialOption = WireMaterialId | "any";
 type InsulationOption = WireInsulationId | "any";
 type CategoryOption = "conductor" | "resistance" | "specialty" | "any";
+type WireLibraryLiveMetrics = {
+  voltage: number;
+  current: number;
+  resistance: number | null;
+  power: number;
+  wireCount: number;
+};
+
+type WireLibraryProps = {
+  activeWireId?: string | null;
+  onApplyWire?: (wire: WireSpec) => void;
+  onClearAppliedWire?: () => void;
+  liveMetrics?: WireLibraryLiveMetrics | null;
+};
 
 const formatResistance = (value: number): string => {
   const digits = value < 1 ? 3 : 2;
@@ -31,6 +46,8 @@ const formatThermal = (insulationLabel: string, maxTemperatureC: number): string
   `${insulationLabel} · ${maxTemperatureC} °C`;
 
 const formatConductivity = (value: number): string => `${formatNumber(value, 1)} MS/m`;
+const formatResistancePerMeter = (value: number): string =>
+  `${formatNumber(value, value < 0.1 ? 4 : 3)} Ω/m`;
 
 const filterIsDirty = (
   material: MaterialOption,
@@ -74,18 +91,24 @@ const getCategoryDescription = (category: WireMaterialSpec["category"]): string 
   }
 };
 
-export default function WireLibrary() {
+export default function WireLibrary({
+  activeWireId = null,
+  onApplyWire,
+  onClearAppliedWire,
+  liveMetrics = null,
+}: WireLibraryProps = {}) {
   const [material, setMaterial] = useState<MaterialOption>("any");
   const [insulation, setInsulation] = useState<InsulationOption>("any");
   const [category, setCategory] = useState<CategoryOption>("any");
   const [minAmpacity, setMinAmpacity] = useState(0);
   const [search, setSearch] = useState("");
+  const [selectedWireId, setSelectedWireId] = useState<string | null>(activeWireId);
 
   // Filter materials based on selected category
   const availableMaterials = useMemo(() => getMaterialsByCategory(category), [category]);
 
   // Reset material selection if it's no longer valid for the category
-  useMemo(() => {
+  useEffect(() => {
     if (material !== "any") {
       const materialSpec = WIRE_MATERIALS[material];
       if (category !== "any" && materialSpec.category !== category) {
@@ -93,6 +116,12 @@ export default function WireLibrary() {
       }
     }
   }, [category, material]);
+
+  useEffect(() => {
+    if (activeWireId) {
+      setSelectedWireId(activeWireId);
+    }
+  }, [activeWireId]);
 
   const filtered = useMemo(() => {
     // First filter by category at the material level
@@ -143,6 +172,60 @@ export default function WireLibrary() {
 
   const sliderMax = Math.ceil(WIRE_LIBRARY_SUMMARY.maxAmpacity);
   const filtersActive = filterIsDirty(material, insulation, category, minAmpacity, search);
+  const isBuilderWireIntegrationEnabled = typeof onApplyWire === "function";
+
+  const activeWireSpec = useMemo(
+    () => (activeWireId ? WIRE_LIBRARY.find((spec) => spec.id === activeWireId) ?? null : null),
+    [activeWireId],
+  );
+  const selectedWire = useMemo(
+    () => (selectedWireId ? WIRE_LIBRARY.find((spec) => spec.id === selectedWireId) ?? null : null),
+    [selectedWireId],
+  );
+  const activeWireResistance = activeWireSpec?.resistanceOhmPerMeter ?? 0.01;
+  const wireCount = Math.max(0, liveMetrics?.wireCount ?? 0);
+  const selectedWirePreview = useMemo(() => {
+    if (!selectedWire || !liveMetrics) {
+      return null;
+    }
+
+    if (
+      !Number.isFinite(liveMetrics.voltage) ||
+      !Number.isFinite(liveMetrics.current) ||
+      liveMetrics.resistance === null ||
+      !Number.isFinite(liveMetrics.resistance)
+    ) {
+      return null;
+    }
+
+    const modelResistanceWithoutWire = Math.max(
+      0,
+      liveMetrics.resistance - wireCount * activeWireResistance,
+    );
+    const nextTotalResistance =
+      modelResistanceWithoutWire + wireCount * selectedWire.resistanceOhmPerMeter;
+    if (nextTotalResistance <= 0) {
+      return null;
+    }
+
+    const nextCurrent = liveMetrics.voltage / nextTotalResistance;
+    const nextPower = liveMetrics.voltage * nextCurrent;
+    return {
+      totalResistance: nextTotalResistance,
+      current: nextCurrent,
+      power: nextPower,
+      wirePathResistance: wireCount * selectedWire.resistanceOhmPerMeter,
+      deltaResistance: nextTotalResistance - liveMetrics.resistance,
+      deltaCurrent: nextCurrent - liveMetrics.current,
+      deltaPower: nextPower - liveMetrics.power,
+    };
+  }, [activeWireResistance, liveMetrics, selectedWire, wireCount]);
+  const selectedWireAlreadyApplied =
+    Boolean(selectedWire && activeWireSpec && selectedWire.id === activeWireSpec.id);
+  const canApplySelectedWire =
+    isBuilderWireIntegrationEnabled &&
+    Boolean(selectedWire) &&
+    !selectedWireAlreadyApplied;
 
   // Count wires by category for display
   const categoryCounts = useMemo(() => {
@@ -189,6 +272,102 @@ export default function WireLibrary() {
           </div>
         </div>
       </header>
+
+      {isBuilderWireIntegrationEnabled && (
+        <section className="wire-library-integration" aria-live="polite">
+          <header className="wire-library-integration-header">
+            <div>
+              <strong>Builder wire profile</strong>
+              <p>
+                Select a wire row, then apply it to the active circuit so W.I.R.E.
+                metrics update with that wire&apos;s resistance model.
+              </p>
+            </div>
+            <span
+              className={`wire-library-profile-chip${activeWireSpec ? " active" : ""}`}
+            >
+              {activeWireSpec ? "Profile active" : "Using default wire"}
+            </span>
+          </header>
+
+          <div className="wire-library-integration-grid">
+            <div>
+              <span className="summary-label">Active profile</span>
+              <strong className="summary-value">
+                {activeWireSpec ? activeWireSpec.gaugeLabel : "Default builder wire"}
+              </strong>
+              <p className="wire-library-integration-meta">
+                Segment resistance: {formatResistancePerMeter(activeWireResistance)}
+              </p>
+            </div>
+            <div>
+              <span className="summary-label">Circuit wires</span>
+              <strong className="summary-value">{wireCount}</strong>
+              <p className="wire-library-integration-meta">
+                Estimated wire path:{" "}
+                {`${formatNumber(activeWireResistance * wireCount, 4)} Ω`}
+              </p>
+            </div>
+            <div>
+              <span className="summary-label">Selected row</span>
+              <strong className="summary-value">
+                {selectedWire ? selectedWire.gaugeLabel : "Choose a wire"}
+              </strong>
+              <p className="wire-library-integration-meta">
+                {selectedWire
+                  ? `Resistance: ${formatResistancePerMeter(selectedWire.resistanceOhmPerMeter)}`
+                  : "Click Select on any row below"}
+              </p>
+            </div>
+          </div>
+
+          {selectedWirePreview && (
+            <div className="wire-library-preview-card" role="status">
+              <strong>Preview with selected wire</strong>
+              <div className="wire-library-preview-grid">
+                <span>
+                  R: {formatNumber(selectedWirePreview.totalResistance, 4)} Ω (
+                  {selectedWirePreview.deltaResistance >= 0 ? "+" : ""}
+                  {formatNumber(selectedWirePreview.deltaResistance, 4)} Ω)
+                </span>
+                <span>
+                  I: {formatNumber(selectedWirePreview.current, 4)} A (
+                  {selectedWirePreview.deltaCurrent >= 0 ? "+" : ""}
+                  {formatNumber(selectedWirePreview.deltaCurrent, 4)} A)
+                </span>
+                <span>
+                  W: {formatNumber(selectedWirePreview.power, 4)} W (
+                  {selectedWirePreview.deltaPower >= 0 ? "+" : ""}
+                  {formatNumber(selectedWirePreview.deltaPower, 4)} W)
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="wire-library-integration-actions">
+            <button
+              type="button"
+              className="wire-library-apply-btn"
+              onClick={() => {
+                if (selectedWire && onApplyWire) {
+                  onApplyWire(selectedWire);
+                }
+              }}
+              disabled={!canApplySelectedWire}
+            >
+              {selectedWireAlreadyApplied ? "Wire already applied" : "Apply selected wire"}
+            </button>
+            <button
+              type="button"
+              className="wire-library-default-btn"
+              onClick={() => onClearAppliedWire?.()}
+              disabled={!activeWireSpec || !onClearAppliedWire}
+            >
+              Revert to default wire model
+            </button>
+          </div>
+        </section>
+      )}
 
       <div className="wire-library-controls">
         <label>
@@ -283,9 +462,29 @@ export default function WireLibrary() {
               {filtered.map((spec) => {
                 const manufacturer = getManufacturerForWire(spec.id);
                 const materialSpec = WIRE_MATERIALS[spec.material as WireMaterialId];
+                const isSelected = selectedWireId === spec.id;
+                const isActiveProfile = activeWireSpec?.id === spec.id;
                 return (
-                  <tr key={spec.id} data-category={materialSpec?.category}>
+                  <tr
+                    key={spec.id}
+                    data-category={materialSpec?.category}
+                    data-selected={isSelected ? "true" : undefined}
+                    data-active-profile={isActiveProfile ? "true" : undefined}
+                  >
                     <th scope="row">
+                      <div className="wire-row-actions">
+                        <button
+                          type="button"
+                          className={`wire-row-select-btn${isSelected ? " selected" : ""}`}
+                          onClick={() => setSelectedWireId(spec.id)}
+                          aria-pressed={isSelected}
+                        >
+                          {isSelected ? "Selected" : "Select"}
+                        </button>
+                        {isActiveProfile && (
+                          <span className="wire-row-active-chip">Active</span>
+                        )}
+                      </div>
                       <div className="wire-gauge-label">{spec.gaugeLabel}</div>
                       <div className="wire-gauge-meta">
                         {`${formatNumber(spec.metricAreaMm2, 2)} mm² · ${formatNumber(spec.diameterMm, 2)} mm Ø`}

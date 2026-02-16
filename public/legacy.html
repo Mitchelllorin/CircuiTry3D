@@ -4118,6 +4118,11 @@ body.android-optimized.menu-visible .status {
                             case 'run-simulation':
                                 if (typeof runSimulation === 'function') runSimulation();
                                 break;
+                            case 'set-wire-profile':
+                                if (typeof applyWireProfileFromBridge === 'function') {
+                                    applyWireProfileFromBridge(data.wireProfile || null);
+                                }
+                                break;
                             case 'lock-circuit':
                                 isCircuitEditLocked = true;
                                 setStatus('🔒 Circuit locked - complete the active challenge to edit');
@@ -4760,8 +4765,9 @@ body.android-optimized.menu-visible .status {
             E: '#ff4444'  // Voltage (Volts) - Red
         };
 
+        const DEFAULT_WIRE_SEGMENT_RESISTANCE = 0.01;
         const FLOW_CONSTANTS = {
-            wireResistance: 0.01,
+            wireResistance: DEFAULT_WIRE_SEGMENT_RESISTANCE,
             shortThreshold: 0.5,
             resistanceReference: 120,
             minSpeedFactor: 0.25,
@@ -4769,6 +4775,47 @@ body.android-optimized.menu-visible .status {
         };
 
         let currentFlowState = null;
+        let activeWireProfile = null;
+
+        function applyWireProfileFromBridge(profile) {
+            const resistanceCandidate = Number(profile?.resistanceOhmPerMeter);
+            const hasValidResistance =
+                Number.isFinite(resistanceCandidate) && resistanceCandidate > 0;
+
+            if (hasValidResistance) {
+                FLOW_CONSTANTS.wireResistance = resistanceCandidate;
+                activeWireProfile = {
+                    id: typeof profile?.id === 'string' ? profile.id : null,
+                    gaugeLabel: typeof profile?.gaugeLabel === 'string' ? profile.gaugeLabel : 'Custom wire',
+                    resistanceOhmPerMeter: resistanceCandidate
+                };
+                const label = activeWireProfile.gaugeLabel || 'Custom wire';
+                setStatus(`⚡ Wire profile active: ${label} (${resistanceCandidate.toFixed(4)} Ω/m)`);
+            } else {
+                FLOW_CONSTANTS.wireResistance = DEFAULT_WIRE_SEGMENT_RESISTANCE;
+                activeWireProfile = null;
+                setStatus(`⚡ Default wire model active (${DEFAULT_WIRE_SEGMENT_RESISTANCE.toFixed(2)} Ω/segment)`);
+            }
+
+            if (typeof analyzeCircuit === 'function') {
+                try {
+                    analyzeCircuit();
+                } catch (error) {
+                    console.warn('Wire profile apply: circuit re-analysis failed', error);
+                }
+            }
+
+            notifyParentModeState({
+                wireProfile: activeWireProfile
+                    ? {
+                        id: activeWireProfile.id,
+                        gaugeLabel: activeWireProfile.gaugeLabel,
+                        resistanceOhmPerMeter: activeWireProfile.resistanceOhmPerMeter
+                    }
+                    : null,
+                wireResistance: FLOW_CONSTANTS.wireResistance
+            });
+        }
         
         // Component counters for labeling
         let componentCounters = {
@@ -12756,7 +12803,7 @@ Made with ? for visual learners everywhere!
                     if (hasPhysicalLoop && wires.length > 0) {
                         // There's a closed loop but directed path finding failed due to polarity.
                         // Show flow animation to indicate circuit completion with polarity issue.
-                        let approxResistance = 0.01;
+                        let approxResistance = FLOW_CONSTANTS.wireResistance;
                         resistors.forEach(r => {
                             approxResistance += r.properties?.resistance || 100;
                         });
@@ -12765,7 +12812,7 @@ Made with ? for visual learners everywhere!
                                 approxResistance += sw.properties?.resistance || 0.1;
                             }
                         });
-                        const approxCurrent = totalVoltage / Math.max(approxResistance, 0.01);
+                        const approxCurrent = totalVoltage / Math.max(approxResistance, FLOW_CONSTANTS.wireResistance, 0.001);
 
                         updateTopologyDisplay('Polarity');
                         const flowResult = {
@@ -12813,7 +12860,7 @@ Made with ? for visual learners everywhere!
                 }
                 
                 // Calculate resistance based on topology
-                let totalResistance = 0.01; // Wire resistance
+                let totalResistance = FLOW_CONSTANTS.wireResistance; // Wire resistance baseline
                 
                 if (topology.type === 'series') {
                     // Series: R_total = R1 + R2 + ... + Rn
@@ -13559,6 +13606,9 @@ Made with ? for visual learners everywhere!
         function updateCircuitDisplay(voltage, current, resistance, power) {
             // Store values for educational modes
             lastKnownValues = { voltage, current, resistance, power };
+            const resistanceDigits = activeWireProfile ? 3 : 1;
+            const currentDigits = activeWireProfile ? 4 : 3;
+            const powerDigits = activeWireProfile ? 3 : 2;
             
             // Update W.I.R.E. analysis display
             const voltageEl = document.getElementById('voltage');
@@ -13567,10 +13617,10 @@ Made with ? for visual learners everywhere!
             const powerEl = document.getElementById('power');
             
             if (voltageEl) voltageEl.textContent = voltage.toFixed(1) + 'V';
-            if (currentEl) currentEl.textContent = current.toFixed(3) + 'A';
+            if (currentEl) currentEl.textContent = current.toFixed(currentDigits) + 'A';
             if (resistanceEl) resistanceEl.textContent = 
-                resistance === Infinity ? '∞' : resistance.toFixed(1) + 'Ω';
-            if (powerEl) powerEl.textContent = power.toFixed(2) + 'W';
+                resistance === Infinity ? '∞' : resistance.toFixed(resistanceDigits) + 'Ω';
+            if (powerEl) powerEl.textContent = power.toFixed(powerDigits) + 'W';
             
             const countEl = document.getElementById('count');
             const wireCountEl = document.getElementById('wire-count');
@@ -13593,7 +13643,7 @@ Made with ? for visual learners everywhere!
             refreshWireWorksheetSolutions();
             
             if (current > 0 && resistance !== Infinity) {
-                setStatus(`⚡ W.I.R.E. COMPLETE! W=${power.toFixed(2)}W, I=${current.toFixed(3)}A, R=${resistance.toFixed(1)}Ω, E=${voltage.toFixed(1)}V`);
+                setStatus(`⚡ W.I.R.E. COMPLETE! W=${power.toFixed(powerDigits)}W, I=${current.toFixed(currentDigits)}A, R=${resistance.toFixed(resistanceDigits)}Ω, E=${voltage.toFixed(1)}V`);
             } else if (resistance === Infinity) {
                 const switches = components.filter(c => c.type === 'switch');
                 const openSwitch = switches.find(sw => !sw.properties.isOn);
