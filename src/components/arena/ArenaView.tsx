@@ -145,6 +145,7 @@ type ComponentShowdownProfile = {
   uid: string;
   name: string;
   type: string;
+  componentNumber: string | null;
   summary: string | null;
   metrics: ComponentMetricEntry[];
 };
@@ -168,6 +169,17 @@ type ComponentTelemetryEntry = {
   displayValue: string;
   severity: "normal" | "warning" | "critical";
   metric: ComponentMetricEntry | null;
+};
+
+type NameplateMetricTrend = "up" | "down" | "steady";
+
+type NameplateMetric = {
+  id: string;
+  label: string;
+  icon: string;
+  displayValue: string;
+  severity: "normal" | "warning" | "critical";
+  trend: NameplateMetricTrend;
 };
 
 const METRIC_UNIT_MAP: Record<string, string> = {
@@ -646,6 +658,68 @@ function buildComponentTelemetry(profile: ComponentShowdownProfile | null): Comp
   }).filter((entry) => profile !== null || entry.metric !== null);
 }
 
+function hashStringToUnitInterval(value: string): number {
+  if (!value) {
+    return 0.5;
+  }
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) % 100000) / 100000;
+}
+
+function formatNameplateLiveValue(entry: ComponentTelemetryEntry, nextValue: number): string {
+  if (!entry.metric) {
+    return entry.displayValue;
+  }
+  const metricKey = entry.metric.key || entry.id;
+  return formatNumericForProperty(metricKey, nextValue).display;
+}
+
+function buildNameplateMetrics(
+  telemetry: ComponentTelemetryEntry[],
+  options: { componentSeed: string; tick: number; isLive: boolean }
+): NameplateMetric[] {
+  const numericTelemetry = telemetry.filter((entry) => (
+    typeof entry.metric?.numericValue === "number" && Number.isFinite(entry.metric.numericValue)
+  ));
+  const source = (numericTelemetry.length ? numericTelemetry : telemetry).slice(0, 3);
+
+  return source.map((entry, index) => {
+    const baseValue = entry.metric?.numericValue;
+    if (!options.isLive || typeof baseValue !== "number" || !Number.isFinite(baseValue)) {
+      return {
+        id: entry.id,
+        label: entry.label,
+        icon: entry.icon,
+        displayValue: entry.displayValue,
+        severity: entry.severity,
+        trend: "steady" as const
+      };
+    }
+
+    const seed = hashStringToUnitInterval(`${options.componentSeed}:${entry.id}`);
+    const amplitude = entry.severity === "critical" ? 0.04 : entry.severity === "warning" ? 0.028 : 0.018;
+    const phase = options.tick * 0.58 + seed * Math.PI * 2 + index * 0.45;
+    const waveform = (Math.sin(phase) * 0.7) + (Math.sin(phase * 0.37 + seed * Math.PI) * 0.3);
+    const relativeDelta = waveform * amplitude;
+    const liveValue = Math.abs(baseValue) < 1e-9 ? baseValue : baseValue * (1 + relativeDelta);
+    const derivative = (Math.cos(phase) * 0.7) + (Math.cos(phase * 0.37 + seed * Math.PI) * 0.3);
+    const trend: NameplateMetricTrend = derivative > 0.22 ? "up" : derivative < -0.22 ? "down" : "steady";
+
+    return {
+      id: entry.id,
+      label: entry.label,
+      icon: entry.icon,
+      displayValue: formatNameplateLiveValue(entry, liveValue),
+      severity: entry.severity,
+      trend
+    };
+  });
+}
+
 function resolveGlyphKey(type?: string | null): string {
   if (!type) {
     return "generic";
@@ -988,6 +1062,7 @@ function normaliseImportPayload(raw: unknown, defaults: { source: string; label?
 function buildComponentProfile(component: ArenaComponent, index: number, uid: string): ComponentShowdownProfile {
   const name = component.name || component.componentNumber || component.type || `Component ${index + 1}`;
   const type = component.type ?? "Unknown";
+  const componentNumber = component.componentNumber ?? null;
   const summary = summariseProperties(component.properties) ?? null;
   const properties = component.properties && typeof component.properties === "object" ? component.properties : {};
 
@@ -1033,6 +1108,7 @@ function buildComponentProfile(component: ArenaComponent, index: number, uid: st
     uid,
     name,
     type,
+    componentNumber,
     summary,
     metrics: orderedMetrics
   };
@@ -1359,7 +1435,20 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   });
   const [selectedScenario, setSelectedScenario] = useState<string>("standard");
   const [battleScore, setBattleScore] = useState<{ leftWins: number; rightWins: number; ties: number; totalRounds: number } | null>(null);
+  const [nameplateTick, setNameplateTick] = useState(0);
   const battleSeedRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      setNameplateTick((previous) => (previous + 1) % 1000000);
+    }, 900);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
     const frameWindow = iframeRef.current?.contentWindow;
@@ -2185,12 +2274,18 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       tag: string;
     }
   ) => {
-    const typeClass = normaliseTypeForClass(profile?.type);
     const beforeData = side === "left" ? beforeMetrics.left : beforeMetrics.right;
     const afterData = side === "left" ? afterMetrics.left : afterMetrics.right;
-    const filteredTelemetry = getFilteredTelemetry(telemetry);
     const showBefore = battleState !== "idle" && beforeData;
     const showAfter = battleState === "complete" && afterData;
+    const panelTelemetry = (showAfter ? afterData : null) ?? (battleState === "battling" ? beforeData : null) ?? telemetry;
+    const filteredTelemetry = getFilteredTelemetry(panelTelemetry);
+    const nameplateMetrics = buildNameplateMetrics(filteredTelemetry, {
+      componentSeed: `${profile?.uid ?? side}:${profile?.componentNumber ?? "na"}`,
+      tick: nameplateTick,
+      isLive: battleState !== "complete"
+    });
+    const showNameplateLiveIndicator = battleState !== "complete" && nameplateMetrics.length > 0;
 
     return (
       <div className={`arena-battle-panel arena-battle-panel-${side}`}>
@@ -2223,12 +2318,49 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             </div>
           </div>
 
-          {/* Component Info */}
-          <div style={{textAlign: 'center', margin: '16px 0'}}>
-            <div style={{fontSize: '0.75rem', color: 'rgba(148, 163, 184, 0.7)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px'}}>{tag}</div>
-            <h3 style={{margin: '0 0 4px', fontSize: '1.1rem', fontWeight: '600'}}>{profile?.name ?? "No component"}</h3>
-            <div style={{fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.85)'}}>{profile?.type ?? "—"}</div>
-            {isChampion && <div style={{marginTop: '8px', padding: '4px 12px', background: 'var(--brand-primary-dim)', borderRadius: '999px', display: 'inline-block', fontSize: '0.7rem', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase'}}>🏆 CHAMPION</div>}
+          {/* Component Nameplate + Live Metrics */}
+          <div className={`arena-component-nameplate${isChampion ? " is-champion" : ""}${isTie ? " is-tie" : ""}`}>
+            <div className="arena-nameplate-header">
+              <span className="arena-nameplate-tag">{tag}</span>
+              {showNameplateLiveIndicator && (
+                <span className="arena-nameplate-live" aria-label="Real-time metrics active">
+                  <span className="arena-nameplate-live-dot" aria-hidden="true" />
+                  LIVE
+                </span>
+              )}
+            </div>
+            <h3 className="arena-nameplate-name">{profile?.name ?? "No component"}</h3>
+            <div className="arena-nameplate-subtitle">
+              <span className="arena-nameplate-type">{profile?.type ?? "—"}</span>
+              {profile?.componentNumber ? (
+                <span className="arena-nameplate-component-number">{profile.componentNumber}</span>
+              ) : null}
+            </div>
+            {nameplateMetrics.length > 0 ? (
+              <div className="arena-nameplate-metrics" role="list" aria-label={`${profile?.name ?? "Component"} real-time metrics`}>
+                {nameplateMetrics.map((metric) => (
+                  <div
+                    key={`${side}-nameplate-${metric.id}`}
+                    className={`arena-nameplate-metric ${metric.severity}`}
+                    role="listitem"
+                  >
+                    <span className="nameplate-metric-icon" aria-hidden="true">{metric.icon}</span>
+                    <span className="nameplate-metric-label">{metric.label}</span>
+                    <span className="nameplate-metric-value">{metric.displayValue}</span>
+                    <span
+                      className={`nameplate-metric-trend nameplate-metric-trend-${metric.trend}`}
+                      aria-hidden="true"
+                    >
+                      {metric.trend === "up" ? "↑" : metric.trend === "down" ? "↓" : "→"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="arena-nameplate-empty">No telemetry available yet.</p>
+            )}
+            {isChampion ? <div className="arena-nameplate-badge">🏆 Champion</div> : null}
+            {!isChampion && isTie ? <div className="arena-nameplate-badge neutral">Even Match</div> : null}
           </div>
 
           {/* After Metrics - Below Component */}
