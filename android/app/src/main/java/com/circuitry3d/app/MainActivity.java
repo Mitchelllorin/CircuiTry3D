@@ -35,7 +35,7 @@ public class MainActivity extends BridgeActivity {
             
             // Cache settings for better performance
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-            settings.setAppCacheEnabled(true);
+            // AppCache APIs were removed from modern WebView; rely on HTTP caching.
             
             // Enable viewport scaling for proper mobile layout
             settings.setLoadWithOverviewMode(true);
