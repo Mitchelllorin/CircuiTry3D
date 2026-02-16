@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#0f172a"/>
-  <g transform="translate(40.960 139.520) scale(1.792000) translate(0 0)">
+  <svg x="16" y="126" width="481" height="261" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
     <defs>
     <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#88ccff;stop-opacity:1" />
@@ -245,5 +245,5 @@
       </circle>
     </g>
   </g>
-  </g>
+  </svg>
 </svg>

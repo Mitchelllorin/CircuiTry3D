@@ -23,7 +23,6 @@ type CompactGuidesPanelProps = {
   isOpen: boolean;
   activeGuide: GuideWorkflowId;
   onToggle: () => void;
-  onExitMode: () => void;
   onSelectGuide: (guide: GuideWorkflowId) => void;
   onLaunchInteractiveTutorial: () => void;
   onOpenPracticeWorksheet: () => void;
@@ -174,7 +173,6 @@ export function CompactGuidesPanel({
   isOpen,
   activeGuide,
   onToggle,
-  onExitMode,
   onSelectGuide,
   onLaunchInteractiveTutorial,
   onOpenPracticeWorksheet,
@@ -269,15 +267,6 @@ export function CompactGuidesPanel({
             {isComplete ? `${activeWorkflow.label} Complete` : activeWorkflow.label}
           </span>
         </button>
-        <div className="compact-guides-header-actions">
-          <button
-            type="button"
-            className="compact-guides-exit-btn"
-            onClick={onExitMode}
-          >
-            Exit Mode
-          </button>
-        </div>
       </div>
 
       {isOpen && (

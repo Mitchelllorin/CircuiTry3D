@@ -20,8 +20,8 @@ import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTroubleshootPanel";
 import { CompactGuidesPanel } from "../components/builder/panels/CompactGuidesPanel";
+import { WorkspaceModePanel } from "../components/builder/panels/WorkspaceModePanel";
 import { EnvironmentalPanel } from "../components/builder/panels/EnvironmentalPanel";
-import { WireLibraryPanel } from "../components/builder/panels/WireLibraryPanel";
 import {
   type EnvironmentalScenario,
   getDefaultScenario,
@@ -73,6 +73,22 @@ import {
 } from "../components/builder/constants";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
 import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
+import PricingSection from "../components/PricingSection";
+import SubscriptionSection from "../components/SubscriptionSection";
+import Community from "./Community";
+import Account from "./Account";
+import Classroom from "./Classroom";
+import Arcade from "./Arcade";
+import WireLibrary from "../components/practice/WireLibrary";
+
+type WorkspacePanelMode =
+  | "arena"
+  | "arcade"
+  | "classroom"
+  | "community"
+  | "account"
+  | "pricing"
+  | "wire-guide";
 
 const HELP_SECTIONS: HelpSection[] = [
   {
@@ -842,7 +858,9 @@ export default function Builder() {
     showLabels: true,
   });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
-  const [isArenaPanelOpen, setArenaPanelOpen] = useState(false);
+  const [activeWorkspacePanelMode, setActiveWorkspacePanelMode] =
+    useState<WorkspacePanelMode | null>(null);
+  const [isWorkspacePanelOpen, setWorkspacePanelOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("build");
   const [isTroubleshootPanelOpen, setTroubleshootPanelOpen] = useState(false);
   const [activeTroubleshootId, setActiveTroubleshootId] = useState<string | null>(
@@ -886,12 +904,6 @@ export default function Builder() {
     useState<GuideWorkflowId>("help");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
-  const [isWireLibraryPanelOpen, setWireLibraryPanelOpen] = useState(false);
-  const [modeBarScrollState, setModeBarScrollState] = useState<{
-    canScrollLeft: boolean;
-    canScrollRight: boolean;
-  }>({ canScrollLeft: false, canScrollRight: false });
-  const modeBarRef = useRef<HTMLDivElement>(null);
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
     getDefaultScenario()
   );
@@ -924,15 +936,6 @@ export default function Builder() {
     }
   }, [globalModeContext.workspaceMode, workspaceMode]);
 
-  // Sync global isWireLibraryPanelOpen with local state
-  useEffect(() => {
-    if (globalModeContext.isWireLibraryPanelOpen && !isWireLibraryPanelOpen) {
-      setWireLibraryPanelOpen(true);
-      // Reset global flag after consuming it
-      globalModeContext.setWireLibraryPanelOpen(false);
-    }
-  }, [globalModeContext.isWireLibraryPanelOpen, isWireLibraryPanelOpen]);
-
   // Update global context when local mode changes (from Builder-internal actions)
   const setWorkspaceModeWithGlobalSync = useCallback((mode: WorkspaceMode) => {
     setWorkspaceMode(mode);
@@ -940,42 +943,6 @@ export default function Builder() {
       globalModeContext.setWorkspaceMode(mode);
     }
   }, [globalModeContext]);
-
-  const exitTroubleshootMode = useCallback(() => {
-    setTroubleshootPanelOpen(false);
-    setTroubleshootWorkspaceMode(false);
-    setTroubleshootStatus(null);
-    setTroubleshootCheckPending(false);
-    setTroubleshootPendingCheckProblemId(null);
-    setCircuitLocked(false);
-    // Ensure global mode bar stays consistent and the panel can be reopened.
-    if (
-      workspaceMode === "troubleshoot" ||
-      globalModeContext.workspaceMode === "troubleshoot"
-    ) {
-      setWorkspaceModeWithGlobalSync("build");
-    }
-  }, [
-    globalModeContext.workspaceMode,
-    setWorkspaceModeWithGlobalSync,
-    workspaceMode,
-  ]);
-
-  const exitGuidesMode = useCallback(() => {
-    setGuidesPanelOpen(false);
-    setGuidesWorkspaceMode(false);
-    if (
-      workspaceMode === "learn" ||
-      globalModeContext.workspaceMode === "learn"
-    ) {
-      setWorkspaceModeWithGlobalSync("build");
-    }
-  }, [
-    globalModeContext.workspaceMode,
-    setWorkspaceModeWithGlobalSync,
-    workspaceMode,
-  ]);
-
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     setModeState((previous) => ({
       ...previous,
@@ -1045,6 +1012,35 @@ export default function Builder() {
     onToolChange: setActiveQuickTool,
     onSimulationPulse: handleSimulationPulse,
   });
+
+  const openArenaWorkspace = useCallback(
+    (options?: { sessionName?: string; forceSync?: boolean }) => {
+      setWorkspaceModeWithGlobalSync("arena");
+      setPracticeWorkspaceMode(false);
+      setTroubleshootWorkspaceMode(false);
+      setTroubleshootPanelOpen(false);
+      setCompactWorksheetOpen(false);
+      setGuidesWorkspaceMode(false);
+      setGuidesPanelOpen(false);
+      setTroubleshootStatus(null);
+      setTroubleshootCheckPending(false);
+      setTroubleshootPendingCheckProblemId(null);
+      setCircuitLocked(false);
+      setEnvironmentalPanelOpen(false);
+      setActiveWorkspacePanelMode("arena");
+      setWorkspacePanelOpen(true);
+
+      const shouldSync =
+        options?.forceSync === true || arenaExportStatus !== "ready";
+      if (shouldSync) {
+        handleArenaSync({
+          openWindow: false,
+          sessionName: options?.sessionName,
+        });
+      }
+    },
+    [arenaExportStatus, handleArenaSync, setWorkspaceModeWithGlobalSync],
+  );
 
   useEffect(() => {
     if (!circuitState) {
@@ -1176,34 +1172,6 @@ export default function Builder() {
     };
   }, []);
 
-  // Track mode bar scroll state for scroll indicators
-  useEffect(() => {
-    const modeBar = modeBarRef.current;
-    if (!modeBar) return;
-
-    const updateScrollState = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = modeBar;
-      const canScrollLeft = scrollLeft > 5;
-      const canScrollRight = scrollLeft < scrollWidth - clientWidth - 5;
-      setModeBarScrollState({ canScrollLeft, canScrollRight });
-    };
-
-    // Initial check
-    updateScrollState();
-
-    // Listen for scroll events
-    modeBar.addEventListener("scroll", updateScrollState, { passive: true });
-
-    // Resize observer to detect layout changes
-    const resizeObserver = new ResizeObserver(updateScrollState);
-    resizeObserver.observe(modeBar);
-
-    return () => {
-      modeBar.removeEventListener("scroll", updateScrollState);
-      resizeObserver.disconnect();
-    };
-  }, []);
-
   // Global keyboard shortcuts for save/load
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
@@ -1252,19 +1220,26 @@ export default function Builder() {
   }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
 
   useEffect(() => {
-    if (!isArenaPanelOpen) {
+    if (!activeWorkspacePanelMode || !isWorkspacePanelOpen) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isArenaPanelOpen) {
-        setArenaPanelOpen(false);
+      if (event.key !== "Escape") {
+        return;
       }
+      setWorkspacePanelOpen(false);
+      setActiveWorkspacePanelMode(null);
+      setWorkspaceModeWithGlobalSync("build");
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isArenaPanelOpen]);
+  }, [
+    activeWorkspacePanelMode,
+    isWorkspacePanelOpen,
+    setWorkspaceModeWithGlobalSync,
+  ]);
 
   // Sync circuit lock state to the iframe
   useEffect(() => {
@@ -1282,24 +1257,51 @@ export default function Builder() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  const resetWorkspaceSurfaces = useCallback(() => {
+    setPracticeWorkspaceMode(false);
+    setCompactWorksheetOpen(false);
+    setTroubleshootWorkspaceMode(false);
+    setTroubleshootPanelOpen(false);
+    setTroubleshootStatus(null);
+    setTroubleshootCheckPending(false);
+    setTroubleshootPendingCheckProblemId(null);
+    setGuidesWorkspaceMode(false);
+    setGuidesPanelOpen(false);
+    setActiveWorkspacePanelMode(null);
+    setWorkspacePanelOpen(false);
+    setCircuitLocked(false);
+    setEnvironmentalPanelOpen(false);
+    setHelpOpen(false);
+  }, [setHelpOpen]);
+
+  const openWorkspacePanelMode = useCallback(
+    (mode: WorkspacePanelMode) => {
+      setWorkspaceModeWithGlobalSync(mode);
+      resetWorkspaceSurfaces();
+      setActiveWorkspacePanelMode(mode);
+      setWorkspacePanelOpen(true);
+
+      if (mode === "arena" && arenaExportStatus !== "ready") {
+        handleArenaSync({ openWindow: false });
+      }
+    },
+    [
+      arenaExportStatus,
+      handleArenaSync,
+      resetWorkspaceSurfaces,
+      setWorkspaceModeWithGlobalSync,
+    ],
+  );
+
   const openGuidesWorkspace = useCallback(
     (workflow: GuideWorkflowId = "help") => {
       setActiveGuideWorkflow(workflow);
-      setWorkspaceModeWithGlobalSync("learn");
+      setWorkspaceModeWithGlobalSync("help");
+      resetWorkspaceSurfaces();
       setGuidesWorkspaceMode(true);
       setGuidesPanelOpen(true);
-      setPracticeWorkspaceMode(false);
-      setCompactWorksheetOpen(false);
-      setTroubleshootWorkspaceMode(false);
-      setTroubleshootPanelOpen(false);
-      setTroubleshootStatus(null);
-      setTroubleshootCheckPending(false);
-      setTroubleshootPendingCheckProblemId(null);
-      setArenaPanelOpen(false);
-      setCircuitLocked(false);
-      setHelpOpen(false);
     },
-    [setHelpOpen, setWorkspaceModeWithGlobalSync],
+    [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync],
   );
 
   const openHelpCenter = useCallback(
@@ -1347,20 +1349,15 @@ export default function Builder() {
 
       assignPracticeProblem(nextProblem, presetOverride);
       setWorkspaceModeWithGlobalSync("practice");
+      resetWorkspaceSurfaces();
       setPracticeWorkspaceMode(true);
       setCompactWorksheetOpen(true);
-      setTroubleshootWorkspaceMode(false);
-      setTroubleshootPanelOpen(false);
-      setGuidesWorkspaceMode(false);
-      setGuidesPanelOpen(false);
       setCircuitLocked(true);
-      setArenaPanelOpen(false);
-      setHelpOpen(false);
     },
     [
       activePracticeProblemId,
       assignPracticeProblem,
-      setArenaPanelOpen,
+      resetWorkspaceSurfaces,
       setWorkspaceModeWithGlobalSync,
     ],
   );
@@ -1388,22 +1385,18 @@ export default function Builder() {
         options?.forceLock ?? !troubleshootSolvedIds.includes(nextProblem.id);
 
       setWorkspaceModeWithGlobalSync("troubleshoot");
+      resetWorkspaceSurfaces();
       setTroubleshootWorkspaceMode(true);
       setTroubleshootPanelOpen(true);
-      setPracticeWorkspaceMode(false);
-      setCompactWorksheetOpen(false);
-      setGuidesWorkspaceMode(false);
-      setGuidesPanelOpen(false);
-      setArenaPanelOpen(false);
       setTroubleshootStatus(null);
       setTroubleshootCheckPending(false);
       setTroubleshootPendingCheckProblemId(null);
       setCircuitLocked(shouldLock);
-      setHelpOpen(false);
       triggerBuilderAction("load-preset", { preset: nextProblem.preset });
     },
     [
       activeTroubleshootId,
+      resetWorkspaceSurfaces,
       setWorkspaceModeWithGlobalSync,
       troubleshootSolvedIds,
       triggerBuilderAction,
@@ -1418,32 +1411,23 @@ export default function Builder() {
 
       if (pendingMode === "build") {
         setWorkspaceMode("build");
-        setPracticeWorkspaceMode(false);
-        setTroubleshootWorkspaceMode(false);
-        setGuidesWorkspaceMode(false);
-        setCompactWorksheetOpen(false);
-        setGuidesPanelOpen(false);
-        setCircuitLocked(false);
-        setArenaPanelOpen(false);
-        setTroubleshootPanelOpen(false);
-        setTroubleshootStatus(null);
-        setHelpOpen(false);
+        resetWorkspaceSurfaces();
       } else if (pendingMode === "practice") {
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
-        setWorkspaceMode("arena");
-        setTroubleshootWorkspaceMode(false);
-        setTroubleshootPanelOpen(false);
-        setGuidesWorkspaceMode(false);
-        setGuidesPanelOpen(false);
-        setCircuitLocked(false);
-        setArenaPanelOpen(true);
-        setHelpOpen(false);
-        if (arenaExportStatus !== "ready") {
-          handleArenaSync({ openWindow: false });
-        }
-      } else if (pendingMode === "learn") {
+        openArenaWorkspace({ forceSync: true });
+      } else if (pendingMode === "help") {
         openGuidesWorkspace("help");
+      } else if (pendingMode === "wire-guide") {
+        openWorkspacePanelMode("wire-guide");
+      } else if (
+        pendingMode === "arcade" ||
+        pendingMode === "classroom" ||
+        pendingMode === "community" ||
+        pendingMode === "account" ||
+        pendingMode === "pricing"
+      ) {
+        openWorkspacePanelMode(pendingMode);
       } else if (pendingMode === "troubleshoot") {
         openTroubleshootWorkspace();
       }
@@ -1456,12 +1440,50 @@ export default function Builder() {
     workspaceMode,
     openPracticeWorkspace,
     openTroubleshootWorkspace,
+    openArenaWorkspace,
+    openWorkspacePanelMode,
     openGuidesWorkspace,
-    handleArenaSync,
-    arenaExportStatus,
+    resetWorkspaceSurfaces,
     globalModeContext,
   ]);
+  
+  const handlePracticeAction = useCallback(
+    (action: PanelAction) => {
+      if (action.action === "open-arena") {
+        openArenaWorkspace({
+          sessionName: "Builder Hand-off",
+          forceSync: true,
+        });
+        return;
+      }
+      if (action.action === "practice-help") {
+        openHelpCenter("overview");
+        return;
+      }
+      if (action.action === "generate-practice") {
+        triggerBuilderAction(action.action, action.data);
+        const randomProblem = getRandomPracticeProblem();
+        if (randomProblem) {
+          openPracticeWorkspace(randomProblem);
+        }
+        return;
+      }
+      triggerBuilderAction(action.action, action.data);
+    },
+    [
+      openHelpCenter,
+      openArenaWorkspace,
+      openPracticeWorkspace,
+      triggerBuilderAction,
+    ],
+  );
 
+  const openLastArenaSession = useCallback(() => {
+    if (!lastArenaExport?.sessionId) {
+      return;
+    }
+    openArenaWorkspace();
+  }, [lastArenaExport, openArenaWorkspace]);
   const handleEnvironmentChange = useCallback((scenario: EnvironmentalScenario) => {
     setActiveEnvironment(scenario);
   }, []);
@@ -1645,8 +1667,10 @@ export default function Builder() {
   const isTroubleshootVisible =
     isTroubleshootWorkspaceMode && isTroubleshootPanelOpen;
   const isGuidesVisible = isGuidesWorkspaceMode && isGuidesPanelOpen;
+  const isWorkspacePanelVisible =
+    activeWorkspacePanelMode !== null && isWorkspacePanelOpen;
   const isOverlayActive =
-    isArenaPanelOpen ||
+    isWorkspacePanelVisible ||
     isEnvironmentalPanelOpen ||
     isHelpOpen ||
     isSaveModalOpen ||
@@ -1886,6 +1910,81 @@ export default function Builder() {
       </p>
     );
   };
+
+  const workspacePanelMeta = useMemo(() => {
+    switch (activeWorkspacePanelMode) {
+      case "arena":
+        return {
+          title: "Arena",
+          subtitle: "Component testing and advanced simulation",
+        };
+      case "wire-guide":
+        return {
+          title: "Wire Guide",
+          subtitle: "Wire gauge tables and W.I.R.E. reference data",
+        };
+      case "community":
+        return {
+          title: "Community",
+          subtitle: "Lab chat, gallery, feedback, and member profiles",
+        };
+      case "account":
+        return {
+          title: "Account",
+          subtitle: "Sign-in, profile, and account preferences",
+        };
+      case "pricing":
+        return {
+          title: "Pricing",
+          subtitle: "Plans, subscriptions, and rollout options",
+        };
+      case "classroom":
+        return {
+          title: "Classroom",
+          subtitle: "Assignments, roster management, and analytics",
+        };
+      case "arcade":
+        return {
+          title: "Arcade",
+          subtitle: "XP progression, missions, and leaderboards",
+        };
+      default:
+        return null;
+    }
+  }, [activeWorkspacePanelMode]);
+
+  const workspacePanelContent = useMemo(() => {
+    switch (activeWorkspacePanelMode) {
+      case "arena":
+        return (
+          <>
+            <div className="workspace-mode-panel-arena-status" role="status">
+              {arenaStatusMessage}
+            </div>
+            <ArenaView variant="embedded" />
+          </>
+        );
+      case "wire-guide":
+        return <WireLibrary />;
+      case "community":
+        return <Community />;
+      case "account":
+        return <Account />;
+      case "pricing":
+        return (
+          <>
+            <PricingSection />
+            <SubscriptionSection />
+          </>
+        );
+      case "classroom":
+        return <Classroom />;
+      case "arcade":
+        return <Arcade />;
+      default:
+        return null;
+    }
+  }, [activeWorkspacePanelMode, arenaStatusMessage]);
 
   return (
     <div
@@ -2631,33 +2730,16 @@ export default function Builder() {
         </span>
       </div>
 
-      <div
-        className={`builder-panel-overlay builder-panel-overlay--arena${isArenaPanelOpen ? " open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isArenaPanelOpen}
-        onClick={() => setArenaPanelOpen(false)}
-      >
-        <div
-          className="builder-panel-shell builder-panel-shell--arena"
-          onClick={(event) => event.stopPropagation()}
+      {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
+        <WorkspaceModePanel
+          title={workspacePanelMeta.title}
+          subtitle={workspacePanelMeta.subtitle}
+          isOpen={isWorkspacePanelOpen}
+          onToggle={() => setWorkspacePanelOpen((open) => !open)}
         >
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setArenaPanelOpen(false)}
-            aria-label="Close component arena"
-          >
-            X
-          </button>
-          <div className="builder-panel-body builder-panel-body--arena">
-            <ArenaView
-              variant="embedded"
-              onNavigateBack={() => setArenaPanelOpen(false)}
-            />
-          </div>
-        </div>
-      </div>
+          {workspacePanelContent}
+        </WorkspaceModePanel>
+      )}
 
       <div
         className={`builder-help-modal ${isHelpOpen ? "open" : ""}`}
@@ -2670,14 +2752,6 @@ export default function Builder() {
           className="builder-help-content"
           onClick={(event) => event.stopPropagation()}
         >
-          <button
-            type="button"
-            className="help-close"
-            onClick={() => setHelpOpen(false)}
-            aria-label="Close help"
-          >
-            X
-          </button>
           {helpView !== "overview" && (
             <button
               type="button"
@@ -2817,7 +2891,6 @@ export default function Builder() {
           isFrameReady={isFrameReady}
           isCircuitLocked={isCircuitLocked}
           onToggle={() => setTroubleshootPanelOpen(!isTroubleshootPanelOpen)}
-          onExitMode={exitTroubleshootMode}
           onSelectProblem={handleSelectTroubleshootProblem}
           onResetCircuit={handleResetTroubleshootProblem}
           onCheckFix={handleCheckTroubleshootFix}
@@ -2835,10 +2908,9 @@ export default function Builder() {
           isOpen={isGuidesPanelOpen}
           activeGuide={activeGuideWorkflow}
           onToggle={() => setGuidesPanelOpen(!isGuidesPanelOpen)}
-          onExitMode={exitGuidesMode}
           onSelectGuide={(guide) => {
             setActiveGuideWorkflow(guide);
-            setWorkspaceModeWithGlobalSync("learn");
+            setWorkspaceModeWithGlobalSync("help");
             setGuidesWorkspaceMode(true);
             setGuidesPanelOpen(true);
           }}
@@ -2866,14 +2938,6 @@ export default function Builder() {
           <div className="builder-panel-brand" aria-hidden="true">
             <BrandMark size="sm" decorative />
           </div>
-          <button
-            type="button"
-            className="builder-panel-close"
-            onClick={() => setEnvironmentalPanelOpen(false)}
-            aria-label="Close environmental conditions"
-          >
-            X
-          </button>
           <div className="builder-panel-body builder-panel-body--environment">
             <EnvironmentalPanel
               baseMetrics={circuitBaseMetrics}
@@ -2882,12 +2946,6 @@ export default function Builder() {
           </div>
         </div>
       </div>
-
-      {/* Wire Library Panel */}
-      <WireLibraryPanel
-        isOpen={isWireLibraryPanelOpen}
-        onClose={() => setWireLibraryPanelOpen(false)}
-      />
 
       {/* Circuit Save Modal */}
       <CircuitSaveModal

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates favicon + PWA + Android launcher icons from the landing-page logo.
+ * Generates favicon + PWA + Android launcher icons from the landing logo.
  *
  * Uses Playwright (already in devDependencies) to render the SVG into square
  * icon canvases and exports all required PNG/ICO/SVG assets.
@@ -28,6 +28,42 @@ const ANDROID_MIPMAPS = [
 ];
 
 const BG = '#0f172a';
+const FALLBACK_VIEWBOX = { minX: 0, minY: 0, width: 240, height: 130 };
+
+function parseSvgViewBox(svg) {
+  const match = svg.match(/viewBox\s*=\s*["']([^"']+)["']/i);
+  if (!match) {
+    return FALLBACK_VIEWBOX;
+  }
+
+  const parts = match[1]
+    .trim()
+    .split(/[\s,]+/)
+    .map((part) => Number.parseFloat(part));
+
+  if (
+    parts.length !== 4
+    || parts.some((value) => Number.isNaN(value))
+    || parts[2] <= 0
+    || parts[3] <= 0
+  ) {
+    return FALLBACK_VIEWBOX;
+  }
+
+  return {
+    minX: parts[0],
+    minY: parts[1],
+    width: parts[2],
+    height: parts[3],
+  };
+}
+
+function extractSvgInner(svg) {
+  return svg
+    .replace(/^[\s\S]*?<svg[^>]*>/i, '')
+    .replace(/<\/svg>\s*$/i, '')
+    .trim();
+}
 
 function normalizeSvg(svg) {
   // Normalize common JSX-style SVG attributes for safe inline HTML rendering.
@@ -45,39 +81,31 @@ function normalizeSvg(svg) {
     .replaceAll('xlinkHref=', 'xlink:href=');
 }
 
-function extractSvgInner(svg) {
-  const match = svg.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>\s*$/i);
-  if (!match) {
-    throw new Error('Unable to extract inner SVG markup from logo.');
-  }
-  return match[1].trim();
-}
+function computeRenderSize({ size, fitRatio, aspectRatio }) {
+  const clampedFitRatio = Math.max(0.1, Math.min(1, fitRatio));
+  const maxW = Math.max(1, Math.round(size * clampedFitRatio));
+  const maxH = Math.max(1, Math.round(size * clampedFitRatio));
 
-function parseSvgViewBox(svg) {
-  const openingTag = svg.match(/<svg\b[^>]*>/i)?.[0] ?? '';
-  const viewBoxMatch = openingTag.match(/viewBox\s*=\s*["']([^"']+)["']/i);
-  if (!viewBoxMatch) {
-    return { minX: 0, minY: 0, width: 512, height: 512 };
+  let width = maxW;
+  let height = Math.max(1, Math.round(width / aspectRatio));
+  if (height > maxH) {
+    height = maxH;
+    width = Math.max(1, Math.round(height * aspectRatio));
   }
 
-  const parts = viewBoxMatch[1].trim().split(/\s+/).map(Number);
-  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) {
-    return { minX: 0, minY: 0, width: 512, height: 512 };
-  }
-
-  const [minX, minY, width, height] = parts;
-  return { minX, minY, width, height };
+  return { width, height };
 }
 
 function makeIconHtml({
   svg,
   size,
-  paddingRatio,
+  fitRatio,
+  aspectRatio,
   backgroundColor = BG,
   frameColor = backgroundColor,
   roundMask = false,
 }) {
-  const inner = Math.max(1, Math.round(size * (1 - paddingRatio * 2)));
+  const { width, height } = computeRenderSize({ size, fitRatio, aspectRatio });
   const bodyBackground = backgroundColor ?? 'transparent';
   const frameBackground = frameColor ? `background: ${frameColor};` : '';
   const frameMask = roundMask ? 'border-radius: 999px; overflow: hidden;' : '';
@@ -90,8 +118,8 @@ function makeIconHtml({
       html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
       body { background: ${bodyBackground}; display: grid; place-items: center; }
       .frame {
-        width: ${inner}px;
-        height: ${inner}px;
+        width: ${width}px;
+        height: ${height}px;
         display: grid;
         place-items: center;
         ${frameBackground}
@@ -112,20 +140,19 @@ function makeIconHtml({
 </html>`;
 }
 
-function buildFaviconSvg({ innerSvg, viewBox, paddingRatio = 0.08, size = 512 }) {
-  const drawable = size * (1 - paddingRatio * 2);
-  const scale = Math.min(drawable / viewBox.width, drawable / viewBox.height);
-  const drawWidth = viewBox.width * scale;
-  const drawHeight = viewBox.height * scale;
-  const tx = (size - drawWidth) / 2;
-  const ty = (size - drawHeight) / 2;
+function buildFaviconSvg({ innerSvg, viewBox, fitRatio = 0.94, size = 512 }) {
+  const aspectRatio = viewBox.width / viewBox.height;
+  const renderSize = computeRenderSize({ size, fitRatio, aspectRatio });
+  const x = Math.round((size - renderSize.width) / 2);
+  const y = Math.round((size - renderSize.height) / 2);
+  const viewBoxString = `${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="${size}" height="${size}" fill="${BG}"/>
-  <g transform="translate(${tx.toFixed(3)} ${ty.toFixed(3)}) scale(${scale.toFixed(6)}) translate(${-viewBox.minX} ${-viewBox.minY})">
+  <svg x="${x}" y="${y}" width="${renderSize.width}" height="${renderSize.height}" viewBox="${viewBoxString}" xmlns="http://www.w3.org/2000/svg">
     ${innerSvg}
-  </g>
+  </svg>
 </svg>
 `;
 }
@@ -174,8 +201,9 @@ async function main() {
 
   const rawLogoSvg = await readFile(LOGO_SVG_PATH, 'utf8');
   const logoSvg = normalizeSvg(rawLogoSvg);
-  const logoInner = extractSvgInner(logoSvg);
   const logoViewBox = parseSvgViewBox(logoSvg);
+  const logoAspectRatio = logoViewBox.width / logoViewBox.height;
+  const logoInner = extractSvgInner(logoSvg);
 
   await mkdir(PUBLIC_DIR, { recursive: true });
   await mkdir(PUBLIC_ICONS_DIR, { recursive: true });
@@ -185,24 +213,32 @@ async function main() {
 
   const renderPng = async (
     size,
-    { paddingRatio, backgroundColor = BG, frameColor = backgroundColor, roundMask = false }
+    { fitRatio, backgroundColor = BG, frameColor = backgroundColor, roundMask = false }
   ) => {
     await page.setViewportSize({ width: size, height: size });
     await page.setContent(
-      makeIconHtml({ svg: logoSvg, size, paddingRatio, backgroundColor, frameColor, roundMask })
+      makeIconHtml({
+        svg: logoSvg,
+        size,
+        fitRatio,
+        aspectRatio: logoAspectRatio,
+        backgroundColor,
+        frameColor,
+        roundMask,
+      })
     );
     // Small wait to ensure SVG filters/gradients are painted.
     await page.waitForTimeout(80);
-    return await page.screenshot({
+    return page.screenshot({
       type: 'png',
       omitBackground: backgroundColor === null,
     });
   };
 
   // Favicons
-  const favicon16 = await renderPng(16, { paddingRatio: 0.02 });
-  const favicon32 = await renderPng(32, { paddingRatio: 0.03 });
-  const favicon48 = await renderPng(48, { paddingRatio: 0.04 });
+  const favicon16 = await renderPng(16, { fitRatio: 0.92 });
+  const favicon32 = await renderPng(32, { fitRatio: 0.94 });
+  const favicon48 = await renderPng(48, { fitRatio: 0.94 });
 
   await writeFile(join(PUBLIC_DIR, 'favicon-16x16.png'), favicon16);
   await writeFile(join(PUBLIC_DIR, 'favicon-32x32.png'), favicon32);
@@ -219,19 +255,18 @@ async function main() {
   const faviconSvg = buildFaviconSvg({
     innerSvg: logoInner,
     viewBox: logoViewBox,
-    paddingRatio: 0.08,
+    fitRatio: 0.94,
   });
   await writeFile(join(PUBLIC_DIR, 'favicon.svg'), faviconSvg);
 
   // Apple touch icon
-  const apple180 = await renderPng(180, { paddingRatio: 0.08 });
+  const apple180 = await renderPng(180, { fitRatio: 0.9 });
   await writeFile(join(PUBLIC_DIR, 'apple-touch-icon.png'), apple180);
 
   // PWA icons (filenames referenced by manifest.json)
   const pwaSizes = [72, 96, 128, 144, 152, 192, 384, 512];
   for (const size of pwaSizes) {
-    const paddingRatio = size >= 192 ? 0.08 : 0.07;
-    const png = await renderPng(size, { paddingRatio });
+    const png = await renderPng(size, { fitRatio: size >= 192 ? 0.84 : 0.88 });
     await writeFile(join(PUBLIC_ICONS_DIR, `icon-${size}.png`), png);
   }
 
@@ -241,17 +276,17 @@ async function main() {
     await mkdir(targetDir, { recursive: true });
 
     const launcher = await renderPng(launcherSize, {
-      paddingRatio: 0.06,
+      fitRatio: 0.88,
       backgroundColor: BG,
     });
     const launcherRound = await renderPng(launcherSize, {
-      paddingRatio: 0.06,
+      fitRatio: 0.88,
       backgroundColor: null,
       frameColor: BG,
       roundMask: true,
     });
     const launcherForeground = await renderPng(foregroundSize, {
-      paddingRatio: 0.12,
+      fitRatio: 0.74,
       backgroundColor: null,
     });
 

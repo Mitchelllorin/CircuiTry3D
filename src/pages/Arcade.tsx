@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
+import RetroCircuitMaze from "../components/arcade/RetroCircuitMaze";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../context/GamificationContext";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
@@ -177,10 +178,11 @@ export default function Arcade() {
         <div className="arcade-hero-copy">
           <BrandSignature size="sm" decorative className="arcade-brand" />
           <p className="arcade-eyebrow">Circuit Arcade</p>
-          <h1>Speed sprints, clean clears, and XP boosts in one hub.</h1>
+          <h1>Speed sprints, clean clears, and retro maze runs in one hub.</h1>
           <p>
-            Track your fastest solves, lock in clean runs, and climb the lab leaderboards.
-            Arcade progress saves automatically to this device.
+            Track your fastest solves, lock in clean runs, and play an 80s-style
+            cabinet challenge. Arcade progress saves automatically to this
+            device.
           </p>
           <div className="arcade-hero-actions">
             <button type="button" onClick={handleLaunchPractice}>
@@ -200,6 +202,19 @@ export default function Arcade() {
           ))}
         </div>
       </header>
+
+      <section className="arcade-panel">
+        <div className="arcade-panel-header">
+          <div>
+            <h2>Retro Arcade Cabinet</h2>
+            <p>
+              Circuit Chase &#39;84 brings a Pac-Man-inspired 2D/3D maze run to
+              Circuitry 3D Arcade.
+            </p>
+          </div>
+        </div>
+        <RetroCircuitMaze />
+      </section>
 
       <section className="arcade-panel">
         <div className="arcade-panel-header">
