@@ -587,26 +587,47 @@ export default function RetroCircuitMaze() {
           </button>
         </div>
 
-        <div className="retro-direction-pad" role="group" aria-label="Direction pad">
-          <button type="button" onClick={() => queueDirection("up")}>
-            Up
+        <div className="retro-dpad" role="group" aria-label="D-pad controller">
+          <button
+            type="button"
+            className="retro-dpad-button is-up"
+            onClick={() => queueDirection("up")}
+            aria-label="Move up"
+          >
+            <span aria-hidden="true">▲</span>
           </button>
-          <div>
-            <button type="button" onClick={() => queueDirection("left")}>
-              Left
-            </button>
-            <button type="button" onClick={() => queueDirection("down")}>
-              Down
-            </button>
-            <button type="button" onClick={() => queueDirection("right")}>
-              Right
-            </button>
+          <button
+            type="button"
+            className="retro-dpad-button is-left"
+            onClick={() => queueDirection("left")}
+            aria-label="Move left"
+          >
+            <span aria-hidden="true">◀</span>
+          </button>
+          <div className="retro-dpad-center" aria-hidden="true">
+            <span>C</span>
           </div>
+          <button
+            type="button"
+            className="retro-dpad-button is-right"
+            onClick={() => queueDirection("right")}
+            aria-label="Move right"
+          >
+            <span aria-hidden="true">▶</span>
+          </button>
+          <button
+            type="button"
+            className="retro-dpad-button is-down"
+            onClick={() => queueDirection("down")}
+            aria-label="Move down"
+          >
+            <span aria-hidden="true">▼</span>
+          </button>
         </div>
       </div>
 
       <p className="retro-maze-help">
-        Keyboard controls: Arrow keys or WASD to move, Enter to start.
+        Controls: Arrow keys or WASD, or tap the D-pad on touch screens.
       </p>
     </section>
   );
