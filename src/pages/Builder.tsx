@@ -513,7 +513,7 @@ const SHORTCUT_SECTIONS: HelpSection[] = [
       "Use arrow keys for fine component positioning.",
       "Scroll wheel zooms by default; hold Shift+scroll to pan.",
       "Double-click (or double-tap) for quick edits, then Space to reveal menus again.",
-      "Try the quick workflow: B (battery), R (resistor), W (wire), connect, Space to review.",
+      "Try this quick sequence: B (battery), R (resistor), W (wire), connect, Space to review.",
     ],
   },
 ];
@@ -2686,9 +2686,9 @@ export default function Builder() {
                       ? "true"
                       : undefined
                   }
-                  title="Open the Help workflow aligned with the standard section model."
+                  title="Open the Help guide aligned with the standard section model."
                 >
-                  <span className="slider-chip-label">Help Workflow</span>
+                  <span className="slider-chip-label">Help Guide</span>
                 </button>
                 <button
                   type="button"
@@ -2699,9 +2699,9 @@ export default function Builder() {
                       ? "true"
                       : undefined
                   }
-                  title="Open the Tutorial workflow with sequenced build steps."
+                  title="Open the Tutorial guide with sequenced build steps."
                 >
-                  <span className="slider-chip-label">Tutorial Workflow</span>
+                  <span className="slider-chip-label">Tutorial Guide</span>
                 </button>
                 <button
                   type="button"
@@ -2712,9 +2712,9 @@ export default function Builder() {
                       ? "true"
                       : undefined
                   }
-                  title="Open the W.I.R.E. workflow for worksheet-first solving."
+                  title="Open the W.I.R.E. guide for worksheet-first solving."
                 >
-                  <span className="slider-chip-label">W.I.R.E. Workflow</span>
+                  <span className="slider-chip-label">W.I.R.E. Guide</span>
                 </button>
                 <button
                   type="button"
