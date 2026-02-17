@@ -728,6 +728,169 @@ const IconPlay = ({ className }: IconProps) => (
   </svg>
 );
 
+const IconUndo = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M7 6 3.5 9.5 7 13"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M4 9.5h6.25a4.25 4.25 0 1 1 0 8.5H9"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconRedo = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M13 6 16.5 9.5 13 13"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M16 9.5H9.75a4.25 4.25 0 1 0 0 8.5H11"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconFolder = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M2.75 7A1.75 1.75 0 0 1 4.5 5.25h3.2l1.6 1.9h6.2a1.75 1.75 0 0 1 1.75 1.75v5.6a1.75 1.75 0 0 1-1.75 1.75h-11a1.75 1.75 0 0 1-1.75-1.75V7Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M2.75 8.5h14.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconSave = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M4.5 3.75h9.4l2.35 2.35V15.5a1.75 1.75 0 0 1-1.75 1.75h-10a1.75 1.75 0 0 1-1.75-1.75v-10A1.75 1.75 0 0 1 4.5 3.75Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.25 3.75V8h6.5V3.75"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.5 13.25h7"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconRotate = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M15.75 9.5A5.75 5.75 0 1 0 14 13.8"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.75 4.75v4.75H11"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconPencil = ({ className }: IconProps) => (
+  <svg
+    className={className}
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="m13.7 4.3 2 2a1.4 1.4 0 0 1 0 2l-7.4 7.4L4.75 16.5l.8-3.55 7.35-7.35a1.4 1.4 0 0 1 2 0Z"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="m11.9 5.9 2.2 2.2"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 /**
  * Hook to detect when an element is visible in the viewport
  * Used to lazy-load expensive 3D thumbnails only when needed
@@ -2123,7 +2286,7 @@ export default function Builder() {
               aria-label="Undo last change"
               title="Undo (Ctrl+Z)"
             >
-              <span className="edge-action-icon" aria-hidden="true">↺</span>
+              <IconUndo className="edge-action-icon-svg" />
             </button>
             <button
               type="button"
@@ -2134,7 +2297,7 @@ export default function Builder() {
               aria-label="Redo previous change"
               title="Redo (Ctrl+Shift+Z)"
             >
-              <span className="edge-action-icon" aria-hidden="true">↻</span>
+              <IconRedo className="edge-action-icon-svg" />
             </button>
             <button
               type="button"
@@ -2143,7 +2306,7 @@ export default function Builder() {
               aria-label="Open circuit"
               title="Open saved circuit (Ctrl+O)"
             >
-              <span className="edge-action-icon" aria-hidden="true">📂</span>
+              <IconFolder className="edge-action-icon-svg" />
             </button>
             <button
               type="button"
@@ -2152,7 +2315,7 @@ export default function Builder() {
               aria-label="Save circuit"
               title="Save circuit (Ctrl+S)"
             >
-              <span className="edge-action-icon" aria-hidden="true">💾</span>
+              <IconSave className="edge-action-icon-svg" />
               {circuitStorage.hasUnsavedChanges && (
                 <span className="unsaved-dot" aria-label="Unsaved changes" />
               )}
@@ -2182,7 +2345,7 @@ export default function Builder() {
               aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
-              <img src={wireStrippersIcon} alt="" className="edge-action-icon edge-action-icon-svg" aria-hidden="true" />
+              <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -2194,7 +2357,7 @@ export default function Builder() {
               aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
               title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
             >
-              <span className="edge-action-icon" aria-hidden="true">🔄</span>
+              <IconRotate className="edge-action-icon-svg" />
             </button>
             <button
               type="button"
@@ -2205,7 +2368,7 @@ export default function Builder() {
               aria-label="Edit selected component"
               title="Edit / Select (E)"
             >
-              <span className="edge-action-icon" aria-hidden="true">✏️</span>
+              <IconPencil className="edge-action-icon-svg" />
             </button>
           </div>
         </Fragment>
