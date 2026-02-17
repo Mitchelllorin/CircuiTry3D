@@ -1721,8 +1721,9 @@ export default function Builder() {
     [triggerBuilderAction, triggerSimulationPulse],
   );
 
-  const handleAdvancePracticeProblem = useCallback(() => {
+  const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
     const currentId =
+      currentProblemId ??
       practiceProblemRef.current ??
       activePracticeProblemId ??
       DEFAULT_PRACTICE_PROBLEM?.id ??
