@@ -15,7 +15,7 @@ type CompactWorksheetPanelProps = {
   onToggle: () => void;
   onComplete: (complete: boolean) => void;
   onRequestUnlock: () => void;
-  onAdvance?: () => void;
+  onAdvance?: (currentProblemId: string) => void;
 };
 
 type WorksheetState = Record<string, Record<WireMetricKey, WorksheetEntry>>;
@@ -304,7 +304,7 @@ export function CompactWorksheetPanel({
               <button
                 type="button"
                 className="compact-worksheet-next-btn"
-                onClick={onAdvance}
+                onClick={() => onAdvance(problem.id)}
               >
                 Next Problem
               </button>
@@ -316,7 +316,7 @@ export function CompactWorksheetPanel({
             <button
               type="button"
               className="compact-worksheet-next-btn skip-btn"
-              onClick={onAdvance}
+              onClick={() => onAdvance(problem.id)}
             >
               Skip to Next Problem
             </button>
