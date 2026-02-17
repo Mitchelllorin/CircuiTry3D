@@ -35,7 +35,6 @@ public class MainActivity extends BridgeActivity {
             
             // Cache settings for better performance
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-            settings.setAppCacheEnabled(true);
             
             // Enable viewport scaling for proper mobile layout
             settings.setLoadWithOverviewMode(true);
