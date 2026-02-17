@@ -2718,6 +2718,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
 
           // Initialize current flow animation - add particles to circuitGroup so they move with the circuit
           flowAnimationSystem = new CurrentFlowAnimationSystem(three, circuitGroup);
+          flowAnimationSystem.setFlowMode("electron");
 
           // Solve the circuit to get current values
           const solutionResult = trySolvePracticeProblem(practiceProblem);
