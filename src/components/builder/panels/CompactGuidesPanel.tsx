@@ -113,35 +113,35 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
   "wire-guide": {
     label: "W.I.R.E. Guide Workflow",
     description:
-      "Use this sequence to connect the W.I.R.E. method to real worksheet solving in Practice mode.",
+      "Use this checklist to solve one circuit at a time without guessing: capture known values, pick a formula, solve, then verify.",
     completionSummary:
-      "W.I.R.E. guide complete. Open Practice Worksheets to apply formulas on fresh circuits.",
+      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check loop on new circuits.",
     workspaceSyncCopy:
-      "The guide is synchronized to the same W.I.R.E. metrics shown in the Insights bar and worksheet panels.",
+      "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
       {
         id: "wire-identify-knowns",
-        title: "Identify known W.I.R.E. values",
+        title: "Capture known values first",
         detail:
-          "List given watts, current, resistance, and voltage values from the active circuit first.",
+          "Write down any known W, I, R, or E values from the circuit before choosing a formula.",
       },
       {
         id: "wire-select-formula",
-        title: "Select the correct formula",
+        title: "Choose one target unknown",
         detail:
-          "Pick the formula that solves the target unknown with the known values you already have.",
+          "Pick one unknown to solve and use a formula that matches the values you already know.",
       },
       {
         id: "wire-verify-totals",
-        title: "Verify totals against simulation",
+        title: "Solve and label units",
         detail:
-          "Compare solved totals against the live simulation metrics to catch wiring or math errors.",
+          "Record the answer with units (W, A, ohm, V) so worksheet rows stay clear and easy to check.",
       },
       {
         id: "wire-open-practice",
-        title: "Apply workflow in Practice Worksheets",
+        title: "Verify in simulation and worksheet",
         detail:
-          "Open Practice Worksheets and complete a full table to reinforce the same method under constraints.",
+          "Compare your solved value against live simulator metrics, then update the worksheet totals row.",
       },
     ],
   },
@@ -316,6 +316,32 @@ export function CompactGuidesPanel({
                 {nextStep ? nextStep.detail : activeWorkflow.completionSummary}
               </span>
             </div>
+            {activeGuide === "wire-guide" && (
+              <aside
+                className="guides-wire-cheatsheet"
+                aria-label="W.I.R.E quick formula picker"
+              >
+                <strong>Quick formula picker</strong>
+                <ul>
+                  <li>
+                    <span>Need current (I)</span>
+                    <code>I = E / R</code>
+                  </li>
+                  <li>
+                    <span>Need resistance (R)</span>
+                    <code>R = E / I</code>
+                  </li>
+                  <li>
+                    <span>Need voltage (E)</span>
+                    <code>E = I * R</code>
+                  </li>
+                  <li>
+                    <span>Need power (W)</span>
+                    <code>W = E * I</code>
+                  </li>
+                </ul>
+              </aside>
+            )}
             <ul className="guides-step-list">
               {activeWorkflow.steps.map((step, index) => {
                 const checked = completedStepIds.includes(step.id);

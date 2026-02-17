@@ -217,6 +217,50 @@
   color: rgba(216, 236, 255, 0.9);
 }
 
+.guides-wire-cheatsheet {
+  border-radius: 10px;
+  border: 1px solid rgba(120, 255, 188, 0.4);
+  background: rgba(18, 62, 44, 0.38);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.guides-wire-cheatsheet strong {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(184, 255, 220, 0.95);
+}
+
+.guides-wire-cheatsheet ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.guides-wire-cheatsheet li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(214, 244, 255, 0.9);
+}
+
+.guides-wire-cheatsheet code {
+  border-radius: 6px;
+  border: 1px solid rgba(120, 255, 188, 0.4);
+  background: rgba(8, 28, 22, 0.8);
+  color: rgba(188, 255, 224, 0.95);
+  font-size: 11px;
+  padding: 2px 6px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
 .guides-step-list {
   list-style: none;
   margin: 0;

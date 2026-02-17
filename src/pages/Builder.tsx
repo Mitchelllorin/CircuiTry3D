@@ -266,7 +266,8 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   {
     title: "W.I.R.E. Overview",
     paragraphs: [
-      "The W.I.R.E. method keeps four core electrical values front and centre while you design circuits.",
+      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits.",
+      "Use this solve loop: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
       "W - Watts (power)",
@@ -328,9 +329,11 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
       "Build small circuits and watch the analysis panel respond in real time.",
     ],
     bullets: [
+      "Start by writing known W, I, R, and E values before solving anything.",
+      "Solve one unknown at a time and record units to avoid table mistakes.",
       "Add or remove resistors to see how total resistance changes.",
       "Swap battery voltages to explore how EMF affects the rest of the system.",
-      "Parallel paths lower total resistance; practice mode provides guided challenges.",
+      "Parallel paths lower total resistance; use Practice mode for guided checks.",
     ],
   },
 ];
@@ -1997,7 +2000,7 @@ export default function Builder() {
           title: "Wire Guide",
           subtitle: activeWireProfile
             ? `Active profile: ${activeWireProfile.gaugeLabel} (${activeWireSegmentResistance.toFixed(4)} Ω/m)`
-            : "Choose a wire profile and apply it to live W.I.R.E. simulation",
+            : "Filter, select, and apply a wire profile to see live W.I.R.E. changes.",
         };
       case "community":
         return {

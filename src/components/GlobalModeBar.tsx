@@ -223,10 +223,15 @@ export function GlobalModeBar() {
           className="mode-tab"
           data-active={workspaceMode === "wire-guide" ? "true" : undefined}
           onClick={handleWireGuideClick}
-          aria-label="Wire guide"
-          title="Wire guide and gauge specifications"
+          aria-label="Wire guide mode"
+          title="Wire guide, formulas, and gauge recommendations"
         >
-          <img src={wireResourceLogo} alt="" className="mode-icon mode-icon--svg" aria-hidden="true" />
+          <img
+            src={wireResourceLogo}
+            alt=""
+            className="mode-icon mode-icon--svg mode-icon--wire-guide"
+            aria-hidden="true"
+          />
           <span className="mode-label">Wire Guide</span>
         </button>
         {modeBarScrollState.canScrollRight && (

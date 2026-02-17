@@ -144,6 +144,19 @@ export default function WireLibrary({
     );
   }, [material, insulation, category, minAmpacity, search]);
 
+  useEffect(() => {
+    if (!filtered.length) {
+      if (selectedWireId !== null) {
+        setSelectedWireId(null);
+      }
+      return;
+    }
+
+    if (!selectedWireId || !filtered.some((spec) => spec.id === selectedWireId)) {
+      setSelectedWireId(filtered[0]?.id ?? null);
+    }
+  }, [filtered, selectedWireId]);
+
   const lowestResistance = useMemo(() => {
     if (!filtered.length) {
       return null;
@@ -226,6 +239,15 @@ export default function WireLibrary({
     isBuilderWireIntegrationEnabled &&
     Boolean(selectedWire) &&
     !selectedWireAlreadyApplied;
+  const selectionStatusCopy = useMemo(() => {
+    if (!selectedWire) {
+      return "Step 2: Select a wire row below to preview how it affects your circuit.";
+    }
+    if (selectedWireAlreadyApplied) {
+      return `${selectedWire.gaugeLabel} is already active in the builder model.`;
+    }
+    return `${selectedWire.gaugeLabel} is selected. Review the preview, then apply it to the circuit.`;
+  }, [selectedWire, selectedWireAlreadyApplied]);
 
   // Count wires by category for display
   const categoryCounts = useMemo(() => {
@@ -273,26 +295,36 @@ export default function WireLibrary({
         </div>
       </header>
 
+      <section className="wire-library-quickstart" aria-label="Wire guide quick start">
+        <h4>Quick start</h4>
+        <ol>
+          <li>Filter by category, material, insulation, or use-case search.</li>
+          <li>Select a wire row to preview expected W.I.R.E. changes.</li>
+          <li>Apply the selected wire to update the live circuit model.</li>
+        </ol>
+        <p className="wire-library-quickstart-status">{selectionStatusCopy}</p>
+      </section>
+
       {isBuilderWireIntegrationEnabled && (
         <section className="wire-library-integration" aria-live="polite">
           <header className="wire-library-integration-header">
             <div>
-              <strong>Builder wire profile</strong>
+              <strong>Step 3: Apply to live circuit</strong>
               <p>
-                Select a wire row, then apply it to the active circuit so W.I.R.E.
-                metrics update with that wire&apos;s resistance model.
+                After you select a row, apply it here to update live W.I.R.E.
+                values with that wire&apos;s resistance and ampacity profile.
               </p>
             </div>
             <span
               className={`wire-library-profile-chip${activeWireSpec ? " active" : ""}`}
             >
-              {activeWireSpec ? "Profile active" : "Using default wire"}
+              {activeWireSpec ? "Applied to circuit" : "Default model active"}
             </span>
           </header>
 
           <div className="wire-library-integration-grid">
             <div>
-              <span className="summary-label">Active profile</span>
+              <span className="summary-label">Current wire model</span>
               <strong className="summary-value">
                 {activeWireSpec ? activeWireSpec.gaugeLabel : "Default builder wire"}
               </strong>
@@ -301,7 +333,7 @@ export default function WireLibrary({
               </p>
             </div>
             <div>
-              <span className="summary-label">Circuit wires</span>
+              <span className="summary-label">Wired segments</span>
               <strong className="summary-value">{wireCount}</strong>
               <p className="wire-library-integration-meta">
                 Estimated wire path:{" "}
@@ -309,34 +341,34 @@ export default function WireLibrary({
               </p>
             </div>
             <div>
-              <span className="summary-label">Selected row</span>
+              <span className="summary-label">Selected wire row</span>
               <strong className="summary-value">
                 {selectedWire ? selectedWire.gaugeLabel : "Choose a wire"}
               </strong>
               <p className="wire-library-integration-meta">
                 {selectedWire
                   ? `Resistance: ${formatResistancePerMeter(selectedWire.resistanceOhmPerMeter)}`
-                  : "Click Select on any row below"}
+                  : "Select any row below to preview and apply"}
               </p>
             </div>
           </div>
 
           {selectedWirePreview && (
             <div className="wire-library-preview-card" role="status">
-              <strong>Preview with selected wire</strong>
+              <strong>Estimated change after apply</strong>
               <div className="wire-library-preview-grid">
                 <span>
-                  R: {formatNumber(selectedWirePreview.totalResistance, 4)} Ω (
+                  R: {formatNumber(selectedWirePreview.totalResistance, 4)} Ω (delta{" "}
                   {selectedWirePreview.deltaResistance >= 0 ? "+" : ""}
                   {formatNumber(selectedWirePreview.deltaResistance, 4)} Ω)
                 </span>
                 <span>
-                  I: {formatNumber(selectedWirePreview.current, 4)} A (
+                  I: {formatNumber(selectedWirePreview.current, 4)} A (delta{" "}
                   {selectedWirePreview.deltaCurrent >= 0 ? "+" : ""}
                   {formatNumber(selectedWirePreview.deltaCurrent, 4)} A)
                 </span>
                 <span>
-                  W: {formatNumber(selectedWirePreview.power, 4)} W (
+                  W: {formatNumber(selectedWirePreview.power, 4)} W (delta{" "}
                   {selectedWirePreview.deltaPower >= 0 ? "+" : ""}
                   {formatNumber(selectedWirePreview.deltaPower, 4)} W)
                 </span>
@@ -355,7 +387,9 @@ export default function WireLibrary({
               }}
               disabled={!canApplySelectedWire}
             >
-              {selectedWireAlreadyApplied ? "Wire already applied" : "Apply selected wire"}
+              {selectedWireAlreadyApplied
+                ? "Selected wire is already active"
+                : "Apply selected wire to circuit"}
             </button>
             <button
               type="button"
@@ -424,14 +458,14 @@ export default function WireLibrary({
           <span>Search gauges or use cases</span>
           <input
             type="search"
-            placeholder="ex: battery, solar, sensor, marine"
+            placeholder="Try: battery lead, sensor wire, marine, high-temp"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
 
         <button type="button" onClick={resetFilters} disabled={!filtersActive} className="wire-library-reset">
-          Reset
+          Reset filters
         </button>
       </div>
 
@@ -448,6 +482,9 @@ export default function WireLibrary({
       ) : (
         <div className="wire-library-table-wrapper">
           <table className="wire-library-table">
+            <caption className="wire-library-table-caption">
+              Select a wire profile to preview and apply it to the active circuit.
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Gauge · Area</th>
@@ -478,6 +515,11 @@ export default function WireLibrary({
                           className={`wire-row-select-btn${isSelected ? " selected" : ""}`}
                           onClick={() => setSelectedWireId(spec.id)}
                           aria-pressed={isSelected}
+                          title={
+                            isSelected
+                              ? `${spec.gaugeLabel} selected`
+                              : `Select ${spec.gaugeLabel}`
+                          }
                         >
                           {isSelected ? "Selected" : "Select"}
                         </button>
