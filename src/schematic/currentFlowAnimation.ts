@@ -1,6 +1,5 @@
 import { Vec2 } from "./types";
 import { getPerformanceTier } from "../utils/mobilePerformance";
-import { LOGO_COLORS } from "./visualConstants";
 
 /**
  * Flow mode determines the direction of particle animation:
@@ -15,31 +14,14 @@ export type FlowMode = "electron" | "conventional";
  */
 export type CurrentIntensity = "off" | "low" | "medium" | "high" | "critical";
 
-const parseHexColor = (hex: string, fallback: number): number => {
-  if (typeof hex !== "string") return fallback;
-  const normalized = hex.trim().replace(/^#/, "");
-  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
-    return fallback;
-  }
-  const parsed = Number.parseInt(normalized, 16);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const BRAND_FLOW_COLORS = {
-  negative: parseHexColor(LOGO_COLORS.wireGradientStart, 0x88ccff),
-  mid: parseHexColor(LOGO_COLORS.componentGradientStart, 0xff8844),
-  positive: parseHexColor(LOGO_COLORS.wireGradientEnd, 0x00ff88),
-} as const;
-
 /**
  * Color scheme for current intensity visualization
- * Uses existing brand palette tokens already shared across the app.
- * Low -> high current: brand blue -> brand orange -> brand green
+ * Slowest -> fastest: red -> blue -> white
  */
 export const CURRENT_FLOW_COLOR_RAMP = {
-  slow: BRAND_FLOW_COLORS.negative,
-  mid: BRAND_FLOW_COLORS.mid,
-  fast: BRAND_FLOW_COLORS.positive,
+  slow: 0xef4444, // Red - slowest current
+  mid: 0x3b82f6,  // Blue - mid current
+  fast: 0xffffff  // White - fastest current
 } as const;
 
 const CURRENT_FLOW_OFF_COLORS = {
@@ -592,8 +574,8 @@ export class CurrentFlowAnimationSystem {
     // Add a comet tail (stacked translucent spheres that trail behind)
     const tailGroup = new this.three.Group();
     tailGroup.name = "tail";
-    const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
-    const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+    const tailHeadColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.fast, 0.3);
+    const tailTrailColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.slow, 0.6);
 
     for (let i = 0; i < COMET_TAIL.segments; i++) {
       const t = i / Math.max(COMET_TAIL.segments - 1, 1); // 0..1
@@ -661,8 +643,8 @@ export class CurrentFlowAnimationSystem {
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
         const COMET_TAIL = getCometTailConfig();
-        const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
-        const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+        const tailHeadColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.fast, 0.3);
+        const tailTrailColor = lerpColor(colors.glow, CURRENT_FLOW_COLOR_RAMP.slow, 0.6);
         const tailChildCount = tail.children?.length || 0;
         tail.children?.forEach?.((seg: any, index: number) => {
           if (!seg?.material) return;
