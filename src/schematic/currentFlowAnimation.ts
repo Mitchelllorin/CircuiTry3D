@@ -375,8 +375,9 @@ export class CurrentFlowAnimationSystem {
     if (!closed) {
       // Reset all particles to their starting positions when circuit opens
       this.particles.forEach(particle => {
-        particle.progress = 0;
-        particle.position = { ...particle.path[0] };
+        particle.progress = particle.reversed ? 1 : 0;
+        const resetPoint = particle.reversed ? particle.path[particle.path.length - 1] : particle.path[0];
+        particle.position = { ...resetPoint };
       });
     }
   }
