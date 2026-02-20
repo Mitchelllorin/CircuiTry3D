@@ -35,6 +35,7 @@
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
+  --builder-edge-action-icon-size: 18px;
 }
 
 body.builder-body {
@@ -386,8 +387,18 @@ body.builder-body {
   opacity: 0.4;
 }
 
+.edge-action-icon,
+.edge-action-icon-svg {
+  width: var(--builder-edge-action-icon-size);
+  height: var(--builder-edge-action-icon-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .edge-action-icon {
-  font-size: 16px;
+  font-size: var(--builder-edge-action-icon-size);
   line-height: 1;
 }
 
@@ -468,8 +479,8 @@ body.builder-body {
 
 /* SVG icon styling for edge action buttons */
 .edge-action-icon-svg {
-  width: 16px;
-  height: 16px;
+  display: block;
+  object-fit: contain;
 }
 
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
@@ -566,13 +577,14 @@ body.builder-body {
     height: 32px;
   }
 
-  .edge-action-icon {
-    font-size: 14px;
+  .edge-action-icon,
+  .edge-action-icon-svg {
+    width: 16px;
+    height: 16px;
   }
 
-  .edge-action-icon-svg {
-    width: 14px;
-    height: 14px;
+  .edge-action-icon {
+    font-size: 16px;
   }
 }
 

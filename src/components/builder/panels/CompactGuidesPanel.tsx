@@ -41,11 +41,11 @@ const DEFAULT_PROGRESS: GuideProgressState = {
 
 const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
   help: {
-    label: "Help Workflow",
+    label: "Help Guide",
     description:
       "Use this flow when you are getting started in a new workspace and need a clean setup path.",
     completionSummary:
-      "You have completed the core help workflow. Use Tutorial next for guided, hands-on practice.",
+      "You have completed the core help guide. Use Tutorial next for guided, hands-on practice.",
     workspaceSyncCopy:
       "These steps map directly to the live workspace. Keep this panel open while you build so the guide stays in lock-step.",
     steps: [
@@ -76,13 +76,13 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
     ],
   },
   tutorial: {
-    label: "Tutorial Workflow",
+    label: "Tutorial Guide",
     description:
       "Follow the guided tutorial sequence to complete a full battery-resistor circuit from scratch.",
     completionSummary:
-      "Tutorial workflow complete. Launch the interactive tutorial again anytime to repeat or practice speed.",
+      "Tutorial guide complete. Launch the interactive tutorial again anytime to repeat or practice speed.",
     workspaceSyncCopy:
-      "This workflow aligns with the interactive tutorial milestones, so progress here mirrors the in-app tutorial cadence.",
+      "This guide aligns with the interactive tutorial milestones, so progress here mirrors the in-app tutorial cadence.",
     steps: [
       {
         id: "tutorial-start",
@@ -111,7 +111,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
     ],
   },
   "wire-guide": {
-    label: "W.I.R.E. Guide Workflow",
+    label: "W.I.R.E. Guide",
     description:
       "Use this checklist to solve one circuit at a time without guessing: capture known values, pick a formula, solve, then verify.",
     completionSummary:
@@ -139,7 +139,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
       },
       {
         id: "wire-open-practice",
-        title: "Verify in simulation and worksheet",
+        title: "Apply and verify in Practice Worksheets",
         detail:
           "Compare your solved value against live simulator metrics, then update the worksheet totals row.",
       },
@@ -273,7 +273,7 @@ export function CompactGuidesPanel({
         <div className="compact-guides-body">
           <div className="guides-toolbar">
             <label className="guides-select">
-              Workflow
+              Guide
               <select
                 value={activeGuide}
                 onChange={(event) =>
@@ -296,7 +296,7 @@ export function CompactGuidesPanel({
             <span
               className={`guides-state-chip ${isComplete ? "complete" : "active"}`}
             >
-              {isComplete ? "Workflow complete" : "Workflow in progress"}
+              {isComplete ? "Guide complete" : "Guide in progress"}
             </span>
           </div>
 
@@ -310,7 +310,7 @@ export function CompactGuidesPanel({
             <p className="guides-description">{activeWorkflow.description}</p>
             <div className="guides-next-step">
               <strong>
-                {nextStep ? `Next: ${nextStep.title}` : "All workflow steps complete"}
+                {nextStep ? `Next: ${nextStep.title}` : "All guide steps complete"}
               </strong>
               <span>
                 {nextStep ? nextStep.detail : activeWorkflow.completionSummary}
@@ -372,7 +372,7 @@ export function CompactGuidesPanel({
           >
             {isComplete
               ? activeWorkflow.completionSummary
-              : `Keep working through the ${activeWorkflow.label.toLowerCase()} sequence to stay aligned with the standard app workflow model.`}
+              : `Keep working through the ${activeWorkflow.label.toLowerCase()} sequence to stay aligned with the standard app section model.`}
           </div>
 
           <div className="guides-workspace-sync" role="status" aria-live="polite">
@@ -395,14 +395,14 @@ export function CompactGuidesPanel({
               className="guides-action-btn"
               onClick={resetActiveWorkflow}
             >
-              Reset Workflow
+              Reset Guide
             </button>
             <button
               type="button"
               className="guides-action-btn"
               onClick={openNextWorkflow}
             >
-              Next Workflow
+              Next Guide
             </button>
             {activeGuide === "tutorial" && (
               <button
