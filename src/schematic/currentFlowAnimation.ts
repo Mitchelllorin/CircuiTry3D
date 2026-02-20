@@ -1,5 +1,6 @@
 import { Vec2 } from "./types";
 import { getPerformanceTier } from "../utils/mobilePerformance";
+import { LOGO_COLORS } from "./visualConstants";
 
 /**
  * Flow mode determines the direction of particle animation:
@@ -14,14 +15,31 @@ export type FlowMode = "electron" | "conventional";
  */
 export type CurrentIntensity = "off" | "low" | "medium" | "high" | "critical";
 
+const parseHexColor = (hex: string, fallback: number): number => {
+  if (typeof hex !== "string") return fallback;
+  const normalized = hex.trim().replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(normalized, 16);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const BRAND_FLOW_COLORS = {
+  negative: parseHexColor(LOGO_COLORS.wireGradientStart, 0x88ccff),
+  mid: parseHexColor(LOGO_COLORS.componentGradientStart, 0xff8844),
+  positive: parseHexColor(LOGO_COLORS.wireGradientEnd, 0x00ff88),
+} as const;
+
 /**
  * Color scheme for current intensity visualization
- * Slowest -> fastest: red -> blue -> white
+ * Uses existing brand palette tokens already shared across the app.
+ * Low -> high current: brand blue -> brand orange -> brand green
  */
 export const CURRENT_FLOW_COLOR_RAMP = {
-  slow: 0xef4444, // Red - slowest current
-  mid: 0x3b82f6,  // Blue - mid current
-  fast: 0xffffff  // White - fastest current
+  slow: BRAND_FLOW_COLORS.negative,
+  mid: BRAND_FLOW_COLORS.mid,
+  fast: BRAND_FLOW_COLORS.positive,
 } as const;
 
 const CURRENT_FLOW_OFF_COLORS = {
@@ -47,8 +65,8 @@ const getCometTailConfig = () => {
   const tier = getPerformanceTier();
   if (tier === 'low') {
     return {
-      segments: 5,    // Increased from 3 for smoother trails
-      length: 5.5,    // Increased from 4.5
+      segments: 6,
+      length: 6.0,
       maxOpacity: 0.28,
       minOpacity: 0.02,
       maxRadiusFactor: 0.75,
@@ -57,8 +75,8 @@ const getCometTailConfig = () => {
   }
   if (tier === 'medium') {
     return {
-      segments: 6,    // Increased from 5
-      length: 6.0,    // Increased from 5.5
+      segments: 7,
+      length: 6.8,
       maxOpacity: 0.28,
       minOpacity: 0.02,
       maxRadiusFactor: 0.75,
@@ -66,8 +84,8 @@ const getCometTailConfig = () => {
     };
   }
   return {
-    segments: 7,
-    length: 6.5,
+    segments: 8,
+    length: 7.4,
     maxOpacity: 0.28,
     minOpacity: 0.02,
     maxRadiusFactor: 0.75,
@@ -179,6 +197,8 @@ export type CurrentFlowParticle = {
   pathLength: number;
   intensity: CurrentIntensity;
   reversed: boolean; // True for electron flow (reversed direction)
+  /** True if conventional current flows from path[0] to path[end] */
+  flowsForward: boolean;
   /** The amperage this particle represents */
   currentAmps: number;
   /** Whether this particle should track global current updates */
@@ -224,6 +244,11 @@ export class CurrentFlowAnimationSystem {
     this.tempDir = new three.Vector3();
     this.tempForward = new three.Vector3(0, 0, 1);
     this.tempQuat = new three.Quaternion();
+  }
+
+  private getReversedForFlowDirection(flowsForward: boolean): boolean {
+    // Electron flow is opposite conventional current.
+    return this.flowMode === "electron" ? flowsForward : !flowsForward;
   }
 
   /**
@@ -340,7 +365,7 @@ export class CurrentFlowAnimationSystem {
     if (wasChanged) {
       // Update all particle directions and appearances
       this.particles.forEach(particle => {
-        particle.reversed = mode === "electron";
+        particle.reversed = this.getReversedForFlowDirection(particle.flowsForward);
       });
       this.updateAllParticleAppearances();
     }
@@ -478,6 +503,7 @@ export class CurrentFlowAnimationSystem {
 
     // Calculate path length for physics-based calculations
     const pathLength = this.calculatePathLength(path);
+    if (pathLength <= 1e-6) return;
 
     // Calculate intensity from current
     const intensity = currentAmps > 0 ? this.calculateIntensity(currentAmps) : this.globalIntensity;
@@ -492,7 +518,7 @@ export class CurrentFlowAnimationSystem {
     // Determine flow direction based on mode and current direction
     // - In electron flow mode, electrons move opposite to conventional current
     // - If current flows forward along path, electrons flow backward, and vice versa
-    const isReversed = this.flowMode === "electron" ? flowsForward : !flowsForward;
+    const isReversed = this.getReversedForFlowDirection(flowsForward);
 
     for (let i = 0; i < count; i++) {
       // For electron flow, start at the end of the path (since we'll move backward)
@@ -514,6 +540,7 @@ export class CurrentFlowAnimationSystem {
         pathLength, // Cache the path length to avoid recalculating every frame
         intensity,
         reversed: isReversed,
+        flowsForward,
         currentAmps,
         usesGlobalCurrent,
         resistanceOhms
@@ -565,17 +592,19 @@ export class CurrentFlowAnimationSystem {
     // Add a comet tail (stacked translucent spheres that trail behind)
     const tailGroup = new this.three.Group();
     tailGroup.name = "tail";
-    const tailColor = colors.glow;
+    const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
+    const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
 
     for (let i = 0; i < COMET_TAIL.segments; i++) {
       const t = i / Math.max(COMET_TAIL.segments - 1, 1); // 0..1
       const falloff = (1 - t) * (1 - t);
       const opacity = COMET_TAIL.minOpacity + (COMET_TAIL.maxOpacity - COMET_TAIL.minOpacity) * falloff;
       const radiusFactor = COMET_TAIL.minRadiusFactor + (COMET_TAIL.maxRadiusFactor - COMET_TAIL.minRadiusFactor) * falloff;
+      const segmentColor = lerpColor(tailHeadColor, tailTrailColor, t);
 
       const segGeom = new this.three.SphereGeometry(1, tailSegments, tailSegments);
       const segMat = new this.three.MeshBasicMaterial({
-        color: tailColor,
+        color: segmentColor,
         transparent: true,
         opacity,
         depthWrite: false
@@ -632,16 +661,24 @@ export class CurrentFlowAnimationSystem {
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
         const COMET_TAIL = getCometTailConfig();
+        const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
+        const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
         const tailChildCount = tail.children?.length || 0;
         tail.children?.forEach?.((seg: any, index: number) => {
           if (!seg?.material) return;
           const t = index / Math.max((tailChildCount - 1), 1);
           const falloff = (1 - t) * (1 - t);
-          seg.material.color.setHex(colors.glow);
+          seg.material.color.setHex(lerpColor(tailHeadColor, tailTrailColor, t));
           seg.material.opacity = COMET_TAIL.minOpacity + (COMET_TAIL.maxOpacity - COMET_TAIL.minOpacity) * falloff;
         });
       }
     });
+  }
+
+  private wrapDistance(distance: number, totalLength: number): number {
+    if (totalLength <= 0) return 0;
+    const wrapped = distance % totalLength;
+    return wrapped < 0 ? wrapped + totalLength : wrapped;
   }
 
   public update(deltaTime: number): void {
@@ -655,23 +692,14 @@ export class CurrentFlowAnimationSystem {
       // Direction is determined by the reversed flag:
       // - reversed=false (conventional): progress increases (positive to negative direction)
       // - reversed=true (electron): progress decreases (negative to positive direction)
-      if (particle.reversed) {
-        particle.progress -= particle.speed * deltaTime;
-        // Loop back when reaching the start
-        if (particle.progress <= 0) {
-          particle.progress = 1;
-        }
-      } else {
-        particle.progress += particle.speed * deltaTime;
-        // Loop back when reaching the end
-        if (particle.progress >= 1) {
-          particle.progress = 0;
-        }
-      }
+      const signedDirection = particle.reversed ? -1 : 1;
+      particle.progress += signedDirection * particle.speed * deltaTime;
+      // Keep progress in [0,1) without snapbacks on long frames.
+      particle.progress = ((particle.progress % 1) + 1) % 1;
 
       // Use cached path length instead of recalculating every frame
       const totalLength = particle.pathLength;
-      const targetDistance = particle.progress * totalLength;
+      const targetDistance = this.wrapDistance(particle.progress * totalLength, totalLength);
 
       const pos = this.getPositionAlongPath(particle.path, targetDistance);
       if (pos) {
@@ -685,7 +713,8 @@ export class CurrentFlowAnimationSystem {
           // Orient the particle so +Z matches direction of travel (tail trails in -Z)
           const sampleDistance = 0.08;
           const signed = particle.reversed ? -1 : 1;
-          const ahead = this.getPositionAlongPath(particle.path, targetDistance + signed * sampleDistance);
+          const aheadDistance = this.wrapDistance(targetDistance + signed * sampleDistance, totalLength);
+          const ahead = this.getPositionAlongPath(particle.path, aheadDistance);
           if (ahead) {
             const dx = ahead.x - pos.x;
             const dz = ahead.z - pos.z;
