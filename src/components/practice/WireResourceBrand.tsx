@@ -26,7 +26,7 @@ export function WireResourceBrand({ size = "md", showName = true }: WireResource
     >
       <img
         src={wireResourceLogo}
-        alt="Wire Resource - Wire cross-sections showing copper cores and insulation"
+        alt="Wire Resource icon showing a wire path and guide card"
         className="wire-resource-logo"
         style={{
           width: `${width}px`,
