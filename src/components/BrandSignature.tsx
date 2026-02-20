@@ -1,5 +1,6 @@
 import BrandMark from "./BrandMark";
 import WordMark from "./WordMark";
+import { APP_BRAND_NAME } from "../constants/branding";
 
 type BrandSignatureSize = "xs" | "sm" | "md" | "lg";
 type BrandSignatureLayout = "inline" | "stacked";
@@ -16,7 +17,7 @@ export default function BrandSignature({
   size = "sm",
   layout = "inline",
   className,
-  label = "CircuiTry3D",
+  label = APP_BRAND_NAME,
   decorative = false,
 }: BrandSignatureProps) {
   const classes = ["circuitry-brand-signature", className].filter(Boolean).join(" ");
