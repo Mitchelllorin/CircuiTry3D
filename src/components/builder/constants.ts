@@ -775,6 +775,13 @@ export const HELP_ENTRIES: HelpEntry[] = [
     view: "wire-guide",
   },
   {
+    id: "schematic",
+    label: "Schematic Layout Guide",
+    description:
+      "Review symbol standards and clean schematic wiring habits.",
+    view: "schematic",
+  },
+  {
     id: "shortcuts",
     label: "Keyboard Shortcuts",
     description:
