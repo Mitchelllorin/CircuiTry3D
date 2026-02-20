@@ -6,6 +6,12 @@ import {
   BATTERY_SPECS,
   LABEL_SPECS,
 } from "../../schematic/visualConstants";
+import {
+  DEFAULT_SYMBOL_STANDARD,
+  STANDARD_PROFILES,
+  resolveSymbolStandard,
+  type SymbolStandard,
+} from "../../schematic/standards";
 
 export type SchematicSymbolProps = {
   x: number;
@@ -18,6 +24,7 @@ export type SchematicSymbolProps = {
   color?: string;
   strokeWidth?: number;
   isOpen?: boolean;
+  standard?: SymbolStandard | string;
 };
 
 // Use centralized visual constants
@@ -25,6 +32,7 @@ const WIRE_COLOR = SCHEMATIC_COLORS.wire;
 const COMPONENT_STROKE = SCHEMATIC_COLORS.componentStroke;
 const LABEL_COLOR = SCHEMATIC_COLORS.labelPrimary;
 const DEFAULT_STROKE_WIDTH = STROKE_WIDTHS.wireSvgSymbol;
+const DEFAULT_SYMBOL_PROFILE = STANDARD_PROFILES[DEFAULT_SYMBOL_STANDARD];
 
 type SvgPoint = { x: number; y: number };
 
@@ -35,26 +43,38 @@ const formatSvgPoints = (points: SvgPoint[]): string =>
     .map(({ x, y }) => `${roundSvgCoord(x)},${roundSvgCoord(y)}`)
     .join(" ");
 
+const resolveSymbolProfile = (standard?: SymbolStandard | string) =>
+  STANDARD_PROFILES[resolveSymbolStandard(standard)] ?? DEFAULT_SYMBOL_PROFILE;
+
+const interpolateSvgPoint = (from: SvgPoint, to: SvgPoint, ratio: number): SvgPoint => ({
+  x: from.x + (to.x - from.x) * ratio,
+  y: from.y + (to.y - from.y) * ratio,
+});
+
 /**
- * Build a consistently shaped triangular arrowhead aligned to a vector.
- * tip = arrow point, tail = direction origin.
+ * Build a consistently shaped triangular arrowhead aligned to a segment.
+ * Direction is explicit so call sites stay semantically obvious.
  */
 const buildArrowHead = (
-  tip: SvgPoint,
-  tail: SvgPoint,
+  start: SvgPoint,
+  end: SvgPoint,
+  direction: "toward-end" | "toward-start" = "toward-end",
   length = 7,
   width = 6,
 ): string => {
-  const dx = tip.x - tail.x;
-  const dy = tip.y - tail.y;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
   const magnitude = Math.hypot(dx, dy);
 
   if (magnitude < 0.001) {
-    return formatSvgPoints([tip, tip, tip]);
+    return formatSvgPoints([end, end, end]);
   }
 
-  const ux = dx / magnitude;
-  const uy = dy / magnitude;
+  const baseUx = dx / magnitude;
+  const baseUy = dy / magnitude;
+  const tip = direction === "toward-end" ? end : start;
+  const ux = direction === "toward-end" ? baseUx : -baseUx;
+  const uy = direction === "toward-end" ? baseUy : -baseUy;
 
   const baseX = tip.x - ux * length;
   const baseY = tip.y - uy * length;
@@ -79,23 +99,55 @@ export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   labelOffset = -18,
   color = COMPONENT_STROKE,
   strokeWidth = DEFAULT_STROKE_WIDTH,
+  standard,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const profile = resolveSymbolProfile(standard);
+  const useIecBody = profile.resistor.bodyStyle === "rectangle";
 
   return (
     <g transform={transform}>
       {/* Lead wires */}
-      <line x1={-RESISTOR_SPECS.totalHalfSpan} y1="0" x2={-RESISTOR_SPECS.bodyHalfWidth} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1={RESISTOR_SPECS.bodyHalfWidth} y1="0" x2={RESISTOR_SPECS.totalHalfSpan} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      {/* Zigzag body (4-6 peaks per style guide) */}
-      <polyline
-        points={RESISTOR_SPECS.zigzagPoints}
+      <line
+        x1={-RESISTOR_SPECS.totalHalfSpan}
+        y1={0}
+        x2={useIecBody ? -14 : -RESISTOR_SPECS.bodyHalfWidth}
+        y2={0}
         stroke={color}
         strokeWidth={strokeWidth}
-        fill="none"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
+      <line
+        x1={useIecBody ? 14 : RESISTOR_SPECS.bodyHalfWidth}
+        y1={0}
+        x2={RESISTOR_SPECS.totalHalfSpan}
+        y2={0}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+      {useIecBody ? (
+        <rect
+          x={-14}
+          y={-8}
+          width={28}
+          height={16}
+          rx={1.5}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth * 0.95}
+        />
+      ) : (
+        // Zigzag body (ANSI/IEEE style, 4-6 peaks)
+        <polyline
+          points={RESISTOR_SPECS.zigzagPoints}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
       {showLabel && label && (
         <text
           x={0}
@@ -122,19 +174,54 @@ export const CapacitorSymbol: FC<SchematicSymbolProps> = ({
   labelOffset = -18,
   color = COMPONENT_STROKE,
   strokeWidth = DEFAULT_STROKE_WIDTH,
+  standard,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const profile = resolveSymbolProfile(standard);
+  const showPolarityMarkers = profile.capacitor.showPolarityMarkers;
+  const resolvedLabelOffset = showPolarityMarkers ? labelOffset - 6 : labelOffset;
+  const markerStroke = "rgba(12, 32, 64, 0.9)";
 
   return (
     <g transform={transform}>
-      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="-8" y1="-18" x2="-8" y2="18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="8" y1="-18" x2="8" y2="18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="8" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={-30} y1={0} x2={-8} y2={0} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={-8} y1={-18} x2={-8} y2={18} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={8} y1={-18} x2={8} y2={18} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={8} y1={0} x2={30} y2={0} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {showPolarityMarkers && (
+        <>
+          <text
+            x={15}
+            y={-22}
+            fill={LABEL_COLOR}
+            fontSize={LABEL_SPECS.polarityMarkerSize}
+            textAnchor="middle"
+            fontWeight="bold"
+            paintOrder="stroke"
+            stroke={markerStroke}
+            strokeWidth={0.8}
+          >
+            +
+          </text>
+          <text
+            x={-15}
+            y={24}
+            fill={LABEL_COLOR}
+            fontSize={LABEL_SPECS.polarityMarkerSize}
+            textAnchor="middle"
+            fontWeight="bold"
+            paintOrder="stroke"
+            stroke={markerStroke}
+            strokeWidth={0.8}
+          >
+            −
+          </text>
+        </>
+      )}
       {showLabel && label && (
         <text
           x={0}
-          y={labelOffset}
+          y={resolvedLabelOffset}
           textAnchor="middle"
           fill={LABEL_COLOR}
           fontSize={LABEL_SPECS.componentLabelSize}
@@ -279,7 +366,7 @@ export const PhotodiodeSymbol: FC<SchematicSymbolProps> = ({
         strokeLinecap="round"
       />
       <polygon
-        points={buildArrowHead(incomingArrow1End, incomingArrow1Start, 4.5, 4)}
+        points={buildArrowHead(incomingArrow1Start, incomingArrow1End, "toward-end", 4.5, 4)}
         fill={color}
         stroke={color}
         strokeWidth={strokeWidth * 0.2}
@@ -295,7 +382,7 @@ export const PhotodiodeSymbol: FC<SchematicSymbolProps> = ({
         strokeLinecap="round"
       />
       <polygon
-        points={buildArrowHead(incomingArrow2End, incomingArrow2Start, 4.5, 4)}
+        points={buildArrowHead(incomingArrow2Start, incomingArrow2End, "toward-end", 4.5, 4)}
         fill={color}
         stroke={color}
         strokeWidth={strokeWidth * 0.2}
@@ -358,7 +445,7 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
         strokeLinecap="round"
       />
       <polygon
-        points={buildArrowHead(outgoingArrow1End, outgoingArrow1Start, 4.5, 4)}
+        points={buildArrowHead(outgoingArrow1Start, outgoingArrow1End, "toward-end", 4.5, 4)}
         fill={color}
         stroke={color}
         strokeWidth={strokeWidth * 0.2}
@@ -374,7 +461,7 @@ export const LEDSymbol: FC<SchematicSymbolProps> = ({
         strokeLinecap="round"
       />
       <polygon
-        points={buildArrowHead(outgoingArrow2End, outgoingArrow2Start, 4.5, 4)}
+        points={buildArrowHead(outgoingArrow2Start, outgoingArrow2End, "toward-end", 4.5, 4)}
         fill={color}
         stroke={color}
         strokeWidth={strokeWidth * 0.2}
@@ -530,6 +617,10 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterBranchStart = { x: -8, y: 8 };
+  const emitterBranchEnd = { x: 12, y: 20 };
+  const npnArrowTail = interpolateSvgPoint(emitterBranchStart, emitterBranchEnd, 0.48);
+  const npnArrowTip = interpolateSvgPoint(emitterBranchStart, emitterBranchEnd, 0.78);
 
   return (
     <g transform={transform}>
@@ -541,11 +632,19 @@ export const TransistorNPNSymbol: FC<SchematicSymbolProps> = ({
       <line x1="-8" y1="-8" x2="12" y2="-20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="12" y1="-20" x2="30" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      <line x1="-8" y1="8" x2="12" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line
+        x1={emitterBranchStart.x}
+        y1={emitterBranchStart.y}
+        x2={emitterBranchEnd.x}
+        y2={emitterBranchEnd.y}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
       <line x1="12" y1="20" x2="30" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       <polygon
-        points={buildArrowHead({ x: 12, y: 20 }, { x: 3, y: 14 })}
+        points={buildArrowHead(npnArrowTail, npnArrowTip, "toward-end", 5.4, 4.6)}
         fill={color}
         stroke={color}
         strokeWidth={strokeWidth * 0.4}
@@ -580,6 +679,10 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const emitterBranchStart = { x: -8, y: 8 };
+  const emitterBranchEnd = { x: 12, y: 20 };
+  const pnpArrowSpanStart = interpolateSvgPoint(emitterBranchStart, emitterBranchEnd, 0.32);
+  const pnpArrowSpanEnd = interpolateSvgPoint(emitterBranchStart, emitterBranchEnd, 0.86);
 
   return (
     <g transform={transform}>
@@ -595,12 +698,20 @@ export const TransistorPNPSymbol: FC<SchematicSymbolProps> = ({
       <line x1="12" y1="-20" x2="30" y2="-30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
       {/* Emitter (bottom) - arrow points INWARD for PNP */}
-      <line x1="-8" y1="8" x2="12" y2="20" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line
+        x1={emitterBranchStart.x}
+        y1={emitterBranchStart.y}
+        x2={emitterBranchEnd.x}
+        y2={emitterBranchEnd.y}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
       <line x1="12" y1="20" x2="30" y2="30" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
 
-      {/* PNP arrow points inward (toward base) */}
+      {/* PNP arrow points inward (toward base/emitter junction) */}
       <polygon
-        points={buildArrowHead({ x: 0, y: 13 }, { x: 8, y: 18 })}
+        points={buildArrowHead(pnpArrowSpanStart, pnpArrowSpanEnd, "toward-start", 5.4, 4.6)}
         fill={color}
         stroke={color}
         strokeWidth={strokeWidth * 0.4}
@@ -635,6 +746,10 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
   strokeWidth = DEFAULT_STROKE_WIDTH,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const firstEmitterStart = { x: -14, y: 4 };
+  const firstEmitterEnd = { x: 0, y: 12 };
+  const secondEmitterStart = { x: 0, y: 9 };
+  const secondEmitterEnd = { x: 14, y: 22 };
 
   return (
     <g transform={transform}>
@@ -647,28 +762,46 @@ export const DarlingtonPairSymbol: FC<SchematicSymbolProps> = ({
       {/* First transistor (input stage) - smaller */}
       <line x1="-14" y1="-8" x2="-14" y2="8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="-14" y1="-4" x2="0" y2="-12" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
-      <line x1="-14" y1="4" x2="0" y2="12" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+      <line
+        x1={firstEmitterStart.x}
+        y1={firstEmitterStart.y}
+        x2={firstEmitterEnd.x}
+        y2={firstEmitterEnd.y}
+        stroke={color}
+        strokeWidth={strokeWidth * 0.9}
+        strokeLinecap="round"
+      />
 
       {/* Arrow on first emitter (pointing outward - NPN) */}
       <polygon
-        points="0,12 -4,7 -6,13"
+        points={buildArrowHead(firstEmitterStart, firstEmitterEnd, "toward-end", 4.8, 4.2)}
         fill={color}
         stroke={color}
-        strokeWidth={1}
+        strokeWidth={strokeWidth * 0.35}
+        strokeLinejoin="round"
       />
 
       {/* Second transistor (output stage) - base connects to first emitter */}
       <line x1="0" y1="12" x2="0" y2="6" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
       <line x1="0" y1="0" x2="0" y2="12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1="0" y1="3" x2="14" y2="-10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-      <line x1="0" y1="9" x2="14" y2="22" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line
+        x1={secondEmitterStart.x}
+        y1={secondEmitterStart.y}
+        x2={secondEmitterEnd.x}
+        y2={secondEmitterEnd.y}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
 
       {/* Arrow on second emitter (pointing outward - NPN) */}
       <polygon
-        points="14,22 9,17 7,23"
+        points={buildArrowHead(secondEmitterStart, secondEmitterEnd, "toward-end", 4.8, 4.2)}
         fill={color}
         stroke={color}
-        strokeWidth={1}
+        strokeWidth={strokeWidth * 0.35}
+        strokeLinejoin="round"
       />
 
       {/* Collector lead (from first transistor collector, joined) */}
@@ -745,17 +878,20 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
   labelOffset = -18,
   color = WIRE_COLOR,
   strokeWidth = STROKE_WIDTHS.componentDetail,
+  standard,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  const profile = resolveSymbolProfile(standard);
 
   // Counter-rotate the markers so text remains upright and readable
   const markerRotation = -rotation;
 
-  // Polarity marker positions - centered above and below the battery symbol (our standard)
-  // Positioned at the center of the battery (x=0), with + above and - below
-  const polarityMarkerX = 0;
-  const posMarkerY = -24; // Above the battery (positive)
-  const negMarkerY = 24;  // Below the battery (negative)
+  // Marker placement keeps polarity labels adjacent to matching plates.
+  const positiveMarkerX = 11;
+  const negativeMarkerX = -11;
+  const posMarkerY = -24;
+  const negMarkerY = 24;
+  const markerStroke = "rgba(12, 32, 64, 0.9)";
 
   return (
     <g transform={transform}>
@@ -766,33 +902,43 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
       <line x1="-7" y1="-10" x2="-7" y2="10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {/* Positive plate (longer, thicker vertical line on right) per style guide */}
       <line x1="7" y1="-18" x2="7" y2="18" stroke={color} strokeWidth={strokeWidth + BATTERY_SPECS.positiveStrokeExtra} strokeLinecap="round" />
-      {/* Polarity markings - centered above (+) and below (-) the battery (our standard) */}
-      <text
-        x={polarityMarkerX}
-        y={posMarkerY}
-        fill={LABEL_COLOR}
-        fontSize={LABEL_SPECS.polarityMarkerSize}
-        textAnchor="middle"
-        fontWeight="bold"
-        transform={`rotate(${markerRotation}, ${polarityMarkerX}, ${posMarkerY})`}
-      >
-        +
-      </text>
-      <text
-        x={polarityMarkerX}
-        y={negMarkerY}
-        fill={LABEL_COLOR}
-        fontSize={LABEL_SPECS.polarityMarkerSize}
-        textAnchor="middle"
-        fontWeight="bold"
-        transform={`rotate(${markerRotation}, ${polarityMarkerX}, ${negMarkerY})`}
-      >
-        −
-      </text>
+      {/* Polarity markings are standard-profile dependent (ANSI/IEEE shows them). */}
+      {profile.battery.showPolarityMarkers && (
+        <>
+          <text
+            x={positiveMarkerX}
+            y={posMarkerY}
+            fill={LABEL_COLOR}
+            fontSize={LABEL_SPECS.polarityMarkerSize}
+            textAnchor="middle"
+            fontWeight="bold"
+            paintOrder="stroke"
+            stroke={markerStroke}
+            strokeWidth={0.8}
+            transform={`rotate(${markerRotation}, ${positiveMarkerX}, ${posMarkerY})`}
+          >
+            +
+          </text>
+          <text
+            x={negativeMarkerX}
+            y={negMarkerY}
+            fill={LABEL_COLOR}
+            fontSize={LABEL_SPECS.polarityMarkerSize}
+            textAnchor="middle"
+            fontWeight="bold"
+            paintOrder="stroke"
+            stroke={markerStroke}
+            strokeWidth={0.8}
+            transform={`rotate(${markerRotation}, ${negativeMarkerX}, ${negMarkerY})`}
+          >
+            −
+          </text>
+        </>
+      )}
       {showLabel && label && (
         <text
           x={0}
-          y={labelOffset - 10}
+          y={labelOffset - 16}
           textAnchor="middle"
           fill={LABEL_COLOR}
           fontSize={LABEL_SPECS.componentLabelSize}
