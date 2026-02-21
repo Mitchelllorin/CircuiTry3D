@@ -1329,6 +1329,11 @@ body.builder-body {
   text-align: left;
 }
 
+.slider-heading--component-library {
+  display: block;
+  padding-left: 6px;
+}
+
 .slider-stack {
   display: flex;
   flex-direction: column;

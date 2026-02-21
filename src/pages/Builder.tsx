@@ -2467,7 +2467,7 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Components Library</span>
+              <span className="slider-heading slider-heading--component-library">Components Library</span>
               <div className="slider-stack">
                 {COMPONENT_ACTIONS.map((component) => (
                   <button
