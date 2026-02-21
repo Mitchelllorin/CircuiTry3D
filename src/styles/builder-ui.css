@@ -614,6 +614,166 @@ body.builder-body {
   }
 }
 
+.current-flow-payoff-banner {
+  position: fixed;
+  top: calc(
+    84px + var(--builder-safe-area-top) + var(--builder-ticker-height, 32px)
+  );
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 930;
+  width: min(640px, calc(100vw - 28px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(136, 204, 255, 0.34);
+  background: linear-gradient(
+    140deg,
+    rgba(10, 24, 48, 0.9),
+    rgba(8, 32, 52, 0.94)
+  );
+  box-shadow:
+    0 12px 28px rgba(3, 12, 32, 0.48),
+    0 0 18px rgba(136, 204, 255, 0.16);
+  backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.current-flow-payoff-kicker {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(136, 204, 255, 0.9);
+  font-weight: 700;
+}
+
+.current-flow-payoff-title {
+  margin: 0;
+  font-size: clamp(14px, 2.3vw, 19px);
+  letter-spacing: 0.01em;
+  color: rgba(236, 248, 255, 0.96);
+}
+
+.current-flow-payoff-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(204, 228, 255, 0.88);
+}
+
+.current-flow-payoff-metrics {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.current-flow-payoff-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(7, 18, 38, 0.52);
+  color: rgba(220, 240, 255, 0.94);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.current-flow-payoff-metric strong {
+  color: var(--wire-i);
+}
+
+.current-flow-payoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.current-flow-payoff-btn {
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(14, 28, 52, 0.84);
+  color: rgba(220, 236, 255, 0.94);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.current-flow-payoff-btn:hover:not(:disabled) {
+  border-color: rgba(136, 204, 255, 0.6);
+  background: rgba(16, 36, 64, 0.9);
+  transform: translateY(-1px);
+}
+
+.current-flow-payoff-btn:disabled,
+.current-flow-payoff-btn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.current-flow-payoff-btn--primary {
+  border-color: rgba(0, 255, 176, 0.45);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 255, 176, 0.22),
+    rgba(0, 204, 255, 0.2)
+  );
+  color: rgba(230, 255, 248, 0.98);
+}
+
+.current-flow-payoff-btn--ghost {
+  border-color: rgba(136, 204, 255, 0.22);
+  background: rgba(10, 22, 44, 0.62);
+  color: rgba(190, 214, 240, 0.88);
+}
+
+@media (max-width: 960px) {
+  .current-flow-payoff-banner {
+    top: calc(
+      78px + var(--builder-safe-area-top) + var(--builder-ticker-height, 28px)
+    );
+  }
+}
+
+@media (max-width: 720px) {
+  .current-flow-payoff-banner {
+    top: calc(
+      72px + var(--builder-safe-area-top) + var(--builder-ticker-height, 26px)
+    );
+    width: calc(100vw - 20px);
+    padding: 12px 12px;
+    gap: 7px;
+  }
+
+  .current-flow-payoff-actions {
+    gap: 6px;
+  }
+
+  .current-flow-payoff-btn {
+    flex: 1 1 auto;
+    min-width: 132px;
+    font-size: 10px;
+    padding: 8px 10px;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+  .current-flow-payoff-banner {
+    display: none;
+  }
+}
+
 .mode-bar-actions {
   display: flex;
   gap: 4px;

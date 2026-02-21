@@ -93,6 +93,8 @@ type WorkspacePanelMode =
   | "wire-guide";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
+const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
+  "circuitry3d:onboarding:current-flow-payoff:v1";
 
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
@@ -1026,6 +1028,8 @@ export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
+  const firstRunPayoffTriggeredRef = useRef(false);
+  const currentFlowPayoffTimersRef = useRef<number[]>([]);
   const appBasePath = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -1109,6 +1113,10 @@ export default function Builder() {
     voltage: 0,
   });
   const [isInteractiveTutorialOpen, setInteractiveTutorialOpen] =
+    useState(false);
+  const [isCurrentFlowPayoffVisible, setCurrentFlowPayoffVisible] =
+    useState(false);
+  const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
     useState(false);
 
   // Global workspace mode context - sync with local state
@@ -1860,6 +1868,115 @@ export default function Builder() {
     triggerSimulationPulse();
   }, [triggerBuilderAction, triggerSimulationPulse]);
 
+  const clearCurrentFlowPayoffTimers = useCallback(() => {
+    currentFlowPayoffTimersRef.current.forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    currentFlowPayoffTimersRef.current = [];
+  }, []);
+
+  const runCurrentFlowPayoffSequence = useCallback(
+    (
+      options: {
+        reloadPreset?: boolean;
+        revealBanner?: boolean;
+      } = {},
+    ) => {
+      if (!isFrameReady) {
+        return;
+      }
+
+      const { reloadPreset = true, revealBanner = true } = options;
+
+      clearCurrentFlowPayoffTimers();
+      setCurrentFlowPayoffRunning(true);
+
+      if (reloadPreset) {
+        triggerBuilderAction("load-preset", { preset: "series_basic" });
+      }
+
+      const primaryTimer = window.setTimeout(() => {
+        if (modeState.currentFlowStyle !== "solid") {
+          triggerBuilderAction("toggle-current-flow");
+        }
+        triggerBuilderAction("run-simulation");
+        triggerSimulationPulse();
+        if (revealBanner) {
+          setCurrentFlowPayoffVisible(true);
+        }
+      }, 220);
+
+      const followupTimer = window.setTimeout(() => {
+        triggerBuilderAction("run-simulation");
+        triggerSimulationPulse();
+        setCurrentFlowPayoffRunning(false);
+      }, 720);
+
+      currentFlowPayoffTimersRef.current.push(primaryTimer, followupTimer);
+    },
+    [
+      clearCurrentFlowPayoffTimers,
+      isFrameReady,
+      modeState.currentFlowStyle,
+      triggerBuilderAction,
+      triggerSimulationPulse,
+    ],
+  );
+
+  const handleReplayCurrentFlowPayoff = useCallback(() => {
+    setBottomMenuOpen(true);
+    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
+  }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
+
+  useEffect(() => {
+    return () => {
+      clearCurrentFlowPayoffTimers();
+    };
+  }, [clearCurrentFlowPayoffTimers]);
+
+  useEffect(() => {
+    if (!isFrameReady || firstRunPayoffTriggeredRef.current) {
+      return;
+    }
+
+    firstRunPayoffTriggeredRef.current = true;
+
+    let hasSeenPayoff = false;
+    try {
+      hasSeenPayoff =
+        window.localStorage.getItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY) === "seen";
+    } catch {
+      hasSeenPayoff = false;
+    }
+
+    if (hasSeenPayoff) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
+    } catch {
+      // ignore storage write failures
+    }
+
+    setBottomMenuOpen(true);
+    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
+  }, [isFrameReady, runCurrentFlowPayoffSequence, setBottomMenuOpen]);
+
+  useEffect(() => {
+    if (!isCurrentFlowPayoffVisible) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCurrentFlowPayoffVisible(false);
+    }, 14000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [isCurrentFlowPayoffVisible]);
+
   const activeWireProfilePayload = useMemo(
     () => toWireProfileBridgePayload(activeWireProfile),
     [activeWireProfile],
@@ -2175,6 +2292,21 @@ export default function Builder() {
       },
     ];
   }, [activeWireProfile, liveWireMetricsSnapshot]);
+  const currentFlowPayoffAmps = Number.isFinite(liveWireMetricsSnapshot.current)
+    ? liveWireMetricsSnapshot.current
+    : 0;
+  const currentFlowPayoffVolts = Number.isFinite(liveWireMetricsSnapshot.voltage)
+    ? liveWireMetricsSnapshot.voltage
+    : 0;
+  const currentFlowPayoffWatts = Number.isFinite(liveWireMetricsSnapshot.power)
+    ? liveWireMetricsSnapshot.power
+    : 0;
+  const currentFlowPayoffHasFlow =
+    Boolean(circuitState?.metrics.flow?.hasFlow) || currentFlowPayoffAmps > 0;
+  const shouldShowCurrentFlowPayoffBanner =
+    isCurrentFlowPayoffVisible &&
+    shouldShowEdgeActions &&
+    !isInteractiveTutorialOpen;
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -2428,6 +2560,66 @@ export default function Builder() {
             </button>
           </div>
         </Fragment>
+      )}
+
+      {shouldShowCurrentFlowPayoffBanner && (
+        <section className="current-flow-payoff-banner" role="status" aria-live="polite">
+          <div className="current-flow-payoff-kicker">First-time payoff</div>
+          <h2 className="current-flow-payoff-title">
+            {currentFlowPayoffHasFlow
+              ? "Current is flowing in 3D right now."
+              : "Load a closed loop to watch current flow instantly."}
+          </h2>
+          <p className="current-flow-payoff-text">
+            This is the core experience: virtual electricity moving through a
+            complete circuit.{" "}
+            {isCurrentFlowSolid
+              ? "Conventional current view is active (positive -> negative)."
+              : "Electron flow view is active (negative -> positive)."}
+          </p>
+          <div className="current-flow-payoff-metrics">
+            <span className="current-flow-payoff-metric">
+              <strong>I</strong>{" "}
+              <span>{currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A</span>
+            </span>
+            <span className="current-flow-payoff-metric">
+              <strong>E</strong> <span>{currentFlowPayoffVolts.toFixed(1)} V</span>
+            </span>
+            <span className="current-flow-payoff-metric">
+              <strong>W</strong>{" "}
+              <span>{currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W</span>
+            </span>
+          </div>
+          <div className="current-flow-payoff-actions">
+            <button
+              type="button"
+              className="current-flow-payoff-btn current-flow-payoff-btn--primary"
+              onClick={handleReplayCurrentFlowPayoff}
+              disabled={controlsDisabled || isCurrentFlowPayoffRunning}
+              aria-disabled={controlsDisabled || isCurrentFlowPayoffRunning}
+            >
+              {isCurrentFlowPayoffRunning ? "Replaying..." : "Replay Flow Demo"}
+            </button>
+            <button
+              type="button"
+              className="current-flow-payoff-btn"
+              onClick={() => {
+                setCurrentFlowPayoffVisible(false);
+                openGuidesWorkspace("tutorial");
+                setInteractiveTutorialOpen(true);
+              }}
+            >
+              Start Interactive Tutorial
+            </button>
+            <button
+              type="button"
+              className="current-flow-payoff-btn current-flow-payoff-btn--ghost"
+              onClick={() => setCurrentFlowPayoffVisible(false)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </section>
       )}
 
       <div className="builder-logo-header" aria-hidden="true">
