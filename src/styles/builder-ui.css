@@ -35,7 +35,8 @@
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
-  --builder-edge-action-icon-size: 18px;
+  --builder-edge-action-button-size: 44px;
+  --builder-edge-action-icon-size: 20px;
 }
 
 body.builder-body {
@@ -364,8 +365,8 @@ body.builder-body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: var(--builder-edge-action-button-size);
+  height: var(--builder-edge-action-button-size);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -572,20 +573,6 @@ body.builder-body {
     );
   }
 
-  .edge-action-btn {
-    width: 32px;
-    height: 32px;
-  }
-
-  .edge-action-icon,
-  .edge-action-icon-svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .edge-action-icon {
-    font-size: 16px;
-  }
 }
 
 @media (max-width: 480px) {
