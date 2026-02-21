@@ -18,18 +18,18 @@
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  /* Toggle tabs - slimmer and longer for a perimeter profile */
-  --builder-menu-toggle-width: 20px;
-  --builder-menu-toggle-height: 78px;
+  /* Toggle tabs - extra slim, long perimeter profile */
+  --builder-menu-toggle-width: 18px;
+  --builder-menu-toggle-height: 74px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
-  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 32px);
+  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 30px);
   /* Keep side rails perimeter-oriented by revealing ~90% when expanded. */
   --builder-menu-side-reveal: 0.9;
   /* Slimmer sidebar widths */
-  --builder-menu-left-width: 180px;
-  --builder-menu-right-width: 172px;
-  --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
-  --builder-menu-bottom-height: 248px;
+  --builder-menu-left-width: 172px;
+  --builder-menu-right-width: 164px;
+  --builder-menu-bottom-width: min(472px, calc(100vw - 112px));
+  --builder-menu-bottom-height: 236px;
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-ticker-height: 32px;
@@ -37,9 +37,9 @@
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
-  --builder-edge-action-button-size: 44px;
-  --builder-edge-action-icon-size: 20px;
-  --builder-edge-actions-peek: 16px;
+  --builder-edge-action-button-size: 40px;
+  --builder-edge-action-icon-size: 18px;
+  --builder-edge-actions-peek: 12px;
 }
 
 body.builder-body {
@@ -331,11 +331,11 @@ body.builder-body {
   );
   right: auto;
   left: auto;
-  z-index: 940;
+  z-index: 810;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px;
+  gap: 4px;
+  padding: 4px;
   background: rgba(10, 24, 48, 0.75);
   border: 1px solid rgba(136, 204, 255, 0.2);
   border-radius: 12px;
@@ -372,7 +372,7 @@ body.builder-body {
   height: var(--builder-edge-action-button-size);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 7px;
   color: var(--builder-muted);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -491,9 +491,11 @@ body.builder-body {
 .workspace-edge-actions--right {
   --workspace-edge-actions-offset-x: calc(100% - var(--builder-edge-actions-peek));
   right: calc(
-    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+    env(safe-area-inset-right, 0px)
   );
   left: auto;
+  border-radius: 10px 0 0 10px;
+  border-right: none;
   /* Position above the Insights toggle to avoid overlap */
   bottom: calc(
     var(--builder-menu-toggle-height) +
@@ -506,29 +508,11 @@ body.builder-body {
 .workspace-edge-actions--left {
   --workspace-edge-actions-offset-x: calc(-100% + var(--builder-edge-actions-peek));
   left: calc(
-    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+    env(safe-area-inset-left, 0px)
   );
   right: auto;
-}
-
-/* When side menus are open, anchor edge actions to the "inner perimeter"
-   (i.e. inside the open menu), so they don't overlap the menu/toggle. */
-.builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-  left: calc(
-    env(safe-area-inset-left, 0px) +
-    (var(--builder-menu-left-width) * var(--builder-menu-side-reveal)) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
-}
-
-.builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-  right: calc(
-    env(safe-area-inset-right, 0px) +
-    (var(--builder-menu-right-width) * var(--builder-menu-side-reveal)) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
+  border-radius: 0 10px 10px 0;
+  border-left: none;
 }
 
 @media (max-width: 720px) {
@@ -544,7 +528,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+      env(safe-area-inset-right, 0px)
     );
     /* Position above the Insights toggle to avoid overlap */
     bottom: calc(
@@ -556,28 +540,9 @@ body.builder-body {
 
   .workspace-edge-actions--left {
     left: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+      env(safe-area-inset-left, 0px)
     );
   }
-
-  .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-    left: calc(
-      env(safe-area-inset-left, 0px) +
-      (var(--builder-menu-left-width) * var(--builder-menu-side-reveal)) +
-      var(--builder-menu-toggle-hit-width) +
-      10px
-    );
-  }
-
-  .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-    right: calc(
-      env(safe-area-inset-right, 0px) +
-      (var(--builder-menu-right-width) * var(--builder-menu-side-reveal)) +
-      var(--builder-menu-toggle-hit-width) +
-      10px
-    );
-  }
-
 }
 
 @media (max-width: 480px) {
@@ -592,7 +557,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+      env(safe-area-inset-right, 0px)
     );
     left: auto;
     transform: none;
@@ -606,7 +571,7 @@ body.builder-body {
 
   .workspace-edge-actions--left {
     left: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+      env(safe-area-inset-left, 0px)
     );
     right: auto;
     transform: none;
@@ -3472,12 +3437,12 @@ body.builder-body {
 @media (max-width: 960px) {
   :root {
     /* Tablet - slimmer toggles */
-    --builder-menu-left-width: 160px;
-    --builder-menu-right-width: 156px;
-    --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
-    --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 18px;
-    --builder-menu-toggle-height: 68px;
+    --builder-menu-left-width: 154px;
+    --builder-menu-right-width: 150px;
+    --builder-menu-bottom-width: min(416px, calc(100vw - 88px));
+    --builder-menu-bottom-height: 206px;
+    --builder-menu-toggle-width: 16px;
+    --builder-menu-toggle-height: 64px;
     --builder-ticker-height: 28px;
   }
 
@@ -3508,15 +3473,15 @@ body.builder-body {
 @media (max-width: 720px) {
   :root {
     /* Mobile - slim but tappable toggles */
-    --builder-menu-left-width: 148px;
-    --builder-menu-right-width: 144px;
+    --builder-menu-left-width: 142px;
+    --builder-menu-right-width: 138px;
     --builder-menu-bottom-width: calc(100vw - 24px);
-    --builder-menu-bottom-height: 196px;
-    --builder-menu-toggle-width: 17px;
-    --builder-menu-toggle-height: 56px;
+    --builder-menu-bottom-height: 188px;
+    --builder-menu-toggle-width: 15px;
+    --builder-menu-toggle-height: 54px;
     --builder-ticker-height: 26px;
     --builder-floating-action-offset: 120px;
-    --builder-floating-button-size: 40px;
+    --builder-floating-button-size: 38px;
   }
 
   .builder-menu-stage-left,
@@ -3599,8 +3564,8 @@ body.builder-body {
 
   /* Ensure toggle buttons are always visible on touch devices - slim but tappable */
   .builder-menu-toggle {
-    min-width: 32px;
-    min-height: 52px;
+    min-width: 30px;
+    min-height: 50px;
     box-shadow:
       0 4px 16px var(--builder-shadow),
       0 0 16px rgba(136, 204, 255, 0.25);
@@ -3632,8 +3597,8 @@ body.builder-body {
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
   :root {
     /* Reduce bottom drawer footprint on short screens. */
-    --builder-menu-bottom-height: 160px;
-    --builder-menu-toggle-height: 52px;
+    --builder-menu-bottom-height: 152px;
+    --builder-menu-toggle-height: 50px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
   }
