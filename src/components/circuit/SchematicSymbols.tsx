@@ -99,55 +99,23 @@ export const ResistorSymbol: FC<SchematicSymbolProps> = ({
   labelOffset = -18,
   color = COMPONENT_STROKE,
   strokeWidth = DEFAULT_STROKE_WIDTH,
-  standard,
 }) => {
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
-  const profile = resolveSymbolProfile(standard);
-  const useIecBody = profile.resistor.bodyStyle === "rectangle";
 
   return (
     <g transform={transform}>
       {/* Lead wires */}
-      <line
-        x1={-RESISTOR_SPECS.totalHalfSpan}
-        y1={0}
-        x2={useIecBody ? -14 : -RESISTOR_SPECS.bodyHalfWidth}
-        y2={0}
+      <line x1={-RESISTOR_SPECS.totalHalfSpan} y1="0" x2={-RESISTOR_SPECS.bodyHalfWidth} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={RESISTOR_SPECS.bodyHalfWidth} y1="0" x2={RESISTOR_SPECS.totalHalfSpan} y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Keep Circuitry3D's current zigzag resistor standard unchanged */}
+      <polyline
+        points={RESISTOR_SPECS.zigzagPoints}
         stroke={color}
         strokeWidth={strokeWidth}
+        fill="none"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <line
-        x1={useIecBody ? 14 : RESISTOR_SPECS.bodyHalfWidth}
-        y1={0}
-        x2={RESISTOR_SPECS.totalHalfSpan}
-        y2={0}
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
-      {useIecBody ? (
-        <rect
-          x={-14}
-          y={-8}
-          width={28}
-          height={16}
-          rx={1.5}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth * 0.95}
-        />
-      ) : (
-        // Zigzag body (ANSI/IEEE style, 4-6 peaks)
-        <polyline
-          points={RESISTOR_SPECS.zigzagPoints}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
       {showLabel && label && (
         <text
           x={0}
@@ -179,7 +147,7 @@ export const CapacitorSymbol: FC<SchematicSymbolProps> = ({
   const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
   const profile = resolveSymbolProfile(standard);
   const showPolarityMarkers = profile.capacitor.showPolarityMarkers;
-  const resolvedLabelOffset = showPolarityMarkers ? labelOffset - 6 : labelOffset;
+  const resolvedLabelOffset = showPolarityMarkers ? labelOffset - 4 : labelOffset;
   const markerStroke = "rgba(12, 32, 64, 0.9)";
 
   return (
@@ -189,34 +157,19 @@ export const CapacitorSymbol: FC<SchematicSymbolProps> = ({
       <line x1={8} y1={-18} x2={8} y2={18} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       <line x1={8} y1={0} x2={30} y2={0} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       {showPolarityMarkers && (
-        <>
-          <text
-            x={15}
-            y={-22}
-            fill={LABEL_COLOR}
-            fontSize={LABEL_SPECS.polarityMarkerSize}
-            textAnchor="middle"
-            fontWeight="bold"
-            paintOrder="stroke"
-            stroke={markerStroke}
-            strokeWidth={0.8}
-          >
-            +
-          </text>
-          <text
-            x={-15}
-            y={24}
-            fill={LABEL_COLOR}
-            fontSize={LABEL_SPECS.polarityMarkerSize}
-            textAnchor="middle"
-            fontWeight="bold"
-            paintOrder="stroke"
-            stroke={markerStroke}
-            strokeWidth={0.8}
-          >
-            −
-          </text>
-        </>
+        <text
+          x={15}
+          y={-22}
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.polarityMarkerSize}
+          textAnchor="middle"
+          fontWeight="bold"
+          paintOrder="stroke"
+          stroke={markerStroke}
+          strokeWidth={0.8}
+        >
+          +
+        </text>
       )}
       {showLabel && label && (
         <text
