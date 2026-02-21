@@ -839,9 +839,9 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
   // Counter-rotate the markers so text remains upright and readable
   const markerRotation = -rotation;
 
-  // Marker placement keeps polarity labels adjacent to matching plates.
-  const positiveMarkerX = 11;
-  const negativeMarkerX = -11;
+  // Keep both polarity markers on the same side for textbook readability.
+  // + is top, − is bottom.
+  const markerX = -16;
   const posMarkerY = -24;
   const negMarkerY = 24;
   const markerStroke = "rgba(12, 32, 64, 0.9)";
@@ -859,7 +859,7 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
       {profile.battery.showPolarityMarkers && (
         <>
           <text
-            x={positiveMarkerX}
+            x={markerX}
             y={posMarkerY}
             fill={LABEL_COLOR}
             fontSize={LABEL_SPECS.polarityMarkerSize}
@@ -868,12 +868,12 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
             paintOrder="stroke"
             stroke={markerStroke}
             strokeWidth={0.8}
-            transform={`rotate(${markerRotation}, ${positiveMarkerX}, ${posMarkerY})`}
+            transform={`rotate(${markerRotation}, ${markerX}, ${posMarkerY})`}
           >
             +
           </text>
           <text
-            x={negativeMarkerX}
+            x={markerX}
             y={negMarkerY}
             fill={LABEL_COLOR}
             fontSize={LABEL_SPECS.polarityMarkerSize}
@@ -882,7 +882,7 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
             paintOrder="stroke"
             stroke={markerStroke}
             strokeWidth={0.8}
-            transform={`rotate(${markerRotation}, ${negativeMarkerX}, ${negMarkerY})`}
+            transform={`rotate(${markerRotation}, ${markerX}, ${negMarkerY})`}
           >
             −
           </text>
