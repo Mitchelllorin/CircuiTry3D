@@ -116,7 +116,7 @@ const HELP_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
-      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Simple, Perimeter, or A* routing modes from the left panel.",
+      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Square (outside), Simple, Perimeter, or A* routing modes from the left panel.",
     ],
     bullets: [
       "One-touch buttons add, rotate, duplicate, or delete components.",
@@ -199,7 +199,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
+      "Wire tool supports freeform, Manhattan (90-deg), square outside, simple, perimeter, and A* auto-routing modes.",
       "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
     ],
   },
@@ -235,7 +235,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
       "Explore routing, junctions, and layout tools to organise complex practice problems quickly.",
     ],
     bullets: [
-      "Swap between free-form and Manhattan routes for textbook wiring.",
+      "Swap between free-form, Manhattan, and Square (outside) routes for textbook wiring.",
       "Drop junctions to branch into parallel paths.",
       "Auto-arrange builds clean study-ready layouts in a single click.",
       "Cycle through free, square, and linear layout modes from the View controls.",
@@ -552,7 +552,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   {
     title: "Flexible Wiring & Layouts",
     bullets: [
-      "Free-form, Manhattan, simple, perimeter, and A* routing styles.",
+      "Free-form, Manhattan, square outside, simple, perimeter, and A* routing styles.",
       "Smart junction placement with long-press editing for parallel branches.",
       "Auto-arrange plus free, square, and linear layout modes for presentation-ready circuits.",
     ],
@@ -2094,6 +2094,7 @@ export default function Builder() {
   const wireRoutingNames: Record<string, string> = {
     freeform: "Freeform",
     manhattan: "Manhattan (90-deg)",
+    square: "Square (outside)",
     offset: "Offset",
     arc: "Arc",
     simple: "Simple",

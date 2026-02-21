@@ -77,7 +77,7 @@ const NODE_STYLE: Record<Node['type'], NodeVisualStyle> = {
   },
 } as const;
 
-export type WireMode = 'free' | 'schematic' | 'star' | 'offset' | 'arc' | 'routing';
+export type WireMode = 'free' | 'schematic' | 'square' | 'star' | 'offset' | 'arc' | 'routing';
 
 interface WireDrawerProps {
   width: number;
@@ -228,6 +228,43 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       return [start, waypoint, end];
     };
 
+    const squarePath = () => {
+      if (length < 0.01) {
+        return [start, end];
+      }
+
+      const minX = Math.min(start.x, end.x);
+      const maxX = Math.max(start.x, end.x);
+      const minY = Math.min(start.y, end.y);
+      const maxY = Math.max(start.y, end.y);
+      const outsideOffset = clamp(length * 0.2, ROUTING_GRID_SIZE, ROUTING_GRID_SIZE * 3);
+
+      // Route "around the outside" of the endpoint box by default.
+      // Shift flips to the opposite outer side while keeping right angles.
+      const routeTopOrBottom = Math.abs(dx) >= Math.abs(dy);
+      if (routeTopOrBottom) {
+        const defaultPositive = dy >= 0;
+        const goPositive = options?.flip ? !defaultPositive : defaultPositive;
+        const outerY = goPositive ? maxY + outsideOffset : minY - outsideOffset;
+        return compressPath([
+          start,
+          { x: start.x, y: outerY },
+          { x: end.x, y: outerY },
+          end
+        ]);
+      }
+
+      const defaultPositive = dx >= 0;
+      const goPositive = options?.flip ? !defaultPositive : defaultPositive;
+      const outerX = goPositive ? maxX + outsideOffset : minX - outsideOffset;
+      return compressPath([
+        start,
+        { x: outerX, y: start.y },
+        { x: outerX, y: end.y },
+        end
+      ]);
+    };
+
     const offsetPath = () => {
       if (length < 0.01) {
         return [start, end];
@@ -287,6 +324,9 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
     switch (mode) {
       case 'schematic': {
         return schematicPath();
+      }
+      case 'square': {
+        return squarePath();
       }
       case 'star': {
         const mid = {

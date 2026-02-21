@@ -6974,6 +6974,12 @@ body.android-optimized.menu-visible .status {
                 notifyParentReady();
                 notifyParentAnalysisState();
                 notifyParentToolState('select');
+                applyRoutingMode(getRouterMode(), {
+                    persist: false,
+                    rerouteExisting: false,
+                    announce: false,
+                    notifyParent: false
+                });
 
             } catch (error) {
                 console.error('Initialization error:', error);
@@ -7757,59 +7763,136 @@ body.android-optimized.menu-visible .status {
         }
 
         // Router mode selection
+        const ROUTING_MODES = Object.freeze([
+            'freeform',
+            'manhattan',
+            'square',
+            'offset',
+            'arc',
+            'simple',
+            'perimeter',
+            'astar'
+        ]);
+        const ROUTING_MODE_NAMES = Object.freeze({
+            freeform: 'Free-form',
+            manhattan: 'Manhattan',
+            square: 'Square (Outside)',
+            offset: 'Offset',
+            arc: 'Arc',
+            simple: 'Simple',
+            perimeter: 'Perimeter',
+            astar: 'A*'
+        });
+        const ROUTING_MODE_ALIASES = Object.freeze({
+            'free': 'freeform',
+            'free-form': 'freeform',
+            'schematic': 'manhattan',
+            'orthogonal': 'manhattan',
+            '90deg': 'manhattan',
+            '90-degree': 'manhattan',
+            'a*': 'astar',
+            'a-star': 'astar',
+            'auto': 'astar',
+            'auto-routing': 'astar'
+        });
+
+        function normalizeRouterMode(rawMode, fallback = 'freeform') {
+            if (typeof rawMode !== 'string') {
+                return fallback;
+            }
+            const normalized = rawMode.trim().toLowerCase();
+            if (!normalized) {
+                return fallback;
+            }
+            if (ROUTING_MODES.includes(normalized)) {
+                return normalized;
+            }
+            return ROUTING_MODE_ALIASES[normalized] || fallback;
+        }
+
         function getRouterMode() {
             // Allow override by query (?router=...), localStorage, or global
+            const resolveCandidate = (value) => normalizeRouterMode(value, null);
+            let resolved = null;
+
             try {
                 const qs = new URLSearchParams(location.search);
-                const q = qs.get('router');
-                if (q) return q;
+                const queryMode = resolveCandidate(qs.get('router'));
+                if (queryMode) {
+                    resolved = queryMode;
+                }
             } catch {}
-            try {
-                const ls = localStorage.getItem('routerMode');
-                if (ls) return ls;
-            } catch {}
-            return (window.ROUTER_MODE || 'freeform');
-        }
-        
-        function cycleRoutingMode() {
-            const modes = ['freeform', 'manhattan', 'offset', 'arc', 'simple', 'perimeter', 'astar'];
-            const current = getRouterMode();
-            const currentIndex = modes.indexOf(current);
-            const nextIndex = (currentIndex + 1) % modes.length;
-            const nextMode = modes[nextIndex];
-            
-            // Save to localStorage
-            try {
-                localStorage.setItem('routerMode', nextMode);
-                window.ROUTER_MODE = nextMode;
-            } catch (e) {
-                window.ROUTER_MODE = nextMode;
+
+            if (!resolved) {
+                try {
+                    const storedMode = resolveCandidate(localStorage.getItem('routerMode'));
+                    if (storedMode) {
+                        resolved = storedMode;
+                    }
+                } catch {}
             }
-            
-            // Update UI
+
+            if (!resolved) {
+                resolved = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
+            }
+
+            window.ROUTER_MODE = resolved;
+            return resolved;
+        }
+
+        function updateRoutingModeLabel(mode = getRouterMode()) {
             const modeLabel = document.getElementById('route-mode');
             if (modeLabel) {
-                const modeNames = {
-                    'freeform': 'Free-form',
-                    'manhattan': 'Manhattan',
-                    'offset': 'Offset',
-                    'arc': 'Arc',
-                    'simple': 'Simple',
-                    'perimeter': 'Perimeter',
-                    'astar': 'A*'
-                };
-                modeLabel.textContent = modeNames[nextMode] || nextMode;
+                modeLabel.textContent = ROUTING_MODE_NAMES[mode] || mode;
             }
-            
-            // Update existing wires with new routing
-            wires.forEach(wire => {
-                if (wire.updatePath) {
-                    wire.updatePath();
-                }
-            });
-            
-            setStatus(`⚡ Routing mode: ${nextMode.toUpperCase()} - Wires updated with new routing style`);
-            notifyParentModeState({ wireRoutingMode: nextMode });
+        }
+
+        function applyRoutingMode(nextMode, options = {}) {
+            const {
+                persist = true,
+                rerouteExisting = true,
+                announce = true,
+                notifyParent = true
+            } = options;
+
+            const normalizedMode = normalizeRouterMode(nextMode, 'freeform');
+            const previousMode = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
+
+            window.ROUTER_MODE = normalizedMode;
+            if (persist) {
+                try {
+                    localStorage.setItem('routerMode', normalizedMode);
+                } catch {}
+            }
+
+            updateRoutingModeLabel(normalizedMode);
+
+            if (rerouteExisting && normalizedMode !== previousMode) {
+                wires.forEach(wire => {
+                    if (wire.updatePath) {
+                        wire.updatePath();
+                    }
+                });
+            }
+
+            if (announce) {
+                const modeName = ROUTING_MODE_NAMES[normalizedMode] || normalizedMode;
+                setStatus(`⚡ Routing mode: ${modeName} - Wires updated with new routing style`);
+            }
+
+            if (notifyParent) {
+                notifyParentModeState({ wireRoutingMode: normalizedMode });
+            }
+
+            return normalizedMode;
+        }
+
+        function cycleRoutingMode() {
+            const current = getRouterMode();
+            const currentIndex = ROUTING_MODES.indexOf(current);
+            const nextIndex = (currentIndex + 1) % ROUTING_MODES.length;
+            const nextMode = ROUTING_MODES[nextIndex];
+            applyRoutingMode(nextMode);
         }
 
         function compressPath(points) {
@@ -7826,49 +7909,9 @@ body.android-optimized.menu-visible .status {
             return clean;
         }
         
-        // Free-form routing - direct line with minimal bends
+        // Free-form routing - true direct segment between terminals
         function routeFreeform(A, B, startSide, endSide) {
-            // Check if we need any bends at all
-            const dx = Math.abs(B.x - A.x);
-            const dz = Math.abs(B.z - A.z);
-            
-            // If points are very close or aligned, just connect directly
-            if (dx < 0.1 || dz < 0.1) {
-                return [A, B];
-            }
-            
-            // For freeform, choose the most natural bend direction based on terminal sides
-            // This reduces visual clutter and makes connections more intuitive
-            
-            // If components are facing each other (e.g., left-to-right), prefer straight-ish path
-            if ((startSide === 'right' || startSide === 'positive') && 
-                (endSide === 'left' || endSide === 'negative') && B.x > A.x) {
-                // Natural left-to-right connection
-                const midX = (A.x + B.x) / 2;
-                if (dz < GRID_SIZE * 2) {
-                    // Almost aligned - use single midpoint
-                    return [A, new THREE.Vector3(midX, 0, A.z), new THREE.Vector3(midX, 0, B.z), B];
-                }
-            }
-            
-            if ((startSide === 'left' || startSide === 'negative') && 
-                (endSide === 'right' || endSide === 'positive') && B.x < A.x) {
-                // Natural right-to-left connection
-                const midX = (A.x + B.x) / 2;
-                if (dz < GRID_SIZE * 2) {
-                    return [A, new THREE.Vector3(midX, 0, A.z), new THREE.Vector3(midX, 0, B.z), B];
-                }
-            }
-            
-            // Otherwise use a simple L-shaped corner
-            // Choose corner based on which direction has more distance for cleaner look
-            if (dx > dz) {
-                // More horizontal distance - go horizontal first
-                return [A, new THREE.Vector3(B.x, 0, A.z), B];
-            } else {
-                // More vertical distance - go vertical first
-                return [A, new THREE.Vector3(A.x, 0, B.z), B];
-            }
+            return [A, B];
         }
 
         function routeOffset(A, B, startSide, endSide) {
@@ -7977,6 +8020,98 @@ body.android-optimized.menu-visible .status {
                 const outwardZ = dz > 0 ? (maxZ + OUTER) : (minZ - OUTER);
                 return compressPath([A, Astub, snapToGrid(new THREE.Vector3(Astub.x,0,outwardZ)), snapToGrid(new THREE.Vector3(Bstub.x,0,outwardZ)), Bstub, B]);
             }
+        }
+
+        function routeSquare(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const STUB = GRID * 2;
+            const OUTER = GRID * 4;
+
+            function stub(point, side, toward) {
+                const dx = toward.x - point.x;
+                const dz = toward.z - point.z;
+                if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
+                if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                return Math.abs(dx) >= Math.abs(dz)
+                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx || 1) * STUB, 0, point.z))
+                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz || 1) * STUB));
+            }
+
+            function sideToHorizontalPreference(side) {
+                if (side === 'left' || side === 'negative') return -1;
+                if (side === 'right' || side === 'positive') return 1;
+                return 0;
+            }
+
+            const Astub = stub(A, startSide, B);
+            const Bstub = stub(B, endSide, A);
+            const minX = Math.min(A.x, B.x, Astub.x, Bstub.x);
+            const maxX = Math.max(A.x, B.x, Astub.x, Bstub.x);
+            const minZ = Math.min(A.z, B.z, Astub.z, Bstub.z);
+            const maxZ = Math.max(A.z, B.z, Astub.z, Bstub.z);
+
+            const alignedX = Math.abs(Astub.x - Bstub.x) < 0.001;
+            const alignedZ = Math.abs(Astub.z - Bstub.z) < 0.001;
+            const candidates = [];
+
+            if (!alignedZ) {
+                candidates.push({
+                    dirX: -1,
+                    path: [A, Astub, snapToGrid(new THREE.Vector3(minX - OUTER, 0, Astub.z)), snapToGrid(new THREE.Vector3(minX - OUTER, 0, Bstub.z)), Bstub, B]
+                });
+                candidates.push({
+                    dirX: 1,
+                    path: [A, Astub, snapToGrid(new THREE.Vector3(maxX + OUTER, 0, Astub.z)), snapToGrid(new THREE.Vector3(maxX + OUTER, 0, Bstub.z)), Bstub, B]
+                });
+            }
+
+            if (!alignedX) {
+                candidates.push({
+                    path: [A, Astub, snapToGrid(new THREE.Vector3(Astub.x, 0, minZ - OUTER)), snapToGrid(new THREE.Vector3(Bstub.x, 0, minZ - OUTER)), Bstub, B]
+                });
+                candidates.push({
+                    path: [A, Astub, snapToGrid(new THREE.Vector3(Astub.x, 0, maxZ + OUTER)), snapToGrid(new THREE.Vector3(Bstub.x, 0, maxZ + OUTER)), Bstub, B]
+                });
+            }
+
+            if (candidates.length === 0) {
+                return routePerimeter(A, B, startSide, endSide);
+            }
+
+            const existingSegments = getExistingWireSegments();
+            const startPreference = sideToHorizontalPreference(startSide);
+            const endPreference = sideToHorizontalPreference(endSide);
+            let bestPath = null;
+            let bestScore = Infinity;
+
+            candidates.forEach(candidate => {
+                const candidatePath = compressPath(candidate.path);
+                if (candidatePath.length < 2) {
+                    return;
+                }
+
+                let length = 0;
+                for (let i = 0; i < candidatePath.length - 1; i++) {
+                    length += candidatePath[i].distanceTo(candidatePath[i + 1]);
+                }
+
+                const crossings = countCrossings(candidatePath, existingSegments);
+                let score = length + crossings * GRID * 4;
+
+                if (candidate.dirX && startPreference && candidate.dirX !== startPreference) {
+                    score += GRID * 2;
+                }
+                if (candidate.dirX && endPreference && candidate.dirX !== endPreference) {
+                    score += GRID * 2;
+                }
+
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestPath = candidatePath;
+                }
+            });
+
+            return bestPath || compressPath([A, Astub, Bstub, B]);
         }
 
         function routeAStar(A, B, startSide, endSide) {
@@ -8274,6 +8409,7 @@ body.android-optimized.menu-visible .status {
             if (mode === 'manhattan') {
                 return routeManhattan(A, B, startSide, endSide);
             }
+            if (mode === 'square') return routeSquare(A, B, startSide, endSide);
             if (mode === 'simple') return routeSimple(A, B, startSide, endSide);
             if (mode === 'perimeter') return routePerimeter(A, B, startSide, endSide);
             if (mode === 'astar') return routeAStar(A, B, startSide, endSide);
@@ -11489,8 +11625,9 @@ Fast circuit building with keyboard shortcuts!
    ? Transparent branding overlay
 
 ?? FLEXIBLE WIRING:
-   ? Free-form: Natural connections
+   ? Free-form: Direct sketch routing
    ? Manhattan: Textbook right-angles
+   ? Square: Outside orthogonal box routing
    ? Offset: Parallel detours
    ? Arc: Smooth sweeps
    ? Simple, Perimeter, A*: Advanced routing
