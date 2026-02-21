@@ -2318,9 +2318,63 @@ export default function Builder() {
       {/* Mode bar is now rendered globally in AppLayout */}
 
       {shouldShowEdgeActions && (
-        <Fragment>
-          {/* Workspace Quick Action Buttons - History/File actions on right edge */}
-          <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
+        <div
+          className="builder-top-quick-actions"
+          role="toolbar"
+          aria-label="Quick build actions"
+        >
+          <div className="builder-top-quick-actions-group" aria-label="Tool quick actions">
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--clear"
+              onClick={handleClearWorkspace}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Clear workspace"
+              title="Clear all components, wires, and analysis data"
+            >
+              <IconTrash className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
+              onClick={() => triggerBuilderAction("toggle-wire-mode")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-pressed={modeState.isWireMode}
+              aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
+              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+            >
+              <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
+              onClick={() => triggerBuilderAction("toggle-rotate-mode")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-pressed={modeState.isRotateMode}
+              aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
+              title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
+            >
+              <IconRotate className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Edit selected component"
+              title="Edit / Select (E)"
+            >
+              <IconPencil className="edge-action-icon-svg" />
+            </button>
+          </div>
+
+          <span className="builder-top-quick-actions-divider" aria-hidden="true" />
+
+          <div className="builder-top-quick-actions-group" aria-label="History and file actions">
             <button
               type="button"
               className="edge-action-btn edge-action-btn--simulate"
@@ -2377,57 +2431,7 @@ export default function Builder() {
               )}
             </button>
           </div>
-
-          {/* Workspace Quick Action Buttons - Tool actions on left edge */}
-          <div className="workspace-edge-actions workspace-edge-actions--left" aria-label="Tool quick actions">
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--clear"
-              onClick={handleClearWorkspace}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Clear workspace"
-              title="Clear all components, wires, and analysis data"
-            >
-              <IconTrash className="edge-action-icon-svg" />
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-wire-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isWireMode}
-              aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
-              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
-            >
-              <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-rotate-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isRotateMode}
-              aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
-              title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
-            >
-              <IconRotate className="edge-action-icon-svg" />
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Edit selected component"
-              title="Edit / Select (E)"
-            >
-              <IconPencil className="edge-action-icon-svg" />
-            </button>
-          </div>
-        </Fragment>
+        </div>
       )}
 
       <div className="builder-logo-header" aria-hidden="true">

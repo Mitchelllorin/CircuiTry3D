@@ -26,14 +26,17 @@
   /* Keep side rails perimeter-oriented by revealing ~90% when expanded. */
   --builder-menu-side-reveal: 0.9;
   /* Slimmer sidebar widths */
-  --builder-menu-left-width: 172px;
-  --builder-menu-right-width: 164px;
-  --builder-menu-bottom-width: min(472px, calc(100vw - 112px));
+  --builder-menu-left-width: 156px;
+  --builder-menu-right-width: 150px;
+  --builder-menu-bottom-width: min(460px, calc(100vw - 104px));
   --builder-menu-bottom-height: 236px;
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --builder-ticker-top: 72px;
   --builder-ticker-height: 32px;
   --builder-ticker-gap: 8px;
+  --builder-top-quick-actions-height: 38px;
+  --builder-top-quick-actions-gap: 6px;
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
@@ -691,8 +694,8 @@ body.builder-body {
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 10px;
+  gap: 8px;
+  padding: 10px 8px;
   flex: 0 0 auto;
   min-height: 0;
   transition:
@@ -2214,7 +2217,7 @@ body.builder-body {
 
 .builder-ticker-feed {
   position: fixed;
-  top: calc(72px + var(--builder-safe-area-top));
+  top: calc(var(--builder-ticker-top) + var(--builder-safe-area-top));
   left: 0;
   right: 0;
   height: var(--builder-ticker-height, 32px);
@@ -2225,6 +2228,66 @@ body.builder-body {
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
+}
+
+.builder-top-quick-actions {
+  position: fixed;
+  top: calc(
+    var(--builder-ticker-top) +
+    var(--builder-safe-area-top) +
+    var(--builder-ticker-height) +
+    var(--builder-top-quick-actions-gap)
+  );
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 812;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--builder-top-quick-actions-height);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.26);
+  background: rgba(10, 24, 48, 0.86);
+  box-shadow: 0 6px 18px rgba(3, 12, 32, 0.45);
+  backdrop-filter: blur(12px);
+  max-width: calc(
+    100vw - 16px - env(safe-area-inset-left, 0px) -
+      env(safe-area-inset-right, 0px)
+  );
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.builder-top-quick-actions::-webkit-scrollbar {
+  display: none;
+}
+
+.builder-top-quick-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.builder-top-quick-actions-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(136, 204, 255, 0.28);
+  flex: 0 0 auto;
+}
+
+.builder-top-quick-actions .edge-action-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.builder-top-quick-actions .edge-action-icon,
+.builder-top-quick-actions .edge-action-icon-svg {
+  width: 15px;
+  height: 15px;
 }
 
 .ticker-wire-fixed {
@@ -2328,8 +2391,18 @@ body.builder-body {
 
 @media (max-width: 960px) {
   .builder-ticker-feed {
-    top: calc(68px + var(--builder-safe-area-top));
+    top: calc(var(--builder-ticker-top) + var(--builder-safe-area-top));
     height: var(--builder-ticker-height, 28px);
+  }
+
+  .builder-top-quick-actions {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .builder-top-quick-actions .edge-action-btn {
+    width: 32px;
+    height: 32px;
   }
 
   .ticker-content {
@@ -2341,8 +2414,35 @@ body.builder-body {
 
 @media (max-width: 720px) {
   .builder-ticker-feed {
-    top: calc(64px + var(--builder-safe-area-top));
+    top: calc(var(--builder-ticker-top) + var(--builder-safe-area-top));
     height: var(--builder-ticker-height, 26px);
+  }
+
+  .builder-top-quick-actions {
+    left: calc(env(safe-area-inset-left, 0px) + 8px);
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
+    transform: none;
+    border-radius: 12px;
+    justify-content: flex-start;
+    max-width: none;
+    padding: 3px 6px;
+    gap: 6px;
+  }
+
+  .builder-top-quick-actions .edge-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+  }
+
+  .builder-top-quick-actions .edge-action-icon,
+  .builder-top-quick-actions .edge-action-icon-svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .builder-top-quick-actions-divider {
+    height: 16px;
   }
 
   .ticker-content {
@@ -3442,13 +3542,15 @@ body.builder-body {
 @media (max-width: 960px) {
   :root {
     /* Tablet - slimmer toggles */
-    --builder-menu-left-width: 154px;
-    --builder-menu-right-width: 150px;
-    --builder-menu-bottom-width: min(416px, calc(100vw - 88px));
+    --builder-menu-left-width: 142px;
+    --builder-menu-right-width: 138px;
+    --builder-menu-bottom-width: min(408px, calc(100vw - 84px));
     --builder-menu-bottom-height: 206px;
     --builder-menu-toggle-width: 16px;
     --builder-menu-toggle-height: 64px;
+    --builder-ticker-top: 68px;
     --builder-ticker-height: 28px;
+    --builder-top-quick-actions-height: 36px;
   }
 
   .builder-menu-stage-left,
@@ -3478,13 +3580,15 @@ body.builder-body {
 @media (max-width: 720px) {
   :root {
     /* Mobile - slim but tappable toggles */
-    --builder-menu-left-width: 142px;
-    --builder-menu-right-width: 138px;
+    --builder-menu-left-width: 132px;
+    --builder-menu-right-width: 126px;
     --builder-menu-bottom-width: calc(100vw - 24px);
     --builder-menu-bottom-height: 188px;
     --builder-menu-toggle-width: 15px;
     --builder-menu-toggle-height: 54px;
+    --builder-ticker-top: 64px;
     --builder-ticker-height: 26px;
+    --builder-top-quick-actions-height: 34px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 38px;
   }
