@@ -106,7 +106,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "tutorial-junctions",
         title: "Add a junction branch",
         detail:
-          "Drop at least one junction on an existing wire and branch a path to practice parallel thinking.",
+          "In wire mode, tap an existing wire run to drop a junction and branch a new path for parallel analysis practice.",
       },
     ],
   },
