@@ -4764,6 +4764,8 @@ body.android-optimized.menu-visible .status {
         
         // Grid and snapping variables
         const GRID_SIZE = 2; // Grid spacing
+        const WIRE_SPLIT_ENDPOINT_TOLERANCE = 0.18;
+        const JUNCTION_REUSE_RADIUS = 0.35;
         let gridHelper = null;
         let snapIndicator = null;
         
@@ -4897,8 +4899,22 @@ body.android-optimized.menu-visible .status {
 
         // Junction class
         class Junction {
-            constructor(position) {
-                this.position = snapToGrid(position);
+            constructor(position, options = {}) {
+                const { snapToGridPosition = true } = options;
+                const initialPosition = position instanceof THREE.Vector3
+                    ? position.clone()
+                    : new THREE.Vector3(
+                        Number(position?.x) || 0,
+                        Number(position?.y) || 0,
+                        Number(position?.z) || 0
+                    );
+
+                if (snapToGridPosition) {
+                    this.position = snapToGrid(initialPosition);
+                } else {
+                    initialPosition.y = 0;
+                    this.position = initialPosition;
+                }
                 this.connections = [];
                 this.id = 'junction_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 this.createMesh();
@@ -8822,31 +8838,15 @@ body.android-optimized.menu-visible .status {
             }
             
             // Check for wires
-            const wireSegments = [];
-            wires.forEach(wire => {
-                if (wire?.segments) {
-                    wire.segments.forEach(segment => {
-                        if (segment.mesh) {
-                            wireSegments.push(segment.mesh);
-                        }
-                    });
+            const wireHit = getWireHitAtScreenPosition(clientX, clientY);
+            if (wireHit?.wire) {
+                showWireEditPopup(wireHit.wire, clientX, clientY, wireHit.point);
+                
+                // Add haptic feedback for mobile devices
+                if (navigator.vibrate && isMobile) {
+                    navigator.vibrate(50);
                 }
-            });
-            
-            const wireHits = raycaster.intersectObjects(wireSegments, false);
-            if (wireHits.length > 0) {
-                const hitSegment = wireHits[0].object;
-                // Find the wire this segment belongs to
-                const wire = wires.find(w => w.segments.some(s => s.mesh === hitSegment));
-                if (wire) {
-                    showWireEditPopup(wire, clientX, clientY);
-                    
-                    // Add haptic feedback for mobile devices
-                    if (navigator.vibrate && isMobile) {
-                        navigator.vibrate(50);
-                    }
-                    return;
-                }
+                return;
             }
         }
         
@@ -9025,7 +9025,7 @@ body.android-optimized.menu-visible .status {
                     if (connectionPoint?.data) {
                         handleConnectionPointClick(connectionPoint.data);
                     } else {
-                        setStatus('⚡ WIRE MODE! Touch terminals to connect components');
+                        setStatus('⚡ WIRE MODE! Touch terminals to connect, or tap any wire run to drop a junction branch.');
                     }
                     break;
                 default:
@@ -9033,16 +9033,147 @@ body.android-optimized.menu-visible .status {
             }
         }
         
+        function projectPointOntoWireSegment(point, segmentStart, segmentEnd) {
+            if (!point || !segmentStart || !segmentEnd) {
+                return null;
+            }
+
+            const segmentVector = new THREE.Vector3().subVectors(segmentEnd, segmentStart);
+            const lengthSquared = segmentVector.lengthSq();
+
+            if (lengthSquared < 1e-8) {
+                return segmentStart.clone();
+            }
+
+            const pointVector = new THREE.Vector3().subVectors(point, segmentStart);
+            const t = Math.max(0, Math.min(1, pointVector.dot(segmentVector) / lengthSquared));
+            const projected = segmentStart.clone().add(segmentVector.multiplyScalar(t));
+            projected.y = 0;
+            return projected;
+        }
+
+        function findNearestJunctionByPosition(position, maxDistance = JUNCTION_REUSE_RADIUS) {
+            if (!position || !Array.isArray(junctions) || junctions.length === 0) {
+                return null;
+            }
+
+            let nearest = null;
+            let nearestDistance = maxDistance;
+
+            junctions.forEach(junction => {
+                if (!junction?.position?.distanceTo) {
+                    return;
+                }
+
+                const candidateDistance = junction.position.distanceTo(position);
+                if (candidateDistance <= nearestDistance) {
+                    nearest = junction;
+                    nearestDistance = candidateDistance;
+                }
+            });
+
+            return nearest;
+        }
+
+        function getWireHitAtScreenPosition(clientX, clientY) {
+            if (!renderer?.domElement || !raycaster || !camera) {
+                return null;
+            }
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const wireMeshes = [];
+            const segmentLookup = new Map();
+            wires.forEach(wire => {
+                if (!wire?.segments?.length) {
+                    return;
+                }
+                wire.segments.forEach(segment => {
+                    if (!segment?.mesh) {
+                        return;
+                    }
+                    wireMeshes.push(segment.mesh);
+                    segmentLookup.set(segment.mesh, { wire, segment });
+                });
+            });
+
+            if (wireMeshes.length === 0) {
+                return null;
+            }
+
+            const hits = raycaster.intersectObjects(wireMeshes, false);
+            for (const hit of hits) {
+                const mapping = segmentLookup.get(hit.object);
+                if (!mapping?.segment) {
+                    continue;
+                }
+
+                const point = projectPointOntoWireSegment(
+                    hit.point,
+                    mapping.segment.start,
+                    mapping.segment.end
+                );
+
+                if (!point) {
+                    continue;
+                }
+
+                return {
+                    wire: mapping.wire,
+                    segment: mapping.segment,
+                    point
+                };
+            }
+
+            return null;
+        }
+
+        function getWireMidpoint(wire) {
+            if (!wire?.segments?.length) {
+                return null;
+            }
+
+            const segment = wire.segments[Math.floor(wire.segments.length / 2)];
+            if (!segment?.start || !segment?.end) {
+                return null;
+            }
+
+            return new THREE.Vector3()
+                .addVectors(segment.start, segment.end)
+                .multiplyScalar(0.5);
+        }
+
+        function getWireBranchStartPointData(junction) {
+            if (!junction) {
+                return null;
+            }
+
+            if (junction?.connectionPoint?.userData) {
+                return junction.connectionPoint.userData;
+            }
+
+            return {
+                junction,
+                isConnectionPoint: true,
+                side: 'center',
+                polarity: 'neutral'
+            };
+        }
+
         // Wire edit popup
-        function showWireEditPopup(wire, clientX, clientY) {
+        function showWireEditPopup(wire, clientX, clientY, splitPoint) {
             const popup = document.getElementById('wire-edit-popup');
             if (!popup) {
                 // Create popup if it doesn't exist
                 createWireEditPopup();
-                return showWireEditPopup(wire, clientX, clientY);
+                return showWireEditPopup(wire, clientX, clientY, splitPoint);
             }
             
             currentEditWire = wire;
+            currentEditWireHitPoint = splitPoint?.clone ? splitPoint.clone() : null;
             popup.style.display = 'block';
             
             setStatus('⚡ Wire selected - Choose action');
@@ -9060,8 +9191,9 @@ body.android-optimized.menu-visible .status {
                         <button onclick="closeWireEditPopup()" class="edit-close">X</button>
                     </div>
                     <div class="edit-actions">
-                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">Delete Wire</button>
+                        <button onclick="addJunctionBranchFromPopup()" class="edit-action-btn">Drop Junction Branch</button>
                         <button onclick="changeWireRoutingFromPopup()" class="edit-action-btn">Change Routing</button>
+                        <button onclick="deleteWireFromPopup()" class="edit-action-btn delete-btn">Delete Wire</button>
                     </div>
                 </div>
             `;
@@ -9074,6 +9206,7 @@ body.android-optimized.menu-visible .status {
                 popup.style.display = 'none';
             }
             currentEditWire = null;
+            currentEditWireHitPoint = null;
         }
         
         function deleteWireFromPopup() {
@@ -9100,9 +9233,50 @@ body.android-optimized.menu-visible .status {
             }
             closeWireEditPopup();
         }
+
+        function addJunctionBranchFromPopup() {
+            const wire = currentEditWire;
+            const splitPoint = currentEditWireHitPoint?.clone
+                ? currentEditWireHitPoint.clone()
+                : getWireMidpoint(wire);
+            const hadWireStart = Boolean(wireStart);
+
+            closeWireEditPopup();
+
+            if (!wire || !splitPoint) {
+                setStatus('⚠ Unable to locate the selected wire segment.');
+                return;
+            }
+
+            enableWireMode({ silent: true });
+
+            const junction = splitWireWithJunction(wire, splitPoint, {
+                saveSnapshot: true,
+                snapToGridPosition: false,
+                suppressStatus: true
+            });
+
+            if (!junction) {
+                setStatus('⚠ Unable to place a junction at that location.');
+                return;
+            }
+
+            const pointData = getWireBranchStartPointData(junction);
+            if (!pointData) {
+                setStatus('⚠ Junction created, but branch start failed.');
+                return;
+            }
+
+            handleConnectionPointClick(pointData);
+
+            if (!hadWireStart && wireStart) {
+                setStatus('⚡ Junction added on wire. Click another terminal or junction to finish the branch.');
+            }
+        }
         
         // Variable to track current wire being edited
         let currentEditWire = null;
+        let currentEditWireHitPoint = null;
 
         // Edit popup functions
         function showEditPopup(component, clientX, clientY) {
@@ -9293,6 +9467,29 @@ body.android-optimized.menu-visible .status {
                     } else {
                         handleConnectionPointClick(hitPoint.userData);
                         return true;
+                    }
+                }
+            }
+
+            if (isWireMode) {
+                const wireHit = getWireHitAtScreenPosition(clientX, clientY);
+                if (wireHit?.wire && wireHit.point) {
+                    const hadWireStart = Boolean(wireStart);
+                    const junction = splitWireWithJunction(wireHit.wire, wireHit.point, {
+                        saveSnapshot: true,
+                        snapToGridPosition: false,
+                        suppressStatus: true
+                    });
+
+                    if (junction) {
+                        const pointData = getWireBranchStartPointData(junction);
+                        if (pointData) {
+                            handleConnectionPointClick(pointData);
+                            if (!hadWireStart && wireStart) {
+                                setStatus('⚡ Junction dropped on wire. Click another terminal or junction to complete the branch.');
+                            }
+                            return true;
+                        }
                     }
                 }
             }
@@ -10973,6 +11170,7 @@ body.android-optimized.menu-visible .status {
 2?? CONNECT WITH WIRES (??? Tools menu):
    ? Click "?? Wire" button (or W key)
    ? Touch component terminals to connect
+   ? Tap any existing wire run to drop a junction and start a branch
    ? Complete the circuit loop for current flow
 
 3?? VIEW CALCULATIONS (panels on right):
@@ -11015,10 +11213,10 @@ body.android-optimized.menu-visible .status {
    ? Arc: Smooth sweeps
    ? Toggle: Tools ? ?? Route
 
-? JUNCTIONS (for parallel circuits):
-   ? Add via Tools ? ? Junction (or J key)
-   ? Click to place on workspace
-   ? Connect multiple wires at one point
+? JUNCTIONS (critical for parallel + series-parallel circuits):
+   ? In Wire Mode, tap/click any wire run to split it and drop a junction
+   ? The new junction becomes a live terminal so you can branch immediately
+   ? Use junction branches to apply KCL on every current split/recombine node
 
 ?? AUTO-ARRANGE:
    ? Tools ? ?? Auto-Arrange
@@ -11058,8 +11256,8 @@ VIEW CONTROLS (??? View menu):
 ?? TIPS:
 ? Complete the circuit loop for current to flow
 ? Open switches stop current flow
-? Use junctions for parallel circuits
-? Long-press wires to delete or reroute
+? Use junctions for every parallel branch; that is where current splits/recombines
+? Long-press wires to add a branch junction, delete, or reroute
 ? Try different routing modes for cleaner layouts
 
 Need more help? Check:
@@ -11203,6 +11401,7 @@ BASIC ACTIONS:
 
 WIRE MODE:
    Click terminal ? Click terminal = Create wire
+   Click/tap wire run = Drop junction + start branch
    Click junction ? Click junction = Wire between junctions
    Esc = Exit wire mode
 
@@ -11212,7 +11411,7 @@ ROTATE MODE:
 
 EDITING:
    Long-press component = Edit properties
-   Long-press wire = Delete or reroute
+   Long-press wire = Add junction branch, delete, or reroute
    Double-click = Quick edit
 
 ???????????????????????????????????????
@@ -11231,7 +11430,8 @@ TWO FINGERS:
 
 WIRE CONNECTIONS:
    Tap terminal in wire mode = Connect
-   Long-press wire = Edit/delete menu
+   Tap wire run in wire mode = Drop junction + start branch
+   Long-press wire = Branch/delete/reroute menu
 
 ???????????????????????????????????????
 
@@ -11294,7 +11494,7 @@ Fast circuit building with keyboard shortcuts!
    ? Offset: Parallel detours
    ? Arc: Smooth sweeps
    ? Simple, Perimeter, A*: Advanced routing
-   ? Smart junction placement
+   ? Tap any wire run to drop junction branches instantly
    ? Long-press wire editing
 
 ?? LAYOUT OPTIONS:
@@ -11481,38 +11681,104 @@ Made with ? for visual learners everywhere!
         }
         
         // Split a wire by adding a junction at a specific point
-        function splitWireWithJunction(wire, position) {
+        function splitWireWithJunction(wire, position, options = {}) {
             if (!wire || !position) return null;
-            
-            saveState(); // Save for undo
-            
-            // Create junction at the split point
-            const junction = new Junction(position);
+
+            const {
+                saveSnapshot = true,
+                snapToGridPosition = false,
+                suppressStatus = false,
+                reuseNearbyJunction = true
+            } = options;
+
+            const splitPoint = position instanceof THREE.Vector3
+                ? position.clone()
+                : new THREE.Vector3(
+                    Number(position?.x) || 0,
+                    Number(position?.y) || 0,
+                    Number(position?.z) || 0
+                );
+            splitPoint.y = 0;
+
+            if (reuseNearbyJunction) {
+                const existingJunction = findNearestJunctionByPosition(splitPoint);
+                if (existingJunction) {
+                    if (!suppressStatus) {
+                        setStatus('⚡ Existing junction selected - continue wiring to branch from this node.');
+                    }
+                    return existingJunction;
+                }
+            }
+
+            const startPos = typeof wire.getStartPosition === 'function'
+                ? wire.getStartPosition()
+                : (wire.startObj?.position?.clone ? wire.startObj.position.clone() : null);
+            const endPos = typeof wire.getEndPosition === 'function'
+                ? wire.getEndPosition()
+                : (wire.endObj?.position?.clone ? wire.endObj.position.clone() : null);
+
+            if (startPos && splitPoint.distanceTo(startPos) <= WIRE_SPLIT_ENDPOINT_TOLERANCE) {
+                if (wire.startObj instanceof Junction) {
+                    return wire.startObj;
+                }
+                if (!suppressStatus) {
+                    setStatus('⚠ Tap the terminal directly to branch from endpoints, or tap farther along the wire to insert a junction.');
+                }
+                return null;
+            }
+
+            if (endPos && splitPoint.distanceTo(endPos) <= WIRE_SPLIT_ENDPOINT_TOLERANCE) {
+                if (wire.endObj instanceof Junction) {
+                    return wire.endObj;
+                }
+                if (!suppressStatus) {
+                    setStatus('⚠ Tap the terminal directly to branch from endpoints, or tap farther along the wire to insert a junction.');
+                }
+                return null;
+            }
+
+            if (saveSnapshot) {
+                saveState();
+            }
+
+            const junction = new Junction(splitPoint, { snapToGridPosition });
             junctions.push(junction);
-            
-            // Store original wire info
+
             const startObj = wire.startObj;
             const startSide = wire.startSide;
             const endObj = wire.endObj;
             const endSide = wire.endSide;
-            
-            // Remove the original wire
-            wire.remove();
-            const wireIndex = wires.indexOf(wire);
-            if (wireIndex > -1) {
-                wires.splice(wireIndex, 1);
+
+            let wire1 = null;
+            let wire2 = null;
+
+            try {
+                wire1 = new Wire(startObj, startSide, junction, 'center');
+                wire2 = new Wire(junction, 'center', endObj, endSide);
+            } catch (error) {
+                console.error('Wire split failed:', error);
+                if (wire1) {
+                    wire1.remove();
+                }
+                if (wire2) {
+                    wire2.remove();
+                }
+                junction.remove();
+                if (!suppressStatus) {
+                    setStatus('⚠ Unable to split wire at that point. Try tapping farther from terminals.');
+                }
+                return null;
             }
-            
-            // Create two new wires: start -> junction and junction -> end
-            const wire1 = new Wire(startObj, startSide, junction, 'center');
-            const wire2 = new Wire(junction, 'center', endObj, endSide);
-            
+
+            wire.remove();
             wires.push(wire1, wire2);
-            
+
             analyzeCircuit();
             updateCircuitInfo();
-            
-            setStatus('⚡ Wire split with junction - now you can branch from this point!');
+
+            if (!suppressStatus) {
+                setStatus('⚡ Wire split with junction - now you can branch from this point!');
+            }
             return junction;
         }
 
@@ -11535,7 +11801,7 @@ Made with ? for visual learners everywhere!
             const { silent = false } = options;
             if (isWireMode) {
                 if (!silent) {
-                    setStatus('⚡ WIRE MODE! Touch terminals to connect components');
+                    setStatus('⚡ WIRE MODE! Touch terminals to connect, or tap any wire run to drop a junction branch.');
                 }
                 notifyParentToolState('wire');
                 notifyParentModeState();
@@ -11556,7 +11822,7 @@ Made with ? for visual learners everywhere!
             closeAllSubmenus();
 
             if (!silent) {
-                setStatus('⚡ WIRE MODE! Touch terminals to connect components');
+                setStatus('⚡ WIRE MODE! Touch terminals to connect, or tap any wire run to drop a junction branch.');
             }
 
             notifyParentToolState('wire');

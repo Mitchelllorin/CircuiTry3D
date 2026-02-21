@@ -116,7 +116,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "junction-intro",
         title: "Step 7 — Junctions: branch your circuit",
         body:
-          "Click anywhere on an existing wire to drop a junction node (amber dot). From that junction, draw a new wire to create parallel branches—essential for solving complex series-parallel problems. Look for the pulsing '+' indicator when hovering over a wire.",
+          "Click anywhere on an existing wire to drop a junction node (amber dot) and immediately start a new branch from that point. Junctions are the required branch nodes for parallel and series-parallel analysis. Look for the pulsing '+' indicator when hovering over a wire.",
         canSkipRequirement: true,
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.junctions ?? 0) > 0),
