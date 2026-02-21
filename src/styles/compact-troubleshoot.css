@@ -214,6 +214,53 @@
   color: rgba(205, 230, 255, 0.85);
 }
 
+.troubleshoot-answer-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(136, 204, 255, 0.24);
+  background: rgba(10, 24, 48, 0.68);
+}
+
+.troubleshoot-answer-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(214, 238, 255, 0.92);
+}
+
+.troubleshoot-answer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.troubleshoot-answer-input {
+  flex: 1 1 220px;
+  min-width: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.32);
+  background: rgba(8, 16, 32, 0.9);
+  color: rgba(230, 245, 255, 0.95);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.troubleshoot-answer-input::placeholder {
+  color: rgba(180, 210, 236, 0.6);
+}
+
+.troubleshoot-answer-input:focus-visible {
+  outline: 2px solid rgba(136, 204, 255, 0.62);
+  outline-offset: 1px;
+}
+
+.troubleshoot-answer-feedback {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(174, 255, 213, 0.95);
+}
+
 .troubleshoot-diagram-column {
   border-radius: 10px;
   border: 1px solid rgba(136, 204, 255, 0.2);
@@ -328,6 +375,11 @@
   border-color: rgba(120, 255, 188, 0.5);
   background: rgba(24, 84, 56, 0.78);
   color: rgba(180, 255, 220, 0.95);
+}
+
+.troubleshoot-action-btn--diagnose {
+  border-color: rgba(140, 214, 255, 0.56);
+  background: rgba(18, 56, 90, 0.84);
 }
 
 .troubleshoot-action-btn--unlock:hover,

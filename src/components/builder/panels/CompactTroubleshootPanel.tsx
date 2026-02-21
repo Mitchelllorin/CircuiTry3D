@@ -8,6 +8,8 @@ type CompactTroubleshootPanelProps = {
   problems: TroubleshootingProblem[];
   activeProblemId: string | null;
   solvedIds: string[];
+  answerValue: string;
+  isDiagnosisAccepted?: boolean;
   isFixVerified?: boolean;
   status: string | null;
   isOpen: boolean;
@@ -16,6 +18,8 @@ type CompactTroubleshootPanelProps = {
   isCircuitLocked: boolean;
   onToggle: () => void;
   onSelectProblem: (problemId: string) => void;
+  onAnswerChange: (value: string) => void;
+  onSubmitAnswer: () => void;
   onResetCircuit: () => void;
   onCheckFix: () => void;
   onNextProblem: () => void;
@@ -34,6 +38,8 @@ export function CompactTroubleshootPanel({
   problems,
   activeProblemId,
   solvedIds,
+  answerValue,
+  isDiagnosisAccepted = false,
   isFixVerified = false,
   status,
   isOpen,
@@ -42,6 +48,8 @@ export function CompactTroubleshootPanel({
   isCircuitLocked,
   onToggle,
   onSelectProblem,
+  onAnswerChange,
+  onSubmitAnswer,
   onResetCircuit,
   onCheckFix,
   onNextProblem,
@@ -61,8 +69,8 @@ export function CompactTroubleshootPanel({
   const statusText =
     status ??
     (isCircuitLocked
-      ? "3D troubleshooting circuit is loaded and locked. Pan, zoom, and rotate while you diagnose the fault."
-      : "Fix verified. This troubleshooting circuit is unlocked for full editing.");
+      ? "Answer the diagnosis prompt to unlock editing, then apply your fix in 3D."
+      : "3D troubleshooting circuit is interactive. Diagnose the fault, fix it, then run Check Fix.");
 
   return (
     <div className={`compact-troubleshoot-panel${isOpen ? " open" : ""}`}>
@@ -114,7 +122,7 @@ export function CompactTroubleshootPanel({
                 <span
                   className={`troubleshoot-lock-chip ${isCircuitLocked ? "locked" : "unlocked"}`}
                 >
-                  {isCircuitLocked ? "Locked until solved" : "Editing unlocked"}
+                  {isCircuitLocked ? "Editing locked" : "Interactive editing"}
                 </span>
               </div>
 
@@ -132,6 +140,44 @@ export function CompactTroubleshootPanel({
                       ))}
                     </ul>
                   ) : null}
+                  <div className="troubleshoot-answer-card">
+                    <label className="troubleshoot-answer-label" htmlFor="troubleshoot-answer-input">
+                      Fault diagnosis
+                    </label>
+                    <div className="troubleshoot-answer-controls">
+                      <input
+                        id="troubleshoot-answer-input"
+                        type="text"
+                        className="troubleshoot-answer-input"
+                        value={answerValue}
+                        onChange={(event) => onAnswerChange(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            onSubmitAnswer();
+                          }
+                        }}
+                        placeholder={
+                          activeProblem.diagnosis?.placeholder ??
+                          "Describe the fault you found before applying the fix."
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="troubleshoot-action-btn troubleshoot-action-btn--diagnose"
+                        onClick={onSubmitAnswer}
+                        disabled={!answerValue.trim()}
+                        aria-disabled={!answerValue.trim()}
+                      >
+                        Submit Diagnosis
+                      </button>
+                    </div>
+                    {isDiagnosisAccepted && (
+                      <p className="troubleshoot-answer-feedback">
+                        Diagnosis accepted. Continue fixing the 3D circuit, then click Check Fix.
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="troubleshoot-diagram-column">
                   <TroubleshootCircuitDiagram problem={activeProblem} />
@@ -146,12 +192,19 @@ export function CompactTroubleshootPanel({
                 <strong>Synced to 3D workspace</strong>
                 <span>
                   {isCircuitLocked
-                    ? "This challenge circuit is inspection-only. Use pan, rotate, and zoom until the fix is verified."
-                    : "Editing is unlocked. You can now wire, move, and modify this circuit freely."}
+                    ? "Editing is locked. Submit a diagnosis, then interact with the 3D circuit to apply your fix."
+                    : "This challenge circuit is interactive. You can wire, move, and modify components while troubleshooting."}
                 </span>
               </div>
 
               <div className="troubleshoot-actions">
+                <button
+                  type="button"
+                  className="troubleshoot-action-btn"
+                  onClick={onToggle}
+                >
+                  Focus 3D View
+                </button>
                 <button
                   type="button"
                   className="troubleshoot-action-btn"
