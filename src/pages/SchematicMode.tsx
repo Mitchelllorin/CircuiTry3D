@@ -1252,7 +1252,8 @@ function BuilderViewport({
   // Camera control constants
   const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
   const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
-  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 2.5, max: 50 }), []);
+  // Lower minimum radius enables near-microscopic ("atomic level") inspection.
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 0.35, max: 50 }), []);
   const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 12, y: 5, z: 12 }), []);
   const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.05, max: Math.PI * 0.48 }), []);
   const TWO_PI = Math.PI * 2;
@@ -1618,7 +1619,7 @@ function BuilderViewport({
         const camera = new three.PerspectiveCamera(
           44,
           container.clientWidth / container.clientHeight,
-          0.1,
+          0.02,
           200
         );
         camera.position.set(9.5, 7.8, 12.4);
@@ -1691,7 +1692,7 @@ function BuilderViewport({
           rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
           zoomSpeed: 1.5,
-          wheelZoomSpeed: 0.008
+          wheelZoomSpeed: 0.0022
         };
 
         const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
@@ -1894,11 +1895,17 @@ function BuilderViewport({
           }
 
           // Default: scroll wheel zooms
-          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
-                            isPinchGesture ? cameraState.wheelZoomSpeed :
-                            cameraState.wheelZoomSpeed * 12;
-          cameraState.spherical.radius += event.deltaY * zoomFactor;
-          cameraState.needsUpdate = true;
+          const zoomFactor = isLineDelta
+            ? cameraState.wheelZoomSpeed * 12
+            : isPinchGesture
+              ? cameraState.wheelZoomSpeed * 0.65
+              : cameraState.wheelZoomSpeed * 1.6;
+          const clampedDelta = Math.max(-48, Math.min(48, event.deltaY));
+          const zoomScale = Math.exp(clampedDelta * zoomFactor);
+          if (Number.isFinite(zoomScale) && zoomScale > 0) {
+            cameraState.spherical.radius *= zoomScale;
+            cameraState.needsUpdate = true;
+          }
         };
 
         const handleResize = () => {
@@ -2256,7 +2263,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
   // Camera control constants
   const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
   const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
-  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 2.5, max: 50 }), []);
+  // Lower minimum radius enables near-microscopic ("atomic level") inspection.
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 0.35, max: 50 }), []);
   const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 12, y: 5, z: 12 }), []);
   const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.05, max: Math.PI * 0.48 }), []);
   const TWO_PI = Math.PI * 2;
@@ -2407,7 +2415,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const camera = new three.PerspectiveCamera(
           44,
           container.clientWidth / container.clientHeight,
-          0.1,
+          0.02,
           200
         );
         camera.position.set(9.5, 7.8, 12.4);
@@ -2469,7 +2477,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
           zoomSpeed: 1.5,
-          wheelZoomSpeed: 0.008
+          wheelZoomSpeed: 0.0022
         };
 
         const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
@@ -2672,11 +2680,17 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           }
 
           // Default: scroll wheel zooms
-          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
-                            isPinchGesture ? cameraState.wheelZoomSpeed :
-                            cameraState.wheelZoomSpeed * 12;
-          cameraState.spherical.radius += event.deltaY * zoomFactor;
-          cameraState.needsUpdate = true;
+          const zoomFactor = isLineDelta
+            ? cameraState.wheelZoomSpeed * 12
+            : isPinchGesture
+              ? cameraState.wheelZoomSpeed * 0.65
+              : cameraState.wheelZoomSpeed * 1.6;
+          const clampedDelta = Math.max(-48, Math.min(48, event.deltaY));
+          const zoomScale = Math.exp(clampedDelta * zoomFactor);
+          if (Number.isFinite(zoomScale) && zoomScale > 0) {
+            cameraState.spherical.radius *= zoomScale;
+            cameraState.needsUpdate = true;
+          }
         };
 
         const handlePointerLeave = () => {

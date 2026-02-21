@@ -53,8 +53,8 @@ const CURRENT_FLOW_OFF_COLORS = {
  */
 export const FLOW_MODE_APPEARANCE = {
   // NOTE: size here is the *base radius* in scene units (scaled in update()).
-  electron: { opacity: 0.72, size: 0.13, glowOpacity: 0.28 },       // Softer, slightly larger
-  conventional: { opacity: 0.95, size: 0.16, glowOpacity: 0.42 }    // Brighter, larger
+  electron: { opacity: 0.78, size: 0.11, glowOpacity: 0.34 },       // Finer, denser electron stream
+  conventional: { opacity: 0.95, size: 0.13, glowOpacity: 0.48 }    // Bright but less oversized at close zoom
 } as const;
 
 /**
@@ -65,31 +65,31 @@ const getCometTailConfig = () => {
   const tier = getPerformanceTier();
   if (tier === 'low') {
     return {
-      segments: 6,
-      length: 6.0,
-      maxOpacity: 0.28,
-      minOpacity: 0.02,
-      maxRadiusFactor: 0.75,
-      minRadiusFactor: 0.18
+      segments: 7,
+      length: 6.8,
+      maxOpacity: 0.32,
+      minOpacity: 0.025,
+      maxRadiusFactor: 0.72,
+      minRadiusFactor: 0.16
     };
   }
   if (tier === 'medium') {
     return {
-      segments: 7,
-      length: 6.8,
-      maxOpacity: 0.28,
+      segments: 9,
+      length: 7.8,
+      maxOpacity: 0.34,
       minOpacity: 0.02,
-      maxRadiusFactor: 0.75,
-      minRadiusFactor: 0.18
+      maxRadiusFactor: 0.74,
+      minRadiusFactor: 0.15
     };
   }
   return {
-    segments: 8,
-    length: 7.4,
-    maxOpacity: 0.28,
-    minOpacity: 0.02,
-    maxRadiusFactor: 0.75,
-    minRadiusFactor: 0.18
+    segments: 11,
+    length: 8.6,
+    maxOpacity: 0.36,
+    minOpacity: 0.015,
+    maxRadiusFactor: 0.76,
+    minRadiusFactor: 0.14
   };
 };
 
@@ -119,12 +119,12 @@ const lerpColor = (start: number, end: number, t: number) => {
 const getParticleLimits = () => {
   const tier = getPerformanceTier();
   if (tier === 'low') {
-    return { min: 2, max: 10 };  // Increased from 1-8 for better flow visualization
+    return { min: 3, max: 14 };
   }
   if (tier === 'medium') {
-    return { min: 2, max: 14 }; // Increased from 2-12
+    return { min: 3, max: 18 };
   }
-  return { min: 2, max: 15 };
+  return { min: 4, max: 22 };
 };
 
 /**
@@ -153,7 +153,7 @@ export const CURRENT_FLOW_PHYSICS = {
    * Base number of particles per unit path length at 1A
    * Higher current = more charge carriers = more visible particles
    */
-  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 0.8,
+  PARTICLES_PER_UNIT_LENGTH_PER_AMP: 1.0,
 
   /**
    * Minimum particles regardless of current (ensures visibility)
@@ -163,7 +163,7 @@ export const CURRENT_FLOW_PHYSICS = {
   /**
    * Maximum particles per path (performance limit)
    */
-  MAX_PARTICLES_PER_PATH: 15,
+  MAX_PARTICLES_PER_PATH: 22,
 
   /**
    * Current threshold below which we consider "no current" (microamps)
@@ -188,6 +188,8 @@ export type CurrentFlowParticle = {
   id: string;
   position: Vec2;
   progress: number;
+  /** Per-particle phase offset to avoid synchronized pulsing */
+  pulsePhase: number;
   /** Base speed from current calculation (will be modified by variation) */
   baseSpeed: number;
   /** Actual speed including random variation */
@@ -534,6 +536,7 @@ export class CurrentFlowAnimationSystem {
         id: `particle-${this.nextParticleId++}`,
         position: { ...startPosition },
         progress: initialProgress,
+        pulsePhase: Math.random() * Math.PI * 2,
         baseSpeed: adjustedSpeed,
         speed: particleSpeed,
         path: path, // Use the path as-is, direction is handled in update()
@@ -557,9 +560,9 @@ export class CurrentFlowAnimationSystem {
     const COMET_TAIL = getCometTailConfig();
 
     // Improved sphere segments for better visual quality across all tiers
-    const sphereSegments = tier === 'low' ? 14 : tier === 'medium' ? 16 : 18;
-    const glowSegments = tier === 'low' ? 12 : tier === 'medium' ? 14 : 16;
-    const tailSegments = tier === 'low' ? 10 : tier === 'medium' ? 10 : 12;
+    const sphereSegments = tier === 'low' ? 18 : tier === 'medium' ? 22 : 28;
+    const glowSegments = tier === 'low' ? 16 : tier === 'medium' ? 20 : 24;
+    const tailSegments = tier === 'low' ? 12 : tier === 'medium' ? 14 : 18;
 
     // Use unit geometry and scale it so we can easily combine base size + pulse in update()
     const geometry = new this.three.SphereGeometry(1, sphereSegments, sphereSegments);
@@ -711,7 +714,7 @@ export class CurrentFlowAnimationSystem {
           mesh.position.set(pos.x, 0.2, pos.z);
 
           // Orient the particle so +Z matches direction of travel (tail trails in -Z)
-          const sampleDistance = 0.08;
+          const sampleDistance = Math.min(0.08, totalLength * 0.22);
           const signed = particle.reversed ? -1 : 1;
           const aheadDistance = this.wrapDistance(targetDistance + signed * sampleDistance, totalLength);
           const ahead = this.getPositionAlongPath(particle.path, aheadDistance);
@@ -730,9 +733,10 @@ export class CurrentFlowAnimationSystem {
 
           // Pulse effect scaled by intensity
           const intensityPulseScale = this.getIntensityPulseScale(particle.intensity);
-          const pulse = 1 + Math.sin(particle.progress * Math.PI * 4) * 0.2 * intensityPulseScale;
+          const pulse = 1 + Math.sin((particle.progress * Math.PI * 4) + particle.pulsePhase) * 0.2 * intensityPulseScale;
+          const microPulse = 1 + Math.sin((particle.progress * Math.PI * 12) + particle.pulsePhase * 0.7) * 0.05 * intensityPulseScale;
           const baseScale = typeof mesh.userData.baseScale === "number" ? mesh.userData.baseScale : FLOW_MODE_APPEARANCE[this.flowMode].size;
-          const finalScale = baseScale * pulse;
+          const finalScale = baseScale * pulse * microPulse;
           mesh.scale.setScalar(finalScale);
         }
       }
