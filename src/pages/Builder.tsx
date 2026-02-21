@@ -104,6 +104,7 @@ const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
     gaugeLabel: wireProfile.gaugeLabel,
     materialLabel: wireProfile.materialLabel,
     insulationLabel: wireProfile.insulationLabel,
+    maxTemperatureC: wireProfile.maxTemperatureC,
     resistanceOhmPerMeter: wireProfile.resistanceOhmPerMeter,
     ampacityBundleA: wireProfile.ampacityBundleA,
     ampacityChassisA: wireProfile.ampacityChassisA,
@@ -2135,6 +2136,38 @@ export default function Builder() {
         circuitState?.metrics.resistance ?? circuitBaseMetrics.resistance,
       isOpenCircuit: circuitState?.metrics.resistance === null,
       wireCount: circuitState?.counts.wires ?? 0,
+      wirePathResistance:
+        circuitState?.metrics.wirePathResistance ??
+        circuitState?.metrics.flow?.wirePathResistance ??
+        null,
+      wireLengthMeters:
+        circuitState?.metrics.wireLengthMeters ??
+        circuitState?.metrics.flow?.wirePathLengthMeters ??
+        null,
+      wireResistanceReferenceMeters:
+        circuitState?.metrics.wireResistanceReferenceMeters ??
+        circuitState?.metrics.flow?.wireResistanceReferenceMeters ??
+        10,
+      wireAmpacityLimitA:
+        circuitState?.metrics.wireAmpacityLimitA ??
+        circuitState?.metrics.flow?.ampacityLimitA ??
+        null,
+      wireAmpacityUtilization:
+        circuitState?.metrics.wireAmpacityUtilization ??
+        circuitState?.metrics.flow?.ampacityUtilization ??
+        null,
+      wireVoltageLimitV:
+        circuitState?.metrics.wireVoltageLimitV ??
+        circuitState?.metrics.flow?.voltageLimitV ??
+        null,
+      wireVoltageUtilization:
+        circuitState?.metrics.wireVoltageUtilization ??
+        circuitState?.metrics.flow?.voltageUtilization ??
+        null,
+      wireWarning:
+        circuitState?.metrics.wireWarning ??
+        circuitState?.metrics.flow?.warning ??
+        null,
     }),
     [circuitBaseMetrics, circuitState],
   );
@@ -2274,6 +2307,17 @@ export default function Builder() {
                 : liveWireMetricsSnapshot.resistance,
               power: liveWireMetricsSnapshot.power,
               wireCount: liveWireMetricsSnapshot.wireCount,
+              wirePathResistance: liveWireMetricsSnapshot.wirePathResistance,
+              wireLengthMeters: liveWireMetricsSnapshot.wireLengthMeters,
+              wireResistanceReferenceMeters:
+                liveWireMetricsSnapshot.wireResistanceReferenceMeters,
+              wireAmpacityLimitA: liveWireMetricsSnapshot.wireAmpacityLimitA,
+              wireAmpacityUtilization:
+                liveWireMetricsSnapshot.wireAmpacityUtilization,
+              wireVoltageLimitV: liveWireMetricsSnapshot.wireVoltageLimitV,
+              wireVoltageUtilization:
+                liveWireMetricsSnapshot.wireVoltageUtilization,
+              wireWarning: liveWireMetricsSnapshot.wireWarning,
             }}
           />
         );
@@ -2805,7 +2849,7 @@ export default function Builder() {
                   <span className="wire-profile-summary-meta">
                     {activeWireProfile
                       ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
-                      : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(2)} Ω/segment`}
+                      : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`}
                   </span>
                 </div>
               </div>

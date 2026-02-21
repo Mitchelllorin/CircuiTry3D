@@ -4783,7 +4783,15 @@ body.android-optimized.menu-visible .status {
             shortThreshold: 0.5,
             resistanceReference: 120,
             minSpeedFactor: 0.25,
-            maxSpeedFactor: 1.0
+            maxSpeedFactor: 1.0,
+            wireLengthScaleMetersPerSceneUnit: 1.5,
+            wireResistanceReferenceLengthMeters: 10,
+            minimumWireLengthMeters: 1,
+            ampacitySoftLimitRatio: 1,
+            ampacityCriticalRatio: 1.6,
+            ampacityThermalGain: 2.2,
+            voltageSoftLimitRatio: 1.05,
+            voltageCriticalRatio: 1.35
         };
 
         let currentFlowState = null;
@@ -4796,17 +4804,25 @@ body.android-optimized.menu-visible .status {
 
             if (hasValidResistance) {
                 FLOW_CONSTANTS.wireResistance = resistanceCandidate;
+                const ampacityBundleA = Number(profile?.ampacityBundleA);
+                const ampacityChassisA = Number(profile?.ampacityChassisA);
+                const maxVoltageV = Number(profile?.maxVoltageV);
+                const maxTemperatureC = Number(profile?.maxTemperatureC);
                 activeWireProfile = {
                     id: typeof profile?.id === 'string' ? profile.id : null,
                     gaugeLabel: typeof profile?.gaugeLabel === 'string' ? profile.gaugeLabel : 'Custom wire',
-                    resistanceOhmPerMeter: resistanceCandidate
+                    resistanceOhmPerMeter: resistanceCandidate,
+                    ampacityBundleA: Number.isFinite(ampacityBundleA) && ampacityBundleA > 0 ? ampacityBundleA : null,
+                    ampacityChassisA: Number.isFinite(ampacityChassisA) && ampacityChassisA > 0 ? ampacityChassisA : null,
+                    maxVoltageV: Number.isFinite(maxVoltageV) && maxVoltageV > 0 ? maxVoltageV : null,
+                    maxTemperatureC: Number.isFinite(maxTemperatureC) && maxTemperatureC > 0 ? maxTemperatureC : null
                 };
                 const label = activeWireProfile.gaugeLabel || 'Custom wire';
                 setStatus(`⚡ Wire profile active: ${label} (${resistanceCandidate.toFixed(4)} Ω/m)`);
             } else {
                 FLOW_CONSTANTS.wireResistance = DEFAULT_WIRE_SEGMENT_RESISTANCE;
                 activeWireProfile = null;
-                setStatus(`⚡ Default wire model active (${DEFAULT_WIRE_SEGMENT_RESISTANCE.toFixed(2)} Ω/segment)`);
+                setStatus(`⚡ Default wire model active (${DEFAULT_WIRE_SEGMENT_RESISTANCE.toFixed(3)} Ω/m, route-length normalized)`);
             }
 
             if (typeof analyzeCircuit === 'function') {
@@ -4822,7 +4838,11 @@ body.android-optimized.menu-visible .status {
                     ? {
                         id: activeWireProfile.id,
                         gaugeLabel: activeWireProfile.gaugeLabel,
-                        resistanceOhmPerMeter: activeWireProfile.resistanceOhmPerMeter
+                        resistanceOhmPerMeter: activeWireProfile.resistanceOhmPerMeter,
+                        ampacityBundleA: activeWireProfile.ampacityBundleA,
+                        ampacityChassisA: activeWireProfile.ampacityChassisA,
+                        maxVoltageV: activeWireProfile.maxVoltageV,
+                        maxTemperatureC: activeWireProfile.maxTemperatureC
                     }
                     : null,
                 wireResistance: FLOW_CONSTANTS.wireResistance
@@ -7873,6 +7893,13 @@ body.android-optimized.menu-visible .status {
                         wire.updatePath();
                     }
                 });
+                if (typeof analyzeCircuit === 'function') {
+                    try {
+                        analyzeCircuit();
+                    } catch (error) {
+                        console.warn('Routing mode apply: analysis refresh failed', error);
+                    }
+                }
             }
 
             if (announce) {
@@ -12288,6 +12315,7 @@ Made with ? for visual learners everywhere!
             const batteries = components.filter(c => c.type === 'battery');
             
             if (batteries.length === 0) {
+                const wireModel = buildWirePathModel(wires);
                 updateCircuitDisplay(0, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
                 applyComponentRuntimeNameplateMetrics(
@@ -12312,6 +12340,14 @@ Made with ? for visual learners everywhere!
                         current: 0,
                         resistance: null,
                         power: 0,
+                        wirePathResistance: wireModel.totalResistance,
+                        wireLengthMeters: wireModel.totalLengthMeters,
+                        wireResistanceReferenceMeters: wireModel.referenceLengthMeters,
+                        wireAmpacityLimitA: null,
+                        wireAmpacityUtilization: null,
+                        wireVoltageLimitV: null,
+                        wireVoltageUtilization: null,
+                        wireWarning: null,
                         isComplete: false,
                         reason: 'no-battery',
                         flow: { hasFlow: false, reason: 'no-battery' }
@@ -12329,6 +12365,7 @@ Made with ? for visual learners everywhere!
             }
             
             if (wires.length === 0) {
+                const wireModel = buildWirePathModel(wires);
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
                 updateCircuitDisplay(totalVoltage, 0, Infinity, 0);
                 animateCurrentFlow({ hasFlow: false, currentValue: 0 });
@@ -12354,6 +12391,14 @@ Made with ? for visual learners everywhere!
                         current: 0,
                         resistance: null,
                         power: 0,
+                        wirePathResistance: wireModel.totalResistance,
+                        wireLengthMeters: wireModel.totalLengthMeters,
+                        wireResistanceReferenceMeters: wireModel.referenceLengthMeters,
+                        wireAmpacityLimitA: null,
+                        wireAmpacityUtilization: null,
+                        wireVoltageLimitV: null,
+                        wireVoltageUtilization: null,
+                        wireWarning: null,
                         isComplete: false,
                         reason: 'no-wires',
                         flow: { hasFlow: false, reason: 'no-wires' }
@@ -12398,6 +12443,16 @@ Made with ? for visual learners everywhere!
                 }
             } else if (flowMeta.warning === 'short') {
                 setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from positive -> negative. Add resistance now!');
+            } else if (flowMeta.warning === 'ampacity') {
+                const utilization = Number(flowMeta?.ampacityUtilization);
+                const overloadPct = Number.isFinite(utilization) ? Math.max(0, (utilization - 1) * 100) : 0;
+                setStatus(`⚠ Wire ampacity overloaded by ${overloadPct.toFixed(0)}% - current flow is derating due to heating.`);
+            } else if (flowMeta.warning === 'ampacity-critical') {
+                setStatus('⚠ CRITICAL wire overload - thermal runaway conditions. Use a higher-ampacity wire immediately.');
+            } else if (flowMeta.warning === 'voltage') {
+                setStatus('⚠ Wire insulation voltage rating exceeded - leakage/breakdown risk is elevated.');
+            } else if (flowMeta.warning === 'voltage-critical') {
+                setStatus('⚠ CRITICAL insulation over-voltage - breakdown risk is severe. Use a higher voltage-rated wire.');
             }
 
             const nameplateFlow = (currentFlowState && typeof currentFlowState === 'object')
@@ -12434,6 +12489,26 @@ Made with ? for visual learners everywhere!
                     current: Number.isFinite(result.current) ? result.current : 0,
                     resistance: Number.isFinite(result.resistance) ? result.resistance : null,
                     power: Number.isFinite(result.power) ? result.power : 0,
+                    wirePathResistance: Number.isFinite(flowMeta?.wirePathResistance)
+                        ? flowMeta.wirePathResistance
+                        : null,
+                    wireLengthMeters: Number.isFinite(flowMeta?.wirePathLengthMeters)
+                        ? flowMeta.wirePathLengthMeters
+                        : null,
+                    wireResistanceReferenceMeters: FLOW_CONSTANTS.wireResistanceReferenceLengthMeters,
+                    wireAmpacityLimitA: Number.isFinite(flowMeta?.ampacityLimitA)
+                        ? flowMeta.ampacityLimitA
+                        : null,
+                    wireAmpacityUtilization: Number.isFinite(flowMeta?.ampacityUtilization)
+                        ? flowMeta.ampacityUtilization
+                        : null,
+                    wireVoltageLimitV: Number.isFinite(flowMeta?.voltageLimitV)
+                        ? flowMeta.voltageLimitV
+                        : null,
+                    wireVoltageUtilization: Number.isFinite(flowMeta?.voltageUtilization)
+                        ? flowMeta.voltageUtilization
+                        : null,
+                    wireWarning: flowMeta?.warning || null,
                     isComplete: Boolean(flowMeta?.hasFlow),
                     reason: flowMeta?.reason,
                     flow: flowMeta
@@ -12547,6 +12622,141 @@ Made with ? for visual learners everywhere!
             return FLOW_CONSTANTS.wireResistance;
         }
 
+        function getWireProfileAmpacityLimitA(profile = activeWireProfile) {
+            const bundle = Number(profile?.ampacityBundleA);
+            if (Number.isFinite(bundle) && bundle > 0) {
+                return bundle;
+            }
+            const chassis = Number(profile?.ampacityChassisA);
+            if (Number.isFinite(chassis) && chassis > 0) {
+                return chassis;
+            }
+            return null;
+        }
+
+        function getWireProfileVoltageLimitV(profile = activeWireProfile) {
+            const rating = Number(profile?.maxVoltageV);
+            if (Number.isFinite(rating) && rating > 0) {
+                return rating;
+            }
+            return null;
+        }
+
+        function getWireLengthSceneUnits(wire) {
+            if (!wire) {
+                return 0;
+            }
+            if (Array.isArray(wire.segments) && wire.segments.length > 0) {
+                return wire.segments.reduce((sum, segment) => {
+                    if (segment?.start && segment?.end && typeof segment.start.distanceTo === 'function') {
+                        return sum + segment.start.distanceTo(segment.end);
+                    }
+                    return sum;
+                }, 0);
+            }
+            const startPos = typeof wire.getStartPosition === 'function'
+                ? wire.getStartPosition()
+                : (wire.startObj?.position?.clone ? wire.startObj.position.clone() : null);
+            const endPos = typeof wire.getEndPosition === 'function'
+                ? wire.getEndPosition()
+                : (wire.endObj?.position?.clone ? wire.endObj.position.clone() : null);
+            if (startPos && endPos && typeof startPos.distanceTo === 'function') {
+                return startPos.distanceTo(endPos);
+            }
+            return 0;
+        }
+
+        function getWireLengthMeters(wire) {
+            const sceneUnits = getWireLengthSceneUnits(wire);
+            const lengthMeters = sceneUnits * FLOW_CONSTANTS.wireLengthScaleMetersPerSceneUnit;
+            return Math.max(FLOW_CONSTANTS.minimumWireLengthMeters, lengthMeters || 0);
+        }
+
+        function getWireResistanceForWire(wire, profile = activeWireProfile, precomputedLengthMeters = null) {
+            const resistancePerMeter = Number(profile?.resistanceOhmPerMeter);
+            const wireResistancePerMeter = Number.isFinite(resistancePerMeter) && resistancePerMeter > 0
+                ? resistancePerMeter
+                : FLOW_CONSTANTS.wireResistance;
+            const referenceLengthMeters = Math.max(0.1, FLOW_CONSTANTS.wireResistanceReferenceLengthMeters);
+            const lengthMeters = Number.isFinite(precomputedLengthMeters)
+                ? Math.max(FLOW_CONSTANTS.minimumWireLengthMeters, precomputedLengthMeters)
+                : getWireLengthMeters(wire);
+            return wireResistancePerMeter * (lengthMeters / referenceLengthMeters);
+        }
+
+        function buildWirePathModel(wireList = wires, profile = activeWireProfile) {
+            let totalLengthMeters = 0;
+            let totalResistance = 0;
+            (wireList || []).forEach(wire => {
+                const lengthMeters = getWireLengthMeters(wire);
+                totalLengthMeters += lengthMeters;
+                totalResistance += getWireResistanceForWire(wire, profile, lengthMeters);
+            });
+            return {
+                totalLengthMeters,
+                totalResistance,
+                referenceLengthMeters: FLOW_CONSTANTS.wireResistanceReferenceLengthMeters
+            };
+        }
+
+        function pickMoreSevereWarning(currentWarning, nextWarning) {
+            const severity = {
+                null: 0,
+                'voltage': 1,
+                'ampacity': 2,
+                'voltage-critical': 3,
+                'ampacity-critical': 4
+            };
+            const currentScore = severity[currentWarning || null] || 0;
+            const nextScore = severity[nextWarning || null] || 0;
+            return nextScore > currentScore ? nextWarning : currentWarning;
+        }
+
+        function computeWireStressAdjustment(current, totalVoltage, wirePathResistance, profile = activeWireProfile) {
+            const safeResistance = Math.max(0, Number(wirePathResistance) || 0);
+            const ampacityLimitA = getWireProfileAmpacityLimitA(profile);
+            const voltageLimitV = getWireProfileVoltageLimitV(profile);
+            const maxTemperatureC = Number(profile?.maxTemperatureC);
+            const thermalHeadroomFactor = Number.isFinite(maxTemperatureC) && maxTemperatureC > 0
+                ? Math.max(0.4, Math.min(1.4, maxTemperatureC / 120))
+                : 1;
+            const ampacityUtilization = (Number.isFinite(ampacityLimitA) && ampacityLimitA > 0)
+                ? (current / ampacityLimitA)
+                : null;
+            const voltageUtilization = (Number.isFinite(voltageLimitV) && voltageLimitV > 0)
+                ? (totalVoltage / voltageLimitV)
+                : null;
+
+            let warning = null;
+            let thermalMultiplier = 1;
+
+            if (Number.isFinite(ampacityUtilization) && ampacityUtilization > FLOW_CONSTANTS.ampacitySoftLimitRatio) {
+                const overload = ampacityUtilization - FLOW_CONSTANTS.ampacitySoftLimitRatio;
+                thermalMultiplier += ((overload * overload * FLOW_CONSTANTS.ampacityThermalGain) + (overload * 0.35)) / thermalHeadroomFactor;
+                warning = pickMoreSevereWarning(
+                    warning,
+                    ampacityUtilization >= FLOW_CONSTANTS.ampacityCriticalRatio ? 'ampacity-critical' : 'ampacity'
+                );
+            }
+
+            if (Number.isFinite(voltageUtilization) && voltageUtilization > FLOW_CONSTANTS.voltageSoftLimitRatio) {
+                warning = pickMoreSevereWarning(
+                    warning,
+                    voltageUtilization >= FLOW_CONSTANTS.voltageCriticalRatio ? 'voltage-critical' : 'voltage'
+                );
+            }
+
+            return {
+                warning,
+                thermalMultiplier: Math.max(1, thermalMultiplier),
+                ampacityLimitA,
+                ampacityUtilization,
+                voltageLimitV,
+                voltageUtilization,
+                adjustedWireResistance: Math.max(safeResistance, safeResistance * Math.max(1, thermalMultiplier))
+            };
+        }
+
         function computeSpeedFactor(resistance) {
             if (!isFinite(resistance) || resistance <= 0) {
                 return FLOW_CONSTANTS.maxSpeedFactor;
@@ -12586,12 +12796,15 @@ Made with ? for visual learners everywhere!
                 const startKey = getTerminalKey(wire.startObj, wire.startSide || 'center');
                 const endKey = getTerminalKey(wire.endObj, wire.endSide || 'center');
                 if (!startKey || !endKey) return;
+                const wireLengthMeters = getWireLengthMeters(wire);
+                const wireResistance = getWireResistanceForWire(wire, activeWireProfile, wireLengthMeters);
 
                 addEdge(startKey, {
                     to: endKey,
                     type: 'wire',
                     wire,
-                    resistance: FLOW_CONSTANTS.wireResistance,
+                    resistance: wireResistance,
+                    lengthMeters: wireLengthMeters,
                     direction: 1,
                     fromSide: wire.startSide || 'center',
                     toSide: wire.endSide || 'center'
@@ -12601,7 +12814,8 @@ Made with ? for visual learners everywhere!
                     to: startKey,
                     type: 'wire',
                     wire,
-                    resistance: FLOW_CONSTANTS.wireResistance,
+                    resistance: wireResistance,
+                    lengthMeters: wireLengthMeters,
                     direction: -1,
                     fromSide: wire.endSide || 'center',
                     toSide: wire.startSide || 'center'
@@ -13208,6 +13422,7 @@ Made with ? for visual learners everywhere!
                         wire: edge.wire,
                         direction: edge.direction >= 0 ? 1 : -1,
                         resistance: edge.resistance ?? FLOW_CONSTANTS.wireResistance,
+                        lengthMeters: edge.lengthMeters ?? getWireLengthMeters(edge.wire),
                         fromSide: edge.fromSide,
                         toSide: edge.toSide,
                         pathIndex: index
@@ -13253,10 +13468,25 @@ Made with ? for visual learners everywhere!
                     wire: segment.wire,
                     direction: segment.direction,
                     speedFactor: computeSpeedFactor(adjacentResistance),
+                    resistance: segment.resistance,
+                    lengthMeters: segment.lengthMeters,
                     fromSide: segment.fromSide,
                     toSide: segment.toSide
                 };
             });
+
+            const totalWirePathResistance = wireSegments.reduce((sum, segment) => {
+                if (isFinite(segment.resistance)) {
+                    return sum + segment.resistance;
+                }
+                return sum;
+            }, 0);
+            const totalWirePathLengthMeters = wireSegments.reduce((sum, segment) => {
+                if (isFinite(segment.lengthMeters)) {
+                    return sum + segment.lengthMeters;
+                }
+                return sum;
+            }, 0);
 
             const totalPathResistance = flowSegments.reduce((sum, segment) => {
                 const res = segment.edge?.resistance;
@@ -13277,6 +13507,8 @@ Made with ? for visual learners everywhere!
                 wireSegments: descriptiveWireSegments,
                 componentSegments,
                 pathResistance: totalPathResistance,
+                wirePathResistance: totalWirePathResistance,
+                wirePathLengthMeters: totalWirePathLengthMeters,
                 shortCircuit: isShortCircuit,
                 hasResistiveElement
             };
@@ -13294,6 +13526,14 @@ Made with ? for visual learners everywhere!
                 warning: flowState.warning || null,
                 shortCircuit: Boolean(flowState.shortCircuit),
                 pathResistance: typeof flowState.pathResistance === 'number' ? flowState.pathResistance : null,
+                wirePathResistance: typeof flowState.wirePathResistance === 'number' ? flowState.wirePathResistance : null,
+                wirePathLengthMeters: typeof flowState.wirePathLengthMeters === 'number' ? flowState.wirePathLengthMeters : null,
+                wireResistanceReferenceMeters: FLOW_CONSTANTS.wireResistanceReferenceLengthMeters,
+                ampacityLimitA: typeof flowState.ampacityLimitA === 'number' ? flowState.ampacityLimitA : null,
+                ampacityUtilization: typeof flowState.ampacityUtilization === 'number' ? flowState.ampacityUtilization : null,
+                voltageLimitV: typeof flowState.voltageLimitV === 'number' ? flowState.voltageLimitV : null,
+                voltageUtilization: typeof flowState.voltageUtilization === 'number' ? flowState.voltageUtilization : null,
+                thermalMultiplier: typeof flowState.thermalMultiplier === 'number' ? flowState.thermalMultiplier : null,
                 hasResistiveElement: Boolean(flowState.hasResistiveElement),
                 currentValue: typeof flowState.currentValue === 'number' ? flowState.currentValue : 0,
                 totalVoltage: typeof flowState.totalVoltage === 'number' ? flowState.totalVoltage : null,
@@ -13301,7 +13541,9 @@ Made with ? for visual learners everywhere!
                     ? flowState.wireSegments.map(segment => ({
                         wireId: segment.wire?.id || null,
                         direction: segment.direction,
-                        speedFactor: segment.speedFactor
+                        speedFactor: segment.speedFactor,
+                        resistance: typeof segment.resistance === 'number' ? segment.resistance : null,
+                        lengthMeters: typeof segment.lengthMeters === 'number' ? segment.lengthMeters : null
                     }))
                     : []
             };
@@ -13399,7 +13641,9 @@ Made with ? for visual learners everywhere!
                     if (hasPhysicalLoop && wires.length > 0) {
                         // There's a closed loop but directed path finding failed due to polarity.
                         // Show flow animation to indicate circuit completion with polarity issue.
-                        let approxResistance = FLOW_CONSTANTS.wireResistance;
+                        const wireModel = buildWirePathModel(wires);
+                        const baseWireResistance = Math.max(FLOW_CONSTANTS.wireResistance, wireModel.totalResistance || 0);
+                        let approxResistance = baseWireResistance;
                         resistors.forEach(r => {
                             approxResistance += r.properties?.resistance || 100;
                         });
@@ -13408,7 +13652,16 @@ Made with ? for visual learners everywhere!
                                 approxResistance += sw.properties?.resistance || 0.1;
                             }
                         });
-                        const approxCurrent = totalVoltage / Math.max(approxResistance, FLOW_CONSTANTS.wireResistance, 0.001);
+                        let approxCurrent = totalVoltage / Math.max(approxResistance, FLOW_CONSTANTS.shortThreshold, 0.001);
+                        let approxStress = computeWireStressAdjustment(approxCurrent, totalVoltage, baseWireResistance);
+                        if (approxStress.adjustedWireResistance > baseWireResistance) {
+                            approxResistance = Math.max(
+                                FLOW_CONSTANTS.shortThreshold,
+                                approxResistance - baseWireResistance + approxStress.adjustedWireResistance
+                            );
+                            approxCurrent = totalVoltage / Math.max(approxResistance, FLOW_CONSTANTS.shortThreshold, 0.001);
+                            approxStress = computeWireStressAdjustment(approxCurrent, totalVoltage, baseWireResistance);
+                        }
 
                         updateTopologyDisplay('Polarity');
                         const flowResult = {
@@ -13418,10 +13671,20 @@ Made with ? for visual learners everywhere!
                             wireSegments: wires.map(wire => ({
                                 wire,
                                 direction: 1,
-                                speedFactor: 1
+                                speedFactor: 1,
+                                resistance: getWireResistanceForWire(wire),
+                                lengthMeters: getWireLengthMeters(wire)
                             })),
                             totalVoltage,
-                            shortCircuit: false
+                            shortCircuit: false,
+                            warning: approxStress.warning || null,
+                            wirePathResistance: approxStress.adjustedWireResistance,
+                            wirePathLengthMeters: wireModel.totalLengthMeters,
+                            ampacityLimitA: approxStress.ampacityLimitA,
+                            ampacityUtilization: approxStress.ampacityUtilization,
+                            voltageLimitV: approxStress.voltageLimitV,
+                            voltageUtilization: approxStress.voltageUtilization,
+                            thermalMultiplier: approxStress.thermalMultiplier
                         };
                         currentFlowState = flowResult;
                         return {
@@ -13456,7 +13719,11 @@ Made with ? for visual learners everywhere!
                 }
                 
                 // Calculate resistance based on topology
-                let totalResistance = FLOW_CONSTANTS.wireResistance; // Wire resistance baseline
+                const baseWireResistance = Math.max(
+                    FLOW_CONSTANTS.wireResistance,
+                    Number(flowState.wirePathResistance) || 0
+                );
+                let totalResistance = baseWireResistance;
                 
                 if (topology.type === 'series') {
                     // Series: R_total = R1 + R2 + ... + Rn
@@ -13494,16 +13761,33 @@ Made with ? for visual learners everywhere!
                     totalResistance = Math.max(totalResistance, flowState.pathResistance);
                 }
                 
-                const current = totalVoltage / totalResistance;
+                let current = totalVoltage / Math.max(totalResistance, FLOW_CONSTANTS.shortThreshold, 0.001);
+                let wireStress = computeWireStressAdjustment(current, totalVoltage, baseWireResistance);
+                if (wireStress.adjustedWireResistance > baseWireResistance) {
+                    totalResistance = Math.max(
+                        FLOW_CONSTANTS.shortThreshold,
+                        totalResistance - baseWireResistance + wireStress.adjustedWireResistance
+                    );
+                    current = totalVoltage / Math.max(totalResistance, FLOW_CONSTANTS.shortThreshold, 0.001);
+                    wireStress = computeWireStressAdjustment(current, totalVoltage, baseWireResistance);
+                }
                 const power = totalVoltage * current;
                 
                 updateTopologyDisplay(topology.type);
+                const warning = flowState.shortCircuit ? 'short' : (wireStress.warning || null);
                 const flowResult = {
                     ...flowState,
                     hasFlow: true,
                     currentValue: current,
                     totalVoltage,
-                    warning: flowState.shortCircuit ? 'short' : null
+                    warning,
+                    wirePathResistance: wireStress.adjustedWireResistance,
+                    wirePathLengthMeters: flowState.wirePathLengthMeters,
+                    ampacityLimitA: wireStress.ampacityLimitA,
+                    ampacityUtilization: wireStress.ampacityUtilization,
+                    voltageLimitV: wireStress.voltageLimitV,
+                    voltageUtilization: wireStress.voltageUtilization,
+                    thermalMultiplier: wireStress.thermalMultiplier
                 };
                 currentFlowState = flowResult;
                 
@@ -14361,6 +14645,18 @@ Made with ? for visual learners everywhere!
         function calculateCurrentColor(flowState) {
             if (flowState?.warning === 'short') {
                 return { hex: 0xff4444, emissive: 0x330000 };
+            }
+            if (flowState?.warning === 'ampacity-critical') {
+                return { hex: 0xff5f4f, emissive: 0x5a1200 };
+            }
+            if (flowState?.warning === 'ampacity') {
+                return { hex: 0xff9b52, emissive: 0x4a2100 };
+            }
+            if (flowState?.warning === 'voltage-critical') {
+                return { hex: 0xff4fd8, emissive: 0x3a0040 };
+            }
+            if (flowState?.warning === 'voltage') {
+                return { hex: 0xd07cff, emissive: 0x2b1244 };
             }
 
             const currentValue = flowState?.currentValue ?? 0;
