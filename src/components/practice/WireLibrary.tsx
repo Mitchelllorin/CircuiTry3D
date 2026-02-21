@@ -25,6 +25,14 @@ type WireLibraryLiveMetrics = {
   resistance: number | null;
   power: number;
   wireCount: number;
+  wirePathResistance?: number | null;
+  wireLengthMeters?: number | null;
+  wireResistanceReferenceMeters?: number | null;
+  wireAmpacityLimitA?: number | null;
+  wireAmpacityUtilization?: number | null;
+  wireVoltageLimitV?: number | null;
+  wireVoltageUtilization?: number | null;
+  wireWarning?: string | null;
 };
 
 type WireLibraryProps = {
@@ -48,6 +56,22 @@ const formatThermal = (insulationLabel: string, maxTemperatureC: number): string
 const formatConductivity = (value: number): string => `${formatNumber(value, 1)} MS/m`;
 const formatResistancePerMeter = (value: number): string =>
   `${formatNumber(value, value < 0.1 ? 4 : 3)} Ω/m`;
+const DEFAULT_WIRE_REFERENCE_METERS = 10;
+
+const pickMoreSevereWarning = (
+  current: string | null,
+  candidate: string | null,
+): string | null => {
+  const severity: Record<string, number> = {
+    voltage: 1,
+    ampacity: 2,
+    "voltage-critical": 3,
+    "ampacity-critical": 4,
+  };
+  const currentScore = current ? severity[current] ?? 0 : 0;
+  const candidateScore = candidate ? severity[candidate] ?? 0 : 0;
+  return candidateScore > currentScore ? candidate : current;
+};
 
 const filterIsDirty = (
   material: MaterialOption,
@@ -197,6 +221,26 @@ export default function WireLibrary({
   );
   const activeWireResistance = activeWireSpec?.resistanceOhmPerMeter ?? 0.01;
   const wireCount = Math.max(0, liveMetrics?.wireCount ?? 0);
+  const wireResistanceReferenceMeters = Math.max(
+    0.1,
+    liveMetrics?.wireResistanceReferenceMeters ?? DEFAULT_WIRE_REFERENCE_METERS,
+  );
+  const existingWirePathResistance =
+    Number.isFinite(liveMetrics?.wirePathResistance) && (liveMetrics?.wirePathResistance ?? 0) >= 0
+      ? (liveMetrics?.wirePathResistance as number)
+      : Math.max(0, wireCount * activeWireResistance);
+  const derivedLengthFromResistance =
+    activeWireResistance > 0
+      ? (existingWirePathResistance / activeWireResistance) * wireResistanceReferenceMeters
+      : null;
+  const effectiveWireLengthMeters = Math.max(
+    0,
+    Number.isFinite(liveMetrics?.wireLengthMeters)
+      ? (liveMetrics?.wireLengthMeters as number)
+      : Number.isFinite(derivedLengthFromResistance)
+        ? (derivedLengthFromResistance as number)
+        : wireCount * wireResistanceReferenceMeters,
+  );
   const selectedWirePreview = useMemo(() => {
     if (!selectedWire || !liveMetrics) {
       return null;
@@ -213,26 +257,89 @@ export default function WireLibrary({
 
     const modelResistanceWithoutWire = Math.max(
       0,
-      liveMetrics.resistance - wireCount * activeWireResistance,
+      liveMetrics.resistance - existingWirePathResistance,
     );
-    const nextTotalResistance =
-      modelResistanceWithoutWire + wireCount * selectedWire.resistanceOhmPerMeter;
+    const nextWirePathResistance =
+      selectedWire.resistanceOhmPerMeter *
+      (Math.max(0, effectiveWireLengthMeters) / wireResistanceReferenceMeters);
+    let nextTotalResistance = modelResistanceWithoutWire + nextWirePathResistance;
     if (nextTotalResistance <= 0) {
       return null;
     }
 
-    const nextCurrent = liveMetrics.voltage / nextTotalResistance;
+    let nextCurrent = liveMetrics.voltage / nextTotalResistance;
+    let warning: string | null = null;
+    let thermalMultiplier = 1;
+    const thermalHeadroomFactor =
+      selectedWire.maxTemperatureC > 0
+        ? Math.max(0.4, Math.min(1.4, selectedWire.maxTemperatureC / 120))
+        : 1;
+
+    const ampacityLimitA = selectedWire.ampacityBundleA > 0
+      ? selectedWire.ampacityBundleA
+      : selectedWire.ampacityChassisA > 0
+        ? selectedWire.ampacityChassisA
+        : null;
+    const ampacityUtilization =
+      ampacityLimitA && ampacityLimitA > 0 ? nextCurrent / ampacityLimitA : null;
+    if (ampacityUtilization && ampacityUtilization > 1) {
+      const overload = ampacityUtilization - 1;
+      thermalMultiplier +=
+        (overload * overload * 2.2 + overload * 0.35) / thermalHeadroomFactor;
+      warning = pickMoreSevereWarning(
+        warning,
+        ampacityUtilization >= 1.6 ? "ampacity-critical" : "ampacity",
+      );
+    }
+
+    const adjustedWirePathResistance = Math.max(
+      nextWirePathResistance,
+      nextWirePathResistance * thermalMultiplier,
+    );
+    if (adjustedWirePathResistance > nextWirePathResistance) {
+      nextTotalResistance =
+        modelResistanceWithoutWire + adjustedWirePathResistance;
+      nextCurrent = liveMetrics.voltage / nextTotalResistance;
+    }
+
+    const voltageLimitV = selectedWire.maxVoltageV > 0 ? selectedWire.maxVoltageV : null;
+    const voltageUtilization =
+      voltageLimitV && voltageLimitV > 0
+        ? liveMetrics.voltage / voltageLimitV
+        : null;
+    if (voltageUtilization && voltageUtilization > 1.05) {
+      warning = pickMoreSevereWarning(
+        warning,
+        voltageUtilization >= 1.35 ? "voltage-critical" : "voltage",
+      );
+    }
+
     const nextPower = liveMetrics.voltage * nextCurrent;
     return {
       totalResistance: nextTotalResistance,
       current: nextCurrent,
       power: nextPower,
-      wirePathResistance: wireCount * selectedWire.resistanceOhmPerMeter,
+      wirePathResistance: adjustedWirePathResistance,
+      baseWirePathResistance: nextWirePathResistance,
+      wireLengthMeters: effectiveWireLengthMeters,
+      wireResistanceReferenceMeters,
+      thermalMultiplier,
+      ampacityLimitA,
+      ampacityUtilization,
+      voltageLimitV,
+      voltageUtilization,
+      warning,
       deltaResistance: nextTotalResistance - liveMetrics.resistance,
       deltaCurrent: nextCurrent - liveMetrics.current,
       deltaPower: nextPower - liveMetrics.power,
     };
-  }, [activeWireResistance, liveMetrics, selectedWire, wireCount]);
+  }, [
+    effectiveWireLengthMeters,
+    existingWirePathResistance,
+    liveMetrics,
+    selectedWire,
+    wireResistanceReferenceMeters,
+  ]);
   const selectedWireAlreadyApplied =
     Boolean(selectedWire && activeWireSpec && selectedWire.id === activeWireSpec.id);
   const canApplySelectedWire =
@@ -329,16 +436,22 @@ export default function WireLibrary({
                 {activeWireSpec ? activeWireSpec.gaugeLabel : "Default builder wire"}
               </strong>
               <p className="wire-library-integration-meta">
-                Segment resistance: {formatResistancePerMeter(activeWireResistance)}
+                Resistance profile: {formatResistancePerMeter(activeWireResistance)}
               </p>
             </div>
             <div>
-              <span className="summary-label">Wired segments</span>
-              <strong className="summary-value">{wireCount}</strong>
+              <span className="summary-label">Routed wire length</span>
+              <strong className="summary-value">
+                {`${formatNumber(effectiveWireLengthMeters, 2)} m`}
+              </strong>
               <p className="wire-library-integration-meta">
-                Estimated wire path:{" "}
-                {`${formatNumber(activeWireResistance * wireCount, 4)} Ω`}
+                {`Path resistance: ${formatNumber(existingWirePathResistance, 4)} Ω across ${wireCount} segments`}
               </p>
+              {liveMetrics?.wireWarning ? (
+                <p className="wire-library-integration-meta">
+                  Live warning: {liveMetrics.wireWarning.replace("-", " ")}
+                </p>
+              ) : null}
             </div>
             <div>
               <span className="summary-label">Selected wire row</span>
@@ -372,6 +485,15 @@ export default function WireLibrary({
                   {selectedWirePreview.deltaPower >= 0 ? "+" : ""}
                   {formatNumber(selectedWirePreview.deltaPower, 4)} W)
                 </span>
+                <span>
+                  Wire path: {formatNumber(selectedWirePreview.wirePathResistance, 4)} Ω over{" "}
+                  {formatNumber(selectedWirePreview.wireLengthMeters, 2)} m
+                </span>
+                {selectedWirePreview.warning ? (
+                  <span>
+                    Stress warning: {selectedWirePreview.warning.replace("-", " ")}
+                  </span>
+                ) : null}
               </div>
             </div>
           )}

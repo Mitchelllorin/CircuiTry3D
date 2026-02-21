@@ -217,6 +217,7 @@ const WireSystemDemo: React.FC = () => {
             [
               { id: "free", label: "Freeform", blurb: "Sketch direct lines" },
               { id: "schematic", label: "Schematic", blurb: "90-degree corners" },
+              { id: "square", label: "Square", blurb: "Outside right angles" },
               { id: "offset", label: "Offset", blurb: "Parallel detours" },
               { id: "star", label: "Star", blurb: "Radial bends" },
               { id: "arc", label: "Arc", blurb: "Smooth sweep" },
@@ -253,7 +254,7 @@ const WireSystemDemo: React.FC = () => {
             );
           })}
           <span style={{ fontSize: "12px", opacity: 0.72 }}>
-            Tip: Hold <code style={{ fontSize: "11px" }}>Shift</code> while dragging in Schematic, Offset, Star, or Arc mode to flip the bend direction.
+            Tip: Hold <code style={{ fontSize: "11px" }}>Shift</code> while dragging in Schematic, Square, Offset, Star, or Arc mode to flip the bend direction.
           </span>
         </div>
 
