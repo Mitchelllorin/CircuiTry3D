@@ -2778,6 +2778,10 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
               if (currentAmps <= 0) continue;
 
               const resistanceOhms = getElementResistanceOhms(el);
+              const powerWatts =
+                resistanceOhms && resistanceOhms > 0
+                  ? currentAmps * currentAmps * resistanceOhms
+                  : undefined;
               const flowsForward =
                 solved.direction === "start->end"
                   ? true
@@ -2790,6 +2794,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
                 currentAmps,
                 flowsForward,
                 resistanceOhms,
+                powerWatts,
               });
             }
           }
