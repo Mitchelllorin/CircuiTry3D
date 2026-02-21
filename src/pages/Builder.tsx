@@ -977,6 +977,7 @@ function ComponentLibraryCard({
   })();
 
   const Symbol = getSchematicSymbol(symbolKey as any);
+  const symbolRotation = symbolKey === "battery" ? -90 : 0;
 
   return (
     <span
@@ -1004,7 +1005,7 @@ function ComponentLibraryCard({
             height="100%"
             focusable="false"
           >
-            <Symbol x={0} y={0} scale={1} showLabel={false} />
+            <Symbol x={0} y={0} rotation={symbolRotation} scale={1} showLabel={false} />
           </svg>
         ) : (
           <span className="slider-component-symbol-text">{component.icon}</span>
