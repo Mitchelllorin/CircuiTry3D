@@ -43,6 +43,7 @@ import practiceProblems, {
 } from "../data/practiceProblems";
 import troubleshootingProblems, {
   getAnalyzeCircuitResult,
+  isTroubleshootingDiagnosisCorrect,
   isTroubleshootingSolved,
   type TroubleshootingProblem,
 } from "../data/troubleshootingProblems";
@@ -1068,6 +1069,11 @@ export default function Builder() {
       }
     },
   );
+  const [troubleshootAnswerByProblemId, setTroubleshootAnswerByProblemId] =
+    useState<Record<string, string>>({});
+  const [troubleshootDiagnosedIds, setTroubleshootDiagnosedIds] = useState<string[]>(
+    [],
+  );
   const [troubleshootStatus, setTroubleshootStatus] = useState<string | null>(
     null,
   );
@@ -1552,10 +1558,7 @@ export default function Builder() {
   );
 
   const openTroubleshootWorkspace = useCallback(
-    (
-      problemOverride?: TroubleshootingProblem | null,
-      options?: { forceLock?: boolean },
-    ) => {
+    (problemOverride?: TroubleshootingProblem | null) => {
       const nextProblem =
         problemOverride ??
         troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
@@ -1570,9 +1573,6 @@ export default function Builder() {
         setActiveTroubleshootId(nextProblem.id);
       }
 
-      const shouldLock =
-        options?.forceLock ?? !troubleshootSolvedIds.includes(nextProblem.id);
-
       setWorkspaceModeWithGlobalSync("troubleshoot");
       resetWorkspaceSurfaces();
       setTroubleshootWorkspaceMode(true);
@@ -1580,14 +1580,13 @@ export default function Builder() {
       setTroubleshootStatus(null);
       setTroubleshootCheckPending(false);
       setTroubleshootPendingCheckProblemId(null);
-      setCircuitLocked(shouldLock);
+      setCircuitLocked(false);
       triggerBuilderAction("load-preset", { preset: nextProblem.preset });
     },
     [
       activeTroubleshootId,
       resetWorkspaceSurfaces,
       setWorkspaceModeWithGlobalSync,
-      troubleshootSolvedIds,
       triggerBuilderAction,
     ],
   );
@@ -1759,9 +1758,54 @@ export default function Builder() {
     if (!activeProblem) {
       return;
     }
-    openTroubleshootWorkspace(activeProblem, { forceLock: true });
-    setTroubleshootStatus("Reset loaded. Fix the fault, then tap Check Fix.");
+    openTroubleshootWorkspace(activeProblem);
+    setTroubleshootStatus(
+      "Reset loaded. Diagnose the fault, apply the fix in 3D, then tap Check Fix.",
+    );
   }, [activeTroubleshootId, openTroubleshootWorkspace]);
+
+  const handleTroubleshootAnswerChange = useCallback(
+    (value: string) => {
+      const problemId = activeTroubleshootId;
+      if (!problemId) return;
+      setTroubleshootAnswerByProblemId((previous) => ({
+        ...previous,
+        [problemId]: value,
+      }));
+    },
+    [activeTroubleshootId],
+  );
+
+  const handleSubmitTroubleshootAnswer = useCallback(() => {
+    const activeProblem =
+      troubleshootingProblems.find((problem) => problem.id === activeTroubleshootId) ??
+      troubleshootingProblems[0] ??
+      null;
+    if (!activeProblem) {
+      return;
+    }
+
+    const answer = (troubleshootAnswerByProblemId[activeProblem.id] ?? "").trim();
+    if (!answer) {
+      setTroubleshootStatus("Enter your diagnosis in the answer field before submitting.");
+      return;
+    }
+
+    if (isTroubleshootingDiagnosisCorrect(activeProblem, answer)) {
+      setTroubleshootDiagnosedIds((previous) => {
+        if (previous.includes(activeProblem.id)) return previous;
+        return [...previous, activeProblem.id];
+      });
+      setTroubleshootStatus(
+        "Diagnosis accepted. Interact with the 3D circuit to apply your fix, then click Check Fix.",
+      );
+      return;
+    }
+
+    setTroubleshootStatus(
+      "Diagnosis not recognized yet. Try naming the fault directly (open switch, missing wire, short circuit, reversed LED).",
+    );
+  }, [activeTroubleshootId, troubleshootAnswerByProblemId]);
 
   const handleCheckTroubleshootFix = useCallback(() => {
     const activeProblem =
@@ -1946,6 +1990,14 @@ export default function Builder() {
       null
     );
   }, [activeTroubleshootId]);
+  const activeTroubleshootAnswer = useMemo(() => {
+    if (!activeTroubleshootProblem) return "";
+    return troubleshootAnswerByProblemId[activeTroubleshootProblem.id] ?? "";
+  }, [activeTroubleshootProblem, troubleshootAnswerByProblemId]);
+  const isActiveTroubleshootDiagnosisAccepted = Boolean(
+    activeTroubleshootProblem &&
+      troubleshootDiagnosedIds.includes(activeTroubleshootProblem.id),
+  );
   const isActiveTroubleshootSolved = Boolean(
     activeTroubleshootProblem &&
       troubleshootSolvedIds.includes(activeTroubleshootProblem.id),
@@ -2010,7 +2062,7 @@ export default function Builder() {
       return;
     }
 
-    setCircuitLocked(true);
+    setCircuitLocked(false);
     const analyzeResult = getAnalyzeCircuitResult(lastSimulation);
     const reason = analyzeResult?.flow?.reason;
     if (reason === "polarity") {
@@ -3185,6 +3237,8 @@ export default function Builder() {
           problems={troubleshootingProblems}
           activeProblemId={activeTroubleshootId}
           solvedIds={troubleshootSolvedIds}
+          answerValue={activeTroubleshootAnswer}
+          isDiagnosisAccepted={isActiveTroubleshootDiagnosisAccepted}
           isFixVerified={isCurrentTroubleshootFixVerified}
           status={troubleshootStatus}
           isOpen={isTroubleshootPanelOpen}
@@ -3193,6 +3247,8 @@ export default function Builder() {
           isCircuitLocked={isCircuitLocked}
           onToggle={() => setTroubleshootPanelOpen(!isTroubleshootPanelOpen)}
           onSelectProblem={handleSelectTroubleshootProblem}
+          onAnswerChange={handleTroubleshootAnswerChange}
+          onSubmitAnswer={handleSubmitTroubleshootAnswer}
           onResetCircuit={handleResetTroubleshootProblem}
           onCheckFix={handleCheckTroubleshootFix}
           onNextProblem={handleAdvanceTroubleshootProblem}
