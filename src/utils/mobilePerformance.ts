@@ -67,6 +67,7 @@ export interface MobileRendererOptions {
 
 export const getMobileRendererOptions = (): MobileRendererOptions => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
 
   if (tier === 'low') {
     return {
@@ -80,7 +81,7 @@ export const getMobileRendererOptions = (): MobileRendererOptions => {
   if (tier === 'medium') {
     return {
       antialias: true,
-      powerPreference: 'default',
+      powerPreference: android ? 'low-power' : 'default',
       precision: 'highp',
       alpha: true
     };
@@ -100,7 +101,19 @@ export const getMobilePixelRatio = (): number => {
   if (typeof window === 'undefined') return 1;
 
   const tier = getPerformanceTier();
+  const android = isAndroid();
   const devicePixelRatio = window.devicePixelRatio || 1;
+
+  // Android-specific caps to avoid fragment-shader pressure and thermal throttling.
+  if (android) {
+    if (tier === 'low') {
+      return Math.min(devicePixelRatio, 1.35);
+    }
+    if (tier === 'medium') {
+      return Math.min(devicePixelRatio, 1.7);
+    }
+    return Math.min(devicePixelRatio, 2.0);
+  }
 
   // More generous pixel ratio allowances for better visual clarity
   if (tier === 'low') {
@@ -120,11 +133,12 @@ export interface ShadowSettings {
 
 export const getMobileShadowSettings = (): ShadowSettings => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
 
   if (tier === 'low') {
     return {
       enabled: true, // Enable shadows even on low-end for visual depth
-      mapSize: 512,
+      mapSize: android ? 384 : 512,
       type: 'basic'
     };
   }
@@ -132,21 +146,28 @@ export const getMobileShadowSettings = (): ShadowSettings => {
   if (tier === 'medium') {
     return {
       enabled: true,
-      mapSize: 1024, // Increased from 512 for better quality
-      type: 'soft'   // Upgraded from 'basic'
+      mapSize: android ? 768 : 1024, // Slightly reduced on Android to lower GPU load
+      type: android ? 'basic' : 'soft'
     };
   }
 
   return {
     enabled: true,
-    mapSize: 1024,
-    type: 'soft'
+    mapSize: android ? 768 : 1024,
+    type: android ? 'basic' : 'soft'
   };
 };
 
 // Animation frame rate settings
 export const getTargetFrameRate = (): number => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
+
+  if (android) {
+    if (tier === 'low') return 36;
+    if (tier === 'medium') return 45;
+    return 55;
+  }
 
   // All tiers target 60fps - even low-end devices can handle it with other optimizations
   // Only drop to 30fps if absolutely necessary (handled elsewhere based on actual performance)
