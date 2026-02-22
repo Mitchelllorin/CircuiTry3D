@@ -1,5 +1,6 @@
 import { Vec2 } from "./types";
 import { getPerformanceTier } from "../utils/mobilePerformance";
+import { isAndroid } from "../hooks/capacitor/useAndroidInit";
 import { LOGO_COLORS } from "./visualConstants";
 
 /**
@@ -63,11 +64,12 @@ export const FLOW_MODE_APPEARANCE = {
  */
 const getCometTailConfig = () => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
   if (tier === 'low') {
     return {
-      segments: 7,
+      segments: android ? 6 : 7,
       length: 6.8,
-      maxOpacity: 0.32,
+      maxOpacity: android ? 0.28 : 0.32,
       minOpacity: 0.025,
       maxRadiusFactor: 0.72,
       minRadiusFactor: 0.16
@@ -75,18 +77,18 @@ const getCometTailConfig = () => {
   }
   if (tier === 'medium') {
     return {
-      segments: 9,
-      length: 7.8,
-      maxOpacity: 0.34,
+      segments: android ? 7 : 9,
+      length: android ? 7.0 : 7.8,
+      maxOpacity: android ? 0.3 : 0.34,
       minOpacity: 0.02,
       maxRadiusFactor: 0.74,
       minRadiusFactor: 0.15
     };
   }
   return {
-    segments: 11,
-    length: 8.6,
-    maxOpacity: 0.36,
+    segments: android ? 9 : 11,
+    length: android ? 7.8 : 8.6,
+    maxOpacity: android ? 0.32 : 0.36,
     minOpacity: 0.015,
     maxRadiusFactor: 0.76,
     minRadiusFactor: 0.14
@@ -118,13 +120,14 @@ const lerpColor = (start: number, end: number, t: number) => {
  */
 const getParticleLimits = () => {
   const tier = getPerformanceTier();
+  const android = isAndroid();
   if (tier === 'low') {
-    return { min: 3, max: 14 };
+    return android ? { min: 2, max: 10 } : { min: 3, max: 14 };
   }
   if (tier === 'medium') {
-    return { min: 3, max: 18 };
+    return android ? { min: 2, max: 13 } : { min: 3, max: 18 };
   }
-  return { min: 4, max: 22 };
+  return android ? { min: 3, max: 16 } : { min: 4, max: 22 };
 };
 
 /**
@@ -594,12 +597,19 @@ export class CurrentFlowAnimationSystem {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
     const colors = this.getCurrentFlowColors(particle.currentAmps, particle.powerWatts);
     const tier = getPerformanceTier();
+    const android = isAndroid();
     const COMET_TAIL = getCometTailConfig();
 
     // Improved sphere segments for better visual quality across all tiers
-    const sphereSegments = tier === 'low' ? 18 : tier === 'medium' ? 22 : 28;
-    const glowSegments = tier === 'low' ? 16 : tier === 'medium' ? 20 : 24;
-    const tailSegments = tier === 'low' ? 12 : tier === 'medium' ? 14 : 18;
+    const sphereSegments = android
+      ? (tier === 'low' ? 14 : tier === 'medium' ? 16 : 20)
+      : (tier === 'low' ? 18 : tier === 'medium' ? 22 : 28);
+    const glowSegments = android
+      ? (tier === 'low' ? 12 : tier === 'medium' ? 14 : 18)
+      : (tier === 'low' ? 16 : tier === 'medium' ? 20 : 24);
+    const tailSegments = android
+      ? (tier === 'low' ? 8 : tier === 'medium' ? 10 : 12)
+      : (tier === 'low' ? 12 : tier === 'medium' ? 14 : 18);
 
     // Use unit geometry and scale it so we can easily combine base size + pulse in update()
     const geometry = new this.three.SphereGeometry(1, sphereSegments, sphereSegments);
@@ -622,7 +632,9 @@ export class CurrentFlowAnimationSystem {
     const glowMaterial = new this.three.MeshBasicMaterial({
       color: colors.glow,
       transparent: true,
-      opacity: tier === 'low' ? appearance.glowOpacity * 0.7 : appearance.glowOpacity // Slightly reduced on low-end
+      opacity: tier === 'low'
+        ? appearance.glowOpacity * (android ? 0.55 : 0.7)
+        : (android ? appearance.glowOpacity * 0.85 : appearance.glowOpacity)
     });
     const glow = new this.three.Mesh(glowGeometry, glowMaterial);
     glow.name = "glow";
@@ -670,6 +682,7 @@ export class CurrentFlowAnimationSystem {
    */
   private updateAllParticleAppearances(): void {
     const appearance = FLOW_MODE_APPEARANCE[this.flowMode];
+    const COMET_TAIL = getCometTailConfig();
 
     this.particles.forEach(particle => {
       const mesh = this.particleMeshes.get(particle.id);
@@ -700,7 +713,6 @@ export class CurrentFlowAnimationSystem {
 
       const tail = mesh.children.find((child: any) => child?.name === "tail");
       if (tail) {
-        const COMET_TAIL = getCometTailConfig();
         const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
         const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
         const tailChildCount = tail.children?.length || 0;

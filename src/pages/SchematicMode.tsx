@@ -6,6 +6,7 @@ import {
   getMobileRendererOptions,
   getMobilePixelRatio,
   getMobileShadowSettings,
+  getTargetFrameRate,
 } from "../utils/mobilePerformance";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
@@ -2025,26 +2026,30 @@ function BuilderViewport({
 
         rebuildSceneContent();
 
-        // Frame-rate throttle for mobile: skip every other frame when
-        // nothing is actively changing (no camera movement, no pointer
-        // interaction) to cut GPU/CPU workload roughly in half.
+        // Frame-rate throttle for mobile:
+        // - Active interaction uses a per-device target FPS budget.
+        // - Idle state drops to 30fps to reduce thermal/battery load.
         let lastFrameTime = 0;
-        const targetInterval = onMobile ? 1000 / 30 : 0; // 30fps cap on mobile, uncapped on desktop
+        const idleTargetInterval = onMobile ? 1000 / 30 : 0;
+        const activeTargetInterval = onMobile ? 1000 / getTargetFrameRate() : 0;
 
         const animate = (now: number) => {
           animationFrameRef.current = window.requestAnimationFrame(animate);
 
-          // On mobile, throttle to ~30fps unless something needs updating
-          if (targetInterval > 0) {
+          if (onMobile) {
             const cameraState = cameraStateRef.current;
             const hasActivePointers = activePointersRef.current.size > 0;
             const cameraMoving = cameraState?.needsUpdate;
             const issues = validationIssuesRef.current ?? [];
             const hasActiveAnimation = issues.some((i) => i.severity === "error" || i.severity === "warning");
             const idle = !hasActivePointers && !cameraMoving && !hasActiveAnimation;
+            const targetInterval = idle ? idleTargetInterval : activeTargetInterval;
 
             if (idle && now - lastFrameTime < targetInterval) {
               return; // skip this frame
+            }
+            if (!idle && targetInterval > 0 && now - lastFrameTime < targetInterval) {
+              return;
             }
             lastFrameTime = now;
           }
@@ -2806,17 +2811,19 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const clock = new three.Clock();
         let animationFrame = 0;
         let pvLastFrameTime = 0;
-        const pvTargetInterval = onMobile ? 1000 / 30 : 0;
+        const pvIdleTargetInterval = onMobile ? 1000 / 30 : 0;
+        const pvActiveTargetInterval = onMobile ? 1000 / getTargetFrameRate() : 0;
 
         const animate = (now: number) => {
           animationFrame = window.requestAnimationFrame(animate);
 
-          // Throttle to 30fps on mobile when no camera movement is active
-          if (pvTargetInterval > 0) {
+          if (onMobile) {
             const cameraState = cameraStateRef.current;
             const hasActivePointers = activePointersRef.current.size > 0;
             const cameraMoving = cameraState?.needsUpdate;
-            if (!hasActivePointers && !cameraMoving && now - pvLastFrameTime < pvTargetInterval) {
+            const idle = !hasActivePointers && !cameraMoving;
+            const targetInterval = idle ? pvIdleTargetInterval : pvActiveTargetInterval;
+            if (targetInterval > 0 && now - pvLastFrameTime < targetInterval) {
               return;
             }
             pvLastFrameTime = now;
