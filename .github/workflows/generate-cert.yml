@@ -6,27 +6,24 @@ on:
 jobs:
   generate-cert:
     runs-on: ubuntu-latest
-    env:
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Decode keystore
-        run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > upload-key.jks
-
       - name: Export certificate
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |
           keytool -exportcert -rfc \
-            -alias "$ANDROID_KEY_ALIAS" \
-            -keystore upload-key.jks \
+            -alias "circuitry3d-upload-reset" `# alias stored in new-upload-key.jks` \
+            -keystore new-upload-key.jks \
             -storepass "$ANDROID_STORE_PASSWORD" \
             -file upload_certificate.pem
 
