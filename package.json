@@ -41,7 +41,7 @@
     "vitest": "^4.0.4"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.4",
+    "@capacitor/android": "^7.5.0",
     "@capacitor/app": "^7.1.0",
     "@capacitor/core": "^7.4.4",
     "@capacitor/splash-screen": "^7.0.3",
