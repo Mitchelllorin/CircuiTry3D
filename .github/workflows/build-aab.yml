@@ -6,28 +6,73 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      JAVA_VERSION: '21'
+      NODE_VERSION: '20.19.0'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
 
-      - name: Decode keystore
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build -- --mode capacitor
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Create release signing files
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_FILENAME: ${{ secrets.ANDROID_KEYSTORE_FILENAME }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > new-upload-key.jks
+          set -euo pipefail
+          : "${ANDROID_KEYSTORE_BASE64:?Missing secret ANDROID_KEYSTORE_BASE64}"
+          : "${ANDROID_KEY_ALIAS:?Missing secret ANDROID_KEY_ALIAS}"
+          : "${ANDROID_STORE_PASSWORD:?Missing secret ANDROID_STORE_PASSWORD}"
+          : "${ANDROID_KEY_PASSWORD:?Missing secret ANDROID_KEY_PASSWORD}"
+          KEYSTORE_FILENAME="${ANDROID_KEYSTORE_FILENAME:-upload-key.jks}"
+
+          mkdir -p android/app/keystore
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "android/app/keystore/${KEYSTORE_FILENAME}"
+
+          cat > android/key.properties <<EOF
+          storePassword=${ANDROID_STORE_PASSWORD}
+          keyPassword=${ANDROID_KEY_PASSWORD}
+          keyAlias=${ANDROID_KEY_ALIAS}
+          storeFile=keystore/${KEYSTORE_FILENAME}
+          EOF
+
+      - name: Ensure Gradle wrapper executable
+        run: chmod +x android/gradlew
 
       - name: Build Android Release
         run: |
           cd android
-          ./gradlew bundleRelease
+          ./gradlew clean bundleRelease --stacktrace
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: app-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
