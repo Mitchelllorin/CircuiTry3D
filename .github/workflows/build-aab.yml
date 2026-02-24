@@ -36,16 +36,31 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
+      - name: Guard Capacitor generated Gradle include
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f android/capacitor-cordova-android-plugins/cordova.variables.gradle ]; then
+            sed -i "/cordova.variables.gradle/d" android/app/capacitor.build.gradle
+          fi
+
       - name: Create release signing files
         shell: bash
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_FILENAME: ${{ secrets.ANDROID_KEYSTORE_FILENAME }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_FILENAME: ${{ secrets.ANDROID_KEYSTORE_FILENAME || secrets.KEYSTORE_FILENAME }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD || secrets.KEY_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD || secrets.ANDROID_STORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
         run: |
           set -euo pipefail
+          if [ -z "${ANDROID_STORE_PASSWORD:-}" ] && [ -n "${ANDROID_KEY_PASSWORD:-}" ]; then
+            ANDROID_STORE_PASSWORD="${ANDROID_KEY_PASSWORD}"
+          fi
+          if [ -z "${ANDROID_KEY_PASSWORD:-}" ] && [ -n "${ANDROID_STORE_PASSWORD:-}" ]; then
+            ANDROID_KEY_PASSWORD="${ANDROID_STORE_PASSWORD}"
+          fi
+
           : "${ANDROID_KEYSTORE_BASE64:?Missing secret ANDROID_KEYSTORE_BASE64}"
           : "${ANDROID_KEY_ALIAS:?Missing secret ANDROID_KEY_ALIAS}"
           : "${ANDROID_STORE_PASSWORD:?Missing secret ANDROID_STORE_PASSWORD}"
