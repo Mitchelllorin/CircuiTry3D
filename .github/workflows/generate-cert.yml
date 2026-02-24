@@ -1,1 +1,26 @@
+name: Generate Upload Key Certificate
 
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-cert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode keystore
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > upload-key.jks
+
+      - name: Export certificate
+        run: |
+          keytool -exportcert -rfc \
+            -alias "$ANDROID_KEY_ALIAS" \
+            -keystore upload-key.jks \
+            -storepass "$ANDROID_STORE_PASSWORD" \
+            -file upload_certificate.pem
+
+      - name: Show certificate
+        run: |
+          echo "-----BEGIN CERTIFICATE-----"
+          cat upload_certificate.pem
+          echo "-----END CERTIFICATE-----"
