@@ -6,7 +6,18 @@ on:
 jobs:
   generate-cert:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+
     steps:
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Decode keystore
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > upload-key.jks
@@ -20,7 +31,10 @@ jobs:
             -file upload_certificate.pem
 
       - name: Show certificate
-        run: |
-          echo "-----BEGIN CERTIFICATE-----"
-          cat upload_certificate.pem
-          echo "-----END CERTIFICATE-----"
+        run: cat upload_certificate.pem
+
+      - name: Upload certificate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-key-certificate
+          path: upload_certificate.pem
