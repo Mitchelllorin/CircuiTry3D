@@ -6,6 +6,7 @@ import {
   getMobileRendererOptions,
   getMobilePixelRatio,
   getMobileShadowSettings,
+  getTargetFrameRate,
 } from "../utils/mobilePerformance";
 import practiceProblems, {
   DEFAULT_PRACTICE_PROBLEM,
@@ -1252,7 +1253,8 @@ function BuilderViewport({
   // Camera control constants
   const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
   const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
-  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 2.5, max: 50 }), []);
+  // Lower minimum radius enables near-microscopic ("atomic level") inspection.
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 0.35, max: 50 }), []);
   const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 12, y: 5, z: 12 }), []);
   const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.05, max: Math.PI * 0.48 }), []);
   const TWO_PI = Math.PI * 2;
@@ -1618,7 +1620,7 @@ function BuilderViewport({
         const camera = new three.PerspectiveCamera(
           44,
           container.clientWidth / container.clientHeight,
-          0.1,
+          0.02,
           200
         );
         camera.position.set(9.5, 7.8, 12.4);
@@ -1691,7 +1693,7 @@ function BuilderViewport({
           rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
           zoomSpeed: 1.5,
-          wheelZoomSpeed: 0.008
+          wheelZoomSpeed: 0.0022
         };
 
         const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
@@ -1894,11 +1896,17 @@ function BuilderViewport({
           }
 
           // Default: scroll wheel zooms
-          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
-                            isPinchGesture ? cameraState.wheelZoomSpeed :
-                            cameraState.wheelZoomSpeed * 12;
-          cameraState.spherical.radius += event.deltaY * zoomFactor;
-          cameraState.needsUpdate = true;
+          const zoomFactor = isLineDelta
+            ? cameraState.wheelZoomSpeed * 12
+            : isPinchGesture
+              ? cameraState.wheelZoomSpeed * 0.65
+              : cameraState.wheelZoomSpeed * 1.6;
+          const clampedDelta = Math.max(-48, Math.min(48, event.deltaY));
+          const zoomScale = Math.exp(clampedDelta * zoomFactor);
+          if (Number.isFinite(zoomScale) && zoomScale > 0) {
+            cameraState.spherical.radius *= zoomScale;
+            cameraState.needsUpdate = true;
+          }
         };
 
         const handleResize = () => {
@@ -2018,26 +2026,30 @@ function BuilderViewport({
 
         rebuildSceneContent();
 
-        // Frame-rate throttle for mobile: skip every other frame when
-        // nothing is actively changing (no camera movement, no pointer
-        // interaction) to cut GPU/CPU workload roughly in half.
+        // Frame-rate throttle for mobile:
+        // - Active interaction uses a per-device target FPS budget.
+        // - Idle state drops to 30fps to reduce thermal/battery load.
         let lastFrameTime = 0;
-        const targetInterval = onMobile ? 1000 / 30 : 0; // 30fps cap on mobile, uncapped on desktop
+        const idleTargetInterval = onMobile ? 1000 / 30 : 0;
+        const activeTargetInterval = onMobile ? 1000 / getTargetFrameRate() : 0;
 
         const animate = (now: number) => {
           animationFrameRef.current = window.requestAnimationFrame(animate);
 
-          // On mobile, throttle to ~30fps unless something needs updating
-          if (targetInterval > 0) {
+          if (onMobile) {
             const cameraState = cameraStateRef.current;
             const hasActivePointers = activePointersRef.current.size > 0;
             const cameraMoving = cameraState?.needsUpdate;
             const issues = validationIssuesRef.current ?? [];
             const hasActiveAnimation = issues.some((i) => i.severity === "error" || i.severity === "warning");
             const idle = !hasActivePointers && !cameraMoving && !hasActiveAnimation;
+            const targetInterval = idle ? idleTargetInterval : activeTargetInterval;
 
             if (idle && now - lastFrameTime < targetInterval) {
               return; // skip this frame
+            }
+            if (!idle && targetInterval > 0 && now - lastFrameTime < targetInterval) {
+              return;
             }
             lastFrameTime = now;
           }
@@ -2256,7 +2268,8 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
   // Camera control constants
   const CAMERA_DEFAULT_POSITION = useMemo(() => ({ x: 9.5, y: 7.8, z: 12.4 }), []);
   const CAMERA_DEFAULT_TARGET = useMemo(() => ({ x: 0, y: 0, z: 0 }), []);
-  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 2.5, max: 50 }), []);
+  // Lower minimum radius enables near-microscopic ("atomic level") inspection.
+  const CAMERA_RADIUS_LIMITS = useMemo(() => ({ min: 0.35, max: 50 }), []);
   const CAMERA_PAN_LIMITS = useMemo(() => ({ x: 12, y: 5, z: 12 }), []);
   const CAMERA_PHI_LIMITS = useMemo(() => ({ min: Math.PI * 0.05, max: Math.PI * 0.48 }), []);
   const TWO_PI = Math.PI * 2;
@@ -2407,7 +2420,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const camera = new three.PerspectiveCamera(
           44,
           container.clientWidth / container.clientHeight,
-          0.1,
+          0.02,
           200
         );
         camera.position.set(9.5, 7.8, 12.4);
@@ -2469,7 +2482,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           rotateVerticalSpeed: 0.0045,
           panSpeed: 0.9,
           zoomSpeed: 1.5,
-          wheelZoomSpeed: 0.008
+          wheelZoomSpeed: 0.0022
         };
 
         const offset = new three.Vector3(CAMERA_DEFAULT_POSITION.x - CAMERA_DEFAULT_TARGET.x,
@@ -2672,11 +2685,17 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
           }
 
           // Default: scroll wheel zooms
-          const zoomFactor = isLineDelta ? cameraState.wheelZoomSpeed * 40 :
-                            isPinchGesture ? cameraState.wheelZoomSpeed :
-                            cameraState.wheelZoomSpeed * 12;
-          cameraState.spherical.radius += event.deltaY * zoomFactor;
-          cameraState.needsUpdate = true;
+          const zoomFactor = isLineDelta
+            ? cameraState.wheelZoomSpeed * 12
+            : isPinchGesture
+              ? cameraState.wheelZoomSpeed * 0.65
+              : cameraState.wheelZoomSpeed * 1.6;
+          const clampedDelta = Math.max(-48, Math.min(48, event.deltaY));
+          const zoomScale = Math.exp(clampedDelta * zoomFactor);
+          if (Number.isFinite(zoomScale) && zoomScale > 0) {
+            cameraState.spherical.radius *= zoomScale;
+            cameraState.needsUpdate = true;
+          }
         };
 
         const handlePointerLeave = () => {
@@ -2764,6 +2783,10 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
               if (currentAmps <= 0) continue;
 
               const resistanceOhms = getElementResistanceOhms(el);
+              const powerWatts =
+                resistanceOhms && resistanceOhms > 0
+                  ? currentAmps * currentAmps * resistanceOhms
+                  : undefined;
               const flowsForward =
                 solved.direction === "start->end"
                   ? true
@@ -2776,6 +2799,7 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
                 currentAmps,
                 flowsForward,
                 resistanceOhms,
+                powerWatts,
               });
             }
           }
@@ -2787,17 +2811,19 @@ export function PracticeViewport({ problem, symbolStandard }: PracticeViewportPr
         const clock = new three.Clock();
         let animationFrame = 0;
         let pvLastFrameTime = 0;
-        const pvTargetInterval = onMobile ? 1000 / 30 : 0;
+        const pvIdleTargetInterval = onMobile ? 1000 / 30 : 0;
+        const pvActiveTargetInterval = onMobile ? 1000 / getTargetFrameRate() : 0;
 
         const animate = (now: number) => {
           animationFrame = window.requestAnimationFrame(animate);
 
-          // Throttle to 30fps on mobile when no camera movement is active
-          if (pvTargetInterval > 0) {
+          if (onMobile) {
             const cameraState = cameraStateRef.current;
             const hasActivePointers = activePointersRef.current.size > 0;
             const cameraMoving = cameraState?.needsUpdate;
-            if (!hasActivePointers && !cameraMoving && now - pvLastFrameTime < pvTargetInterval) {
+            const idle = !hasActivePointers && !cameraMoving;
+            const targetInterval = idle ? pvIdleTargetInterval : pvActiveTargetInterval;
+            if (targetInterval > 0 && now - pvLastFrameTime < targetInterval) {
               return;
             }
             pvLastFrameTime = now;
