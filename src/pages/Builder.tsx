@@ -191,6 +191,35 @@ const getNextPracticeProblem = (currentId: string | null) => {
 
   return pool[(index + 1) % pool.length] ?? null;
 };
+
+type BeginnerSeriesPreset = {
+  id: string;
+  label: string;
+  description: string;
+  preset: string;
+};
+
+const BEGINNER_SERIES_PRESETS: BeginnerSeriesPreset[] = [
+  {
+    id: "starter-loop",
+    label: "Starter Loop",
+    description: "Battery + resistor loop for first-time wiring practice.",
+    preset: "series_basic",
+  },
+  {
+    id: "voltage-drop-chain",
+    label: "Voltage Drop Chain",
+    description: "Two resistors in series to compare how voltage divides.",
+    preset: "series_voltage_drop",
+  },
+  {
+    id: "led-resistor-starter",
+    label: "LED + Resistor Starter",
+    description: "Classic LED current-limiter build using a simple series path.",
+    preset: "series_led_resistor",
+  },
+];
+
 const TUTORIAL_SECTIONS: HelpSection[] = [
   {
     title: "Getting Started",
@@ -201,6 +230,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
+      "Need build ideas? Use Library -> Beginner Series Starters to load a preset and remix it.",
       "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
       "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
     ],
@@ -1732,6 +1762,13 @@ export default function Builder() {
     [triggerBuilderAction, triggerSimulationPulse],
   );
 
+  const handleLoadBeginnerSeriesPreset = useCallback(
+    (preset: string) => {
+      triggerBuilderAction("load-preset", { preset });
+    },
+    [triggerBuilderAction],
+  );
+
   const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
     const currentId =
       currentProblemId ??
@@ -2687,6 +2724,34 @@ export default function Builder() {
                       thumbnailsEnabled={isLeftMenuOpen}
                       animateThumbnails={shouldAnimateLibraryThumbnails}
                     />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div
+              className="slider-section"
+              data-tutorial-id="tutorial-beginner-series-presets"
+            >
+              <span className="slider-heading">Beginner Series Starters</span>
+              <div className="slider-stack">
+                {BEGINNER_SERIES_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className="slider-btn slider-btn-stacked"
+                    onClick={() => handleLoadBeginnerSeriesPreset(preset.preset)}
+                    disabled={controlsDisabled}
+                    aria-disabled={controlsDisabled}
+                    title={
+                      controlsDisabled
+                        ? controlDisabledTitle
+                        : `Load preset: ${preset.label}`
+                    }
+                  >
+                    <span className="slider-label">{preset.label}</span>
+                    <span className="slider-description">
+                      {preset.description}
+                    </span>
                   </button>
                 ))}
               </div>

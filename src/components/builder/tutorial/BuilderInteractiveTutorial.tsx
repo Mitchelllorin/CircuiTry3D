@@ -17,7 +17,7 @@ type TutorialStep = {
   }) => boolean;
 };
 
-const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v1";
+const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v2";
 
 function safeParseInt(value: string | null) {
   if (!value) return null;
@@ -57,6 +57,19 @@ export function BuilderInteractiveTutorial(props: {
           "You’ll build a simple battery + resistor circuit, then use W.I.R.E. (Watts, Current, Resistance, Voltage) to read what’s happening.",
         canSkipRequirement: true,
         isComplete: () => true,
+      },
+      {
+        id: "series-presets",
+        title: "Step 0 — Optional warm-up: load a starter series circuit",
+        body:
+          "Need ideas before your first build? In Library > Beginner Series Starters, load Starter Loop, Voltage Drop Chain, or LED + Resistor Starter. Use one as a reference, then modify values to explore.",
+        targetId: "tutorial-beginner-series-presets",
+        canSkipRequirement: true,
+        isComplete: ({ circuit }) =>
+          Boolean(
+            (circuit?.counts.byType?.battery ?? 0) > 0 &&
+              (circuit?.counts.byType?.resistor ?? 0) > 0,
+          ),
       },
       {
         id: "battery",
@@ -159,6 +172,7 @@ export function BuilderInteractiveTutorial(props: {
 
     // Some steps need the Library open so the user can actually click the target.
     if (
+      activeStep.id === "series-presets" ||
       activeStep.id === "battery" ||
       activeStep.id === "resistor" ||
       activeStep.id === "wire-mode" ||
