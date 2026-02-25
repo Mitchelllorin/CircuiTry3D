@@ -30,8 +30,27 @@ jobs:
       - name: Show certificate
         run: cat upload_certificate.pem
 
+      - name: Export certificate bundle (PKCS12)
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          keytool -importkeystore \
+            -srckeystore new-upload-key.jks \
+            -srcstorepass "$ANDROID_STORE_PASSWORD" \
+            -srcalias "circuitry3d-upload-reset" `# alias stored in new-upload-key.jks` \
+            -destkeystore upload_certificate_bundle.p12 \
+            -deststoretype PKCS12 \
+            -deststorepass "$ANDROID_STORE_PASSWORD" \
+            -noprompt
+
       - name: Upload certificate artifact
         uses: actions/upload-artifact@v4
         with:
           name: upload-key-certificate
           path: upload_certificate.pem
+
+      - name: Upload certificate bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-key-certificate-bundle
+          path: upload_certificate_bundle.p12
