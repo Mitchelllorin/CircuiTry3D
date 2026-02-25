@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandSignature from "./BrandSignature";
+import { APP_BRAND_NAME } from "../constants/branding";
 import "../styles/unified-nav.css";
 
 export default function UnifiedNav() {
@@ -18,7 +19,7 @@ export default function UnifiedNav() {
 
   return (
     <nav className="unified-nav">
-      <Link to="/" className="unified-nav-brand" aria-label="CircuiTry3D">
+      <Link to="/" className="unified-nav-brand" aria-label={APP_BRAND_NAME}>
         <BrandSignature size="sm" decorative />
       </Link>
       <div className="unified-nav-links">
