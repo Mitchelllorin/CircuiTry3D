@@ -839,11 +839,14 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
   // Counter-rotate the markers so text remains upright and readable
   const markerRotation = -rotation;
 
-  // Keep both polarity markers on the same side for textbook readability.
-  // + is top, − is bottom.
-  const markerX = -16;
-  const posMarkerY = -24;
-  const negMarkerY = 24;
+  // Place + just outside the positive plate (x=7, extends to y=±18) and − just outside the
+  // negative plate (x=-7, extends to y=±10). markerY=-16 clears the plate area vertically.
+  // posMarkerX=24 / negMarkerX=-24 mirror the plate positions with extra clearance.
+  // When the battery is shown at rotation=-90 (vertical, component library), SVG rotate(-90)
+  // maps local (x, y) → (y, -x), placing "+" at (-16, -24) = top-left and "−" at (-16, 24) = bottom.
+  const posMarkerX = 24;
+  const negMarkerX = -24;
+  const markerY = -16;
   const markerStroke = "rgba(12, 32, 64, 0.9)";
 
   return (
@@ -859,8 +862,8 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
       {profile.battery.showPolarityMarkers && (
         <>
           <text
-            x={markerX}
-            y={posMarkerY}
+            x={posMarkerX}
+            y={markerY}
             fill={LABEL_COLOR}
             fontSize={LABEL_SPECS.polarityMarkerSize}
             textAnchor="middle"
@@ -868,13 +871,13 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
             paintOrder="stroke"
             stroke={markerStroke}
             strokeWidth={0.8}
-            transform={`rotate(${markerRotation}, ${markerX}, ${posMarkerY})`}
+            transform={`rotate(${markerRotation}, ${posMarkerX}, ${markerY})`}
           >
             +
           </text>
           <text
-            x={markerX}
-            y={negMarkerY}
+            x={negMarkerX}
+            y={markerY}
             fill={LABEL_COLOR}
             fontSize={LABEL_SPECS.polarityMarkerSize}
             textAnchor="middle"
@@ -882,7 +885,7 @@ export const BatterySymbol: FC<SchematicSymbolProps> = ({
             paintOrder="stroke"
             stroke={markerStroke}
             strokeWidth={0.8}
-            transform={`rotate(${markerRotation}, ${markerX}, ${negMarkerY})`}
+            transform={`rotate(${markerRotation}, ${negMarkerX}, ${markerY})`}
           >
             −
           </text>
