@@ -55,16 +55,18 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: clamp(18px, 5vw, 44px);
+      gap: clamp(22px, 5.5vw, 48px);
       text-align: center;
     }
     .wordmark {
       font-size: clamp(38px, 9.4vw, 92px);
       font-weight: 900;
       letter-spacing: -0.015em;
+      line-height: 1.06;
       display: inline-flex;
       gap: 6px;
       margin-inline: auto;
+      margin-bottom: clamp(2px, 0.8vw, 8px);
       filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
     }
     .wordmark span { display: inline-block; }
@@ -86,6 +88,8 @@
       align-items: center;
       justify-content: center;
       margin-inline: auto;
+      margin-top: clamp(2px, 0.8vw, 8px);
+      margin-bottom: clamp(4px, 1vw, 10px);
       filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.45));
     }
     .logo-mark img {
@@ -99,7 +103,7 @@
       text-transform: uppercase;
       letter-spacing: 0.42em;
       font-size: clamp(0.72rem, 2.4vw, 0.95rem);
-      margin-top: -6px;
+      margin-top: 0;
       text-align: center;
       opacity: 0.92;
     }
