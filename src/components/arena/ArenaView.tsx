@@ -2697,7 +2697,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             })}
 
             <div className="arena-battle-overlay">
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+              <div className="arena-toggle-controls">
                 <button
                   className="arena-btn ghost small"
                   type="button"
