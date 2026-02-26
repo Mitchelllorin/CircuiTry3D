@@ -106,6 +106,7 @@ const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
     gaugeLabel: wireProfile.gaugeLabel,
     materialLabel: wireProfile.materialLabel,
     insulationLabel: wireProfile.insulationLabel,
+    maxTemperatureC: wireProfile.maxTemperatureC,
     resistanceOhmPerMeter: wireProfile.resistanceOhmPerMeter,
     ampacityBundleA: wireProfile.ampacityBundleA,
     ampacityChassisA: wireProfile.ampacityChassisA,
@@ -118,7 +119,7 @@ const HELP_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Pull out the Component Library, tap a device, then place it directly into the 3D workspace.",
-      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Simple, Perimeter, or A* routing modes from the left panel.",
+      "Use the Wire Tool to drag intelligent routes between pins - swap between Freeform, Manhattan (90-deg), Square (outside), Simple, Perimeter, or A* routing modes from the left panel.",
     ],
     bullets: [
       "One-touch buttons add, rotate, duplicate, or delete components.",
@@ -201,7 +202,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     ],
     bullets: [
       "Quick keys: B (battery), R (resistor), L (LED), S (switch), J (junction).",
-      "Wire tool supports freeform, Manhattan (90-deg), simple, perimeter, and A* auto-routing modes.",
+      "Wire tool supports freeform, Manhattan (90-deg), square outside, simple, perimeter, and A* auto-routing modes.",
       "Analysis panels include W.I.R.E., EIR triangle, power, worksheet, and solve tabs.",
     ],
   },
@@ -237,7 +238,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
       "Explore routing, junctions, and layout tools to organise complex practice problems quickly.",
     ],
     bullets: [
-      "Swap between free-form and Manhattan routes for textbook wiring.",
+      "Swap between free-form, Manhattan, and Square (outside) routes for textbook wiring.",
       "Drop junctions to branch into parallel paths.",
       "Auto-arrange builds clean study-ready layouts in a single click.",
       "Cycle through free, square, and linear layout modes from the View controls.",
@@ -554,7 +555,7 @@ const ABOUT_SECTIONS: HelpSection[] = [
   {
     title: "Flexible Wiring & Layouts",
     bullets: [
-      "Free-form, Manhattan, simple, perimeter, and A* routing styles.",
+      "Free-form, Manhattan, square outside, simple, perimeter, and A* routing styles.",
       "Smart junction placement with long-press editing for parallel branches.",
       "Auto-arrange plus free, square, and linear layout modes for presentation-ready circuits.",
     ],
@@ -2212,6 +2213,7 @@ export default function Builder() {
   const wireRoutingNames: Record<string, string> = {
     freeform: "Freeform",
     manhattan: "Manhattan (90-deg)",
+    square: "Square (outside)",
     offset: "Offset",
     arc: "Arc",
     simple: "Simple",
@@ -2252,6 +2254,38 @@ export default function Builder() {
         circuitState?.metrics.resistance ?? circuitBaseMetrics.resistance,
       isOpenCircuit: circuitState?.metrics.resistance === null,
       wireCount: circuitState?.counts.wires ?? 0,
+      wirePathResistance:
+        circuitState?.metrics.wirePathResistance ??
+        circuitState?.metrics.flow?.wirePathResistance ??
+        null,
+      wireLengthMeters:
+        circuitState?.metrics.wireLengthMeters ??
+        circuitState?.metrics.flow?.wirePathLengthMeters ??
+        null,
+      wireResistanceReferenceMeters:
+        circuitState?.metrics.wireResistanceReferenceMeters ??
+        circuitState?.metrics.flow?.wireResistanceReferenceMeters ??
+        10,
+      wireAmpacityLimitA:
+        circuitState?.metrics.wireAmpacityLimitA ??
+        circuitState?.metrics.flow?.ampacityLimitA ??
+        null,
+      wireAmpacityUtilization:
+        circuitState?.metrics.wireAmpacityUtilization ??
+        circuitState?.metrics.flow?.ampacityUtilization ??
+        null,
+      wireVoltageLimitV:
+        circuitState?.metrics.wireVoltageLimitV ??
+        circuitState?.metrics.flow?.voltageLimitV ??
+        null,
+      wireVoltageUtilization:
+        circuitState?.metrics.wireVoltageUtilization ??
+        circuitState?.metrics.flow?.voltageUtilization ??
+        null,
+      wireWarning:
+        circuitState?.metrics.wireWarning ??
+        circuitState?.metrics.flow?.warning ??
+        null,
     }),
     [circuitBaseMetrics, circuitState],
   );
@@ -2406,6 +2440,17 @@ export default function Builder() {
                 : liveWireMetricsSnapshot.resistance,
               power: liveWireMetricsSnapshot.power,
               wireCount: liveWireMetricsSnapshot.wireCount,
+              wirePathResistance: liveWireMetricsSnapshot.wirePathResistance,
+              wireLengthMeters: liveWireMetricsSnapshot.wireLengthMeters,
+              wireResistanceReferenceMeters:
+                liveWireMetricsSnapshot.wireResistanceReferenceMeters,
+              wireAmpacityLimitA: liveWireMetricsSnapshot.wireAmpacityLimitA,
+              wireAmpacityUtilization:
+                liveWireMetricsSnapshot.wireAmpacityUtilization,
+              wireVoltageLimitV: liveWireMetricsSnapshot.wireVoltageLimitV,
+              wireVoltageUtilization:
+                liveWireMetricsSnapshot.wireVoltageUtilization,
+              wireWarning: liveWireMetricsSnapshot.wireWarning,
             }}
           />
         );
@@ -2997,7 +3042,7 @@ export default function Builder() {
                   <span className="wire-profile-summary-meta">
                     {activeWireProfile
                       ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
-                      : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(2)} Ω/segment`}
+                      : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`}
                   </span>
                 </div>
               </div>
