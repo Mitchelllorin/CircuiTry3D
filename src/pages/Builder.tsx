@@ -2565,7 +2565,7 @@ export default function Builder() {
 
       {shouldShowCurrentFlowPayoffBanner && (
         <section className="current-flow-payoff-banner" role="status" aria-live="polite">
-          <div className="current-flow-payoff-kicker">First-time payoff</div>
+          <div className="current-flow-payoff-kicker">Electricity in motion</div>
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
               ? "Current is flowing in 3D right now."
