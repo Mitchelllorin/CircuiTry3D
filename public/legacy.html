@@ -14117,6 +14117,16 @@ Made with ? for visual learners everywhere!
             }
         }
 
+        // Pre-built color constants for the current-flow speed spectrum (parsed once, cloned per call).
+        const FLOW_SPECTRUM_COLORS = {
+            dullRed:   new THREE.Color('#8b0000'),
+            orange:    new THREE.Color('#ff6600'),
+            yellow:    new THREE.Color('#ffff00'),
+            cyan:      new THREE.Color('#00ddff'),
+            blueWhite: new THREE.Color('#aaddff'),
+            white:     new THREE.Color('#ffffff')
+        };
+
         function animateCurrentFlow(flowState) {
             currentFlowParticles.forEach(particle => {
                 if (particle && scene) {
@@ -14142,7 +14152,6 @@ Made with ? for visual learners everywhere!
                 return;
             }
 
-            const flowColor = calculateCurrentColor(flowState);
             const baseSpeed = calculateFlowSpeed(currentValue);
             const baseParticleCount = isMobile ? 3 : 4;
             const maxParticles = isMobile ? 8 : 12;
@@ -14165,6 +14174,9 @@ Made with ? for visual learners everywhere!
                 }
 
                 const segmentSpeed = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
+                // Compute per-segment color so particles near resistors appear dull red and
+                // particles on free wires appear blue-white, following the speed spectrum.
+                const flowColor = calculateCurrentColor(flowState, segment.speedFactor);
                 const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
 
                 let dynamicCount = Math.floor((currentValue * (isMobile ? 14 : 18)) * (segment.speedFactor || 1));
@@ -14221,24 +14233,35 @@ Made with ? for visual learners everywhere!
             });
         }
 
-        function calculateCurrentColor(flowState) {
+        function calculateCurrentColor(flowState, speedFactor) {
             if (flowState?.warning === 'short') {
                 return { hex: 0xff4444, emissive: 0x330000 };
             }
 
-            const currentValue = flowState?.currentValue ?? 0;
-            const blend = Math.min(1, Math.max(0, currentValue / 0.6));
+            // Map the segment's speedFactor ([minSpeedFactor..maxSpeedFactor]) to [0..1].
+            // speedFactor is low near high-resistance components and high on free wires.
+            const sf = speedFactor ?? FLOW_CONSTANTS.maxSpeedFactor;
+            const minSF = FLOW_CONSTANTS.minSpeedFactor;
+            const maxSF = FLOW_CONSTANTS.maxSpeedFactor;
+            const t = Math.min(1, Math.max(0, (sf - minSF) / (maxSF - minSF)));
 
-            const baseColor = new THREE.Color(WIRE_COLORS.I);
-            const highlightColor = new THREE.Color('#ffd8b1');
-            const displayColor = highlightColor.clone().lerp(baseColor, blend);
-
-            if (currentFlowStyle === 'misty') {
-                displayColor.lerp(new THREE.Color('#ffffff'), 0.2);
+            // Color spectrum: dull red (slow, t=0) -> orange -> yellow -> cyan -> blue-white (fast, t=1)
+            let displayColor;
+            if (t < 0.25) {
+                displayColor = FLOW_SPECTRUM_COLORS.dullRed.clone().lerp(FLOW_SPECTRUM_COLORS.orange, t / 0.25);
+            } else if (t < 0.5) {
+                displayColor = FLOW_SPECTRUM_COLORS.orange.clone().lerp(FLOW_SPECTRUM_COLORS.yellow, (t - 0.25) / 0.25);
+            } else if (t < 0.75) {
+                displayColor = FLOW_SPECTRUM_COLORS.yellow.clone().lerp(FLOW_SPECTRUM_COLORS.cyan, (t - 0.5) / 0.25);
+            } else {
+                displayColor = FLOW_SPECTRUM_COLORS.cyan.clone().lerp(FLOW_SPECTRUM_COLORS.blueWhite, (t - 0.75) / 0.25);
             }
 
-            const emissiveColor = baseColor.clone().multiplyScalar(0.25 + (0.5 * blend));
+            if (currentFlowStyle === 'misty') {
+                displayColor.lerp(FLOW_SPECTRUM_COLORS.white, 0.15);
+            }
 
+            const emissiveColor = displayColor.clone().multiplyScalar(0.4);
             return {
                 hex: displayColor.getHex(),
                 emissive: emissiveColor.getHex()
