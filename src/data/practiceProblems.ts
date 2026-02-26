@@ -1248,22 +1248,22 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const reciprocal = 1 / components.R2.resistance + 1 / components.R3.resistance;
         const equivalent = 1 / reciprocal;
         return {
-          title: "Collapse the parallel branch",
-          detail: `R_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
-          formula: "R_{eq} = 1 / (1/R_2 + 1/R_3)",
+          title: "Step 1 — Collapse the parallel branch (R2 ∥ R3) into one equivalent resistor",
+          detail: `This converts the combination circuit into a simple series loop: R1 → R_{2||3} → R4.\nR_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
+          formula: "R_{2||3} = 1 / (1/R_2 + 1/R_3)",
         };
       },
       ({ components, totals }) => {
         const branchResistance = 1 / (1 / components.R2.resistance + 1 / components.R3.resistance);
         return {
-          title: "Add the series legs",
-          detail: `R_T = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω + ${formatNumber(components.R4.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+          title: "Step 2 — Sum the simplified series loop (R1 + R_eq + R4)",
+          detail: `R_T = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω + ${formatNumber(components.R4.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nThe circuit is now a single series path — solve with Ohm's Law.`,
           formula: "R_T = R1 + R_{branch} + R4",
         };
       },
       ({ totals }) => ({
-        title: "Solve for source current",
-        detail: `I_T = E / R_T = ${formatMetricValue(totals.current, "current")}`,
+        title: "Step 3 — Solve for source current (flows through R1 and R4)",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.current, "current")}\nThis is the same current through R1 and R4 (series elements).`,
         formula: "I = E / R",
       }),
       ({ components, totals }) => {
@@ -1271,15 +1271,15 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const vBranch = formatMetricValue(components.R2.voltage, "voltage");
         const vR4 = formatMetricValue(components.R4.voltage, "voltage");
         return {
-          title: "Track voltage drops",
-          detail: `E_T = ${formatMetricValue(totals.voltage, "voltage")} = ${vR1} + ${vBranch} + ${vR4}`,
+          title: "Step 4 — Track voltage drops with KVL",
+          detail: `E_T = ${formatMetricValue(totals.voltage, "voltage")} = ${vR1} (R1) + ${vBranch} (parallel branch) + ${vR4} (R4)\nThe remaining voltage appears across the entire parallel section.`,
           formula: "KVL around the loop",
         };
       },
       ({ components }) => {
         return {
-          title: "Split branch currents",
-          detail: `I_{R2} = ${formatMetricValue(components.R2.current, "current")}, I_{R3} = ${formatMetricValue(components.R3.current, "current")}`,
+          title: "Step 5 — Work back into branches (KCL)",
+          detail: `Branch voltage = ${formatMetricValue(components.R2.voltage, "voltage")} across both R2 and R3.\nI_{R2} = ${formatMetricValue(components.R2.current, "current")}, I_{R3} = ${formatMetricValue(components.R3.current, "current")}`,
           formula: "I_{branch} = E_{branch} / R_{branch}",
         };
       },
@@ -1348,21 +1348,21 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const reciprocal = 1 / components.R2.resistance + 1 / components.R3.resistance;
         const equivalent = 1 / reciprocal;
         return {
-          title: "Find parallel equivalent",
-          detail: `R_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
+          title: "Step 1 — Collapse the parallel branch (R2 ∥ R3) to one equivalent resistor",
+          detail: `Replace the parallel section with R_{eq} so the circuit becomes a simple series loop: R1 → R_{eq}.\nR_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
           formula: "R_{eq} = 1 / (1/R_2 + 1/R_3)",
         };
       },
       ({ components, totals }) => {
         const branchResistance = 1 / (1 / components.R2.resistance + 1 / components.R3.resistance);
         return {
-          title: "Calculate total resistance",
-          detail: `R_T = R1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+          title: "Step 2 — Solve the simplified series loop",
+          detail: `R_T = R1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nNow the circuit is fully simplified to a single series loop.`,
           formula: "R_T = R1 + R_{eq}",
         };
       },
       ({ totals }) => ({
-        title: "Find total current",
+        title: "Step 3 — Find total current using Ohm's Law",
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
         formula: "I = E / R",
       }),
@@ -1370,8 +1370,8 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const vR1 = formatMetricValue(components.R1.voltage, "voltage");
         const vBranch = formatMetricValue(components.R2.voltage, "voltage");
         return {
-          title: "Apply KVL for voltage drops",
-          detail: `V_{R1} = I_T × R1 = ${vR1}\nV_{branch} = E_T - V_{R1} = ${formatMetricValue(totals.voltage, "voltage")} - ${vR1} = ${vBranch}`,
+          title: "Step 4 — Work back to find individual voltage drops",
+          detail: `V_{R1} = I_T × R1 = ${vR1}\nV_{branch} = E_T - V_{R1} = ${formatMetricValue(totals.voltage, "voltage")} - ${vR1} = ${vBranch}\n(Both R2 and R3 share this same branch voltage.)`,
           formula: "E_T = V_{R1} + V_{branch}",
         };
       },
@@ -1440,28 +1440,28 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const reciprocal = 1 / components.R1.resistance + 1 / components.R2.resistance;
         const equivalent = 1 / reciprocal;
         return {
-          title: "Calculate parallel equivalent (R1 || R2)",
-          detail: `R_{1||2} = 1 / (1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
+          title: "Step 1 — Collapse the parallel branch into one equivalent resistor",
+          detail: `The parallel section (R1 ∥ R2) acts as a single resistor in the series loop.\nR_{1||2} = 1 / (1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω\nNow the circuit is a simple series loop: R_{eq} → R3`,
           formula: "R_{eq} = (R1 × R2) / (R1 + R2)",
         };
       },
       ({ components, totals }) => {
         const branchResistance = 1 / (1 / components.R1.resistance + 1 / components.R2.resistance);
         return {
-          title: "Add series resistance",
-          detail: `R_T = R_{1||2} + R3 = ${formatNumber(branchResistance, 2)}Ω + ${formatNumber(components.R3.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
+          title: "Step 2 — Add series resistances (simplified series loop)",
+          detail: `With the parallel branch collapsed, treat R_{eq} and R3 as a plain series circuit.\nR_T = R_{1||2} + R3 = ${formatNumber(branchResistance, 2)}Ω + ${formatNumber(components.R3.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
           formula: "R_T = R_{eq} + R3",
         };
       },
       ({ totals }) => ({
-        title: "Calculate total current",
-        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}`,
+        title: "Step 3 — Apply Ohm's Law to the simplified series loop",
+        detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}\nThis total current flows through R3 (series element).`,
         formula: "I = E / R",
       }),
       ({ components }) => {
         return {
-          title: "Find branch currents (equal resistors = equal currents)",
-          detail: `I_{R1} = I_{R2} = I_T / 2 = ${formatMetricValue(components.R1.current, "current")}`,
+          title: "Step 4 — Work back through branches for individual values",
+          detail: `I_{R1} = I_{R2} = I_T / 2 = ${formatMetricValue(components.R1.current, "current")}\n(Equal resistors share current equally in a parallel branch.)`,
           formula: "I_x = V_{branch} / R_x",
         };
       },
