@@ -563,15 +563,25 @@
 
 .retro-maze-hud strong {
   color: #f8fbff;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(200, 228, 255, 0.45);
 }
 
 .retro-maze-board-frame {
   position: relative;
   border-radius: 16px;
   padding: 14px;
-  border: 1px solid rgba(95, 163, 248, 0.38);
-  background: radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.36), rgba(5, 10, 26, 0.95) 56%);
+  border: 1px solid rgba(95, 163, 248, 0.5);
+  background:
+    radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.28), transparent 56%),
+    linear-gradient(rgba(40, 100, 200, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 100, 200, 0.055) 1px, transparent 1px),
+    rgba(4, 8, 22, 0.97);
+  background-size: 100% 100%, 22px 22px, 22px 22px;
+  box-shadow:
+    0 0 0 1px rgba(60, 140, 255, 0.08),
+    inset 0 0 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 
@@ -622,37 +632,40 @@
 }
 
 .retro-maze-cell.is-wall {
-  background: linear-gradient(180deg, rgba(40, 98, 182, 0.85), rgba(26, 61, 128, 0.95));
+  background: linear-gradient(180deg, rgba(22, 72, 162, 0.97), rgba(10, 38, 96, 0.99));
   box-shadow:
-    inset 0 1px 0 rgba(177, 224, 255, 0.22),
-    inset 0 -1px 0 rgba(6, 20, 49, 0.5);
+    inset 0 1px 0 rgba(110, 190, 255, 0.45),
+    inset 0 -1px 0 rgba(4, 14, 42, 0.7),
+    0 0 6px rgba(40, 100, 220, 0.22);
+  border: 1px solid rgba(50, 120, 240, 0.28);
 }
 
 .retro-pellet {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
-  background: #f8fafc;
-  box-shadow: 0 0 8px rgba(248, 250, 252, 0.6);
+  background: #dff0ff;
+  box-shadow: 0 0 6px rgba(220, 240, 255, 0.85), 0 0 14px rgba(180, 220, 255, 0.35);
   z-index: 1;
 }
 
 .retro-pellet.is-power {
-  width: 10px;
-  height: 10px;
-  background: #fcd34d;
-  box-shadow: 0 0 12px rgba(252, 211, 77, 0.9);
-  animation: retro-pellet-pulse 0.85s ease-in-out infinite;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 35% 35%, #fffbd0, #fcd34d 55%, #f59e0b 100%);
+  box-shadow: 0 0 10px rgba(252, 211, 77, 0.95), 0 0 26px rgba(252, 211, 77, 0.45);
+  animation: retro-pellet-pulse 0.75s ease-in-out infinite;
 }
 
 .retro-player {
   width: 72%;
   height: 72%;
   border-radius: 999px;
-  background: radial-gradient(circle at 34% 34%, #fff7b0 0%, #fcd34d 44%, #f59e0b 100%);
+  background: radial-gradient(circle at 34% 34%, #fffde4 0%, #fde047 44%, #ca8a04 100%);
   clip-path: polygon(100% 50%, 57% 62%, 100% 100%, 0 100%, 0 0, 100% 0);
   z-index: 3;
   animation: retro-chomp 0.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(253, 224, 71, 0.85)) drop-shadow(0 0 10px rgba(253, 224, 71, 0.38));
 }
 
 .retro-player.retro-facing-up {
@@ -699,19 +712,24 @@
 }
 
 .retro-ghost-cyan {
-  background: linear-gradient(180deg, #7dd3fc 0%, #22d3ee 100%);
+  background: linear-gradient(180deg, #93e3fd 0%, #06b6d4 100%);
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.6));
 }
 
 .retro-ghost-pink {
-  background: linear-gradient(180deg, #f9a8d4 0%, #ec4899 100%);
+  background: linear-gradient(180deg, #fbb6ce 0%, #e879f9 100%);
+  filter: drop-shadow(0 0 5px rgba(232, 121, 249, 0.6));
 }
 
 .retro-ghost-amber {
-  background: linear-gradient(180deg, #fdba74 0%, #f97316 100%);
+  background: linear-gradient(180deg, #fdd28a 0%, #fb923c 100%);
+  filter: drop-shadow(0 0 5px rgba(251, 146, 60, 0.6));
 }
 
 .retro-ghost.is-frightened {
   background: linear-gradient(180deg, #93c5fd 0%, #2563eb 100%);
+  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.75));
+  animation: retro-ghost-flash 0.45s ease-in-out infinite;
 }
 
 .retro-maze-message {
@@ -809,6 +827,11 @@
   50% {
     clip-path: polygon(100% 50%, 74% 52%, 100% 72%, 0 100%, 0 0, 100% 28%);
   }
+}
+
+@keyframes retro-ghost-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 @media (max-width: 960px) {
@@ -1070,7 +1093,7 @@
   display: grid;
   grid-template-columns: 18px 1fr 1fr 1fr 18px;
   gap: 2px;
-  height: 36px;
+  height: 44px;
 }
 
 .race-border {
@@ -1093,18 +1116,22 @@
 }
 
 .race-cell.is-player {
-  background: rgba(30, 80, 160, 0.6);
-  color: #fcd34d;
-  font-size: 0.9rem;
+  background: radial-gradient(circle at 50% 40%, rgba(60, 120, 220, 0.65), rgba(20, 60, 130, 0.45));
+  color: #fef08a;
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 6px rgba(254, 240, 138, 0.85));
 }
 
 .race-cell.is-obstacle {
-  color: #f87171;
+  background: rgba(120, 28, 28, 0.35);
+  color: #fca5a5;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.55));
 }
 
 .race-cell.is-pickup {
-  color: #fcd34d;
-  text-shadow: 0 0 8px rgba(252, 211, 77, 0.8);
+  background: rgba(78, 64, 8, 0.35);
+  color: #fef08a;
+  text-shadow: 0 0 12px rgba(254, 240, 138, 0.9), 0 0 26px rgba(254, 240, 138, 0.4);
 }
 
 /* ============================================================
@@ -1137,10 +1164,11 @@
 
 .fight-hp-track {
   flex: 1;
-  height: 12px;
+  height: 18px;
   border-radius: 999px;
   background: rgba(8, 20, 40, 0.85);
-  border: 1px solid rgba(110, 180, 255, 0.22);
+  border: 1px solid rgba(110, 180, 255, 0.3);
+  box-shadow: 0 0 8px rgba(80, 140, 255, 0.12);
   overflow: hidden;
 }
 
@@ -1160,11 +1188,12 @@
 }
 
 .fight-hp-value {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #e8f6ff;
   min-width: 2ch;
   text-align: center;
+  text-shadow: 0 0 6px rgba(200, 230, 255, 0.4);
 }
 
 .fight-vs {
@@ -1178,10 +1207,13 @@
 .fight-arena {
   position: relative;
   width: 100%;
-  height: 130px;
+  height: 200px;
   border-radius: 14px;
-  border: 1px solid rgba(95, 163, 248, 0.3);
-  background: radial-gradient(circle at 50% 120%, rgba(30, 80, 160, 0.3), rgba(5, 10, 26, 0.95) 60%);
+  border: 1px solid rgba(95, 163, 248, 0.45);
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(30, 80, 160, 0.48) 0%, transparent 62%),
+    linear-gradient(180deg, rgba(3, 8, 24, 0.98) 0%, rgba(6, 14, 38, 0.96) 100%);
+  box-shadow: inset 0 -4px 28px rgba(30, 80, 160, 0.22);
   overflow: hidden;
 }
 
@@ -1190,15 +1222,16 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 18px;
-  background: linear-gradient(180deg, rgba(40, 98, 182, 0.7), rgba(20, 50, 110, 0.9));
-  border-top: 2px solid rgba(120, 190, 255, 0.3);
+  height: 22px;
+  background: linear-gradient(180deg, rgba(30, 80, 180, 0.65), rgba(14, 40, 104, 0.92));
+  border-top: 2px solid rgba(100, 180, 255, 0.55);
+  box-shadow: 0 -4px 18px rgba(80, 150, 255, 0.22);
 }
 
 .fight-sprite {
   position: absolute;
-  bottom: 18px;
-  width: 48px;
+  bottom: 22px;
+  width: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1208,7 +1241,7 @@
 }
 
 .fight-sprite-icon {
-  font-size: 1.7rem;
+  font-size: 2.4rem;
   line-height: 1;
   transition: transform 0.08s ease;
 }
@@ -1230,12 +1263,40 @@
 
 .fight-sprite.hurt .fight-sprite-icon {
   transform: rotate(-20deg) scale(0.85);
-  filter: brightness(2) saturate(0.5);
+  filter: brightness(2.2) saturate(0.4);
 }
 
 .fight-sprite.blocking .fight-sprite-icon {
-  transform: scale(0.9);
-  filter: brightness(0.7);
+  transform: scale(0.88);
+  filter: brightness(0.65) saturate(0.7);
+}
+
+.fight-sprite.idle .fight-sprite-icon {
+  animation: fight-idle-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes fight-idle-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Respect reduced-motion preference — disable all decorative game animations */
+@media (prefers-reduced-motion: reduce) {
+  .retro-ghost.is-frightened {
+    animation: none;
+  }
+
+  .fight-sprite.idle .fight-sprite-icon {
+    animation: none;
+  }
+
+  .retro-pellet.is-power {
+    animation: none;
+  }
+
+  .retro-player {
+    animation: none;
+  }
 }
 
 /* ============================================================
