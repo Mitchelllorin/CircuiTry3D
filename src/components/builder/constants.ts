@@ -745,9 +745,9 @@ export const PRACTICE_ACTIONS: PanelAction[] = [
   },
   {
     id: "open-arena",
-    label: "Component Arena Sync",
+    label: "Component Arena",
     description:
-      "Export the active build and open the Component Arena for testing.",
+      "Open the Component Arena to test and compare components from this circuit.",
     action: "open-arena",
   },
 ];

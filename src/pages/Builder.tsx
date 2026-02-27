@@ -2020,10 +2020,10 @@ export default function Builder() {
   const arenaStatusMessage = useMemo(() => {
     switch (arenaExportStatus) {
       case "exporting":
-        return "Exporting current build to Component Arena...";
+        return "Loading current build into Component Arena...";
       case "ready": {
         if (!lastArenaExport) {
-          return "Component Arena export is ready.";
+          return "Component Arena is ready.";
         }
         const exportedTime = lastArenaExport.exportedAt
           ? new Date(lastArenaExport.exportedAt)
@@ -2040,15 +2040,15 @@ export default function Builder() {
             ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
             : null;
         if (componentLabel && formattedTime) {
-          return `Last arena export: ${componentLabel} - ${formattedTime}`;
+          return `Last loaded: ${componentLabel} - ${formattedTime}`;
         }
         if (componentLabel) {
-          return `Last arena export: ${componentLabel}`;
+          return `Last loaded: ${componentLabel}`;
         }
-        return "Component Arena export is ready.";
+        return "Component Arena is ready.";
       }
       case "error":
-        return arenaExportError ?? "Component Arena export failed.";
+        return arenaExportError ?? "Component Arena failed to load.";
       default:
         return "Send this build to the Component Arena for advanced testing.";
     }

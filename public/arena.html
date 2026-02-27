@@ -30,7 +30,7 @@
     }
 
     .arena-brand {
-      font-size: clamp(24px, 5vw, 36px);
+      font-size: clamp(14px, 2.5vw, 20px);
       font-weight: 900;
       letter-spacing: -0.015em;
       display: inline-flex;
@@ -478,7 +478,7 @@
           <div class="section-heading">Import Sources</div>
           <button class="chip-btn" id="reload-import" type="button">Reload</button>
         </div>
-        <div id="import-status" class="import-status panel-subtext">Using reference component library. Load a builder export to sync live components.</div>
+        <div id="import-status" class="import-status panel-subtext">Using reference component library.</div>
         <div class="import-tags" id="import-tags"></div>
         <div class="row">
           <label for="mode">Mode</label>
@@ -2022,7 +2022,7 @@
           );
           renderImportSummary(manifest.summary || null);
         } else {
-          setImportStatus("Using reference component library. Load a builder export to sync live components.");
+          setImportStatus("Using reference component library.");
           renderImportSummary(null);
         }
       }
