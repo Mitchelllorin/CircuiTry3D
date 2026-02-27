@@ -695,7 +695,7 @@ export const PRACTICE_SCENARIOS: PracticeScenario[] = [
   {
     id: "series-basic",
     label: "Series Circuit",
-    question: "Series loop: solve for total current (I_T).",
+    question: "Series circuit: solve for total current (I_T).",
     description:
       "Log W.I.R.E. values, add the resistances, pick I = E / R_T, then confirm with KVL.",
     preset: "series_basic",
@@ -722,7 +722,7 @@ export const PRACTICE_SCENARIOS: PracticeScenario[] = [
   {
     id: "combo-challenge",
     label: "Combo Challenge",
-    question: "Multi-loop combo: determine every unknown.",
+    question: "Multi-branch combo: determine every unknown.",
     description:
       "Trace W.I.R.E. values, mix Ohm's Law identities, and enforce Kirchhoff on nested branches.",
     preset: "combination_advanced",

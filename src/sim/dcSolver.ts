@@ -719,7 +719,7 @@ export function solveDCCircuit(elements: SchematicElement[], options?: { toleran
     if (!solved) {
       return {
         status: "singular",
-        reason: "Circuit matrix is singular (often caused by floating subcircuits or ideal-only loops).",
+        reason: "Circuit matrix is singular (often caused by floating subcircuits or ideal-only paths).",
         nodeVoltages: new Map([[globalPreferredReference, 0]]),
         elementCurrents: new Map(),
         wireSegmentCurrents: [],

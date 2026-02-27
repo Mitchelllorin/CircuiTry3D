@@ -251,7 +251,7 @@ export function getReachableNodes(startNodeId: string, graph: AdjacencyGraph): S
  */
 export interface CircuitStatus {
   isClosed: boolean;
-  hasLoop: boolean;
+  hasCycle: boolean;
   powerSourceConnected: boolean;
   componentCount: number;
   openEndpoints: string[];
@@ -259,7 +259,7 @@ export interface CircuitStatus {
 }
 
 /**
- * Check if the circuit forms a complete closed loop
+ * Check if the circuit forms a complete closed path
  * A circuit is considered closed if:
  * 1. There is at least one power source (battery)
  * 2. The power source terminals are connected through a path
@@ -278,7 +278,7 @@ export function checkCircuitCompletion(
   if (wires.length === 0 || nodes.length < 2) {
     return {
       isClosed: false,
-      hasLoop: false,
+      hasCycle: false,
       powerSourceConnected: false,
       componentCount: 0,
       openEndpoints: [],
@@ -322,22 +322,22 @@ export function checkCircuitCompletion(
     powerSourceConnected = components.length > 0 && components.some(c => c.size >= 2);
   }
 
-  // Check for loops using cycle detection
-  const hasLoop = detectCycle(graph);
+  // Check for cycles using cycle detection
+  const hasCycle = detectCycle(graph);
 
   // A circuit is closed if:
   // - Power source terminals are connected (or we have valid components)
-  // - There's a loop in the circuit
+  // - There's a cycle in the circuit
   // - No dangling wire anchors (open endpoints are okay if they're component pins)
-  const isClosed = powerSourceConnected && hasLoop && openEndpoints.length === 0;
+  const isClosed = powerSourceConnected && hasCycle && openEndpoints.length === 0;
 
   let message: string;
   if (isClosed) {
     message = "Circuit is complete and closed";
   } else if (!powerSourceConnected) {
     message = "Power source terminals not connected";
-  } else if (!hasLoop) {
-    message = "No closed loop detected in circuit";
+  } else if (!hasCycle) {
+    message = "No complete circuit detected";
   } else if (openEndpoints.length > 0) {
     message = `Open circuit: ${openEndpoints.length} unconnected wire endpoint(s)`;
   } else {
@@ -346,7 +346,7 @@ export function checkCircuitCompletion(
 
   return {
     isClosed,
-    hasLoop,
+    hasCycle,
     powerSourceConnected,
     componentCount: nodes.filter(n => n.type === 'componentPin').length,
     openEndpoints,
@@ -355,7 +355,7 @@ export function checkCircuitCompletion(
 }
 
 /**
- * Detect if the graph contains at least one cycle (closed loop)
+ * Detect if the graph contains at least one cycle (closed path)
  * Uses DFS-based cycle detection
  */
 function detectCycle(graph: AdjacencyGraph): boolean {

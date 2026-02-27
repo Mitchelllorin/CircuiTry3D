@@ -1249,14 +1249,14 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const equivalent = 1 / reciprocal;
         return {
           title: "Step 1 — Collapse the parallel branch (R2 ∥ R3) into one equivalent resistor",
-          detail: `This converts the combination circuit into a simple series loop: R1 → R_{2||3} → R4.\nR_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
+          detail: `This converts the combination circuit into a simple series circuit: R1 → R_{2||3} → R4.\nR_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
           formula: "R_{2||3} = 1 / (1/R_2 + 1/R_3)",
         };
       },
       ({ components, totals }) => {
         const branchResistance = 1 / (1 / components.R2.resistance + 1 / components.R3.resistance);
         return {
-          title: "Step 2 — Sum the simplified series loop (R1 + R_eq + R4)",
+          title: "Step 2 — Sum the simplified series circuit (R1 + R_eq + R4)",
           detail: `R_T = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω + ${formatNumber(components.R4.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nThe circuit is now a single series path — solve with Ohm's Law.`,
           formula: "R_T = R1 + R_{branch} + R4",
         };
@@ -1273,7 +1273,7 @@ const practiceProblemSeeds: PracticeProblem[] = [
         return {
           title: "Step 4 — Track voltage drops with KVL",
           detail: `E_T = ${formatMetricValue(totals.voltage, "voltage")} = ${vR1} (R1) + ${vBranch} (parallel branch) + ${vR4} (R4)\nThe remaining voltage appears across the entire parallel section.`,
-          formula: "KVL around the loop",
+          formula: "KVL around the path",
         };
       },
       ({ components }) => {
@@ -1349,15 +1349,15 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const equivalent = 1 / reciprocal;
         return {
           title: "Step 1 — Collapse the parallel branch (R2 ∥ R3) to one equivalent resistor",
-          detail: `Replace the parallel section with R_{eq} so the circuit becomes a simple series loop: R1 → R_{eq}.\nR_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
+          detail: `Replace the parallel section with R_{eq} so the circuit becomes a simple series circuit: R1 → R_{eq}.\nR_{2||3} = 1 / (1/${formatNumber(components.R2.resistance, 0)}Ω + 1/${formatNumber(components.R3.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω`,
           formula: "R_{eq} = 1 / (1/R_2 + 1/R_3)",
         };
       },
       ({ components, totals }) => {
         const branchResistance = 1 / (1 / components.R2.resistance + 1 / components.R3.resistance);
         return {
-          title: "Step 2 — Solve the simplified series loop",
-          detail: `R_T = R1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nNow the circuit is fully simplified to a single series loop.`,
+          title: "Step 2 — Solve the simplified series circuit",
+          detail: `R_T = R1 + R_{2||3} = ${formatNumber(components.R1.resistance, 0)}Ω + ${formatNumber(branchResistance, 2)}Ω = ${formatMetricValue(totals.resistance, "resistance")}\nNow the circuit is fully simplified to a single series path.`,
           formula: "R_T = R1 + R_{eq}",
         };
       },
@@ -1441,20 +1441,20 @@ const practiceProblemSeeds: PracticeProblem[] = [
         const equivalent = 1 / reciprocal;
         return {
           title: "Step 1 — Collapse the parallel branch into one equivalent resistor",
-          detail: `The parallel section (R1 ∥ R2) acts as a single resistor in the series loop.\nR_{1||2} = 1 / (1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω\nNow the circuit is a simple series loop: R_{eq} → R3`,
+          detail: `The parallel section (R1 ∥ R2) acts as a single resistor in the series circuit.\nR_{1||2} = 1 / (1/${formatNumber(components.R1.resistance, 0)}Ω + 1/${formatNumber(components.R2.resistance, 0)}Ω) = ${formatNumber(equivalent, 2)} Ω\nNow the circuit is a simple series circuit: R_{eq} → R3`,
           formula: "R_{eq} = (R1 × R2) / (R1 + R2)",
         };
       },
       ({ components, totals }) => {
         const branchResistance = 1 / (1 / components.R1.resistance + 1 / components.R2.resistance);
         return {
-          title: "Step 2 — Add series resistances (simplified series loop)",
+          title: "Step 2 — Add series resistances (simplified series circuit)",
           detail: `With the parallel branch collapsed, treat R_{eq} and R3 as a plain series circuit.\nR_T = R_{1||2} + R3 = ${formatNumber(branchResistance, 2)}Ω + ${formatNumber(components.R3.resistance, 0)}Ω = ${formatMetricValue(totals.resistance, "resistance")}`,
           formula: "R_T = R_{eq} + R3",
         };
       },
       ({ totals }) => ({
-        title: "Step 3 — Apply Ohm's Law to the simplified series loop",
+        title: "Step 3 — Apply Ohm's Law to the simplified series circuit",
         detail: `I_T = E / R_T = ${formatMetricValue(totals.voltage, "voltage")} ÷ ${formatMetricValue(totals.resistance, "resistance")} = ${formatMetricValue(totals.current, "current")}\nThis total current flows through R3 (series element).`,
         formula: "I = E / R",
       }),
@@ -1795,11 +1795,11 @@ const practiceProblemSeeds: PracticeProblem[] = [
   },
   // ═══════════════════════════════════════════════════════════════════════════
   // TEXTBOOK-STYLE SERIES PROBLEMS
-  // Single continuous path for current - one loop, no branches
+  // Single continuous path for current - one circuit, no branches
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: "textbook-series-basic-01",
-    title: "Textbook Series · Basic Loop",
+    title: "Textbook Series · Basic Circuit",
     topology: "series",
     difficulty: "intro",
     prompt:

@@ -91,16 +91,16 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
           "Launch the interactive walkthrough to get live highlights and step-by-step validation.",
       },
       {
-        id: "tutorial-build-loop",
-        title: "Build and close a loop",
+        id: "tutorial-build-circuit",
+        title: "Build and complete a circuit",
         detail:
-          "Add the required parts and close the loop so the simulator reports a complete circuit.",
+          "Add the required parts and complete the circuit so the simulator reports a complete circuit.",
       },
       {
         id: "tutorial-simulate",
         title: "Run simulation checkpoint",
         detail:
-          "Run simulation from the tutorial flow to confirm current can travel through the loop.",
+          "Run simulation from the tutorial flow to confirm current can travel through the circuit.",
       },
       {
         id: "tutorial-junctions",
@@ -115,7 +115,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
     description:
       "Use this checklist to solve one circuit at a time without guessing: identify the circuit type, capture known values, pick a formula, solve, then verify.",
     completionSummary:
-      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check loop on new circuits.",
+      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check cycle on new circuits.",
     workspaceSyncCopy:
       "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
@@ -129,7 +129,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "wire-collapse-parallel",
         title: "Collapse parallel branches to equivalent series",
         detail:
-          "For parallel or combination circuits: calculate each parallel branch's equivalent resistance first (R_eq = 1/(1/R_a + 1/R_b)). Replace the whole parallel section with that single equivalent resistor. Now the circuit looks like a simple series loop — solve it using R_T = R_1 + R_2 + … .",
+          "For parallel or combination circuits: calculate each parallel branch's equivalent resistance first (R_eq = 1/(1/R_a + 1/R_b)). Replace the whole parallel section with that single equivalent resistor. Now the circuit looks like a simple series circuit — solve it using R_T = R_1 + R_2 + … .",
       },
       {
         id: "wire-identify-knowns",

@@ -692,7 +692,7 @@ export function getSeverityLabel(severity: ValidationSeverity): string {
  *
  * Current flow should ONLY be enabled when:
  * 1. Circuit has no errors (open circuit, short circuit)
- * 2. Circuit forms a complete closed loop
+ * 2. Circuit forms a complete closed path
  * 3. There is at least one power source and one load
  *
  * This implements CircuiTry3D Rule C3D-010: Circuit Completion State
@@ -724,7 +724,7 @@ export function shouldEnableCurrentFlow(elements: SchematicElement[]): {
     return {
       shouldAnimate: false,
       reason: validation.circuitStatus === 'incomplete'
-        ? 'Circuit is incomplete - ensure all components are connected in a closed loop'
+        ? 'Circuit is incomplete - ensure all components are connected in a complete circuit'
         : 'Circuit is invalid',
       currentAmps: 0
     };

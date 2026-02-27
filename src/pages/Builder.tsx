@@ -196,7 +196,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Add components from the Components menu, then place them directly into the 3D workspace.",
-      "Use the Wire tool to connect terminals and close the circuit loop so current can flow.",
+      "Use the Wire tool to connect terminals and complete the circuit so current can flow.",
       "Open the analysis panels on the right to watch live calculations while you build.",
     ],
     bullets: [
@@ -260,7 +260,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     bullets: [
       "Reset View recentres the camera; Fit to Screen frames the active circuit.",
       "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
-      "Complete the circuit loop, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
+      "Complete the circuit, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
     ],
   },
 ];
@@ -270,7 +270,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
     title: "W.I.R.E. Overview",
     paragraphs: [
       "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits.",
-      "Use this solve loop: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
+      "Use this solve cycle: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
       "W - Watts (power)",
@@ -417,7 +417,7 @@ const TABLE_METHOD_SECTIONS: HelpSection[] = [
       "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
       "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
       "4. Record the newly solved value in the table, then update the totals row when complete.",
-      "5. Check your work with Kirchhoff: sum voltages around each loop and verify currents at junctions.",
+      "5. Check your work with Kirchhoff: sum voltages around each path and verify currents at junctions.",
     ],
   },
   {
@@ -2569,7 +2569,7 @@ export default function Builder() {
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
               ? "Current is flowing in 3D right now."
-              : "Load a closed loop to watch current flow instantly."}
+              : "Load a complete circuit to watch current flow instantly."}
           </h2>
           <p className="current-flow-payoff-text">
             This is the core experience: virtual electricity moving through a
