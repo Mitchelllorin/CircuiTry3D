@@ -7562,8 +7562,14 @@ body.android-optimized.menu-visible .status {
                     isRotating = true;
                     lastTouchPos = { x: e.clientX, y: e.clientY };
                 }
+            } else if (e.button === 1) {
+                // Middle-button drag → pan
+                e.preventDefault();
+                isPanning = true;
+                lastTouchPos = { x: e.clientX, y: e.clientY };
             } else if (e.button === 2) {
-                isRotating = true;
+                // Right-click drag → pan
+                isPanning = true;
                 lastTouchPos = { x: e.clientX, y: e.clientY };
             }
         }
@@ -7580,7 +7586,12 @@ body.android-optimized.menu-visible .status {
                 maybeStartDrag(e.clientX, e.clientY);
             }
 
-            if (isRotating) {
+            if (isPanning) {
+                const panDeltaX = e.clientX - lastTouchPos.x;
+                const panDeltaY = e.clientY - lastTouchPos.y;
+                applyCameraPan(panDeltaX, panDeltaY, 1);
+                lastTouchPos = { x: e.clientX, y: e.clientY };
+            } else if (isRotating) {
                 const deltaX = e.clientX - lastTouchPos.x;
                 const deltaY = e.clientY - lastTouchPos.y;
                 
@@ -7596,6 +7607,7 @@ body.android-optimized.menu-visible .status {
 
         function handleMouseUp(e) {
             isRotating = false;
+            isPanning = false;
             cancelLongPress();
             if (isDragging) {
                 handleRelease();
@@ -7604,8 +7616,11 @@ body.android-optimized.menu-visible .status {
 
         function handleWheel(e) {
             e.preventDefault();
-            const sensitivity = isMobile ? 0.005 : 0.01;
-            cameraDistance = Math.max(5, Math.min(50, cameraDistance + e.deltaY * sensitivity));
+            // Use a tighter zoom range and slightly finer sensitivity for smooth control
+            // Line-based scroll: normalize to approximate pixel equivalence (~8px per line)
+            const delta = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * 8 : e.deltaY;
+            const sensitivity = isMobile ? 0.005 : 0.008;
+            cameraDistance = Math.max(3, Math.min(80, cameraDistance + delta * sensitivity));
             updateCameraPosition();
         }
 
@@ -14615,18 +14630,18 @@ Made with ? for visual learners everywhere!
         const PRESET_CIRCUITS = {
             welcome_demo: {
                 name: "Welcome — Illuminated Circuit",
-                description: "48 V source driving high current through a switch, resistor, and LED — the CircuiTry3D hook circuit.",
+                description: "12 V source powering a switch, resistor, and LED — a classic series loop to illuminate how electricity works.",
                 objectives: [
-                    "See live current flow visualized in 3D as electrons race around a closed loop.",
-                    "Observe how a high-voltage source (48 V) and low resistance (40 Ω total) produce bright, visible current (~1.2 A).",
-                    "Toggle the switch to open or close the circuit and watch current start or stop instantly.",
-                    "Explore W.I.R.E. metrics to see how Ohm's Law governs every component in real time."
+                    "A 12 V battery acts as the electron pump, creating a pressure difference (voltage) that drives current around the loop.",
+                    "The switch controls the path: when closed, it completes the circuit and current flows; open it to see current stop instantly.",
+                    "The 47 Ω resistor limits current — with total circuit resistance of 147 Ω (switch + resistor + LED), Ohm's Law gives I = V ÷ R = 12 ÷ 147 ≈ 0.08 A.",
+                    "Watch the animated current particles in 3D: they follow the wire path from battery + terminal, through each component, and back to −."
                 ],
                 components: [
-                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 48 } },
+                    { id: 'B1', type: 'battery', position: [-10, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 12 } },
                     { id: 'SW1', type: 'switch', position: [0, 0, 6], properties: { resistance: 0.1, isOn: true } },
-                    { id: 'R1', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 10 } },
-                    { id: 'LED1', type: 'led', position: [0, 0, -6], properties: { resistance: 30 } }
+                    { id: 'R1', type: 'resistor', position: [10, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 47 } },
+                    { id: 'LED1', type: 'led', position: [0, 0, -6], properties: { resistance: 100 } }
                 ],
                 junctions: [
                     { id: 'J_TL', position: [-10, 0, 6] },

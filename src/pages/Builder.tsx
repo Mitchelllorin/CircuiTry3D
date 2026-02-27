@@ -2552,11 +2552,11 @@ export default function Builder() {
               : "Close the loop to watch current come alive in 3D."}
           </h2>
           <p className="current-flow-payoff-text">
-            {currentFlowPayoffVolts > 0 ? `A ${currentFlowPayoffVolts.toFixed(0)} V battery` : "A high-voltage battery"} is pushing {currentFlowPayoffAmps > 0 ? `${currentFlowPayoffAmps.toFixed(2)} A` : "current"} through a switch, resistor, and LED — all rendered in real-time 3D.
-            Build any circuit, flip the switch, and watch Ohm&apos;s Law play out before your eyes.
-            {isCurrentFlowSolid
-              ? " Conventional flow is active (positive → negative)."
-              : " Electron flow is active (negative → positive)."}
+            The battery is the electron pump — it creates a voltage difference that pushes current through the switch, resistor, and LED.{" "}
+            {currentFlowPayoffVolts > 0 && currentFlowPayoffAmps > 0
+              ? `At ${currentFlowPayoffVolts.toFixed(0)} V with ${(currentFlowPayoffVolts / currentFlowPayoffAmps).toFixed(0)} Ω total resistance, Ohm's Law gives I = V ÷ R ≈ ${currentFlowPayoffAmps.toFixed(3)} A.`
+              : "Apply Ohm's Law (I = V ÷ R) to find the current, then watch it animate in real time."}{" "}
+            Orbit with left-drag, pan with right-drag, and zoom with the scroll wheel.
           </p>
           <div className="current-flow-payoff-metrics">
             <span className="current-flow-payoff-metric">
