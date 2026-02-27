@@ -496,15 +496,15 @@ body.builder-body .arena-page {
 
 .arena-metrics-compact {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr;
+  gap: 5px;
 }
 
 .arena-metric-compact {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 5px;
+  padding: 5px 8px;
   border-radius: 6px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -516,12 +516,39 @@ body.builder-body .arena-page {
   flex-shrink: 0;
 }
 
+.arena-metric-compact .metric-compact-label {
+  flex: 1;
+  font-size: 0.64rem;
+  color: rgba(148, 163, 184, 0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .arena-metric-compact .metric-compact-value {
   font-weight: 600;
   color: rgba(226, 232, 240, 0.95);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.arena-metric-compact .metric-compact-result {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.arena-metric-compact.result-win {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(0, 255, 136, 0.07);
+}
+
+.arena-metric-compact.result-loss {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 
@@ -1348,6 +1375,41 @@ body.builder-body .arena-page {
   color: rgba(203, 213, 225, 0.95);
 }
 
+.arena-nameplate-badge.battle-winner {
+  border-color: rgba(0, 255, 136, 0.65);
+  background: linear-gradient(135deg, rgba(0, 200, 100, 0.4), rgba(0, 255, 136, 0.25));
+  color: rgba(220, 255, 235, 0.98);
+  font-size: 0.7rem;
+}
+
+.arena-nameplate-badge.runner-up {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(185, 28, 28, 0.2);
+  color: rgba(254, 200, 200, 0.95);
+}
+
+.arena-battle-panel-left.battle-winner,
+.arena-battle-panel-right.battle-winner {
+  background: linear-gradient(180deg,
+    rgba(0, 255, 136, 0.1) 0%,
+    rgba(8, 14, 28, 0.95) 55%,
+    rgba(8, 14, 28, 0.98) 100%
+  );
+  box-shadow: inset 0 0 40px rgba(0, 255, 136, 0.05);
+}
+
+.arena-component-nameplate.battle-winner {
+  border-color: rgba(0, 255, 136, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 6px 20px rgba(0, 255, 136, 0.12);
+}
+
+.arena-component-nameplate.battle-loser {
+  border-color: rgba(94, 110, 130, 0.3);
+}
+
+
 .arena-battle-tagline {
   display: flex;
   align-items: center;
@@ -1366,13 +1428,13 @@ body.builder-body .arena-page {
   align-items: center;
   gap: 16px;
   pointer-events: none;
-  background: rgba(2, 6, 23, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(2, 6, 23, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 16px 24px;
   border-radius: 20px;
-  border: 1px solid rgba(0, 245, 255, 0.2);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .arena-battle-overlay > * {

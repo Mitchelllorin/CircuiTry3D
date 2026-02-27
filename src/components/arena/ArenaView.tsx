@@ -2276,19 +2276,59 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   ) => {
     const beforeData = side === "left" ? beforeMetrics.left : beforeMetrics.right;
     const afterData = side === "left" ? afterMetrics.left : afterMetrics.right;
+    const opponentAfterData = side === "left" ? afterMetrics.right : afterMetrics.left;
     const showBefore = battleState !== "idle" && beforeData;
     const showAfter = battleState === "complete" && afterData;
     const panelTelemetry = (showAfter ? afterData : null) ?? (battleState === "battling" ? beforeData : null) ?? telemetry;
     const filteredTelemetry = getFilteredTelemetry(panelTelemetry);
+
+    // Determine actual battle result for this panel
+    const battleIsWinner = battleState === "complete" && battleWinner !== null && battleWinner !== "tie" &&
+      ((side === "left" && battleWinner === "left") || (side === "right" && battleWinner === "right"));
+    const battleIsLoser = battleState === "complete" && battleWinner !== null && battleWinner !== "tie" && !battleIsWinner;
+    const battleIsTied = battleState === "complete" && battleWinner === "tie";
+
+    // Per-metric result indicator for AFTER section
+    const FALLBACK_METRIC_ICON = "📊";
+    const getMetricResult = (entryId: string, myValue: number | null): "win" | "loss" | "tie" | null => {
+      if (battleState !== "complete" || !opponentAfterData) return null;
+      const opponentEntry = opponentAfterData.find((e) => e.id === entryId);
+      const opponentValue = opponentEntry?.metric?.numericValue ?? null;
+      if (!Number.isFinite(myValue) || !Number.isFinite(opponentValue)) return null;
+      const preference = getBattlePreference(entryId);
+      const diff = (myValue as number) - (opponentValue as number);
+      const base = Math.max(Math.abs(myValue as number), Math.abs(opponentValue as number), 1e-9);
+      const relative = Math.abs(diff) / base;
+      if (relative < 0.015) return "tie";
+      const advantage = preference === "higher" ? diff : -diff;
+      return advantage > 0 ? "win" : "loss";
+    };
+
     const nameplateMetrics = buildNameplateMetrics(filteredTelemetry, {
       componentSeed: `${profile?.uid ?? side}:${profile?.componentNumber ?? "na"}`,
       tick: nameplateTick,
       isLive: battleState !== "complete"
     });
-    const showNameplateLiveIndicator = battleState !== "complete" && nameplateMetrics.length > 0;
+
+    // Fallback: show profile.metrics when telemetry presets don't match this component type
+    const hasRealTelemetry = nameplateMetrics.some((m) => m.displayValue !== "—");
+    const displayMetrics: NameplateMetric[] = hasRealTelemetry ? nameplateMetrics : (
+      profile ? profile.metrics.slice(0, 3).map((m) => ({
+        id: m.key,
+        label: m.label,
+        icon: FALLBACK_METRIC_ICON,
+        displayValue: m.displayValue,
+        severity: "normal" as const,
+        trend: "steady" as const
+      })) : []
+    );
+
+    const showNameplateLiveIndicator = battleState !== "complete" && displayMetrics.length > 0;
+    const panelResultClass = battleIsWinner ? " battle-winner" : battleIsLoser ? " battle-loser" : "";
+    const afterResultLabel = battleIsWinner ? "🏆 WON" : battleIsLoser ? "📉 RESULT" : battleIsTied ? "🤝 TIED" : "📈 AFTER";
 
     return (
-      <div className={`arena-battle-panel arena-battle-panel-${side}`}>
+      <div className={`arena-battle-panel arena-battle-panel-${side}${panelResultClass}`}>
         <div className="arena-component-info">
           {/* Before Metrics - Above Component */}
           {showBefore && (
@@ -2298,6 +2338,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                 {getFilteredTelemetry(beforeData).map((entry) => (
                   <div key={`before-${side}-${entry.id}`} className="arena-metric-compact">
                     <span className="metric-compact-icon">{entry.icon}</span>
+                    <span className="metric-compact-label">{entry.label}</span>
                     <span className="metric-compact-value">{entry.displayValue}</span>
                   </div>
                 ))}
@@ -2319,7 +2360,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
           </div>
 
           {/* Component Nameplate + Live Metrics */}
-          <div className={`arena-component-nameplate${isChampion ? " is-champion" : ""}${isTie ? " is-tie" : ""}`}>
+          <div className={`arena-component-nameplate${isChampion ? " is-champion" : ""}${isTie ? " is-tie" : ""}${battleIsWinner ? " battle-winner" : ""}${battleIsLoser ? " battle-loser" : ""}`}>
             <div className="arena-nameplate-header">
               <span className="arena-nameplate-tag">{tag}</span>
               {showNameplateLiveIndicator && (
@@ -2336,9 +2377,9 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                 <span className="arena-nameplate-component-number">{profile.componentNumber}</span>
               ) : null}
             </div>
-            {nameplateMetrics.length > 0 ? (
+            {displayMetrics.length > 0 ? (
               <div className="arena-nameplate-metrics" role="list" aria-label={`${profile?.name ?? "Component"} real-time metrics`}>
-                {nameplateMetrics.map((metric) => (
+                {displayMetrics.map((metric) => (
                   <div
                     key={`${side}-nameplate-${metric.id}`}
                     className={`arena-nameplate-metric ${metric.severity}`}
@@ -2359,21 +2400,44 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             ) : (
               <p className="arena-nameplate-empty">No telemetry available yet.</p>
             )}
-            {isChampion ? <div className="arena-nameplate-badge">🏆 Champion</div> : null}
-            {!isChampion && isTie ? <div className="arena-nameplate-badge neutral">Even Match</div> : null}
+            {battleState === "complete" ? (
+              battleIsTied ? <div className="arena-nameplate-badge neutral">🤝 Tied</div>
+              : battleIsWinner ? <div className="arena-nameplate-badge battle-winner">🏆 Winner</div>
+              : <div className="arena-nameplate-badge runner-up">Runner-Up</div>
+            ) : isChampion ? <div className="arena-nameplate-badge">🏆 Champion</div>
+              : isTie ? <div className="arena-nameplate-badge neutral">Even Match</div>
+              : null}
           </div>
 
           {/* After Metrics - Below Component */}
-          {showAfter && (
+          {showAfter && afterData && (
             <div className="arena-metrics-section arena-metrics-after">
-              <div className="arena-metrics-label">📈 AFTER</div>
+              <div className="arena-metrics-label">{afterResultLabel}</div>
               <div className="arena-metrics-compact">
-                {getFilteredTelemetry(afterData).map((entry) => (
-                  <div key={`after-${side}-${entry.id}`} className="arena-metric-compact">
-                    <span className="metric-compact-icon">{entry.icon}</span>
-                    <span className="metric-compact-value">{entry.displayValue}</span>
-                  </div>
-                ))}
+                {(() => {
+                  const entries = getFilteredTelemetry(afterData).filter((e) => e.displayValue !== "—");
+                  if (entries.length > 0) {
+                    return entries.map((entry) => {
+                      const result = getMetricResult(entry.id, entry.metric?.numericValue ?? null);
+                      return (
+                        <div key={`after-${side}-${entry.id}`} className={`arena-metric-compact${result ? ` result-${result}` : ""}`}>
+                          <span className="metric-compact-icon">{entry.icon}</span>
+                          <span className="metric-compact-label">{entry.label}</span>
+                          <span className="metric-compact-value">{entry.displayValue}</span>
+                          {result && <span className="metric-compact-result">{result === "win" ? "✅" : result === "loss" ? "❌" : "→"}</span>}
+                        </div>
+                      );
+                    });
+                  }
+                  // Fallback: show component's actual spec metrics when presets don't match
+                  return profile ? profile.metrics.slice(0, 4).map((m) => (
+                    <div key={`after-spec-${side}-${m.key}`} className="arena-metric-compact">
+                      <span className="metric-compact-icon">{FALLBACK_METRIC_ICON}</span>
+                      <span className="metric-compact-label">{m.label}</span>
+                      <span className="metric-compact-value">{m.displayValue}</span>
+                    </div>
+                  )) : null;
+                })()}
               </div>
             </div>
           )}
