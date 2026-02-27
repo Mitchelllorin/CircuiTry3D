@@ -115,7 +115,7 @@ const TOPOLOGY_CONTENT: Record<PracticeTopology, TopologyInfo> = {
     summary:
       "Single current path with elements chained end-to-end. Current is identical through every component while voltage divides proportionally to resistance.",
     bulletPoints: [
-      "Current is constant at every point in the loop.",
+      "Current is constant at every point in the circuit.",
       "Voltage drops add to the source voltage (Kirchhoff's Voltage Law).",
       "Equivalent resistance is the algebraic sum of individual resistances.",
     ],

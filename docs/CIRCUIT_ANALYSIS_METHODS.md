@@ -257,22 +257,22 @@ At maximum power transfer, efficiency is only 50% (half the power is dissipated 
 
 ---
 
-## Part 6: Mesh (Loop) Current Analysis
+## Part 6: Mesh Current Analysis
 
 ### 6.1 Overview
 
-Mesh analysis assigns loop currents to each independent loop and uses KVL to solve for them.
+Mesh analysis assigns mesh currents to each independent mesh and uses KVL to solve for them.
 
 ### 6.2 Mesh Analysis Process
 
-1. **Identify meshes** (loops that don't contain other loops)
+1. **Identify meshes** (paths that don't contain other meshes)
 2. **Assign mesh currents** (typically clockwise)
 3. **Write KVL** around each mesh
 4. **Solve** the system of equations
 
 ### 6.3 Mesh Analysis Example
 
-**Circuit with two loops:**
+**Circuit with two meshes:**
 ```
     ┌───R1(10Ω)───┬───R2(20Ω)───┐
     │             │             │
@@ -401,7 +401,7 @@ R_ca = (R₁×R₂ + R₂×R₃ + R₃×R₁) / R₂
 
 1. **Check power balance:** P_supplied = P_dissipated
 2. **Verify KCL at every node:** Currents in = Currents out
-3. **Verify KVL around every loop:** Voltage rises = Voltage drops
+3. **Verify KVL around every path:** Voltage rises = Voltage drops
 4. **Sanity check:** Are results physically reasonable?
 
 ---
@@ -416,7 +416,7 @@ This document covers the primary circuit analysis methods used in electrical eng
 | **Superposition** | Multiple source analysis |
 | **Thévenin/Norton** | Circuit simplification, load analysis |
 | **Maximum Power Transfer** | Optimization problems |
-| **Mesh Analysis** | Loop-based manual solving |
+| **Mesh Analysis** | Path-based manual solving |
 | **Node Analysis** | Node-based manual solving |
 
 **CircuiTry3D Implementation:**

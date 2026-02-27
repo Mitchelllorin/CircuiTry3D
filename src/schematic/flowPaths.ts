@@ -193,7 +193,7 @@ export function buildFlowPathsFromElements(elements: SchematicElement[], standar
 
     const current = [...item.path];
     // Greedily extend in both directions as long as possible.
-    // (This tends to reconstruct the intended loop rails / branches.)
+    // (This tends to reconstruct the intended circuit rails / branches.)
     while (tryExtend(current, "forward")) {
       // keep extending
     }

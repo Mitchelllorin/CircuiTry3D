@@ -69,7 +69,7 @@ export type LegacyCircuitState = {
     /** null when open/infinite resistance */
     resistance: number | null;
     power: number;
-    /** True when the legacy flow engine reports a complete closed loop. */
+    /** True when the legacy flow engine reports a complete closed circuit. */
     isComplete: boolean;
     /** Diagnostic reason when incomplete (e.g. 'no-battery', 'no-wires'). */
     reason?: string;

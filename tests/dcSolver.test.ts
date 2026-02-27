@@ -3,7 +3,7 @@ import { solveDCCircuit } from "../src/sim/dcSolver";
 import type { SchematicElement } from "../src/schematic/types";
 
 describe("DC solver (Kirchhoff + Ohm)", () => {
-  it("solves a simple series loop and returns consistent direction", () => {
+  it("solves a simple series circuit and returns consistent direction", () => {
     const elements: SchematicElement[] = [
       // Battery: start = negative, end = positive (per threeFactory battery build)
       { id: "bat1", kind: "battery", label: "10V", start: { x: 0, z: 0 }, end: { x: 0, z: 2 }, orientation: "vertical" },
@@ -31,7 +31,7 @@ describe("DC solver (Kirchhoff + Ohm)", () => {
     expect(Math.abs(Math.abs(bot!.amps) - 2)).toBeLessThan(1e-6);
   });
 
-  it("returns ~0A for an open circuit (no closed conductive loop)", () => {
+  it("returns ~0A for an open circuit (no complete conductive path)", () => {
     const elements: SchematicElement[] = [
       { id: "bat1", kind: "battery", label: "9V", start: { x: 0, z: 0 }, end: { x: 0, z: 2 }, orientation: "vertical" },
       // Resistor not connected back to battery

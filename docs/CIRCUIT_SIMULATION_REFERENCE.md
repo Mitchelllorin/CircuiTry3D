@@ -64,7 +64,7 @@ This is what prevents “current flow in open circuits”: if there is no closed
 
 ### Kirchhoff’s Voltage Law (KVL)
 
-Around any closed loop, the algebraic sum of voltage changes is zero:
+Around any closed path, the algebraic sum of voltage changes is zero:
 
 \[
 \sum_k \Delta V_k = 0

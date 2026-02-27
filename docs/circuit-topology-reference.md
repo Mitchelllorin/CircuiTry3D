@@ -47,7 +47,7 @@ rightCount = componentCount - topCount - bottomCount
 ---
 
 ### Series Circuits
-- A single conductive loop shared by every component; no branching nodes.
+- A single conductive path shared by every component; no branching nodes.
 - All components experience identical current, so the diagram emphasises one continuous path.
 - Standard IEC/IEEE symbology uses zigzag resistors, open/closed switch symbols, and battery plates of unequal length to mark polarity (shorter line = negative).
 

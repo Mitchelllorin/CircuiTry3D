@@ -21,7 +21,7 @@ describe("isTroubleshootingDiagnosisCorrect", () => {
   it("accepts missing-wire diagnoses", () => {
     const problem = getProblem("ts_missing_wire");
     expect(
-      isTroubleshootingDiagnosisCorrect(problem, "The loop has a missing wire return path."),
+      isTroubleshootingDiagnosisCorrect(problem, "The circuit has a missing wire return path."),
     ).toBe(true);
   });
 

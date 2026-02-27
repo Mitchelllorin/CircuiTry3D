@@ -379,7 +379,7 @@ export class CurrentFlowAnimationSystem {
   }
 
   /**
-   * Set whether the circuit is closed (complete loop with power source)
+   * Set whether the circuit is closed (complete circuit with power source)
    * Animation only runs when circuit is closed
    */
   public setCircuitClosed(closed: boolean): void {

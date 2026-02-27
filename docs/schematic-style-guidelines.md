@@ -134,10 +134,10 @@ import { SCHEMATIC_COLORS, STROKE_WIDTHS, RESISTOR_SPECS, formatResistance } fro
 ### Circuit Layout Standards
 
 #### Series Circuit
-- Single continuous loop with no branching nodes.
+- Single continuous path with no branching nodes.
 - All components connected end-to-end in one path.
 - Current flows through each component sequentially.
-- Layout: rectangular loop with battery on one side, components distributed along the path.
+- Layout: rectangular path with battery on one side, components distributed along the path.
 
 #### Parallel Circuit
 - Two common nodes (supply rail and return rail).
