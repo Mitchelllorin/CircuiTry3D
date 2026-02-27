@@ -93,8 +93,6 @@ type WorkspacePanelMode =
   | "wire-guide";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
-const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
-  "circuitry3d:onboarding:current-flow-payoff:v1";
 
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
@@ -1893,7 +1891,7 @@ export default function Builder() {
       setCurrentFlowPayoffRunning(true);
 
       if (reloadPreset) {
-        triggerBuilderAction("load-preset", { preset: "series_basic" });
+        triggerBuilderAction("load-preset", { preset: "welcome_demo" });
       }
 
       const primaryTimer = window.setTimeout(() => {
@@ -1941,24 +1939,6 @@ export default function Builder() {
     }
 
     firstRunPayoffTriggeredRef.current = true;
-
-    let hasSeenPayoff = false;
-    try {
-      hasSeenPayoff =
-        window.localStorage.getItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY) === "seen";
-    } catch {
-      hasSeenPayoff = false;
-    }
-
-    if (hasSeenPayoff) {
-      return;
-    }
-
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
-    }
 
     setBottomMenuOpen(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
@@ -2565,18 +2545,18 @@ export default function Builder() {
 
       {shouldShowCurrentFlowPayoffBanner && (
         <section className="current-flow-payoff-banner" role="status" aria-live="polite">
-          <div className="current-flow-payoff-kicker">Electricity in motion</div>
+          <div className="current-flow-payoff-kicker">⚡ Welcome to CircuiTry3D — Electricity Illuminated</div>
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
-              ? "Current is flowing in 3D right now."
-              : "Load a closed loop to watch current flow instantly."}
+              ? "Live current is flowing through your circuit right now."
+              : "Close the loop to watch current come alive in 3D."}
           </h2>
           <p className="current-flow-payoff-text">
-            This is the core experience: virtual electricity moving through a
-            complete circuit.{" "}
-            {isCurrentFlowSolid
-              ? "Conventional current view is active (positive -> negative)."
-              : "Electron flow view is active (negative -> positive)."}
+            The battery is the electron pump — it creates a voltage difference that pushes current through the switch, resistor, and LED.{" "}
+            {currentFlowPayoffVolts > 0 && currentFlowPayoffAmps > 0
+              ? `At ${currentFlowPayoffVolts.toFixed(0)} V with ${(currentFlowPayoffVolts / currentFlowPayoffAmps).toFixed(0)} Ω total resistance, Ohm's Law gives I = V ÷ R ≈ ${currentFlowPayoffAmps.toFixed(3)} A.`
+              : "Apply Ohm's Law (I = V ÷ R) to find the current, then watch it animate in real time."}{" "}
+            Orbit with left-drag, pan with right-drag, and zoom with the scroll wheel.
           </p>
           <div className="current-flow-payoff-metrics">
             <span className="current-flow-payoff-metric">
