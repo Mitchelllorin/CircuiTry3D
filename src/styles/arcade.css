@@ -828,3 +828,354 @@
     align-items: stretch;
   }
 }
+
+/* ============================================================
+   Shared arcade controller  (D-pad + A/B)
+   ============================================================ */
+.arcade-controller {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* 2×2 grid: A = top-right, B = bottom-left  (Gameboy diagonal) */
+.arcade-ab-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 6px;
+}
+
+.arcade-btn-a,
+.arcade-btn-b {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4);
+  transition: background 0.08s ease, box-shadow 0.08s ease, transform 0.08s ease;
+}
+
+/* A = red (primary / attack / boost) */
+.arcade-btn-a {
+  background: radial-gradient(circle at 38% 32%, #f87171, #b91c1c);
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* B = grey-charcoal (secondary / shield / brake) */
+.arcade-btn-b {
+  background: radial-gradient(circle at 38% 32%, #9ca3af, #374151);
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.arcade-btn-a:hover:not(:disabled) {
+  background: radial-gradient(circle at 38% 32%, #fca5a5, #dc2626);
+}
+
+.arcade-btn-b:hover:not(:disabled) {
+  background: radial-gradient(circle at 38% 32%, #d1d5db, #4b5563);
+}
+
+.arcade-btn-a:active:not(:disabled),
+.arcade-btn-b:active:not(:disabled) {
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.5);
+  transform: scale(0.94);
+}
+
+.arcade-btn-a:disabled,
+.arcade-btn-b:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Shared game section wrapper  (mirrors .retro-maze)
+   ============================================================ */
+.retro-game {
+  display: grid;
+  gap: 16px;
+}
+
+/* ============================================================
+   Ohm's Racer  — race track
+   ============================================================ */
+.race-track-frame {
+  position: relative;
+  border-radius: 16px;
+  padding: 10px;
+  border: 1px solid rgba(95, 163, 248, 0.38);
+  background: radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.36), rgba(5, 10, 26, 0.95) 56%);
+  overflow: hidden;
+}
+
+.race-track-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.025) 0,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+.race-track {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  width: min(100%, 480px);
+  margin: 0 auto;
+}
+
+.race-row {
+  display: grid;
+  grid-template-columns: 18px 1fr 1fr 1fr 18px;
+  gap: 2px;
+  height: 36px;
+}
+
+.race-border {
+  background: linear-gradient(180deg, rgba(40, 98, 182, 0.85), rgba(26, 61, 128, 0.95));
+  border-radius: 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(177, 224, 255, 0.22),
+    inset 0 -1px 0 rgba(6, 20, 49, 0.5);
+}
+
+.race-cell {
+  background: rgba(3, 8, 24, 0.9);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: rgba(220, 238, 255, 0.9);
+  min-width: 0;
+}
+
+.race-cell.is-player {
+  background: rgba(30, 80, 160, 0.6);
+  color: #fcd34d;
+  font-size: 0.9rem;
+}
+
+.race-cell.is-obstacle {
+  color: #f87171;
+}
+
+.race-cell.is-pickup {
+  color: #fcd34d;
+  text-shadow: 0 0 8px rgba(252, 211, 77, 0.8);
+}
+
+/* ============================================================
+   Volt Fighter  — fight arena
+   ============================================================ */
+.fight-hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fight-hp-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fight-hp-section-enemy {
+  flex-direction: row-reverse;
+}
+
+.fight-hp-name {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(196, 228, 255, 0.85);
+  white-space: nowrap;
+}
+
+.fight-hp-track {
+  flex: 1;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(8, 20, 40, 0.85);
+  border: 1px solid rgba(110, 180, 255, 0.22);
+  overflow: hidden;
+}
+
+.fight-hp-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.12s ease;
+}
+
+.fight-hp-fill-player {
+  background: linear-gradient(90deg, #fcd34d, #f59e0b);
+}
+
+.fight-hp-fill-enemy {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+  margin-left: auto;
+}
+
+.fight-hp-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #e8f6ff;
+  min-width: 2ch;
+  text-align: center;
+}
+
+.fight-vs {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(200, 228, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.fight-arena {
+  position: relative;
+  width: 100%;
+  height: 130px;
+  border-radius: 14px;
+  border: 1px solid rgba(95, 163, 248, 0.3);
+  background: radial-gradient(circle at 50% 120%, rgba(30, 80, 160, 0.3), rgba(5, 10, 26, 0.95) 60%);
+  overflow: hidden;
+}
+
+.fight-platform {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 18px;
+  background: linear-gradient(180deg, rgba(40, 98, 182, 0.7), rgba(20, 50, 110, 0.9));
+  border-top: 2px solid rgba(120, 190, 255, 0.3);
+}
+
+.fight-sprite {
+  position: absolute;
+  bottom: 18px;
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: left 0.06s ease;
+  user-select: none;
+}
+
+.fight-sprite-icon {
+  font-size: 1.7rem;
+  line-height: 1;
+  transition: transform 0.08s ease;
+}
+
+.fight-sprite-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(200, 228, 255, 0.7);
+}
+
+.fight-shield {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.fight-sprite.hurt .fight-sprite-icon {
+  transform: rotate(-20deg) scale(0.85);
+  filter: brightness(2) saturate(0.5);
+}
+
+.fight-sprite.blocking .fight-sprite-icon {
+  transform: scale(0.9);
+  filter: brightness(0.7);
+}
+
+/* ============================================================
+   Circuit Lab Notes  — facts panel
+   ============================================================ */
+.arcade-facts-panel {
+  border-color: rgba(252, 211, 77, 0.22);
+}
+
+.arcade-facts-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: rgba(200, 228, 255, 0.75);
+}
+
+.arcade-facts-nav button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 190, 255, 0.3);
+  background: rgba(14, 34, 65, 0.85);
+  color: #e0f2ff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.arcade-facts-nav button:hover,
+.arcade-facts-nav button:focus-visible {
+  background: rgba(26, 58, 108, 0.95);
+  border-color: rgba(178, 220, 255, 0.65);
+  outline: none;
+}
+
+.arcade-fact-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(8, 20, 44, 0.75);
+  border: 1px solid rgba(252, 211, 77, 0.15);
+}
+
+.arcade-fact-text {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  color: #f8fbff;
+}
+
+.arcade-fact-tip {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(196, 228, 255, 0.78);
+  border-left: 2px solid rgba(252, 211, 77, 0.45);
+  padding-left: 12px;
+}
