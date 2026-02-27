@@ -100,6 +100,7 @@ export default function Arcade() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [tipIndex, setTipIndex] = useState(0);
+  const [activeGame, setActiveGame] = useState<"maze" | "racer" | "fighter">("maze");
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -264,47 +265,46 @@ export default function Arcade() {
         </div>
       </header>
 
-      <section className="arcade-panel">
+      {/* ── Unified Arcade Cabinet ── */}
+      <section className="arcade-panel arcade-cabinet-panel">
         <div className="arcade-panel-header">
           <div>
             <h2>Retro Arcade Cabinet</h2>
-            <p>
-              Circuit Chase &#39;84 brings a Pac-Man-inspired 2D/3D maze run to
-              Circuitry 3D Arcade.
-            </p>
+            <p>Pick a game title, then play in the screen below.</p>
           </div>
         </div>
-        <RetroCircuitMaze />
-      </section>
 
-      {/* ── Ohm's Racer ── */}
-      <section className="arcade-panel">
-        <div className="arcade-panel-header">
-          <div>
-            <h2>Ohm&#39;s Racer &#39;85</h2>
-            <p>
-              A top-down circuit-board racer inspired by early arcade driving
-              classics. Steer your electron through three lanes, dodge components,
-              and hit the boost to reach 600 points.
-            </p>
-          </div>
+        {/* Game title selector */}
+        <div className="arcade-game-selector" role="group" aria-label="Choose game">
+          <button
+            type="button"
+            className={activeGame === "maze" ? "is-active" : ""}
+            onClick={() => setActiveGame("maze")}
+          >
+            Circuit Chase &#39;84
+          </button>
+          <button
+            type="button"
+            className={activeGame === "racer" ? "is-active" : ""}
+            onClick={() => setActiveGame("racer")}
+          >
+            Ohm&#39;s Racer &#39;85
+          </button>
+          <button
+            type="button"
+            className={activeGame === "fighter" ? "is-active" : ""}
+            onClick={() => setActiveGame("fighter")}
+          >
+            Volt Fighter &#39;87
+          </button>
         </div>
-        <OhmsRacer />
-      </section>
 
-      {/* ── Volt Fighter ── */}
-      <section className="arcade-panel">
-        <div className="arcade-panel-header">
-          <div>
-            <h2>Volt Fighter &#39;87</h2>
-            <p>
-              A Street Fighter-style one-on-one brawler with a circuit twist.
-              Face off against Resistor Ryu, Capacitor Ken, and Diode Dan — zap,
-              shield, and outmaneuver to win!
-            </p>
-          </div>
+        {/* Game screen */}
+        <div className="arcade-cabinet-screen">
+          {activeGame === "maze" && <RetroCircuitMaze />}
+          {activeGame === "racer" && <OhmsRacer />}
+          {activeGame === "fighter" && <VoltFighter />}
         </div>
-        <VoltFighter />
       </section>
 
       {/* ── Circuit Lab Notes (rotating educational facts) ── */}

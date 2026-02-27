@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import ArcadeController from "./ArcadeController";
 import type { ArcadeDirection } from "./ArcadeController";
 
-const FIGHT_TICK_MS = 80;
+const FIGHT_TICK_MS = 140;
 const AI_INTERVAL = 8;
 const PLAYER_MOVE = 6;
 const ENEMY_MOVE = 4;

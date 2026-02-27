@@ -4,8 +4,8 @@ import type { ArcadeDirection } from "./ArcadeController";
 
 const LANES = 3;
 const TRACK_ROWS = 10;
-const RACE_TICK_MS = 155;
-const BOOST_TICK_MS = 80;
+const RACE_TICK_MS = 230;
+const BOOST_TICK_MS = 120;
 const BOOST_DURATION = 22;
 const WIN_SCORE = 600;
 const STARTING_LIVES = 3;

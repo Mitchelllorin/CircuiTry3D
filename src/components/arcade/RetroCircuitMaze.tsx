@@ -67,7 +67,7 @@ const DOT_SCORE = 10;
 const POWER_SCORE = 60;
 const GHOST_SCORE = 200;
 const POWER_TICKS = 42;
-const TICK_MS = 180;
+const TICK_MS = 260;
 
 const GHOST_TEMPLATES: GhostTemplate[] = [
   { id: "ghost-cyan", startX: 13, startY: 1, direction: "left", tone: "cyan" },
