@@ -119,20 +119,35 @@ body.builder-body .arena-page {
   font-family: var(--arena-font-display);
   font-size: clamp(1.4rem, 4vw, 2rem);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, var(--arena-neon-cyan) 0%, var(--arena-neon-green) 50%, var(--arena-neon-cyan) 100%);
-  background-size: 200% 200%;
+  background: linear-gradient(
+    160deg,
+    #607898 0%,
+    #a8c4dc 12%,
+    #d8eeff 22%,
+    #ffffff 30%,
+    #c0d8f0 38%,
+    #8098b8 50%,
+    #b8d0e8 62%,
+    #e8f6ff 72%,
+    #ffffff 78%,
+    #a0c0d8 88%,
+    #6888a8 100%
+  );
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: arena-title-shimmer 4s ease-in-out infinite;
+  animation: steel-gleam 3.5s ease-in-out infinite;
   text-shadow: none;
+  filter: drop-shadow(0 2px 8px rgba(160, 200, 255, 0.35));
 }
 
-@keyframes arena-title-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+@keyframes steel-gleam {
+  0%   { background-position: 100% 0%; }
+  50%  { background-position: 0% 100%; }
+  100% { background-position: 100% 0%; }
 }
 
 .arena-title-group p {

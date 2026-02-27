@@ -2466,28 +2466,29 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     <div
       className={`arena-page${isEmbedded ? " arena-page--embedded" : ""}${isWorkspace ? " arena-page--workspace" : ""}`}
     >
-      <header className="arena-header">
-        <div className="arena-header-left">
-          {!isEmbedded && !isWorkspace && (
-            <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
-              ← Back
-            </button>
-          )}
-          <WordMark size="md" decorative />
-          <div className="arena-title-group">
-            <h1>Component Arena</h1>
-            <p>Test and compare components side-by-side</p>
+      {!isEmbedded && (
+        <header className="arena-header">
+          <div className="arena-header-left">
+            {!isWorkspace && (
+              <button className="arena-btn ghost" type="button" onClick={handleBackClick}>
+                ← Back
+              </button>
+            )}
+            <WordMark size="md" decorative />
+            <div className="arena-title-group">
+              <h1>Component Arena</h1>
+              <p>Test and compare components side-by-side</p>
+            </div>
           </div>
-        </div>
-        <div className="arena-header-right">
-          {showOpenBuilderButton ? (
-            <button className="arena-btn outline" type="button" onClick={handleOpenBuilderClick}>
-              Open Builder
-            </button>
-          ) : null}
-        </div>
-      </header>
-
+          <div className="arena-header-right">
+            {showOpenBuilderButton ? (
+              <button className="arena-btn outline" type="button" onClick={handleOpenBuilderClick}>
+                Open Builder
+              </button>
+            ) : null}
+          </div>
+        </header>
+      )}
       <div className={`arena-body${isWorkspace ? " arena-body--workspace-split" : ""}`}>
 
         <section className="arena-import-section">

@@ -8,6 +8,7 @@ type WorkspaceModePanelProps = {
   isOpen: boolean;
   onToggle: () => void;
   children: ReactNode;
+  className?: string;
 };
 
 export function WorkspaceModePanel({
@@ -16,9 +17,10 @@ export function WorkspaceModePanel({
   isOpen,
   onToggle,
   children,
+  className,
 }: WorkspaceModePanelProps) {
   return (
-    <div className={`workspace-mode-panel${isOpen ? " open" : ""}`}>
+    <div className={`workspace-mode-panel${isOpen ? " open" : ""}${className ? ` ${className}` : ""}`}>
       <div className="workspace-mode-panel-header">
         <div className="workspace-mode-panel-brand" aria-hidden="true">
           <WordMark size="sm" decorative />

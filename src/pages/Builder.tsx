@@ -2341,8 +2341,8 @@ export default function Builder() {
     switch (activeWorkspacePanelMode) {
       case "arena":
         return {
-          title: "Arena",
-          subtitle: "Component testing and advanced simulation",
+          title: "Component Arena",
+          subtitle: arenaStatusMessage,
         };
       case "wire-guide":
         return {
@@ -2379,19 +2379,12 @@ export default function Builder() {
       default:
         return null;
     }
-  }, [activeWireProfile, activeWireSegmentResistance, activeWorkspacePanelMode]);
+  }, [activeWireProfile, activeWireSegmentResistance, activeWorkspacePanelMode, arenaStatusMessage]);
 
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        return (
-          <>
-            <div className="workspace-mode-panel-arena-status" role="status">
-              {arenaStatusMessage}
-            </div>
-            <ArenaView variant="embedded" />
-          </>
-        );
+        return <ArenaView variant="embedded" />;
       case "wire-guide":
         return (
           <WireLibrary
@@ -2430,7 +2423,6 @@ export default function Builder() {
   }, [
     activeWireProfile,
     activeWorkspacePanelMode,
-    arenaStatusMessage,
     handleApplyWireProfile,
     handleClearWireProfile,
     liveWireMetricsSnapshot.current,
@@ -3282,6 +3274,7 @@ export default function Builder() {
           subtitle={workspacePanelMeta.subtitle}
           isOpen={isWorkspacePanelOpen}
           onToggle={() => setWorkspacePanelOpen((open) => !open)}
+          className={activeWorkspacePanelMode === "arena" ? "workspace-mode-panel--arena" : undefined}
         >
           {workspacePanelContent}
         </WorkspaceModePanel>

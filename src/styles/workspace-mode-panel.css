@@ -79,15 +79,50 @@
   padding: 0;
 }
 
-.workspace-mode-panel-arena-status {
-  margin: 14px 16px 0;
-  border-radius: 10px;
-  border: 1px solid rgba(136, 204, 255, 0.24);
-  background: rgba(12, 30, 58, 0.72);
-  color: rgba(214, 238, 255, 0.88);
-  padding: 10px 12px;
-  font-size: 12px;
+/* ── Arena mode: steel sword styling on the title ── */
+.workspace-mode-panel--arena .toggle-label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: linear-gradient(
+    160deg,
+    #607898 0%,
+    #a8c4dc 12%,
+    #d8eeff 22%,
+    #ffffff 30%,
+    #c0d8f0 38%,
+    #8098b8 50%,
+    #b8d0e8 62%,
+    #e8f6ff 72%,
+    #ffffff 78%,
+    #a0c0d8 88%,
+    #6888a8 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: panel-steel-gleam 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 1px 4px rgba(160, 200, 255, 0.3));
 }
+
+@keyframes panel-steel-gleam {
+  0%   { background-position: 100% 0%; }
+  50%  { background-position: 0% 100%; }
+  100% { background-position: 100% 0%; }
+}
+
+.workspace-mode-panel--arena .workspace-mode-panel-subtitle {
+  font-size: 10px;
+  color: rgba(160, 200, 255, 0.7);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: min(280px, 35vw);
+}
+
 
 .workspace-mode-panel-content .arcade-page,
 .workspace-mode-panel-content .classroom-page,
