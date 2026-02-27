@@ -7,7 +7,9 @@ export type TroubleshootingProblem = {
     | "switchOpenRect"
     | "missingWireRect"
     | "shortCircuitRect"
-    | "reversedLedRect";
+    | "reversedLedRect"
+    | "parallelOpenBranch"
+    | "comboOpenBranch";
   hints?: string[];
   diagnosis?: {
     placeholder?: string;
@@ -215,6 +217,67 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
         ["led", "reversed"],
         ["led", "backwards"],
         ["polarity", "mismatch"],
+      ],
+    },
+    success: { kind: "has-flow" },
+  },
+  {
+    id: "ts_parallel_open_branch",
+    title: "Troubleshoot: Parallel Open Branch",
+    prompt:
+      "This parallel circuit has two branches (R1 and R2) across a shared voltage source. Current flows only through R1 — R2's branch is open and carries no current. Locate the broken connection and complete R2's branch so both paths carry current.",
+    preset: "troubleshoot_parallel_open",
+    diagram: "parallelOpenBranch",
+    hints: [
+      "In a parallel circuit each branch has its own independent path from + to −.",
+      "R1 works, so the top rail and battery are fine. Focus on R2's bottom return connection.",
+      "A complete parallel branch needs a wire from the resistor all the way back to the − terminal.",
+    ],
+    diagnosis: {
+      placeholder: "Example: R2 branch is open — the return wire is missing.",
+      acceptedAnswers: [
+        "open branch",
+        "open r2 branch",
+        "r2 open",
+        "missing branch wire",
+        "broken branch",
+        "open parallel branch",
+      ],
+      keywordGroups: [
+        ["open", "branch"],
+        ["r2", "open"],
+        ["missing", "wire"],
+      ],
+    },
+    success: { kind: "has-flow" },
+  },
+  {
+    id: "ts_combo_open_branch",
+    title: "Troubleshoot: Combination Circuit — Open Parallel Branch",
+    prompt:
+      "This combination circuit has R1 in series followed by a parallel section (R2 ∥ R3). R3's branch is open — its return path is disconnected. The circuit still passes current through R2, but the total current is lower than expected and R3 dissipates no power. Identify the fault and restore the missing connection.",
+    preset: "troubleshoot_combo_open",
+    diagram: "comboOpenBranch",
+    hints: [
+      "Simplify: collapse the parallel section first. R2 carries current, R3 does not — one branch is open.",
+      "In a combination circuit, check each parallel branch independently before looking at the series elements.",
+      "Restore R3's bottom return wire to complete both parallel paths, then re-solve using the W.I.R.E. method.",
+    ],
+    diagnosis: {
+      placeholder: "Example: R3 branch is open — the parallel return path is disconnected.",
+      acceptedAnswers: [
+        "open r3 branch",
+        "r3 open",
+        "r3 disconnected",
+        "open parallel branch",
+        "missing r3 return",
+        "broken r3 branch",
+      ],
+      keywordGroups: [
+        ["r3", "open"],
+        ["r3", "disconnected"],
+        ["open", "branch"],
+        ["parallel", "open"],
       ],
     },
     success: { kind: "has-flow" },

@@ -39,6 +39,41 @@ describe("isTroubleshootingDiagnosisCorrect", () => {
     ).toBe(true);
   });
 
+  it("accepts parallel open-branch diagnoses", () => {
+    const problem = getProblem("ts_parallel_open_branch");
+    expect(
+      isTroubleshootingDiagnosisCorrect(problem, "The R2 branch is open — missing wire."),
+    ).toBe(true);
+  });
+
+  it("accepts parallel open-branch diagnoses with 'open branch' phrasing", () => {
+    const problem = getProblem("ts_parallel_open_branch");
+    expect(
+      isTroubleshootingDiagnosisCorrect(problem, "There is an open parallel branch."),
+    ).toBe(true);
+  });
+
+  it("accepts combination open-branch diagnoses (R3)", () => {
+    const problem = getProblem("ts_combo_open_branch");
+    expect(
+      isTroubleshootingDiagnosisCorrect(problem, "R3 is open — the branch is disconnected."),
+    ).toBe(true);
+  });
+
+  it("accepts combination open-branch diagnoses with 'parallel open' phrasing", () => {
+    const problem = getProblem("ts_combo_open_branch");
+    expect(
+      isTroubleshootingDiagnosisCorrect(problem, "The parallel branch is open."),
+    ).toBe(true);
+  });
+
+  it("rejects unrelated diagnoses for parallel open-branch", () => {
+    const problem = getProblem("ts_parallel_open_branch");
+    expect(
+      isTroubleshootingDiagnosisCorrect(problem, "The switch is open."),
+    ).toBe(false);
+  });
+
   it("rejects unrelated diagnoses", () => {
     const problem = getProblem("ts_short_circuit");
     expect(

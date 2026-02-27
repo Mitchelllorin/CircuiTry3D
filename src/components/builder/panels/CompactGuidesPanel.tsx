@@ -113,17 +113,29 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
   "wire-guide": {
     label: "W.I.R.E. Guide",
     description:
-      "Use this checklist to solve one circuit at a time without guessing: capture known values, pick a formula, solve, then verify.",
+      "Use this checklist to solve one circuit at a time without guessing: identify the circuit type, capture known values, pick a formula, solve, then verify.",
     completionSummary:
       "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check loop on new circuits.",
     workspaceSyncCopy:
       "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
       {
+        id: "wire-identify-circuit-type",
+        title: "Identify the circuit type",
+        detail:
+          "Determine if the circuit is series (one path), parallel (branched paths with junction nodes), or combination (series and parallel together). For parallel/combination circuits, sketch the branches and mark each junction node — this is how textbooks show it and how you start the W.I.R.E. process.",
+      },
+      {
+        id: "wire-collapse-parallel",
+        title: "Collapse parallel branches to equivalent series",
+        detail:
+          "For parallel or combination circuits: calculate each parallel branch's equivalent resistance first (R_eq = 1/(1/R_a + 1/R_b)). Replace the whole parallel section with that single equivalent resistor. Now the circuit looks like a simple series loop — solve it using R_T = R_1 + R_2 + … .",
+      },
+      {
         id: "wire-identify-knowns",
         title: "Capture known values first",
         detail:
-          "Write down any known W, I, R, or E values from the circuit before choosing a formula.",
+          "Write down any known W, I, R, or E values from the (now simplified) circuit before choosing a formula.",
       },
       {
         id: "wire-select-formula",
@@ -135,7 +147,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "wire-verify-totals",
         title: "Solve and label units",
         detail:
-          "Record the answer with units (W, A, ohm, V) so worksheet rows stay clear and easy to check.",
+          "Record the answer with units (W, A, ohm, V) so worksheet rows stay clear and easy to check. For combination circuits, work back through the branches to find individual component voltages and currents.",
       },
       {
         id: "wire-open-practice",
