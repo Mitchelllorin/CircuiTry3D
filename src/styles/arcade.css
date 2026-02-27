@@ -1062,22 +1062,31 @@
   border-radius: 16px;
   padding: 10px;
   border: 1px solid rgba(95, 163, 248, 0.38);
-  background: radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.36), rgba(5, 10, 26, 0.95) 56%);
+  background: #0b0c10;
   overflow: hidden;
 }
 
 .race-track-frame::after {
   content: "";
+  /* inset starts 2px above the pattern height so the first stripe is never clipped */
   position: absolute;
-  inset: 0;
+  inset: -48px 0 0 0;
   pointer-events: none;
+  z-index: 2;
+  /* stripe repeats every 46px — animation translateY matches that value */
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.025) 0,
-    rgba(255, 255, 255, 0.025) 1px,
+    rgba(255, 255, 255, 0.028) 0,
+    rgba(255, 255, 255, 0.028) 1px,
     transparent 1px,
-    transparent 5px
+    transparent 46px
   );
+  animation: road-scan 0.55s linear infinite;
+}
+
+@keyframes road-scan {
+  from { transform: translateY(0); }
+  to   { transform: translateY(46px); }
 }
 
 .race-track {
@@ -1097,15 +1106,18 @@
 }
 
 .race-border {
-  background: linear-gradient(180deg, rgba(40, 98, 182, 0.85), rgba(26, 61, 128, 0.95));
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(220, 50, 50, 0.92) 0px,
+    rgba(220, 50, 50, 0.92) 8px,
+    rgba(235, 235, 235, 0.88) 8px,
+    rgba(235, 235, 235, 0.88) 16px
+  );
   border-radius: 3px;
-  box-shadow:
-    inset 0 1px 0 rgba(177, 224, 255, 0.22),
-    inset 0 -1px 0 rgba(6, 20, 49, 0.5);
 }
 
 .race-cell {
-  background: rgba(3, 8, 24, 0.9);
+  background: #0d0f16;
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -1113,13 +1125,47 @@
   font-size: 1rem;
   color: rgba(220, 238, 255, 0.9);
   min-width: 0;
+  position: relative;
+}
+
+/* Dashed lane dividers between the 3 road lanes */
+.race-row > .race-cell:nth-child(2),
+.race-row > .race-cell:nth-child(3) {
+  border-right: 2px dashed rgba(255, 220, 50, 0.18);
+}
+
+/* Player car — rotated so emoji faces up the road */
+.race-player-car {
+  display: inline-block;
+  transform: rotate(-90deg);
+  font-size: 1.3rem;
+  filter: drop-shadow(0 0 5px rgba(254, 240, 138, 0.9));
+}
+
+/* Laser beam — neon vertical line firing upward */
+.race-cell.is-laser::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 100%;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 220, 255, 0.12),
+    rgba(0, 220, 255, 0.95),
+    rgba(0, 220, 255, 0.12)
+  );
+  box-shadow: 0 0 8px rgba(0, 220, 255, 0.9), 0 0 22px rgba(0, 220, 255, 0.35);
+  pointer-events: none;
+  z-index: 3;
 }
 
 .race-cell.is-player {
   background: radial-gradient(circle at 50% 40%, rgba(60, 120, 220, 0.65), rgba(20, 60, 130, 0.45));
   color: #fef08a;
   font-size: 1.1rem;
-  filter: drop-shadow(0 0 6px rgba(254, 240, 138, 0.85));
 }
 
 .race-cell.is-obstacle {
@@ -1211,8 +1257,13 @@
   border-radius: 14px;
   border: 1px solid rgba(95, 163, 248, 0.45);
   background:
-    radial-gradient(ellipse at 50% 110%, rgba(30, 80, 160, 0.48) 0%, transparent 62%),
-    linear-gradient(180deg, rgba(3, 8, 24, 0.98) 0%, rgba(6, 14, 38, 0.96) 100%);
+    radial-gradient(ellipse 34% 55% at 28% 0%, rgba(255, 210, 60, 0.07) 0%, transparent 100%),
+    radial-gradient(ellipse 34% 55% at 72% 0%, rgba(80, 160, 255, 0.07) 0%, transparent 100%),
+    radial-gradient(ellipse at 50% 108%, rgba(30, 80, 160, 0.5) 0%, transparent 62%),
+    linear-gradient(rgba(35, 90, 190, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(35, 90, 190, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(2, 6, 18, 0.99) 0%, rgba(6, 14, 38, 0.97) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 24px 24px, 100% 100%;
   box-shadow: inset 0 -4px 28px rgba(30, 80, 160, 0.22);
   overflow: hidden;
 }
@@ -1223,8 +1274,14 @@
   left: 0;
   right: 0;
   height: 22px;
-  background: linear-gradient(180deg, rgba(30, 80, 180, 0.65), rgba(14, 40, 104, 0.92));
-  border-top: 2px solid rgba(100, 180, 255, 0.55);
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(18, 55, 140, 0.84) 0px,
+    rgba(18, 55, 140, 0.84) 28px,
+    rgba(10, 35, 96, 0.9) 28px,
+    rgba(10, 35, 96, 0.9) 56px
+  );
+  border-top: 2px solid rgba(100, 180, 255, 0.6);
   box-shadow: 0 -4px 18px rgba(80, 150, 255, 0.22);
 }
 
@@ -1264,11 +1321,35 @@
 .fight-sprite.hurt .fight-sprite-icon {
   transform: rotate(-20deg) scale(0.85);
   filter: brightness(2.2) saturate(0.4);
+  animation: fight-hurt-flash 0.1s ease-in-out 4;
+}
+
+@keyframes fight-hurt-flash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
 }
 
 .fight-sprite.blocking .fight-sprite-icon {
   transform: scale(0.88);
   filter: brightness(0.65) saturate(0.7);
+}
+
+/* Pop-up hit effect (💥 / ⛨ / 💀) at impact midpoint */
+.fight-attack-fx {
+  position: absolute;
+  bottom: 52px;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+  animation: fight-fx-pop 0.7s ease-out forwards;
+}
+
+@keyframes fight-fx-pop {
+  0%   { transform: translateX(-50%) scale(0.4) rotate(-12deg); opacity: 1; }
+  28%  { transform: translateX(-50%) scale(1.6) rotate(6deg);   opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-32px) scale(0.85) rotate(0deg); opacity: 0; }
 }
 
 .fight-sprite.idle .fight-sprite-icon {
@@ -1290,11 +1371,24 @@
     animation: none;
   }
 
+  .fight-sprite.hurt .fight-sprite-icon {
+    animation: none;
+  }
+
+  .fight-attack-fx {
+    animation: none;
+    opacity: 1;
+  }
+
   .retro-pellet.is-power {
     animation: none;
   }
 
   .retro-player {
+    animation: none;
+  }
+
+  .race-track-frame::after {
     animation: none;
   }
 }

@@ -15,6 +15,7 @@ const PLAYER_MIN_X = 8;
 const PLAYER_MAX_X = 52;
 const ENEMY_MIN_X = 48;
 const ENEMY_MAX_X = 85;
+const ATTACK_FX_MS = 700; // must match .fight-attack-fx animation duration (0.7s)
 
 type VoltStatus = "ready" | "running" | "won" | "lost";
 
@@ -33,6 +34,8 @@ type VoltState = {
   aiTicks: number;
   message: string;
   enemyIndex: number;
+  attackFx: { x: number; symbol: string; id: number } | null;
+  fxId: number;
 };
 
 const ENEMIES = [
@@ -60,6 +63,8 @@ function createFightState(status: VoltStatus, enemyIndex = 0): VoltState {
         ? `Press Start to challenge ${ENEMIES[enemyIndex].name}!`
         : `Fight! Defeat ${ENEMIES[enemyIndex].name}!`,
     enemyIndex,
+    attackFx: null,
+    fxId: 0,
   };
 }
 
@@ -101,6 +106,12 @@ function advanceFight(state: VoltState): VoltState {
             message: blocked
               ? `⛨ Blocked! Absorbed most damage. (${newHp} HP)`
               : `💥 Hit for ${dmg}! ${newHp} HP remaining`,
+            attackFx: {
+              x: (s.playerX + s.enemyX) / 2,
+              symbol: blocked ? "⛨" : "💥",
+              id: s.fxId + 1,
+            },
+            fxId: s.fxId + 1,
           };
         } else {
           const dir = s.playerX > s.enemyX ? 1 : -1;
@@ -176,6 +187,7 @@ export default function VoltFighter() {
       const dmg = blocked ? Math.floor(rawDmg * 0.2) : rawDmg;
       const newEnemyHp = Math.max(0, prev.enemyHp - dmg);
       const won = newEnemyHp <= 0;
+      const newFxId = prev.fxId + 1;
       return {
         ...prev,
         enemyHp: newEnemyHp,
@@ -186,6 +198,12 @@ export default function VoltFighter() {
             ? `${currentEnemy.name} blocked! Only ${dmg} damage. (${newEnemyHp} HP)`
             : `⚡ Zap! Dealt ${dmg} damage. (${newEnemyHp} HP left)`,
         status: won ? "won" : prev.status,
+        attackFx: {
+          x: (prev.playerX + prev.enemyX) / 2,
+          symbol: won ? "💀" : blocked ? "⛨" : "💥",
+          id: newFxId,
+        },
+        fxId: newFxId,
       };
     });
   }, []);
@@ -208,6 +226,14 @@ export default function VoltFighter() {
     }, FIGHT_TICK_MS);
     return () => window.clearInterval(tick);
   }, [fightState.status]);
+
+  useEffect(() => {
+    if (!fightState.attackFx) return;
+    const timer = setTimeout(() => {
+      setFightState((prev) => ({ ...prev, attackFx: null }));
+    }, ATTACK_FX_MS);
+    return () => clearTimeout(timer);
+  }, [fightState.attackFx]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -322,6 +348,17 @@ export default function VoltFighter() {
         </div>
 
         <div className="fight-platform" aria-hidden="true" />
+
+        {fightState.attackFx && (
+          <div
+            key={fightState.attackFx.id}
+            className="fight-attack-fx"
+            style={{ left: `${fightState.attackFx.x}%` }}
+            aria-hidden="true"
+          >
+            {fightState.attackFx.symbol}
+          </div>
+        )}
       </div>
 
       <p className="retro-maze-message">{fightState.message}</p>

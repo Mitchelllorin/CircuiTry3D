@@ -4,11 +4,14 @@ import type { ArcadeDirection } from "./ArcadeController";
 
 const LANES = 3;
 const TRACK_ROWS = 10;
-const RACE_TICK_MS = 230;
-const BOOST_TICK_MS = 120;
+const RACE_TICK_MS = 350;
+const BOOST_TICK_MS = 195;
 const BOOST_DURATION = 22;
 const WIN_SCORE = 600;
 const STARTING_LIVES = 3;
+const LASER_TICKS = 2;
+const LASER_COOLDOWN = 15;
+const PLAYER_SYMBOL = "🚗";
 
 type RaceStatus = "ready" | "running" | "won" | "gameover";
 
@@ -30,10 +33,13 @@ type RaceState = {
   distance: number;
   message: string;
   nextId: number;
+  laserLane: number | null;
+  laserTicks: number;
+  laserCooldown: number;
 };
 
-const OBSTACLE_SYMBOLS = ["⊗", "⊖", "⊕", "▬"];
-const PICKUP_SYMBOLS = ["⚡", "💡"];
+const OBSTACLE_SYMBOLS = ["🔴", "⛔", "🚧"];
+const PICKUP_SYMBOLS = ["⚡", "🔋"];
 
 function createRaceState(status: RaceStatus): RaceState {
   return {
@@ -47,8 +53,11 @@ function createRaceState(status: RaceStatus): RaceState {
     message:
       status === "ready"
         ? "Press Start to race the circuits!"
-        : "Dodge obstacles — grab power-ups!",
+        : "Dodge 🔴 hazards — grab ⚡🔋 pickups! (B = Laser)",
     nextId: 0,
+    laserLane: null,
+    laserTicks: 0,
+    laserCooldown: 0,
   };
 }
 
@@ -56,6 +65,9 @@ function advanceRace(state: RaceState): RaceState {
   if (state.status !== "running") return state;
 
   const boostTicks = Math.max(0, state.boostTicks - 1);
+  const laserTicks = Math.max(0, state.laserTicks - 1);
+  const laserCooldown = Math.max(0, state.laserCooldown - 1);
+  const laserLane = laserTicks > 0 ? state.laserLane : null;
   const distance = state.distance + 1;
   const scoreGain = boostTicks > 0 ? 2 : 1;
 
@@ -68,7 +80,7 @@ function advanceRace(state: RaceState): RaceState {
   let message =
     boostTicks > 0
       ? `⚡ Boost active! (${boostTicks} ticks)`
-      : "Dodge obstacles — grab power-ups!";
+      : "Dodge 🔴 hazards — grab ⚡🔋 pickups! (B = Laser)";
 
   const remaining: TrackObject[] = [];
   for (const obj of moved) {
@@ -77,7 +89,7 @@ function advanceRace(state: RaceState): RaceState {
         lives -= 1;
         message =
           lives > 0
-            ? `Short circuit! ${lives} ${lives === 1 ? "life" : "lives"} left.`
+            ? `💥 Hazard hit! ${lives} ${lives === 1 ? "life" : "lives"} left.`
             : "Circuit breaker! Game over.";
       } else {
         score += 50;
@@ -98,6 +110,9 @@ function advanceRace(state: RaceState): RaceState {
       message: "Circuit breaker! Game over.",
       distance,
       boostTicks: 0,
+      laserLane: null,
+      laserTicks: 0,
+      laserCooldown,
       nextId: state.nextId,
     };
   }
@@ -112,6 +127,9 @@ function advanceRace(state: RaceState): RaceState {
       message: `Lap complete! Score: ${score} — nicely driven! ⚡`,
       distance,
       boostTicks,
+      laserLane,
+      laserTicks,
+      laserCooldown,
       nextId: state.nextId,
     };
   }
@@ -143,7 +161,7 @@ function advanceRace(state: RaceState): RaceState {
     }
   }
 
-  return { ...state, objects: spawned, score, lives, boostTicks, distance, message, nextId };
+  return { ...state, objects: spawned, score, lives, boostTicks, laserLane, laserTicks, laserCooldown, distance, message, nextId };
 }
 
 export default function OhmsRacer() {
@@ -183,6 +201,35 @@ export default function OhmsRacer() {
     });
   }, []);
 
+  const handleLaser = useCallback(() => {
+    setRaceState((prev) => {
+      if (prev.status !== "running") return prev;
+      if (prev.laserCooldown > 0) {
+        return { ...prev, message: `🔄 Laser recharging… (${prev.laserCooldown} ticks)` };
+      }
+      const obstaclesInLane = prev.objects
+        .filter((obj) => obj.lane === prev.playerLane && obj.kind === "obstacle")
+        .sort((a, b) => a.row - b.row);
+      let objects = prev.objects;
+      let score = prev.score;
+      let message = "⚡ Laser fired!";
+      if (obstaclesInLane.length > 0) {
+        objects = prev.objects.filter((obj) => obj.id !== obstaclesInLane[0].id);
+        score += 15;
+        message = "🎯 Obstacle zapped! +15 pts";
+      }
+      return {
+        ...prev,
+        objects,
+        score,
+        message,
+        laserLane: prev.playerLane,
+        laserTicks: LASER_TICKS,
+        laserCooldown: LASER_COOLDOWN,
+      };
+    });
+  }, []);
+
   useEffect(() => {
     if (raceState.status !== "running") return;
     const ms = isBoosting ? BOOST_TICK_MS : RACE_TICK_MS;
@@ -209,31 +256,40 @@ export default function OhmsRacer() {
           }
           return createRaceState("running");
         });
+      } else if (e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        handleLaser();
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [handleDirection]);
+  }, [handleDirection, handleLaser]);
 
   const displayGrid = useMemo(() => {
     type CellKind = "empty" | "obstacle" | "pickup" | "player";
-    const grid: Array<Array<{ symbol: string; kind: CellKind }>> = Array.from(
+    const grid: Array<Array<{ symbol: string; kind: CellKind; isLaser: boolean }>> = Array.from(
       { length: TRACK_ROWS },
-      () => Array(LANES).fill(null).map(() => ({ symbol: "", kind: "empty" as CellKind })),
+      () => Array(LANES).fill(null).map(() => ({ symbol: "", kind: "empty" as CellKind, isLaser: false })),
     );
 
     for (const obj of raceState.objects) {
       if (obj.row >= 0 && obj.row < TRACK_ROWS) {
-        grid[obj.row][obj.lane] = { symbol: obj.symbol, kind: obj.kind };
+        grid[obj.row][obj.lane] = { symbol: obj.symbol, kind: obj.kind, isLaser: false };
       }
     }
 
     if (raceState.status === "running" || raceState.status === "ready") {
-      grid[TRACK_ROWS - 1][raceState.playerLane] = { symbol: "▶", kind: "player" };
+      grid[TRACK_ROWS - 1][raceState.playerLane] = { symbol: PLAYER_SYMBOL, kind: "player", isLaser: false };
+    }
+
+    if (raceState.laserLane !== null && raceState.laserTicks > 0) {
+      for (let row = 0; row < TRACK_ROWS - 1; row++) {
+        grid[row][raceState.laserLane] = { ...grid[row][raceState.laserLane], isLaser: true };
+      }
     }
 
     return grid;
-  }, [raceState.objects, raceState.playerLane, raceState.status]);
+  }, [raceState.objects, raceState.playerLane, raceState.status, raceState.laserLane, raceState.laserTicks]);
 
   const primaryLabel =
     raceState.status === "ready"
@@ -281,9 +337,17 @@ export default function OhmsRacer() {
               {row.map((cell, laneIdx) => (
                 <div
                   key={laneIdx}
-                  className={`race-cell${cell.kind === "player" ? " is-player" : ""}${cell.kind === "obstacle" ? " is-obstacle" : ""}${cell.kind === "pickup" ? " is-pickup" : ""}`}
+                  className={[
+                    "race-cell",
+                    cell.kind === "player" ? "is-player" : "",
+                    cell.kind === "obstacle" ? "is-obstacle" : "",
+                    cell.kind === "pickup" ? "is-pickup" : "",
+                    cell.isLaser ? "is-laser" : "",
+                  ].filter(Boolean).join(" ")}
                 >
-                  {cell.symbol}
+                  {cell.kind === "player" ? (
+                    <span className="race-player-car">{cell.symbol}</span>
+                  ) : cell.symbol}
                 </div>
               ))}
               <div className="race-border" />
@@ -300,14 +364,14 @@ export default function OhmsRacer() {
           onStart={raceState.status === "running" ? undefined : handleStart}
           onSelect={handleReset}
           onA={handleBoost}
-          onB={raceState.status === "running" ? undefined : handleReset}
-          labelA="A"
-          labelB="B"
+          onB={raceState.status === "running" ? handleLaser : handleReset}
+          labelA="BOOST"
+          labelB={raceState.laserCooldown > 0 ? "⚡…" : "LASER"}
         />
       </div>
 
       <p className="retro-maze-help">
-        Keyboard: ←/→ or A/D to steer · Space/Enter to boost.
+        Keyboard: ←/→ or A/D to steer · Space to boost · B to fire laser.
       </p>
     </section>
   );
