@@ -6682,6 +6682,13 @@ body.android-optimized.menu-visible .status {
             createWireSegments(path) {
                 this.wireGroup = new THREE.Group();
                 this.segments = [];
+
+                const wireMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xd2691e,
+                    shininess: 150,
+                    transparent: true,
+                    opacity: 0.9
+                });
                 
                 for (let i = 0; i < path.length - 1; i++) {
                     const segmentStart = path[i];
@@ -6691,14 +6698,7 @@ body.android-optimized.menu-visible .status {
                     if (distance > 0.1) {
                         const wireGeometry = new THREE.CylinderGeometry(0.08, 0.08, distance, isMobile ? 8 : 12);
                         
-                        const material = new THREE.MeshPhongMaterial({ 
-                            color: 0xd2691e,
-                            shininess: 150,
-                            transparent: true,
-                            opacity: 0.9
-                        });
-                        
-                        const segment = new THREE.Mesh(wireGeometry, material);
+                        const segment = new THREE.Mesh(wireGeometry, wireMaterial);
                         
                         // Position segment at midpoint
                         const midPoint = new THREE.Vector3().addVectors(segmentStart, segmentEnd).multiplyScalar(0.5);
@@ -6717,6 +6717,14 @@ body.android-optimized.menu-visible .status {
                             end: segmentEnd.clone()
                         });
                     }
+                }
+
+                // Add small spheres at interior corner joints to fill gaps between segments
+                for (let i = 1; i < path.length - 1; i++) {
+                    const jointGeometry = new THREE.SphereGeometry(0.08, isMobile ? 6 : 8, isMobile ? 4 : 6);
+                    const joint = new THREE.Mesh(jointGeometry, wireMaterial);
+                    joint.position.copy(path[i]);
+                    this.wireGroup.add(joint);
                 }
                 
                 this.wireGroup.userData = { wire: this };
