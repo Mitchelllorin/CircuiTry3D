@@ -181,7 +181,31 @@ export const CURRENT_FLOW_PHYSICS = {
    */
   RESISTANCE_LOG_RANGE: 4,          // log10 range (1Ω to 10kΩ) for full slowdown
   MAX_RESISTANCE_SLOWDOWN: 0.6,     // up to 60% slowdown at high resistance
-  RESISTANCE_SPEED_FLOOR: 0.35      // keep at least 35% of min visible speed
+  RESISTANCE_SPEED_FLOOR: 0.35,     // keep at least 35% of min visible speed
+
+  /**
+   * Scatter effect for resistor zones — electrons deflecting off atomic lattice sites
+   * like photons bouncing inside a mirror-lined cavity.
+   *
+   * MAX_SCATTER_AMPLITUDE: peak lateral displacement in scene-units at maximum resistance
+   * SCATTER_PRIMARY_FREQ:  primary oscillation frequency (Hz) — gives the main bounce cadence
+   * SCATTER_HARMONIC_FREQ: harmonic frequency — adds chaotic variation on top of the primary
+   * SCATTER_HARMONIC_RATIO: amplitude of the harmonic relative to the primary (0–1)
+   */
+  MAX_SCATTER_AMPLITUDE: 0.18,
+  SCATTER_PRIMARY_FREQ: 9.0,
+  SCATTER_HARMONIC_FREQ: 22.0,
+  SCATTER_HARMONIC_RATIO: 0.35,
+
+  /**
+   * Quantum thermal jitter — tiny stochastic displacement on every particle every frame.
+   * Simulates the real randomness of individual electron thermal motion around net drift.
+   * These are sine-based pseudo-random hash seeds (Wang/Blum hash style).
+   */
+  JITTER_RADIUS: 0.018,
+  JITTER_HASH_SEED_X: 127.1,
+  JITTER_HASH_SEED_Z: 269.5,
+  JITTER_HASH_MULTIPLIER: 43758.5453
 } as const;
 
 export type CurrentFlowParticle = {
@@ -205,6 +229,17 @@ export type CurrentFlowParticle = {
   usesGlobalCurrent: boolean;
   /** Optional resistance to slow this particle's speed */
   resistanceOhms?: number;
+  /**
+   * Scatter effect for resistor zones — electrons deflecting off atomic lattice
+   * (like light bouncing inside a mirror-lined cavity).
+   */
+  scatterPhase?: number;      // phase offset so particles don't all move in sync
+  scatterPhase2?: number;     // second harmonic for chaotic look
+  scatterAmplitude?: number;  // max lateral displacement (scales with resistance)
+  scatterPerp?: Vec2;         // unit vector perpendicular to the flow path
+  scatterTime?: number;       // accumulated time driving the oscillation
+  /** Tiny per-frame thermal jitter accumulated time (quantum uncertainty) */
+  jitterSeed?: number;
 };
 
 export type FlowPathConfig = {
@@ -293,6 +328,30 @@ export class CurrentFlowAnimationSystem {
     const normalized = clamp01(Math.log10(resistanceOhms + 1) / CURRENT_FLOW_PHYSICS.RESISTANCE_LOG_RANGE);
     const slowdown = 1 - normalized * CURRENT_FLOW_PHYSICS.MAX_RESISTANCE_SLOWDOWN;
     return Math.max(1 - CURRENT_FLOW_PHYSICS.MAX_RESISTANCE_SLOWDOWN, slowdown);
+  }
+
+  /**
+   * Calculate how far a particle should scatter laterally when passing through a resistor.
+   * Physics analogy: electrons deflecting off atomic lattice sites — like photons bouncing
+   * in a mirror-lined cavity.  Higher resistance → more collisions → wider scatter.
+   */
+  private calculateScatterAmplitude(resistanceOhms: number): number {
+    if (!Number.isFinite(resistanceOhms) || resistanceOhms <= 0) return 0;
+    const normalized = clamp01(Math.log10(resistanceOhms + 1) / CURRENT_FLOW_PHYSICS.RESISTANCE_LOG_RANGE);
+    return normalized * CURRENT_FLOW_PHYSICS.MAX_SCATTER_AMPLITUDE;
+  }
+
+  /**
+   * Compute the unit tangent of a path (start → end direction).
+   * Used to derive the perpendicular "scatter" axis.
+   */
+  private calculatePathTangent(path: Vec2[]): Vec2 {
+    if (path.length < 2) return { x: 1, z: 0 };
+    const dx = path[path.length - 1].x - path[0].x;
+    const dz = path[path.length - 1].z - path[0].z;
+    const mag = Math.sqrt(dx * dx + dz * dz);
+    if (mag < 1e-6) return { x: 1, z: 0 };
+    return { x: dx / mag, z: dz / mag };
   }
 
   private applyResistanceToSpeed(baseSpeed: number, resistanceOhms?: number): number {
@@ -543,8 +602,22 @@ export class CurrentFlowAnimationSystem {
         flowsForward,
         currentAmps,
         usesGlobalCurrent,
-        resistanceOhms
+        resistanceOhms,
+        jitterSeed: Math.random() * 1000
       };
+
+      // Scatter effect for resistor zones: electrons deflect off atomic sites like
+      // photons bouncing inside a mirrored cavity.
+      if (resistanceOhms && resistanceOhms > 0) {
+        const tangent = this.calculatePathTangent(path);
+        // Perpendicular = rotate tangent 90° in XZ plane
+        particle.scatterPerp = { x: -tangent.z, z: tangent.x };
+        particle.scatterAmplitude = this.calculateScatterAmplitude(resistanceOhms);
+        particle.scatterPhase = Math.random() * Math.PI * 2;
+        particle.scatterPhase2 = Math.random() * Math.PI * 2;
+        particle.scatterTime = 0;
+      }
+
       this.particles.push(particle);
       this.createParticleMesh(particle);
     }
@@ -556,6 +629,10 @@ export class CurrentFlowAnimationSystem {
     const tier = getPerformanceTier();
     const COMET_TAIL = getCometTailConfig();
 
+    // Particles in resistor zones get a chrome/mirror look to suggest electrons
+    // scattering off the atomic lattice (like light inside a mirrored cavity).
+    const inResistorZone = (particle.scatterAmplitude ?? 0) > 0;
+
     // Improved sphere segments for better visual quality across all tiers
     const sphereSegments = tier === 'low' ? 14 : tier === 'medium' ? 16 : 18;
     const glowSegments = tier === 'low' ? 12 : tier === 'medium' ? 14 : 16;
@@ -564,11 +641,12 @@ export class CurrentFlowAnimationSystem {
     // Use unit geometry and scale it so we can easily combine base size + pulse in update()
     const geometry = new this.three.SphereGeometry(1, sphereSegments, sphereSegments);
     const material = new this.three.MeshStandardMaterial({
-      color: colors.core,
-      emissive: colors.emissive,
-      emissiveIntensity: 0.8,
-      metalness: 0.3,
-      roughness: 0.2,
+      color: inResistorZone ? lerpColor(colors.core, 0xd0e8ff, 0.55) : colors.core,
+      emissive: inResistorZone ? lerpColor(colors.emissive, 0x88aaff, 0.4) : colors.emissive,
+      emissiveIntensity: inResistorZone ? 1.3 : 0.8,
+      // Chrome-like surface for resistor particles — high reflectivity, mirror finish
+      metalness: inResistorZone ? 0.92 : 0.3,
+      roughness: inResistorZone ? 0.04 : 0.2,
       transparent: true,
       opacity: appearance.opacity
     });
@@ -576,24 +654,33 @@ export class CurrentFlowAnimationSystem {
     mesh.position.set(particle.position.x, 0.2, particle.position.z);
     mesh.scale.setScalar(1);
     mesh.userData.baseScale = appearance.size;
+    mesh.userData.inResistorZone = inResistorZone;
 
     // Add a glow effect - enabled on all tiers for visual appeal
+    // Resistor-zone particles get a wider, more intense glow (prismatic refraction)
     const glowGeometry = new this.three.SphereGeometry(1, glowSegments, glowSegments);
+    const glowColor = inResistorZone ? lerpColor(colors.glow, 0xffffff, 0.6) : colors.glow;
     const glowMaterial = new this.three.MeshBasicMaterial({
-      color: colors.glow,
+      color: glowColor,
       transparent: true,
-      opacity: tier === 'low' ? appearance.glowOpacity * 0.7 : appearance.glowOpacity // Slightly reduced on low-end
+      opacity: inResistorZone
+        ? Math.min(1, appearance.glowOpacity * 1.8)
+        : (tier === 'low' ? appearance.glowOpacity * 0.7 : appearance.glowOpacity)
     });
     const glow = new this.three.Mesh(glowGeometry, glowMaterial);
     glow.name = "glow";
-    glow.scale.setScalar(1.9);
+    glow.scale.setScalar(inResistorZone ? 2.6 : 1.9);
     mesh.add(glow);
 
     // Add a comet tail (stacked translucent spheres that trail behind)
     const tailGroup = new this.three.Group();
     tailGroup.name = "tail";
-    const tailHeadColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
-    const tailTrailColor = lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
+    const tailHeadColor = inResistorZone
+      ? lerpColor(colors.glow, 0xffffff, 0.5)
+      : lerpColor(colors.glow, BRAND_FLOW_COLORS.positive, 0.3);
+    const tailTrailColor = inResistorZone
+      ? lerpColor(colors.core, 0x88aaff, 0.4)
+      : lerpColor(colors.glow, BRAND_FLOW_COLORS.negative, 0.6);
 
     for (let i = 0; i < COMET_TAIL.segments; i++) {
       const t = i / Math.max(COMET_TAIL.segments - 1, 1); // 0..1
@@ -697,6 +784,11 @@ export class CurrentFlowAnimationSystem {
       // Keep progress in [0,1) without snapbacks on long frames.
       particle.progress = ((particle.progress % 1) + 1) % 1;
 
+      // Advance scatter timer for resistor-zone particles
+      if (particle.scatterTime !== undefined) {
+        particle.scatterTime += deltaTime;
+      }
+
       // Use cached path length instead of recalculating every frame
       const totalLength = particle.pathLength;
       const targetDistance = this.wrapDistance(particle.progress * totalLength, totalLength);
@@ -708,7 +800,39 @@ export class CurrentFlowAnimationSystem {
         // Update mesh position
         const mesh = this.particleMeshes.get(particle.id);
         if (mesh) {
-          mesh.position.set(pos.x, 0.2, pos.z);
+          // ── Base position ──────────────────────────────────────────────────
+          let meshX = pos.x;
+          let meshZ = pos.z;
+
+          // ── Resistance scatter (electrons deflecting off atomic lattice) ──
+          // Two overlapping sine frequencies create a chaotic, mirror-reflection look.
+          if (
+            particle.scatterAmplitude &&
+            particle.scatterAmplitude > 0 &&
+            particle.scatterPerp &&
+            particle.scatterTime !== undefined
+          ) {
+            const st = particle.scatterTime;
+            const phase1 = particle.scatterPhase ?? 0;
+            const phase2 = particle.scatterPhase2 ?? Math.PI / 3;
+            // Primary oscillation (slower) + harmonic (faster, smaller) for chaos
+            const scatter =
+              Math.sin(st * CURRENT_FLOW_PHYSICS.SCATTER_PRIMARY_FREQ + phase1) * particle.scatterAmplitude +
+              Math.sin(st * CURRENT_FLOW_PHYSICS.SCATTER_HARMONIC_FREQ + phase2) * particle.scatterAmplitude * CURRENT_FLOW_PHYSICS.SCATTER_HARMONIC_RATIO;
+            meshX += particle.scatterPerp.x * scatter;
+            meshZ += particle.scatterPerp.z * scatter;
+          }
+
+          // ── Quantum thermal jitter (simulates electron thermal motion) ────
+          // Tiny stochastic displacement — represents the real randomness of
+          // individual electron paths around the net drift direction.
+          const jSeed = (particle.jitterSeed ?? 0) + particle.progress * 1000;
+          const jx = (Math.sin(jSeed * CURRENT_FLOW_PHYSICS.JITTER_HASH_SEED_X) * CURRENT_FLOW_PHYSICS.JITTER_HASH_MULTIPLIER) % 1;
+          const jz = (Math.sin(jSeed * CURRENT_FLOW_PHYSICS.JITTER_HASH_SEED_Z) * CURRENT_FLOW_PHYSICS.JITTER_HASH_MULTIPLIER) % 1;
+          meshX += (jx - 0.5) * 2 * CURRENT_FLOW_PHYSICS.JITTER_RADIUS;
+          meshZ += (jz - 0.5) * 2 * CURRENT_FLOW_PHYSICS.JITTER_RADIUS;
+
+          mesh.position.set(meshX, 0.2, meshZ);
 
           // Orient the particle so +Z matches direction of travel (tail trails in -Z)
           const sampleDistance = 0.08;

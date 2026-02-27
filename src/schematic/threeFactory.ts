@@ -459,6 +459,44 @@ const buildResistorElement = (three: any, element: TwoTerminalElement, options: 
     }
   }
 
+  // ── Resistance scatter-field aura ──────────────────────────────────────────
+  // A translucent envelope around the resistor body that hints at the mirror-like
+  // atomic lattice inside: electrons bounce off it like light in a mirrored cavity.
+  // Only shown in full 3D view (not preview mode) and only when body is large enough.
+  if (!options.preview && bodyLength > 0.15) {
+    const centerDistance = leadLength + bodyLength / 2;
+    const centerPoint = metrics.offsetPoint(centerDistance);
+    // How much larger than the resistor body the aura extends on each side
+    const AURA_EXPANSION = 0.22;
+    // Scale increment between the two nested glow shells
+    const AURA_SHELL_SCALE_INCREMENT = 0.22;
+    const profile = resolveProfile(options.standard);
+    const auraThickness = profile.resistor.bodyThickness + AURA_EXPANSION;
+    const auraDepth = profile.resistor.bodyDepth + AURA_EXPANSION;
+    const auraLength = bodyLength + AURA_EXPANSION;
+
+    const auraGeom = metrics.orientation === "horizontal"
+      ? new three.BoxGeometry(auraLength, auraThickness, auraDepth)
+      : new three.BoxGeometry(auraDepth, auraThickness, auraLength);
+
+    // Two nested shells give a soft, glowing "field" look
+    for (let shell = 0; shell < 2; shell++) {
+      const shellScale = 1 + shell * AURA_SHELL_SCALE_INCREMENT;
+      const auraMat = new three.MeshBasicMaterial({
+        color: 0xaaccff,
+        transparent: true,
+        opacity: shell === 0 ? 0.07 : 0.03,
+        depthWrite: false,
+        side: three.BackSide
+      });
+      const auraMesh = new three.Mesh(auraGeom, auraMat);
+      auraMesh.position.copy(toVec3(three, centerPoint, COMPONENT_HEIGHT));
+      auraMesh.scale.setScalar(shellScale);
+      auraMesh.name = `resistor-aura-${shell}`;
+      group.add(auraMesh);
+    }
+  }
+
   return { group, terminals: [element.start, element.end] };
 };
 
