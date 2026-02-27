@@ -723,8 +723,9 @@
   gap: 8px;
 }
 
-.retro-direction-pad > div button:nth-child(2) {
-  grid-column: 2;
+/* Empty center cell keeps the D-pad in a cross shape */
+.retro-dpad-center {
+  display: block;
 }
 
 .retro-maze-help {

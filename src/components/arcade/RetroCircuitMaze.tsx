@@ -588,20 +588,21 @@ export default function RetroCircuitMaze() {
         </div>
 
         <div className="retro-direction-pad" role="group" aria-label="Direction pad">
-          <button type="button" onClick={() => queueDirection("up")}>
-            Up
+          <button type="button" aria-label="Up" onClick={() => queueDirection("up")}>
+            ▲
           </button>
           <div>
-            <button type="button" onClick={() => queueDirection("left")}>
-              Left
+            <button type="button" aria-label="Left" onClick={() => queueDirection("left")}>
+              ◄
             </button>
-            <button type="button" onClick={() => queueDirection("down")}>
-              Down
-            </button>
-            <button type="button" onClick={() => queueDirection("right")}>
-              Right
+            <span className="retro-dpad-center" aria-hidden="true" />
+            <button type="button" aria-label="Right" onClick={() => queueDirection("right")}>
+              ►
             </button>
           </div>
+          <button type="button" aria-label="Down" onClick={() => queueDirection("down")}>
+            ▼
+          </button>
         </div>
       </div>
 
