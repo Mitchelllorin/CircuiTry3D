@@ -295,20 +295,10 @@ export default function OhmsRacer() {
       <p className="retro-maze-message">{raceState.message}</p>
 
       <div className="retro-maze-controls">
-        <div className="retro-maze-primary-actions">
-          <button
-            type="button"
-            onClick={handleStart}
-            disabled={raceState.status === "running"}
-          >
-            {primaryLabel}
-          </button>
-          <button type="button" className="ghost" onClick={handleReset}>
-            Reset
-          </button>
-        </div>
         <ArcadeController
           onDirection={handleDirection}
+          onStart={raceState.status === "running" ? undefined : handleStart}
+          onSelect={handleReset}
           onA={handleBoost}
           onB={raceState.status === "running" ? undefined : handleReset}
           labelA="A"

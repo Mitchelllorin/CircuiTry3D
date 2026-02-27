@@ -575,21 +575,10 @@ export default function RetroCircuitMaze() {
       <p className="retro-maze-message">{mazeState.message}</p>
 
       <div className="retro-maze-controls">
-        <div className="retro-maze-primary-actions">
-          <button
-            type="button"
-            onClick={handleStartOrRestart}
-            disabled={mazeState.status === "running"}
-          >
-            {primaryActionLabel}
-          </button>
-          <button type="button" className="ghost" onClick={handleResetBoard}>
-            Reset Board
-          </button>
-        </div>
-
         <ArcadeController
           onDirection={queueDirection}
+          onStart={mazeState.status === "running" ? undefined : handleStartOrRestart}
+          onSelect={handleResetBoard}
           onA={mazeState.status === "running" ? undefined : handleStartOrRestart}
           onB={handleResetBoard}
         />

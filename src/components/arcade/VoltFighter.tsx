@@ -327,20 +327,10 @@ export default function VoltFighter() {
       <p className="retro-maze-message">{fightState.message}</p>
 
       <div className="retro-maze-controls">
-        <div className="retro-maze-primary-actions">
-          <button
-            type="button"
-            onClick={handleStart}
-            disabled={fightState.status === "running"}
-          >
-            {primaryLabel}
-          </button>
-          <button type="button" className="ghost" onClick={handleReset}>
-            Reset
-          </button>
-        </div>
         <ArcadeController
           onDirection={handleDirection}
+          onStart={fightState.status === "running" ? undefined : handleStart}
+          onSelect={handleReset}
           onA={fightState.status === "running" ? handleAttack : undefined}
           onB={fightState.status === "running" ? handleBlock : undefined}
         />

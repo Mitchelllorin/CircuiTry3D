@@ -666,46 +666,7 @@
 
 .retro-maze-controls {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.retro-maze-primary-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.retro-maze-primary-actions button {
-  border-radius: 10px;
-  border: 1px solid rgba(122, 191, 255, 0.4);
-  background: rgba(14, 34, 65, 0.92);
-  color: #eaf4ff;
-  padding: 9px 12px;
-  cursor: pointer;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
-}
-
-.retro-maze-primary-actions button:hover,
-.retro-maze-primary-actions button:focus-visible {
-  border-color: rgba(178, 220, 255, 0.72);
-  background: rgba(20, 50, 93, 0.95);
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.retro-maze-primary-actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.72;
-  transform: none;
-}
-
-.retro-maze-primary-actions button.ghost {
-  background: transparent;
+  justify-content: center;
 }
 
 /* Nintendo / Gameboy-style D-pad */
@@ -823,22 +784,123 @@
     flex-direction: column;
   }
 
-  .retro-maze-controls {
-    flex-direction: column;
-    align-items: stretch;
+  /* On small screens keep the controller body but shrink it */
+  .arcade-controller {
+    max-width: 100%;
+    padding: 10px 12px;
+    border-radius: 18px 18px 26px 26px / 14px 14px 22px 22px;
+  }
+
+  .arcade-ab-buttons {
+    grid-template-columns: repeat(2, 38px);
+    grid-template-rows: repeat(2, 38px);
+  }
+
+  .arcade-btn-a,
+  .arcade-btn-b {
+    width: 38px;
+    height: 38px;
+  }
+
+  .retro-direction-pad {
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(3, 38px);
+  }
+
+  .retro-direction-pad button {
+    width: 38px;
+    height: 38px;
   }
 }
 
 /* ============================================================
    Shared arcade controller  (D-pad + A/B)
    ============================================================ */
+
+/* Full controller chassis — D-pad left · Start/Select center · A/B right */
 .arcade-controller {
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between;
+  gap: 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  background: linear-gradient(160deg, #1c1c1c 0%, #141414 100%);
+  border-radius: 24px 24px 36px 36px / 18px 18px 28px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 4px 0 #0a0a0a,
+    0 8px 24px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* 2×2 grid: A = top-right, B = bottom-left  (Gameboy diagonal) */
+/* Left zone — D-pad */
+.arcade-ctrl-left {
+  flex-shrink: 0;
+}
+
+/* Center zone — Start + Select */
+.arcade-ctrl-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 0 12px;
+}
+
+/* Right zone — A/B */
+.arcade-ctrl-right {
+  flex-shrink: 0;
+}
+
+/* Start / Select oval pill buttons */
+.arcade-btn-start,
+.arcade-btn-select {
+  width: 52px;
+  height: 18px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3a3a3a, #222);
+  color: rgba(210, 228, 255, 0.7);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: background 0.1s ease, transform 0.08s ease;
+}
+
+.arcade-btn-start:hover:not(:disabled),
+.arcade-btn-select:hover:not(:disabled) {
+  background: linear-gradient(180deg, #4a4a4a, #2e2e2e);
+  color: #e8f4ff;
+}
+
+.arcade-btn-start:active:not(:disabled),
+.arcade-btn-select:active:not(:disabled) {
+  background: linear-gradient(180deg, #1e1e1e, #2a2a2a);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  transform: translateY(1px);
+}
+
+.arcade-btn-start:disabled,
+.arcade-btn-select:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 2×2 A/B grid — B top-left (grey), A bottom-right (red) — SNES diagonal */
 .arcade-ab-buttons {
   display: grid;
   grid-template-columns: repeat(2, 44px);
@@ -867,17 +929,17 @@
   transition: background 0.08s ease, box-shadow 0.08s ease, transform 0.08s ease;
 }
 
-/* A = red (primary / attack / boost) */
-.arcade-btn-a {
-  background: radial-gradient(circle at 38% 32%, #f87171, #b91c1c);
-  grid-column: 2;
-  grid-row: 1;
-}
-
-/* B = grey-charcoal (secondary / shield / brake) */
+/* B = grey-charcoal (secondary / shield / brake) — top-left */
 .arcade-btn-b {
   background: radial-gradient(circle at 38% 32%, #9ca3af, #374151);
   grid-column: 1;
+  grid-row: 1;
+}
+
+/* A = red (primary / attack / boost) — bottom-right */
+.arcade-btn-a {
+  background: radial-gradient(circle at 38% 32%, #f87171, #b91c1c);
+  grid-column: 2;
   grid-row: 2;
 }
 
