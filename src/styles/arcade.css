@@ -677,8 +677,7 @@
   gap: 10px;
 }
 
-.retro-maze-primary-actions button,
-.retro-direction-pad button {
+.retro-maze-primary-actions button {
   border-radius: 10px;
   border: 1px solid rgba(122, 191, 255, 0.4);
   background: rgba(14, 34, 65, 0.92);
@@ -692,9 +691,7 @@
 }
 
 .retro-maze-primary-actions button:hover,
-.retro-maze-primary-actions button:focus-visible,
-.retro-direction-pad button:hover,
-.retro-direction-pad button:focus-visible {
+.retro-maze-primary-actions button:focus-visible {
   border-color: rgba(178, 220, 255, 0.72);
   background: rgba(20, 50, 93, 0.95);
   transform: translateY(-1px);
@@ -711,22 +708,59 @@
   background: transparent;
 }
 
+/* Nintendo / Gameboy-style D-pad */
 .retro-direction-pad {
   display: grid;
-  gap: 8px;
-  justify-items: center;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+  gap: 0;
+  width: fit-content;
 }
 
-.retro-direction-pad > div {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(70px, 1fr));
-  gap: 8px;
+.retro-direction-pad button {
+  width: 44px;
+  height: 44px;
+  background: #252525;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.08s ease;
+  padding: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45);
 }
 
-/* Empty center cell keeps the D-pad in a cross shape */
+.retro-direction-pad button:hover {
+  background: #303030;
+  outline: none;
+}
+
+.retro-direction-pad button:active,
+.retro-direction-pad button:focus-visible {
+  background: #1a1a1a;
+  outline: none;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Grid placement — cross/plus shape */
+.retro-dpad-up    { grid-column: 2; grid-row: 1; border-radius: 6px 6px 0 0; }
+.retro-dpad-left  { grid-column: 1; grid-row: 2; border-radius: 6px 0 0 6px; }
 .retro-dpad-center {
+  grid-column: 2;
+  grid-row: 2;
+  background: #252525;
   display: block;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
+.retro-dpad-right { grid-column: 3; grid-row: 2; border-radius: 0 6px 6px 0; }
+.retro-dpad-down  { grid-column: 2; grid-row: 3; border-radius: 0 0 6px 6px; }
 
 .retro-maze-help {
   margin: 0;
@@ -792,13 +826,5 @@
   .retro-maze-controls {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .retro-direction-pad {
-    justify-items: stretch;
-  }
-
-  .retro-direction-pad > div {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
