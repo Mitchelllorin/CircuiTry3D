@@ -1372,6 +1372,18 @@ body.builder-body .arena-page {
   pointer-events: auto;
 }
 
+.arena-toggle-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(8, 18, 30, 0.72);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  backdrop-filter: blur(8px);
+}
+
 @media (max-width: 600px) {
   .arena-component-nameplate {
     margin: 6px 0 10px;
