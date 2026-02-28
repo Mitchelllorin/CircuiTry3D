@@ -2575,9 +2575,46 @@ export default function Builder() {
             This is the core experience: virtual electricity moving through a
             complete circuit.{" "}
             {isCurrentFlowSolid
-              ? "Conventional current view is active (positive -> negative)."
-              : "Electron flow view is active (negative -> positive)."}
+              ? "Conventional current view is active (positive → negative)."
+              : "Electron flow view is active (negative → positive)."}
           </p>
+          <div className="current-flow-payoff-explainer">
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">⚡ Current (I)</span>
+              <span className="payoff-explainer-value">
+                Flow of electric charge through the circuit.{" "}
+                {currentFlowPayoffAmps > 0
+                  ? `${currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A flowing now.`
+                  : "Close the loop to start flow."}
+              </span>
+            </div>
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">🔋 Voltage (E)</span>
+              <span className="payoff-explainer-value">
+                Electrical pressure pushing charge around the loop.{" "}
+                {currentFlowPayoffVolts > 0
+                  ? `${currentFlowPayoffVolts.toFixed(1)} V supplied by the battery.`
+                  : "Add a battery to supply voltage."}
+              </span>
+            </div>
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">🟢 Resistance (R)</span>
+              <span className="payoff-explainer-value">
+                Opposition to current. Higher resistance → less current.
+                Ohm's Law: <strong>E = I × R</strong>.
+              </span>
+            </div>
+            <div className="payoff-explainer-item">
+              <span className="payoff-explainer-label">🔵 Power (W)</span>
+              <span className="payoff-explainer-value">
+                Energy used per second.{" "}
+                <strong>P = E × I</strong>.{" "}
+                {currentFlowPayoffWatts > 0
+                  ? `${currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W consumed now.`
+                  : "Appears once current flows."}
+              </span>
+            </div>
+          </div>
           <div className="current-flow-payoff-metrics">
             <span className="current-flow-payoff-metric">
               <strong>I</strong>{" "}
@@ -3263,6 +3300,41 @@ export default function Builder() {
           style={workspaceSkinStyle}
         />
       </div>
+
+      {isActiveCircuitBuildMode && !isOverlayActive && (
+        <div className="circuit-zoom-controls" aria-label="Zoom controls">
+          <button
+            type="button"
+            className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("zoom-in")}
+            disabled={controlsDisabled}
+            aria-label="Zoom in"
+            title="Zoom in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("fit-screen")}
+            disabled={controlsDisabled}
+            aria-label="Fit circuit to screen"
+            title="Fit to screen"
+          >
+            ⊡
+          </button>
+          <button
+            type="button"
+            className="circuit-zoom-btn"
+            onClick={() => triggerBuilderAction("zoom-out")}
+            disabled={controlsDisabled}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            −
+          </button>
+        </div>
+      )}
 
       <div
         ref={floatingLogoRef}

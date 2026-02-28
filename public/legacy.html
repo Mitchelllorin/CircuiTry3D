@@ -4141,6 +4141,14 @@ body.android-optimized.menu-visible .status {
                                 isCircuitEditLocked = false;
                                 setStatus('🔓 Circuit unlocked - you can now edit');
                                 break;
+                            case 'zoom-in':
+                                cameraDistance = Math.max(5, cameraDistance - 2);
+                                updateCameraPosition();
+                                break;
+                            case 'zoom-out':
+                                cameraDistance = Math.min(50, cameraDistance + 2);
+                                updateCameraPosition();
+                                break;
                             default:
                                 break;
                         }

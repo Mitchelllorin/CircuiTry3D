@@ -30,7 +30,9 @@ export type BuilderInvokeAction =
   | "run-simulation"
   | "set-wire-profile"
   | "lock-circuit"
-  | "unlock-circuit";
+  | "unlock-circuit"
+  | "zoom-in"
+  | "zoom-out";
 
 export type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
