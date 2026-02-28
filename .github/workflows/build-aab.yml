@@ -76,6 +76,24 @@ jobs:
           # Fall back to the alias stored in new-upload-key.jks when ANDROID_KEY_ALIAS is not set
           KEY_ALIAS="${ANDROID_KEY_ALIAS:-circuitry3d-upload-reset}"
 
+          # Verify the alias exists in the keystore; auto-detect the first available alias
+          # when the configured alias is wrong (e.g. ANDROID_KEY_ALIAS secret has a stale value).
+          ACTUAL_ALIASES=$(keytool -list -v \
+            -keystore "android/app/keystore/${KEYSTORE_FILENAME}" \
+            -storepass "${ANDROID_STORE_PASSWORD}" 2>/tmp/keytool-err.txt \
+            | awk '/^Alias name:/ { print $3 }') || true
+          if [ -n "${ACTUAL_ALIASES}" ]; then
+            echo "Keystore aliases available: ${ACTUAL_ALIASES}"
+            if ! printf '%s\n' "${ACTUAL_ALIASES}" | grep -qFx "${KEY_ALIAS}"; then
+              DETECTED_ALIAS=$(printf '%s\n' "${ACTUAL_ALIASES}" | head -1)
+              echo "::warning::ANDROID_KEY_ALIAS secret does not match any alias in the keystore (available: ${ACTUAL_ALIASES}). Auto-selecting '${DETECTED_ALIAS}'. Update the ANDROID_KEY_ALIAS secret to silence this warning."
+              KEY_ALIAS="${DETECTED_ALIAS}"
+            fi
+          else
+            KEYTOOL_ERR=$(cat /tmp/keytool-err.txt 2>/dev/null || true)
+            echo "::warning::Could not list aliases from keystore (${KEYTOOL_ERR:-no error details}). Proceeding with configured alias — verify ANDROID_STORE_PASSWORD is correct and the keystore is not corrupted."
+          fi
+
           cat > android/key.properties <<EOF
           storePassword=${ANDROID_STORE_PASSWORD}
           keyPassword=${ANDROID_KEY_PASSWORD}
