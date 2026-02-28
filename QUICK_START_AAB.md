@@ -12,9 +12,59 @@ Before you begin, ensure you have:
 - [ ] Android Studio installed (optional but recommended)
 - [ ] Android SDK installed
 
-## Method 1: Using the Automated Script (Easiest)
+## Method 1: Download from GitHub Actions (Fastest — No Local Setup Required)
 
-Simply run:
+The **Build AAB** GitHub Actions workflow builds and signs the AAB automatically in the cloud. You do **not** need Android Studio or an Android SDK installed locally.
+
+### Do you already have an AAB?
+
+Yes — every successful run of the **Build AAB** workflow uploads the signed bundle as a downloadable artifact. To get it:
+
+1. Go to **Actions → Build AAB** in the GitHub repository:
+   `https://github.com/Mitchelllorin/CircuiTry3D/actions/workflows/build-aab.yml`
+2. Click the most recent **successful** run.
+3. Scroll to the **Artifacts** section at the bottom.
+4. Download **`app-release-aab`** (a ZIP file containing `app-release.aab`).
+
+> **Note:** GitHub keeps artifacts for 90 days. If the artifact has expired, re-run the workflow (see below).
+
+### Generate a new AAB
+
+1. Go to **Actions → Build AAB**:
+   `https://github.com/Mitchelllorin/CircuiTry3D/actions/workflows/build-aab.yml`
+2. Click **Run workflow** (top-right of the run list).
+3. Select branch **`main`** and click **Run workflow**.
+4. Wait ~3 minutes for the run to complete.
+5. Download **`app-release-aab`** from the **Artifacts** section of the completed run.
+
+### Required GitHub secret
+
+The workflow needs the keystore password to sign the bundle. Ensure the following secret is set in
+**Settings → Secrets and variables → Actions**:
+
+| Secret name             | Value                                                      |
+|-------------------------|------------------------------------------------------------|
+| `ANDROID_STORE_PASSWORD` | Password for `new-upload-key.jks` (the committed keystore) |
+
+The keystore file (`new-upload-key.jks`, alias `circuitry3d-upload-reset`) is already committed to the repository.
+
+---
+
+## Method 2: Using the Automated Script (Local Build)
+
+Before running the script, set up your local signing configuration:
+
+```bash
+# 1. Copy the keystore to the android/app/keystore/ directory
+#    new-upload-key.jks (repo root) → android/app/keystore/upload-key.jks
+cp new-upload-key.jks android/app/keystore/upload-key.jks
+
+# 2. Create android/key.properties from the example
+cp android/key.properties.example android/key.properties
+# Then edit android/key.properties and set storePassword / keyPassword
+```
+
+Then run:
 
 ```bash
 ./build-android.sh
@@ -29,7 +79,7 @@ This script will:
 
 **Output:** `circuitry3d-release.aab`
 
-## Method 2: Manual Build
+## Method 3: Manual Build
 
 If the automated script doesn't work, follow these manual steps:
 
@@ -74,7 +124,7 @@ Copy it to your desired location or rename it:
 cp android/app/build/outputs/bundle/release/app-release.aab ./circuitry3d-release-v1.0.0.aab
 ```
 
-## Method 3: Using Android Studio
+## Method 4: Using Android Studio
 
 1. **Open the project:**
    - Launch Android Studio
