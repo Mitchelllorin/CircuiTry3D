@@ -275,6 +275,7 @@ Once you have your signed AAB:
 
 ## Getting Help
 
+- **Updating the app (after first release):** [UPDATING_THE_APP.md](UPDATING_THE_APP.md)
 - **Upload the AAB to Play Console:** [UPLOAD_TO_PLAY_STORE.md](UPLOAD_TO_PLAY_STORE.md)
 - **Read the full guide:** [PLAY_STORE_SUBMISSION_GUIDE.md](PLAY_STORE_SUBMISSION_GUIDE.md)
 - **Check the package summary:** [PLAY_STORE_PACKAGE_SUMMARY.md](PLAY_STORE_PACKAGE_SUMMARY.md)

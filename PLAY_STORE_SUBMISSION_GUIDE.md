@@ -409,6 +409,8 @@ Before releasing to production:
     - Create new release in Play Console
     - Add meaningful release notes
 
+> **Short checklist for every update:** See [UPDATING_THE_APP.md](UPDATING_THE_APP.md)
+
 **Version naming convention:**
 - Major updates: `1.0.0` → `2.0.0`
 - Minor updates: `1.0.0` → `1.1.0`
