@@ -244,17 +244,17 @@ keytool -genkey -v -keystore your-upload-keystore.jks \
 
 Once you have your signed AAB:
 
-1. **Test it locally** (optional):
+1. **→ Follow the upload guide:** [UPLOAD_TO_PLAY_STORE.md](UPLOAD_TO_PLAY_STORE.md)
+   - Check if you already uploaded the AAB
+   - Step-by-step Play Console upload instructions
+   - Store listing checklist (copy-paste ready)
+   - How to submit for production
+
+2. **Test it locally** (optional):
    ```bash
    bundletool build-apks --bundle=app-release.aab --output=test.apks --mode=universal
    bundletool install-apks --apks=test.apks
    ```
-
-2. **Upload to Google Play Console:**
-   - Follow the [Play Store Submission Guide](PLAY_STORE_SUBMISSION_GUIDE.md)
-   - Start with internal testing
-   - Gather feedback
-   - Submit for production
 
 3. **Monitor your release:**
    - Check Play Console for review status
@@ -275,6 +275,7 @@ Once you have your signed AAB:
 
 ## Getting Help
 
+- **Upload the AAB to Play Console:** [UPLOAD_TO_PLAY_STORE.md](UPLOAD_TO_PLAY_STORE.md)
 - **Read the full guide:** [PLAY_STORE_SUBMISSION_GUIDE.md](PLAY_STORE_SUBMISSION_GUIDE.md)
 - **Check the package summary:** [PLAY_STORE_PACKAGE_SUMMARY.md](PLAY_STORE_PACKAGE_SUMMARY.md)
 - **Android Developers:** https://developer.android.com/guide
