@@ -17,6 +17,7 @@ const Community = lazy(() => import("../pages/Community"));
 const Account = lazy(() => import("../pages/Account"));
 const Classroom = lazy(() => import("../pages/Classroom"));
 const Arcade = lazy(() => import("../pages/Arcade"));
+const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 
 function PageFallback() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/account" element={<Account />} />
             <Route path="/classroom" element={<Classroom />} />
             <Route path="/arcade" element={<Arcade />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
