@@ -73,8 +73,28 @@ jobs:
             cp new-upload-key.jks "android/app/keystore/${KEYSTORE_FILENAME}"
           fi
 
-          # Fall back to the alias stored in new-upload-key.jks when ANDROID_KEY_ALIAS is not set
-          KEY_ALIAS="${ANDROID_KEY_ALIAS:-circuitry3d-upload-reset}"
+          # Determine the signing alias.  If ANDROID_KEY_ALIAS is set but does not exist in the
+          # keystore (e.g. stale secret after a keystore reset), auto-detect the first alias found
+          # in the keystore; fall back to the committed-keystore default when all else fails.
+          CANDIDATE_ALIAS="${ANDROID_KEY_ALIAS:-circuitry3d-upload-reset}"
+          if keytool -list \
+               -keystore "android/app/keystore/${KEYSTORE_FILENAME}" \
+               -alias "${CANDIDATE_ALIAS}" \
+               -storepass "${ANDROID_STORE_PASSWORD}" \
+               >/dev/null 2>&1; then
+            KEY_ALIAS="${CANDIDATE_ALIAS}"
+          else
+            echo "::warning::Alias '${CANDIDATE_ALIAS}' not found in keystore; auto-detecting alias."
+            # keytool -list output lines look like:
+            #   <alias>, <date>, PrivateKeyEntry,
+            DETECTED="$(keytool -list \
+               -keystore "android/app/keystore/${KEYSTORE_FILENAME}" \
+               -storepass "${ANDROID_STORE_PASSWORD}" 2>/dev/null \
+               | grep -E ',[[:space:]]*(PrivateKeyEntry|SecretKeyEntry)' \
+               | head -1 | cut -d',' -f1 | xargs)" || DETECTED=""
+            KEY_ALIAS="${DETECTED:-circuitry3d-upload-reset}"
+            echo "::notice::Using alias '${KEY_ALIAS}' for signing."
+          fi
 
           cat > android/key.properties <<EOF
           storePassword=${ANDROID_STORE_PASSWORD}
