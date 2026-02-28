@@ -103,13 +103,16 @@ jobs:
           storeFile=keystore/${KEYSTORE_FILENAME}
           EOF
 
+      - name: Compute version code
+        run: echo "VERSION_CODE=$(( GITHUB_RUN_NUMBER + 2 ))" >> "$GITHUB_ENV"
+
       - name: Ensure Gradle wrapper executable
         run: chmod +x android/gradlew
 
       - name: Build Android Release
         run: |
           cd android
-          ./gradlew clean bundleRelease --stacktrace
+          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" --stacktrace
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
