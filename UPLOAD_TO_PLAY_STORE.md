@@ -47,7 +47,7 @@ Then continue to Step 1.
    ```
 7. Click **Save** → **Review release** → **Start rollout to Internal testing**
 
-> **If you see an error about the version code already being used**, you uploaded this AAB before. Go to Step 3.
+> **If you see "version code is already used"** — this means an AAB with the same `versionCode` was already uploaded to Play Console (even if that upload had a key problem, Play still counts it). You must increment the `versionCode` in `android/app/build.gradle` (e.g. `1` → `2`), rebuild the AAB using the **Build AAB** workflow, and upload the new file. You do **not** need to change the version code every time — only when you need to upload a fresh AAB.
 
 ---
 
@@ -125,11 +125,12 @@ https://play.google.com/store/apps/details?id=com.circuitry3d.app
 
 ## Uploading a New AAB Later
 
-Each time you want to update the app:
+Each time you want to update the app **or if a previous AAB upload was rejected by Play Console**:
 
-1. Increment `versionCode` (e.g., `1` → `2`) in `android/app/build.gradle`
-2. Re-run the **Build AAB** GitHub Actions workflow (or local build)
-3. Upload the new AAB to Play Console as a new release
+1. Open `android/app/build.gradle` and increment `versionCode` by 1 (e.g., `2` → `3`).  
+   ⚠️ **You must do this even if the previous upload failed due to a key issue — Play Console records the version code the moment an AAB is processed.**
+2. Re-run the **Build AAB** GitHub Actions workflow (or local build) to produce a fresh AAB.
+3. Upload the new AAB to Play Console as a new release.
 
 ---
 

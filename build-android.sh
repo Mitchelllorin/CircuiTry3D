@@ -40,6 +40,16 @@ npx cap sync android
 echo -e "${GREEN}✓ Capacitor synced${NC}"
 echo ""
 
+# Remind developer to increment versionCode for each Play Store upload
+CURRENT_VERSION_CODE=$(grep -E 'versionCode' android/app/build.gradle | grep -v '//' | awk '{print $NF}' | head -1)
+echo -e "${YELLOW}⚠ Version reminder:${NC}"
+if [ -n "$CURRENT_VERSION_CODE" ]; then
+    echo "  Current versionCode in android/app/build.gradle: ${CURRENT_VERSION_CODE}"
+fi
+echo "  Google Play requires a strictly higher versionCode for every new upload."
+echo "  If you are uploading a new AAB, increment versionCode before building."
+echo ""
+
 # Step 4: Build Android AAB
 echo -e "${YELLOW}Step 4: Building Android App Bundle...${NC}"
 
