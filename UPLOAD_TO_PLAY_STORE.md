@@ -14,7 +14,7 @@ Open Play Console and check:
 
 | What you see | What it means |
 |---|---|
-| A release listed with your AAB | ✅ Already uploaded — skip to [Step 3](#step-3--complete-the-store-listing) |
+| A release listed with your AAB | ✅ Already uploaded — **[see AFTER_AAB_UPLOAD.md](AFTER_AAB_UPLOAD.md)** for next steps |
 | "Create new release" button only | ❌ Not uploaded yet — start at [Step 1](#step-1--upload-the-aab) |
 | App not in the list at all | ❌ App not created yet — start at [Create the app](#create-the-app-first-if-needed) |
 
@@ -135,6 +135,7 @@ Each time you want to update the app:
 
 ## More Detail
 
+- **What to do after uploading:** [`AFTER_AAB_UPLOAD.md`](AFTER_AAB_UPLOAD.md)
 - Full submission walkthrough: [`PLAY_STORE_SUBMISSION_GUIDE.md`](PLAY_STORE_SUBMISSION_GUIDE.md)
 - Full checklist with every sub-step: [`SUBMISSION_CHECKLIST.md`](SUBMISSION_CHECKLIST.md)
 - Rebuilding the AAB: [`QUICK_START_AAB.md`](QUICK_START_AAB.md)
