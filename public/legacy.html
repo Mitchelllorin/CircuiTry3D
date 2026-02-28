@@ -4142,11 +4142,11 @@ body.android-optimized.menu-visible .status {
                                 setStatus('🔓 Circuit unlocked - you can now edit');
                                 break;
                             case 'zoom-in':
-                                cameraDistance = Math.max(5, cameraDistance - 2);
+                                cameraDistance = Math.max(ZOOM_MIN, cameraDistance - Math.max(ZOOM_IN_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
                                 updateCameraPosition();
                                 break;
                             case 'zoom-out':
-                                cameraDistance = Math.min(50, cameraDistance + 2);
+                                cameraDistance = Math.min(ZOOM_MAX, cameraDistance + Math.max(ZOOM_OUT_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
                                 updateCameraPosition();
                                 break;
                             default:
@@ -4878,6 +4878,7 @@ body.android-optimized.menu-visible .status {
         let lastTouchPos = { x: 0, y: 0 };
         let lastTwoFingerCenter = { x: 0, y: 0 };
         let lastPinchDistance = 0;
+        let lastAtomicMode = false;
 
         // Mobile detection
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -4904,6 +4905,22 @@ body.android-optimized.menu-visible .status {
         const TOUCH_ROTATE_Y_MAX = 1.3;
         const TWO_FINGER_PAN_MULTIPLIER = isMobile ? (isAndroid ? 1.05 : 0.85) : 0.75;
         const ZOOM_SENSITIVITY_BASE = isMobile ? (isAndroid ? 0.012 : 0.015) : 0.02;
+        const ZOOM_MIN = 0.3;
+        const ZOOM_MAX = 50;
+        const ATOMIC_ZOOM_THRESHOLD = 2.0;
+        const CLOSE_ZOOM_THRESHOLD = 5.0;
+        const MAX_PARTICLE_SCALE = 6;
+        const ZOOM_STEP_PROPORTIONAL = 0.2;
+        const ZOOM_IN_MIN_STEP = 0.1;
+        const ZOOM_OUT_MIN_STEP = 0.5;
+        const ORBITAL_RING_RADIUS_FACTOR = 2.8;
+        const ORBITAL_RING_TUBE_FACTOR = 0.35;
+        const ORBITAL_RING_RADIAL_SEGMENTS = 6;
+        const ORBITAL_RING_TUBULAR_SEGMENTS = 18;
+        const ORBITAL_RING_BASE_ROTATION = Math.PI / 3;
+        const ORBITAL_RING_ROTATION_OFFSET = 0.4;
+        const ORBITAL_RING_Z_ROTATION_FACTOR = 4;
+        const ORBITAL_RING_X_ROTATION_FACTOR = 2;
 
         // Junction class
         class Junction {
@@ -7047,6 +7064,14 @@ body.android-optimized.menu-visible .status {
         }
 
         function updateFlowParticles() {
+            // Re-create particles if atomic mode has changed (threshold crossing)
+            const atomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            if (atomicMode !== lastAtomicMode && currentFlowState) {
+                lastAtomicMode = atomicMode;
+                animateCurrentFlow(currentFlowState);
+                return;
+            }
+
             // Iterate backwards when removing items to avoid index issues
             for (let i = currentFlowParticles.length - 1; i >= 0; i--) {
                 const particle = currentFlowParticles[i];
@@ -7078,6 +7103,20 @@ body.android-optimized.menu-visible .status {
                     const position = wire.curve.getPoint(wireData.progress);
                     if (position && position.isVector3) {
                         particle.position.copy(position);
+                    }
+
+                    // Scale particles dynamically when zoomed close for near-atomic visualization
+                    if (cameraDistance < CLOSE_ZOOM_THRESHOLD) {
+                        const zoomScale = Math.min(MAX_PARTICLE_SCALE, CLOSE_ZOOM_THRESHOLD / cameraDistance);
+                        particle.scale.setScalar(zoomScale);
+                    } else if (particle.scale.x !== 1) {
+                        particle.scale.setScalar(1);
+                    }
+
+                    // Animate orbital ring when in near-atomic mode
+                    if (wireData.orbitalRing) {
+                        wireData.orbitalRing.rotation.z += wireData.speed * ORBITAL_RING_Z_ROTATION_FACTOR;
+                        wireData.orbitalRing.rotation.x += wireData.speed * ORBITAL_RING_X_ROTATION_FACTOR;
                     }
 
                 } catch (error) {
@@ -7489,7 +7528,7 @@ body.android-optimized.menu-visible .status {
                     const pinchDelta = newDistance - lastPinchDistance;
                     // Add threshold to prevent jittery zoom from small movements
                     if (Math.abs(pinchDelta) > 2) {
-                        cameraDistance = Math.max(5, Math.min(50, cameraDistance - pinchDelta * ZOOM_SENSITIVITY_BASE));
+                        cameraDistance = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, cameraDistance - pinchDelta * ZOOM_SENSITIVITY_BASE));
                         updateCameraPosition();
                     }
                 }
@@ -7621,7 +7660,7 @@ body.android-optimized.menu-visible .status {
         function handleWheel(e) {
             e.preventDefault();
             const sensitivity = isMobile ? 0.005 : 0.01;
-            cameraDistance = Math.max(5, Math.min(50, cameraDistance + e.deltaY * sensitivity));
+            cameraDistance = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, cameraDistance + e.deltaY * sensitivity));
             updateCameraPosition();
         }
 
@@ -14151,6 +14190,9 @@ Made with ? for visual learners everywhere!
             });
             currentFlowParticles = [];
 
+            // Sync atomic mode flag so updateFlowParticles doesn't immediately re-trigger
+            lastAtomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+
             currentFlowState = flowState || null;
 
             const hasFlow = Boolean(flowState?.hasFlow);
@@ -14230,6 +14272,21 @@ Made with ? for visual learners everywhere!
                         const initialPosition = wire.curve.getPoint(clampedProgress);
                         particle.position.copy(initialPosition);
 
+                        // Add orbital ring in near-atomic zoom mode
+                        let orbitalRing = null;
+                        if (cameraDistance < ATOMIC_ZOOM_THRESHOLD) {
+                            const ringGeometry = new THREE.TorusGeometry(particleSize * ORBITAL_RING_RADIUS_FACTOR, particleSize * ORBITAL_RING_TUBE_FACTOR, ORBITAL_RING_RADIAL_SEGMENTS, ORBITAL_RING_TUBULAR_SEGMENTS);
+                            const ringMaterial = new THREE.MeshBasicMaterial({
+                                color: flowColor.hex,
+                                transparent: true,
+                                opacity: 0.45,
+                                side: THREE.DoubleSide
+                            });
+                            orbitalRing = new THREE.Mesh(ringGeometry, ringMaterial);
+                            orbitalRing.rotation.x = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
+                            particle.add(orbitalRing);
+                        }
+
                         particle.userData = {
                             wire,
                             progress: clampedProgress,
@@ -14237,7 +14294,8 @@ Made with ? for visual learners everywhere!
                             direction: directionMultiplier,
                             flowColor,
                             isFlowing: true,
-                            flowStyle: currentFlowStyle
+                            flowStyle: currentFlowStyle,
+                            orbitalRing
                         };
 
                         scene.add(particle);
