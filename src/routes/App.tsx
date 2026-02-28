@@ -3,6 +3,7 @@ import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import Home from "../pages/Home";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
+import TipsTicker from "../components/TipsTicker";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
 
@@ -106,6 +107,8 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
+      {/* Tips & facts ticker - shown on all pages except landing */}
+      {!isLanding && <TipsTicker />}
     </div>
   );
 }
