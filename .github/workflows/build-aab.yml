@@ -1,6 +1,9 @@
 name: Build AAB
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version_name:
