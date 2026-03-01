@@ -2,6 +2,11 @@ name: Build AAB
 
 on:
   workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name (e.g. 1.2.0). Leave blank to auto-generate as 1.0.<run_number>.'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -103,8 +108,19 @@ jobs:
           storeFile=keystore/${KEYSTORE_FILENAME}
           EOF
 
-      - name: Compute version code
-        run: echo "VERSION_CODE=$(( GITHUB_RUN_NUMBER + 2 ))" >> "$GITHUB_ENV"
+      - name: Compute version code and name
+        env:
+          INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
+        run: |
+          VERSION_CODE=$(( GITHUB_RUN_NUMBER + 2 ))
+          echo "VERSION_CODE=${VERSION_CODE}" >> "$GITHUB_ENV"
+          if [ -n "${INPUT_VERSION_NAME}" ]; then
+            # Sanitize: allow only alphanumeric characters, dots, and hyphens
+            SAFE_VERSION_NAME="$(echo "${INPUT_VERSION_NAME}" | tr -cd '[:alnum:].-')"
+            echo "VERSION_NAME=${SAFE_VERSION_NAME}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION_NAME=1.0.${VERSION_CODE}" >> "$GITHUB_ENV"
+          fi
 
       - name: Ensure Gradle wrapper executable
         run: chmod +x android/gradlew
@@ -112,11 +128,11 @@ jobs:
       - name: Build Android Release
         run: |
           cd android
-          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" --stacktrace
+          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-aab
+          name: app-release-aab-v${{ env.VERSION_NAME }}
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
