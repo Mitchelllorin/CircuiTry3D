@@ -2017,42 +2017,6 @@ export default function Builder() {
     applyWireProfileToLegacy(activeWireProfilePayload, { runSimulation: false });
   }, [activeWireProfilePayload, applyWireProfileToLegacy, isFrameReady]);
 
-  const arenaStatusMessage = useMemo(() => {
-    switch (arenaExportStatus) {
-      case "exporting":
-        return "Exporting current build to Component Arena...";
-      case "ready": {
-        if (!lastArenaExport) {
-          return "Component Arena export is ready.";
-        }
-        const exportedTime = lastArenaExport.exportedAt
-          ? new Date(lastArenaExport.exportedAt)
-          : null;
-        const formattedTime =
-          exportedTime && !Number.isNaN(exportedTime.getTime())
-            ? exportedTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : null;
-        const componentLabel =
-          typeof lastArenaExport.componentCount === "number"
-            ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-            : null;
-        if (componentLabel && formattedTime) {
-          return `Last arena export: ${componentLabel} - ${formattedTime}`;
-        }
-        if (componentLabel) {
-          return `Last arena export: ${componentLabel}`;
-        }
-        return "Component Arena export is ready.";
-      }
-      case "error":
-        return arenaExportError ?? "Component Arena export failed.";
-      default:
-        return "Send this build to the Component Arena for advanced testing.";
-    }
-  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
@@ -2341,8 +2305,7 @@ export default function Builder() {
     switch (activeWorkspacePanelMode) {
       case "arena":
         return {
-          title: "Arena",
-          subtitle: "Component testing and advanced simulation",
+          title: "Component Arena",
         };
       case "wire-guide":
         return {
@@ -2384,14 +2347,7 @@ export default function Builder() {
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        return (
-          <>
-            <div className="workspace-mode-panel-arena-status" role="status">
-              {arenaStatusMessage}
-            </div>
-            <ArenaView variant="embedded" />
-          </>
-        );
+        return <ArenaView variant="embedded" />;
       case "wire-guide":
         return (
           <WireLibrary
@@ -2430,7 +2386,6 @@ export default function Builder() {
   }, [
     activeWireProfile,
     activeWorkspacePanelMode,
-    arenaStatusMessage,
     handleApplyWireProfile,
     handleClearWireProfile,
     liveWireMetricsSnapshot.current,
@@ -3354,6 +3309,7 @@ export default function Builder() {
           subtitle={workspacePanelMeta.subtitle}
           isOpen={isWorkspacePanelOpen}
           onToggle={() => setWorkspacePanelOpen((open) => !open)}
+          className={activeWorkspacePanelMode === "arena" ? "workspace-mode-panel--arena" : undefined}
         >
           {workspacePanelContent}
         </WorkspaceModePanel>

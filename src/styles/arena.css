@@ -119,20 +119,35 @@ body.builder-body .arena-page {
   font-family: var(--arena-font-display);
   font-size: clamp(1.4rem, 4vw, 2rem);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, var(--arena-neon-cyan) 0%, var(--arena-neon-green) 50%, var(--arena-neon-cyan) 100%);
-  background-size: 200% 200%;
+  background: linear-gradient(
+    160deg,
+    #607898 0%,
+    #a8c4dc 12%,
+    #d8eeff 22%,
+    #ffffff 30%,
+    #c0d8f0 38%,
+    #8098b8 50%,
+    #b8d0e8 62%,
+    #e8f6ff 72%,
+    #ffffff 78%,
+    #a0c0d8 88%,
+    #6888a8 100%
+  );
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: arena-title-shimmer 4s ease-in-out infinite;
+  animation: steel-gleam 3.5s ease-in-out infinite;
   text-shadow: none;
+  filter: drop-shadow(0 2px 8px rgba(160, 200, 255, 0.35));
 }
 
-@keyframes arena-title-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+@keyframes steel-gleam {
+  0%   { background-position: 100% 0%; }
+  50%  { background-position: 0% 100%; }
+  100% { background-position: 100% 0%; }
 }
 
 .arena-title-group p {
@@ -496,15 +511,15 @@ body.builder-body .arena-page {
 
 .arena-metrics-compact {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  grid-template-columns: 1fr;
+  gap: 5px;
 }
 
 .arena-metric-compact {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 5px;
+  padding: 5px 8px;
   border-radius: 6px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -516,12 +531,39 @@ body.builder-body .arena-page {
   flex-shrink: 0;
 }
 
+.arena-metric-compact .metric-compact-label {
+  flex: 1;
+  font-size: 0.64rem;
+  color: rgba(148, 163, 184, 0.78);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .arena-metric-compact .metric-compact-value {
   font-weight: 600;
   color: rgba(226, 232, 240, 0.95);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.arena-metric-compact .metric-compact-result {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.arena-metric-compact.result-win {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(0, 255, 136, 0.07);
+}
+
+.arena-metric-compact.result-loss {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(15, 23, 42, 0.7);
 }
 
 
@@ -1348,6 +1390,41 @@ body.builder-body .arena-page {
   color: rgba(203, 213, 225, 0.95);
 }
 
+.arena-nameplate-badge.battle-winner {
+  border-color: rgba(0, 255, 136, 0.65);
+  background: linear-gradient(135deg, rgba(0, 200, 100, 0.4), rgba(0, 255, 136, 0.25));
+  color: rgba(220, 255, 235, 0.98);
+  font-size: 0.7rem;
+}
+
+.arena-nameplate-badge.runner-up {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(185, 28, 28, 0.2);
+  color: rgba(254, 200, 200, 0.95);
+}
+
+.arena-battle-panel-left.battle-winner,
+.arena-battle-panel-right.battle-winner {
+  background: linear-gradient(180deg,
+    rgba(0, 255, 136, 0.1) 0%,
+    rgba(8, 14, 28, 0.95) 55%,
+    rgba(8, 14, 28, 0.98) 100%
+  );
+  box-shadow: inset 0 0 40px rgba(0, 255, 136, 0.05);
+}
+
+.arena-component-nameplate.battle-winner {
+  border-color: rgba(0, 255, 136, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 6px 20px rgba(0, 255, 136, 0.12);
+}
+
+.arena-component-nameplate.battle-loser {
+  border-color: rgba(94, 110, 130, 0.3);
+}
+
+
 .arena-battle-tagline {
   display: flex;
   align-items: center;
@@ -1357,9 +1434,9 @@ body.builder-body .arena-page {
 
 .arena-battle-overlay {
   position: absolute;
-  top: 50%;
+  bottom: 20px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -1370,6 +1447,23 @@ body.builder-body .arena-page {
 
 .arena-battle-overlay > * {
   pointer-events: auto;
+}
+
+/* Controls row (Rotation / Variance toggles) — ghost until hovered */
+.arena-battle-overlay-controls {
+  opacity: 0.25;
+  transition: opacity 0.25s ease;
+}
+
+.arena-battle-overlay-controls:hover {
+  opacity: 1;
+}
+
+/* Winner banner auto-dismiss fade */
+.arena-winner-banner--dismissed {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
 }
 
 @media (max-width: 600px) {
