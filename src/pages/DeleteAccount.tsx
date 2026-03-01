@@ -10,6 +10,12 @@ const MAILTO_LINK = `mailto:${DELETION_EMAIL}?subject=${encodeURIComponent(
   "Hi,\n\nI would like to permanently delete my CircuiTry3D account and all associated data.\n\nAccount email address: [YOUR EMAIL HERE]\n\nPlease confirm once the deletion has been completed.\n\nThank you."
 )}`;
 
+const PARTIAL_MAILTO_LINK = `mailto:${DELETION_EMAIL}?subject=${encodeURIComponent(
+  "Partial Data Deletion Request — CircuiTry3D"
+)}&body=${encodeURIComponent(
+  "Hi,\n\nI would like to delete specific data from my CircuiTry3D account WITHOUT deleting my account.\n\nAccount email address: [YOUR EMAIL HERE]\n\nPlease delete the following data (check all that apply):\n☐ Saved circuit designs and projects\n☐ Community posts and comments\n☐ App usage and interaction history\n☐ Crash logs and diagnostic data\n☐ Profile bio\n\nPlease confirm once the deletion has been completed.\n\nThank you."
+)}`;
+
 export default function DeleteAccount() {
   return (
     <div className="legal-page">
@@ -63,6 +69,34 @@ export default function DeleteAccount() {
             Sends to{" "}
             <a href={`mailto:${DELETION_EMAIL}`}>{DELETION_EMAIL}</a>
             {" "}— replace the placeholder with your account email address before sending.
+          </p>
+        </div>
+
+        {/* ── Option 3: Delete Some Data (No Account Deletion) ───────────── */}
+        <h2>Option 3 — Delete Specific Data Only (Keep Your Account)</h2>
+        <p>
+          You can request deletion of <strong>individual data types</strong> without closing your account.
+          This satisfies Google Play's requirement for partial data deletion.
+        </p>
+        <p>The following data types can be deleted independently:</p>
+        <ul>
+          <li>Saved circuit designs and projects</li>
+          <li>Community posts and comments</li>
+          <li>App usage and interaction history</li>
+          <li>Crash logs and diagnostic data</li>
+          <li>Profile bio</li>
+        </ul>
+        <div className="delete-account-cta">
+          <a
+            href={PARTIAL_MAILTO_LINK}
+            className="delete-account-btn"
+            style={{ background: "rgba(59,130,246,0.18)", borderColor: "rgba(59,130,246,0.45)" }}
+            aria-label="Open email client to send a partial data deletion request"
+          >
+            ✉ Request Partial Data Deletion by Email
+          </a>
+          <p className="delete-account-email-note">
+            Tick the items you want removed in the email body. Your account stays open.
           </p>
         </div>
 
