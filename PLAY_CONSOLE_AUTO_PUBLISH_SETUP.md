@@ -1,5 +1,10 @@
 # Auto-Publish Setup: Connect GitHub → Google Play Console
 
+> ⚠️ **You must do this on a desktop or laptop computer using a web browser.**
+>
+> The Google Play Console **Android app** does not include the "Setup" or "API access" sections — they are only available at **https://play.google.com/console** in a desktop browser (Chrome, Firefox, Safari, Edge, etc.).
+> If you are currently on your phone, bookmark this page and come back when you're at a computer.
+
 This is a one-time setup. After completing these steps, every merge to `main` will automatically build a signed AAB **and** upload it to your Play Console internal testing track — no manual steps required.
 
 ---
@@ -113,7 +118,8 @@ Merge any change to `main` (or go to **Actions → Build AAB → Run workflow** 
 
 | Symptom | Fix |
 |---|---|
-| Can't find "Setup" in Play Console sidebar | You may be inside an app. Click the Play Console logo top-left to go back to the developer home, then look for Setup in the sidebar. |
+| Using the Play Console **Android app** and can't find "Setup" | The Android app does not have this feature. Open **https://play.google.com/console** in a **desktop browser** on a computer instead. |
+| Can't find "Setup" in Play Console sidebar on desktop | You may be inside an app. Click the Play Console logo top-left to go back to the developer home, then look for Setup in the sidebar. |
 | "Service accounts" section is empty after linking | Refresh the API access page — it sometimes takes 30 seconds to populate. |
 | GitHub Actions step shows "permission denied" error | Go back to Play Console → Setup → API access → Grant access, and make sure the service account has "Release manager" on your app. |
 | GitHub Actions step shows "package not found" error | The app must already exist in Play Console with at least one internal testing release uploaded manually before the API can publish subsequent ones. |
