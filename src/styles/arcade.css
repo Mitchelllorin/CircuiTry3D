@@ -147,6 +147,66 @@
   color: rgba(200, 228, 255, 0.7);
 }
 
+/* ── Cabinet: game title selector ── */
+.arcade-game-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.arcade-game-selector button {
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 200, 255, 0.25);
+  background: rgba(10, 22, 44, 0.7);
+  color: rgba(200, 228, 255, 0.65);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.arcade-game-selector button:hover {
+  border-color: rgba(140, 210, 255, 0.5);
+  color: #e0f2ff;
+  background: rgba(16, 36, 68, 0.85);
+}
+
+.arcade-game-selector button.is-active {
+  border-color: rgba(100, 180, 255, 0.72);
+  background: rgba(22, 50, 96, 0.92);
+  color: #cce8ff;
+  box-shadow: 0 0 10px rgba(80, 160, 255, 0.15);
+}
+
+/* ── Cabinet: CRT-style game screen ── */
+.arcade-cabinet-screen {
+  background: #080e18;
+  border: 2px solid #1e293b;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    0 4px 20px rgba(0, 0, 0, 0.4);
+  /* slight scanline overlay */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+}
+
+/* Hide the per-game title/description headers inside the screen —
+   the game selector above already identifies the active game. */
+.arcade-cabinet-screen .retro-maze-header,
+.arcade-cabinet-screen .retro-game > .retro-maze-header {
+  display: none;
+}
+
 .arcade-reward-pill {
   background: rgba(12, 32, 64, 0.7);
   border: 1px solid rgba(120, 200, 255, 0.28);
@@ -503,15 +563,25 @@
 
 .retro-maze-hud strong {
   color: #f8fbff;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(200, 228, 255, 0.45);
 }
 
 .retro-maze-board-frame {
   position: relative;
   border-radius: 16px;
   padding: 14px;
-  border: 1px solid rgba(95, 163, 248, 0.38);
-  background: radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.36), rgba(5, 10, 26, 0.95) 56%);
+  border: 1px solid rgba(95, 163, 248, 0.5);
+  background:
+    radial-gradient(circle at 20% -10%, rgba(30, 92, 162, 0.28), transparent 56%),
+    linear-gradient(rgba(40, 100, 200, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 100, 200, 0.055) 1px, transparent 1px),
+    rgba(4, 8, 22, 0.97);
+  background-size: 100% 100%, 22px 22px, 22px 22px;
+  box-shadow:
+    0 0 0 1px rgba(60, 140, 255, 0.08),
+    inset 0 0 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 
@@ -562,37 +632,40 @@
 }
 
 .retro-maze-cell.is-wall {
-  background: linear-gradient(180deg, rgba(40, 98, 182, 0.85), rgba(26, 61, 128, 0.95));
+  background: linear-gradient(180deg, rgba(22, 72, 162, 0.97), rgba(10, 38, 96, 0.99));
   box-shadow:
-    inset 0 1px 0 rgba(177, 224, 255, 0.22),
-    inset 0 -1px 0 rgba(6, 20, 49, 0.5);
+    inset 0 1px 0 rgba(110, 190, 255, 0.45),
+    inset 0 -1px 0 rgba(4, 14, 42, 0.7),
+    0 0 6px rgba(40, 100, 220, 0.22);
+  border: 1px solid rgba(50, 120, 240, 0.28);
 }
 
 .retro-pellet {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
-  background: #f8fafc;
-  box-shadow: 0 0 8px rgba(248, 250, 252, 0.6);
+  background: #dff0ff;
+  box-shadow: 0 0 6px rgba(220, 240, 255, 0.85), 0 0 14px rgba(180, 220, 255, 0.35);
   z-index: 1;
 }
 
 .retro-pellet.is-power {
-  width: 10px;
-  height: 10px;
-  background: #fcd34d;
-  box-shadow: 0 0 12px rgba(252, 211, 77, 0.9);
-  animation: retro-pellet-pulse 0.85s ease-in-out infinite;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 35% 35%, #fffbd0, #fcd34d 55%, #f59e0b 100%);
+  box-shadow: 0 0 10px rgba(252, 211, 77, 0.95), 0 0 26px rgba(252, 211, 77, 0.45);
+  animation: retro-pellet-pulse 0.75s ease-in-out infinite;
 }
 
 .retro-player {
   width: 72%;
   height: 72%;
   border-radius: 999px;
-  background: radial-gradient(circle at 34% 34%, #fff7b0 0%, #fcd34d 44%, #f59e0b 100%);
+  background: radial-gradient(circle at 34% 34%, #fffde4 0%, #fde047 44%, #ca8a04 100%);
   clip-path: polygon(100% 50%, 57% 62%, 100% 100%, 0 100%, 0 0, 100% 0);
   z-index: 3;
   animation: retro-chomp 0.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(253, 224, 71, 0.85)) drop-shadow(0 0 10px rgba(253, 224, 71, 0.38));
 }
 
 .retro-player.retro-facing-up {
@@ -639,19 +712,24 @@
 }
 
 .retro-ghost-cyan {
-  background: linear-gradient(180deg, #7dd3fc 0%, #22d3ee 100%);
+  background: linear-gradient(180deg, #93e3fd 0%, #06b6d4 100%);
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.6));
 }
 
 .retro-ghost-pink {
-  background: linear-gradient(180deg, #f9a8d4 0%, #ec4899 100%);
+  background: linear-gradient(180deg, #fbb6ce 0%, #e879f9 100%);
+  filter: drop-shadow(0 0 5px rgba(232, 121, 249, 0.6));
 }
 
 .retro-ghost-amber {
-  background: linear-gradient(180deg, #fdba74 0%, #f97316 100%);
+  background: linear-gradient(180deg, #fdd28a 0%, #fb923c 100%);
+  filter: drop-shadow(0 0 5px rgba(251, 146, 60, 0.6));
 }
 
 .retro-ghost.is-frightened {
   background: linear-gradient(180deg, #93c5fd 0%, #2563eb 100%);
+  filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.75));
+  animation: retro-ghost-flash 0.45s ease-in-out infinite;
 }
 
 .retro-maze-message {
@@ -666,66 +744,62 @@
 
 .retro-maze-controls {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: center;
 }
 
-.retro-maze-primary-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+/* Nintendo / Gameboy-style D-pad */
+.retro-direction-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+  gap: 0;
+  width: fit-content;
 }
 
-.retro-maze-primary-actions button,
 .retro-direction-pad button {
-  border-radius: 10px;
-  border: 1px solid rgba(122, 191, 255, 0.4);
-  background: rgba(14, 34, 65, 0.92);
-  color: #eaf4ff;
-  padding: 9px 12px;
+  width: 44px;
+  height: 44px;
+  background: #252525;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.7rem;
   cursor: pointer;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.08s ease;
+  padding: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45);
 }
 
-.retro-maze-primary-actions button:hover,
-.retro-maze-primary-actions button:focus-visible,
-.retro-direction-pad button:hover,
-.retro-direction-pad button:focus-visible {
-  border-color: rgba(178, 220, 255, 0.72);
-  background: rgba(20, 50, 93, 0.95);
-  transform: translateY(-1px);
+.retro-direction-pad button:hover {
+  background: #303030;
   outline: none;
 }
 
-.retro-maze-primary-actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.72;
-  transform: none;
+.retro-direction-pad button:active,
+.retro-direction-pad button:focus-visible {
+  background: #1a1a1a;
+  outline: none;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
-.retro-maze-primary-actions button.ghost {
-  background: transparent;
-}
-
-.retro-direction-pad {
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-}
-
-.retro-direction-pad > div {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(70px, 1fr));
-  gap: 8px;
-}
-
-.retro-direction-pad > div button:nth-child(2) {
+/* Grid placement — cross/plus shape */
+.retro-dpad-up    { grid-column: 2; grid-row: 1; border-radius: 6px 6px 0 0; }
+.retro-dpad-left  { grid-column: 1; grid-row: 2; border-radius: 6px 0 0 6px; }
+.retro-dpad-center {
   grid-column: 2;
+  grid-row: 2;
+  background: #252525;
+  display: block;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
+.retro-dpad-right { grid-column: 3; grid-row: 2; border-radius: 0 6px 6px 0; }
+.retro-dpad-down  { grid-column: 2; grid-row: 3; border-radius: 0 0 6px 6px; }
 
 .retro-maze-help {
   margin: 0;
@@ -753,6 +827,11 @@
   50% {
     clip-path: polygon(100% 50%, 74% 52%, 100% 72%, 0 100%, 0 0, 100% 28%);
   }
+}
+
+@keyframes retro-ghost-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 @media (max-width: 960px) {
@@ -788,16 +867,592 @@
     flex-direction: column;
   }
 
-  .retro-maze-controls {
-    flex-direction: column;
-    align-items: stretch;
+  /* On small screens keep the controller body but shrink it */
+  .arcade-controller {
+    max-width: 100%;
+    padding: 10px 12px;
+    border-radius: 18px 18px 26px 26px / 14px 14px 22px 22px;
+  }
+
+  .arcade-ab-buttons {
+    grid-template-columns: repeat(2, 38px);
+    grid-template-rows: repeat(2, 38px);
+  }
+
+  .arcade-btn-a,
+  .arcade-btn-b {
+    width: 38px;
+    height: 38px;
   }
 
   .retro-direction-pad {
-    justify-items: stretch;
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(3, 38px);
   }
 
-  .retro-direction-pad > div {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .retro-direction-pad button {
+    width: 38px;
+    height: 38px;
   }
+}
+
+/* ============================================================
+   Shared arcade controller  (D-pad + A/B)
+   ============================================================ */
+
+/* Full controller chassis — D-pad left · Start/Select center · A/B right */
+.arcade-controller {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  background: linear-gradient(160deg, #1c1c1c 0%, #141414 100%);
+  border-radius: 24px 24px 36px 36px / 18px 18px 28px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 4px 0 #0a0a0a,
+    0 8px 24px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Left zone — D-pad */
+.arcade-ctrl-left {
+  flex-shrink: 0;
+}
+
+/* Center zone — Start + Select */
+.arcade-ctrl-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 0 12px;
+}
+
+/* Right zone — A/B */
+.arcade-ctrl-right {
+  flex-shrink: 0;
+}
+
+/* Start / Select oval pill buttons */
+.arcade-btn-start,
+.arcade-btn-select {
+  width: 52px;
+  height: 18px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3a3a3a, #222);
+  color: rgba(210, 228, 255, 0.7);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: background 0.1s ease, transform 0.08s ease;
+}
+
+.arcade-btn-start:hover:not(:disabled),
+.arcade-btn-select:hover:not(:disabled) {
+  background: linear-gradient(180deg, #4a4a4a, #2e2e2e);
+  color: #e8f4ff;
+}
+
+.arcade-btn-start:active:not(:disabled),
+.arcade-btn-select:active:not(:disabled) {
+  background: linear-gradient(180deg, #1e1e1e, #2a2a2a);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  transform: translateY(1px);
+}
+
+.arcade-btn-start:disabled,
+.arcade-btn-select:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 2×2 A/B grid — B top-left (grey), A bottom-right (red) — SNES diagonal */
+.arcade-ab-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 6px;
+}
+
+.arcade-btn-a,
+.arcade-btn-b {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4);
+  transition: background 0.08s ease, box-shadow 0.08s ease, transform 0.08s ease;
+}
+
+/* B = grey-charcoal (secondary / shield / brake) — top-left */
+.arcade-btn-b {
+  background: radial-gradient(circle at 38% 32%, #9ca3af, #374151);
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* A = red (primary / attack / boost) — bottom-right */
+.arcade-btn-a {
+  background: radial-gradient(circle at 38% 32%, #f87171, #b91c1c);
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.arcade-btn-a:hover:not(:disabled) {
+  background: radial-gradient(circle at 38% 32%, #fca5a5, #dc2626);
+}
+
+.arcade-btn-b:hover:not(:disabled) {
+  background: radial-gradient(circle at 38% 32%, #d1d5db, #4b5563);
+}
+
+.arcade-btn-a:active:not(:disabled),
+.arcade-btn-b:active:not(:disabled) {
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.5);
+  transform: scale(0.94);
+}
+
+.arcade-btn-a:disabled,
+.arcade-btn-b:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Shared game section wrapper  (mirrors .retro-maze)
+   ============================================================ */
+.retro-game {
+  display: grid;
+  gap: 16px;
+}
+
+/* ============================================================
+   Ohm's Racer  — race track
+   ============================================================ */
+.race-track-frame {
+  position: relative;
+  border-radius: 16px;
+  padding: 10px;
+  border: 1px solid rgba(95, 163, 248, 0.38);
+  background: #0b0c10;
+  overflow: hidden;
+}
+
+.race-track-frame::after {
+  content: "";
+  /* inset starts 2px above the pattern height so the first stripe is never clipped */
+  position: absolute;
+  inset: -48px 0 0 0;
+  pointer-events: none;
+  z-index: 2;
+  /* stripe repeats every 46px — animation translateY matches that value */
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.028) 0,
+    rgba(255, 255, 255, 0.028) 1px,
+    transparent 1px,
+    transparent 46px
+  );
+  animation: road-scan 0.55s linear infinite;
+}
+
+@keyframes road-scan {
+  from { transform: translateY(0); }
+  to   { transform: translateY(46px); }
+}
+
+.race-track {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  width: min(100%, 480px);
+  margin: 0 auto;
+}
+
+.race-row {
+  display: grid;
+  grid-template-columns: 18px 1fr 1fr 1fr 18px;
+  gap: 2px;
+  height: 44px;
+}
+
+.race-border {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(220, 50, 50, 0.92) 0px,
+    rgba(220, 50, 50, 0.92) 8px,
+    rgba(235, 235, 235, 0.88) 8px,
+    rgba(235, 235, 235, 0.88) 16px
+  );
+  border-radius: 3px;
+}
+
+.race-cell {
+  background: #0d0f16;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: rgba(220, 238, 255, 0.9);
+  min-width: 0;
+  position: relative;
+}
+
+/* Dashed lane dividers between the 3 road lanes */
+.race-row > .race-cell:nth-child(2),
+.race-row > .race-cell:nth-child(3) {
+  border-right: 2px dashed rgba(255, 220, 50, 0.18);
+}
+
+/* Player car — rotated so emoji faces up the road */
+.race-player-car {
+  display: inline-block;
+  transform: rotate(-90deg);
+  font-size: 1.3rem;
+  filter: drop-shadow(0 0 5px rgba(254, 240, 138, 0.9));
+}
+
+/* Laser beam — neon vertical line firing upward */
+.race-cell.is-laser::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 100%;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 220, 255, 0.12),
+    rgba(0, 220, 255, 0.95),
+    rgba(0, 220, 255, 0.12)
+  );
+  box-shadow: 0 0 8px rgba(0, 220, 255, 0.9), 0 0 22px rgba(0, 220, 255, 0.35);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.race-cell.is-player {
+  background: radial-gradient(circle at 50% 40%, rgba(60, 120, 220, 0.65), rgba(20, 60, 130, 0.45));
+  color: #fef08a;
+  font-size: 1.1rem;
+}
+
+.race-cell.is-obstacle {
+  background: rgba(120, 28, 28, 0.35);
+  color: #fca5a5;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.55));
+}
+
+.race-cell.is-pickup {
+  background: rgba(78, 64, 8, 0.35);
+  color: #fef08a;
+  text-shadow: 0 0 12px rgba(254, 240, 138, 0.9), 0 0 26px rgba(254, 240, 138, 0.4);
+}
+
+/* ============================================================
+   Volt Fighter  — fight arena
+   ============================================================ */
+.fight-hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fight-hp-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fight-hp-section-enemy {
+  flex-direction: row-reverse;
+}
+
+.fight-hp-name {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(196, 228, 255, 0.85);
+  white-space: nowrap;
+}
+
+.fight-hp-track {
+  flex: 1;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(8, 20, 40, 0.85);
+  border: 1px solid rgba(110, 180, 255, 0.3);
+  box-shadow: 0 0 8px rgba(80, 140, 255, 0.12);
+  overflow: hidden;
+}
+
+.fight-hp-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.12s ease;
+}
+
+.fight-hp-fill-player {
+  background: linear-gradient(90deg, #fcd34d, #f59e0b);
+}
+
+.fight-hp-fill-enemy {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+  margin-left: auto;
+}
+
+.fight-hp-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e8f6ff;
+  min-width: 2ch;
+  text-align: center;
+  text-shadow: 0 0 6px rgba(200, 230, 255, 0.4);
+}
+
+.fight-vs {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(200, 228, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.fight-arena {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border-radius: 14px;
+  border: 1px solid rgba(95, 163, 248, 0.45);
+  background:
+    radial-gradient(ellipse 34% 55% at 28% 0%, rgba(255, 210, 60, 0.07) 0%, transparent 100%),
+    radial-gradient(ellipse 34% 55% at 72% 0%, rgba(80, 160, 255, 0.07) 0%, transparent 100%),
+    radial-gradient(ellipse at 50% 108%, rgba(30, 80, 160, 0.5) 0%, transparent 62%),
+    linear-gradient(rgba(35, 90, 190, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(35, 90, 190, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(2, 6, 18, 0.99) 0%, rgba(6, 14, 38, 0.97) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 24px 24px, 100% 100%;
+  box-shadow: inset 0 -4px 28px rgba(30, 80, 160, 0.22);
+  overflow: hidden;
+}
+
+.fight-platform {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(18, 55, 140, 0.84) 0px,
+    rgba(18, 55, 140, 0.84) 28px,
+    rgba(10, 35, 96, 0.9) 28px,
+    rgba(10, 35, 96, 0.9) 56px
+  );
+  border-top: 2px solid rgba(100, 180, 255, 0.6);
+  box-shadow: 0 -4px 18px rgba(80, 150, 255, 0.22);
+}
+
+.fight-sprite {
+  position: absolute;
+  bottom: 22px;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: left 0.06s ease;
+  user-select: none;
+}
+
+.fight-sprite-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+  transition: transform 0.08s ease;
+}
+
+.fight-sprite-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(200, 228, 255, 0.7);
+}
+
+.fight-shield {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.fight-sprite.hurt .fight-sprite-icon {
+  transform: rotate(-20deg) scale(0.85);
+  filter: brightness(2.2) saturate(0.4);
+  animation: fight-hurt-flash 0.1s ease-in-out 4;
+}
+
+@keyframes fight-hurt-flash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+
+.fight-sprite.blocking .fight-sprite-icon {
+  transform: scale(0.88);
+  filter: brightness(0.65) saturate(0.7);
+}
+
+/* Pop-up hit effect (💥 / ⛨ / 💀) at impact midpoint */
+.fight-attack-fx {
+  position: absolute;
+  bottom: 52px;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+  animation: fight-fx-pop 0.7s ease-out forwards;
+}
+
+@keyframes fight-fx-pop {
+  0%   { transform: translateX(-50%) scale(0.4) rotate(-12deg); opacity: 1; }
+  28%  { transform: translateX(-50%) scale(1.6) rotate(6deg);   opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-32px) scale(0.85) rotate(0deg); opacity: 0; }
+}
+
+.fight-sprite.idle .fight-sprite-icon {
+  animation: fight-idle-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes fight-idle-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Respect reduced-motion preference — disable all decorative game animations */
+@media (prefers-reduced-motion: reduce) {
+  .retro-ghost.is-frightened {
+    animation: none;
+  }
+
+  .fight-sprite.idle .fight-sprite-icon {
+    animation: none;
+  }
+
+  .fight-sprite.hurt .fight-sprite-icon {
+    animation: none;
+  }
+
+  .fight-attack-fx {
+    animation: none;
+    opacity: 1;
+  }
+
+  .retro-pellet.is-power {
+    animation: none;
+  }
+
+  .retro-player {
+    animation: none;
+  }
+
+  .race-track-frame::after {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Circuit Lab Notes  — facts panel
+   ============================================================ */
+.arcade-facts-panel {
+  border-color: rgba(252, 211, 77, 0.22);
+}
+
+.arcade-facts-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: rgba(200, 228, 255, 0.75);
+}
+
+.arcade-facts-nav button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(120, 190, 255, 0.3);
+  background: rgba(14, 34, 65, 0.85);
+  color: #e0f2ff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.arcade-facts-nav button:hover,
+.arcade-facts-nav button:focus-visible {
+  background: rgba(26, 58, 108, 0.95);
+  border-color: rgba(178, 220, 255, 0.65);
+  outline: none;
+}
+
+.arcade-fact-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(8, 20, 44, 0.75);
+  border: 1px solid rgba(252, 211, 77, 0.15);
+}
+
+.arcade-fact-text {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  color: #f8fbff;
+}
+
+.arcade-fact-tip {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(196, 228, 255, 0.78);
+  border-left: 2px solid rgba(252, 211, 77, 0.45);
+  padding-left: 12px;
 }

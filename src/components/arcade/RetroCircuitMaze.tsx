@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import ArcadeController from "./ArcadeController";
 
 type Direction = "up" | "down" | "left" | "right";
 type ViewMode = "2d" | "3d";
@@ -66,7 +67,7 @@ const DOT_SCORE = 10;
 const POWER_SCORE = 60;
 const GHOST_SCORE = 200;
 const POWER_TICKS = 42;
-const TICK_MS = 180;
+const TICK_MS = 260;
 
 const GHOST_TEMPLATES: GhostTemplate[] = [
   { id: "ghost-cyan", startX: 13, startY: 1, direction: "left", tone: "cyan" },
@@ -574,35 +575,13 @@ export default function RetroCircuitMaze() {
       <p className="retro-maze-message">{mazeState.message}</p>
 
       <div className="retro-maze-controls">
-        <div className="retro-maze-primary-actions">
-          <button
-            type="button"
-            onClick={handleStartOrRestart}
-            disabled={mazeState.status === "running"}
-          >
-            {primaryActionLabel}
-          </button>
-          <button type="button" className="ghost" onClick={handleResetBoard}>
-            Reset Board
-          </button>
-        </div>
-
-        <div className="retro-direction-pad" role="group" aria-label="Direction pad">
-          <button type="button" onClick={() => queueDirection("up")}>
-            Up
-          </button>
-          <div>
-            <button type="button" onClick={() => queueDirection("left")}>
-              Left
-            </button>
-            <button type="button" onClick={() => queueDirection("down")}>
-              Down
-            </button>
-            <button type="button" onClick={() => queueDirection("right")}>
-              Right
-            </button>
-          </div>
-        </div>
+        <ArcadeController
+          onDirection={queueDirection}
+          onStart={mazeState.status === "running" ? undefined : handleStartOrRestart}
+          onSelect={handleResetBoard}
+          onA={mazeState.status === "running" ? undefined : handleStartOrRestart}
+          onB={handleResetBoard}
+        />
       </div>
 
       <p className="retro-maze-help">

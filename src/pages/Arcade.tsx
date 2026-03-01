@@ -1,7 +1,9 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
 import RetroCircuitMaze from "../components/arcade/RetroCircuitMaze";
+import OhmsRacer from "../components/arcade/OhmsRacer";
+import VoltFighter from "../components/arcade/VoltFighter";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../context/GamificationContext";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
@@ -25,6 +27,57 @@ const formatDuration = (ms?: number) => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
+const CIRCUIT_FACTS = [
+  {
+    fact: "Ohm's Law: V = I × R — voltage equals current times resistance.",
+    tip: "In CircuiTry3D, watch how the voltage readout changes as you swap resistor values in a series circuit.",
+  },
+  {
+    fact: "In a series circuit all components share the same current path — break one link and the whole loop stops.",
+    tip: "Try removing a single resistor in a series build in CircuiTry3D and watch every component go dark.",
+  },
+  {
+    fact: "In a parallel circuit each branch receives the full supply voltage independently.",
+    tip: "Add a second branch in CircuiTry3D and notice that the first branch's brightness doesn't drop.",
+  },
+  {
+    fact: "A capacitor stores energy in an electric field between two conducting plates.",
+    tip: "Charge a capacitor in CircuiTry3D then disconnect the source — the stored charge will slowly drain through a resistor.",
+  },
+  {
+    fact: "A resistor limits current flow and converts electrical energy into heat (P = I² × R).",
+    tip: "Swap in a higher-resistance component in CircuiTry3D and watch the current meter drop in real time.",
+  },
+  {
+    fact: "A diode only allows current to flow in one direction — reverse it and the circuit goes dead.",
+    tip: "Flip a diode backwards in CircuiTry3D to see how forward vs reverse bias changes the simulation.",
+  },
+  {
+    fact: "Power formula: P = V × I. Doubling current quadruples the power consumed by a resistor.",
+    tip: "Use CircuiTry3D's power display to compare a series vs parallel arrangement of identical bulbs.",
+  },
+  {
+    fact: "Kirchhoff's Current Law: all current entering a junction must equal all current leaving it.",
+    tip: "Place a current probe at a parallel junction in CircuiTry3D and verify the branch currents add up.",
+  },
+  {
+    fact: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed loop equals zero.",
+    tip: "Trace a complete loop in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
+  },
+  {
+    fact: "A short circuit provides a near-zero resistance path, causing dangerously high current.",
+    tip: "CircuiTry3D's safety mode will flash a warning when a short is detected in your build.",
+  },
+  {
+    fact: "AC (alternating current) reverses direction many times per second — household supply is typically 50 or 60 Hz.",
+    tip: "Switch to the AC source in CircuiTry3D and observe how the oscilloscope waveform changes.",
+  },
+  {
+    fact: "A transistor can amplify a signal or act as a digital switch — the foundation of all modern chips.",
+    tip: "Use a transistor as a switch in CircuiTry3D to control a high-power LED with a tiny base current.",
+  },
+];
+
 type SprintLeaderboardRow = {
   id: string;
   name: string;
@@ -46,6 +99,15 @@ type CleanLeaderboardRow = {
 export default function Arcade() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const [tipIndex, setTipIndex] = useState(0);
+  const [activeGame, setActiveGame] = useState<"maze" | "racer" | "fighter">("maze");
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % CIRCUIT_FACTS.length);
+    }, 9000);
+    return () => window.clearInterval(id);
+  }, []);
   const { setWorkspaceMode } = useWorkspaceMode();
   const {
     state,
@@ -203,17 +265,87 @@ export default function Arcade() {
         </div>
       </header>
 
-      <section className="arcade-panel">
+      {/* ── Unified Arcade Cabinet ── */}
+      <section className="arcade-panel arcade-cabinet-panel">
         <div className="arcade-panel-header">
           <div>
             <h2>Retro Arcade Cabinet</h2>
-            <p>
-              Circuit Chase &#39;84 brings a Pac-Man-inspired 2D/3D maze run to
-              Circuitry 3D Arcade.
-            </p>
+            <p>Pick a game title, then play in the screen below.</p>
           </div>
         </div>
-        <RetroCircuitMaze />
+
+        {/* Game title selector */}
+        <div className="arcade-game-selector" role="group" aria-label="Choose game">
+          <button
+            type="button"
+            className={activeGame === "maze" ? "is-active" : ""}
+            onClick={() => setActiveGame("maze")}
+          >
+            Circuit Chase &#39;84
+          </button>
+          <button
+            type="button"
+            className={activeGame === "racer" ? "is-active" : ""}
+            onClick={() => setActiveGame("racer")}
+          >
+            Ohm&#39;s Racer &#39;85
+          </button>
+          <button
+            type="button"
+            className={activeGame === "fighter" ? "is-active" : ""}
+            onClick={() => setActiveGame("fighter")}
+          >
+            Volt Fighter &#39;87
+          </button>
+        </div>
+
+        {/* Game screen */}
+        <div className="arcade-cabinet-screen">
+          {activeGame === "maze" && <RetroCircuitMaze />}
+          {activeGame === "racer" && <OhmsRacer />}
+          {activeGame === "fighter" && <VoltFighter />}
+        </div>
+      </section>
+
+      {/* ── Circuit Lab Notes (rotating educational facts) ── */}
+      <section className="arcade-panel arcade-facts-panel">
+        <div className="arcade-panel-header">
+          <div>
+            <h2>Circuit Lab Notes</h2>
+            <p>Facts and tips to level up your circuit knowledge.</p>
+          </div>
+          <div className="arcade-facts-nav" aria-label="Navigate facts">
+            <button
+              type="button"
+              aria-label="Previous fact"
+              onClick={() =>
+                setTipIndex((prev) => (prev - 1 + CIRCUIT_FACTS.length) % CIRCUIT_FACTS.length)
+              }
+            >
+              ‹
+            </button>
+            <span>
+              {tipIndex + 1}&thinsp;/&thinsp;{CIRCUIT_FACTS.length}
+            </span>
+            <button
+              type="button"
+              aria-label="Next fact"
+              onClick={() =>
+                setTipIndex((prev) => (prev + 1) % CIRCUIT_FACTS.length)
+              }
+            >
+              ›
+            </button>
+          </div>
+        </div>
+        <div className="arcade-fact-card">
+          <p className="arcade-fact-text">
+            <span aria-hidden="true">💡</span> {CIRCUIT_FACTS[tipIndex].fact}
+          </p>
+          <p className="arcade-fact-tip">
+            <span aria-hidden="true">🎮</span> {CIRCUIT_FACTS[tipIndex].tip}
+          </p>
+        </div>
       </section>
 
       <section className="arcade-panel">
