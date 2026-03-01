@@ -3448,14 +3448,12 @@ body.builder-body .arena-page {
 
 @keyframes battle-divider-pulse {
   0% {
-    width: 4px;
     box-shadow:
       0 0 20px rgba(150, 220, 255, 0.8),
       0 0 40px rgba(100, 200, 255, 0.6),
       0 0 60px rgba(80, 180, 255, 0.4);
   }
   100% {
-    width: 8px;
     box-shadow:
       0 0 40px rgba(150, 220, 255, 1),
       0 0 80px rgba(100, 200, 255, 0.9),
@@ -3796,6 +3794,32 @@ body.builder-body .arena-page {
     padding: 8px 10px;
     font-size: 0.68rem;
   }
+}
+
+/* ============================================================
+   BATTLE EFFECTS — ONLY ANIMATE DURING ACTIVE BATTLE
+   Prevents screen-flash, sparks, lightning, and arcs from
+   running continuously when the battle effects overlay is hidden,
+   eliminating the flashing and glitching caused by invisible but
+   actively-animating elements consuming GPU compositor budget.
+   ============================================================ */
+
+/* Screen flash must only fire while battling */
+.arena-battle-stage:not(.battling) .arena-battle-flash {
+  animation: none;
+}
+
+/* Stop expensive battle-effects animations when not actively battling */
+.arena-battle-stage:not(.battling) .arena-lightning-bolt,
+.arena-battle-stage:not(.battling) .arena-spark,
+.arena-battle-stage:not(.battling) .arena-energy-wave {
+  animation: none;
+}
+
+.arena-battle-stage:not(.battling) .arena-electrical-arc::before,
+.arena-battle-stage:not(.battling) .arena-electrical-arc::after,
+.arena-battle-stage:not(.battling) .arena-electric-crackle path {
+  animation: none;
 }
 
 /* ============================================================
