@@ -193,6 +193,162 @@
   color: var(--text-secondary);
 }
 
+/* ── Play Store Compliance hub ───────────────────────────────────────────── */
+
+.compliance-page {
+  max-width: 56rem; /* slightly wider to give the grid space */
+}
+
+.compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.compliance-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.3rem 1.4rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.compliance-card:target {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-primary-dim);
+}
+
+.compliance-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.compliance-icon {
+  font-size: 1.55rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.compliance-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.compliance-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Override the .legal-body h2 rule for card titles */
+.compliance-card .compliance-card-title {
+  font-size: 1.05rem;
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.compliance-status {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.compliance-status--complete {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--brand-accent);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.compliance-status--na {
+  background: rgba(136, 204, 255, 0.1);
+  color: var(--brand-primary);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+}
+
+.compliance-declaration {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.compliance-detail {
+  margin: 0 0 0 1.1rem;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.compliance-detail li {
+  margin-bottom: 0.2rem;
+}
+
+.compliance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.compliance-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.compliance-btn--download {
+  background: var(--brand-primary-dim);
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  color: var(--brand-primary);
+}
+
+.compliance-btn--download:hover {
+  background: rgba(136, 204, 255, 0.28);
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.compliance-btn--view {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.compliance-btn--view:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .compliance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Back link */
 .legal-back {
   display: inline-flex;

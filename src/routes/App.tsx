@@ -20,6 +20,7 @@ const Arcade = lazy(() => import("../pages/Arcade"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 const DataSafety = lazy(() => import("../pages/DataSafety"));
 const AppAccess = lazy(() => import("../pages/AppAccess"));
+const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
 
 function PageFallback() {
   return (
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/data-safety" element={<DataSafety />} />
             <Route path="/app-access" element={<AppAccess />} />
+            <Route path="/play-store" element={<PlayStoreCompliance />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -123,6 +125,8 @@ function AppLayout() {
           <Link to="/data-safety" className="app-footer-link">Data Safety</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
           <Link to="/app-access" className="app-footer-link">Get the App</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/play-store" className="app-footer-link">Play Store Compliance</Link>
         </footer>
       )}
     </div>
