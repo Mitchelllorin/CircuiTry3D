@@ -175,6 +175,34 @@
       }
       .landing-page { gap: 22px; }
     }
+    .landing-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 16px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.5rem;
+      font-size: 0.72rem;
+      z-index: 10;
+    }
+    .landing-footer-link {
+      color: rgba(147, 197, 253, 0.55);
+      text-decoration: none;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s ease;
+    }
+    .landing-footer-link:hover {
+      color: rgba(147, 197, 253, 0.9);
+    }
+    .landing-footer-sep {
+      color: rgba(147, 197, 253, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -194,6 +222,15 @@
       <a class="launch-button" href="/app" id="launch-btn">Launch</a>
     </div>
   </div>
+  <footer class="landing-footer">
+    <nav aria-label="Legal information">
+      <a class="landing-footer-link" href="/privacy">Privacy Policy</a>
+      <span class="landing-footer-sep" aria-hidden="true">·</span>
+      <a class="landing-footer-link" href="/data-safety">Data Safety</a>
+      <span class="landing-footer-sep" aria-hidden="true">·</span>
+      <a class="landing-footer-link" href="/delete-account">Delete Account</a>
+    </nav>
+  </footer>
   <script>
     (function(){
       const normalisePath = (href) => {
@@ -241,6 +278,21 @@
           }
         });
       }
+
+      document.querySelectorAll('.landing-footer-link').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          const href = link.getAttribute('href');
+          if (!href) {
+            return;
+          }
+
+          const pathTarget = normalisePath(href);
+          const handled = sendNavigationMessage(pathTarget);
+          if (handled) {
+            event.preventDefault();
+          }
+        });
+      });
   })();
 </script>
 </body>
