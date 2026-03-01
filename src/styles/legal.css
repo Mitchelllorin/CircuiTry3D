@@ -349,6 +349,59 @@
   }
 }
 
+/* ── Delete Account page ─────────────────────────────────────────────────── */
+
+.delete-account-warning {
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.delete-account-warning strong {
+  color: #ff6b6b;
+}
+
+.delete-account-cta {
+  margin: 1rem 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.delete-account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.2rem;
+  border-radius: 10px;
+  background: rgba(255, 80, 80, 0.12);
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  color: #ff8080;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.delete-account-btn:hover {
+  background: rgba(255, 80, 80, 0.22);
+  border-color: #ff6b6b;
+  color: #ffaaaa;
+  text-decoration: none;
+}
+
+.delete-account-email-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 /* Back link */
 .legal-back {
   display: inline-flex;

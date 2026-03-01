@@ -179,6 +179,9 @@ export default function DataSafety() {
             complete deletion within 30 days.
           </li>
         </ol>
+        <p>
+          <Link to="/delete-account">→ Visit the dedicated Delete Account page for full instructions and a pre-filled request link.</Link>
+        </p>
 
         <h2>Compliance</h2>
         <ul>

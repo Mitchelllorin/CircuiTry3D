@@ -98,6 +98,9 @@ export default function PrivacyPolicy() {
             complete deletion within 30 days.
           </li>
         </ol>
+        <p>
+          <Link to="/delete-account">→ Visit the dedicated Delete Account page for step-by-step instructions and a pre-filled request link.</Link>
+        </p>
 
         <h2>Children's Privacy</h2>
         <p>
