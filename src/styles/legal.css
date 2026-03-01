@@ -193,6 +193,130 @@
   color: var(--text-secondary);
 }
 
+/* ── Play Console URL reference panel ───────────────────────────────────── */
+
+.console-url-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-emphasis);
+  border-radius: 14px;
+  padding: 1.3rem 1.5rem 1.1rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.console-url-panel-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+  padding: 0;
+  border: none;
+}
+
+/* Override .legal-body h2 defaults for this heading */
+.legal-body .console-url-panel-heading {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  font-size: 1.05rem;
+}
+
+.console-url-panel-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.console-url-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.console-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  background: var(--bg-darker);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+}
+
+.console-url-meta {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.console-url-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.console-url-field {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.console-url-value {
+  grid-column: 1;
+  grid-row: 2;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace;
+  font-size: 0.82rem;
+  color: var(--brand-primary);
+  word-break: break-all;
+  background: none;
+  padding: 0;
+}
+
+.console-url-copy {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 7px;
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  background: var(--brand-primary-dim);
+  color: var(--brand-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.console-url-copy:hover {
+  background: rgba(136, 204, 255, 0.28);
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+}
+
+.console-url-copy--copied {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: var(--brand-accent);
+}
+
+@media (max-width: 520px) {
+  .console-url-row {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .console-url-copy {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+  }
+}
+
 /* ── Play Store Compliance hub ───────────────────────────────────────────── */
 
 .compliance-page {

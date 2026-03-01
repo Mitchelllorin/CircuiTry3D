@@ -1,6 +1,40 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import BrandSignature from "../components/BrandSignature";
 import "../styles/legal.css";
+
+const SITE_ORIGIN = "https://circuitry3d.app";
+
+type ConsoleUrl = { label: string; field: string; url: string };
+
+const CONSOLE_URLS: ConsoleUrl[] = [
+  { label: "Privacy Policy", field: "Store listing → Privacy policy", url: `${SITE_ORIGIN}/privacy` },
+  { label: "Data Safety", field: "Data safety → Privacy policy link", url: `${SITE_ORIGIN}/data-safety` },
+  { label: "Delete Account", field: "Data safety → Account deletion URL", url: `${SITE_ORIGIN}/delete-account` },
+  { label: "App Access", field: "App content → App access", url: `${SITE_ORIGIN}/app-access` },
+];
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      className={`console-url-copy${copied ? " console-url-copy--copied" : ""}`}
+      onClick={handleCopy}
+      aria-label={`Copy ${text}`}
+    >
+      {copied ? "✔ Copied" : "Copy"}
+    </button>
+  );
+}
 
 type Requirement = {
   id: string;
@@ -162,6 +196,24 @@ export default function PlayStoreCompliance() {
           Each requirement includes the declaration answer, supporting detail, and a downloadable
           document you can reference while filling out the Play Console form.
         </p>
+
+        {/* ── Play Console URL reference ──────────────────────────────────── */}
+        <div className="console-url-panel">
+          <h2 className="console-url-panel-heading">🔗 Play Console URLs</h2>
+          <p className="console-url-panel-hint">Copy each URL and paste it into the matching field in Google Play Console.</p>
+          <div className="console-url-list">
+            {CONSOLE_URLS.map(({ label, field, url }) => (
+              <div key={url} className="console-url-row">
+                <div className="console-url-meta">
+                  <span className="console-url-label">{label}</span>
+                  <span className="console-url-field">{field}</span>
+                </div>
+                <code className="console-url-value">{url}</code>
+                <CopyButton text={url} />
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="compliance-grid">
           {REQUIREMENTS.map((req) => (
