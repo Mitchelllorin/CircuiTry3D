@@ -4905,11 +4905,11 @@ body.android-optimized.menu-visible .status {
         const TOUCH_ROTATE_Y_MAX = 1.3;
         const TWO_FINGER_PAN_MULTIPLIER = isMobile ? (isAndroid ? 1.05 : 0.85) : 0.75;
         const ZOOM_SENSITIVITY_BASE = isMobile ? (isAndroid ? 0.012 : 0.015) : 0.02;
-        const ZOOM_MIN = 0.3;
+        const ZOOM_MIN = 0.1; // 0.1 allows near-atomic zoom; orbital rings only spawn below ATOMIC_ZOOM_THRESHOLD (2.0) to keep performance manageable
         const ZOOM_MAX = 50;
         const ATOMIC_ZOOM_THRESHOLD = 2.0;
         const CLOSE_ZOOM_THRESHOLD = 5.0;
-        const MAX_PARTICLE_SCALE = 6;
+        const MAX_PARTICLE_SCALE = 12;
         const ZOOM_STEP_PROPORTIONAL = 0.2;
         const ZOOM_IN_MIN_STEP = 0.1;
         const ZOOM_OUT_MIN_STEP = 0.5;
@@ -7617,8 +7617,14 @@ body.android-optimized.menu-visible .status {
                     isRotating = true;
                     lastTouchPos = { x: e.clientX, y: e.clientY };
                 }
+            } else if (e.button === 1) {
+                // Middle-click pan
+                e.preventDefault();
+                isPanning = true;
+                lastTouchPos = { x: e.clientX, y: e.clientY };
             } else if (e.button === 2) {
-                isRotating = true;
+                // Right-click pan (standard 3D-viewport convention: right-drag pans the scene)
+                isPanning = true;
                 lastTouchPos = { x: e.clientX, y: e.clientY };
             }
         }
@@ -7644,6 +7650,12 @@ body.android-optimized.menu-visible .status {
                 updateCameraPosition();
                 
                 lastTouchPos = { x: e.clientX, y: e.clientY };
+            } else if (isPanning) {
+                const deltaX = e.clientX - lastTouchPos.x;
+                const deltaY = e.clientY - lastTouchPos.y;
+                applyCameraPan(deltaX, deltaY);
+                updateCameraPosition();
+                lastTouchPos = { x: e.clientX, y: e.clientY };
             } else if (isDragging && selectedComponent) {
                 handleComponentDrag(e.clientX, e.clientY);
             }
@@ -7651,6 +7663,7 @@ body.android-optimized.menu-visible .status {
 
         function handleMouseUp(e) {
             isRotating = false;
+            isPanning = false;
             cancelLongPress();
             if (isDragging) {
                 handleRelease();
@@ -14182,6 +14195,23 @@ Made with ? for visual learners everywhere!
             white:     new THREE.Color('#ffffff')
         };
 
+        // Constants for the current-flow color and speed calculations.
+        // SPEED_SQRT_MULTIPLIER: tuned so ~0.001 A yields barely-visible drift (~0.003 speed)
+        //   and ~2 A yields the maximum capped speed (0.22), giving ~73× range.
+        const SPEED_SQRT_MULTIPLIER = 40;
+        // CURRENT_COLOR_SATURATION_THRESHOLD: current (A) at which the global-current color
+        //   contribution fully saturates to blue-white.  2 A covers the full practical range
+        //   of hobby/educational circuits (typically 0.01–1 A).
+        const CURRENT_COLOR_SATURATION_THRESHOLD = 2.0;
+        // Blend weights for calculateCurrentColor: segment resistance and global current each
+        //   contribute to the final colour.  55 % resistance / 45 % current gives enough
+        //   per-segment contrast to show resistive elements as dull-red while still letting
+        //   overall brightness reflect how much total current is flowing.
+        const COLOR_RESISTANCE_WEIGHT = 0.55;
+        const COLOR_CURRENT_WEIGHT = 0.45;
+        // Emissive strength multiplier for particle glow.
+        const PARTICLE_EMISSIVE_MULTIPLIER = 0.65;
+
         function animateCurrentFlow(flowState) {
             currentFlowParticles.forEach(particle => {
                 if (particle && scene) {
@@ -14211,8 +14241,8 @@ Made with ? for visual learners everywhere!
             }
 
             const baseSpeed = calculateFlowSpeed(currentValue);
-            const baseParticleCount = isMobile ? 3 : 4;
-            const maxParticles = isMobile ? 8 : 12;
+            const baseParticleCount = isMobile ? 4 : 5;
+            const maxParticles = isMobile ? 12 : 18;
 
             segments.forEach((segment, segmentIndex) => {
                 const wire = segment.wire;
@@ -14237,7 +14267,7 @@ Made with ? for visual learners everywhere!
                 const flowColor = calculateCurrentColor(flowState, segment.speedFactor);
                 const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
 
-                let dynamicCount = Math.floor((currentValue * (isMobile ? 14 : 18)) * (segment.speedFactor || 1));
+                let dynamicCount = Math.floor((currentValue * (isMobile ? 18 : 24)) * (segment.speedFactor || 1));
                 dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
 
                 const particleCount = dynamicCount;
@@ -14245,8 +14275,8 @@ Made with ? for visual learners everywhere!
 
                 for (let i = 0; i < particleCount; i++) {
                     try {
-                        const particleSize = 0.08 + (intensity * 0.06);
-                        const particleGeometry = new THREE.SphereGeometry(particleSize, isMobile ? 8 : 10, isMobile ? 6 : 8);
+                        const particleSize = 0.09 + (intensity * 0.07);
+                        const particleGeometry = new THREE.SphereGeometry(particleSize, isMobile ? 8 : 12, isMobile ? 6 : 10);
 
                         const baseMaterialProps = {
                             color: flowColor.hex,
@@ -14256,11 +14286,11 @@ Made with ? for visual learners everywhere!
                         };
 
                         if (currentFlowStyle === 'misty') {
-                            baseMaterialProps.opacity = 0.35 + (intensity * 0.25);
-                            baseMaterialProps.emissiveIntensity = 0.7;
+                            baseMaterialProps.opacity = 0.4 + (intensity * 0.3);
+                            baseMaterialProps.emissiveIntensity = 0.9;
                         } else {
-                            baseMaterialProps.opacity = 0.85 + (intensity * 0.1);
-                            baseMaterialProps.emissiveIntensity = 1.05;
+                            baseMaterialProps.opacity = 0.88 + (intensity * 0.1);
+                            baseMaterialProps.emissiveIntensity = 1.3;
                         }
 
                         const particleMaterial = new THREE.MeshPhongMaterial(baseMaterialProps);
@@ -14272,19 +14302,32 @@ Made with ? for visual learners everywhere!
                         const initialPosition = wire.curve.getPoint(clampedProgress);
                         particle.position.copy(initialPosition);
 
-                        // Add orbital ring in near-atomic zoom mode
+                        // Add orbital rings in near-atomic zoom mode for electron shell visualization
                         let orbitalRing = null;
                         if (cameraDistance < ATOMIC_ZOOM_THRESHOLD) {
                             const ringGeometry = new THREE.TorusGeometry(particleSize * ORBITAL_RING_RADIUS_FACTOR, particleSize * ORBITAL_RING_TUBE_FACTOR, ORBITAL_RING_RADIAL_SEGMENTS, ORBITAL_RING_TUBULAR_SEGMENTS);
                             const ringMaterial = new THREE.MeshBasicMaterial({
                                 color: flowColor.hex,
                                 transparent: true,
-                                opacity: 0.45,
+                                opacity: 0.6,
                                 side: THREE.DoubleSide
                             });
                             orbitalRing = new THREE.Mesh(ringGeometry, ringMaterial);
                             orbitalRing.rotation.x = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
                             particle.add(orbitalRing);
+
+                            // Second smaller orbital ring at a perpendicular angle for richer atomic look
+                            const ring2Geometry = new THREE.TorusGeometry(particleSize * ORBITAL_RING_RADIUS_FACTOR * 0.65, particleSize * ORBITAL_RING_TUBE_FACTOR, ORBITAL_RING_RADIAL_SEGMENTS, ORBITAL_RING_TUBULAR_SEGMENTS);
+                            const ring2Material = new THREE.MeshBasicMaterial({
+                                color: flowColor.hex,
+                                transparent: true,
+                                opacity: 0.35,
+                                side: THREE.DoubleSide
+                            });
+                            const orbitalRing2 = new THREE.Mesh(ring2Geometry, ring2Material);
+                            orbitalRing2.rotation.y = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
+                            orbitalRing2.rotation.z = Math.PI / 4;
+                            particle.add(orbitalRing2);
                         }
 
                         particle.userData = {
@@ -14309,7 +14352,7 @@ Made with ? for visual learners everywhere!
 
         function calculateCurrentColor(flowState, speedFactor) {
             if (flowState?.warning === 'short') {
-                return { hex: 0xff4444, emissive: 0x330000 };
+                return { hex: 0xff4444, emissive: 0x660000 };
             }
 
             // Map the segment's speedFactor ([minSpeedFactor..maxSpeedFactor]) to [0..1].
@@ -14317,7 +14360,17 @@ Made with ? for visual learners everywhere!
             const sf = speedFactor ?? FLOW_CONSTANTS.maxSpeedFactor;
             const minSF = FLOW_CONSTANTS.minSpeedFactor;
             const maxSF = FLOW_CONSTANTS.maxSpeedFactor;
-            const t = Math.min(1, Math.max(0, (sf - minSF) / (maxSF - minSF)));
+            const sfT = Math.min(1, Math.max(0, (sf - minSF) / (maxSF - minSF)));
+
+            // Also factor in global current magnitude so the entire circuit is dull-red
+            // at near-zero current and blue-white at high current, not just based on
+            // segment resistance alone.  Saturates at CURRENT_COLOR_SATURATION_THRESHOLD.
+            const currentValue = flowState?.currentValue ?? 0;
+            const currentT = Math.min(1, Math.sqrt(Math.max(0, currentValue / CURRENT_COLOR_SATURATION_THRESHOLD)));
+
+            // Blend: per-segment resistance accounts for COLOR_RESISTANCE_WEIGHT,
+            //   overall current for COLOR_CURRENT_WEIGHT.
+            const t = sfT * COLOR_RESISTANCE_WEIGHT + currentT * COLOR_CURRENT_WEIGHT;
 
             // Color spectrum: dull red (slow, t=0) -> orange -> yellow -> cyan -> blue-white (fast, t=1)
             let displayColor;
@@ -14335,7 +14388,8 @@ Made with ? for visual learners everywhere!
                 displayColor.lerp(FLOW_SPECTRUM_COLORS.white, 0.15);
             }
 
-            const emissiveColor = displayColor.clone().multiplyScalar(0.4);
+            // Stronger emissive for a vivid glow effect
+            const emissiveColor = displayColor.clone().multiplyScalar(PARTICLE_EMISSIVE_MULTIPLIER);
             return {
                 hex: displayColor.getHex(),
                 emissive: emissiveColor.getHex()
@@ -14343,9 +14397,11 @@ Made with ? for visual learners everywhere!
         }
 
         function calculateFlowSpeed(current) {
-            const baseSpeed = isMobile ? 0.008 : 0.01;
-            const speedMultiplier = 1 + (current * 8);
-            return Math.min(baseSpeed * speedMultiplier, isMobile ? 0.06 : 0.08);
+            // Wide speed range: near-stationary at tiny currents, blazing fast at high currents.
+            // Uses a square-root curve so mid-range currents feel responsive, not just the extremes.
+            const baseSpeed = isMobile ? 0.002 : 0.003;
+            const speedMultiplier = 1 + (Math.sqrt(Math.max(0, current)) * SPEED_SQRT_MULTIPLIER);
+            return Math.min(baseSpeed * speedMultiplier, isMobile ? 0.15 : 0.22);
         }
 
         function updateCircuitInfo() {
