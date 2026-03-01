@@ -1443,17 +1443,27 @@ body.builder-body .arena-page {
   align-items: center;
   gap: 16px;
   pointer-events: none;
-  background: rgba(2, 6, 23, 0.28);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 16px 24px;
-  border-radius: 20px;
-  border: 1px solid rgba(0, 245, 255, 0.3);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .arena-battle-overlay > * {
   pointer-events: auto;
+}
+
+/* Controls row (Rotation / Variance toggles) — ghost until hovered */
+.arena-battle-overlay-controls {
+  opacity: 0.25;
+  transition: opacity 0.25s ease;
+}
+
+.arena-battle-overlay-controls:hover {
+  opacity: 1;
+}
+
+/* Winner banner auto-dismiss fade */
+.arena-winner-banner--dismissed {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
 }
 
 @media (max-width: 600px) {

@@ -1422,6 +1422,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   });
   const [battleState, setBattleState] = useState<"idle" | "battling" | "complete">("idle");
   const [battleWinner, setBattleWinner] = useState<"left" | "right" | "tie" | null>(null);
+  const [winnerDismissed, setWinnerDismissed] = useState(false);
   const [beforeMetrics, setBeforeMetrics] = useState<{ left: ComponentTelemetryEntry[] | null; right: ComponentTelemetryEntry[] | null }>({
     left: null,
     right: null
@@ -2218,7 +2219,17 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     setBattleScore(null);
     setBeforeMetrics({ left: null, right: null });
     setAfterMetrics({ left: null, right: null });
+    setWinnerDismissed(false);
   }, []);
+
+  // Auto-dismiss the winner banner after 4 seconds
+  useEffect(() => {
+    if (battleState !== "complete") return;
+    // Reset dismissed flag then schedule auto-dismiss
+    setWinnerDismissed(false);
+    const timer = window.setTimeout(() => setWinnerDismissed(true), 4000);
+    return () => window.clearTimeout(timer);
+  }, [battleState]);
 
   const handleMetricToggle = useCallback((metricId: string) => {
     setSelectedMetrics(prev => {
@@ -2762,7 +2773,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             })}
 
             <div className="arena-battle-overlay">
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+              <div className="arena-battle-overlay-controls" style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
                 <button
                   className="arena-btn ghost small"
                   type="button"
@@ -2790,7 +2801,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
               </button>
               
               {battleState === "complete" && battleWinner && (
-                <div className="arena-winner-banner">
+                <div className={`arena-winner-banner${winnerDismissed ? " arena-winner-banner--dismissed" : ""}`}>
                   <div className="winner-label">🏆 WINNER 🏆</div>
                   <div className="winner-name">
                     {battleWinner === "left" ? componentAProfile?.name : battleWinner === "right" ? componentBProfile?.name : "TIE"}
@@ -2800,7 +2811,9 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
                       {battleScore.leftWins}-{battleScore.rightWins}{battleScore.ties > 0 ? `-${battleScore.ties}` : ""} · {battleScore.totalRounds} metric{battleScore.totalRounds === 1 ? "" : "s"}
                     </div>
                   ) : null}
-                  <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">Reset Battle</button>
+                  {!winnerDismissed && (
+                    <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">Reset Battle</button>
+                  )}
                 </div>
               )}
             </div>
