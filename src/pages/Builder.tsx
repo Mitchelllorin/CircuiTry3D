@@ -2017,42 +2017,6 @@ export default function Builder() {
     applyWireProfileToLegacy(activeWireProfilePayload, { runSimulation: false });
   }, [activeWireProfilePayload, applyWireProfileToLegacy, isFrameReady]);
 
-  const arenaStatusMessage = useMemo(() => {
-    switch (arenaExportStatus) {
-      case "exporting":
-        return "Exporting current build to Component Arena...";
-      case "ready": {
-        if (!lastArenaExport) {
-          return "Component Arena export is ready.";
-        }
-        const exportedTime = lastArenaExport.exportedAt
-          ? new Date(lastArenaExport.exportedAt)
-          : null;
-        const formattedTime =
-          exportedTime && !Number.isNaN(exportedTime.getTime())
-            ? exportedTime.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : null;
-        const componentLabel =
-          typeof lastArenaExport.componentCount === "number"
-            ? `${lastArenaExport.componentCount} component${lastArenaExport.componentCount === 1 ? "" : "s"}`
-            : null;
-        if (componentLabel && formattedTime) {
-          return `Last arena export: ${componentLabel} - ${formattedTime}`;
-        }
-        if (componentLabel) {
-          return `Last arena export: ${componentLabel}`;
-        }
-        return "Component Arena export is ready.";
-      }
-      case "error":
-        return arenaExportError ?? "Component Arena export failed.";
-      default:
-        return "Send this build to the Component Arena for advanced testing.";
-    }
-  }, [arenaExportStatus, arenaExportError, lastArenaExport]);
 
   const isWorksheetVisible = isPracticeWorkspaceMode && isCompactWorksheetOpen;
   const isTroubleshootVisible =
@@ -2342,7 +2306,6 @@ export default function Builder() {
       case "arena":
         return {
           title: "Component Arena",
-          subtitle: arenaStatusMessage,
         };
       case "wire-guide":
         return {
@@ -2379,7 +2342,7 @@ export default function Builder() {
       default:
         return null;
     }
-  }, [activeWireProfile, activeWireSegmentResistance, activeWorkspacePanelMode, arenaStatusMessage]);
+  }, [activeWireProfile, activeWireSegmentResistance, activeWorkspacePanelMode]);
 
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
