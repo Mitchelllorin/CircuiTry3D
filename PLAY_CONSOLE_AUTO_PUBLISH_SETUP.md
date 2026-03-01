@@ -9,6 +9,15 @@ This is a one-time setup. After completing these steps, every merge to `main` wi
 
 ---
 
+## Prerequisites checklist
+
+Before starting, confirm these two things:
+
+- [x] **The app exists in Play Console.** The Google Play API can only publish to an app that already has at least one release uploaded (even a draft). If your app is already in internal testing, this is satisfied ✅
+- [ ] **You are on a computer with a web browser.** (See the note above — this cannot be done from the Android app.)
+
+---
+
 ## What you need to do (overview)
 
 1. Link Play Console to a Google Cloud project
@@ -122,7 +131,7 @@ Merge any change to `main` (or go to **Actions → Build AAB → Run workflow** 
 | Can't find "Setup" in Play Console sidebar on desktop | You may be inside an app. Click the Play Console logo top-left to go back to the developer home, then look for Setup in the sidebar. |
 | "Service accounts" section is empty after linking | Refresh the API access page — it sometimes takes 30 seconds to populate. |
 | GitHub Actions step shows "permission denied" error | Go back to Play Console → Setup → API access → Grant access, and make sure the service account has "Release manager" on your app. |
-| GitHub Actions step shows "package not found" error | The app must already exist in Play Console with at least one internal testing release uploaded manually before the API can publish subsequent ones. |
+| GitHub Actions step shows "package not found" error | The app must already have at least one release in Play Console (any track) before the API can publish new ones. If your app is already in internal testing, you're fine — this error won't apply to you. |
 | Downloaded JSON is empty or very small | You may have downloaded the wrong key type. Delete it, and repeat step 14 selecting **JSON**. |
 
 ---
