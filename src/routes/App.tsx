@@ -18,6 +18,10 @@ const Account = lazy(() => import("../pages/Account"));
 const Classroom = lazy(() => import("../pages/Classroom"));
 const Arcade = lazy(() => import("../pages/Arcade"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
+const DataSafety = lazy(() => import("../pages/DataSafety"));
+const AppAccess = lazy(() => import("../pages/AppAccess"));
+const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
+const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
 
 function PageFallback() {
   return (
@@ -41,6 +45,10 @@ export default function App() {
             <Route path="/classroom" element={<Classroom />} />
             <Route path="/arcade" element={<Arcade />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/data-safety" element={<DataSafety />} />
+            <Route path="/app-access" element={<AppAccess />} />
+            <Route path="/play-store" element={<PlayStoreCompliance />} />
+            <Route path="/delete-account" element={<DeleteAccount />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -111,6 +119,20 @@ function AppLayout() {
       </main>
       {/* Tips & facts ticker - shown on all pages except landing */}
       {!isLanding && <TipsTicker />}
+      {/* Site footer with legal links - shown on all pages except landing & workspace */}
+      {!isLanding && !isWorkspace && (
+        <footer className="app-footer">
+          <Link to="/privacy" className="app-footer-link">Privacy Policy</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/data-safety" className="app-footer-link">Data Safety</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/app-access" className="app-footer-link">Get the App</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/play-store" className="app-footer-link">Play Store Compliance</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/delete-account" className="app-footer-link">Delete Account</Link>
+        </footer>
+      )}
     </div>
   );
 }

@@ -1,0 +1,418 @@
+/* ── Legal pages (Privacy Policy, Data Safety, App Access) ───────────────── */
+
+.legal-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2rem) 4rem;
+  color: var(--text-secondary);
+}
+
+.legal-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.legal-eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+  margin-bottom: 0.5rem;
+}
+
+.legal-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.legal-header .legal-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.legal-body h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 2rem 0 0.6rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.legal-body h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.legal-body h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+  margin: 1.25rem 0 0.4rem;
+}
+
+.legal-body p {
+  margin: 0.4rem 0 0.8rem;
+  line-height: 1.7;
+}
+
+.legal-body ul,
+.legal-body ol {
+  margin: 0.4rem 0 0.9rem 1.4rem;
+  padding: 0;
+  line-height: 1.7;
+}
+
+.legal-body li {
+  margin-bottom: 0.3rem;
+}
+
+.legal-body a {
+  color: var(--brand-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-body a:hover {
+  color: var(--text-primary);
+}
+
+.legal-body strong {
+  color: var(--text-primary);
+}
+
+/* Data table */
+.data-safety-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin: 0.8rem 0 1.2rem;
+}
+
+.data-safety-table th,
+.data-safety-table td {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.data-safety-table th {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.data-safety-table tbody tr:nth-child(even) {
+  background: rgba(136, 204, 255, 0.04);
+}
+
+.data-safety-yes {
+  color: var(--brand-accent);
+  font-weight: 700;
+}
+
+.data-safety-no {
+  color: var(--text-muted);
+}
+
+/* App Access badges */
+.app-access-badges {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+
+.app-access-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.app-access-badge:hover {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-dim);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.app-access-badge-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.app-access-highlight {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.2rem 1.4rem;
+  margin: 1rem 0;
+}
+
+.app-access-highlight h3 {
+  margin-top: 0;
+  color: var(--brand-secondary);
+  border-top: none;
+  padding-top: 0;
+}
+
+/* Legal contact card */
+.legal-contact-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.2rem 1.4rem;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+.legal-contact-card h3 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.legal-contact-card p {
+  margin: 0.2rem 0;
+  color: var(--text-secondary);
+}
+
+/* ── Play Store Compliance hub ───────────────────────────────────────────── */
+
+.compliance-page {
+  max-width: 56rem; /* slightly wider to give the grid space */
+}
+
+.compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.compliance-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.3rem 1.4rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.compliance-card:target {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-primary-dim);
+}
+
+.compliance-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.compliance-icon {
+  font-size: 1.55rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.compliance-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.compliance-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Override the .legal-body h2 rule for card titles */
+.compliance-card .compliance-card-title {
+  font-size: 1.05rem;
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.compliance-status {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.compliance-status--complete {
+  background: rgba(0, 255, 136, 0.12);
+  color: var(--brand-accent);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.compliance-status--na {
+  background: rgba(136, 204, 255, 0.1);
+  color: var(--brand-primary);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+}
+
+.compliance-declaration {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.compliance-detail {
+  margin: 0 0 0 1.1rem;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.compliance-detail li {
+  margin-bottom: 0.2rem;
+}
+
+.compliance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.compliance-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.compliance-btn--download {
+  background: var(--brand-primary-dim);
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  color: var(--brand-primary);
+}
+
+.compliance-btn--download:hover {
+  background: rgba(136, 204, 255, 0.28);
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.compliance-btn--view {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.compliance-btn--view:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .compliance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Delete Account page ─────────────────────────────────────────────────── */
+
+.delete-account-warning {
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.delete-account-warning strong {
+  color: #ff6b6b;
+}
+
+.delete-account-cta {
+  margin: 1rem 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.delete-account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.2rem;
+  border-radius: 10px;
+  background: rgba(255, 80, 80, 0.12);
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  color: #ff8080;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.delete-account-btn:hover {
+  background: rgba(255, 80, 80, 0.22);
+  border-color: #ff6b6b;
+  color: #ffaaaa;
+  text-decoration: none;
+}
+
+.delete-account-email-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Back link */
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--brand-primary);
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+}
+
+.legal-back:hover {
+  color: var(--text-primary);
+}
