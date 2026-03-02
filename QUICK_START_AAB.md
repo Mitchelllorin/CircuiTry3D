@@ -274,8 +274,10 @@ Once you have your signed AAB:
 - Store passwords in a password manager
 
 ⚠️ **Version Management:**
-- Increment `versionCode` for each release in `android/app/build.gradle`
-- Update `versionName` to reflect the version (e.g., 1.0.0, 1.1.0, etc.)
+- **Do not manually edit `versionCode` or `versionName` in `build.gradle`.** The workflow sets both automatically on every run.
+- `versionCode` = run number + 2 (increments automatically with each build).
+- `versionName` = `1.0.<versionCode>` by default, or whatever you type in the **version_name** input when manually dispatching.
+- Each new run produces a higher version code than the last — no manual changes needed.
 
 ## Getting Help
 
