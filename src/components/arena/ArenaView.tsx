@@ -2488,7 +2488,6 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             <WordMark size="md" decorative />
             <div className="arena-title-group">
               <h1>Component Arena</h1>
-              <p>Test and compare components side-by-side</p>
             </div>
           </div>
           <div className="arena-header-right">
