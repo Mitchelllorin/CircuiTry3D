@@ -22,9 +22,10 @@ Yes — every successful run of the **Build AAB** workflow uploads the signed bu
 
 1. Go to **Actions → Build AAB** in the GitHub repository:
    `https://github.com/Mitchelllorin/CircuiTry3D/actions/workflows/build-aab.yml`
-2. Click the most recent **successful** run.
-3. Scroll to the **Artifacts** section at the bottom.
-4. Download **`app-release-aab`** (a ZIP file containing `app-release.aab`).
+2. Click the most recent **successful** run (green check ✅).
+3. On the run's detail page, click the **Summary** tab to see the **Build Summary** table. This shows the exact commit, branch, and version that was built — confirm it matches your changes before downloading.
+4. Scroll down to the **Artifacts** section.
+5. Download **`app-release-aab-v<version>-<sha>`** (a ZIP file containing `app-release.aab`). The artifact name includes the version number and the first 7 characters of the commit hash so you always know what code is inside it.
 
 > **Note:** GitHub keeps artifacts for 90 days. If the artifact has expired, re-run the workflow (see below).
 
@@ -35,18 +36,21 @@ Yes — every successful run of the **Build AAB** workflow uploads the signed bu
 2. Click **Run workflow** (top-right of the run list).
 3. Select branch **`main`** and click **Run workflow**.
 4. Wait ~3 minutes for the run to complete.
-5. Download **`app-release-aab`** from the **Artifacts** section of the completed run.
+5. Download **`app-release-aab-v<version>-<sha>`** from the **Artifacts** section of the completed run.
 
-### Required GitHub secret
+### Required GitHub secrets
 
-The workflow needs the keystore password to sign the bundle. Ensure the following secret is set in
-**Settings → Secrets and variables → Actions**:
+The workflow signs the bundle using a keystore. You need **at least one password secret** set in
+**Settings → Secrets and variables → Actions**. The workflow accepts either name and falls back automatically:
 
-| Secret name             | Value                                                      |
-|-------------------------|------------------------------------------------------------|
-| `ANDROID_STORE_PASSWORD` | Password for `new-upload-key.jks` (the committed keystore) |
+| Secret name              | Notes                                                                  |
+|--------------------------|------------------------------------------------------------------------|
+| `ANDROID_KEY_PASSWORD`   | Password that protects your upload key inside the keystore             |
+| `ANDROID_STORE_PASSWORD` | Password that protects the keystore file itself (can be the same as above) |
 
-The keystore file (`new-upload-key.jks`, alias `circuitry3d-upload-reset`) is already committed to the repository.
+You only need to set **one** of these secrets. If only one is provided, the workflow will use that same value for both passwords.
+
+**Keystore:** set `ANDROID_KEYSTORE_BASE64` (base64-encoded `.jks`) if you use your own upload key. Otherwise, the committed `new-upload-key.jks` (alias `circuitry3d-upload-reset`) is used automatically.
 
 ---
 
@@ -270,8 +274,10 @@ Once you have your signed AAB:
 - Store passwords in a password manager
 
 ⚠️ **Version Management:**
-- Increment `versionCode` for each release in `android/app/build.gradle`
-- Update `versionName` to reflect the version (e.g., 1.0.0, 1.1.0, etc.)
+- **Do not manually edit `versionCode` or `versionName` in `build.gradle`.** The workflow sets both automatically on every run.
+- `versionCode` = run number + 2 (increments automatically with each build).
+- `versionName` = `1.0.<versionCode>` by default, or whatever you type in the **version_name** input when manually dispatching.
+- Each new run produces a higher version code than the last — no manual changes needed.
 
 ## Getting Help
 

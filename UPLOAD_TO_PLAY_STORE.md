@@ -36,10 +36,15 @@ Then continue to Step 1.
 
 ## Step 1 — Upload the AAB
 
+> **Getting the AAB from GitHub Actions?**
+> The artifact you download is a ZIP file (e.g. `app-release-aab-v1.0.105-abc1234f.zip`).
+> Extract/unzip it first — the `app-release.aab` file is inside the ZIP.
+> Play Console will reject the ZIP directly; you must upload the `.aab` file.
+
 1. In Play Console, go to **Testing → Internal testing**
 2. Click **Create new release**
 3. Under **App bundles**, click **Upload**
-4. Select your `app-release.aab` file
+4. Select your `app-release.aab` file (extracted from the downloaded ZIP)
 5. Wait for it to process (1–3 minutes)
 6. In the **Release notes** box, paste:
    ```
@@ -127,9 +132,10 @@ https://play.google.com/store/apps/details?id=com.circuitry3d.app
 
 Each time you want to update the app:
 
-1. Increment `versionCode` (e.g., `1` → `2`) in `android/app/build.gradle`
-2. Re-run the **Build AAB** GitHub Actions workflow (or local build)
-3. Upload the new AAB to Play Console as a new release
+1. Merge your changes into `main` (or trigger the workflow manually via **Actions → Build AAB → Run workflow**)
+2. The workflow **automatically increments the version code and name** on every run — you do not need to change `build.gradle`
+3. Download the new AAB from the completed run's **Artifacts** section
+4. Upload the new AAB to Play Console as a new release
 
 ---
 

@@ -176,6 +176,44 @@ To trigger a build right now without changing any code:
 
 ---
 
+## Tracking your upload history
+
+Every push or merge to `main` triggers one workflow run, which equals one build — and one Play Store upload (if the secret is set). Here is how to see your full history:
+
+### GitHub Actions run list — all builds at a glance
+
+**https://github.com/Mitchelllorin/CircuiTry3D/actions/workflows/build-aab.yml**
+
+Each row in that list is one run. The list shows:
+- ✅ green = build succeeded (and upload was attempted if the secret is set)
+- ❌ red = build or upload failed
+
+The total number of rows is the total number of times the workflow has run (= total number of pushes/merges to `main`).
+
+### Per-run Build Summary — what was in each build
+
+Click any run → click the **Summary** tab. You will see a table like this:
+
+| | |
+|---|---|
+| **Commit** | `abc1234f…` |
+| **Branch** | `main` |
+| **Message** | Shrink junction nodes… |
+| **Version name** | `1.0.106` |
+| **Version code** | `106` |
+| **Artifact** | `app-release-aab-v1.0.106-abc1234f` |
+| **Play Store upload** | ✅ Uploaded to internal testing track |
+
+The last row tells you whether that specific run was shipped to Play Store or just built as an artifact.
+
+### Play Console — all builds that reached Play Store
+
+**https://play.google.com/console → CircuiTry3D → Testing → Internal testing → Releases**
+
+Every release that the workflow uploaded appears here with its version code and release notes. This is your official upload ledger — one row per upload that made it through.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Fix |
