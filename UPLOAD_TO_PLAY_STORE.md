@@ -127,9 +127,10 @@ https://play.google.com/store/apps/details?id=com.circuitry3d.app
 
 Each time you want to update the app:
 
-1. Increment `versionCode` (e.g., `1` → `2`) in `android/app/build.gradle`
-2. Re-run the **Build AAB** GitHub Actions workflow (or local build)
-3. Upload the new AAB to Play Console as a new release
+1. Merge your changes into `main` (or trigger the workflow manually via **Actions → Build AAB → Run workflow**)
+2. The workflow **automatically increments the version code and name** on every run — you do not need to change `build.gradle`
+3. Download the new AAB from the completed run's **Artifacts** section
+4. Upload the new AAB to Play Console as a new release
 
 ---
 
