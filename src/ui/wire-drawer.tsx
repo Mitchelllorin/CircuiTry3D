@@ -60,12 +60,12 @@ const NODE_STYLE: Record<Node['type'], NodeVisualStyle> = {
     glow: "rgba(46, 255, 190, 0.78)",
   },
   junction: {
-    radius: 6.3,
-    center: "#fff3e4",
-    mid: "#ffc17f",
-    edge: "#ff7a2f",
-    stroke: "#ffe1c5",
-    glow: "rgba(255, 166, 80, 0.78)",
+    radius: 4.5,
+    center: "#fffde0",
+    mid: "#ffcc00",
+    edge: "#ff8c00",
+    stroke: "#ffe566",
+    glow: "rgba(255, 180, 0, 0.92)",
   },
   wireAnchor: {
     radius: 5.1,
@@ -1121,11 +1121,17 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       const style = NODE_STYLE[node.type];
       const isHovered = hoveredNode?.id === node.id;
       const isSnap = snapTarget?.id === node.id;
-      const radius = style.radius + (isHovered || isSnap ? 1.1 : 0);
+      const isActive = isHovered || isSnap;
+      const radius = style.radius + (isActive ? 0.4 : 0);
+
+      // Junction nodes shift to yellow when hovered or snapped (wiring mode indicator)
+      const centerColor = isActive && node.type === 'junction' ? '#fffff0' : style.center;
+      const midColor = isActive && node.type === 'junction' ? '#ffe84d' : style.mid;
+      const edgeColor = isActive && node.type === 'junction' ? '#ffd700' : style.edge;
 
       ctx.save();
       ctx.shadowColor = style.glow;
-      ctx.shadowBlur = isHovered || isSnap ? 24 : 14;
+      ctx.shadowBlur = isActive ? 22 : 14;
       const gradient = ctx.createRadialGradient(
         node.pos.x - radius * 0.35,
         node.pos.y - radius * 0.35,
@@ -1134,9 +1140,9 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
         node.pos.y,
         radius + 1.4
       );
-      gradient.addColorStop(0, style.center);
-      gradient.addColorStop(0.45, style.mid);
-      gradient.addColorStop(1, style.edge);
+      gradient.addColorStop(0, centerColor);
+      gradient.addColorStop(0.45, midColor);
+      gradient.addColorStop(1, edgeColor);
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(node.pos.x, node.pos.y, radius, 0, Math.PI * 2);
@@ -1144,7 +1150,7 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
 
       ctx.globalAlpha = 0.95;
       ctx.strokeStyle = style.stroke;
-      ctx.lineWidth = isHovered || isSnap ? 2 : 1.4;
+      ctx.lineWidth = isActive ? 2 : 1.4;
       ctx.beginPath();
       ctx.arc(node.pos.x, node.pos.y, radius + 0.5, 0, Math.PI * 2);
       ctx.stroke();
