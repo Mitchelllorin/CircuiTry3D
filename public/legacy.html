@@ -5584,20 +5584,22 @@ body.android-optimized.menu-visible .status {
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
 
-                // Positive terminal
-                const posGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.3, segments);
+                // Positive terminal — extended to x=1.0 so it overlaps the connection sphere
+                // (sphere center at x=1.2, inner edge at x=0.9), eliminating the visual gap.
+                const posGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.4, segments);
                 const posMaterial = new THREE.MeshPhongMaterial({ color: 0xb87333 });
                 const pos = new THREE.Mesh(posGeometry, posMaterial);
                 pos.rotation.z = Math.PI / 2;
-                pos.position.x = 0.75;
+                pos.position.x = 0.8;
                 group.add(pos);
 
-                // Negative terminal
-                const negGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.15, segments);
+                // Negative terminal — previously ended at x=-0.775 leaving a 0.125-unit gap
+                // before the connection sphere (inner edge at x=-0.9). Now extended to x=-1.0.
+                const negGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments);
                 const negMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
                 const neg = new THREE.Mesh(negGeometry, negMaterial);
                 neg.rotation.z = Math.PI / 2;
-                neg.position.x = -0.7;
+                neg.position.x = -0.8;
                 group.add(neg);
 
                 // Labels
@@ -5674,17 +5676,19 @@ body.android-optimized.menu-visible .status {
 
             addLeads(group) {
                 const segments = isMobile ? 4 : 6;
-                const leadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.8, segments);
+                // Leads extend from ±0.2 (inside component body) to ±1.2 (connection sphere center)
+                // so there is no gap between the lead tip and the wire endpoint.
+                const leadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.0, segments);
                 const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
                 
                 const leftLead = new THREE.Mesh(leadGeometry, leadMaterial);
                 leftLead.rotation.z = Math.PI / 2;
-                leftLead.position.x = -0.6;
+                leftLead.position.x = -0.7;
                 group.add(leftLead);
 
                 const rightLead = new THREE.Mesh(leadGeometry, leadMaterial);
                 rightLead.rotation.z = Math.PI / 2;
-                rightLead.position.x = 0.6;
+                rightLead.position.x = 0.7;
                 group.add(rightLead);
             }
 
@@ -6744,8 +6748,9 @@ body.android-optimized.menu-visible .status {
                     }
                 }
 
-                // Add small spheres at interior corner joints to fill gaps between segments
-                for (let i = 1; i < path.length - 1; i++) {
+                // Add small spheres at all path points (corners and endpoints) to fill
+                // gaps between segments and to seal the wire ends at component terminals.
+                for (let i = 0; i < path.length; i++) {
                     const jointGeometry = new THREE.SphereGeometry(0.08, isMobile ? 6 : 8, isMobile ? 4 : 6);
                     const joint = new THREE.Mesh(jointGeometry, wireMaterial);
                     joint.position.copy(path[i]);
