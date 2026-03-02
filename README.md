@@ -13,6 +13,7 @@ This project is now configured as an Android application ready for Google Play S
 
 ### Quick Links
 
+- **🤖 [Auto-Publish Setup](PLAY_CONSOLE_AUTO_PUBLISH_SETUP.md)** ← **Start here** — connect GitHub Actions to Google Play so every merge publishes automatically
 - **📋 [Play Store Submission Guide](PLAY_STORE_SUBMISSION_GUIDE.md)** - Complete step-by-step instructions
 - **📦 [Package Summary](PLAY_STORE_PACKAGE_SUMMARY.md)** - Overview of all prepared materials
 - **🎨 Play Store Assets** - Located in `play-store-assets/` directory
