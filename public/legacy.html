@@ -72,6 +72,7 @@
 
         body.embedded #menu-bar,
         body.embedded #menu-toggle,
+        body.embedded #quick-actions,
         body.embedded #wire-analysis,
         body.embedded #status,
         body.embedded #branding-overlay,
@@ -82,6 +83,7 @@
         body.embedded #loading-text,
         html.embedded #menu-bar,
         html.embedded #menu-toggle,
+        html.embedded #quick-actions,
         html.embedded #wire-analysis,
         html.embedded #status,
         html.embedded #branding-overlay,
@@ -1677,6 +1679,46 @@
             left: calc(var(--legacy-menu-gap) + var(--legacy-menu-width) + 16px);
         }
         
+        .quick-actions {
+            position: fixed;
+            top: calc(var(--legacy-menu-gap) + 64px + 10px);
+            left: var(--legacy-menu-gap);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 300;
+            transition: left 0.3s ease;
+        }
+
+        .quick-actions.open {
+            left: calc(var(--legacy-menu-gap) + var(--legacy-menu-width) + 16px);
+        }
+
+        .quick-action-btn {
+            background: #aa88ff;
+            border: 3px solid #ffffff;
+            color: #000000;
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(170,136,255,0.35);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            line-height: 1.1;
+            text-align: center;
+            padding: 0;
+        }
+
+        .quick-action-btn:hover, .quick-action-btn:active {
+            transform: scale(1.08);
+            box-shadow: 0 6px 18px rgba(170,136,255,0.55);
+        }
+        
         .status {
             position: fixed;
             bottom: 300px;
@@ -2138,6 +2180,15 @@
             .menu-toggle.open {
                 left: 15px;
             }
+
+            .quick-actions {
+                top: calc(15px + 45px + 10px);
+                left: 15px;
+            }
+
+            .quick-actions.open {
+                left: 15px;
+            }
         }
 
         /* Additional mobile optimizations */
@@ -2176,6 +2227,17 @@
                 left: 15px;
                 width: 56px;
                 height: 56px;
+            }
+
+            .quick-actions {
+                top: calc(15px + 56px + 10px);
+                left: 15px;
+            }
+
+            .quick-action-btn {
+                width: 56px;
+                height: 56px;
+                font-size: 12px;
             }
             
             .analysis-toggle {
@@ -2989,6 +3051,10 @@
     <div id="loading" class="loading" style="display: none;">Loading CircuiTry...</div>
     
     <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">Menu</button>
+
+    <div class="quick-actions" id="quick-actions">
+        <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
+    </div>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
         <div class="menu-tabs">
@@ -3743,6 +3809,7 @@
                 const hiddenIds = [
                     "menu-bar",
                     "menu-toggle",
+                    "quick-actions",
                     "wire-analysis",
                     "status",
                     "branding-overlay",
@@ -3866,6 +3933,23 @@ body.android-optimized .menu-toggle {
 
 body.android-optimized .menu-toggle.open {
   transform: translateX(calc(var(--legacy-menu-width) + 12px));
+}
+
+body.android-optimized .quick-actions {
+  top: calc(16px + 56px + 10px);
+  left: 16px;
+  transition: transform 0.3s ease;
+}
+
+body.android-optimized .quick-actions.open {
+  left: 16px;
+  transform: translateX(calc(var(--legacy-menu-width) + 12px));
+}
+
+body.android-optimized .quick-action-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
 }
 
 body.android-optimized.menu-visible #canvas {
@@ -10084,12 +10168,14 @@ body.android-optimized.menu-visible .status {
         function toggleMenuBar() {
             const menuBar = document.getElementById('menu-bar');
             const toggle = document.getElementById('menu-toggle');
+            const quickActions = document.getElementById('quick-actions');
             
             if (!menuBar || !toggle) return;
             
             menuBar.classList.toggle('hidden');
             menuVisible = !menuVisible;
             toggle.classList.toggle('open', menuVisible);
+            if (quickActions) quickActions.classList.toggle('open', menuVisible);
             if (document.body && document.body.classList.contains('android-optimized')) {
                 document.body.classList.toggle('menu-visible', menuVisible);
             }
