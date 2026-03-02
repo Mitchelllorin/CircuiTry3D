@@ -23,6 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set short commit SHA
+        shell: bash
+        run: echo "SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)" >> "$GITHUB_ENV"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -137,7 +141,7 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-aab-v${{ env.VERSION_NAME }}
+          name: app-release-aab-v${{ env.VERSION_NAME }}-${{ env.SHORT_SHA }}
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
@@ -150,3 +154,21 @@ jobs:
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
           track: internal
           status: completed
+
+      - name: Build summary
+        if: always()
+        shell: bash
+        run: |
+          commit_msg="$(git log -1 --pretty=%s 2>/dev/null | tr '|`' '//' | cut -c1-80 || echo 'unknown')"
+          {
+            echo "## Build Summary"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| **Commit** | \`${GITHUB_SHA}\` |"
+            echo "| **Branch** | \`${GITHUB_REF_NAME}\` |"
+            echo "| **Message** | ${commit_msg} |"
+            echo "| **Version name** | ${VERSION_NAME:-unknown} |"
+            echo "| **Version code** | ${VERSION_CODE:-unknown} |"
+            echo "| **Artifact** | \`app-release-aab-v${VERSION_NAME:-unknown}-${SHORT_SHA:-unknown}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
