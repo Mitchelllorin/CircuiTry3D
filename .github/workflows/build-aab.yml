@@ -1,6 +1,9 @@
 name: Build AAB
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version_name:
@@ -136,3 +139,13 @@ jobs:
           name: app-release-aab-v${{ env.VERSION_NAME }}
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+      - name: Publish to Play Store internal testing
+        if: secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.circuitry3d.app
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
