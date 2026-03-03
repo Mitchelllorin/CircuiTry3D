@@ -188,7 +188,8 @@ export type WorkspaceMode =
   | "classroom"
   | "community"
   | "account"
-  | "pricing";
+  | "pricing"
+  | "textbook";
 
 export type GuideWorkflowId = "help" | "tutorial" | "wire-guide";
 

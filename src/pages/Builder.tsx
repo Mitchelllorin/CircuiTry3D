@@ -81,6 +81,7 @@ import Community from "./Community";
 import Account from "./Account";
 import Classroom from "./Classroom";
 import Arcade from "./Arcade";
+import Textbook from "./Textbook";
 import WireLibrary from "../components/practice/WireLibrary";
 
 type WorkspacePanelMode =
@@ -90,7 +91,8 @@ type WorkspacePanelMode =
   | "community"
   | "account"
   | "pricing"
-  | "wire-guide";
+  | "wire-guide"
+  | "textbook";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
@@ -1623,7 +1625,8 @@ export default function Builder() {
         pendingMode === "classroom" ||
         pendingMode === "community" ||
         pendingMode === "account" ||
-        pendingMode === "pricing"
+        pendingMode === "pricing" ||
+        pendingMode === "textbook"
       ) {
         openWorkspacePanelMode(pendingMode);
       } else if (pendingMode === "troubleshoot") {
@@ -2373,6 +2376,11 @@ export default function Builder() {
           title: "Arcade",
           subtitle: "XP progression, missions, and leaderboards",
         };
+      case "textbook":
+        return {
+          title: "Textbook",
+          subtitle: "Year 1 & Year 2 Electrical Studies — formulas, rules, and safety",
+        };
       default:
         return null;
     }
@@ -2425,6 +2433,8 @@ export default function Builder() {
         return <Classroom />;
       case "arcade":
         return <Arcade />;
+      case "textbook":
+        return <Textbook />;
       default:
         return null;
     }

@@ -481,3 +481,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── When rendered inside the workspace mode panel ── */
+.workspace-mode-panel-content .tb-page {
+  min-height: unset;
+}
+
+.workspace-mode-panel-content .tb-body {
+  height: auto;
+  min-height: 420px;
+  overflow: visible;
+}

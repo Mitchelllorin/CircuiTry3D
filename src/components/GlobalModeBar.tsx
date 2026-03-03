@@ -237,8 +237,8 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={location.pathname === "/textbook" ? "true" : undefined}
-          onClick={() => navigate("/textbook")}
+          data-active={workspaceMode === "textbook" ? "true" : undefined}
+          onClick={() => handleModeClick("textbook")}
           aria-label="Electrical Textbook — Year 1 and Year 2 reference"
           title="Year 1 & Year 2 Electrical Studies Textbook"
         >

@@ -127,7 +127,8 @@
 .workspace-mode-panel-content .arcade-page,
 .workspace-mode-panel-content .classroom-page,
 .workspace-mode-panel-content .community-page,
-.workspace-mode-panel-content .account-page {
+.workspace-mode-panel-content .account-page,
+.workspace-mode-panel-content .tb-page {
   background: transparent;
   padding-top: 18px;
   padding-bottom: calc(18px + var(--builder-safe-area-bottom));
