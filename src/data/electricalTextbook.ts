@@ -1,0 +1,1317 @@
+/**
+ * Electrical Studies Textbook Data
+ *
+ * Covers Year 1 (DC Fundamentals) and Year 2 (AC Theory & Devices) content
+ * aligned with SkilledTradesBC / Red Seal electrical apprenticeship curricula.
+ * All formulas are enforced by the circuit simulator (dcSolver, circuitValidator).
+ */
+
+export type Formula = {
+  name: string;
+  expression: string;
+  variables: Record<string, string>;
+  example?: string;
+};
+
+export type TextbookSection = {
+  id: string;
+  title: string;
+  body: string[];          // Paragraphs of explanatory text
+  formulas?: Formula[];
+  keyPoints?: string[];
+  safetyNotes?: string[];
+  realWorldExamples?: string[];
+};
+
+export type TextbookChapter = {
+  id: string;
+  number: number;
+  year: 1 | 2;
+  title: string;
+  overview: string;
+  sections: TextbookSection[];
+};
+
+export type TextbookData = {
+  title: string;
+  subtitle: string;
+  edition: string;
+  chapters: TextbookChapter[];
+};
+
+const textbook: TextbookData = {
+  title: "Electrical Studies",
+  subtitle: "Year 1 & Year 2 — DC Fundamentals to AC Theory",
+  edition: "CircuiTry3D Reference Edition",
+  chapters: [
+    // ─────────────────────────────────────────────────────────────────────────
+    //  YEAR 1 — DC FUNDAMENTALS
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+      id: "atomic-theory",
+      number: 1,
+      year: 1,
+      title: "Atomic Theory & Electrical Charge",
+      overview:
+        "All matter is made of atoms. Understanding the structure of the atom — protons, neutrons, and electrons — is the starting point for understanding why electricity flows.",
+      sections: [
+        {
+          id: "atomic-structure",
+          title: "Atomic Structure",
+          body: [
+            "Every element is made of atoms. An atom consists of a nucleus (containing positively-charged protons and neutral neutrons) surrounded by negatively-charged electrons arranged in shells (energy levels).",
+            "The number of protons in the nucleus defines the element (e.g., copper has 29 protons). Under normal conditions an atom is electrically neutral — the number of electrons equals the number of protons.",
+            "Electrons in the outermost shell (valence shell) are the least tightly bound to the nucleus. In conductive materials such as copper, silver, and gold, there is only one valence electron — a free electron — that can drift from atom to atom when a voltage is applied.",
+          ],
+          keyPoints: [
+            "Protons: positive charge (+1), fixed in nucleus",
+            "Neutrons: no charge, fixed in nucleus",
+            "Electrons: negative charge (−1), in shells around nucleus",
+            "Valence electrons determine conductivity",
+            "Conductors (copper, aluminium) have 1–3 valence electrons",
+            "Insulators (rubber, PVC) have 5–8 valence electrons",
+          ],
+        },
+        {
+          id: "electrical-charge",
+          title: "Electrical Charge",
+          body: [
+            "Electric charge (symbol Q) is measured in coulombs (C). One coulomb equals the charge of 6.242 × 10¹⁸ electrons.",
+            "Like charges repel each other; unlike charges attract. This fundamental law (Coulomb's Law) governs how charged particles interact and is the force that drives current flow when a potential difference (voltage) is present.",
+            "Static electricity is a buildup of electrical charge on a surface that is not free to flow. ESD (Electrostatic Discharge) can damage sensitive electronic components.",
+          ],
+          formulas: [
+            {
+              name: "Coulomb's Law",
+              expression: "F = k × (Q₁ × Q₂) / r²",
+              variables: {
+                F: "Force between charges (N)",
+                k: "Coulomb's constant (8.99 × 10⁹ N·m²/C²)",
+                "Q₁": "Charge 1 (C)",
+                "Q₂": "Charge 2 (C)",
+                r: "Distance between charges (m)",
+              },
+            },
+          ],
+          safetyNotes: [
+            "Always discharge capacitors before working on circuits — they can store lethal charge even after power is removed.",
+            "Use anti-static wrist straps when handling PCBs and sensitive ICs.",
+          ],
+        },
+        {
+          id: "electron-theory",
+          title: "Electron Flow vs. Conventional Current",
+          body: [
+            "Electron flow describes the actual movement of electrons from the negative terminal of a source, through the external circuit, to the positive terminal.",
+            "Conventional current (used in most textbooks and circuit analysis) flows in the opposite direction — from positive to negative. This convention was established before the electron was discovered.",
+            "In CircuiTry3D, the simulator uses conventional current direction: positive terminal of battery → through circuit → negative terminal. The current arrows shown on component models follow conventional current.",
+          ],
+          keyPoints: [
+            "Electron flow: negative (−) → circuit → positive (+)",
+            "Conventional current: positive (+) → circuit → negative (−)",
+            "Ohm's Law and Kirchhoff's Laws work with conventional current",
+            "CircuiTry3D uses conventional current throughout",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "ohms-law",
+      number: 2,
+      year: 1,
+      title: "Voltage, Current & Resistance — Ohm's Law",
+      overview:
+        "The three fundamental quantities in a DC circuit are voltage (V), current (I), and resistance (R). Ohm's Law defines the relationship between them and is the single most important formula in electrical studies.",
+      sections: [
+        {
+          id: "voltage",
+          title: "Voltage (Electromotive Force)",
+          body: [
+            "Voltage (symbol V or E) is the electrical potential difference between two points. It is the force that pushes electrons through a conductor. Voltage is measured in volts (V).",
+            "A battery converts chemical energy into electrical energy, producing a voltage (EMF — electromotive force) across its terminals. The positive terminal is at higher potential than the negative terminal.",
+            "Voltage does not flow; it exists between two points. Current flows because of voltage.",
+          ],
+          formulas: [
+            {
+              name: "Ohm's Law — Voltage",
+              expression: "V = I × R",
+              variables: {
+                V: "Voltage (volts, V)",
+                I: "Current (amperes, A)",
+                R: "Resistance (ohms, Ω)",
+              },
+              example: "A 2 A current through a 10 Ω resistor produces V = 2 × 10 = 20 V",
+            },
+          ],
+        },
+        {
+          id: "current",
+          title: "Current",
+          body: [
+            "Current (symbol I) is the rate of flow of electric charge past a point in a circuit. It is measured in amperes (A). One ampere equals one coulomb of charge passing per second.",
+            "Current can only flow in a complete (closed) circuit. An open circuit (a break anywhere in the loop) stops current flow entirely.",
+            "The ammeter is used to measure current and must always be connected in series with the load so that all current passes through it.",
+          ],
+          formulas: [
+            {
+              name: "Ohm's Law — Current",
+              expression: "I = V / R",
+              variables: {
+                V: "Voltage (V)",
+                I: "Current (A)",
+                R: "Resistance (Ω)",
+              },
+              example: "Applying 12 V across a 4 Ω resistor: I = 12 / 4 = 3 A",
+            },
+            {
+              name: "Charge and Current",
+              expression: "Q = I × t",
+              variables: {
+                Q: "Charge (coulombs, C)",
+                I: "Current (A)",
+                t: "Time (seconds, s)",
+              },
+            },
+          ],
+        },
+        {
+          id: "resistance",
+          title: "Resistance",
+          body: [
+            "Resistance (symbol R) is the opposition to the flow of current in a conductor. It is measured in ohms (Ω). All real conductors have some resistance; a perfect conductor would have zero resistance.",
+            "Resistance depends on: material (resistivity ρ), length (L), cross-sectional area (A), and temperature. Resistance increases with length and temperature, and decreases with larger cross-sectional area.",
+            "The voltmeter measures the voltage drop across a resistance and must always be connected in parallel with the component being measured.",
+          ],
+          formulas: [
+            {
+              name: "Ohm's Law — Resistance",
+              expression: "R = V / I",
+              variables: {
+                R: "Resistance (Ω)",
+                V: "Voltage (V)",
+                I: "Current (A)",
+              },
+              example: "A 24 V source produces 6 A: R = 24 / 6 = 4 Ω",
+            },
+            {
+              name: "Resistance from material properties",
+              expression: "R = ρ × L / A",
+              variables: {
+                R: "Resistance (Ω)",
+                ρ: "Resistivity of material (Ω·m)",
+                L: "Length of conductor (m)",
+                A: "Cross-sectional area (m²)",
+              },
+            },
+          ],
+          keyPoints: [
+            "Resistors limit current flow in a circuit",
+            "The W.I.R.E. table: Watts, (current) I, Resistance, EMF (Voltage)",
+            "Resistor colour code: Black Brown Red Orange Yellow Green Blue Violet Grey White (0–9)",
+            "Gold band = 5% tolerance; Silver = 10%; No band = 20%",
+          ],
+        },
+        {
+          id: "ohms-law-triangle",
+          title: "The Ohm's Law Triangle",
+          body: [
+            "The Ohm's Law triangle is a memory aid: cover the unknown quantity and the remaining two quantities show you whether to multiply or divide.",
+            "Place V on top, I and R on the bottom. Covering V gives V = I × R. Covering I gives I = V / R. Covering R gives R = V / I.",
+          ],
+          formulas: [
+            {
+              name: "Ohm's Law (all three forms)",
+              expression: "V = I × R   |   I = V / R   |   R = V / I",
+              variables: {
+                V: "Voltage (V)",
+                I: "Current (A)",
+                R: "Resistance (Ω)",
+              },
+            },
+          ],
+          realWorldExamples: [
+            "A standard household LED bulb draws about 0.09 A at 120 V — its equivalent resistance is R = 120 / 0.09 ≈ 1 333 Ω.",
+            "The heating element in a 1 500 W electric kettle running on 120 V draws I = 1 500 / 120 = 12.5 A, requiring a 15 A circuit breaker.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "series-circuits",
+      number: 3,
+      year: 1,
+      title: "Series Circuits",
+      overview:
+        "In a series circuit all components are connected end-to-end in a single loop. Current has only one path. Understanding the voltage divider rule and total resistance is essential.",
+      sections: [
+        {
+          id: "series-rules",
+          title: "Rules for Series Circuits",
+          body: [
+            "A series circuit provides a single conductive path between the two terminals of the voltage source. If any component in the path opens (fails), the entire circuit stops functioning.",
+            "There are three defining rules for series circuits that must hold true at all times.",
+          ],
+          keyPoints: [
+            "Rule 1 — Current: Current is the same through every component. I_T = I₁ = I₂ = I₃ = …",
+            "Rule 2 — Resistance: Total resistance is the sum of all individual resistances. R_T = R₁ + R₂ + R₃ + …",
+            "Rule 3 — Voltage: The sum of all voltage drops equals the source voltage (KVL). V_S = V₁ + V₂ + V₃ + …",
+          ],
+          formulas: [
+            {
+              name: "Total Resistance (Series)",
+              expression: "R_T = R₁ + R₂ + R₃ + …",
+              variables: {
+                R_T: "Total resistance (Ω)",
+                "R₁": "Resistance of component 1 (Ω)",
+              },
+              example: "R₁ = 150 Ω, R₂ = 200 Ω, R₃ = 250 Ω → R_T = 600 Ω",
+            },
+            {
+              name: "Voltage Divider Rule",
+              expression: "V_x = V_S × (R_x / R_T)",
+              variables: {
+                V_x: "Voltage across component x (V)",
+                V_S: "Source voltage (V)",
+                R_x: "Resistance of component x (Ω)",
+                R_T: "Total resistance (Ω)",
+              },
+              example: "V₁ = 24 × (150/600) = 6 V",
+            },
+          ],
+          safetyNotes: [
+            "In a series circuit a broken wire or blown fuse opens the entire circuit — always check for continuity when troubleshooting.",
+          ],
+          realWorldExamples: [
+            "Old-style Christmas light strings wired in series: one blown bulb darkens the entire string.",
+            "A fuse is placed in series with the load so that an overload opens the circuit and protects the wiring.",
+          ],
+        },
+        {
+          id: "wire-table-series",
+          title: "W.I.R.E. Table for Series Circuits",
+          body: [
+            "The W.I.R.E. table (Watts · Current · Resistance · EMF/Voltage) is the standard worksheet format for solving circuits in BC electrical trades training.",
+            "Fill in all known values first, then apply series rules to find unknown quantities. Total resistance, total current, individual voltage drops, and individual power dissipation are found in sequence.",
+          ],
+          keyPoints: [
+            "Column headers: Component | Watts (P) | Current (I) | Resistance (R) | Voltage (V)",
+            "In series: the Current column is identical for all rows",
+            "Total Voltage (V_T) = sum of all component voltages",
+            "Total Power (P_T) = sum of all component powers = V_T × I_T",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "parallel-circuits",
+      number: 4,
+      year: 1,
+      title: "Parallel Circuits",
+      overview:
+        "In a parallel circuit each component is connected directly across the voltage source. Current divides between branches. Total resistance is always less than the smallest branch resistance.",
+      sections: [
+        {
+          id: "parallel-rules",
+          title: "Rules for Parallel Circuits",
+          body: [
+            "A parallel circuit provides multiple conductive paths between the source terminals. Current divides among the branches according to each branch's resistance (Kirchhoff's Current Law). If one branch opens, the remaining branches continue to operate.",
+          ],
+          keyPoints: [
+            "Rule 1 — Voltage: Voltage is the same across every branch. V_T = V₁ = V₂ = V₃ = …",
+            "Rule 2 — Current: Total current equals the sum of all branch currents. I_T = I₁ + I₂ + I₃ + …",
+            "Rule 3 — Resistance: Total resistance is always less than the smallest branch resistance.",
+          ],
+          formulas: [
+            {
+              name: "Total Resistance (Two Branches — Product over Sum)",
+              expression: "R_T = (R₁ × R₂) / (R₁ + R₂)",
+              variables: {
+                R_T: "Total resistance (Ω)",
+                "R₁": "Branch 1 resistance (Ω)",
+                "R₂": "Branch 2 resistance (Ω)",
+              },
+              example: "R₁ = 6 Ω, R₂ = 12 Ω → R_T = (6×12)/(6+12) = 72/18 = 4 Ω",
+            },
+            {
+              name: "Total Resistance (Reciprocal Method)",
+              expression: "1/R_T = 1/R₁ + 1/R₂ + 1/R₃ + …",
+              variables: {
+                R_T: "Total resistance (Ω)",
+              },
+            },
+            {
+              name: "Equal Resistors in Parallel",
+              expression: "R_T = R / n",
+              variables: {
+                R: "Value of one resistor (Ω)",
+                n: "Number of equal resistors",
+              },
+              example: "Three 30 Ω resistors in parallel: R_T = 30 / 3 = 10 Ω",
+            },
+            {
+              name: "Current Divider Rule",
+              expression: "I_x = I_T × (R_T / R_x)",
+              variables: {
+                I_x: "Current in branch x (A)",
+                I_T: "Total current (A)",
+                R_T: "Total parallel resistance (Ω)",
+                R_x: "Resistance of branch x (Ω)",
+              },
+            },
+          ],
+          safetyNotes: [
+            "Adding more branches to a parallel circuit increases total current demand from the source — always verify the source and wiring can handle the increased load.",
+            "Household electrical wiring is parallel — each outlet receives the full supply voltage independently.",
+          ],
+          realWorldExamples: [
+            "All outlets in a home are wired in parallel — each device receives the full 120 V (or 240 V) supply voltage.",
+            "Connecting batteries in parallel increases capacity (amp-hours) without changing voltage.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "series-parallel-circuits",
+      number: 5,
+      year: 1,
+      title: "Series-Parallel Circuits",
+      overview:
+        "Most practical circuits combine series and parallel connections. The analysis technique is to simplify step-by-step: replace parallel groups with their equivalent resistance, then treat the result as a series circuit.",
+      sections: [
+        {
+          id: "analysis-method",
+          title: "Step-by-Step Analysis Method",
+          body: [
+            "To solve a series-parallel circuit, work from the innermost parallel group outward, replacing each parallel combination with its equivalent resistance until only a simple series circuit remains.",
+            "Then solve the series circuit for total current, and trace back through the network to find individual branch values.",
+          ],
+          keyPoints: [
+            "Step 1: Identify all parallel groups",
+            "Step 2: Calculate equivalent resistance of each parallel group",
+            "Step 3: Redraw as a series circuit with equivalent resistances",
+            "Step 4: Find R_T and I_T",
+            "Step 5: Trace back for branch voltages and currents",
+          ],
+          realWorldExamples: [
+            "Automotive electrical systems use series-parallel combinations: the battery (series stacking) powers parallel circuits for lighting, engine control, and accessories.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "power-energy",
+      number: 6,
+      year: 1,
+      title: "Power & Energy",
+      overview:
+        "Electrical power is the rate at which energy is converted. Power is measured in watts (W). Energy (work done) is measured in joules (J) or kilowatt-hours (kWh) for billing purposes.",
+      sections: [
+        {
+          id: "power-formulas",
+          title: "Power Formulas",
+          body: [
+            "Electrical power (P) is the product of voltage and current. Using Ohm's Law substitution, power can be expressed three ways.",
+          ],
+          formulas: [
+            {
+              name: "Power — Voltage × Current",
+              expression: "P = V × I",
+              variables: {
+                P: "Power (watts, W)",
+                V: "Voltage (V)",
+                I: "Current (A)",
+              },
+              example: "A 12 V lamp drawing 2 A: P = 12 × 2 = 24 W",
+            },
+            {
+              name: "Power — Current × Resistance",
+              expression: "P = I² × R",
+              variables: {
+                P: "Power (W)",
+                I: "Current (A)",
+                R: "Resistance (Ω)",
+              },
+              example: "2 A through 6 Ω: P = 4 × 6 = 24 W",
+            },
+            {
+              name: "Power — Voltage / Resistance",
+              expression: "P = V² / R",
+              variables: {
+                P: "Power (W)",
+                V: "Voltage (V)",
+                R: "Resistance (Ω)",
+              },
+              example: "12 V across 6 Ω: P = 144 / 6 = 24 W",
+            },
+            {
+              name: "Energy",
+              expression: "W = P × t",
+              variables: {
+                W: "Energy (joules J; or kWh when P in kW and t in hours)",
+                P: "Power (W or kW)",
+                t: "Time (s or h)",
+              },
+              example: "1 500 W kettle running for 0.1 h: W = 1.5 kW × 0.1 h = 0.15 kWh",
+            },
+          ],
+          keyPoints: [
+            "Total power in any circuit = sum of all component powers",
+            "Power is always positive (dissipated as heat, light, or motion)",
+            "The watt is named after James Watt; 1 W = 1 J/s",
+            "Utility companies bill in kilowatt-hours (kWh)",
+          ],
+          safetyNotes: [
+            "Exceeding a resistor's power rating causes overheating and fire risk — always check wattage ratings.",
+            "Wire gauge is chosen based on current-carrying capacity (ampacity) to prevent overheating.",
+          ],
+        },
+        {
+          id: "efficiency",
+          title: "Efficiency",
+          body: [
+            "Efficiency is the ratio of useful output power to total input power. No real device is 100% efficient — some energy is always lost as heat.",
+          ],
+          formulas: [
+            {
+              name: "Efficiency",
+              expression: "η = (P_out / P_in) × 100%",
+              variables: {
+                η: "Efficiency (%)",
+                P_out: "Output power (W)",
+                P_in: "Input power (W)",
+              },
+              example: "Motor input 500 W, mechanical output 425 W: η = (425/500)×100 = 85%",
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "kirchhoffs-laws",
+      number: 7,
+      year: 1,
+      title: "Kirchhoff's Laws",
+      overview:
+        "Kirchhoff's Laws extend Ohm's Law to complex multi-loop circuits. KCL governs current at nodes; KVL governs voltage around loops. Together they allow any DC circuit to be solved systematically.",
+      sections: [
+        {
+          id: "kcl",
+          title: "Kirchhoff's Current Law (KCL)",
+          body: [
+            "KCL states: The algebraic sum of all currents entering a node (junction) equals zero. Equivalently, the sum of currents entering a node equals the sum of currents leaving it.",
+            "This is a consequence of conservation of charge — charge cannot accumulate at a node in steady state.",
+          ],
+          formulas: [
+            {
+              name: "Kirchhoff's Current Law",
+              expression: "ΣI_in = ΣI_out   (or   ΣI = 0 at any node)",
+              variables: {
+                ΣI_in: "Sum of currents entering the node (A)",
+                ΣI_out: "Sum of currents leaving the node (A)",
+              },
+              example: "Node with I₁=2A and I₂=3A entering, then I₃=5A must leave",
+            },
+          ],
+          keyPoints: [
+            "KCL applies at every node (junction) in the circuit",
+            "In a series circuit there is only one node pair — current is identical everywhere",
+            "In a parallel circuit the total current splits at each node",
+          ],
+        },
+        {
+          id: "kvl",
+          title: "Kirchhoff's Voltage Law (KVL)",
+          body: [
+            "KVL states: The algebraic sum of all voltages around any closed loop equals zero. This means the sum of voltage rises (sources) equals the sum of voltage drops (loads) around any loop.",
+            "This is a consequence of conservation of energy — energy gained from sources must equal energy dissipated by loads.",
+          ],
+          formulas: [
+            {
+              name: "Kirchhoff's Voltage Law",
+              expression: "ΣV = 0   (around any closed loop)",
+              variables: {
+                ΣV: "Algebraic sum of all voltages in the loop (V)",
+              },
+              example: "Loop: +24V source, −8V drop, −10V drop, −6V drop → 24−8−10−6 = 0 ✓",
+            },
+          ],
+          realWorldExamples: [
+            "Mesh analysis of complex circuits (e.g., bridge circuits, ladder networks) uses KVL to write a system of equations that are solved simultaneously.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "magnetism",
+      number: 8,
+      year: 1,
+      title: "Magnetism & Electromagnetism",
+      overview:
+        "Magnetism and electricity are deeply linked. Moving charges create magnetic fields; changing magnetic fields create voltage. This is the basis for motors, generators, transformers, and inductors.",
+      sections: [
+        {
+          id: "magnetic-fields",
+          title: "Magnetic Fields",
+          body: [
+            "A magnetic field is an invisible force field surrounding a magnet or a current-carrying conductor. Field lines exit the north pole and enter the south pole of a magnet.",
+            "The right-hand rule: wrap your right hand around a conductor with the thumb pointing in the direction of conventional current; your fingers indicate the direction of the surrounding magnetic field.",
+          ],
+          keyPoints: [
+            "Like poles repel; unlike poles attract",
+            "Magnetic flux (Φ) is measured in webers (Wb)",
+            "Magnetic flux density (B) is measured in teslas (T) — B = Φ / A",
+            "Permeability (μ) describes how easily a material supports a magnetic field",
+          ],
+        },
+        {
+          id: "electromagnetic-induction",
+          title: "Electromagnetic Induction — Faraday's & Lenz's Laws",
+          body: [
+            "Faraday's Law: When the magnetic flux linking a conductor changes, a voltage (EMF) is induced in the conductor. The induced EMF is proportional to the rate of change of flux.",
+            "Lenz's Law: The direction of the induced current is such that its magnetic field opposes the change in flux that caused the induction. This is the basis of transformer and generator operation.",
+          ],
+          formulas: [
+            {
+              name: "Faraday's Law",
+              expression: "e = −N × (ΔΦ / Δt)",
+              variables: {
+                e: "Induced EMF (V)",
+                N: "Number of turns in the coil",
+                "ΔΦ": "Change in magnetic flux (Wb)",
+                "Δt": "Change in time (s)",
+              },
+            },
+          ],
+          realWorldExamples: [
+            "An electric generator converts mechanical rotation into AC voltage via electromagnetic induction.",
+            "Induction cooktops use rapidly changing magnetic fields to induce currents directly in metal cookware.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "dc-instruments",
+      title: "DC Measuring Instruments",
+      number: 9,
+      year: 1,
+      overview:
+        "Accurate measurement is essential in electrical work. Ammeters measure current in series; voltmeters measure voltage in parallel; ohmmeters measure resistance with power off.",
+      sections: [
+        {
+          id: "ammeter",
+          title: "Ammeter",
+          body: [
+            "An ammeter measures current in amperes. It must be connected in series with the circuit because it has very low internal resistance — if connected in parallel it would short-circuit the load.",
+            "Digital multimeters (DMM) have separate current input jacks; always select the correct range and connect to the current terminals (A or mA) before making a measurement.",
+          ],
+          safetyNotes: [
+            "NEVER connect an ammeter in parallel — it has near-zero resistance and will draw extreme current, potentially destroying the meter and starting a fire.",
+            "Always start with the highest current range and step down to avoid burning out the meter's fuse.",
+          ],
+        },
+        {
+          id: "voltmeter",
+          title: "Voltmeter",
+          body: [
+            "A voltmeter measures voltage (potential difference) in volts. It is connected in parallel with the component under test. A voltmeter has very high internal resistance to avoid disturbing the circuit.",
+          ],
+        },
+        {
+          id: "ohmmeter",
+          title: "Ohmmeter",
+          body: [
+            "An ohmmeter measures resistance in ohms. It must only be used on de-energized circuits — never measure resistance in a live circuit.",
+            "The ohmmeter supplies its own internal voltage to drive a test current; the displayed resistance is calculated from the resulting current.",
+          ],
+          safetyNotes: [
+            "Always de-energize and discharge the circuit before measuring resistance.",
+            "Resistance measurements in-circuit may be inaccurate due to parallel paths — isolate the component when possible.",
+          ],
+        },
+      ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  YEAR 2 — AC THEORY & DEVICES
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+      id: "ac-fundamentals",
+      number: 10,
+      year: 2,
+      title: "AC Theory Fundamentals",
+      overview:
+        "Alternating current (AC) periodically reverses direction. AC is the form of electricity supplied by utilities worldwide because it can be efficiently stepped up and down in voltage by transformers.",
+      sections: [
+        {
+          id: "ac-waveform",
+          title: "The Sinusoidal Waveform",
+          body: [
+            "The most common AC waveform is a sine wave. It is produced by rotating an armature inside a magnetic field in a generator. The instantaneous value at any angle θ is v = V_peak × sin(θ).",
+            "Key waveform parameters: Peak value (V_p), Peak-to-peak value (V_pp = 2 × V_p), Period (T — time for one full cycle in seconds), and Frequency (f — cycles per second in hertz).",
+          ],
+          formulas: [
+            {
+              name: "Instantaneous Voltage",
+              expression: "v(t) = V_p × sin(2π f t)",
+              variables: {
+                "v(t)": "Instantaneous voltage (V)",
+                V_p: "Peak voltage (V)",
+                f: "Frequency (Hz)",
+                t: "Time (s)",
+              },
+            },
+            {
+              name: "Frequency and Period",
+              expression: "f = 1 / T",
+              variables: {
+                f: "Frequency (Hz)",
+                T: "Period (s)",
+              },
+              example: "North American grid: f = 60 Hz → T = 1/60 ≈ 16.67 ms",
+            },
+            {
+              name: "RMS Voltage (Sinusoidal)",
+              expression: "V_rms = V_p / √2 ≈ 0.707 × V_p",
+              variables: {
+                V_rms: "RMS (effective) voltage (V)",
+                V_p: "Peak voltage (V)",
+              },
+              example: "North American 120 V RMS → V_p = 120 × √2 ≈ 170 V peak",
+            },
+          ],
+          keyPoints: [
+            "RMS (Root Mean Square) value is the effective DC equivalent — it produces the same heating effect",
+            "North America: 60 Hz, 120 V RMS (residential), 240 V RMS (dryers, ranges)",
+            "Europe/international: 50 Hz, 230 V RMS",
+            "V_avg of a full sine wave = 0; V_avg of a half-wave rectified sine = 0.637 × V_p",
+          ],
+        },
+        {
+          id: "phase-angle",
+          title: "Phase Angle",
+          body: [
+            "Phase angle (φ) describes the time offset between two sinusoidal quantities. If voltage leads current by 90°, the circuit contains a pure capacitance; if current leads voltage by 90°, the circuit contains a pure inductance.",
+            "In a purely resistive AC circuit, voltage and current are in phase (φ = 0°).",
+          ],
+          formulas: [
+            {
+              name: "Angular Frequency",
+              expression: "ω = 2π f",
+              variables: {
+                ω: "Angular frequency (radians/second, rad/s)",
+                f: "Frequency (Hz)",
+              },
+              example: "60 Hz → ω = 2π × 60 ≈ 377 rad/s",
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "capacitance",
+      number: 11,
+      year: 2,
+      title: "Capacitance & Capacitors",
+      overview:
+        "A capacitor stores electrical energy in an electric field between two conducting plates separated by an insulating dielectric. Capacitors block DC and pass AC, making them essential in filtering, timing, and power factor correction.",
+      sections: [
+        {
+          id: "capacitor-basics",
+          title: "Capacitor Fundamentals",
+          body: [
+            "Capacitance (C) is the ability to store charge. It is measured in farads (F). Practical capacitors are typically in microfarads (µF) or picofarads (pF).",
+            "When voltage is applied, charge Q accumulates: Q = C × V. Energy stored in a capacitor is W = ½ C V².",
+            "In DC steady state, a capacitor blocks current (acts as an open circuit once fully charged). In AC circuits, capacitors pass current — the opposition to current flow is called capacitive reactance (X_C).",
+          ],
+          formulas: [
+            {
+              name: "Capacitance",
+              expression: "C = Q / V",
+              variables: {
+                C: "Capacitance (farads, F)",
+                Q: "Charge stored (coulombs, C)",
+                V: "Voltage across capacitor (V)",
+              },
+            },
+            {
+              name: "Energy stored in a capacitor",
+              expression: "W = ½ × C × V²",
+              variables: {
+                W: "Energy (joules, J)",
+                C: "Capacitance (F)",
+                V: "Voltage (V)",
+              },
+            },
+            {
+              name: "Capacitive Reactance",
+              expression: "X_C = 1 / (2π f C)",
+              variables: {
+                X_C: "Capacitive reactance (Ω)",
+                f: "Frequency (Hz)",
+                C: "Capacitance (F)",
+              },
+              example: "C = 100 µF at 60 Hz: X_C = 1/(2π×60×0.0001) ≈ 26.5 Ω",
+            },
+            {
+              name: "Capacitors in Series",
+              expression: "1/C_T = 1/C₁ + 1/C₂ + 1/C₃ + …",
+              variables: {
+                C_T: "Total capacitance (F)",
+              },
+            },
+            {
+              name: "Capacitors in Parallel",
+              expression: "C_T = C₁ + C₂ + C₃ + …",
+              variables: {
+                C_T: "Total capacitance (F)",
+              },
+            },
+          ],
+          keyPoints: [
+            "Capacitors in series: total capacitance decreases (like resistors in parallel)",
+            "Capacitors in parallel: total capacitance increases (like resistors in series)",
+            "X_C decreases as frequency increases — capacitors pass high frequencies more easily",
+            "X_C is 90° out of phase with voltage (current leads voltage by 90°)",
+          ],
+          safetyNotes: [
+            "Large capacitors (e.g., in power supplies, motor start capacitors) can hold a dangerous charge long after power is removed — always discharge before handling.",
+            "Electrolytic capacitors are polarized — connecting with reversed polarity can cause violent failure.",
+          ],
+        },
+        {
+          id: "rc-time-constant",
+          title: "RC Time Constant",
+          body: [
+            "The RC time constant (τ = R × C) defines how quickly a capacitor charges or discharges through a resistance. After one time constant, a capacitor charges to approximately 63.2% of the supply voltage. After five time constants it is considered fully charged (99.3%).",
+          ],
+          formulas: [
+            {
+              name: "RC Time Constant",
+              expression: "τ = R × C",
+              variables: {
+                τ: "Time constant (seconds, s)",
+                R: "Resistance (Ω)",
+                C: "Capacitance (F)",
+              },
+              example: "R = 10 kΩ, C = 100 µF → τ = 10 000 × 0.0001 = 1 s",
+            },
+            {
+              name: "Capacitor Charging Voltage",
+              expression: "v_C(t) = V_S × (1 − e^(−t/τ))",
+              variables: {
+                "v_C(t)": "Capacitor voltage at time t (V)",
+                V_S: "Source voltage (V)",
+                t: "Time (s)",
+                τ: "Time constant (s)",
+              },
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "inductance",
+      number: 12,
+      year: 2,
+      title: "Inductance & Inductors",
+      overview:
+        "An inductor stores energy in a magnetic field surrounding a coil. Inductors resist changes in current flow. In DC steady state, an inductor acts as a short circuit (pure conductor). In AC circuits it opposes current through inductive reactance.",
+      sections: [
+        {
+          id: "inductor-basics",
+          title: "Inductor Fundamentals",
+          body: [
+            "Inductance (L) is measured in henries (H). A voltage is induced across an inductor whenever current through it changes: v = L × (di/dt). An inductor resists sudden changes in current.",
+            "In DC steady state, the inductor current is constant (di/dt = 0), so no voltage is induced — the inductor looks like a piece of wire (short circuit). This is how dcSolver models inductors.",
+            "In AC circuits, the inductor opposes current through inductive reactance (X_L). Current lags voltage by 90° in a pure inductor.",
+          ],
+          formulas: [
+            {
+              name: "Induced Voltage",
+              expression: "v = L × (di / dt)",
+              variables: {
+                v: "Induced voltage (V)",
+                L: "Inductance (H)",
+                "di/dt": "Rate of change of current (A/s)",
+              },
+            },
+            {
+              name: "Energy Stored in an Inductor",
+              expression: "W = ½ × L × I²",
+              variables: {
+                W: "Energy (J)",
+                L: "Inductance (H)",
+                I: "Current (A)",
+              },
+            },
+            {
+              name: "Inductive Reactance",
+              expression: "X_L = 2π f L",
+              variables: {
+                X_L: "Inductive reactance (Ω)",
+                f: "Frequency (Hz)",
+                L: "Inductance (H)",
+              },
+              example: "L = 50 mH at 60 Hz: X_L = 2π × 60 × 0.05 ≈ 18.85 Ω",
+            },
+            {
+              name: "Inductors in Series",
+              expression: "L_T = L₁ + L₂ + L₃ + …  (no coupling)",
+              variables: {
+                L_T: "Total inductance (H)",
+              },
+            },
+            {
+              name: "Inductors in Parallel",
+              expression: "1/L_T = 1/L₁ + 1/L₂ + …  (no coupling)",
+              variables: {
+                L_T: "Total inductance (H)",
+              },
+            },
+          ],
+          keyPoints: [
+            "X_L increases as frequency increases — inductors block high frequencies",
+            "Current lags voltage by 90° in a pure inductive circuit",
+            "DC steady-state: inductor = short circuit (handled by dcSolver)",
+            "RL time constant: τ = L / R",
+          ],
+          safetyNotes: [
+            "Suddenly interrupting current through an inductor causes a large voltage spike (inductive kick) that can damage switches and transistors — use a flyback diode for protection.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "impedance",
+      number: 13,
+      year: 2,
+      title: "Impedance, Reactance & Phase",
+      overview:
+        "Impedance (Z) is the total opposition to AC current flow, combining resistance (R) and reactance (X) using phasor (vector) mathematics. Power factor describes how efficiently AC power is used.",
+      sections: [
+        {
+          id: "impedance-basics",
+          title: "Impedance",
+          body: [
+            "In AC circuits, resistance R (in phase) and reactance X (90° out of phase) combine as phasors. The impedance magnitude Z and phase angle φ are found using the Pythagorean theorem and trigonometry.",
+          ],
+          formulas: [
+            {
+              name: "Impedance Magnitude (Series RL)",
+              expression: "Z = √(R² + X_L²)",
+              variables: {
+                Z: "Impedance (Ω)",
+                R: "Resistance (Ω)",
+                X_L: "Inductive reactance (Ω)",
+              },
+            },
+            {
+              name: "Impedance Magnitude (Series RC)",
+              expression: "Z = √(R² + X_C²)",
+              variables: {
+                Z: "Impedance (Ω)",
+                R: "Resistance (Ω)",
+                X_C: "Capacitive reactance (Ω)",
+              },
+            },
+            {
+              name: "Phase Angle",
+              expression: "φ = arctan(X / R)",
+              variables: {
+                φ: "Phase angle (degrees)",
+                X: "Net reactance (X_L − X_C) (Ω)",
+                R: "Resistance (Ω)",
+              },
+            },
+            {
+              name: "Ohm's Law for AC",
+              expression: "I = V / Z",
+              variables: {
+                I: "Current (A)",
+                V: "Voltage (V)",
+                Z: "Impedance (Ω)",
+              },
+            },
+          ],
+        },
+        {
+          id: "power-factor",
+          title: "Power Factor",
+          body: [
+            "In AC circuits, true (real) power P is dissipated only in resistive elements. Reactive power Q is stored and returned by reactive elements. Apparent power S is the product of RMS voltage and current.",
+            "Power factor (PF) is the ratio of real power to apparent power. A PF of 1 (unity) means all power is usefully consumed. Motors and transformers often have lagging power factors due to inductance.",
+          ],
+          formulas: [
+            {
+              name: "True Power",
+              expression: "P = V × I × cos(φ)   [W]",
+              variables: {
+                P: "Real (true) power (W)",
+                V: "Voltage (V)",
+                I: "Current (A)",
+                "cos(φ)": "Power factor",
+              },
+            },
+            {
+              name: "Apparent Power",
+              expression: "S = V × I   [VA]",
+              variables: {
+                S: "Apparent power (volt-amperes, VA)",
+              },
+            },
+            {
+              name: "Reactive Power",
+              expression: "Q = V × I × sin(φ)   [VAR]",
+              variables: {
+                Q: "Reactive power (volt-amperes reactive, VAR)",
+              },
+            },
+            {
+              name: "Power Triangle",
+              expression: "S² = P² + Q²",
+              variables: {
+                S: "Apparent power (VA)",
+                P: "True power (W)",
+                Q: "Reactive power (VAR)",
+              },
+            },
+            {
+              name: "Power Factor",
+              expression: "PF = P / S = cos(φ)",
+              variables: {
+                PF: "Power factor (0 to 1)",
+                P: "True power (W)",
+                S: "Apparent power (VA)",
+              },
+            },
+          ],
+          realWorldExamples: [
+            "Industrial facilities pay a power factor penalty if PF < 0.9 — they add capacitor banks to correct lagging PF caused by motors.",
+            "UPS (Uninterruptible Power Supplies) and variable frequency drives are rated in kVA (apparent power), not just kW.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "resonance",
+      number: 14,
+      year: 2,
+      title: "Resonance",
+      overview:
+        "Resonance occurs in LC circuits when inductive and capacitive reactances are equal and cancel each other. At resonance, a series circuit has minimum impedance (maximum current); a parallel circuit has maximum impedance (minimum current).",
+      sections: [
+        {
+          id: "series-resonance",
+          title: "Series Resonance",
+          body: [
+            "In a series RLC circuit, resonance occurs at the frequency where X_L = X_C. At this frequency the net reactance is zero; impedance equals R and current is maximum.",
+          ],
+          formulas: [
+            {
+              name: "Resonant Frequency",
+              expression: "f_r = 1 / (2π √(L × C))",
+              variables: {
+                f_r: "Resonant frequency (Hz)",
+                L: "Inductance (H)",
+                C: "Capacitance (F)",
+              },
+              example: "L = 10 mH, C = 100 µF: f_r = 1/(2π√(0.01 × 0.0001)) ≈ 159 Hz",
+            },
+            {
+              name: "Quality Factor (Q)",
+              expression: "Q = X_L / R = (1/R) × √(L/C)",
+              variables: {
+                Q: "Quality factor (dimensionless)",
+                X_L: "Inductive reactance at resonance (Ω)",
+                R: "Resistance (Ω)",
+              },
+            },
+          ],
+          realWorldExamples: [
+            "Radio tuning circuits use resonance to select a specific broadcast frequency.",
+            "Notch filters use parallel resonance to block a specific unwanted frequency.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "transformers",
+      number: 15,
+      year: 2,
+      title: "Transformers",
+      overview:
+        "A transformer transfers electrical energy between two circuits through electromagnetic induction. It can step voltage up or down with no moving parts and very high efficiency. Transformers only work with AC.",
+      sections: [
+        {
+          id: "transformer-basics",
+          title: "Transformer Principles",
+          body: [
+            "A transformer consists of two coils (primary and secondary) wound on a common iron core. AC in the primary creates a changing magnetic flux in the core, which induces an EMF in the secondary.",
+            "The turns ratio (a = N_p / N_s) determines the voltage step-up or step-down ratio. An ideal transformer transfers power with 100% efficiency: P_primary = P_secondary.",
+          ],
+          formulas: [
+            {
+              name: "Transformer Voltage Ratio",
+              expression: "V_p / V_s = N_p / N_s",
+              variables: {
+                V_p: "Primary voltage (V)",
+                V_s: "Secondary voltage (V)",
+                N_p: "Number of primary turns",
+                N_s: "Number of secondary turns",
+              },
+              example: "Step-down: N_p=2400, N_s=240 → V_s = V_p × (240/2400) = V_p / 10",
+            },
+            {
+              name: "Transformer Current Ratio",
+              expression: "I_p / I_s = N_s / N_p",
+              variables: {
+                I_p: "Primary current (A)",
+                I_s: "Secondary current (A)",
+              },
+            },
+            {
+              name: "Ideal Transformer Power",
+              expression: "P_p = P_s   →   V_p × I_p = V_s × I_s",
+              variables: {
+                P_p: "Primary apparent power (VA)",
+                P_s: "Secondary apparent power (VA)",
+              },
+            },
+          ],
+          keyPoints: [
+            "Step-up transformer: V_s > V_p (N_s > N_p), I_s < I_p",
+            "Step-down transformer: V_s < V_p (N_s < N_p), I_s > I_p",
+            "Transformer losses: copper losses (I²R in windings) and iron core losses (hysteresis + eddy currents)",
+            "Distribution transformers on utility poles step 12 kV down to 120/240 V for homes",
+          ],
+          safetyNotes: [
+            "Never short-circuit the secondary of a transformer — the primary will draw excessive current.",
+            "High-voltage transformer secondaries are lethal — always treat as live until proven otherwise.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "semiconductors",
+      number: 16,
+      year: 2,
+      title: "Semiconductors & Diodes",
+      overview:
+        "Semiconductors (silicon, germanium) have conductivity between conductors and insulators. By doping with impurities we create P-type and N-type materials. Joining them forms a P-N junction — the diode — which allows current to flow in only one direction.",
+      sections: [
+        {
+          id: "pn-junction",
+          title: "The P-N Junction",
+          body: [
+            "N-type semiconductor has excess free electrons (donors). P-type has excess holes (acceptors). When joined, electrons from the N-side fill holes on the P-side near the junction, creating a depletion region with a built-in barrier voltage.",
+            "Forward bias (+ to P, − to N) reduces the barrier and allows current to flow. The forward voltage drop is ≈ 0.7 V for silicon diodes and ≈ 2 V for LEDs.",
+            "Reverse bias (+ to N, − to P) widens the depletion region and blocks current (only a tiny leakage current flows). The maximum reverse voltage before breakdown is the Peak Inverse Voltage (PIV or PRV).",
+          ],
+          formulas: [
+            {
+              name: "Diode Simplified Model (Forward Bias)",
+              expression: "V_diode ≈ 0.7 V (silicon)   |   V_LED ≈ 1.8–3.3 V",
+              variables: {
+                V_diode: "Forward voltage drop (V)",
+              },
+            },
+            {
+              name: "Current Limiting Resistor for LED",
+              expression: "R = (V_S − V_LED) / I_LED",
+              variables: {
+                R: "Series resistor (Ω)",
+                V_S: "Supply voltage (V)",
+                V_LED: "LED forward voltage (V)",
+                I_LED: "Desired LED current (typically 10–20 mA)",
+              },
+              example: "V_S=5V, V_LED=2V, I_LED=20mA: R = (5−2)/0.02 = 150 Ω",
+            },
+          ],
+          keyPoints: [
+            "Anode (+) to cathode (−) = forward bias = conducts",
+            "Cathode (+) to anode (−) = reverse bias = blocks",
+            "Zener diodes are designed to conduct in reverse at a precise breakdown voltage (used in voltage regulation)",
+            "Rectifier diodes convert AC to pulsating DC",
+          ],
+          safetyNotes: [
+            "Always use a current-limiting resistor with an LED — without one, the LED will be destroyed immediately.",
+          ],
+          realWorldExamples: [
+            "Bridge rectifier: four diodes arranged to convert full-wave AC to pulsating DC in power supplies.",
+            "Flyback diode: placed across an inductive load to absorb the voltage spike when current is switched off.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "transistors",
+      number: 17,
+      year: 2,
+      title: "Transistors (BJT)",
+      overview:
+        "The Bipolar Junction Transistor (BJT) is a three-terminal semiconductor device that acts as a current-controlled current amplifier or switch. Understanding the NPN transistor is foundational for electronics.",
+      sections: [
+        {
+          id: "bjt-basics",
+          title: "BJT Fundamentals",
+          body: [
+            "A BJT has three terminals: Base (B), Collector (C), and Emitter (E). In an NPN transistor, a small base current (I_B) controls a much larger collector current (I_C). The emitter current is the sum: I_E = I_B + I_C.",
+            "The DC current gain (β or h_FE) is the ratio I_C / I_B. Typical β values range from 20 to 500 depending on the transistor.",
+            "Operating regions: Cutoff (no current — switch OFF), Active (amplifier operation), and Saturation (maximum current — switch ON).",
+          ],
+          formulas: [
+            {
+              name: "BJT Current Relationships",
+              expression: "I_E = I_B + I_C   |   I_C = β × I_B",
+              variables: {
+                I_E: "Emitter current (A)",
+                I_B: "Base current (A)",
+                I_C: "Collector current (A)",
+                β: "DC current gain (h_FE)",
+              },
+              example: "β = 100, I_B = 20 µA → I_C = 100 × 0.00002 = 2 mA",
+            },
+            {
+              name: "Base Resistor for Switching",
+              expression: "R_B = (V_S − V_BE) / I_B",
+              variables: {
+                R_B: "Base resistor (Ω)",
+                V_S: "Supply voltage at base input (V)",
+                V_BE: "Base-emitter voltage ≈ 0.7 V (silicon NPN)",
+                I_B: "Required base current (A)",
+              },
+            },
+          ],
+          keyPoints: [
+            "NPN: current flows collector → emitter when base is driven high",
+            "PNP: current flows emitter → collector when base is driven low",
+            "V_BE (forward bias, NPN) ≈ 0.7 V",
+            "V_CE(sat) ≈ 0.2 V in saturation (switch ON)",
+          ],
+          realWorldExamples: [
+            "Transistor as switch: microcontroller output drives a base resistor to switch a relay or motor on/off.",
+            "Audio amplifier: transistors in active region amplify weak microphone signals.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "safety-codes",
+      number: 18,
+      year: 2,
+      title: "Electrical Safety & Codes",
+      overview:
+        "Electrical safety is not optional — it is governed by codes and regulations designed to protect lives and property. In Canada, the Canadian Electrical Code (CEC) sets the minimum standards for all electrical installations.",
+      sections: [
+        {
+          id: "effects-of-current",
+          title: "Effects of Electrical Current on the Human Body",
+          body: [
+            "Current, not voltage, kills — but voltage drives current through the body's resistance. Severity depends on current magnitude, path through the body, and duration.",
+          ],
+          keyPoints: [
+            "1 mA: Threshold of perception",
+            "10–20 mA: Inability to let go (muscular freeze)",
+            "50–100 mA: Ventricular fibrillation — potentially fatal",
+            "100+ mA: Cardiac arrest, severe burns",
+            "Body resistance: skin dry ≈ 100 kΩ; skin wet ≈ 1 kΩ; internal ≈ 300 Ω",
+          ],
+          safetyNotes: [
+            "Treat every circuit as energized until you have personally verified it is de-energized.",
+            "Lock Out / Tag Out (LOTO): always lock and tag the disconnect before working on equipment.",
+            "Use a non-contact voltage tester before touching any conductor.",
+            "Ground Fault Circuit Interrupters (GFCI) trip at ≈ 5 mA — use in wet locations.",
+            "Arc Flash can cause burns, blindness, and death — wear appropriate PPE and observe safe working distances.",
+          ],
+        },
+        {
+          id: "cec-basics",
+          title: "Canadian Electrical Code (CEC) Basics",
+          body: [
+            "The Canadian Electrical Code (CEC) — CSA C22.1 — is the national standard adopted by all provinces and territories (sometimes with amendments). SkilledTradesBC administers the Electrical apprenticeship program in British Columbia.",
+            "Key CEC concepts include: conductor sizing (based on ampacity and voltage drop), overcurrent protection (fuses and breakers rated ≤ conductor ampacity), grounding and bonding, and wiring methods.",
+          ],
+          keyPoints: [
+            "Rule 2-110: Conductor ampacity must be ≥ the connected load current",
+            "Rule 14-100: Every circuit must be protected by an overcurrent device at its source",
+            "Rule 10-400: All exposed metal parts must be bonded to the grounding system",
+            "Voltage drop: CEC recommends ≤ 3% on branch circuits and ≤ 5% total from service entrance to load",
+          ],
+          realWorldExamples: [
+            "SkilledTradesBC (skilledtradesbc.ca) certifies electricians, industrial electricians, and instrumentation & control technicians in British Columbia.",
+            "The Red Seal Program allows certified tradespeople to work across all Canadian provinces without re-examination.",
+          ],
+        },
+        {
+          id: "voltage-drop",
+          title: "Voltage Drop Calculations",
+          body: [
+            "Voltage drop occurs because all conductors have resistance. Excessive voltage drop reduces equipment performance and can cause overheating. The CEC limits voltage drop to ensure adequate voltage at the load.",
+          ],
+          formulas: [
+            {
+              name: "Voltage Drop (Single-Phase)",
+              expression: "V_drop = 2 × I × R_conductor",
+              variables: {
+                V_drop: "Voltage drop (V)",
+                I: "Load current (A)",
+                R_conductor: "Resistance of one conductor (Ω)",
+              },
+            },
+            {
+              name: "Conductor Resistance",
+              expression: "R = ρ × L / A",
+              variables: {
+                R: "Conductor resistance (Ω)",
+                ρ: "Resistivity (Ω·m); copper ≈ 1.72 × 10⁻⁸ Ω·m",
+                L: "Length (m)",
+                A: "Cross-sectional area (m²)",
+              },
+            },
+          ],
+          keyPoints: [
+            "Larger wire gauge (smaller AWG number or larger mm²) = lower resistance = less voltage drop",
+            "Longer runs require larger conductors to maintain acceptable voltage drop",
+            "Use voltage drop tables in the CEC appendix for quick calculations",
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+export default textbook;
+
+/** Convenience: flat array of all chapters */
+export const allChapters: TextbookChapter[] = textbook.chapters;
+
+/** Get chapters for a specific year */
+export function getChaptersByYear(year: 1 | 2): TextbookChapter[] {
+  return textbook.chapters.filter((ch) => ch.year === year);
+}
+
+/** Find a chapter by id */
+export function findChapterById(id: string): TextbookChapter | undefined {
+  return textbook.chapters.find((ch) => ch.id === id);
+}
+
+/** Find a section within a chapter */
+export function findSection(chapterId: string, sectionId: string): TextbookSection | undefined {
+  return findChapterById(chapterId)?.sections.find((s) => s.id === sectionId);
+}
