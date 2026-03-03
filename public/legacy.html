@@ -73,6 +73,7 @@
         body.embedded #menu-bar,
         body.embedded #menu-toggle,
         body.embedded #quick-actions,
+        body.embedded #zoom-controls,
         body.embedded #wire-analysis,
         body.embedded #status,
         body.embedded #branding-overlay,
@@ -85,6 +86,7 @@
         html.embedded #menu-bar,
         html.embedded #menu-toggle,
         html.embedded #quick-actions,
+        html.embedded #zoom-controls,
         html.embedded #wire-analysis,
         html.embedded #status,
         html.embedded #branding-overlay,
@@ -1834,6 +1836,42 @@
             box-shadow: 0 6px 18px rgba(170,136,255,0.55);
         }
 
+        .zoom-controls {
+            position: fixed;
+            right: var(--legacy-menu-gap);
+            top: var(--legacy-menu-gap);
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            z-index: 300;
+        }
+
+        .zoom-btn {
+            background: rgba(0, 0, 0, 0.75);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            line-height: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+            padding: 0;
+        }
+
+        .zoom-btn:hover, .zoom-btn:active {
+            background: rgba(0, 255, 136, 0.15);
+            transform: scale(1.1);
+            box-shadow: 0 6px 18px rgba(0, 255, 136, 0.35);
+        }
+
         #view-only-banner {
             position: fixed;
             top: 12px;
@@ -2349,6 +2387,17 @@
             .quick-actions.open {
                 left: 15px;
             }
+
+            .zoom-controls {
+                right: 15px;
+                top: 15px;
+            }
+
+            .zoom-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+            }
         }
 
         /* Additional mobile optimizations */
@@ -2405,6 +2454,17 @@
                 height: 56px;
                 top: -28px;
             }
+
+            .zoom-controls {
+                right: 10px;
+                top: 10px;
+            }
+
+            .zoom-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
         }
 
         /* High DPI screens */
@@ -2434,6 +2494,10 @@
             
             .status {
                 bottom: 200px;
+            }
+
+            .zoom-controls {
+                top: 15px;
             }
         }
 
@@ -3219,6 +3283,11 @@
 
     <div class="quick-actions" id="quick-actions">
         <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
+    </div>
+
+    <div class="zoom-controls" id="zoom-controls">
+        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
+        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
     </div>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
@@ -4152,6 +4221,18 @@ body.android-optimized.menu-visible .wire-analysis-fixed,
 body.android-optimized.menu-visible .status {
   left: calc(var(--legacy-menu-width) + 24px);
   right: 24px;
+}
+
+body.android-optimized .zoom-controls {
+  right: 16px;
+  top: 16px;
+}
+
+body.android-optimized .zoom-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  font-size: 26px;
 }
                 `;
                 const headElement = document.head || document.getElementsByTagName("head")[0];
@@ -7451,6 +7532,16 @@ body.android-optimized.menu-visible .status {
                 cameraTarget.z + z
             );
             camera.lookAt(cameraTarget);
+        }
+
+        function zoomIn() {
+            cameraDistance = Math.max(ZOOM_MIN, cameraDistance - Math.max(ZOOM_IN_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
+            updateCameraPosition();
+        }
+
+        function zoomOut() {
+            cameraDistance = Math.min(ZOOM_MAX, cameraDistance + Math.max(ZOOM_OUT_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
+            updateCameraPosition();
         }
 
         function applyCameraPan(deltaX, deltaY, multiplier = 1) {
