@@ -24,6 +24,7 @@
       min-height: 100svh;
       min-height: 100dvh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding:
@@ -99,6 +100,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.42em;
+      padding-inline-start: 0.42em;
       font-size: clamp(0.72rem, 2.4vw, 0.95rem);
       margin-top: -6px;
       text-align: center;
@@ -133,9 +135,11 @@
     .status-text {
       font-size: 0.88rem;
       letter-spacing: 0.16em;
+      padding-inline-start: 0.16em;
       text-transform: uppercase;
       color: rgba(136, 204, 255, 0.92);
       font-weight: 600;
+      text-align: center;
     }
     .launch-button {
       display: inline-flex;
@@ -170,7 +174,7 @@
     @media (max-height: 640px) {
       body {
         justify-content: flex-start;
-        align-items: flex-start;
+        align-items: center;
         padding-top: max(48px, env(safe-area-inset-top, 0px));
       }
       .landing-page { gap: 22px; }
