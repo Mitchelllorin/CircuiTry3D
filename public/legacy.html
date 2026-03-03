@@ -81,6 +81,7 @@
         body.embedded #loading,
         body.embedded #loading-progress,
         body.embedded #loading-text,
+        body.embedded #view-only-banner,
         html.embedded #menu-bar,
         html.embedded #menu-toggle,
         html.embedded #quick-actions,
@@ -91,7 +92,8 @@
         html.embedded #launch-btn,
         html.embedded #loading,
         html.embedded #loading-progress,
-        html.embedded #loading-text {
+        html.embedded #loading-text,
+        html.embedded #view-only-banner {
             display: none !important;
         }
 
@@ -1718,6 +1720,51 @@
             transform: scale(1.08);
             box-shadow: 0 6px 18px rgba(170,136,255,0.55);
         }
+
+        #view-only-banner {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 400;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(10, 10, 26, 0.88);
+            border: 1.5px solid rgba(0,255,136,0.45);
+            border-radius: 32px;
+            padding: 6px 8px 6px 14px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+            pointer-events: auto;
+        }
+
+        #view-only-banner .view-only-label {
+            color: #aaffcc;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+
+        #edit-circuit-btn {
+            background: #00ff88;
+            color: #0a0a1a;
+            border: none;
+            border-radius: 22px;
+            padding: 6px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            transition: background 0.15s, transform 0.12s;
+            white-space: nowrap;
+        }
+
+        #edit-circuit-btn:hover, #edit-circuit-btn:active {
+            background: #33ffaa;
+            transform: scale(1.06);
+        }
         
         .status {
             position: fixed;
@@ -3052,6 +3099,11 @@
     
     <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">Menu</button>
 
+    <div id="view-only-banner" style="display:none;">
+        <span class="view-only-label">👁 View Only</span>
+        <button id="edit-circuit-btn" onclick="unlockCircuitForEditing()" aria-label="Edit circuit">✏️ Edit</button>
+    </div>
+
     <div class="quick-actions" id="quick-actions">
         <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
     </div>
@@ -3817,7 +3869,8 @@
                     "launch-btn",
                     "loading",
                     "loading-progress",
-                    "loading-text"
+                    "loading-text",
+                    "view-only-banner"
                 ];
                 hiddenIds.forEach((id) => {
                     const element = document.getElementById(id);
@@ -9113,10 +9166,21 @@ body.android-optimized.menu-visible .status {
                         document.body.classList.toggle('menu-visible', menuVisible);
                     }
                     
-                    // Set initial status for CircuiTry
-                    setStatus('CircuiTry Professional Circuit Design Environment Ready!');
+                    // Load default circuit in view-only mode on first launch
+                    loadPresetCircuit('series_basic');
+                    isCircuitEditLocked = true;
+                    const banner = document.getElementById('view-only-banner');
+                    if (banner) banner.style.display = 'flex';
+                    setStatus('👁 View Only — click ✏️ Edit to make changes');
                 }, 0);
             }, 0);
+        }
+
+        function unlockCircuitForEditing() {
+            isCircuitEditLocked = false;
+            const banner = document.getElementById('view-only-banner');
+            if (banner) banner.style.display = 'none';
+            setStatus('✏️ Edit mode — you can now move and modify components');
         }
 
         // Auto-launch immediately to avoid getting stuck on splash
