@@ -1839,7 +1839,7 @@
         .zoom-controls {
             position: fixed;
             right: var(--legacy-menu-gap);
-            top: var(--legacy-menu-gap);
+            bottom: calc(var(--legacy-menu-gap) + 60px + 8px);
             display: flex;
             flex-direction: row;
             gap: 8px;
@@ -2343,6 +2343,11 @@
                 width: 320px;
                 max-width: none;
             }
+
+            .zoom-controls {
+                top: var(--legacy-menu-gap);
+                bottom: auto;
+            }
         }
 
         /* Stack menu across the top on narrow screens */
@@ -2390,7 +2395,7 @@
 
             .zoom-controls {
                 right: 15px;
-                top: 15px;
+                bottom: calc(20px + 60px + 8px);
             }
 
             .zoom-btn {
@@ -2457,7 +2462,7 @@
 
             .zoom-controls {
                 right: 10px;
-                top: 10px;
+                bottom: calc(10px + 60px + 8px);
             }
 
             .zoom-btn {
@@ -2497,7 +2502,7 @@
             }
 
             .zoom-controls {
-                top: 15px;
+                bottom: calc(10px + 60px + 8px);
             }
         }
 
@@ -4225,7 +4230,7 @@ body.android-optimized.menu-visible .status {
 
 body.android-optimized .zoom-controls {
   right: 16px;
-  top: 16px;
+  bottom: calc(16px + 60px + 8px);
 }
 
 body.android-optimized .zoom-btn {
