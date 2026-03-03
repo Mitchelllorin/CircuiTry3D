@@ -18,25 +18,31 @@
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  /* Toggle tabs - slimmer for minimal footprint */
-  --builder-menu-toggle-width: 24px;
-  --builder-menu-toggle-height: 64px;
+  /* Toggle tabs - extra slim, long perimeter profile */
+  --builder-menu-toggle-width: 18px;
+  --builder-menu-toggle-height: 74px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
-  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
+  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 30px);
+  /* Keep side rails perimeter-oriented by revealing ~90% when expanded. */
+  --builder-menu-side-reveal: 0.9;
   /* Slimmer sidebar widths */
-  --builder-menu-left-width: 180px;
-  --builder-menu-right-width: 172px;
-  --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
-  --builder-menu-bottom-height: 248px;
+  --builder-menu-left-width: 156px;
+  --builder-menu-right-width: 150px;
+  --builder-menu-bottom-width: min(460px, calc(100vw - 104px));
+  --builder-menu-bottom-height: 236px;
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --builder-ticker-top: 72px;
   --builder-ticker-height: 32px;
   --builder-ticker-gap: 8px;
+  --builder-top-quick-actions-height: 38px;
+  --builder-top-quick-actions-gap: 6px;
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
-  --builder-edge-action-button-size: 44px;
-  --builder-edge-action-icon-size: 20px;
+  --builder-edge-action-button-size: 40px;
+  --builder-edge-action-icon-size: 18px;
+  --builder-edge-actions-peek: 12px;
 }
 
 body.builder-body {
@@ -328,30 +334,30 @@ body.builder-body {
   );
   right: auto;
   left: auto;
-  z-index: 940;
+  z-index: 810;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px;
+  gap: 4px;
+  padding: 4px;
   background: rgba(10, 24, 48, 0.75);
   border: 1px solid rgba(136, 204, 255, 0.2);
   border-radius: 12px;
   backdrop-filter: blur(12px);
   box-shadow: 0 4px 16px rgba(3, 12, 32, 0.45);
-  opacity: 0;
-  transform: translateY(8px);
+  opacity: 0.72;
+  transform: translate3d(var(--workspace-edge-actions-offset-x, 0px), 8px, 0);
   transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
 .workspace-edge-actions:hover {
   opacity: 1;
   background: rgba(10, 24, 48, 0.88);
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
 .workspace-edge-actions:focus-within {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
 @media (hover: none) {
@@ -369,7 +375,7 @@ body.builder-body {
   height: var(--builder-edge-action-button-size);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 7px;
   color: var(--builder-muted);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -486,10 +492,13 @@ body.builder-body {
 
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
 .workspace-edge-actions--right {
+  --workspace-edge-actions-offset-x: calc(100% - var(--builder-edge-actions-peek));
   right: calc(
-    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+    env(safe-area-inset-right, 0px)
   );
   left: auto;
+  border-radius: 10px 0 0 10px;
+  border-right: none;
   /* Position above the Insights toggle to avoid overlap */
   bottom: calc(
     var(--builder-menu-toggle-height) +
@@ -500,30 +509,13 @@ body.builder-body {
 
 /* Left edge positioning (Wire, Rotate, Edit tools) */
 .workspace-edge-actions--left {
+  --workspace-edge-actions-offset-x: calc(-100% + var(--builder-edge-actions-peek));
   left: calc(
-    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+    env(safe-area-inset-left, 0px)
   );
   right: auto;
-}
-
-/* When side menus are open, anchor edge actions to the "inner perimeter"
-   (i.e. inside the open menu), so they don't overlap the menu/toggle. */
-.builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-  left: calc(
-    env(safe-area-inset-left, 0px) +
-    var(--builder-menu-left-width) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
-}
-
-.builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-  right: calc(
-    env(safe-area-inset-right, 0px) +
-    var(--builder-menu-right-width) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
+  border-radius: 0 10px 10px 0;
+  border-left: none;
 }
 
 @media (max-width: 720px) {
@@ -539,7 +531,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+      env(safe-area-inset-right, 0px)
     );
     /* Position above the Insights toggle to avoid overlap */
     bottom: calc(
@@ -551,28 +543,9 @@ body.builder-body {
 
   .workspace-edge-actions--left {
     left: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+      env(safe-area-inset-left, 0px)
     );
   }
-
-  .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-    left: calc(
-      env(safe-area-inset-left, 0px) +
-      var(--builder-menu-left-width) +
-      var(--builder-menu-toggle-hit-width) +
-      10px
-    );
-  }
-
-  .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-    right: calc(
-      env(safe-area-inset-right, 0px) +
-      var(--builder-menu-right-width) +
-      var(--builder-menu-toggle-hit-width) +
-      10px
-    );
-  }
-
 }
 
 @media (max-width: 480px) {
@@ -587,7 +560,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+      env(safe-area-inset-right, 0px)
     );
     left: auto;
     transform: none;
@@ -601,7 +574,7 @@ body.builder-body {
 
   .workspace-edge-actions--left {
     left: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+      env(safe-area-inset-left, 0px)
     );
     right: auto;
     transform: none;
@@ -966,8 +939,8 @@ body.builder-body {
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 10px;
+  gap: 8px;
+  padding: 10px 8px;
   flex: 0 0 auto;
   min-height: 0;
   transition:
@@ -1044,7 +1017,13 @@ body.builder-body {
 }
 
 .builder-menu-stage-left.open {
-  transform: translateX(0);
+  transform: translateX(
+    calc(
+      -1 *
+      (var(--builder-menu-left-width) * (1 - var(--builder-menu-side-reveal))
+      )
+    )
+  );
 }
 
 /* Edge-attached right sidebar - toggle always at visible edge */
@@ -1057,7 +1036,11 @@ body.builder-body {
 }
 
 .builder-menu-stage-right.open {
-  transform: translateX(0);
+  transform: translateX(
+    calc(
+      var(--builder-menu-right-width) * (1 - var(--builder-menu-side-reveal))
+    )
+  );
 }
 
 .builder-menu-stage-bottom {
@@ -1387,7 +1370,7 @@ body.builder-body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
   width: var(--builder-menu-toggle-width);
   min-height: var(--builder-menu-toggle-height);
   border-radius: 0;
@@ -1438,7 +1421,7 @@ body.builder-body {
 .builder-menu-toggle-left,
 .builder-menu-toggle-right {
   flex-shrink: 0;
-  padding: 6px 2px;
+  padding: 8px 1px;
   margin-bottom: 0;
   align-self: center;
   position: relative;
@@ -1478,18 +1461,18 @@ body.builder-body {
 }
 
 .toggle-icon {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   pointer-events: none;
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--builder-cyan);
 }
 
 .toggle-icon svg {
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   display: block;
   filter: drop-shadow(0 0 4px rgba(136, 204, 255, 0.4));
 }
@@ -1497,9 +1480,9 @@ body.builder-body {
 /* Show vertical text on edge-attached toggle tabs */
 .toggle-text {
   display: block;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--builder-cyan);
   white-space: nowrap;
@@ -1592,6 +1575,11 @@ body.builder-body {
   text-transform: uppercase;
   color: rgba(136, 204, 255, 0.72);
   text-align: left;
+}
+
+.slider-heading--component-library {
+  display: block;
+  padding-left: 6px;
 }
 
 .slider-stack {
@@ -2474,7 +2462,7 @@ body.builder-body {
 
 .builder-ticker-feed {
   position: fixed;
-  top: calc(72px + var(--builder-safe-area-top));
+  top: calc(var(--builder-ticker-top) + var(--builder-safe-area-top));
   left: 0;
   right: 0;
   height: var(--builder-ticker-height, 32px);
@@ -2485,6 +2473,66 @@ body.builder-body {
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
+}
+
+.builder-top-quick-actions {
+  position: fixed;
+  top: calc(
+    var(--builder-ticker-top) +
+    var(--builder-safe-area-top) +
+    var(--builder-ticker-height) +
+    var(--builder-top-quick-actions-gap)
+  );
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 812;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--builder-top-quick-actions-height);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.26);
+  background: rgba(10, 24, 48, 0.86);
+  box-shadow: 0 6px 18px rgba(3, 12, 32, 0.45);
+  backdrop-filter: blur(12px);
+  max-width: calc(
+    100vw - 16px - env(safe-area-inset-left, 0px) -
+      env(safe-area-inset-right, 0px)
+  );
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.builder-top-quick-actions::-webkit-scrollbar {
+  display: none;
+}
+
+.builder-top-quick-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.builder-top-quick-actions-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(136, 204, 255, 0.28);
+  flex: 0 0 auto;
+}
+
+.builder-top-quick-actions .edge-action-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.builder-top-quick-actions .edge-action-icon,
+.builder-top-quick-actions .edge-action-icon-svg {
+  width: 19px;
+  height: 19px;
 }
 
 .ticker-wire-fixed {
@@ -2588,8 +2636,18 @@ body.builder-body {
 
 @media (max-width: 960px) {
   .builder-ticker-feed {
-    top: calc(68px + var(--builder-safe-area-top));
+    top: calc(var(--builder-ticker-top) + var(--builder-safe-area-top));
     height: var(--builder-ticker-height, 28px);
+  }
+
+  .builder-top-quick-actions {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .builder-top-quick-actions .edge-action-btn {
+    width: 32px;
+    height: 32px;
   }
 
   .ticker-content {
@@ -2601,8 +2659,35 @@ body.builder-body {
 
 @media (max-width: 720px) {
   .builder-ticker-feed {
-    top: calc(64px + var(--builder-safe-area-top));
+    top: calc(var(--builder-ticker-top) + var(--builder-safe-area-top));
     height: var(--builder-ticker-height, 26px);
+  }
+
+  .builder-top-quick-actions {
+    left: calc(env(safe-area-inset-left, 0px) + 8px);
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
+    transform: none;
+    border-radius: 12px;
+    justify-content: flex-start;
+    max-width: none;
+    padding: 3px 6px;
+    gap: 6px;
+  }
+
+  .builder-top-quick-actions .edge-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+  }
+
+  .builder-top-quick-actions .edge-action-icon,
+  .builder-top-quick-actions .edge-action-icon-svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .builder-top-quick-actions-divider {
+    height: 16px;
   }
 
   .ticker-content {
@@ -3702,13 +3787,15 @@ body.builder-body {
 @media (max-width: 960px) {
   :root {
     /* Tablet - slimmer toggles */
-    --builder-menu-left-width: 160px;
-    --builder-menu-right-width: 156px;
-    --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
-    --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 22px;
-    --builder-menu-toggle-height: 56px;
+    --builder-menu-left-width: 142px;
+    --builder-menu-right-width: 138px;
+    --builder-menu-bottom-width: min(408px, calc(100vw - 84px));
+    --builder-menu-bottom-height: 206px;
+    --builder-menu-toggle-width: 16px;
+    --builder-menu-toggle-height: 64px;
+    --builder-ticker-top: 68px;
     --builder-ticker-height: 28px;
+    --builder-top-quick-actions-height: 36px;
   }
 
   .builder-menu-stage-left,
@@ -3738,15 +3825,17 @@ body.builder-body {
 @media (max-width: 720px) {
   :root {
     /* Mobile - slim but tappable toggles */
-    --builder-menu-left-width: 148px;
-    --builder-menu-right-width: 144px;
+    --builder-menu-left-width: 132px;
+    --builder-menu-right-width: 126px;
     --builder-menu-bottom-width: calc(100vw - 24px);
-    --builder-menu-bottom-height: 196px;
-    --builder-menu-toggle-width: 20px;
-    --builder-menu-toggle-height: 48px;
+    --builder-menu-bottom-height: 188px;
+    --builder-menu-toggle-width: 15px;
+    --builder-menu-toggle-height: 54px;
+    --builder-ticker-top: 64px;
     --builder-ticker-height: 26px;
+    --builder-top-quick-actions-height: 34px;
     --builder-floating-action-offset: 120px;
-    --builder-floating-button-size: 40px;
+    --builder-floating-button-size: 38px;
   }
 
   .builder-menu-stage-left,
@@ -3781,17 +3870,17 @@ body.builder-body {
   /* Keep toggle text visible but smaller on mobile */
   .toggle-text {
     display: block;
-    font-size: 7px;
+    font-size: 8px;
   }
 
   .toggle-icon {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
 
   .toggle-icon svg {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
 }
 
@@ -3829,8 +3918,8 @@ body.builder-body {
 
   /* Ensure toggle buttons are always visible on touch devices - slim but tappable */
   .builder-menu-toggle {
-    min-width: 36px;
-    min-height: 48px;
+    min-width: 30px;
+    min-height: 50px;
     box-shadow:
       0 4px 16px var(--builder-shadow),
       0 0 16px rgba(136, 204, 255, 0.25);
@@ -3862,8 +3951,8 @@ body.builder-body {
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
   :root {
     /* Reduce bottom drawer footprint on short screens. */
-    --builder-menu-bottom-height: 160px;
-    --builder-menu-toggle-height: 44px;
+    --builder-menu-bottom-height: 152px;
+    --builder-menu-toggle-height: 50px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
   }
