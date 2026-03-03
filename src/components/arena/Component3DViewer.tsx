@@ -216,7 +216,10 @@ export function Component3DViewer({
 
       // Animation loop with mobile frame rate throttling
       let animationTime = 0;
-      let lastFrameTime = 0;
+      // Use -1 as sentinel: first rAF callback initialises lastFrameTime without
+      // rendering, preventing the large initial jump that occurs when currentTime
+      // equals the page-load elapsed time (potentially many seconds).
+      let lastFrameTime = -1;
       const targetFps = getTargetFrameRate();
       const frameInterval = 1000 / targetFps;
 
@@ -226,12 +229,21 @@ export function Component3DViewer({
 
         animationIdRef.current = requestAnimationFrame(animate);
 
+        // First frame: seed lastFrameTime and skip rendering to avoid a large
+        // deltaTime jump caused by the page-load timestamp being used as elapsed.
+        if (lastFrameTime < 0) {
+          lastFrameTime = currentTime;
+          return;
+        }
+
         // Throttle frame rate on mobile for battery savings
         const elapsed = currentTime - lastFrameTime;
         if (elapsed < frameInterval) return;
         lastFrameTime = currentTime - (elapsed % frameInterval);
 
-        const deltaTime = elapsed / 1000; // Convert to seconds
+        // Cap deltaTime to two frame-intervals so that tab-switching or browser
+        // throttling cannot cause a large rotation jump on resume.
+        const deltaTime = Math.min(elapsed, frameInterval * 2) / 1000;
         animationTime += deltaTime;
 
         if (isRotating) {
@@ -245,7 +257,7 @@ export function Component3DViewer({
         renderer.render(scene, camera);
       };
 
-      animate(0);
+      animationIdRef.current = requestAnimationFrame(animate);
 
       // Handle resize
       const handleResize = () => {

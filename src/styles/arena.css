@@ -2051,16 +2051,16 @@ body.builder-body .arena-page {
 
 @keyframes platform-battle-pulse {
   0%, 100% {
-    transform: rotateX(15deg) scale(1);
+    transform: translateZ(-20px) rotateX(-15deg) scale(1);
   }
   50% {
-    transform: rotateX(15deg) scale(1.05);
+    transform: translateZ(-20px) rotateX(-15deg) scale(1.05);
   }
 }
 
 @keyframes gentle-float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { translate: 0px 0px; }
+  50% { translate: 0px -10px; }
 }
 
 @keyframes battle-shake {

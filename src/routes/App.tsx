@@ -39,6 +39,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/app" element={<Builder />} />
+            <Route path="/arena" element={<Arena />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
             <Route path="/account" element={<Account />} />
