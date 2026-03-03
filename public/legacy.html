@@ -73,7 +73,6 @@
         body.embedded #menu-bar,
         body.embedded #menu-toggle,
         body.embedded #quick-actions,
-        body.embedded #zoom-controls,
         body.embedded #wire-analysis,
         body.embedded #status,
         body.embedded #branding-overlay,
@@ -86,7 +85,6 @@
         html.embedded #menu-bar,
         html.embedded #menu-toggle,
         html.embedded #quick-actions,
-        html.embedded #zoom-controls,
         html.embedded #wire-analysis,
         html.embedded #status,
         html.embedded #branding-overlay,
@@ -1837,9 +1835,9 @@
         }
 
         .zoom-controls {
-            position: fixed;
-            right: var(--legacy-menu-gap);
-            bottom: calc(var(--legacy-menu-gap) + 60px + 8px);
+            position: absolute;
+            top: -30px; /* floats above the panel top edge, matching .analysis-toggle */
+            right: 20px;
             display: flex;
             flex-direction: row;
             gap: 8px;
@@ -2393,11 +2391,6 @@
                 left: 15px;
             }
 
-            .zoom-controls {
-                right: 15px;
-                bottom: calc(20px + 60px + 8px);
-            }
-
             .zoom-btn {
                 width: 44px;
                 height: 44px;
@@ -2460,11 +2453,6 @@
                 top: -28px;
             }
 
-            .zoom-controls {
-                right: 10px;
-                bottom: calc(10px + 60px + 8px);
-            }
-
             .zoom-btn {
                 width: 40px;
                 height: 40px;
@@ -2499,10 +2487,6 @@
             
             .status {
                 bottom: 200px;
-            }
-
-            .zoom-controls {
-                bottom: calc(10px + 60px + 8px);
             }
         }
 
@@ -3289,11 +3273,6 @@
     <div class="quick-actions" id="quick-actions">
         <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
     </div>
-
-    <div class="zoom-controls" id="zoom-controls">
-        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
-        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
-    </div>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
         <div class="menu-tabs">
@@ -3439,6 +3418,10 @@
     
     <div class="wire-analysis-fixed" id="wire-analysis">
         <button class="analysis-toggle" onclick="toggleAnalysis()">Toggle</button>
+        <div class="zoom-controls" id="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
+        </div>
         
         <div class="analysis-tabs">
             <button class="analysis-tab active" onclick="switchAnalysisTab('wire')" id="tab-wire">W.I.R.E.</button>
@@ -4226,11 +4209,6 @@ body.android-optimized.menu-visible .wire-analysis-fixed,
 body.android-optimized.menu-visible .status {
   left: calc(var(--legacy-menu-width) + 24px);
   right: 24px;
-}
-
-body.android-optimized .zoom-controls {
-  right: 16px;
-  bottom: calc(16px + 60px + 8px);
 }
 
 body.android-optimized .zoom-btn {
