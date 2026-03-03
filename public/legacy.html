@@ -5084,10 +5084,10 @@ body.android-optimized.menu-visible .status {
             }
 
             createConnectionPoint() {
-                const pointGeometry = new THREE.SphereGeometry(0.28, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const pointGeometry = new THREE.SphereGeometry(0.14, isMobile ? 12 : 16, isMobile ? 8 : 12);
                 const pointMaterial = new THREE.MeshPhongMaterial({ 
-                    color: 0xaa66ff,
-                    emissive: 0x332288,
+                    color: 0x00ffff,
+                    emissive: 0x007777,
                     shininess: 200
                 });
                 
@@ -6292,7 +6292,7 @@ body.android-optimized.menu-visible .status {
             createConnectionPoints() {
                 this.connectionPoints = [];
 
-                const pointGeometry = new THREE.SphereGeometry(0.3, isMobile ? 16 : 20, isMobile ? 12 : 16);
+                const pointGeometry = new THREE.SphereGeometry(0.15, isMobile ? 16 : 20, isMobile ? 12 : 16);
                 const leftPos = new THREE.Vector3(-1.2, 0, 0);
                 const rightPos = new THREE.Vector3(1.2, 0, 0);
                 const centerPos = new THREE.Vector3(0, 0, 0);
@@ -6317,8 +6317,8 @@ body.android-optimized.menu-visible .status {
 
                     // Gray negative terminal
                     const negativeMaterial = new THREE.MeshPhongMaterial({
-                        color: 0x333333,
-                        emissive: 0x111111,
+                        color: 0x4488ff,
+                        emissive: 0x112244,
                         shininess: 200
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
@@ -6335,8 +6335,8 @@ body.android-optimized.menu-visible .status {
                 } else if (this.type === 'bjt') {
                     // BJT has 3 terminals: Collector (left), Base (center), Emitter (right)
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -6379,8 +6379,8 @@ body.android-optimized.menu-visible .status {
                 } else if (this.type === 'mosfet') {
                     // MOSFET has 3 terminals: Gate (left), Drain (center), Source (right)
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -6423,8 +6423,8 @@ body.android-optimized.menu-visible .status {
                 } else if (this.type === 'potentiometer') {
                     // Potentiometer has 3 terminals: Terminal 1 (left), Wiper (center), Terminal 2 (right)
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -6467,8 +6467,8 @@ body.android-optimized.menu-visible .status {
                 } else if (this.type === 'ground') {
                     // Ground has only 1 connection point at the top
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -6486,8 +6486,8 @@ body.android-optimized.menu-visible .status {
                 } else if (this.type === 'bjt-npn' || this.type === 'bjt-pnp') {
                     // NPN/PNP BJTs have 3 terminals like regular BJT
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -6530,8 +6530,8 @@ body.android-optimized.menu-visible .status {
                 } else if (this.type === 'darlington') {
                     // Darlington has 3 terminals like BJT/MOSFET
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -6590,8 +6590,8 @@ body.android-optimized.menu-visible .status {
                     this.connectionPoints.push(positivePoint);
 
                     const negativeMaterial = new THREE.MeshPhongMaterial({
-                        color: 0x333333,
-                        emissive: 0x111111,
+                        color: 0x4488ff,
+                        emissive: 0x112244,
                         shininess: 200
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
@@ -6608,8 +6608,8 @@ body.android-optimized.menu-visible .status {
                 } else {
                     // White neutral terminals for 2-terminal components
                     const neutralMaterial = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0x222222,
+                        color: 0x00ffff,
+                        emissive: 0x007777,
                         shininess: 200
                     });
 
@@ -10051,11 +10051,11 @@ body.android-optimized.menu-visible .status {
             if (highlight) {
                 connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
-                connectionPoint.scale.setScalar(2.0);
+                connectionPoint.scale.setScalar(1.4);
             } else {
                 if (pointData.junction) {
-                    connectionPoint.material.color.setRGB(0.67, 0.4, 1.0);
-                    connectionPoint.material.emissive.setRGB(0.2, 0.1, 0.4);
+                    connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
+                    connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
                 } else {
                     const originalColor = getOriginalColor(pointData.polarity);
                     connectionPoint.material.color.copy(originalColor);
@@ -10068,8 +10068,8 @@ body.android-optimized.menu-visible .status {
         function getOriginalColor(polarity) {
             switch (polarity) {
                 case 'positive': return new THREE.Color(1, 0, 0);
-                case 'negative': return new THREE.Color(0.3, 0.3, 0.3);
-                default: return new THREE.Color(1, 1, 1);
+                case 'negative': return new THREE.Color(0.267, 0.533, 1.0); // 0x4488ff
+                default: return new THREE.Color(0, 1, 1); // 0x00ffff cyan
             }
         }
 
@@ -10079,10 +10079,10 @@ body.android-optimized.menu-visible .status {
                     point.material.emissive.setRGB(0.3, 0.0, 0.0);
                     break;
                 case 'negative':
-                    point.material.emissive.setRGB(0.1, 0.1, 0.1);
+                    point.material.emissive.setRGB(0.067, 0.133, 0.267); // 0x112244
                     break;
                 default:
-                    point.material.emissive.setRGB(0.2, 0.2, 0.2);
+                    point.material.emissive.setRGB(0.0, 0.467, 0.467); // 0x007777 cyan emissive
             }
         }
 
@@ -10731,15 +10731,15 @@ body.android-optimized.menu-visible .status {
             if (which === 'a') {
                 connectionPoint.material.color.setRGB(1.0, 0.25, 0.25);
                 connectionPoint.material.emissive.setRGB(0.5, 0.05, 0.05);
-                connectionPoint.scale.setScalar(2.2);
+                connectionPoint.scale.setScalar(1.5);
             } else if (which === 'b') {
                 connectionPoint.material.color.setRGB(0.7, 0.7, 0.75);
                 connectionPoint.material.emissive.setRGB(0.15, 0.15, 0.18);
-                connectionPoint.scale.setScalar(1.9);
+                connectionPoint.scale.setScalar(1.3);
             } else {
                 connectionPoint.material.color.setRGB(0.5, 0.9, 1.0);
                 connectionPoint.material.emissive.setRGB(0.05, 0.22, 0.28);
-                connectionPoint.scale.setScalar(2.0);
+                connectionPoint.scale.setScalar(1.4);
             }
         }
 
