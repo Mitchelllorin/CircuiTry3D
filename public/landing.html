@@ -175,6 +175,36 @@
       }
       .landing-page { gap: 22px; }
     }
+    @media (orientation: landscape) and (max-height: 480px) {
+      body {
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: max(12px, env(safe-area-inset-top, 0px));
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      }
+      .landing-page {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+      }
+      .logo-mark {
+        width: clamp(72px, 18vw, 110px);
+      }
+      .wordmark {
+        font-size: clamp(24px, 6vw, 40px);
+      }
+      .subtitle {
+        display: none;
+      }
+      .status-wrapper {
+        gap: 8px;
+      }
+    }
     .landing-footer {
       position: fixed;
       bottom: 0;
