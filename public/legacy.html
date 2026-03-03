@@ -4206,6 +4206,12 @@ body.android-optimized.menu-visible .status {
                             case 'open-arena':
                                 if (typeof openArena === 'function') openArena();
                                 break;
+                            case 'undo':
+                                if (typeof undo === 'function') undo();
+                                break;
+                            case 'redo':
+                                if (typeof redo === 'function') redo();
+                                break;
                             case 'clear-workspace':
                                 if (typeof clearAll === 'function') clearAll();
                                 break;
@@ -10224,6 +10230,8 @@ body.android-optimized.menu-visible .status {
                 return;
             }
 
+            saveState(); // Save state before moving so the move is undoable
+
             const wasRotateMode = isRotateMode;
             if (wasRotateMode) {
                 disableRotateMode({ silent: true, skipNotify: true, skipCloseMenus: true });
@@ -11101,11 +11109,6 @@ body.android-optimized.menu-visible .status {
             // Clear current circuit
             clearAll(false); // Don't save state during clear
             
-            // Restore component counters
-            if (state.componentCounters) {
-                componentCounters = { ...state.componentCounters };
-            }
-            
             // Restore components
             state.components.forEach(compData => {
                 const position = new THREE.Vector3().fromArray(compData.position);
@@ -11124,6 +11127,12 @@ body.android-optimized.menu-visible .status {
                 components.push(component);
             });
             
+            // Restore component counters after component creation so the Component
+            // constructor's counter increments do not inflate the saved values
+            if (state.componentCounters) {
+                componentCounters = { ...state.componentCounters };
+            }
+            
             // Restore junctions
             state.junctions.forEach(junctionData => {
                 const position = new THREE.Vector3().fromArray(junctionData.position);
@@ -11138,9 +11147,13 @@ body.android-optimized.menu-visible .status {
                 const endObj = [...components, ...junctions].find(obj => obj.id === wireData.endId);
                 
                 if (startObj && endObj) {
-                    const wire = new Wire(startObj, wireData.startSide, endObj, wireData.endSide);
-                    wire.id = wireData.id;
-                    wires.push(wire);
+                    try {
+                        const wire = new Wire(startObj, wireData.startSide, endObj, wireData.endSide);
+                        wire.id = wireData.id;
+                        wires.push(wire);
+                    } catch (e) {
+                        console.warn('Could not restore wire during undo/redo:', e);
+                    }
                 }
             });
             
@@ -11316,6 +11329,7 @@ body.android-optimized.menu-visible .status {
                 return;
             }
             
+            saveState(); // Save for undo
             selectedComponents.clear();
             const offset = new THREE.Vector3(2, 0, 2); // Offset for pasted objects
             
