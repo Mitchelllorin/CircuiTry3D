@@ -74,6 +74,7 @@
         body.embedded #menu-toggle,
         body.embedded #quick-actions,
         body.embedded #wire-analysis,
+        body.embedded #panel-top-bar,
         body.embedded #status,
         body.embedded #branding-overlay,
         body.embedded #landing-page,
@@ -86,6 +87,7 @@
         html.embedded #menu-toggle,
         html.embedded #quick-actions,
         html.embedded #wire-analysis,
+        html.embedded #panel-top-bar,
         html.embedded #status,
         html.embedded #branding-overlay,
         html.embedded #landing-page,
@@ -322,14 +324,15 @@
         
         .wire-analysis-fixed {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             left: 20px;
             right: 20px;
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
             padding: 20px;
-            border-radius: 16px;
+            border-radius: 0 0 16px 16px;
             border: 2px solid rgba(0,255,136,0.4);
+            border-top: none;
             z-index: 90;
             transition: transform 0.3s ease;
             max-height: 60vh;
@@ -338,7 +341,7 @@
         }
         
         .wire-analysis-fixed.collapsed {
-            transform: translateY(calc(100% - 60px));
+            transform: translateY(calc(100% + 80px));
         }
 
         .analysis-tabs {
@@ -885,23 +888,20 @@
         }
         
         .analysis-toggle {
-            position: absolute;
-            left: 50%;
-            top: -30px;
-            transform: translateX(-50%);
             background: #00ff88;
             border: 3px solid #ffffff;
             color: #000000;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
             box-shadow: 0 4px 12px rgba(0,255,136,0.3);
+            flex-shrink: 0;
         }
         
         .menu-toggle {
@@ -1324,14 +1324,15 @@
         
         .wire-analysis-fixed {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             left: 20px;
             right: 20px;
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
             padding: 20px;
-            border-radius: 16px;
+            border-radius: 0 0 16px 16px;
             border: 2px solid rgba(0,255,136,0.4);
+            border-top: none;
             z-index: 90;
             transition: transform 0.3s ease;
             max-height: 60vh;
@@ -1340,7 +1341,7 @@
         }
         
         .wire-analysis-fixed.collapsed {
-            transform: translateY(calc(100% - 60px));
+            transform: translateY(calc(100% + 80px));
         }
 
         .analysis-tabs {
@@ -1750,23 +1751,20 @@
         }
         
         .analysis-toggle {
-            position: absolute;
-            left: 50%;
-            top: -30px;
-            transform: translateX(-50%);
             background: #00ff88;
             border: 3px solid #ffffff;
             color: #000000;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
             box-shadow: 0 4px 12px rgba(0,255,136,0.3);
+            flex-shrink: 0;
         }
         
         .menu-toggle {
@@ -1835,13 +1833,28 @@
         }
 
         .zoom-controls {
-            position: absolute;
-            top: -30px; /* floats above the panel top edge, matching .analysis-toggle */
-            right: 20px;
             display: flex;
             flex-direction: row;
             gap: 8px;
-            z-index: 300;
+        }
+
+        .panel-top-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 60px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 95;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 16px 16px 0 0;
+            border: 2px solid rgba(0,255,136,0.4);
+            border-bottom: none;
         }
 
         .zoom-btn {
@@ -2300,22 +2313,32 @@
         /* Desktop styles for larger screens */
         @media (min-width: 769px) {
             .wire-analysis-fixed {
-                top: 80px;
+                top: 140px;
                 right: 20px;
                 left: auto;
                 bottom: auto;
                 max-width: 320px;
                 max-height: none;
+                border-radius: 0 0 16px 16px;
+                border-top: none;
             }
             
             .wire-analysis-fixed.collapsed {
-                transform: translateX(calc(100% - 60px));
+                transform: translateX(calc(100% + 20px));
+            }
+
+            .panel-top-bar {
+                top: 80px;
+                right: 20px;
+                left: auto;
+                bottom: auto;
+                width: 320px;
+                border-radius: 16px 0 0 16px;
+                border-right: none;
+                border-bottom: 2px solid rgba(0,255,136,0.4);
             }
             
             .analysis-toggle {
-                left: -40px;
-                top: 50%;
-                transform: translateY(-50%);
                 width: 40px;
                 height: 40px;
                 font-size: 14px;
@@ -2413,6 +2436,12 @@
                 padding: 16px;
                 left: 10px;
                 right: 10px;
+                bottom: 70px;
+            }
+
+            .panel-top-bar {
+                left: 10px;
+                right: 10px;
                 bottom: 10px;
             }
             
@@ -2443,15 +2472,19 @@
             }
             
             .analysis-toggle {
-                width: 56px;
-                height: 56px;
-                top: -28px;
+                width: 44px;
+                height: 44px;
             }
 
             .zoom-btn {
                 width: 40px;
                 height: 40px;
                 font-size: 20px;
+            }
+
+            /* 70px = panel-top-bar bottom(10px) + height(60px) = panel's own bottom offset */
+            .wire-analysis-fixed.collapsed {
+                transform: translateY(calc(100% + 70px));
             }
         }
 
@@ -3411,13 +3444,15 @@
         </div>
     </div>
     
-    <div class="wire-analysis-fixed" id="wire-analysis">
+    <div class="panel-top-bar" id="panel-top-bar">
         <button class="analysis-toggle" onclick="toggleAnalysis()">Toggle</button>
         <div class="zoom-controls" id="zoom-controls">
             <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
             <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
         </div>
-        
+    </div>
+
+    <div class="wire-analysis-fixed" id="wire-analysis">
         <div class="analysis-tabs">
             <button class="analysis-tab active" onclick="switchAnalysisTab('wire')" id="tab-wire">W.I.R.E.</button>
             <button class="analysis-tab" onclick="switchAnalysisTab('eir')" id="tab-eir">EIR</button>
@@ -4201,6 +4236,7 @@ body.android-optimized.menu-visible #canvas {
 }
 
 body.android-optimized.menu-visible .wire-analysis-fixed,
+body.android-optimized.menu-visible .panel-top-bar,
 body.android-optimized.menu-visible .status {
   left: calc(var(--legacy-menu-width) + 24px);
   right: 24px;
