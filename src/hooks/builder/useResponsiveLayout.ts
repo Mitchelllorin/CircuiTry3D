@@ -36,6 +36,9 @@ export function useResponsiveLayout() {
 
     const largeScreenQuery = window.matchMedia("(min-width: 1024px)");
     const compactScreenQuery = window.matchMedia("(max-width: 900px)");
+    const phoneLandscapeQuery = window.matchMedia(
+      "(orientation: landscape) and (max-height: 480px)",
+    );
 
     const handleLargeScreen = (event: MediaQueryListEvent) => {
       if (event.matches) {
@@ -49,7 +52,19 @@ export function useResponsiveLayout() {
       }
     };
 
-    if (compactScreenQuery.matches) {
+    const handlePhoneLandscape = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setLeftMenuOpen(false);
+        setRightMenuOpen(false);
+        setBottomMenuOpen(false);
+      }
+    };
+
+    if (phoneLandscapeQuery.matches) {
+      setLeftMenuOpen(false);
+      setRightMenuOpen(false);
+      setBottomMenuOpen(false);
+    } else if (compactScreenQuery.matches) {
       setLeftMenuOpen(false);
     } else if (largeScreenQuery.matches) {
       setLeftMenuOpen(true);
@@ -63,10 +78,15 @@ export function useResponsiveLayout() {
       compactScreenQuery,
       handleCompactScreen,
     );
+    const detachPhoneLandscape = subscribeToMediaQuery(
+      phoneLandscapeQuery,
+      handlePhoneLandscape,
+    );
 
     return () => {
       detachLargeScreen();
       detachCompactScreen();
+      detachPhoneLandscape();
     };
   }, []);
 
