@@ -22,6 +22,7 @@ const DataSafety = lazy(() => import("../pages/DataSafety"));
 const AppAccess = lazy(() => import("../pages/AppAccess"));
 const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
 const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
+const Textbook = lazy(() => import("../pages/Textbook"));
 
 function PageFallback() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/app-access" element={<AppAccess />} />
             <Route path="/play-store" element={<PlayStoreCompliance />} />
             <Route path="/delete-account" element={<DeleteAccount />} />
+            <Route path="/textbook" element={<Textbook />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

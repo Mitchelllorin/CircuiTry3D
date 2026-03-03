@@ -234,6 +234,17 @@ export function GlobalModeBar() {
           />
           <span className="mode-label">Wire Guide</span>
         </button>
+        <button
+          type="button"
+          className="mode-tab"
+          data-active={location.pathname === "/textbook" ? "true" : undefined}
+          onClick={() => navigate("/textbook")}
+          aria-label="Electrical Textbook — Year 1 and Year 2 reference"
+          title="Year 1 & Year 2 Electrical Studies Textbook"
+        >
+          <span className="mode-icon" aria-hidden="true">📖</span>
+          <span className="mode-label">Textbook</span>
+        </button>
         {modeBarScrollState.canScrollRight && (
           <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
             <span className="scroll-indicator-arrow">›</span>
