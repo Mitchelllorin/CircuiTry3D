@@ -81,9 +81,9 @@ export function TipsTicker() {
     <div className="tips-ticker" role="status" aria-live="polite" aria-atomic="true">
       <span
         className={`tips-ticker__badge tips-ticker__badge--${entry.kind}`}
-        aria-label={entry.kind === "tip" ? "Tip" : "Did you know"}
+        aria-label={entry.kind === "tip" ? "Tip" : entry.kind === "trick" ? "Trick" : "Did you know"}
       >
-        {entry.kind === "tip" ? "💡 Tip" : "⚡ Fact"}
+        {entry.kind === "tip" ? "💡 Tip" : entry.kind === "trick" ? "🔧 Trick" : "⚡ Fact"}
       </span>
       <span className={`tips-ticker__text${visible ? " tips-ticker__text--visible" : ""}`}>
         {entry.text}

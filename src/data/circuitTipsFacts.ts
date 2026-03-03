@@ -1,6 +1,6 @@
 export type TipOrFact = {
   id: string;
-  kind: "tip" | "fact";
+  kind: "tip" | "fact" | "trick";
   text: string;
 };
 
@@ -142,6 +142,42 @@ const CIRCUIT_TIPS_FACTS: TipOrFact[] = [
     id: "real-3",
     kind: "fact",
     text: "Lightning is a massive electrical discharge — a single bolt can carry 300 million volts.",
+  },
+  // Tricks
+  {
+    id: "trick-1",
+    kind: "trick",
+    text: "Trick: Swap any resistor for a short (0 Ω) or open (∞ Ω) to instantly check circuit behavior at the extremes.",
+  },
+  {
+    id: "trick-2",
+    kind: "trick",
+    text: "Trick: When debugging, split the circuit in half and measure the midpoint — binary search finds faults fast.",
+  },
+  {
+    id: "trick-3",
+    kind: "trick",
+    text: "Trick: Label each node with its voltage before writing any equations — it prevents sign errors in KVL loops.",
+  },
+  {
+    id: "trick-4",
+    kind: "trick",
+    text: "Trick: Replace a complex resistor network with its Thévenin equivalent (one voltage source + one resistor) to simplify analysis.",
+  },
+  {
+    id: "trick-5",
+    kind: "trick",
+    text: "Trick: Use superposition — zero out all but one source at a time, solve, then sum the results for the total response.",
+  },
+  {
+    id: "trick-6",
+    kind: "trick",
+    text: "Trick: Redraw messy schematics by stretching all wires horizontal or vertical — cleaner layout reveals hidden symmetry.",
+  },
+  {
+    id: "trick-7",
+    kind: "trick",
+    text: "Trick: A voltage divider gives V_out = V_in × R₂ / (R₁ + R₂) — memorize this and you can set any voltage quickly.",
   },
 ];
 
