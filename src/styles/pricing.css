@@ -129,6 +129,20 @@
   backdrop-filter: blur(8px);
 }
 
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--pricing-accent), var(--pricing-highlight));
+  color: var(--bg-dark);
+  margin-bottom: 0.5rem;
+}
+
 .plan-header h2 {
   font-size: 1.6rem;
   margin: 0 0 0.35rem 0;
@@ -685,7 +699,7 @@
 
 @media (min-width: 960px) {
   .plan-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .addon-grid {
