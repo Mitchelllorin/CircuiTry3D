@@ -330,9 +330,9 @@
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
             padding: 20px;
-            border-radius: 0 0 16px 16px;
+            border-radius: 16px 16px 0 0;
             border: 2px solid rgba(0,255,136,0.4);
-            border-top: none;
+            border-bottom: none;
             z-index: 90;
             transition: transform 0.3s ease;
             max-height: 60vh;
@@ -1330,9 +1330,9 @@
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
             padding: 20px;
-            border-radius: 0 0 16px 16px;
+            border-radius: 16px 16px 0 0;
             border: 2px solid rgba(0,255,136,0.4);
-            border-top: none;
+            border-bottom: none;
             z-index: 90;
             transition: transform 0.3s ease;
             max-height: 60vh;
@@ -1852,9 +1852,9 @@
             z-index: 95;
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
-            border-radius: 16px 16px 0 0;
+            border-radius: 0 0 16px 16px;
             border: 2px solid rgba(0,255,136,0.4);
-            border-bottom: none;
+            border-top: none;
         }
 
         .zoom-btn {
@@ -2321,6 +2321,7 @@
                 max-height: none;
                 border-radius: 0 0 16px 16px;
                 border-top: none;
+                border-bottom: 2px solid rgba(0,255,136,0.4);
             }
             
             .wire-analysis-fixed.collapsed {
@@ -2333,8 +2334,8 @@
                 left: auto;
                 bottom: auto;
                 width: 320px;
-                border-radius: 16px 0 0 16px;
-                border-right: none;
+                border-radius: 16px 16px 0 0;
+                border-top: 2px solid rgba(0,255,136,0.4);
                 border-bottom: 2px solid rgba(0,255,136,0.4);
             }
             
