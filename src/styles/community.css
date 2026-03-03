@@ -27,7 +27,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 24px;
-  padding: 32px;
+  padding: calc(32px + var(--app-safe-area-top)) 32px 32px;
   border-radius: 20px;
   background: linear-gradient(135deg, var(--brand-primary-dim), var(--brand-secondary-dim));
   border: 1px solid var(--community-border);
@@ -582,7 +582,7 @@
 
 @media (max-width: 960px) {
   .community-hero {
-    padding: 24px;
+    padding: calc(24px + var(--app-safe-area-top)) 24px 24px;
     margin: 0 20px;
   }
 
