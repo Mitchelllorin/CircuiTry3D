@@ -946,6 +946,119 @@
             font-size: 16px;
             line-height: 1.4;
         }
+
+        /* ── Hazard overlays (AC/DC conflict + short circuit) ─────────────── */
+        @keyframes hazard-flash {
+            0%   { opacity: 0; }
+            15%  { opacity: 0.85; }
+            30%  { opacity: 0.3; }
+            50%  { opacity: 0.75; }
+            70%  { opacity: 0.2; }
+            85%  { opacity: 0.6; }
+            100% { opacity: 0; }
+        }
+        @keyframes short-flash {
+            0%   { opacity: 0; }
+            20%  { opacity: 0.65; }
+            40%  { opacity: 0.2; }
+            60%  { opacity: 0.55; }
+            80%  { opacity: 0.1; }
+            100% { opacity: 0; }
+        }
+        @keyframes hazard-shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            15%       { transform: translate(calc(-50% - 6px), -50%) rotate(-2deg); }
+            30%       { transform: translate(calc(-50% + 6px), -50%) rotate(2deg); }
+            45%       { transform: translate(calc(-50% - 4px), -50%) rotate(-1.5deg); }
+            60%       { transform: translate(calc(-50% + 4px), -50%) rotate(1.5deg); }
+            75%       { transform: translate(calc(-50% - 2px), -50%) rotate(-0.5deg); }
+        }
+        #hazard-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(255,120,0,0.7) 0%, rgba(255,30,0,0.5) 40%, rgba(80,0,0,0.4) 100%);
+            z-index: 9000;
+            pointer-events: none;
+            opacity: 0;
+            display: none;
+        }
+        #hazard-overlay.active {
+            display: block;
+            animation: hazard-flash 0.9s ease-out forwards;
+        }
+        #short-circuit-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(255,60,0,0.55) 0%, rgba(200,0,0,0.35) 50%, rgba(60,0,0,0.25) 100%);
+            z-index: 8900;
+            pointer-events: none;
+            opacity: 0;
+            display: none;
+        }
+        #short-circuit-overlay.active {
+            display: block;
+            animation: short-flash 0.7s ease-out forwards;
+        }
+        #hazard-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 0, 0, 0.96);
+            backdrop-filter: blur(18px);
+            border: 2px solid #ff4400;
+            border-radius: 18px;
+            padding: 28px 32px;
+            z-index: 9500;
+            display: none;
+            width: 90%;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255,60,0,0.6), 0 0 80px rgba(255,30,0,0.3);
+            color: #fff;
+        }
+        #hazard-warning.active {
+            display: block;
+            animation: hazard-shake 0.6s ease-out;
+        }
+        #hazard-warning .hazard-icon {
+            font-size: 52px;
+            display: block;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 0 12px #ff6600);
+        }
+        #hazard-warning .hazard-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #ff4400;
+            letter-spacing: 0.04em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        #hazard-warning .hazard-body {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255,220,200,0.92);
+            margin-bottom: 18px;
+        }
+        #hazard-warning .hazard-close {
+            background: #ff4400;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 28px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            box-shadow: 0 2px 12px rgba(255,60,0,0.5);
+            transition: background 0.15s;
+        }
+        #hazard-warning .hazard-close:hover,
+        #hazard-warning .hazard-close:active {
+            background: #cc3300;
+        }
+        /* ────────────────────────────────────────────────────────────────── */
         
         .edit-popup {
             position: fixed;
@@ -3608,7 +3721,32 @@
     </div>
     
     <div class="status" id="status" style="display: none;">W.I.R.E. Circuit Builder Ready!</div>
-    
+
+    <!-- AC/DC conflict explosion overlay -->
+    <div id="hazard-overlay"></div>
+    <!-- Short circuit flash overlay -->
+    <div id="short-circuit-overlay"></div>
+    <!-- AC/DC conflict hazard warning panel -->
+    <div id="hazard-warning" role="alertdialog" aria-modal="true" aria-labelledby="hazard-warning-title" aria-describedby="hazard-warning-body">
+        <span class="hazard-icon">💥</span>
+        <div class="hazard-title" id="hazard-warning-title">⚡ EXPLOSION HAZARD ⚡</div>
+        <div class="hazard-body" id="hazard-warning-body">
+            <strong>AC and DC power sources cannot be directly connected!</strong><br><br>
+            Connecting an AC source (alternating current, ~120 V / 60 Hz) directly to a DC battery
+            creates a catastrophic short circuit. In the real world this would cause an immediate
+            explosion, fire, and destruction of every component in the circuit.
+            <br><br>
+            <strong>Why?</strong> AC and DC operate on fundamentally different principles.
+            A DC battery provides a steady voltage while an AC source reverses polarity 60 times
+            per second. Bridging them directly produces enormous surge currents that no component
+            can survive.
+            <br><br>
+            Remove one of the power sources or add the proper conversion circuitry
+            (rectifier, transformer, or power-supply circuit) before connecting them.
+        </div>
+        <button class="hazard-close" onclick="dismissHazardWarning()">Understood — Remove the Connection</button>
+    </div>
+
     <div class="edit-popup" id="edit-popup">
         <h3 id="edit-title">Edit Component</h3>
         <div id="edit-content">
@@ -12585,6 +12723,13 @@ Made with ? for visual learners everywhere!
 
         // Circuit analysis
         function analyzeCircuit() {
+            // ── AC/DC conflict check ──────────────────────────────────────────
+            if (detectACDCConflict()) {
+                triggerExplosionFlash();
+                showHazardWarning();
+                setStatus('DANGER: AC and DC power sources connected — real-world explosion hazard! Remove the connection.');
+            }
+            // ─────────────────────────────────────────────────────────────────
             const batteries = components.filter(c => c.type === 'battery');
             
             if (batteries.length === 0) {
@@ -12710,11 +12855,13 @@ Made with ? for visual learners everywhere!
                 if (flowMeta.reason === 'polarity') {
                     setStatus('POLARITY MISMATCH: Reverse components so current can travel positive -> negative.');
                 } else if (flowMeta.reason === 'short') {
+                    triggerShortCircuitFlash();
                     setStatus('⚡ SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
                 } else if (flowMeta.reason === 'no-source') {
                     setStatus('⚡ Add a battery to power the circuit and start current flow.');
                 }
             } else if (flowMeta.warning === 'short') {
+                triggerShortCircuitFlash();
                 setStatus('⚡ SHORT CIRCUIT PATH: Current is racing from positive -> negative. Add resistance now!');
             } else if (flowMeta.warning === 'ampacity') {
                 const utilization = Number(flowMeta?.ampacityUtilization);
@@ -16234,6 +16381,82 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 }, isMobile ? 6000 : 5000); // Longer display time on mobile
             }
         }
+
+        // ── AC/DC conflict detection ─────────────────────────────────────────
+        /**
+         * Returns true when an AC source and a DC battery share the same
+         * electrically-connected network (i.e. they are joined by wires,
+         * directly or through intermediate components / junctions).
+         */
+        function detectACDCConflict() {
+            const batteries  = components.filter(c => c.type === 'battery');
+            const acSources  = components.filter(c => c.type === 'ac_source');
+            if (batteries.length === 0 || acSources.length === 0) return false;
+
+            // BFS from every battery through the wire graph; if we reach an
+            // ac_source the circuit has a direct AC/DC connection.
+            const visited = new Set(batteries);
+            const queue   = [...batteries];
+            while (queue.length > 0) {
+                const node = queue.shift();
+                for (const wire of wires) {
+                    let neighbor = null;
+                    if (wire.startObj === node) neighbor = wire.endObj;
+                    else if (wire.endObj === node) neighbor = wire.startObj;
+                    if (neighbor && !visited.has(neighbor)) {
+                        if (neighbor.type === 'ac_source') return true;
+                        visited.add(neighbor);
+                        queue.push(neighbor);
+                    }
+                }
+            }
+            return false;
+        }
+
+        /** Flash the screen with a fiery explosion radial gradient. */
+        function triggerExplosionFlash() {
+            const overlay = document.getElementById('hazard-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('active');
+            // Trigger browser reflow so the CSS animation restarts each time this is called.
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+            overlay.addEventListener('animationend', () => {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }, { once: true });
+        }
+
+        /** Show the persistent AC/DC hazard warning panel. */
+        function showHazardWarning() {
+            const panel = document.getElementById('hazard-warning');
+            if (!panel) return;
+            panel.classList.remove('active');
+            // Trigger browser reflow so the shake animation restarts on repeated calls.
+            void panel.offsetWidth;
+            panel.classList.add('active');
+        }
+
+        /** Dismiss the hazard warning panel (called by the close button). */
+        function dismissHazardWarning() {
+            const panel = document.getElementById('hazard-warning');
+            if (panel) panel.classList.remove('active');
+        }
+
+        /** Flash the screen red for a short-circuit event. */
+        function triggerShortCircuitFlash() {
+            const overlay = document.getElementById('short-circuit-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('active');
+            // Trigger browser reflow so the CSS animation restarts each time this is called.
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+            overlay.addEventListener('animationend', () => {
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }, { once: true });
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         // Start the application
         init();
