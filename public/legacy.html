@@ -4206,6 +4206,12 @@ body.android-optimized.menu-visible .status {
                             case 'open-arena':
                                 if (typeof openArena === 'function') openArena();
                                 break;
+                            case 'undo':
+                                if (typeof undo === 'function') undo();
+                                break;
+                            case 'redo':
+                                if (typeof redo === 'function') redo();
+                                break;
                             case 'clear-workspace':
                                 if (typeof clearAll === 'function') clearAll();
                                 break;
