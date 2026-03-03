@@ -3053,6 +3053,11 @@
     <button class="menu-toggle" id="menu-toggle" onclick="toggleMenuBar()">Menu</button>
 
     <div class="quick-actions" id="quick-actions">
+        <button class="quick-action-btn" onclick="addComponent('battery')" title="Add Battery">⚡<br>Batt</button>
+        <button class="quick-action-btn" onclick="addComponent('resistor')" title="Add Resistor">Ω<br>Res</button>
+        <button class="quick-action-btn" onclick="addComponent('led')" title="Add LED">★<br>LED</button>
+        <button class="quick-action-btn" onclick="addComponent('switch')" title="Add Switch">⊡<br>SW</button>
+        <button class="quick-action-btn wire-btn" id="quick-wire-btn" onclick="toggleWireMode()" title="Toggle Wire Mode">≈<br>Wire</button>
         <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
     </div>
     
@@ -12400,9 +12405,11 @@ Made with ? for visual learners everywhere!
             try {
                 const wireBtn = document.getElementById('wire-btn');
                 const rotateBtn = document.getElementById('rotate-btn');
+                const quickWireBtn = document.getElementById('quick-wire-btn');
                 
                 if (wireBtn) wireBtn.classList.toggle('active', isWireMode);
                 if (rotateBtn) rotateBtn.classList.toggle('active', isRotateMode);
+                if (quickWireBtn) quickWireBtn.classList.toggle('active', isWireMode);
                 
                 updateUndoRedoButtons();
             } catch (error) {
