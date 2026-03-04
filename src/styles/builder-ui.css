@@ -3478,7 +3478,7 @@ body.builder-body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
-  z-index: 1200;
+  z-index: 1210;
 }
 
 .builder-help-modal.open {

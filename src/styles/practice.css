@@ -3115,7 +3115,7 @@
    ===================================================== */
 .worksheet-modal {
   position: fixed;
-  z-index: 2100;
+  z-index: 1900;
   min-width: 320px;
   max-width: 90vw;
   max-height: 80vh;
