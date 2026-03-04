@@ -30,6 +30,7 @@ type Plan = {
   id: string;
   name: string;
   tagline?: string;
+  badge?: string;
   price: PriceMap;
   unit?: string;
   features: string[];
@@ -199,6 +200,7 @@ export default function PricingSection() {
           return (
             <article key={plan.id} className={`plan-card plan-${plan.id}`}>
               <header className="plan-header">
+                {plan.badge && <span className="plan-badge">{plan.badge}</span>}
                 <h2>{plan.name}</h2>
                 {plan.tagline && <p className="plan-tagline">{plan.tagline}</p>}
               </header>

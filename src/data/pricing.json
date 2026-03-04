@@ -35,6 +35,29 @@
       }
     },
     {
+      "id": "student",
+      "name": "Student Plan",
+      "tagline": "Build circuits. Ace your coursework.",
+      "badge": "Popular",
+      "price": {
+        "monthly": 900,
+        "annual": 9200
+      },
+      "unit": "per student",
+      "features": [
+        "10 active circuits",
+        "Full component library",
+        "W.I.R.E. analysis tools",
+        "Community resource hub"
+      ],
+      "renewal": "Auto-renews, cancel anytime",
+      "cta": {
+        "label": "Subscribe",
+        "type": "stripeCheckout",
+        "sku": "student-plan"
+      }
+    },
+    {
       "id": "educator",
       "name": "Educator License",
       "tagline": "Full toolkit for classroom instruction",
