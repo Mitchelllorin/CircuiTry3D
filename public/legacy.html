@@ -1799,10 +1799,15 @@
             top: calc(var(--legacy-menu-gap) + 64px + 10px);
             left: var(--legacy-menu-gap);
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: row;
+            gap: 8px;
             z-index: 300;
             transition: left 0.3s ease;
+            background: rgba(10, 10, 26, 0.72);
+            border: 1.5px solid rgba(170, 136, 255, 0.35);
+            border-radius: 36px;
+            padding: 6px 10px;
+            backdrop-filter: blur(8px);
         }
 
         .quick-actions.open {
@@ -3219,6 +3224,8 @@
 
     <div class="quick-actions" id="quick-actions">
         <button class="quick-action-btn" onclick="addJunction()" title="Add Junction">⬡<br>Junct</button>
+        <button class="quick-action-btn" onclick="addComponent('battery')" title="Add Battery">🔋<br>Battery</button>
+        <button class="quick-action-btn" onclick="addComponent('resistor')" title="Add Resistor">⏦<br>Resistor</button>
     </div>
     
     <div class="menu-bar" id="menu-bar" style="display: none;">
