@@ -4,7 +4,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1185;
+  z-index: 1192;
   height: calc(100vh - var(--compact-guides-top-offset));
   height: calc(100dvh - var(--compact-guides-top-offset));
   max-height: calc(100vh - var(--compact-guides-top-offset));
