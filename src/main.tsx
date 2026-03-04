@@ -112,11 +112,9 @@ try {
       return false;
     },
     onResume: () => {
-      console.log('[App] Resumed from background');
       // Re-sync data or refresh state if needed
     },
     onPause: () => {
-      console.log('[App] Going to background');
       // Save state or pause animations if needed
     }
   }).catch((error) => {

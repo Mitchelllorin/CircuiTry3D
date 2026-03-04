@@ -12,6 +12,12 @@ export default function Home() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<LandingMessage>) => {
+      // Only accept messages from the same origin (landing.html is served from
+      // the same origin as the host app).
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
       const message = event.data;
       if (!message || typeof message !== "object") {
         return;
