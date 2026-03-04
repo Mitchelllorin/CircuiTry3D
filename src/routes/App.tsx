@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import TipsTicker from "../components/TipsTicker";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import "../styles/layout.css";
 
@@ -12,6 +13,7 @@ import "../styles/layout.css";
 // alone pulls in Three.js, the schematic engine, wire routing, etc.
 const Builder = lazy(() => import("../pages/Builder"));
 const Arena = lazy(() => import("../pages/Arena"));
+const Practice = lazy(() => import("../pages/Practice"));
 const Pricing = lazy(() => import("../pages/Pricing"));
 const Community = lazy(() => import("../pages/Community"));
 const Account = lazy(() => import("../pages/Account"));
@@ -35,12 +37,14 @@ function PageFallback() {
 export default function App() {
   return (
     <WorkspaceModeProvider>
+      <ErrorBoundary>
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/app" element={<Builder />} />
             <Route path="/arena" element={<Arena />} />
+            <Route path="/practice" element={<Practice />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
             <Route path="/account" element={<Account />} />
@@ -56,6 +60,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </WorkspaceModeProvider>
   );
 }
