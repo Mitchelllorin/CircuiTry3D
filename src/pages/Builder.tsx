@@ -1965,6 +1965,8 @@ export default function Builder() {
     }
 
     setBottomMenuOpen(true);
+    // Lock circuit during first-visit payoff sequence so the user watches before editing
+    setCircuitLocked(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence, setBottomMenuOpen]);
 
@@ -1974,7 +1976,9 @@ export default function Builder() {
     }
 
     const timer = window.setTimeout(() => {
+      // Auto-unlock circuit when payoff banner expires so user can edit freely
       setCurrentFlowPayoffVisible(false);
+      setCircuitLocked(false);
     }, 14000);
 
     return () => {
@@ -2642,6 +2646,16 @@ export default function Builder() {
             <button
               type="button"
               className="current-flow-payoff-btn current-flow-payoff-btn--primary"
+              onClick={() => {
+                setCurrentFlowPayoffVisible(false);
+                setCircuitLocked(false);
+              }}
+            >
+              ✏️ Edit Circuit
+            </button>
+            <button
+              type="button"
+              className="current-flow-payoff-btn"
               onClick={handleReplayCurrentFlowPayoff}
               disabled={controlsDisabled || isCurrentFlowPayoffRunning}
               aria-disabled={controlsDisabled || isCurrentFlowPayoffRunning}
@@ -2653,6 +2667,7 @@ export default function Builder() {
               className="current-flow-payoff-btn"
               onClick={() => {
                 setCurrentFlowPayoffVisible(false);
+                setCircuitLocked(false);
                 openGuidesWorkspace("tutorial");
                 setInteractiveTutorialOpen(true);
               }}
@@ -2662,7 +2677,10 @@ export default function Builder() {
             <button
               type="button"
               className="current-flow-payoff-btn current-flow-payoff-btn--ghost"
-              onClick={() => setCurrentFlowPayoffVisible(false)}
+              onClick={() => {
+                setCurrentFlowPayoffVisible(false);
+                setCircuitLocked(false);
+              }}
             >
               Dismiss
             </button>
