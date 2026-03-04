@@ -36,6 +36,11 @@ echo ""
 
 # Step 3: Sync Capacitor
 echo -e "${YELLOW}Step 3: Syncing Capacitor...${NC}"
+# Clear stale web assets so cap sync always starts from a clean slate.
+# Keep these paths in sync with the matching step in .github/workflows/build-aab.yml.
+rm -rf android/app/src/main/assets/public \
+       android/app/src/main/assets/capacitor.config.json \
+       android/app/src/main/assets/capacitor.plugins.json
 npx cap sync android
 echo -e "${GREEN}✓ Capacitor synced${NC}"
 echo ""
