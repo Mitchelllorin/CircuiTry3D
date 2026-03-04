@@ -9410,12 +9410,7 @@ body.android-optimized .zoom-btn {
                         document.body.classList.toggle('menu-visible', menuVisible);
                     }
                     
-                    // Load default circuit in view-only mode on first launch
-                    loadPresetCircuit('series_basic');
-                    isCircuitEditLocked = true;
-                    const banner = document.getElementById('view-only-banner');
-                    if (banner) banner.style.display = 'flex';
-                    setStatus('👁 View Only — click ✏️ Edit to make changes');
+                    // Initial state is managed by the React host via postMessage bridge
                 }, 0);
             }, 0);
         }
