@@ -46,6 +46,11 @@ jobs:
       - name: Build web app
         run: npm run build -- --mode capacitor
 
+      - name: Clear stale Android web assets
+        # Ensures cap sync always starts from a clean state so every AAB reflects
+        # the latest merged web changes. Keep these paths in sync with build-android.sh.
+        run: rm -rf android/app/src/main/assets/public android/app/src/main/assets/capacitor.config.json android/app/src/main/assets/capacitor.plugins.json
+
       - name: Sync Capacitor Android
         run: npx cap sync android
 
@@ -136,7 +141,7 @@ jobs:
       - name: Build Android Release
         run: |
           cd android
-          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace
+          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
