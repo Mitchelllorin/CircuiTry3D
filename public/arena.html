@@ -422,6 +422,74 @@
       display: none;
     }
 
+    .failure-analysis {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .failure-ok {
+      font-size: 12px;
+      color: rgba(52, 211, 153, 0.9);
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      background: rgba(6, 78, 59, 0.25);
+    }
+
+    .failure-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .failure-stressed {
+      background: rgba(250, 204, 21, 0.2);
+      border: 1px solid rgba(250, 204, 21, 0.5);
+      color: #fde68a;
+    }
+
+    .failure-warning {
+      background: rgba(251, 146, 60, 0.2);
+      border: 1px solid rgba(251, 146, 60, 0.5);
+      color: #fed7aa;
+    }
+
+    .failure-critical {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+
+    .failure-failed {
+      background: rgba(220, 38, 38, 0.35);
+      border: 1px solid rgba(220, 38, 38, 0.7);
+      color: #fef2f2;
+      box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
+    }
+
+    .failure-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-strong);
+      margin-bottom: 2px;
+    }
+
+    .failure-desc {
+      font-size: 11px;
+      line-height: 1.55;
+      color: rgba(148, 163, 184, 0.9);
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(8, 15, 28, 0.55);
+      border: 1px solid rgba(136, 204, 255, 0.12);
+    }
+
     @media (pointer: coarse) {
       .btn {
         min-height: 52px;
@@ -547,6 +615,14 @@
         <div id="metrics-delta" class="metric-grid"></div>
       </section>
       <section class="panel-section">
+        <div class="section-heading">Failure Analysis — A</div>
+        <div class="failure-analysis" id="failure-a"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Failure Analysis — B</div>
+        <div class="failure-analysis" id="failure-b"></div>
+      </section>
+      <section class="panel-section">
         <div class="section-heading">Status</div>
         <div class="stat" id="stat-out">Ready.</div>
       </section>
@@ -559,10 +635,18 @@
         document.write('<script src="vendor/three.min.js"><\\/script>');
       }
     </script>
+    <script src="js/component-failure-engine.js"></script>
     <script>
     (() => {
       "use strict";
 
+      // Shared failure engine — aliases so existing code needs no other changes
+      const COMPONENT_PROFILES          = FailureEngine.COMPONENT_PROFILES;
+      const COMPONENT_FAMILY_MAP        = FailureEngine.COMPONENT_FAMILY_MAP;
+      const COMPONENT_FAILURE_PROFILES  = FailureEngine.COMPONENT_FAILURE_PROFILES;
+      const resolveComponentFamily      = FailureEngine.resolveComponentFamily;
+      const registerComponentType       = FailureEngine.registerComponentType;
+      const registerFailureProfile      = FailureEngine.registerFailureProfile;
       const state = {
         mode: "compare",
         components: [],
@@ -588,57 +672,6 @@
         last: "circuitry:arena-session:last",
       };
 
-      const COMPONENT_PROFILES = {
-        battery: {
-          defaultProperties: {
-            voltage: 9,
-            internalResistance: 0.2,
-            capacityMah: 1500,
-            tempCoeff: 0.0004,
-            thermalResistance: 35,
-            maxDischargeCurrent: 2,
-          },
-        },
-        resistor: {
-          defaultProperties: {
-            resistance: 100,
-            tempCoeff: 0.0005,
-            tolerance: 0.05,
-            thermalResistance: 75,
-          },
-        },
-        led: {
-          defaultProperties: {
-            forwardVoltage: 2,
-            seriesResistance: 120,
-            efficiency: 0.35,
-            thermalResistance: 120,
-          },
-        },
-        switch: {
-          defaultProperties: {
-            onResistance: 0.05,
-            offResistance: 1000000,
-            transitionTimeMs: 2,
-          },
-        },
-        capacitor: {
-          defaultProperties: {
-            capacitance: 1e-6,
-            esr: 0.1,
-            tempCoeff: 0.0002,
-            thermalResistance: 40,
-          },
-        },
-        inductor: {
-          defaultProperties: {
-            inductance: 1e-3,
-            resistance: 5,
-            thermalResistance: 55,
-          },
-        },
-      };
-
       const COMPONENT_PALETTES = {
         battery: { base: 0xf97316, glow: 0xffedd5, orbit: 0xf59e0b, accent: 0x1f2937 },
         resistor: { base: 0xf97316, glow: 0xffedd5, orbit: 0xfb923c, band: 0xfacc15 },
@@ -646,6 +679,22 @@
         inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
         led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
         switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x0ea5e9, accent: 0x0d9488 },
+        mosfet: { base: 0x1e293b, glow: 0x38bdf8, orbit: 0x0ea5e9, accent: 0x94a3b8 },
+        heatsink: { base: 0x94a3b8, glow: 0xcbd5e1, orbit: 0x64748b, accent: 0xe2e8f0 },
+        bjt: { base: 0x0f172a, glow: 0x4ade80, orbit: 0x22c55e, accent: 0x86efac },
+        diode: { base: 0xdc2626, glow: 0xfca5a5, orbit: 0xf87171, accent: 0x1f2937 },
+        zener_diode: { base: 0x7c3aed, glow: 0xc4b5fd, orbit: 0xa78bfa, accent: 0x1f2937 },
+        opamp: { base: 0x0e7490, glow: 0x67e8f9, orbit: 0x22d3ee, accent: 0xf0fdfa },
+        voltage_regulator: { base: 0x065f46, glow: 0x6ee7b7, orbit: 0x34d399, accent: 0xd1fae5 },
+        ic: { base: 0x1e1b4b, glow: 0x818cf8, orbit: 0x6366f1, accent: 0xc7d2fe },
+        relay: { base: 0x44403c, glow: 0xfbbf24, orbit: 0xf59e0b, accent: 0xfef3c7 },
+        fuse: { base: 0xfafafa, glow: 0xfef3c7, orbit: 0xfbbf24, accent: 0x1f2937 },
+        lamp: { base: 0x78350f, glow: 0xfef08a, orbit: 0xfde047, accent: 0xfefce8 },
+        motor: { base: 0x1c1917, glow: 0x94a3b8, orbit: 0x64748b, accent: 0xe2e8f0 },
+        thermistor: { base: 0x7f1d1d, glow: 0xfca5a5, orbit: 0xf87171, band: 0x3b82f6 },
+        transformer: { base: 0x292524, glow: 0xd8b4fe, orbit: 0xc084fc, accent: 0x7e22ce },
+        crystal: { base: 0xe0f2fe, glow: 0xbae6fd, orbit: 0x38bdf8, accent: 0x0c4a6e },
+        generic: { base: 0x334155, glow: 0x94a3b8, orbit: 0x64748b },
         default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8 },
       };
 
@@ -691,6 +740,91 @@
           type: "switch",
           properties: { onResistance: 0.05, offResistance: 1000000, transitionTimeMs: 1.5 },
           metadata: { displayName: "SW1", source: "Reference Library" },
+        },
+        {
+          id: "mosfet-irf540",
+          name: "MOSFET IRF540N",
+          type: "mosfet",
+          properties: { vth: 4, rds_on: 0.044, id_max: 33, vds_max: 100, vgs_max: 20, powerRating: 130, thermalResistance: 0.92 },
+          metadata: { displayName: "Q1", source: "Reference Library" },
+        },
+        {
+          id: "mosfet-2n7000",
+          name: "MOSFET 2N7000",
+          type: "mosfet",
+          properties: { vth: 2.1, rds_on: 5, id_max: 0.2, vds_max: 60, vgs_max: 20, powerRating: 0.4, thermalResistance: 62.5 },
+          metadata: { displayName: "Q2", source: "Reference Library" },
+        },
+        {
+          id: "heatsink-to220",
+          name: "Heat Sink TO-220",
+          type: "heatsink",
+          properties: { thermalResistanceJA: 10, maxTempC: 200, thermalResistance: 2 },
+          metadata: { displayName: "HS1", source: "Reference Library" },
+        },
+        // Real-world branded components (show framework auto-resolves them)
+        {
+          id: "bjt-2n2222a",
+          name: "2N2222A NPN BJT",
+          type: "bjt-npn",
+          properties: { vce_max: 40, ic_max: 0.6, hfe: 100, vbe: 0.7, powerRating: 0.625, thermalResistance: 200 },
+          metadata: { displayName: "Q3", partNumber: "2N2222A", vendor: "ON Semiconductor", source: "Reference Library" },
+        },
+        {
+          id: "bjt-bc547",
+          name: "BC547 NPN BJT",
+          type: "bjt",
+          properties: { vce_max: 45, ic_max: 0.1, hfe: 110, vbe: 0.7, powerRating: 0.5, thermalResistance: 250 },
+          metadata: { displayName: "Q4", partNumber: "BC547", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "diode-1n4007",
+          name: "1N4007 Rectifier Diode",
+          type: "diode",
+          properties: { forwardVoltage: 0.7, maxCurrent: 1, reverseVoltage: 1000, thermalResistance: 60, powerRating: 3 },
+          metadata: { displayName: "D1", partNumber: "1N4007", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "diode-1n4148",
+          name: "1N4148 Signal Diode",
+          type: "diode",
+          properties: { forwardVoltage: 0.72, maxCurrent: 0.3, reverseVoltage: 75, thermalResistance: 150, powerRating: 0.5 },
+          metadata: { displayName: "D2", partNumber: "1N4148", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "opamp-lm741",
+          name: "LM741 Op-Amp",
+          type: "opamp",
+          properties: { supplyVoltage: 15, slewRate: 0.5, gainBandwidth: 1e6, powerRating: 0.5, thermalResistance: 100 },
+          metadata: { displayName: "U1", partNumber: "LM741", vendor: "Texas Instruments", source: "Reference Library" },
+        },
+        {
+          id: "vreg-lm7805",
+          name: "LM7805 5V Regulator",
+          type: "voltage_regulator",
+          properties: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5 },
+          metadata: { displayName: "U2", partNumber: "LM7805", vendor: "Texas Instruments", source: "Reference Library" },
+        },
+        {
+          id: "ic-ne555",
+          name: "NE555 Timer IC",
+          type: "ic",
+          properties: { supplyVoltage: 5, maxCurrent: 0.2, powerRating: 0.6, thermalResistance: 70 },
+          metadata: { displayName: "U3", partNumber: "NE555", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "relay-5v",
+          name: "5V Relay",
+          type: "relay",
+          properties: { coilVoltage: 5, coilResistance: 72, maxSwitchCurrent: 5, maxSwitchVoltage: 250, thermalResistance: 80 },
+          metadata: { displayName: "RLY1", source: "Reference Library" },
+        },
+        {
+          id: "fuse-1a",
+          name: "Fuse 1A",
+          type: "fuse",
+          properties: { ratedCurrentA: 1, meltingI2t: 1, resistance: 0.02, thermalResistance: 40 },
+          metadata: { displayName: "F1", source: "Reference Library" },
         },
       ];
 
@@ -744,6 +878,7 @@
 
       const particleSpeeds = [];
       const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
+      const failureParticleSystems = [];
 
       function initThree() {
         const canvas = document.getElementById("arena");
@@ -1259,11 +1394,14 @@
         }
 
       function buildComponent(type, nominalValue, isPrimary) {
-        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES.default;
+        // Resolve canonical family for palette and geometry selection
+        const family = resolveComponentFamily(type);
+        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES[family] || COMPONENT_PALETTES.default;
         const group = new THREE.Group();
         group.userData = {
           palette,
           componentType: type,
+          resolvedFamily: family,
           energy: 0.3,
           bobOffset: Math.random() * Math.PI * 2,
           baseScale: computeScale(nominalValue),
@@ -1279,7 +1417,17 @@
         });
 
         let core;
-        switch (type) {
+        // Determine which geometry case to use — prefer exact type, fall back to family.
+        // The set of known geometry keys is derived from COMPONENT_PROFILES to stay in sync.
+        const geoKey = (() => {
+          // "generic" is handled by the default case; exclude it from the set
+          const known = new Set(Object.keys(COMPONENT_PROFILES).filter(k => k !== "generic" && k !== "zener_diode"));
+          if (known.has(type)) return type;
+          if (known.has(family)) return family;
+          return "generic";
+        })();
+
+        switch (geoKey) {
           case "resistor": {
             core = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.5), material);
             const leadGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.9, 20);
@@ -1429,11 +1577,269 @@
             group.add(base, lever);
             break;
           }
+          case "mosfet": {
+            // TO-220 style package: black rectangular body
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.4), material);
+            // Metal heat tab at the top back
+            const tabMat = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0x94a3b8,
+              metalness: 0.92,
+              roughness: 0.18,
+              emissive: palette.glow,
+              emissiveIntensity: 0.12,
+            });
+            const tab = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.15), tabMat);
+            tab.position.set(0, 0.96, 0.12);
+            group.add(tab);
+            const holeGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.16, 20);
+            const hole = new THREE.Mesh(holeGeo, tabMat);
+            hole.rotation.z = Math.PI / 2;
+            hole.position.set(0, 0.96, 0.12);
+            group.add(hole);
+            // Three metal leads (Gate, Drain, Source)
+            const legMat = new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.95,
+              roughness: 0.18,
+            });
+            const legGeo = new THREE.BoxGeometry(0.08, 1.2, 0.04);
+            [-0.32, 0, 0.32].forEach((xPos, idx) => {
+              const leg = new THREE.Mesh(legGeo, legMat);
+              leg.position.set(xPos, -1.3, 0);
+              group.add(leg);
+              // Bend at base
+              const bend = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.25), legMat);
+              bend.position.set(xPos, -0.7, -0.1);
+              group.add(bend);
+            });
+            break;
+          }
+          case "heatsink": {
+            // Flat aluminum base
+            core = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 1.6), material);
+            // Vertical fins
+            const finMat = new THREE.MeshStandardMaterial({
+              color: palette.base,
+              metalness: 0.82,
+              roughness: 0.28,
+              emissive: palette.glow,
+              emissiveIntensity: 0.06,
+            });
+            for (let f = 0; f < 8; f++) {
+              const fin = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.1, 0.07), finMat);
+              fin.position.set(0, 0.66, -0.66 + f * 0.19);
+              group.add(fin);
+            }
+            // Mounting hole suggestion (small cylinder cutouts)
+            const mountMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.5 });
+            [-0.8, 0.8].forEach((xPos) => {
+              const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.25, 16), mountMat);
+              mount.position.set(xPos, 0, 0);
+              group.add(mount);
+            });
+            break;
+          }
+          case "bjt": {
+            // TO-92 package: D-profile cylinder
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 1.1, 20), material);
+            // Flat face (D-shape approximation via a flattened box overlay)
+            const flatMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.2, roughness: 0.7 });
+            const flat = new THREE.Mesh(new THREE.BoxGeometry(1.06, 1.12, 0.16), flatMat);
+            flat.position.set(0, 0, 0.45);
+            group.add(flat);
+            // Three leads (E, B, C)
+            const bjtLegMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.92, roughness: 0.15 });
+            const bjtLegGeo = new THREE.CylinderGeometry(0.045, 0.045, 1.0, 12);
+            [-0.28, 0, 0.28].forEach((xPos) => {
+              const leg = new THREE.Mesh(bjtLegGeo, bjtLegMat);
+              leg.position.set(xPos, -1.05, 0);
+              group.add(leg);
+            });
+            break;
+          }
+          case "diode": {
+            // DO-41 glass capsule: cylinder with silver bands
+            const diodeMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f5, metalness: 0.25, roughness: 0.45 });
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 1.1, 20), diodeMat);
+            core.rotation.z = Math.PI / 2;
+            // Cathode band
+            const bandMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.5, roughness: 0.3 });
+            const band = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.12, 20), bandMat);
+            band.rotation.z = Math.PI / 2;
+            band.position.set(0.42, 0, 0);
+            group.add(band);
+            // Leads
+            const diodeLegMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const diodeLegGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.7, 12);
+            diodeLegGeo.rotateZ(Math.PI / 2);
+            [-0.9, 0.9].forEach((xPos) => {
+              const leg = new THREE.Mesh(diodeLegGeo, diodeLegMat);
+              leg.position.set(xPos, 0, 0);
+              group.add(leg);
+            });
+            break;
+          }
+          case "opamp": {
+            // DIP-8 package: black rectangular IC with notch
+            core = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.35, 1.6), material);
+            // Notch on top
+            const notchMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.1, roughness: 0.9 });
+            const notch = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.37, 16), notchMat);
+            notch.rotation.x = Math.PI / 2;
+            notch.position.set(0, 0, -0.65);
+            group.add(notch);
+            // 4 pins per side (DIP-8)
+            const opampPinMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const opampPinGeo = new THREE.BoxGeometry(0.07, 0.35, 0.05);
+            for (let i = 0; i < 4; i++) {
+              [-0.53, 0.53].forEach((xPos) => {
+                const pin = new THREE.Mesh(opampPinGeo, opampPinMat);
+                pin.position.set(xPos, -0.35, -0.55 + i * 0.38);
+                group.add(pin);
+              });
+            }
+            break;
+          }
+          case "ic": {
+            // DIP-14/16 style: wider black rectangular IC
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 2.1), material);
+            // Notch
+            const icNotchMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.1, roughness: 0.9 });
+            const icNotch = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.37, 16), icNotchMat);
+            icNotch.rotation.x = Math.PI / 2;
+            icNotch.position.set(0, 0, -0.9);
+            group.add(icNotch);
+            // 7 pins per side
+            const icPinMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const icPinGeo = new THREE.BoxGeometry(0.07, 0.35, 0.05);
+            for (let i = 0; i < 7; i++) {
+              [-0.58, 0.58].forEach((xPos) => {
+                const pin = new THREE.Mesh(icPinGeo, icPinMat);
+                pin.position.set(xPos, -0.35, -0.88 + i * 0.3);
+                group.add(pin);
+              });
+            }
+            break;
+          }
+          case "relay": {
+            // Rectangular relay body with coil indication
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 1.1), material);
+            // Contact window on front
+            const windowMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, metalness: 0.1, roughness: 0.8, transparent: true, opacity: 0.7 });
+            const win = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.08), windowMat);
+            win.position.set(0, 0.1, 0.56);
+            group.add(win);
+            // 5 pins on bottom
+            const relayPinMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const relayPinGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.7, 12);
+            for (let i = 0; i < 5; i++) {
+              const pin = new THREE.Mesh(relayPinGeo, relayPinMat);
+              pin.position.set(-0.8 + i * 0.4, -0.9, 0);
+              group.add(pin);
+            }
+            break;
+          }
+          case "fuse": {
+            // Glass cartridge fuse: transparent cylinder with metal caps
+            const fuseCapMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const fuseBodyMat = new THREE.MeshStandardMaterial({ color: 0xf0f9ff, metalness: 0.1, roughness: 0.2, transparent: true, opacity: 0.75 });
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.2, 20), fuseBodyMat);
+            core.rotation.z = Math.PI / 2;
+            [-0.65, 0.65].forEach((xPos) => {
+              const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.22, 20), fuseCapMat);
+              cap.rotation.z = Math.PI / 2;
+              cap.position.set(xPos, 0, 0);
+              group.add(cap);
+            });
+            // Fuse element wire
+            const wireMat = new THREE.MeshStandardMaterial({ color: 0xfde047, metalness: 0.8, roughness: 0.2 });
+            const wireGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 8);
+            const wire = new THREE.Mesh(wireGeo, wireMat);
+            wire.rotation.z = Math.PI / 2;
+            group.add(wire);
+            break;
+          }
+          case "lamp": {
+            // Incandescent bulb: sphere + base cylinder
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0xfef9c3, metalness: 0.05, roughness: 0.1, transparent: true, opacity: 0.82, emissive: 0xfde68a, emissiveIntensity: 0.6 });
+            core = new THREE.Mesh(new THREE.SphereGeometry(0.65, 28, 24), glassMat);
+            core.position.y = 0.65;
+            // Base
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.75, roughness: 0.35 });
+            const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.7, 20), baseMat);
+            lampBase.position.y = -0.35;
+            group.add(lampBase);
+            // Filament glow point
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.9 });
+            const glow = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), glowMat);
+            glow.position.y = 0.65;
+            group.add(glow);
+            break;
+          }
+          case "motor": {
+            // DC motor: cylinder body with shaft
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 1.4, 32), material);
+            core.rotation.z = Math.PI / 2;
+            // Shaft
+            const shaftMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.1 });
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.9, 16), shaftMat);
+            shaft.rotation.z = Math.PI / 2;
+            shaft.position.set(1.15, 0, 0);
+            group.add(shaft);
+            // End caps
+            const capMat = new THREE.MeshStandardMaterial({ color: 0x71717a, metalness: 0.7, roughness: 0.3 });
+            [-0.72, 0.72].forEach((xPos) => {
+              const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.12, 32), capMat);
+              cap.rotation.z = Math.PI / 2;
+              cap.position.set(xPos, 0, 0);
+              group.add(cap);
+            });
+            break;
+          }
+          case "thermistor": {
+            // Bead thermistor: small sphere with leads
+            core = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 20), material);
+            const thermLeadMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.9, roughness: 0.15 });
+            const thermLeadGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.0, 12);
+            [-0.25, 0.25].forEach((xPos) => {
+              const lead = new THREE.Mesh(thermLeadGeo, thermLeadMat);
+              lead.position.set(xPos, -0.9, 0);
+              group.add(lead);
+            });
+            break;
+          }
+          case "transformer": {
+            // E-I core transformer: two coil bobbins + laminated core
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 1.1), material);
+            const coreMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, metalness: 0.55, roughness: 0.6 });
+            // Primary and secondary bobbins
+            const bobbin1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 0.9), coreMat);
+            bobbin1.position.x = -0.42;
+            group.add(bobbin1);
+            const bobbin2 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 0.9), coreMat);
+            bobbin2.position.x = 0.42;
+            group.add(bobbin2);
+            break;
+          }
+          case "crystal": {
+            // HC-49 crystal can: metal rectangle with leads
+            const xtalBodyMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.88, roughness: 0.22 });
+            core = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.45), xtalBodyMat);
+            // Two leads
+            const xtalLeadMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const xtalLeadGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.75, 12);
+            [-0.18, 0.18].forEach((xPos) => {
+              const lead = new THREE.Mesh(xtalLeadGeo, xtalLeadMat);
+              lead.position.set(xPos, -1.13, 0);
+              group.add(lead);
+            });
+            break;
+          }
           default: {
+            // Generic unknown component: octahedron (family name label added to userData)
             core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
             break;
           }
-        }
 
         group.add(core);
         group.userData.core = core;
@@ -1535,9 +1941,10 @@
           return current || null;
         }
 
-        const paletteKey = component.type && COMPONENT_PALETTES[component.type]
-          ? component.type
-          : "default";
+        const resolvedFamily = component.family || resolveComponentFamily(component.type, component.properties);
+        const paletteKey = (COMPONENT_PALETTES[component.type] ? component.type : null)
+          || (COMPONENT_PALETTES[resolvedFamily] ? resolvedFamily : null)
+          || "default";
         const nominalValue = extractNominalValue(component);
         const baseScale = computeScale(nominalValue);
 
@@ -1607,6 +2014,7 @@
           }
 
           animateParticles(delta);
+          updateFailureParticles(delta);
 
           updateCamera();
           renderer.render(scene, camera);
@@ -1654,6 +2062,394 @@
         pulseRing.userData.life = 1;
         pulseRing.userData.strength = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
         pulseRing.scale.setScalar(1);
+      }
+
+      // ---------- Failure Detection (arena wrapper) ----------
+      // Delegates to FailureEngine.detectFailure which handles all component families.
+      function detectFailure(component, metrics) {
+        return FailureEngine.detectFailure(component, metrics);
+      }
+
+      // ---------- Failure Particles ----------
+      function createFailureParticles(group, mode) {
+        if (!scene || !group) {
+          return null;
+        }
+        const isSpark = mode === "arc" || mode === "burst";
+        const count = isSpark ? 42 : 26;
+        const positions = new Float32Array(count * 3);
+        const velocities = [];
+        const lifetimes = new Float32Array(count);
+
+        const pos = new THREE.Vector3();
+        group.getWorldPosition(pos);
+
+        for (let i = 0; i < count; i++) {
+          positions[i * 3] = pos.x + (Math.random() - 0.5) * 0.5;
+          positions[i * 3 + 1] = pos.y + Math.random() * 0.4;
+          positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.5;
+          if (isSpark) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 0.8 + Math.random() * 2.2;
+            velocities.push({
+              x: Math.cos(angle) * speed,
+              y: (0.5 + Math.random() * 2) * speed,
+              z: Math.sin(angle) * speed,
+            });
+            lifetimes[i] = 0.25 + Math.random() * 0.5;
+          } else {
+            velocities.push({
+              x: (Math.random() - 0.5) * 0.18,
+              y: 0.35 + Math.random() * 0.55,
+              z: (Math.random() - 0.5) * 0.18,
+            });
+            lifetimes[i] = 0.9 + Math.random() * 1.6;
+          }
+        }
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+        const color =
+          mode === "arc" ? 0xffff66 :
+          mode === "burst" ? 0xff8822 :
+          mode === "glow" ? 0xff6600 : 0x999999;
+
+        const mat = new THREE.PointsMaterial({
+          color,
+          size: isSpark ? 0.1 : 0.065,
+          transparent: true,
+          opacity: isSpark ? 0.95 : 0.75,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        const points = new THREE.Points(geo, mat);
+        points.frustumCulled = false;
+        scene.add(points);
+
+        const maxAge = isSpark ? 1.8 : Infinity;
+        const system = { group, points, velocities, lifetimes, mode, age: 0, maxAge };
+        failureParticleSystems.push(system);
+        if (!group.userData.failureParticleSystem) {
+          group.userData.failureParticleSystem = system;
+        }
+        return system;
+      }
+
+      function clearFailureParticles(group) {
+        for (let s = failureParticleSystems.length - 1; s >= 0; s--) {
+          if (failureParticleSystems[s].group === group) {
+            const sys = failureParticleSystems[s];
+            if (scene) {
+              scene.remove(sys.points);
+            }
+            sys.points.geometry.dispose();
+            sys.points.material.dispose();
+            failureParticleSystems.splice(s, 1);
+          }
+        }
+        group.userData.failureParticleSystem = null;
+        group.userData.smokeActive = false;
+      }
+
+      function updateFailureParticles(delta) {
+        const tempPos = new THREE.Vector3();
+        for (let s = failureParticleSystems.length - 1; s >= 0; s--) {
+          const sys = failureParticleSystems[s];
+          sys.age += delta;
+          if (sys.maxAge !== Infinity && sys.age > sys.maxAge) {
+            if (scene) {
+              scene.remove(sys.points);
+            }
+            sys.points.geometry.dispose();
+            sys.points.material.dispose();
+            failureParticleSystems.splice(s, 1);
+            if (sys.group && sys.group.userData.failureParticleSystem === sys) {
+              sys.group.userData.failureParticleSystem = null;
+            }
+            continue;
+          }
+
+          const posAttr = sys.points.geometry.getAttribute("position");
+          sys.group.getWorldPosition(tempPos);
+          const isSpark = sys.mode === "arc" || sys.mode === "burst";
+
+          for (let i = 0; i < sys.velocities.length; i++) {
+            sys.lifetimes[i] -= delta;
+            if (sys.lifetimes[i] <= 0) {
+              if (!isSpark) {
+                // Respawn smoke at component origin
+                posAttr.array[i * 3] = tempPos.x + (Math.random() - 0.5) * 0.4;
+                posAttr.array[i * 3 + 1] = tempPos.y + Math.random() * 0.3;
+                posAttr.array[i * 3 + 2] = tempPos.z + (Math.random() - 0.5) * 0.4;
+                sys.velocities[i] = {
+                  x: (Math.random() - 0.5) * 0.18,
+                  y: 0.35 + Math.random() * 0.55,
+                  z: (Math.random() - 0.5) * 0.18,
+                };
+                sys.lifetimes[i] = 0.9 + Math.random() * 1.6;
+              } else {
+                posAttr.array[i * 3 + 1] = -200;
+              }
+              continue;
+            }
+            posAttr.array[i * 3] += sys.velocities[i].x * delta;
+            posAttr.array[i * 3 + 1] += sys.velocities[i].y * delta;
+            posAttr.array[i * 3 + 2] += sys.velocities[i].z * delta;
+          }
+          posAttr.needsUpdate = true;
+        }
+      }
+
+      // ---------- Failure Visual Effects ----------
+      function applyFailureVisuals(group, failure) {
+        if (!group || !failure || failure.severity <= 0) {
+          return;
+        }
+        const { visual, severity } = failure;
+        const intensity = Math.min(severity / 3, 1);
+
+        if (group.userData.failureMode !== visual) {
+          clearFailureParticles(group);
+          group.userData.failureMode = visual;
+        }
+
+        const core = group.userData.core;
+        const halo = group.userData.halo;
+
+        switch (visual) {
+          case "char":
+          case "smoke":
+            if (core && core.material) {
+              core.material.color.setRGB(
+                0.2 + (1 - intensity) * 0.4,
+                0.13 + (1 - intensity) * 0.15,
+                0.08
+              );
+              core.material.emissive.setRGB(0.1 + intensity * 0.04, 0.03, 0);
+              core.material.emissiveIntensity = 0.08;
+              core.material.roughness = 0.95;
+              core.material.metalness = 0;
+            }
+            if (halo) {
+              halo.material.color.setHex(0x331100);
+              halo.material.opacity = 0.08;
+            }
+            if (severity >= 1.2 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "blowout":
+            // LED specifically: all light out, lens darkens
+            group.traverse((child) => {
+              if (child.material) {
+                const m = child.material;
+                m.emissiveIntensity = 0;
+                m.color.setHex(0x150800);
+                m.roughness = 0.98;
+                m.metalness = 0;
+              }
+            });
+            if (severity >= 1.0 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "melt":
+            if (core && core.material) {
+              core.material.color.setRGB(0.75 - intensity * 0.25, 0.2 - intensity * 0.1, 0.02);
+              core.material.emissive.setRGB(0.55 - intensity * 0.1, 0.08, 0);
+              core.material.emissiveIntensity = 0.35 + intensity * 0.7;
+              core.material.roughness = 0.55;
+              core.material.metalness = 0.15;
+            }
+            // Sagging geometry: widen, compress vertically
+            {
+              const bS = group.userData.baseScale || 1;
+              group.scale.set(bS * (1 + intensity * 0.32), bS * (1 - intensity * 0.22), bS * (1 + intensity * 0.32));
+            }
+            if (halo) {
+              halo.material.color.setHex(0xff4400);
+              halo.material.opacity = 0.28 + intensity * 0.42;
+            }
+            if (severity >= 1.0 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "arc":
+            if (core && core.material) {
+              core.material.color.setRGB(0.18, 0.1, 0.06);
+              core.material.emissive.setRGB(0.2, 0.03, 0);
+              core.material.emissiveIntensity = 0.1;
+              core.material.roughness = 0.92;
+            }
+            if (!group.userData.smokeActive) {
+              createFailureParticles(group, "arc");
+              group.userData.smokeActive = true;
+            }
+            if (halo) {
+              halo.material.color.setHex(0xffee44);
+              halo.material.opacity = 0.4 + Math.sin(Date.now() * 0.025) * 0.35;
+            }
+            break;
+
+          case "burst":
+            if (core && core.material) {
+              core.material.color.setRGB(0.28, 0.12, 0.04);
+              core.material.emissive.setRGB(0.35, 0.08, 0);
+              core.material.emissiveIntensity = 0.18;
+              core.material.roughness = 0.92;
+            }
+            {
+              const bS = group.userData.baseScale || 1;
+              group.scale.set(bS * (1 + intensity * 0.42), bS * (1 + intensity * 0.28), bS * (1 + intensity * 0.42));
+            }
+            if (!group.userData.smokeActive) {
+              createFailureParticles(group, "burst");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "vent":
+            if (core && core.material) {
+              core.material.color.setRGB(0.45, 0.16, 0.04);
+              core.material.emissive.setRGB(0.25, 0.08, 0);
+              core.material.emissiveIntensity = 0.28 + intensity * 0.28;
+            }
+            {
+              const bS = group.userData.baseScale || 1;
+              group.scale.set(bS * (1 + intensity * 0.18), bS * (1 + intensity * 0.22), bS * (1 + intensity * 0.18));
+            }
+            if (severity >= 0.8 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "glow":
+            if (core && core.material) {
+              const r = 0.45 + intensity * 0.45;
+              const g = 0.1 + (1 - intensity) * 0.28;
+              core.material.color.setRGB(r, g, 0.02);
+              core.material.emissive.setRGB(r * 0.65, g * 0.1, 0);
+              core.material.emissiveIntensity = 0.28 + intensity * 0.75;
+            }
+            if (halo) {
+              halo.material.color.setHex(0xff6600);
+              halo.material.opacity = 0.25 + intensity * 0.45;
+            }
+            if (severity >= 1.5 && !group.userData.smokeActive) {
+              createFailureParticles(group, "glow");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      function clearFailureVisuals(group) {
+        if (!group) {
+          return;
+        }
+        clearFailureParticles(group);
+        group.userData.failureMode = null;
+        group.userData.smokeActive = false;
+        group.scale.setScalar(group.userData.baseScale || 1);
+
+        const palette = group.userData.palette || COMPONENT_PALETTES.default;
+        const core = group.userData.core;
+        if (core && core.material) {
+          core.material.color.setHex(palette.base);
+          core.material.emissive.setHex(palette.glow);
+          core.material.emissiveIntensity = 0.35;
+          core.material.roughness = 0.28;
+          core.material.metalness = 0.35;
+        }
+        if (group.userData.halo) {
+          group.userData.halo.material.color.setHex(palette.glow);
+          group.userData.halo.material.opacity = 0.3;
+        }
+        // Restore other children that may have been overridden (e.g., LED bulb)
+        group.traverse((child) => {
+          if (child === core || !child.material) {
+            return;
+          }
+          const m = child.material;
+          if (m.color && m.emissiveIntensity !== undefined && m.emissiveIntensity < 0.1) {
+            m.emissiveIntensity = 0.35;
+          }
+        });
+      }
+
+      // ---------- Failure Analysis UI ----------
+      function renderFailureAnalysis(failureA, failureB) {
+        const containerA = document.getElementById("failure-a");
+        const containerB = document.getElementById("failure-b");
+        renderFailureCard(containerA, failureA);
+        renderFailureCard(containerB, failureB);
+      }
+
+      function renderFailureCard(container, failure) {
+        if (!container) {
+          return;
+        }
+        container.innerHTML = "";
+
+        if (!failure || failure.severity <= 0) {
+          const ok = document.createElement("div");
+          ok.className = "failure-ok";
+          ok.textContent = "Operating within ratings.";
+          container.appendChild(ok);
+          return;
+        }
+
+        const severityLabel =
+          failure.severity >= 2.5 ? "FAILED" :
+          failure.severity >= 1.5 ? "CRITICAL" :
+          failure.severity >= 0.8 ? "WARNING" : "STRESSED";
+
+        const severityClass =
+          failure.severity >= 2.5 ? "failure-failed" :
+          failure.severity >= 1.5 ? "failure-critical" :
+          failure.severity >= 0.8 ? "failure-warning" : "failure-stressed";
+
+        const badge = document.createElement("div");
+        badge.className = `failure-badge ${severityClass}`;
+        badge.textContent = severityLabel;
+
+        const name = document.createElement("div");
+        name.className = "failure-name";
+        name.textContent = failure.name || "Failure";
+
+        const desc = document.createElement("div");
+        desc.className = "failure-desc";
+        desc.textContent = failure.description || "";
+
+        container.appendChild(badge);
+        container.appendChild(name);
+        container.appendChild(desc);
+      }
+
+      function triggerFailureAnimation(group, failure) {
+        if (!group) {
+          return;
+        }
+        if (!failure || failure.severity <= 0) {
+          clearFailureVisuals(group);
+          return;
+        }
+        applyFailureVisuals(group, failure);
+        if (failure.severity >= 2) {
+          triggerPulse(Math.min(failure.severity / 3, 1));
+        }
       }
 
       function energizeComponent(group, energy) {
@@ -1727,14 +2523,24 @@
           return null;
         }
         const type = typeof raw.type === "string" ? raw.type.toLowerCase() : "generic";
-        const properties = Object.assign({}, COMPONENT_PROFILES[type]?.defaultProperties || {}, raw.properties || {});
-        const metadata = Object.assign({}, raw.metadata || {});
+        // Resolve canonical physics family — covers branded part numbers and aliases
+        const family = resolveComponentFamily(type, raw.properties);
+        const familyProfile = COMPONENT_PROFILES[family] || { defaultProperties: {} };
+        const typeProfile = COMPONENT_PROFILES[type] || { defaultProperties: {} };
+        const properties = Object.assign(
+          {},
+          familyProfile.defaultProperties || {},
+          typeProfile.defaultProperties || {},
+          raw.properties || {}
+        );
+        const metadata = Object.assign({}, raw.metadata || {}, { resolvedFamily: family });
         const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : `${type}-${Math.random().toString(36).slice(2, 9)}`;
         const name = raw.name || metadata.displayName || raw.identifier || id;
         return {
           id,
           name,
           type,
+          family,
           properties,
           metadata,
           source: sourceLabel || metadata.source || "library",
@@ -2279,6 +3085,23 @@
 
         updateMeshesForMetrics(metricsA, metricsB);
 
+        // Failure detection and visual simulation
+        const failureA = detectFailure(componentA, metricsA);
+        const failureB = componentB ? detectFailure(componentB, metricsB) : null;
+
+        const groupA = ensureComponentGroup("A", state.selectedA);
+        if (groupA) {
+          triggerFailureAnimation(groupA, failureA);
+        }
+        if (state.mode === "compare" && componentB) {
+          const groupB = ensureComponentGroup("B", state.selectedB);
+          if (groupB) {
+            triggerFailureAnimation(groupB, failureB);
+          }
+        }
+
+        renderFailureAnalysis(failureA, failureB);
+
         state.lastRun = {
           timestamp: new Date().toISOString(),
           mode: state.mode,
@@ -2317,7 +3140,10 @@
       }
 
       function computeComponentMetrics(component, variables) {
-        const profile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const family = component.family || resolveComponentFamily(component.type, component.properties);
+        const familyProfile = COMPONENT_PROFILES[family] || { defaultProperties: {} };
+        const typeProfile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const profile = { defaultProperties: Object.assign({}, familyProfile.defaultProperties, typeProfile.defaultProperties) };
         const props = Object.assign({}, profile.defaultProperties || {}, component.properties || {});
 
         const voltage = Number.isFinite(variables.voltage) ? variables.voltage : 0;
@@ -2336,14 +3162,68 @@
             : props.seriesResistance;
         }
 
-        if (component.type === "switch") {
+        if (family === "switch") {
           const onResistance = props.onResistance ?? resistance ?? 0.05;
           const offResistance = props.offResistance ?? 1000000;
           resistance = props.isOn === false ? offResistance : onResistance;
         }
 
-        if (component.type === "battery") {
+        if (family === "battery") {
           resistance = Math.max(variables.loadImpedanceOhms || resistance || props.internalResistance || 1, 0.0001);
+        }
+
+        if (family === "mosfet") {
+          const vth = props.vth ?? 4;
+          const rdsOn = Math.max(props.rds_on ?? 0.1, 0.0001);
+          resistance = voltage >= vth ? rdsOn : 1e8;
+        }
+
+        if (family === "heatsink" || family === "relay" || family === "transformer" || family === "crystal") {
+          resistance = 1e8;
+        }
+
+        if (family === "bjt") {
+          // Simple BJT active model: if Vbe > threshold, base is forward biased.
+          // hfe (current gain) would be used for base-current-limited modeling in a future
+          // full small-signal simulator; kept here for when that model is added.
+          const vbe = props.vbe ?? 0.7;
+          resistance = voltage > vbe ? Math.max(props.resistance ?? 50, 0.1) : 1e8;
+        }
+
+        if (family === "diode" || family === "zener_diode") {
+          const vf = props.forwardVoltage ?? 0.7;
+          resistance = voltage > vf
+            ? Math.max(props.forwardResistance ?? 0.2, 0.001)
+            : (props.reverseVoltage && voltage < -(props.reverseVoltage ?? 50) ? 0.1 : 1e8);
+        }
+
+        if (family === "voltage_regulator") {
+          const dropout = props.dropoutVoltage ?? 2;
+          resistance = voltage > dropout
+            ? Math.max((voltage - (props.outputVoltage ?? 5)) / Math.max(props.maxCurrent ?? 1.5, 0.001), 0.01)
+            : 1e8;
+        }
+
+        if (family === "ic") {
+          resistance = Math.max(props.resistance ?? (props.supplyVoltage ?? 5) / Math.max(props.maxCurrent ?? 0.1, 0.001), 1);
+        }
+
+        if (family === "fuse") {
+          resistance = Math.max(props.resistance ?? 0.02, 0.001);
+        }
+
+        if (family === "lamp" || family === "motor") {
+          resistance = Math.max(props.resistance ?? 10, 0.1);
+        }
+
+        if (family === "thermistor") {
+          // NTC: resistance decreases with temperature
+          const r25 = props.resistance ?? 10000;
+          const beta = props.beta ?? 3950;
+          const T = 273.15 + (variables.temperatureC ?? 25);
+          const T25 = 298.15;
+          resistance = r25 * Math.exp(beta * (1 / T - 1 / T25));
+          if (!Number.isFinite(resistance) || resistance <= 0) resistance = r25;
         }
 
         let reactanceC = 0;
@@ -2371,7 +3251,7 @@
         let current = impedance > 0 ? voltage / impedance : 0;
         let voltageAcross = voltage;
 
-        if (component.type === "led") {
+        if (family === "led") {
           const forward = props.forwardVoltage ?? 2;
           const seriesR = Math.max(props.seriesResistance ?? effectiveResistance ?? 100, 0.1);
           voltageAcross = Math.max(voltage - forward, 0);
@@ -2380,13 +3260,51 @@
           effectiveResistance = seriesR;
         }
 
-        if (component.type === "battery") {
+        if (family === "diode" || family === "zener_diode") {
+          const vf = props.forwardVoltage ?? 0.7;
+          if (voltage > vf) {
+            voltageAcross = vf;
+            current = (voltage - vf) / Math.max(props.forwardResistance ?? 0.2, 0.001);
+            impedance = effectiveResistance;
+          } else {
+            current = 0;
+            voltageAcross = 0;
+          }
+        }
+
+        if (family === "battery") {
           const internalR = Math.max(props.internalResistance ?? 0.2, 0.0001);
           const loadR = Math.max(variables.loadImpedanceOhms || 0, 0.0001);
           const totalR = internalR + loadR;
           current = voltage / totalR;
           impedance = totalR;
           effectiveResistance = loadR;
+        }
+
+        if (family === "mosfet") {
+          const vth = props.vth ?? 4;
+          const rdsOn = Math.max(props.rds_on ?? 0.1, 0.0001);
+          const vdsMax = props.vds_max ?? 60;
+          const idMax = props.id_max ?? 10;
+          if (voltage >= vth) {
+            const vds = Math.min(voltage, vdsMax);
+            current = Math.min(vds / rdsOn, idMax);
+            voltageAcross = current * rdsOn;
+            impedance = rdsOn;
+            effectiveResistance = rdsOn;
+          } else {
+            current = 0;
+            voltageAcross = 0;
+            impedance = 1e8;
+            effectiveResistance = 1e8;
+          }
+        }
+
+        if (family === "heatsink" || family === "crystal") {
+          current = 0;
+          voltageAcross = 0;
+          impedance = 1e8;
+          effectiveResistance = 1e8;
         }
 
         const dutyCycle = Math.max(Math.min(variables.dutyCyclePercent ?? 100, 100), 0) / 100;
@@ -2402,11 +3320,11 @@
 
         let efficiency = props.efficiency;
         if (!Number.isFinite(efficiency)) {
-          if (component.type === "battery" && impedance > 0) {
+          if (family === "battery" && impedance > 0) {
             efficiency = effectiveResistance / impedance;
-          } else if (component.type === "led") {
+          } else if (family === "led") {
             efficiency = props.efficiency ?? 0.35;
-          } else if (component.type === "resistor") {
+          } else if (family === "resistor") {
             efficiency = 0;
           } else {
             efficiency = null;
@@ -2417,6 +3335,7 @@
           componentId: component.id,
           name: component.name,
           type: component.type,
+          family,
           operatingVoltage: voltage,
           currentRms: rmsCurrent,
           currentPeak: current * Math.sqrt(2),
@@ -2578,11 +3497,13 @@
       function resetArena() {
         const groupA = ensureComponentGroup("A", state.selectedA);
         if (groupA) {
+          clearFailureVisuals(groupA);
           groupA.rotation.set(0, 0, 0);
           energizeComponent(groupA, 0.24);
         }
         const groupB = ensureComponentGroup("B", state.selectedB);
         if (groupB) {
+          clearFailureVisuals(groupB);
           groupB.rotation.set(0, 0, 0);
           energizeComponent(groupB, 0.24);
         }
@@ -2594,6 +3515,7 @@
         renderMetricGrid("metrics-a", null);
         renderMetricGrid("metrics-b", null);
         renderMetricGrid("metrics-delta", null);
+        renderFailureAnalysis(null, null);
         setStatus("Arena reset. Metrics cleared.");
       }
 
@@ -2665,6 +3587,7 @@
         renderMetricGrid("metrics-a", null);
         renderMetricGrid("metrics-b", null);
         renderMetricGrid("metrics-delta", null);
+        renderFailureAnalysis(null, null);
       }
 
       function bootstrap() {
