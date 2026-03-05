@@ -1,115 +1,164 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CircuiTry3D app icon — series circuit frame + CT3D text inside.
+
+  Circuit layout (512×512 canvas):
+    TL (62, 130)  TR (450, 130)
+    BL (62, 382)  BR (450, 382)
+
+    TOP    : Resistor R1 — orange zigzag (x 168→328), sky-blue leads
+    BOTTOM : Resistor R2 — orange zigzag (x 168→328), sky-blue leads
+    LEFT   : Battery     — blue plates, sky-blue leads
+    RIGHT  : Plain wire  — sky-blue
+
+  Text "CT3D" inside the loop (Lato Black / font-weight 900, 118 px):
+    Measured widths at 118 px: C≈77 px · T≈72 px · 3D≈158 px · total≈307 px
+    Centered at x=256  →  C starts x=102, T x=180, 3D x=252
+    Baseline at y=290  →  cap tops ≈ y=205, visually centred in the 252 px-tall interior
+-->
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <!-- Background depth gradient -->
-    <radialGradient id="bgGrad" cx="50%" cy="40%" r="70%">
-      <stop offset="0%" stop-color="#1e293b"/>
-      <stop offset="100%" stop-color="#0f172a"/>
+    <!-- ── Shared letter style ── -->
+    <style>
+      .ct3d-letter {
+        font-family: 'LatoBlack', 'Lato Black', 'Lato', 'Liberation Sans', Arial, sans-serif;
+        font-size: 118px;
+        font-weight: 900;
+      }
+    </style>
+    <!-- ── Background gradient ── -->
+    <radialGradient id="bg" cx="50%" cy="46%" r="64%">
+      <stop offset="0%" stop-color="#16243d"/>
+      <stop offset="100%" stop-color="#080d18"/>
     </radialGradient>
 
-    <!-- Per-letter glow filters -->
-    <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="9" result="blur"/>
-      <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.23
-                0 0 0 0 0.51
-                0 0 0 0 0.96
-                0 0 0 18 -7"
-        result="coloredBlur"/>
+    <!-- ── Trace glow (applied to wires & dots) ── -->
+    <filter id="traceGlow" x="-30%" y="-120%" width="160%" height="340%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
       <feMerge>
-        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
 
-    <filter id="glowOrange" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="9" result="blur"/>
+    <!-- ── Per-letter text glows ── -->
+    <filter id="glowBlue" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.98
-                0 0 0 0 0.45
-                0 0 0 0 0.09
-                0 0 0 18 -7"
-        result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+        values="0 0 0 0 0.23  0 0 0 0 0.51  0 0 0 0 0.96  0 0 0 13 -4"
+        result="cb"/>
+      <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
 
-    <filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="9" result="blur"/>
+    <filter id="glowOrange" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.13
-                0 0 0 0 0.77
-                0 0 0 0 0.37
-                0 0 0 18 -7"
-        result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+        values="0 0 0 0 0.98  0 0 0 0 0.45  0 0 0 0 0.09  0 0 0 13 -4"
+        result="cb"/>
+      <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <filter id="glowGreen" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0.13  0 0 0 0 0.77  0 0 0 0 0.37  0 0 0 13 -4"
+        result="cb"/>
+      <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="512" height="512" fill="url(#bgGrad)"/>
+  <!-- ── Background ── -->
+  <rect width="512" height="512" fill="url(#bg)"/>
 
-  <!-- Subtle circuit trace decorations -->
-  <g opacity="0.12" fill="none" stroke-linecap="round">
-    <!-- Top-left trace cluster -->
-    <polyline points="0,96 60,96 60,60 96,60" stroke="#3b82f6" stroke-width="2"/>
-    <circle cx="60" cy="96" r="3.5" fill="#3b82f6" stroke="none"/>
-    <circle cx="96" cy="60" r="3.5" fill="#3b82f6" stroke="none"/>
+  <!-- ════════════════════════════════════════════════════════════
+       SERIES CIRCUIT FRAME
+       ════════════════════════════════════════════════════════════ -->
 
-    <!-- Top-right trace cluster -->
-    <polyline points="512,96 452,96 452,60 416,60" stroke="#f97316" stroke-width="2"/>
-    <circle cx="452" cy="96" r="3.5" fill="#f97316" stroke="none"/>
-    <circle cx="416" cy="60" r="3.5" fill="#f97316" stroke="none"/>
+  <!-- TOP: left lead -->
+  <line x1="62" y1="130" x2="168" y2="130"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
 
-    <!-- Bottom-left trace cluster -->
-    <polyline points="0,416 60,416 60,452 96,452" stroke="#22c55e" stroke-width="2"/>
-    <circle cx="60" cy="416" r="3.5" fill="#22c55e" stroke="none"/>
-    <circle cx="96" cy="452" r="3.5" fill="#22c55e" stroke="none"/>
+  <!-- TOP: R1 resistor (ANSI zigzag, orange) -->
+  <!--   10 half-steps × 16 px = 160 px body, amplitude ±20 px  -->
+  <polyline
+    points="168,130 176,110 192,150 208,110 224,150 240,110 256,150 272,110 288,150 304,110 320,150 328,130"
+    fill="none" stroke="#fb923c" stroke-width="5.5"
+    stroke-linecap="round" stroke-linejoin="round"
+    filter="url(#traceGlow)"/>
 
-    <!-- Bottom-right trace cluster -->
-    <polyline points="512,416 452,416 452,452 416,452" stroke="#22c55e" stroke-width="2"/>
-    <circle cx="452" cy="416" r="3.5" fill="#22c55e" stroke="none"/>
-    <circle cx="416" cy="452" r="3.5" fill="#22c55e" stroke="none"/>
+  <!-- TOP: right lead -->
+  <line x1="328" y1="130" x2="450" y2="130"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
 
-    <!-- Center-top accent line -->
-    <line x1="200" y1="40" x2="312" y2="40" stroke="#94a3b8" stroke-width="1.5"/>
-    <circle cx="200" cy="40" r="2.5" fill="#94a3b8" stroke="none"/>
-    <circle cx="312" cy="40" r="2.5" fill="#94a3b8" stroke="none"/>
+  <!-- RIGHT: straight vertical wire -->
+  <line x1="450" y1="130" x2="450" y2="382"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
 
-    <!-- Center-bottom accent line -->
-    <line x1="200" y1="472" x2="312" y2="472" stroke="#94a3b8" stroke-width="1.5"/>
-    <circle cx="200" cy="472" r="2.5" fill="#94a3b8" stroke="none"/>
-    <circle cx="312" cy="472" r="2.5" fill="#94a3b8" stroke="none"/>
-  </g>
+  <!-- BOTTOM: right lead -->
+  <line x1="450" y1="382" x2="328" y2="382"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
 
-  <!-- ── Row 1: C (blue) + T (orange) ── -->
-  <text
-    x="138" y="278"
-    font-family="system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
-    font-size="230" font-weight="900"
-    fill="#3b82f6"
-    text-anchor="middle"
-    filter="url(#glowBlue)">C</text>
+  <!-- BOTTOM: R2 resistor (ANSI zigzag, orange) -->
+  <polyline
+    points="328,382 320,362 304,402 288,362 272,402 256,362 240,402 224,362 208,402 192,362 176,402 168,382"
+    fill="none" stroke="#fb923c" stroke-width="5.5"
+    stroke-linecap="round" stroke-linejoin="round"
+    filter="url(#traceGlow)"/>
 
-  <text
-    x="374" y="278"
-    font-family="system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
-    font-size="230" font-weight="900"
-    fill="#f97316"
-    text-anchor="middle"
-    filter="url(#glowOrange)">T</text>
+  <!-- BOTTOM: left lead -->
+  <line x1="168" y1="382" x2="62" y2="382"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
 
-  <!-- ── Row 2: 3D (green) ── -->
-  <text
-    x="256" y="446"
-    font-family="system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
-    font-size="170" font-weight="900"
-    fill="#22c55e"
-    text-anchor="middle"
-    filter="url(#glowGreen)">3D</text>
+  <!-- LEFT: upper lead (above battery) -->
+  <line x1="62" y1="130" x2="62" y2="226"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
+
+  <!-- LEFT: battery positive plate (long, blue) -->
+  <line x1="38" y1="230" x2="86" y2="230"
+        stroke="#60a5fa" stroke-width="7.5" stroke-linecap="square"/>
+
+  <!-- LEFT: battery negative plate (short, blue) -->
+  <line x1="47" y1="250" x2="77" y2="250"
+        stroke="#60a5fa" stroke-width="5" stroke-linecap="square"/>
+
+  <!-- LEFT: lower lead (below battery) -->
+  <line x1="62" y1="250" x2="62" y2="382"
+        stroke="#7dd3fc" stroke-width="6" stroke-linecap="round"
+        filter="url(#traceGlow)"/>
+
+  <!-- Battery polarity labels (outside the circuit, left side) -->
+  <text x="26" y="235" text-anchor="middle"
+        font-family="sans-serif" font-size="15" font-weight="700"
+        fill="#93c5fd">+</text>
+  <text x="26" y="255" text-anchor="middle"
+        font-family="sans-serif" font-size="15" font-weight="700"
+        fill="#93c5fd">−</text>
+
+  <!-- Junction dots at corners (green) -->
+  <circle cx="62"  cy="130" r="9" fill="#22c55e" filter="url(#traceGlow)"/>
+  <circle cx="450" cy="130" r="9" fill="#22c55e" filter="url(#traceGlow)"/>
+  <circle cx="450" cy="382" r="9" fill="#22c55e" filter="url(#traceGlow)"/>
+  <circle cx="62"  cy="382" r="9" fill="#22c55e" filter="url(#traceGlow)"/>
+
+  <!-- ════════════════════════════════════════════════════════════
+       CT3D TEXT  (Lato Black 118 px, precisely centred inside the loop)
+       C   x=102   (width≈77 px)
+       T   x=180   (width≈72 px)
+       3D  x=252   (width≈158 px)
+       Total ≈ 307 px  →  centre = 102 + 307/2 = 255.5 ≈ 256 ✓
+       ════════════════════════════════════════════════════════════ -->
+  <text x="102" y="290" class="ct3d-letter"
+        fill="#3b82f6" filter="url(#glowBlue)">C</text>
+
+  <text x="180" y="290" class="ct3d-letter"
+        fill="#f97316" filter="url(#glowOrange)">T</text>
+
+  <text x="252" y="290" class="ct3d-letter"
+        fill="#22c55e" filter="url(#glowGreen)">3D</text>
 </svg>
