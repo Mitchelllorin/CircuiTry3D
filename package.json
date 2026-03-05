@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate-splash": "node generate-splash-images.js",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "generate-play-store-icons": "node scripts/generate-play-store-icons.js"
   },
   "repository": {
     "type": "git",
