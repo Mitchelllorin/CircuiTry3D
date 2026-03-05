@@ -4074,6 +4074,7 @@
             document.write('<script src="vendor/three.min.js"><\\/script>');
         }
     </script>
+    <script src="js/component-failure-engine.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let isEmbedded = false;
@@ -5570,11 +5571,13 @@ body.android-optimized .zoom-btn {
                 const identifier = this.getComponentIdentifier();
                 const { text, color } = this.getValueTextAndColor();
                 const runtimeMarkup = this.getRuntimeMetricMarkup();
+                const failureBadge = this.getFailureBadgeMarkup ? this.getFailureBadgeMarkup() : '';
 
                 return `
                     <div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>
                     <div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>
                     ${runtimeMarkup}
+                    ${failureBadge}
                 `;
             }
 
@@ -5785,6 +5788,31 @@ body.android-optimized .zoom-btn {
                 }
 
                 return `<div style="font-size: ${fontSize}; font-weight: 600;">${parts.join(separator)}</div>`;
+            }
+
+            getFailureBadgeMarkup() {
+                // Show a failure badge in the nameplate if this component has an active failure state
+                if (!window.FailureEngine) return '';
+                const failure = workspaceFailureState ? workspaceFailureState.get(this.id) : null;
+                if (!failure || !failure.severity) return '';
+
+                const sev = failure.severity;
+                let badgeColor, badgeText, textColor;
+                if (sev >= 2.5) {
+                    badgeColor = '#1a0000'; badgeText = '💥 FAILED'; textColor = '#ff4444';
+                } else if (sev >= 2) {
+                    badgeColor = '#1a0000'; badgeText = '🔥 CRITICAL'; textColor = '#ff6600';
+                } else if (sev >= 1.5) {
+                    badgeColor = '#1a0800'; badgeText = '⚠ WARNING'; textColor = '#ffaa00';
+                } else {
+                    badgeColor = '#0a1400'; badgeText = '⚡ STRESSED'; textColor = '#aadd00';
+                }
+                const fontSize = isMobile ? '10px' : '9px';
+                const name = failure.name ? `<div style="font-size:${fontSize};color:#e5e7eb;max-width:120px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${failure.name}</div>` : '';
+                return `<div style="margin-top:2px;padding:2px 4px;border-radius:3px;background:${badgeColor};border:1px solid ${textColor}30;">
+                    <span style="font-size:${fontSize};font-weight:700;color:${textColor};">${badgeText}</span>
+                    ${name}
+                </div>`;
             }
 
             updateRuntimeMetrics(runtimeMetrics) {
@@ -7047,6 +7075,13 @@ body.android-optimized .zoom-btn {
                     document.body.removeChild(this.labelDiv);
                 }
                 
+                // Clear any failure state and particles for this component
+                if (this.id) {
+                    clearWorkspaceFailureVisuals(this);
+                    removeWorkspaceParticlesFor(this.id);
+                    if (workspaceFailureState) workspaceFailureState.delete(this.id);
+                }
+                
                 // Remove polarity indicators
                 if (this.polarityDivs) {
                     this.polarityDivs.forEach(item => {
@@ -7450,6 +7485,7 @@ body.android-optimized .zoom-btn {
             lastFrameTime = currentTime;
 
             updateFlowParticles();
+            updateWorkspaceFailureParticles();
 
             // Only update labels every few frames to reduce DOM manipulation overhead
             labelUpdateCounter++;
@@ -12827,6 +12863,9 @@ Made with ? for visual learners everywhere!
                 }
                 component.updateRuntimeMetrics(metricsByComponentId.get(component.id) || null);
             });
+            // Apply physics-based failure visuals to every component
+            const circuitVoltage = analysis && isFinite(analysis.voltage) ? analysis.voltage : 0;
+            applyAllWorkspaceFailures(circuitVoltage, metricsByComponentId);
         }
 
         // Circuit analysis
@@ -16398,6 +16437,9 @@ Made with ? for visual learners everywhere!
                 if (particle) scene.remove(particle);
             });
             currentFlowParticles = [];
+
+            // Clear all failure visuals and particles
+            clearAllWorkspaceFailures();
             
             wires.forEach(wire => {
                 if (wire?.wireGroup) scene.remove(wire.wireGroup);
@@ -16519,6 +16561,303 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 }
             }
             return false;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // WORKSPACE FAILURE VISUALIZATION SYSTEM
+        // Uses the shared FailureEngine to detect and display physically accurate
+        // component failure states directly on the 3D workspace components.
+        // ─────────────────────────────────────────────────────────────────────
+
+        // Track failure state and particle systems per component
+        const workspaceFailureState = new Map();   // componentId → failureResult
+        const workspaceFailureParticles = [];       // { points, velocities, lifetimes, pos, isSpark }
+        // Particle lifetime range (seconds). Particles spawn with life in [MIN, MAX].
+        const FAIL_PARTICLE_MIN_LIFE = 0.4;
+        const FAIL_PARTICLE_MAX_LIFE = 0.8;
+        const FAIL_PARTICLE_TOTAL_LIFE = FAIL_PARTICLE_MIN_LIFE + FAIL_PARTICLE_MAX_LIFE;
+
+        /**
+         * Convert the legacy.html circuit metrics object to the format expected
+         * by FailureEngine.detectFailure().
+         */
+        function buildFailureMetrics(component, runtimeMetrics, circuitVoltage) {
+            const props = component.properties || {};
+            const thermalR = props.thermalResistance || 60;
+            const power = (runtimeMetrics && isFinite(runtimeMetrics.power)) ? runtimeMetrics.power : 0;
+            const current = (runtimeMetrics && isFinite(runtimeMetrics.current)) ? runtimeMetrics.current : 0;
+            const voltageDrop = (runtimeMetrics && isFinite(runtimeMetrics.voltageDrop))
+                ? runtimeMetrics.voltageDrop
+                : (circuitVoltage || 0);
+
+            return {
+                powerDissipation: power,
+                currentRms: current,
+                operatingVoltage: voltageDrop,
+                thermalRise: (power * thermalR) / 1000,
+                impedance: (runtimeMetrics && isFinite(runtimeMetrics.resistance)) ? runtimeMetrics.resistance : 0,
+                storedEnergy: 0,
+                energyDelivered: 0,
+            };
+        }
+
+        /**
+         * Create a Three.js particle system for a failure effect at a component's
+         * world position.  Returns the particles object (added to scene).
+         */
+        function createWorkspaceParticles(component, visual) {
+            if (!scene || !component.mesh) return null;
+
+            const isSpark = visual === 'arc' || visual === 'burst';
+            const count = isSpark ? 32 : 20;
+            const positions = new Float32Array(count * 3);
+            const velocities = [];
+            const lifetimes = new Float32Array(count);
+
+            const pos = new THREE.Vector3();
+            component.mesh.getWorldPosition(pos);
+
+            for (let i = 0; i < count; i++) {
+                positions[i * 3]     = pos.x + (Math.random() - 0.5) * 0.4;
+                positions[i * 3 + 1] = pos.y + Math.random() * 0.3;
+                positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.4;
+
+                if (isSpark) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 0.6 + Math.random() * 1.8;
+                    velocities.push({ x: Math.cos(angle) * speed, y: 0.5 + Math.random() * 1.5, z: Math.sin(angle) * speed });
+                } else {
+                    velocities.push({ x: (Math.random() - 0.5) * 0.15, y: 0.3 + Math.random() * 0.5, z: (Math.random() - 0.5) * 0.15 });
+                }
+                lifetimes[i] = FAIL_PARTICLE_MIN_LIFE + Math.random() * FAIL_PARTICLE_MAX_LIFE;
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const color = isSpark ? 0xfde047 : 0x9ca3af;
+            const mat = new THREE.PointsMaterial({
+                color,
+                size: isSpark ? 0.18 : 0.14,
+                transparent: true,
+                opacity: 0.9,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+            });
+
+            const points = new THREE.Points(geo, mat);
+            scene.add(points);
+
+            workspaceFailureParticles.push({
+                points, velocities, lifetimes,
+                componentId: component.id,
+                isSpark,
+            });
+
+            return points;
+        }
+
+        /**
+         * Update all workspace failure particles each animation frame.
+         */
+        function updateWorkspaceFailureParticles() {
+            const dt = 0.016; // approximate delta at 60 fps
+            for (let pi = workspaceFailureParticles.length - 1; pi >= 0; pi--) {
+                const sys = workspaceFailureParticles[pi];
+                const positions = sys.points.geometry.attributes.position;
+                let alive = false;
+                for (let i = 0; i < sys.lifetimes.length; i++) {
+                    sys.lifetimes[i] -= dt;
+                    if (sys.lifetimes[i] > 0) {
+                        alive = true;
+                        positions.array[i * 3]     += sys.velocities[i].x * dt;
+                        positions.array[i * 3 + 1] += sys.velocities[i].y * dt;
+                        positions.array[i * 3 + 2] += sys.velocities[i].z * dt;
+                        // Gravity for sparks
+                        if (sys.isSpark) sys.velocities[i].y -= 1.5 * dt;
+                    } else {
+                        // Recycle this particle back to its component if it's still failing
+                        const comp = components.find(c => c.id === sys.componentId);
+                        if (comp && comp.mesh && workspaceFailureState.get(sys.componentId)?.severity > 0) {
+                            const pos = new THREE.Vector3();
+                            comp.mesh.getWorldPosition(pos);
+                            positions.array[i * 3]     = pos.x + (Math.random() - 0.5) * 0.4;
+                            positions.array[i * 3 + 1] = pos.y + Math.random() * 0.3;
+                            positions.array[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.4;
+                            if (sys.isSpark) {
+                                const angle = Math.random() * Math.PI * 2;
+                                const speed = 0.6 + Math.random() * 1.8;
+                                sys.velocities[i] = { x: Math.cos(angle) * speed, y: 0.5 + Math.random() * 1.5, z: Math.sin(angle) * speed };
+                            } else {
+                                sys.velocities[i] = { x: (Math.random() - 0.5) * 0.15, y: 0.3 + Math.random() * 0.5, z: (Math.random() - 0.5) * 0.15 };
+                            }
+                            sys.lifetimes[i] = FAIL_PARTICLE_MIN_LIFE + Math.random() * FAIL_PARTICLE_MAX_LIFE;
+                            alive = true;
+                        }
+                    }
+                }
+                positions.needsUpdate = true;
+
+                if (!alive) {
+                    scene.remove(sys.points);
+                    sys.points.geometry.dispose();
+                    sys.points.material.dispose();
+                    workspaceFailureParticles.splice(pi, 1);
+                } else {
+                    // Fade out material as overall intensity decays
+                    const maxLife = FAIL_PARTICLE_TOTAL_LIFE;
+                    const avgLife = sys.lifetimes.reduce((a, b) => a + Math.max(0, b), 0) / sys.lifetimes.length;
+                    sys.points.material.opacity = Math.min(0.9, Math.max(0, avgLife / maxLife * 0.9));
+                }
+            }
+        }
+
+        /**
+         * Apply failure visual effects to a component's THREE.js mesh.
+         * Mutates existing Phong/Lambert materials — no new geometry needed.
+         * Colors and emissive intensity encode the physical failure state.
+         */
+        function applyWorkspaceFailureVisuals(component, failure) {
+            if (!component.mesh) return;
+
+            // Severity color ramp: 0=OK, 1=stressed (yellow), 2=critical (orange), 3=destroyed (dark char/black)
+            const SEVERITY_COLORS = {
+                char:    [0x422006, 0x1a0f00],  // stressed/destroyed: dark brown → black
+                blowout: [0x3b1210, 0x0a0202],  // dark red-black
+                melt:    [0x92400e, 0x3b1204],  // orange-brown → charred
+                arc:     [0xfef9c3, 0x3b1204],  // bright flash → char
+                burst:   [0x9a3412, 0x431407],  // dark orange/red
+                vent:    [0x78350f, 0x1c0e04],  // brown tan
+                smoke:   [0x374151, 0x111827],  // gray → dark
+                glow:    [0xfbbf24, 0xdc2626],  // yellow → red (overtemp)
+            };
+
+            const visual = failure.visual || 'char';
+            const sev = Math.min(failure.severity, 3);
+            const t = Math.min(sev / 3, 1);
+            const colors = SEVERITY_COLORS[visual] || SEVERITY_COLORS.char;
+            const baseColor = colors[0];
+            const destroyedColor = colors[1];
+            // Lerp between stressed color and destroyed color
+            const r = Math.round((((baseColor >> 16) & 0xff) * (1 - t) + ((destroyedColor >> 16) & 0xff) * t));
+            const g = Math.round((((baseColor >> 8)  & 0xff) * (1 - t) + ((destroyedColor >> 8)  & 0xff) * t));
+            const b = Math.round((((baseColor)       & 0xff) * (1 - t) + ((destroyedColor)       & 0xff) * t));
+            const targetColor = (r << 16) | (g << 8) | b;
+
+            // Emissive intensity: stressed glows, destroyed is dark
+            const emissiveColor = visual === 'glow' ? 0xff6600
+                : visual === 'arc'  ? 0xffff00
+                : visual === 'melt' ? 0xff4400
+                : 0x110500;
+            const emissiveIntensity = visual === 'glow' ? t * 0.8
+                : visual === 'arc' || visual === 'burst' ? 0.5 + Math.sin(Date.now() / 80) * 0.3
+                : 0.05 + t * 0.1;
+
+            // Apply to all body materials in the mesh group
+            component.mesh.traverse(child => {
+                if (!child.isMesh || !child.material) return;
+                // Skip selection box (invisible mesh)
+                if (child.userData && child.userData.isSelectionBox) return;
+                const m = child.material;
+                if (m.color) m.color.setHex(targetColor);
+                if (m.emissive) m.emissive.setHex(emissiveColor);
+                if (m.emissiveIntensity !== undefined) m.emissiveIntensity = emissiveIntensity;
+            });
+
+            // Store original colors if not already saved
+            if (!component.mesh.userData.originalColors) {
+                component.mesh.userData.originalColors = {};
+                component.mesh.traverse(child => {
+                    if (!child.isMesh || !child.material || child.userData?.isSelectionBox) return;
+                    component.mesh.userData.originalColors[child.uuid] = {
+                        color: child.material.color ? child.material.color.getHex() : null,
+                        emissive: child.material.emissive ? child.material.emissive.getHex() : null,
+                        emissiveIntensity: child.material.emissiveIntensity,
+                    };
+                });
+            }
+        }
+
+        /**
+         * Clear all failure visuals from a component — restores original materials.
+         */
+        function clearWorkspaceFailureVisuals(component) {
+            if (!component.mesh) return;
+            const originals = component.mesh.userData.originalColors;
+            if (!originals) return;
+            component.mesh.traverse(child => {
+                if (!child.isMesh || !child.material || child.userData?.isSelectionBox) return;
+                const orig = originals[child.uuid];
+                if (!orig) return;
+                if (child.material.color && orig.color != null) child.material.color.setHex(orig.color);
+                if (child.material.emissive && orig.emissive != null) child.material.emissive.setHex(orig.emissive);
+                if (child.material.emissiveIntensity !== undefined && orig.emissiveIntensity != null) {
+                    child.material.emissiveIntensity = orig.emissiveIntensity;
+                }
+            });
+            component.mesh.userData.originalColors = null;
+        }
+
+        /**
+         * Remove all failure particles for a specific component.
+         */
+        function removeWorkspaceParticlesFor(componentId) {
+            for (let i = workspaceFailureParticles.length - 1; i >= 0; i--) {
+                if (workspaceFailureParticles[i].componentId === componentId) {
+                    const sys = workspaceFailureParticles[i];
+                    if (scene) scene.remove(sys.points);
+                    sys.points.geometry.dispose();
+                    sys.points.material.dispose();
+                    workspaceFailureParticles.splice(i, 1);
+                }
+            }
+        }
+
+        /**
+         * Called after each circuit analysis with the per-component metrics map.
+         * Detects failures and applies/clears 3D visuals for every component.
+         */
+        function applyAllWorkspaceFailures(circuitVoltage, metricsByComponentId) {
+            if (!window.FailureEngine) return;
+            const { detectFailure } = FailureEngine;
+
+            components.forEach(component => {
+                if (!component || !component.id) return;
+
+                const runtimeMetrics = metricsByComponentId ? metricsByComponentId.get(component.id) : null;
+                const failureMetrics = buildFailureMetrics(component, runtimeMetrics, circuitVoltage);
+                const failure = detectFailure(component, failureMetrics);
+                const prev = workspaceFailureState.get(component.id);
+
+                if (failure.severity > 0) {
+                    workspaceFailureState.set(component.id, failure);
+                    applyWorkspaceFailureVisuals(component, failure);
+                    // Only spawn particles if severity just crossed the threshold or visual changed
+                    const noParticles = !workspaceFailureParticles.some(p => p.componentId === component.id);
+                    if (noParticles && failure.severity >= 1.5) {
+                        createWorkspaceParticles(component, failure.visual);
+                    }
+                } else {
+                    // Failure cleared — restore visuals
+                    if (prev && prev.severity > 0) {
+                        clearWorkspaceFailureVisuals(component);
+                        removeWorkspaceParticlesFor(component.id);
+                    }
+                    workspaceFailureState.set(component.id, null);
+                }
+            });
+        }
+
+        /**
+         * Clear all failure state — called on circuit reset.
+         */
+        function clearAllWorkspaceFailures() {
+            components.forEach(component => {
+                if (!component) return;
+                clearWorkspaceFailureVisuals(component);
+                removeWorkspaceParticlesFor(component.id);
+                workspaceFailureState.delete(component.id);
+            });
         }
 
         /** Flash the screen with a fiery explosion radial gradient. */

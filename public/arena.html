@@ -635,10 +635,18 @@
         document.write('<script src="vendor/three.min.js"><\\/script>');
       }
     </script>
+    <script src="js/component-failure-engine.js"></script>
     <script>
     (() => {
       "use strict";
 
+      // Shared failure engine — aliases so existing code needs no other changes
+      const COMPONENT_PROFILES          = FailureEngine.COMPONENT_PROFILES;
+      const COMPONENT_FAMILY_MAP        = FailureEngine.COMPONENT_FAMILY_MAP;
+      const COMPONENT_FAILURE_PROFILES  = FailureEngine.COMPONENT_FAILURE_PROFILES;
+      const resolveComponentFamily      = FailureEngine.resolveComponentFamily;
+      const registerComponentType       = FailureEngine.registerComponentType;
+      const registerFailureProfile      = FailureEngine.registerFailureProfile;
       const state = {
         mode: "compare",
         components: [],
@@ -663,297 +671,6 @@
         prefix: "circuitry:arena-session:",
         last: "circuitry:arena-session:last",
       };
-
-      const COMPONENT_PROFILES = {
-        battery: {
-          defaultProperties: {
-            voltage: 9,
-            internalResistance: 0.2,
-            capacityMah: 1500,
-            tempCoeff: 0.0004,
-            thermalResistance: 35,
-            maxDischargeCurrent: 2,
-          },
-        },
-        resistor: {
-          defaultProperties: {
-            resistance: 100,
-            tempCoeff: 0.0005,
-            tolerance: 0.05,
-            thermalResistance: 75,
-          },
-        },
-        led: {
-          defaultProperties: {
-            forwardVoltage: 2,
-            seriesResistance: 120,
-            efficiency: 0.35,
-            thermalResistance: 120,
-          },
-        },
-        switch: {
-          defaultProperties: {
-            onResistance: 0.05,
-            offResistance: 1000000,
-            transitionTimeMs: 2,
-          },
-        },
-        capacitor: {
-          defaultProperties: {
-            capacitance: 1e-6,
-            esr: 0.1,
-            tempCoeff: 0.0002,
-            thermalResistance: 40,
-          },
-        },
-        inductor: {
-          defaultProperties: {
-            inductance: 1e-3,
-            resistance: 5,
-            thermalResistance: 55,
-          },
-        },
-        mosfet: {
-          defaultProperties: {
-            vth: 4,
-            rds_on: 0.044,
-            id_max: 33,
-            vds_max: 100,
-            vgs_max: 20,
-            powerRating: 130,
-            thermalResistance: 0.92,
-          },
-        },
-        heatsink: {
-          defaultProperties: {
-            thermalResistanceJA: 10,
-            maxTempC: 200,
-            thermalResistance: 2,
-          },
-        },
-        bjt: {
-          defaultProperties: {
-            vce_max: 40,
-            ic_max: 0.6,
-            hfe: 100,
-            vbe: 0.7,
-            powerRating: 0.625,
-            thermalResistance: 200,
-          },
-        },
-        diode: {
-          defaultProperties: {
-            forwardVoltage: 0.7,
-            maxCurrent: 1,
-            reverseVoltage: 50,
-            thermalResistance: 60,
-            powerRating: 1,
-          },
-        },
-        zener_diode: {
-          defaultProperties: {
-            zenerVoltage: 5.1,
-            maxCurrent: 0.05,
-            powerRating: 0.5,
-            thermalResistance: 150,
-          },
-        },
-        opamp: {
-          defaultProperties: {
-            supplyVoltage: 15,
-            slewRate: 0.5,
-            gainBandwidth: 1e6,
-            inputOffsetVoltage: 0.001,
-            powerRating: 0.5,
-            thermalResistance: 100,
-          },
-        },
-        voltage_regulator: {
-          defaultProperties: {
-            outputVoltage: 5,
-            dropoutVoltage: 2,
-            maxCurrent: 1.5,
-            powerRating: 15,
-            thermalResistance: 5,
-          },
-        },
-        ic: {
-          defaultProperties: {
-            supplyVoltage: 5,
-            maxCurrent: 0.1,
-            powerRating: 1,
-            thermalResistance: 70,
-          },
-        },
-        relay: {
-          defaultProperties: {
-            coilVoltage: 5,
-            coilResistance: 72,
-            maxSwitchCurrent: 5,
-            maxSwitchVoltage: 250,
-            thermalResistance: 80,
-          },
-        },
-        fuse: {
-          defaultProperties: {
-            ratedCurrentA: 1,
-            meltingI2t: 1,
-            resistance: 0.02,
-            thermalResistance: 40,
-          },
-        },
-        lamp: {
-          defaultProperties: {
-            ratedVoltage: 12,
-            ratedWatts: 5,
-            thermalResistance: 30,
-          },
-        },
-        motor: {
-          defaultProperties: {
-            ratedVoltage: 12,
-            ratedCurrentA: 0.5,
-            ratedRpm: 3000,
-            resistance: 8,
-            thermalResistance: 15,
-          },
-        },
-        thermistor: {
-          defaultProperties: {
-            resistance: 10000,
-            beta: 3950,
-            tempCoeff: -0.04,
-            thermalResistance: 120,
-          },
-        },
-        transformer: {
-          defaultProperties: {
-            turnsRatio: 10,
-            primaryResistance: 2,
-            secondaryResistance: 0.02,
-            powerRating: 50,
-            thermalResistance: 8,
-          },
-        },
-        crystal: {
-          defaultProperties: {
-            frequencyHz: 16e6,
-            seriesResistance: 10,
-            thermalResistance: 200,
-          },
-        },
-        generic: {
-          defaultProperties: {
-            resistance: 1000,
-            thermalResistance: 60,
-            powerRating: 0.25,
-          },
-        },
-      };
-
-      // ---------- Component Family Resolver ----------
-      // Maps type-string keywords to canonical physics families used for metrics,
-      // failure profiles, and 3D models. This supports arbitrary imported names
-      // (branded parts, abbreviations, datasheet part numbers).
-      const COMPONENT_FAMILY_MAP = {
-        // Resistors
-        resistor: "resistor", res: "resistor", r: "resistor",
-        thermistor: "thermistor", ntc: "thermistor", ptc: "thermistor", rtd: "thermistor",
-        // Capacitors
-        capacitor: "capacitor", cap: "capacitor", c: "capacitor",
-        electrolytic: "capacitor", ceramic: "capacitor", tantalum: "capacitor",
-        // Inductors
-        inductor: "inductor", coil: "inductor", choke: "inductor", ferrite: "inductor",
-        // LEDs / Optoelectronics
-        led: "led", photodiode: "diode",
-        // Diodes
-        diode: "diode", rectifier: "diode", schottky: "diode",
-        "zener-diode": "zener_diode", zener: "zener_diode",
-        // BJT Transistors
-        bjt: "bjt", "bjt-npn": "bjt", "bjt-pnp": "bjt", npn: "bjt", pnp: "bjt",
-        transistor: "bjt", "2n": "bjt", bc: "bjt", bd: "bjt", "tip": "bjt",
-        // MOSFETs
-        mosfet: "mosfet", nmos: "mosfet", pmos: "mosfet", nfet: "mosfet", pfet: "mosfet",
-        irf: "mosfet", irfz: "mosfet",
-        // Op-Amps
-        opamp: "opamp", "op-amp": "opamp", "op_amp": "opamp",
-        lm741: "opamp", lm324: "opamp", tl072: "opamp", tl071: "opamp",
-        ne5532: "opamp", mcp6002: "opamp",
-        // Voltage Regulators
-        voltage_regulator: "voltage_regulator", "voltage-regulator": "voltage_regulator",
-        regulator: "voltage_regulator", ldo: "voltage_regulator",
-        lm7805: "voltage_regulator", lm7812: "voltage_regulator", lm317: "voltage_regulator",
-        lm1117: "voltage_regulator",
-        // ICs / Microcontrollers
-        ic: "ic", chip: "ic", microcontroller: "ic", mcu: "ic",
-        ne555: "ic", "555": "ic", atmega: "ic", attiny: "ic", pic: "ic",
-        stm32: "ic", esp32: "ic", esp8266: "ic", arduino: "ic",
-        // Batteries / Power Sources
-        battery: "battery", cell: "battery", "ac_source": "battery",
-        // Switches
-        switch: "switch", sw: "switch", relay: "relay",
-        // Heatsinks
-        heatsink: "heatsink", "heat-sink": "heatsink", "heat_sink": "heatsink",
-        // Other passives
-        fuse: "fuse",
-        lamp: "lamp", bulb: "lamp",
-        motor: "motor",
-        speaker: "motor",
-        transformer: "transformer", xfmr: "transformer",
-        crystal: "crystal", xtal: "crystal", oscillator: "crystal",
-      };
-
-      /**
-       * Resolves any imported component type string to a canonical physics family.
-       * 1. Exact match against COMPONENT_PROFILES keys
-       * 2. Exact match against COMPONENT_FAMILY_MAP keys
-       * 3. Substring scan of COMPONENT_FAMILY_MAP keys
-       * 4. Property-signature heuristic
-       * 5. Falls back to "generic"
-       *
-       * @param {string} rawType - The raw type string from an imported component
-       * @param {Object} [props]  - Optional component properties for heuristic fallback
-       * @returns {string} Canonical family name guaranteed to exist in COMPONENT_PROFILES
-       */
-      function resolveComponentFamily(rawType, props) {
-        if (!rawType || typeof rawType !== "string") {
-          return "generic";
-        }
-        const t = rawType.toLowerCase().trim().replace(/[\s_]+/g, "-");
-
-        // 1. Direct match against known profile keys
-        if (COMPONENT_PROFILES[t]) {
-          return t;
-        }
-
-        // 2. Exact match in COMPONENT_FAMILY_MAP (handles aliases and common abbrevs)
-        if (COMPONENT_FAMILY_MAP[t]) {
-          return COMPONENT_FAMILY_MAP[t];
-        }
-
-        // 3. Starts-with or contains scan — handles part numbers like "IRF840", "2N2222", "BC547"
-        for (const [keyword, family] of Object.entries(COMPONENT_FAMILY_MAP)) {
-          if (t.startsWith(keyword) || t.includes(keyword)) {
-            return family;
-          }
-        }
-
-        // 4. Property-signature heuristic for completely unknown types
-        if (props && typeof props === "object") {
-          if (typeof props.inductance === "number") return "inductor";
-          if (typeof props.capacitance === "number") return "capacitor";
-          if (typeof props.forwardVoltage === "number") return "diode";
-          if (typeof props.rds_on === "number" || typeof props.vth === "number") return "mosfet";
-          if (typeof props.hfe === "number" || typeof props.vce_max === "number") return "bjt";
-          if (typeof props.coilVoltage === "number") return "relay";
-          if (typeof props.ratedCurrentA === "number" && typeof props.meltingI2t === "number") return "fuse";
-          if (typeof props.internalResistance === "number" || typeof props.capacityMah === "number") return "battery";
-          if (typeof props.resistance === "number") return "resistor";
-          if (typeof props.turnsRatio === "number") return "transformer";
-        }
-
-        return "generic";
-      }
 
       const COMPONENT_PALETTES = {
         battery: { base: 0xf97316, glow: 0xffedd5, orbit: 0xf59e0b, accent: 0x1f2937 },
@@ -1677,11 +1394,14 @@
         }
 
       function buildComponent(type, nominalValue, isPrimary) {
-        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES.default;
+        // Resolve canonical family for palette and geometry selection
+        const family = resolveComponentFamily(type);
+        const palette = COMPONENT_PALETTES[type] || COMPONENT_PALETTES[family] || COMPONENT_PALETTES.default;
         const group = new THREE.Group();
         group.userData = {
           palette,
           componentType: type,
+          resolvedFamily: family,
           energy: 0.3,
           bobOffset: Math.random() * Math.PI * 2,
           baseScale: computeScale(nominalValue),
@@ -1697,7 +1417,17 @@
         });
 
         let core;
-        switch (type) {
+        // Determine which geometry case to use — prefer exact type, fall back to family.
+        // The set of known geometry keys is derived from COMPONENT_PROFILES to stay in sync.
+        const geoKey = (() => {
+          // "generic" is handled by the default case; exclude it from the set
+          const known = new Set(Object.keys(COMPONENT_PROFILES).filter(k => k !== "generic" && k !== "zener_diode"));
+          if (known.has(type)) return type;
+          if (known.has(family)) return family;
+          return "generic";
+        })();
+
+        switch (geoKey) {
           case "resistor": {
             core = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 0.5), material);
             const leadGeometry = new THREE.CylinderGeometry(0.07, 0.07, 0.9, 20);
@@ -1847,10 +1577,6 @@
             group.add(base, lever);
             break;
           }
-          default: {
-            core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
-            break;
-          }
           case "mosfet": {
             // TO-220 style package: black rectangular body
             core = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.4), material);
@@ -1913,7 +1639,207 @@
             });
             break;
           }
-        }
+          case "bjt": {
+            // TO-92 package: D-profile cylinder
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 1.1, 20), material);
+            // Flat face (D-shape approximation via a flattened box overlay)
+            const flatMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.2, roughness: 0.7 });
+            const flat = new THREE.Mesh(new THREE.BoxGeometry(1.06, 1.12, 0.16), flatMat);
+            flat.position.set(0, 0, 0.45);
+            group.add(flat);
+            // Three leads (E, B, C)
+            const bjtLegMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.92, roughness: 0.15 });
+            const bjtLegGeo = new THREE.CylinderGeometry(0.045, 0.045, 1.0, 12);
+            [-0.28, 0, 0.28].forEach((xPos) => {
+              const leg = new THREE.Mesh(bjtLegGeo, bjtLegMat);
+              leg.position.set(xPos, -1.05, 0);
+              group.add(leg);
+            });
+            break;
+          }
+          case "diode": {
+            // DO-41 glass capsule: cylinder with silver bands
+            const diodeMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f5, metalness: 0.25, roughness: 0.45 });
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 1.1, 20), diodeMat);
+            core.rotation.z = Math.PI / 2;
+            // Cathode band
+            const bandMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.5, roughness: 0.3 });
+            const band = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.12, 20), bandMat);
+            band.rotation.z = Math.PI / 2;
+            band.position.set(0.42, 0, 0);
+            group.add(band);
+            // Leads
+            const diodeLegMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const diodeLegGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.7, 12);
+            diodeLegGeo.rotateZ(Math.PI / 2);
+            [-0.9, 0.9].forEach((xPos) => {
+              const leg = new THREE.Mesh(diodeLegGeo, diodeLegMat);
+              leg.position.set(xPos, 0, 0);
+              group.add(leg);
+            });
+            break;
+          }
+          case "opamp": {
+            // DIP-8 package: black rectangular IC with notch
+            core = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.35, 1.6), material);
+            // Notch on top
+            const notchMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.1, roughness: 0.9 });
+            const notch = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.37, 16), notchMat);
+            notch.rotation.x = Math.PI / 2;
+            notch.position.set(0, 0, -0.65);
+            group.add(notch);
+            // 4 pins per side (DIP-8)
+            const opampPinMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const opampPinGeo = new THREE.BoxGeometry(0.07, 0.35, 0.05);
+            for (let i = 0; i < 4; i++) {
+              [-0.53, 0.53].forEach((xPos) => {
+                const pin = new THREE.Mesh(opampPinGeo, opampPinMat);
+                pin.position.set(xPos, -0.35, -0.55 + i * 0.38);
+                group.add(pin);
+              });
+            }
+            break;
+          }
+          case "ic": {
+            // DIP-14/16 style: wider black rectangular IC
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 2.1), material);
+            // Notch
+            const icNotchMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.1, roughness: 0.9 });
+            const icNotch = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.37, 16), icNotchMat);
+            icNotch.rotation.x = Math.PI / 2;
+            icNotch.position.set(0, 0, -0.9);
+            group.add(icNotch);
+            // 7 pins per side
+            const icPinMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const icPinGeo = new THREE.BoxGeometry(0.07, 0.35, 0.05);
+            for (let i = 0; i < 7; i++) {
+              [-0.58, 0.58].forEach((xPos) => {
+                const pin = new THREE.Mesh(icPinGeo, icPinMat);
+                pin.position.set(xPos, -0.35, -0.88 + i * 0.3);
+                group.add(pin);
+              });
+            }
+            break;
+          }
+          case "relay": {
+            // Rectangular relay body with coil indication
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.1, 1.1), material);
+            // Contact window on front
+            const windowMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, metalness: 0.1, roughness: 0.8, transparent: true, opacity: 0.7 });
+            const win = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 0.08), windowMat);
+            win.position.set(0, 0.1, 0.56);
+            group.add(win);
+            // 5 pins on bottom
+            const relayPinMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const relayPinGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.7, 12);
+            for (let i = 0; i < 5; i++) {
+              const pin = new THREE.Mesh(relayPinGeo, relayPinMat);
+              pin.position.set(-0.8 + i * 0.4, -0.9, 0);
+              group.add(pin);
+            }
+            break;
+          }
+          case "fuse": {
+            // Glass cartridge fuse: transparent cylinder with metal caps
+            const fuseCapMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const fuseBodyMat = new THREE.MeshStandardMaterial({ color: 0xf0f9ff, metalness: 0.1, roughness: 0.2, transparent: true, opacity: 0.75 });
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.2, 20), fuseBodyMat);
+            core.rotation.z = Math.PI / 2;
+            [-0.65, 0.65].forEach((xPos) => {
+              const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.22, 20), fuseCapMat);
+              cap.rotation.z = Math.PI / 2;
+              cap.position.set(xPos, 0, 0);
+              group.add(cap);
+            });
+            // Fuse element wire
+            const wireMat = new THREE.MeshStandardMaterial({ color: 0xfde047, metalness: 0.8, roughness: 0.2 });
+            const wireGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 8);
+            const wire = new THREE.Mesh(wireGeo, wireMat);
+            wire.rotation.z = Math.PI / 2;
+            group.add(wire);
+            break;
+          }
+          case "lamp": {
+            // Incandescent bulb: sphere + base cylinder
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0xfef9c3, metalness: 0.05, roughness: 0.1, transparent: true, opacity: 0.82, emissive: 0xfde68a, emissiveIntensity: 0.6 });
+            core = new THREE.Mesh(new THREE.SphereGeometry(0.65, 28, 24), glassMat);
+            core.position.y = 0.65;
+            // Base
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.75, roughness: 0.35 });
+            const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.7, 20), baseMat);
+            lampBase.position.y = -0.35;
+            group.add(lampBase);
+            // Filament glow point
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.9 });
+            const glow = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), glowMat);
+            glow.position.y = 0.65;
+            group.add(glow);
+            break;
+          }
+          case "motor": {
+            // DC motor: cylinder body with shaft
+            core = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 1.4, 32), material);
+            core.rotation.z = Math.PI / 2;
+            // Shaft
+            const shaftMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.1 });
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.9, 16), shaftMat);
+            shaft.rotation.z = Math.PI / 2;
+            shaft.position.set(1.15, 0, 0);
+            group.add(shaft);
+            // End caps
+            const capMat = new THREE.MeshStandardMaterial({ color: 0x71717a, metalness: 0.7, roughness: 0.3 });
+            [-0.72, 0.72].forEach((xPos) => {
+              const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.12, 32), capMat);
+              cap.rotation.z = Math.PI / 2;
+              cap.position.set(xPos, 0, 0);
+              group.add(cap);
+            });
+            break;
+          }
+          case "thermistor": {
+            // Bead thermistor: small sphere with leads
+            core = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 20), material);
+            const thermLeadMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.9, roughness: 0.15 });
+            const thermLeadGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.0, 12);
+            [-0.25, 0.25].forEach((xPos) => {
+              const lead = new THREE.Mesh(thermLeadGeo, thermLeadMat);
+              lead.position.set(xPos, -0.9, 0);
+              group.add(lead);
+            });
+            break;
+          }
+          case "transformer": {
+            // E-I core transformer: two coil bobbins + laminated core
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 1.1), material);
+            const coreMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, metalness: 0.55, roughness: 0.6 });
+            // Primary and secondary bobbins
+            const bobbin1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 0.9), coreMat);
+            bobbin1.position.x = -0.42;
+            group.add(bobbin1);
+            const bobbin2 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 0.9), coreMat);
+            bobbin2.position.x = 0.42;
+            group.add(bobbin2);
+            break;
+          }
+          case "crystal": {
+            // HC-49 crystal can: metal rectangle with leads
+            const xtalBodyMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.88, roughness: 0.22 });
+            core = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.45), xtalBodyMat);
+            // Two leads
+            const xtalLeadMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.12 });
+            const xtalLeadGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.75, 12);
+            [-0.18, 0.18].forEach((xPos) => {
+              const lead = new THREE.Mesh(xtalLeadGeo, xtalLeadMat);
+              lead.position.set(xPos, -1.13, 0);
+              group.add(lead);
+            });
+            break;
+          }
+          default: {
+            // Generic unknown component: octahedron (family name label added to userData)
+            core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
+            break;
+          }
 
         group.add(core);
         group.userData.core = core;
@@ -2015,9 +1941,10 @@
           return current || null;
         }
 
-        const paletteKey = component.type && COMPONENT_PALETTES[component.type]
-          ? component.type
-          : "default";
+        const resolvedFamily = component.family || resolveComponentFamily(component.type, component.properties);
+        const paletteKey = (COMPONENT_PALETTES[component.type] ? component.type : null)
+          || (COMPONENT_PALETTES[resolvedFamily] ? resolvedFamily : null)
+          || "default";
         const nominalValue = extractNominalValue(component);
         const baseScale = computeScale(nominalValue);
 
@@ -2137,524 +2064,10 @@
         pulseRing.scale.setScalar(1);
       }
 
-      // ---------- Component Failure Profiles ----------
-      // Physical failure modes with real-world descriptions for each component type.
-      const COMPONENT_FAILURE_PROFILES = {
-        resistor: {
-          modes: {
-            overpower: {
-              name: "Thermal Overload",
-              visual: "char",
-              physicalDescription:
-                "Carbon film ablates from the ceramic substrate. The body chars and darkens, then cracks open. Acrid smoke and carbon particles are emitted. Resistance drifts high before the element opens completely.",
-              trigger: (metrics, props) => metrics.powerDissipation > (props.powerRating ?? 0.25) * 1.5,
-              severity: (metrics, props) =>
-                Math.min((metrics.powerDissipation / ((props.powerRating ?? 0.25) * 2)) * 3, 3),
-            },
-            overtemp: {
-              name: "Temperature Limit Exceeded",
-              visual: "char",
-              physicalDescription:
-                "Resistive element collapses under sustained heat. Leads pull away from the body and end caps may dislodge. The component is permanently open-circuit.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 155,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 130) / 30, 3),
-            },
-          },
-        },
-        capacitor: {
-          modes: {
-            overvoltage: {
-              name: "Dielectric Breakdown",
-              visual: "burst",
-              physicalDescription:
-                "The dielectric breaks down under excess voltage. Electrolyte vaporizes rapidly — the pressure relief vent (or the entire can) ruptures. Electrolyte mist sprays outward. A crackling pop is audible.",
-              trigger: (metrics, props) => metrics.operatingVoltage > (props.maxVoltage ?? 50) * 1.2,
-              severity: (metrics, props) =>
-                Math.min((metrics.operatingVoltage / ((props.maxVoltage ?? 50) * 1.5)) * 3, 3),
-            },
-            overtemp: {
-              name: "Electrolyte Boilover",
-              visual: "burst",
-              physicalDescription:
-                "Electrolyte boils inside the sealed can. Gas pressure forces the relief vent open — or the capacitor bursts at the weld seam. The top dome bulges noticeably before rupture.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 125,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
-            },
-          },
-        },
-        led: {
-          modes: {
-            overcurrent: {
-              name: "Junction Burnout",
-              visual: "blowout",
-              physicalDescription:
-                "Thermal runaway destroys the semiconductor die. The bond wire vaporizes in a flash, opening the circuit permanently. The epoxy lens discolors yellow-brown. No light is emitted afterward.",
-              trigger: (metrics, props) => metrics.currentRms > (props.maxCurrent ?? 0.02) * 1.5,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.maxCurrent ?? 0.02) * 2.5)) * 3, 3),
-            },
-            overtemp: {
-              name: "Phosphor Degradation",
-              visual: "char",
-              physicalDescription:
-                "Die temperature exceeds junction limit. Phosphor layer disintegrates and emission drops sharply. The lens yellows and may crack from thermal stress.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 125,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
-            },
-          },
-        },
-        mosfet: {
-          modes: {
-            overcurrent: {
-              name: "Drain Current Burnout",
-              visual: "melt",
-              physicalDescription:
-                "Drain current exceeds Id_max — the aluminum bond wires inside the package fuse and vaporize. The silicon die cracks from the thermal shock. Package plastic discolors and may fracture. Drain-source forms a permanent short or open.",
-              trigger: (metrics, props) => metrics.currentRms > (props.id_max ?? 10) * 1.2,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.id_max ?? 10) * 1.5)) * 3, 3),
-            },
-            overvoltage: {
-              name: "Avalanche Breakdown",
-              visual: "arc",
-              physicalDescription:
-                "Vds exceeds the avalanche rating — hot electrons punch through the drift region. If energy is too high, the junction temperature spikes locally. Gate oxide ruptures from Vgs overshoot. A burn spot forms; drain-source permanently shorts.",
-              trigger: (metrics, props) => metrics.operatingVoltage > (props.vds_max ?? 60) * 1.1,
-              severity: (metrics, props) =>
-                Math.min((metrics.operatingVoltage / ((props.vds_max ?? 60) * 1.3)) * 3, 3),
-            },
-            overtemp: {
-              name: "Thermal Runaway / Second Breakdown",
-              visual: "melt",
-              physicalDescription:
-                "Second breakdown occurs — a current filament concentrates heat in a microscopic region. Silicon melts at 1,414 °C. The package discolors from silver to brown to black. Leads may pull loose. Device opens or shorts permanently.",
-              trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 175),
-              severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 150) / 30, 3),
-            },
-          },
-        },
-        battery: {
-          modes: {
-            overload: {
-              name: "Thermal Venting",
-              visual: "vent",
-              physicalDescription:
-                "High discharge current heats the electrolyte. The case swells. The safety vent opens, releasing hydrogen gas and electrolyte vapor. In Li-ion cells this can escalate to uncontrolled thermal runaway and fire.",
-              trigger: (metrics, props) => metrics.powerDissipation > (props.maxPower ?? 10),
-              severity: (metrics, props) =>
-                Math.min(metrics.powerDissipation / ((props.maxPower ?? 10) * 1.5), 3),
-            },
-            overtemp: {
-              name: "Electrolyte Decomposition",
-              visual: "vent",
-              physicalDescription:
-                "Separator melts, causing an internal short. Rapid exothermic reaction builds pressure. The cell vents violently — electrolyte spray, intense heat, potential fire or explosion.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 60,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 50) / 20, 3),
-            },
-          },
-        },
-        switch: {
-          modes: {
-            arc: {
-              name: "Contact Arcing / Welding",
-              visual: "arc",
-              physicalDescription:
-                "During opening, an arc forms between the contacts. Arc plasma reaches 6,000–10,000 °C, vaporizing and eroding contact material. Carbon deposits increase resistance. Repeated arcing may weld the contacts permanently shut.",
-              trigger: (metrics, props) => metrics.currentRms > (props.maxCurrent ?? 5) * 1.3,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.maxCurrent ?? 5) * 2)) * 3, 3),
-            },
-            overtemp: {
-              name: "Contact Overheating",
-              visual: "melt",
-              physicalDescription:
-                "Excessive current heats the contact mass. Contact material fuses together — the switch is permanently closed. The housing may deform or melt at the contact entry points.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 120,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
-            },
-          },
-        },
-        inductor: {
-          modes: {
-            overpower: {
-              name: "Winding Insulation Failure",
-              visual: "smoke",
-              physicalDescription:
-                "Enamel insulation on copper windings softens and carbonizes above ~180 °C. Turn-to-turn shorts develop, inductance collapses, and current spikes. Smoke with a characteristic burnt-plastic odor is emitted.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 130,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 40, 3),
-            },
-          },
-        },
-        heatsink: {
-          modes: {
-            overtemp: {
-              name: "Thermal Saturation",
-              visual: "glow",
-              physicalDescription:
-                "Fin temperature exceeds design limits. Aluminum oxidizes — fins discolor from silver to dark gray. Thermal compound between component and sink degrades and dries out, dramatically increasing interface resistance. Attached components overheat.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 150,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 100, 3),
-            },
-          },
-        },
-        bjt: {
-          modes: {
-            overcurrent: {
-              name: "Collector Current Burnout",
-              visual: "melt",
-              physicalDescription:
-                "Collector current exceeds Ic_max — aluminum bond wires fuse inside the package. Silicon die cracks from thermal shock. Second breakdown occurs when a conducting filament concentrates current in one spot, melting the junction locally. Package chars and the transistor is permanently open.",
-              trigger: (metrics, props) => metrics.currentRms > (props.ic_max ?? 0.5) * 1.3,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.ic_max ?? 0.5) * 1.8)) * 3, 3),
-            },
-            overvoltage: {
-              name: "Vce Avalanche Breakdown",
-              visual: "arc",
-              physicalDescription:
-                "Collector-emitter voltage exceeds Vce_max. Avalanche current punches through the base-collector junction — a hot spot forms, junction melts. Characteristic brown scorch mark appears at the die surface. Device shorts collector-to-emitter permanently.",
-              trigger: (metrics, props) => metrics.operatingVoltage > (props.vce_max ?? 30) * 1.15,
-              severity: (metrics, props) =>
-                Math.min((metrics.operatingVoltage / ((props.vce_max ?? 30) * 1.4)) * 3, 3),
-            },
-            overtemp: {
-              name: "Thermal Runaway",
-              visual: "melt",
-              physicalDescription:
-                "Junction temperature rises above 150 °C — leakage current increases, which raises power dissipation further. Positive-feedback loop destroys the junction. Silicon melts at 1,414 °C locally. Device becomes permanently short-circuit.",
-              trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 150),
-              severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 120) / 35, 3),
-            },
-          },
-        },
-        diode: {
-          modes: {
-            overcurrent: {
-              name: "Forward Current Burnout",
-              visual: "blowout",
-              physicalDescription:
-                "Forward current exceeds rated maximum — the p-n junction overheats and the bond wire melts. The junction fuses open. Epoxy package discolors or cracks. The diode is permanently open-circuit.",
-              trigger: (metrics, props) => metrics.currentRms > (props.maxCurrent ?? 1) * 1.5,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.maxCurrent ?? 1) * 2.5)) * 3, 3),
-            },
-            overvoltage: {
-              name: "Reverse Avalanche",
-              visual: "arc",
-              physicalDescription:
-                "Reverse voltage exceeds PIV rating — avalanche breakdown occurs. Current spikes through the junction, generating intense local heat. If not current-limited, the junction melts and the diode permanently shorts.",
-              trigger: (metrics, props) => metrics.operatingVoltage > (props.reverseVoltage ?? 50) * 1.1,
-              severity: (metrics, props) =>
-                Math.min((metrics.operatingVoltage / ((props.reverseVoltage ?? 50) * 1.3)) * 3, 3),
-            },
-          },
-        },
-        zener_diode: {
-          modes: {
-            overvoltage: {
-              name: "Zener Punch-Through",
-              visual: "arc",
-              physicalDescription:
-                "Exceeding maximum zener power — the regulating avalanche zone becomes non-uniform. Current filaments form in the silicon, melting the junction locally. Zener voltage drifts then collapses to a short.",
-              trigger: (metrics, props) => metrics.powerDissipation > (props.powerRating ?? 0.5) * 1.5,
-              severity: (metrics, props) =>
-                Math.min((metrics.powerDissipation / ((props.powerRating ?? 0.5) * 2)) * 3, 3),
-            },
-          },
-        },
-        opamp: {
-          modes: {
-            overvoltage: {
-              name: "Input Stage Latch-Up",
-              visual: "melt",
-              physicalDescription:
-                "Input voltage exceeds supply rails or differential limit. Substrate diodes conduct, triggering parasitic SCR latch-up. Supply current spikes to hundreds of milliamps — the input transistors fuse. Output locks to a rail and the IC may rupture the package.",
-              trigger: (metrics, props) => metrics.operatingVoltage > (props.supplyVoltage ?? 15) * 1.2,
-              severity: (metrics, props) =>
-                Math.min((metrics.operatingVoltage / ((props.supplyVoltage ?? 15) * 1.5)) * 3, 3),
-            },
-            overtemp: {
-              name: "Output Stage Burnout",
-              visual: "melt",
-              physicalDescription:
-                "Output transistors dissipate excess power under short-circuit or overload. Junction temperature climbs past 150 °C — thermal protection may trigger or the output stage fails permanently. Package surface discolors and may blister.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 130,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 35, 3),
-            },
-          },
-        },
-        voltage_regulator: {
-          modes: {
-            overtemp: {
-              name: "Thermal Shutdown / Burnout",
-              visual: "melt",
-              physicalDescription:
-                "Input-output voltage difference times load current exceeds package rating. Internal thermal shutdown trips repeatedly. If heat sinking is inadequate, junction temperature exceeds 150 °C — the pass transistor melts through. Output voltage collapses and input is shorted to output permanently.",
-              trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 150),
-              severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 120) / 35, 3),
-            },
-            overcurrent: {
-              name: "Current Limit Latch-Off",
-              visual: "smoke",
-              physicalDescription:
-                "Output current exceeds device maximum. Current limiting activates, power dissipation spikes inside the package. Repeated trips degrade the junction. Eventually the regulator latches off or the pass element shorts.",
-              trigger: (metrics, props) => metrics.currentRms > (props.maxCurrent ?? 1.5) * 1.4,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.maxCurrent ?? 1.5) * 2)) * 3, 3),
-            },
-          },
-        },
-        ic: {
-          modes: {
-            overvoltage: {
-              name: "Supply Overvoltage / ESD",
-              visual: "arc",
-              physicalDescription:
-                "Supply voltage exceeds Vcc_max or an electrostatic discharge enters an I/O pin. Gate oxide in logic transistors is permanently ruptured — punch-through disables logic cells. The IC may show erratic behavior or complete failure. A small burn mark may be visible on the die under magnification.",
-              trigger: (metrics, props) => metrics.operatingVoltage > (props.supplyVoltage ?? 5) * 1.3,
-              severity: (metrics, props) =>
-                Math.min((metrics.operatingVoltage / ((props.supplyVoltage ?? 5) * 1.6)) * 3, 3),
-            },
-            overtemp: {
-              name: "Thermal Die Failure",
-              visual: "melt",
-              physicalDescription:
-                "Tj exceeds absolute maximum — metal interconnect migrates (electromigration). Aluminium traces thin and open, or copper pillars crack. Logic function fails non-recoverable. Package may blister; die bond pads pull away.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 110,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 85) / 35, 3),
-            },
-          },
-        },
-        relay: {
-          modes: {
-            coil_overload: {
-              name: "Coil Burnout",
-              visual: "smoke",
-              physicalDescription:
-                "Excess voltage across the coil drives current far above rated value — enamel insulation on the magnet wire melts and shorts turn-to-turn. I²R heating chars the bobbin. The coil opens permanently; relay will not actuate.",
-              trigger: (metrics, props) => {
-                const coilR = props.coilResistance ?? 72;
-                const coilI = coilR > 0 ? metrics.operatingVoltage / coilR : 0;
-                const ratedCoilI = props.coilVoltage != null && coilR > 0 ? props.coilVoltage / coilR : 0.07;
-                return coilI > ratedCoilI * 1.8;
-              },
-              severity: (metrics, props) => {
-                const coilR = props.coilResistance ?? 72;
-                const coilI = coilR > 0 ? metrics.operatingVoltage / coilR : 0;
-                const ratedCoilI = props.coilVoltage != null && coilR > 0 ? props.coilVoltage / coilR : 0.07;
-                return Math.min((coilI / (ratedCoilI * 2.5)) * 3, 3);
-              },
-            },
-            contact_overload: {
-              name: "Contact Welding",
-              visual: "arc",
-              physicalDescription:
-                "Switched current exceeds contact rating. Arc energy vaporizes and deposits contact material. Pitting accelerates until contacts weld together on closure. The relay is permanently closed; armature cannot open.",
-              trigger: (metrics, props) => metrics.currentRms > (props.maxSwitchCurrent ?? 5) * 1.2,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.maxSwitchCurrent ?? 5) * 1.8)) * 3, 3),
-            },
-          },
-        },
-        fuse: {
-          modes: {
-            overcurrent: {
-              name: "Fuse Element Melts",
-              visual: "blowout",
-              physicalDescription:
-                "Current exceeds rated I²t — the fuse element (silver or copper alloy wire) heats past its melting point in milliseconds. The element vaporizes in a flash, forming an arc that is quenched by the filler sand (in HRC types) or extinguishes naturally (glass cartridge). Circuit is permanently open; fuse must be replaced.",
-              trigger: (metrics, props) => metrics.currentRms > (props.ratedCurrentA ?? 1) * 1.1,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.ratedCurrentA ?? 1) * 1.5)) * 3, 3),
-            },
-          },
-        },
-        lamp: {
-          modes: {
-            overpower: {
-              name: "Filament Burnout",
-              visual: "blowout",
-              physicalDescription:
-                "Tungsten filament temperature exceeds design limit — tungsten migrates from thin hot spots to cooler areas (sublimation). The filament thins progressively until it snaps open. Glass envelope may turn black from tungsten deposits. Bulb flashes brightly for a millisecond before opening.",
-              trigger: (metrics, props) => {
-                const ratedW = props.ratedWatts ?? 5;
-                return metrics.powerDissipation > ratedW * 1.3;
-              },
-              severity: (metrics, props) => {
-                const ratedW = props.ratedWatts ?? 5;
-                return Math.min((metrics.powerDissipation / (ratedW * 1.8)) * 3, 3);
-              },
-            },
-          },
-        },
-        motor: {
-          modes: {
-            overcurrent: {
-              name: "Winding Burnout",
-              visual: "smoke",
-              physicalDescription:
-                "Stall or severe overload drives armature current far above rated value. I²R heating chars the enamel insulation on armature windings — turn-to-turn shorts form, current rises further. Smoke with a distinctive burnt-varnish odor is produced. The motor may seize if molten insulation contacts commutator segments.",
-              trigger: (metrics, props) => metrics.currentRms > (props.ratedCurrentA ?? 0.5) * 2.5,
-              severity: (metrics, props) =>
-                Math.min((metrics.currentRms / ((props.ratedCurrentA ?? 0.5) * 4)) * 3, 3),
-            },
-            overtemp: {
-              name: "Bearing Seizure",
-              visual: "char",
-              physicalDescription:
-                "Sustained overtemperature degrades bearing lubricant. Metal-to-metal contact increases friction, raises temperature further. Bearing races deform and the shaft seizes — rotor locks up. Continuing to apply voltage drives winding burnout.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 100,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 80) / 30, 3),
-            },
-          },
-        },
-        thermistor: {
-          modes: {
-            overtemp: {
-              name: "Self-Heating Deviation",
-              visual: "glow",
-              physicalDescription:
-                "NTC thermistor body temperature rises significantly above ambient due to self-heating (I²R). Measured resistance now reflects sensor body temperature rather than ambient — readings are inaccurate. At extreme temperatures the ceramic substrate can crack, permanently shifting or opening the element.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 80,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 60) / 30, 3),
-            },
-          },
-        },
-        transformer: {
-          modes: {
-            overtemp: {
-              name: "Winding Insulation Breakdown",
-              visual: "smoke",
-              physicalDescription:
-                "Sustained overload heats primary or secondary winding past insulation class limit. Class B insulation fails above 130 °C; Class F above 155 °C. Inter-winding arc-over may occur. The transformer hums louder, draws high no-load current, and eventually shorts the supply.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 110,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 85) / 35, 3),
-            },
-          },
-        },
-        crystal: {
-          modes: {
-            overpower: {
-              name: "Crystal Drive Overdrive",
-              visual: "char",
-              physicalDescription:
-                "Excess drive level from the oscillator circuit stresses the quartz element. AT-cut crystals develop microfractures at the electrode edges. Frequency drifts, aging rate accelerates, and the crystal may fracture completely — permanently stopping oscillation.",
-              trigger: (metrics) => metrics.powerDissipation > 0.001,
-              severity: (metrics) => Math.min(metrics.powerDissipation / 0.002 * 3, 3),
-            },
-          },
-        },
-        generic: {
-          modes: {
-            overtemp: {
-              name: "Thermal Overload",
-              visual: "char",
-              physicalDescription:
-                "Component temperature exceeds material limits. Insulation chars, bonding compounds melt, and contacts oxidize. The component may open-circuit, short-circuit, or degrade in performance depending on its construction.",
-              trigger: (metrics) => 25 + metrics.thermalRise > 100,
-              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 80) / 30, 3),
-            },
-            overpower: {
-              name: "Power Dissipation Limit",
-              visual: "smoke",
-              physicalDescription:
-                "Dissipated power exceeds rated maximum. Heat cannot be transferred away fast enough — body temperature rises until the most thermally sensitive part fails. Smoke or discoloration may appear. Electrical parameters shift significantly.",
-              trigger: (metrics, props) => metrics.powerDissipation > (props.powerRating ?? 0.25) * 1.5,
-              severity: (metrics, props) =>
-                Math.min((metrics.powerDissipation / ((props.powerRating ?? 0.25) * 2.5)) * 3, 3),
-            },
-          },
-        },
-      };
-
-      // ---------- Runtime Profile Registration API ----------
-      /**
-       * Register or override a component type profile at runtime.
-       * Used when importing branded/third-party components that provide their own specs.
-       *
-       * @param {string} type - Component type string (e.g. "my-custom-sensor")
-       * @param {Object} spec - { defaultProperties, failureModes, palette, family }
-       *   - defaultProperties: {Object} default electrical/thermal properties
-       *   - failureModes: {Object} map of mode name → { name, visual, physicalDescription, trigger, severity }
-       *   - palette: {Object} { base, glow, orbit } hex colors (optional)
-       *   - family: {string} canonical family to fall back to for 3D model (optional)
-       */
-      function registerComponentType(type, spec) {
-        if (!type || typeof type !== "string" || !spec || typeof spec !== "object") {
-          console.warn("registerComponentType: invalid arguments", type, spec);
-          return;
-        }
-        const key = type.toLowerCase().trim();
-
-        if (spec.defaultProperties && typeof spec.defaultProperties === "object") {
-          COMPONENT_PROFILES[key] = { defaultProperties: Object.assign({}, spec.defaultProperties) };
-        } else if (!COMPONENT_PROFILES[key]) {
-          COMPONENT_PROFILES[key] = { defaultProperties: {} };
-        }
-
-        if (spec.failureModes && typeof spec.failureModes === "object") {
-          COMPONENT_FAILURE_PROFILES[key] = { modes: Object.assign({}, spec.failureModes) };
-        }
-
-        if (spec.palette && typeof spec.palette === "object") {
-          COMPONENT_PALETTES[key] = Object.assign({}, COMPONENT_PALETTES.default, spec.palette);
-        }
-
-        if (spec.family && typeof spec.family === "string") {
-          COMPONENT_FAMILY_MAP[key] = spec.family;
-        }
-      }
-
-      /**
-       * Register additional failure modes for an existing or new component type.
-       * Merges with any existing modes rather than replacing them.
-       *
-       * @param {string} type - Component type string
-       * @param {Object} modes - Map of mode name → failure mode descriptor
-       */
-      function registerFailureProfile(type, modes) {
-        if (!type || typeof type !== "string" || !modes || typeof modes !== "object") {
-          console.warn("registerFailureProfile: invalid arguments", type, modes);
-          return;
-        }
-        const key = type.toLowerCase().trim();
-        if (!COMPONENT_FAILURE_PROFILES[key]) {
-          COMPONENT_FAILURE_PROFILES[key] = { modes: {} };
-        }
-        Object.assign(COMPONENT_FAILURE_PROFILES[key].modes, modes);
-      }
-        if (!component || !metrics) {
-          return { failed: false, severity: 0, mode: null, description: null, name: null, visual: null };
-        }
-        const profile = COMPONENT_FAILURE_PROFILES[component.type];
-        if (!profile) {
-          return { failed: false, severity: 0, mode: null, description: null, name: null, visual: null };
-        }
-        const props = component.properties || {};
-        let worstSeverity = 0;
-        let worstMode = null;
-        for (const [_modeName, modeData] of Object.entries(profile.modes)) {
-          if (modeData.trigger(metrics, props)) {
-            const sev = modeData.severity ? Math.max(0, modeData.severity(metrics, props)) : 1;
-            if (sev > worstSeverity) {
-              worstSeverity = sev;
-              worstMode = modeData;
-            }
-          }
-        }
-        if (worstSeverity <= 0) {
-          return { failed: false, severity: 0, mode: null, description: null, name: null, visual: null };
-        }
-        return {
-          failed: worstSeverity >= 2,
-          severity: worstSeverity,
-          mode: worstMode,
-          description: worstMode ? worstMode.physicalDescription : null,
-          name: worstMode ? worstMode.name : null,
-          visual: worstMode ? worstMode.visual : null,
-        };
+      // ---------- Failure Detection (arena wrapper) ----------
+      // Delegates to FailureEngine.detectFailure which handles all component families.
+      function detectFailure(component, metrics) {
+        return FailureEngine.detectFailure(component, metrics);
       }
 
       // ---------- Failure Particles ----------
@@ -3110,14 +2523,24 @@
           return null;
         }
         const type = typeof raw.type === "string" ? raw.type.toLowerCase() : "generic";
-        const properties = Object.assign({}, COMPONENT_PROFILES[type]?.defaultProperties || {}, raw.properties || {});
-        const metadata = Object.assign({}, raw.metadata || {});
+        // Resolve canonical physics family — covers branded part numbers and aliases
+        const family = resolveComponentFamily(type, raw.properties);
+        const familyProfile = COMPONENT_PROFILES[family] || { defaultProperties: {} };
+        const typeProfile = COMPONENT_PROFILES[type] || { defaultProperties: {} };
+        const properties = Object.assign(
+          {},
+          familyProfile.defaultProperties || {},
+          typeProfile.defaultProperties || {},
+          raw.properties || {}
+        );
+        const metadata = Object.assign({}, raw.metadata || {}, { resolvedFamily: family });
         const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : `${type}-${Math.random().toString(36).slice(2, 9)}`;
         const name = raw.name || metadata.displayName || raw.identifier || id;
         return {
           id,
           name,
           type,
+          family,
           properties,
           metadata,
           source: sourceLabel || metadata.source || "library",
@@ -3717,7 +3140,10 @@
       }
 
       function computeComponentMetrics(component, variables) {
-        const profile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const family = component.family || resolveComponentFamily(component.type, component.properties);
+        const familyProfile = COMPONENT_PROFILES[family] || { defaultProperties: {} };
+        const typeProfile = COMPONENT_PROFILES[component.type] || { defaultProperties: {} };
+        const profile = { defaultProperties: Object.assign({}, familyProfile.defaultProperties, typeProfile.defaultProperties) };
         const props = Object.assign({}, profile.defaultProperties || {}, component.properties || {});
 
         const voltage = Number.isFinite(variables.voltage) ? variables.voltage : 0;
@@ -3736,24 +3162,68 @@
             : props.seriesResistance;
         }
 
-        if (component.type === "switch") {
+        if (family === "switch") {
           const onResistance = props.onResistance ?? resistance ?? 0.05;
           const offResistance = props.offResistance ?? 1000000;
           resistance = props.isOn === false ? offResistance : onResistance;
         }
 
-        if (component.type === "battery") {
+        if (family === "battery") {
           resistance = Math.max(variables.loadImpedanceOhms || resistance || props.internalResistance || 1, 0.0001);
         }
 
-        if (component.type === "mosfet") {
+        if (family === "mosfet") {
           const vth = props.vth ?? 4;
           const rdsOn = Math.max(props.rds_on ?? 0.1, 0.0001);
           resistance = voltage >= vth ? rdsOn : 1e8;
         }
 
-        if (component.type === "heatsink") {
+        if (family === "heatsink" || family === "relay" || family === "transformer" || family === "crystal") {
           resistance = 1e8;
+        }
+
+        if (family === "bjt") {
+          // Simple BJT active model: if Vbe > threshold, base is forward biased.
+          // hfe (current gain) would be used for base-current-limited modeling in a future
+          // full small-signal simulator; kept here for when that model is added.
+          const vbe = props.vbe ?? 0.7;
+          resistance = voltage > vbe ? Math.max(props.resistance ?? 50, 0.1) : 1e8;
+        }
+
+        if (family === "diode" || family === "zener_diode") {
+          const vf = props.forwardVoltage ?? 0.7;
+          resistance = voltage > vf
+            ? Math.max(props.forwardResistance ?? 0.2, 0.001)
+            : (props.reverseVoltage && voltage < -(props.reverseVoltage ?? 50) ? 0.1 : 1e8);
+        }
+
+        if (family === "voltage_regulator") {
+          const dropout = props.dropoutVoltage ?? 2;
+          resistance = voltage > dropout
+            ? Math.max((voltage - (props.outputVoltage ?? 5)) / Math.max(props.maxCurrent ?? 1.5, 0.001), 0.01)
+            : 1e8;
+        }
+
+        if (family === "ic") {
+          resistance = Math.max(props.resistance ?? (props.supplyVoltage ?? 5) / Math.max(props.maxCurrent ?? 0.1, 0.001), 1);
+        }
+
+        if (family === "fuse") {
+          resistance = Math.max(props.resistance ?? 0.02, 0.001);
+        }
+
+        if (family === "lamp" || family === "motor") {
+          resistance = Math.max(props.resistance ?? 10, 0.1);
+        }
+
+        if (family === "thermistor") {
+          // NTC: resistance decreases with temperature
+          const r25 = props.resistance ?? 10000;
+          const beta = props.beta ?? 3950;
+          const T = 273.15 + (variables.temperatureC ?? 25);
+          const T25 = 298.15;
+          resistance = r25 * Math.exp(beta * (1 / T - 1 / T25));
+          if (!Number.isFinite(resistance) || resistance <= 0) resistance = r25;
         }
 
         let reactanceC = 0;
@@ -3781,7 +3251,7 @@
         let current = impedance > 0 ? voltage / impedance : 0;
         let voltageAcross = voltage;
 
-        if (component.type === "led") {
+        if (family === "led") {
           const forward = props.forwardVoltage ?? 2;
           const seriesR = Math.max(props.seriesResistance ?? effectiveResistance ?? 100, 0.1);
           voltageAcross = Math.max(voltage - forward, 0);
@@ -3790,7 +3260,19 @@
           effectiveResistance = seriesR;
         }
 
-        if (component.type === "battery") {
+        if (family === "diode" || family === "zener_diode") {
+          const vf = props.forwardVoltage ?? 0.7;
+          if (voltage > vf) {
+            voltageAcross = vf;
+            current = (voltage - vf) / Math.max(props.forwardResistance ?? 0.2, 0.001);
+            impedance = effectiveResistance;
+          } else {
+            current = 0;
+            voltageAcross = 0;
+          }
+        }
+
+        if (family === "battery") {
           const internalR = Math.max(props.internalResistance ?? 0.2, 0.0001);
           const loadR = Math.max(variables.loadImpedanceOhms || 0, 0.0001);
           const totalR = internalR + loadR;
@@ -3799,7 +3281,7 @@
           effectiveResistance = loadR;
         }
 
-        if (component.type === "mosfet") {
+        if (family === "mosfet") {
           const vth = props.vth ?? 4;
           const rdsOn = Math.max(props.rds_on ?? 0.1, 0.0001);
           const vdsMax = props.vds_max ?? 60;
@@ -3818,7 +3300,7 @@
           }
         }
 
-        if (component.type === "heatsink") {
+        if (family === "heatsink" || family === "crystal") {
           current = 0;
           voltageAcross = 0;
           impedance = 1e8;
@@ -3838,11 +3320,11 @@
 
         let efficiency = props.efficiency;
         if (!Number.isFinite(efficiency)) {
-          if (component.type === "battery" && impedance > 0) {
+          if (family === "battery" && impedance > 0) {
             efficiency = effectiveResistance / impedance;
-          } else if (component.type === "led") {
+          } else if (family === "led") {
             efficiency = props.efficiency ?? 0.35;
-          } else if (component.type === "resistor") {
+          } else if (family === "resistor") {
             efficiency = 0;
           } else {
             efficiency = null;
@@ -3853,6 +3335,7 @@
           componentId: component.id,
           name: component.name,
           type: component.type,
+          family,
           operatingVoltage: voltage,
           currentRms: rmsCurrent,
           currentPeak: current * Math.sqrt(2),
