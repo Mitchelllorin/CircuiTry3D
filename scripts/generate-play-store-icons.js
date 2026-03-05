@@ -25,7 +25,7 @@ const ICON_SVG_PATH = join(ROOT, 'public', 'app-icon.svg');
 const PLAY_STORE_ICONS_DIR = join(ROOT, 'play-store-assets', 'icons');
 const ANDROID_RES_DIR = join(ROOT, 'android', 'app', 'src', 'main', 'res');
 
-const BG = '#080d18';
+const BG = '#0f172a';
 
 /** Android adaptive-icon mipmap specs */
 const ANDROID_MIPMAPS = [
@@ -37,23 +37,26 @@ const ANDROID_MIPMAPS = [
 ];
 
 /**
- * Load Lato Black from the system font directory and return a CSS @font-face
- * block embedding the font as a base64 data URI.  Falls back to an empty
- * string if the font file is not found (non-Linux environments).
+ * Load Liberation Sans Bold from the system font directory and return a CSS
+ * @font-face block embedding the font as a base64 data URI.  Falls back to an
+ * empty string if the font file is not found (non-Linux environments).
+ *
+ * Liberation Sans Bold is metrically compatible with Arial Bold and renders
+ * clean, sharp letterforms — no rounded/friendly fallbacks.
  */
 async function buildFontFaceCSS() {
-  const LATO_BLACK_PATH = '/usr/share/fonts/truetype/lato/Lato-Black.ttf';
+  const LIB_SANS_BOLD_PATH = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf';
   try {
-    const fontData = await readFile(LATO_BLACK_PATH);
+    const fontData = await readFile(LIB_SANS_BOLD_PATH);
     const b64 = fontData.toString('base64');
     return `@font-face {
-  font-family: 'LatoBlack';
+  font-family: 'LibSansBold';
   src: url('data:font/truetype;base64,${b64}') format('truetype');
-  font-weight: 900;
+  font-weight: 700;
   font-style: normal;
 }`;
   } catch {
-    console.warn('  ⚠  Lato-Black.ttf not found – falling back to system fonts');
+    console.warn('  ⚠  LiberationSans-Bold.ttf not found – falling back to system fonts');
     return '';
   }
 }
