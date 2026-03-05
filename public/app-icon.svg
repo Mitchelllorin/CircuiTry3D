@@ -12,19 +12,18 @@
   BOTTOM : Resistor R3 — reversed zigzag, body x=360→152, at y=414
   WIRE   : green #00ff88 (matches circuit-logo.svg exactly)
 
-  Text "CT3D" inside loop (Liberation Sans Bold 96px):
-    Measured widths: C=69.3 · T=58.6 · 3D=122.7 · total=250.7 px
+  Text "CT3D" inside loop (Lato Black 900 / 96px — matches the logo wordmark's squared geometric style):
     C at x=131, T at x=200, 3D at x=259, baseline y=291
-    Centre = 131 + 250.7/2 = 256.35 ≈ 256 ✓
+    Centre ≈ 256 ✓
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <!-- ── Shared letter style (Liberation Sans Bold — sharp, clean, not rounded) ── -->
+    <!-- ── Shared letter style (Lato Black / 900 — matches the logo wordmark's squared geometric letterforms) ── -->
     <style>
       .ct3d-letter {
-        font-family: 'LibSansBold', 'Liberation Sans', Arial, Helvetica, sans-serif;
+        font-family: 'LatoBlack', 'Lato', 'Inter', 'Poppins', Arial, Helvetica, sans-serif;
         font-size: 96px;
-        font-weight: 700;
+        font-weight: 900;
       }
     </style>
 

@@ -37,26 +37,26 @@ const ANDROID_MIPMAPS = [
 ];
 
 /**
- * Load Liberation Sans Bold from the system font directory and return a CSS
+ * Load Lato Black from the system font directory and return a CSS
  * @font-face block embedding the font as a base64 data URI.  Falls back to an
  * empty string if the font file is not found (non-Linux environments).
  *
- * Liberation Sans Bold is metrically compatible with Arial Bold and renders
- * clean, sharp letterforms — no rounded/friendly fallbacks.
+ * Lato Black (weight 900) matches the logo wordmark's squared geometric style,
+ * providing clean, heavy letterforms consistent with the brand identity.
  */
 async function buildFontFaceCSS() {
-  const LIB_SANS_BOLD_PATH = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf';
+  const LATO_BLACK_PATH = '/usr/share/fonts/truetype/lato/Lato-Black.ttf';
   try {
-    const fontData = await readFile(LIB_SANS_BOLD_PATH);
+    const fontData = await readFile(LATO_BLACK_PATH);
     const b64 = fontData.toString('base64');
     return `@font-face {
-  font-family: 'LibSansBold';
+  font-family: 'LatoBlack';
   src: url('data:font/truetype;base64,${b64}') format('truetype');
-  font-weight: 700;
+  font-weight: 900;
   font-style: normal;
 }`;
   } catch {
-    console.warn('  ⚠  LiberationSans-Bold.ttf not found – falling back to system fonts');
+    console.warn('  ⚠  Lato-Black.ttf not found – falling back to system fonts');
     return '';
   }
 }
