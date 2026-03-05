@@ -422,6 +422,74 @@
       display: none;
     }
 
+    .failure-analysis {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .failure-ok {
+      font-size: 12px;
+      color: rgba(52, 211, 153, 0.9);
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      background: rgba(6, 78, 59, 0.25);
+    }
+
+    .failure-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .failure-stressed {
+      background: rgba(250, 204, 21, 0.2);
+      border: 1px solid rgba(250, 204, 21, 0.5);
+      color: #fde68a;
+    }
+
+    .failure-warning {
+      background: rgba(251, 146, 60, 0.2);
+      border: 1px solid rgba(251, 146, 60, 0.5);
+      color: #fed7aa;
+    }
+
+    .failure-critical {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+
+    .failure-failed {
+      background: rgba(220, 38, 38, 0.35);
+      border: 1px solid rgba(220, 38, 38, 0.7);
+      color: #fef2f2;
+      box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
+    }
+
+    .failure-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-strong);
+      margin-bottom: 2px;
+    }
+
+    .failure-desc {
+      font-size: 11px;
+      line-height: 1.55;
+      color: rgba(148, 163, 184, 0.9);
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(8, 15, 28, 0.55);
+      border: 1px solid rgba(136, 204, 255, 0.12);
+    }
+
     @media (pointer: coarse) {
       .btn {
         min-height: 52px;
@@ -547,6 +615,14 @@
         <div id="metrics-delta" class="metric-grid"></div>
       </section>
       <section class="panel-section">
+        <div class="section-heading">Failure Analysis — A</div>
+        <div class="failure-analysis" id="failure-a"></div>
+      </section>
+      <section class="panel-section compare-only">
+        <div class="section-heading">Failure Analysis — B</div>
+        <div class="failure-analysis" id="failure-b"></div>
+      </section>
+      <section class="panel-section">
         <div class="section-heading">Status</div>
         <div class="stat" id="stat-out">Ready.</div>
       </section>
@@ -637,6 +713,24 @@
             thermalResistance: 55,
           },
         },
+        mosfet: {
+          defaultProperties: {
+            vth: 4,
+            rds_on: 0.044,
+            id_max: 33,
+            vds_max: 100,
+            vgs_max: 20,
+            powerRating: 130,
+            thermalResistance: 0.92,
+          },
+        },
+        heatsink: {
+          defaultProperties: {
+            thermalResistanceJA: 10,
+            maxTempC: 200,
+            thermalResistance: 2,
+          },
+        },
       };
 
       const COMPONENT_PALETTES = {
@@ -646,6 +740,8 @@
         inductor: { base: 0xa855f7, glow: 0xc4b5fd, orbit: 0x8b5cf6 },
         led: { base: 0xf43f5e, glow: 0xfda4af, orbit: 0xf472b6 },
         switch: { base: 0x2dd4bf, glow: 0x5eead4, orbit: 0x0ea5e9, accent: 0x0d9488 },
+        mosfet: { base: 0x1e293b, glow: 0x38bdf8, orbit: 0x0ea5e9, accent: 0x94a3b8 },
+        heatsink: { base: 0x94a3b8, glow: 0xcbd5e1, orbit: 0x64748b, accent: 0xe2e8f0 },
         default: { base: 0x38bdf8, glow: 0x1d4ed8, orbit: 0x38bdf8 },
       };
 
@@ -691,6 +787,27 @@
           type: "switch",
           properties: { onResistance: 0.05, offResistance: 1000000, transitionTimeMs: 1.5 },
           metadata: { displayName: "SW1", source: "Reference Library" },
+        },
+        {
+          id: "mosfet-irf540",
+          name: "MOSFET IRF540N",
+          type: "mosfet",
+          properties: { vth: 4, rds_on: 0.044, id_max: 33, vds_max: 100, vgs_max: 20, powerRating: 130, thermalResistance: 0.92 },
+          metadata: { displayName: "Q1", source: "Reference Library" },
+        },
+        {
+          id: "mosfet-2n7000",
+          name: "MOSFET 2N7000",
+          type: "mosfet",
+          properties: { vth: 2.1, rds_on: 5, id_max: 0.2, vds_max: 60, vgs_max: 20, powerRating: 0.4, thermalResistance: 62.5 },
+          metadata: { displayName: "Q2", source: "Reference Library" },
+        },
+        {
+          id: "heatsink-to220",
+          name: "Heat Sink TO-220",
+          type: "heatsink",
+          properties: { thermalResistanceJA: 10, maxTempC: 200, thermalResistance: 2 },
+          metadata: { displayName: "HS1", source: "Reference Library" },
         },
       ];
 
@@ -744,6 +861,7 @@
 
       const particleSpeeds = [];
       const COMPONENT_POSITIONS = { A: -1.65, B: 1.65 };
+      const failureParticleSystems = [];
 
       function initThree() {
         const canvas = document.getElementById("arena");
@@ -1433,6 +1551,68 @@
             core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
             break;
           }
+          case "mosfet": {
+            // TO-220 style package: black rectangular body
+            core = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.4), material);
+            // Metal heat tab at the top back
+            const tabMat = new THREE.MeshStandardMaterial({
+              color: palette.accent || 0x94a3b8,
+              metalness: 0.92,
+              roughness: 0.18,
+              emissive: palette.glow,
+              emissiveIntensity: 0.12,
+            });
+            const tab = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.15), tabMat);
+            tab.position.set(0, 0.96, 0.12);
+            group.add(tab);
+            const holeGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.16, 20);
+            const hole = new THREE.Mesh(holeGeo, tabMat);
+            hole.rotation.z = Math.PI / 2;
+            hole.position.set(0, 0.96, 0.12);
+            group.add(hole);
+            // Three metal leads (Gate, Drain, Source)
+            const legMat = new THREE.MeshStandardMaterial({
+              color: 0xdbeafe,
+              metalness: 0.95,
+              roughness: 0.18,
+            });
+            const legGeo = new THREE.BoxGeometry(0.08, 1.2, 0.04);
+            [-0.32, 0, 0.32].forEach((xPos, idx) => {
+              const leg = new THREE.Mesh(legGeo, legMat);
+              leg.position.set(xPos, -1.3, 0);
+              group.add(leg);
+              // Bend at base
+              const bend = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.25), legMat);
+              bend.position.set(xPos, -0.7, -0.1);
+              group.add(bend);
+            });
+            break;
+          }
+          case "heatsink": {
+            // Flat aluminum base
+            core = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 1.6), material);
+            // Vertical fins
+            const finMat = new THREE.MeshStandardMaterial({
+              color: palette.base,
+              metalness: 0.82,
+              roughness: 0.28,
+              emissive: palette.glow,
+              emissiveIntensity: 0.06,
+            });
+            for (let f = 0; f < 8; f++) {
+              const fin = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.1, 0.07), finMat);
+              fin.position.set(0, 0.66, -0.66 + f * 0.19);
+              group.add(fin);
+            }
+            // Mounting hole suggestion (small cylinder cutouts)
+            const mountMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.5 });
+            [-0.8, 0.8].forEach((xPos) => {
+              const mount = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.25, 16), mountMat);
+              mount.position.set(xPos, 0, 0);
+              group.add(mount);
+            });
+            break;
+          }
         }
 
         group.add(core);
@@ -1607,6 +1787,7 @@
           }
 
           animateParticles(delta);
+          updateFailureParticles(delta);
 
           updateCamera();
           renderer.render(scene, camera);
@@ -1654,6 +1835,586 @@
         pulseRing.userData.life = 1;
         pulseRing.userData.strength = THREE.MathUtils.clamp(intensity, 0.2, 1.1);
         pulseRing.scale.setScalar(1);
+      }
+
+      // ---------- Component Failure Profiles ----------
+      // Physical failure modes with real-world descriptions for each component type.
+      const COMPONENT_FAILURE_PROFILES = {
+        resistor: {
+          modes: {
+            overpower: {
+              name: "Thermal Overload",
+              visual: "char",
+              physicalDescription:
+                "Carbon film ablates from the ceramic substrate. The body chars and darkens, then cracks open. Acrid smoke and carbon particles are emitted. Resistance drifts high before the element opens completely.",
+              trigger: (metrics, props) => metrics.powerDissipation > (props.powerRating ?? 0.25) * 1.5,
+              severity: (metrics, props) =>
+                Math.min((metrics.powerDissipation / ((props.powerRating ?? 0.25) * 2)) * 3, 3),
+            },
+            overtemp: {
+              name: "Temperature Limit Exceeded",
+              visual: "char",
+              physicalDescription:
+                "Resistive element collapses under sustained heat. Leads pull away from the body and end caps may dislodge. The component is permanently open-circuit.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 155,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 130) / 30, 3),
+            },
+          },
+        },
+        capacitor: {
+          modes: {
+            overvoltage: {
+              name: "Dielectric Breakdown",
+              visual: "burst",
+              physicalDescription:
+                "The dielectric breaks down under excess voltage. Electrolyte vaporizes rapidly — the pressure relief vent (or the entire can) ruptures. Electrolyte mist sprays outward. A crackling pop is audible.",
+              trigger: (metrics, props) => metrics.operatingVoltage > (props.maxVoltage ?? 50) * 1.2,
+              severity: (metrics, props) =>
+                Math.min((metrics.operatingVoltage / ((props.maxVoltage ?? 50) * 1.5)) * 3, 3),
+            },
+            overtemp: {
+              name: "Electrolyte Boilover",
+              visual: "burst",
+              physicalDescription:
+                "Electrolyte boils inside the sealed can. Gas pressure forces the relief vent open — or the capacitor bursts at the weld seam. The top dome bulges noticeably before rupture.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 125,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
+            },
+          },
+        },
+        led: {
+          modes: {
+            overcurrent: {
+              name: "Junction Burnout",
+              visual: "blowout",
+              physicalDescription:
+                "Thermal runaway destroys the semiconductor die. The bond wire vaporizes in a flash, opening the circuit permanently. The epoxy lens discolors yellow-brown. No light is emitted afterward.",
+              trigger: (metrics, props) => metrics.currentRms > (props.maxCurrent ?? 0.02) * 1.5,
+              severity: (metrics, props) =>
+                Math.min((metrics.currentRms / ((props.maxCurrent ?? 0.02) * 2.5)) * 3, 3),
+            },
+            overtemp: {
+              name: "Phosphor Degradation",
+              visual: "char",
+              physicalDescription:
+                "Die temperature exceeds junction limit. Phosphor layer disintegrates and emission drops sharply. The lens yellows and may crack from thermal stress.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 125,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
+            },
+          },
+        },
+        mosfet: {
+          modes: {
+            overcurrent: {
+              name: "Drain Current Burnout",
+              visual: "melt",
+              physicalDescription:
+                "Drain current exceeds Id_max — the aluminum bond wires inside the package fuse and vaporize. The silicon die cracks from the thermal shock. Package plastic discolors and may fracture. Drain-source forms a permanent short or open.",
+              trigger: (metrics, props) => metrics.currentRms > (props.id_max ?? 10) * 1.2,
+              severity: (metrics, props) =>
+                Math.min((metrics.currentRms / ((props.id_max ?? 10) * 1.5)) * 3, 3),
+            },
+            overvoltage: {
+              name: "Avalanche Breakdown",
+              visual: "arc",
+              physicalDescription:
+                "Vds exceeds the avalanche rating — hot electrons punch through the drift region. If energy is too high, the junction temperature spikes locally. Gate oxide ruptures from Vgs overshoot. A burn spot forms; drain-source permanently shorts.",
+              trigger: (metrics, props) => metrics.operatingVoltage > (props.vds_max ?? 60) * 1.1,
+              severity: (metrics, props) =>
+                Math.min((metrics.operatingVoltage / ((props.vds_max ?? 60) * 1.3)) * 3, 3),
+            },
+            overtemp: {
+              name: "Thermal Runaway / Second Breakdown",
+              visual: "melt",
+              physicalDescription:
+                "Second breakdown occurs — a current filament concentrates heat in a microscopic region. Silicon melts at 1,414 °C. The package discolors from silver to brown to black. Leads may pull loose. Device opens or shorts permanently.",
+              trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 175),
+              severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 150) / 30, 3),
+            },
+          },
+        },
+        battery: {
+          modes: {
+            overload: {
+              name: "Thermal Venting",
+              visual: "vent",
+              physicalDescription:
+                "High discharge current heats the electrolyte. The case swells. The safety vent opens, releasing hydrogen gas and electrolyte vapor. In Li-ion cells this can escalate to uncontrolled thermal runaway and fire.",
+              trigger: (metrics, props) => metrics.powerDissipation > (props.maxPower ?? 10),
+              severity: (metrics, props) =>
+                Math.min(metrics.powerDissipation / ((props.maxPower ?? 10) * 1.5), 3),
+            },
+            overtemp: {
+              name: "Electrolyte Decomposition",
+              visual: "vent",
+              physicalDescription:
+                "Separator melts, causing an internal short. Rapid exothermic reaction builds pressure. The cell vents violently — electrolyte spray, intense heat, potential fire or explosion.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 60,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 50) / 20, 3),
+            },
+          },
+        },
+        switch: {
+          modes: {
+            arc: {
+              name: "Contact Arcing / Welding",
+              visual: "arc",
+              physicalDescription:
+                "During opening, an arc forms between the contacts. Arc plasma reaches 6,000–10,000 °C, vaporizing and eroding contact material. Carbon deposits increase resistance. Repeated arcing may weld the contacts permanently shut.",
+              trigger: (metrics, props) => metrics.currentRms > (props.maxCurrent ?? 5) * 1.3,
+              severity: (metrics, props) =>
+                Math.min((metrics.currentRms / ((props.maxCurrent ?? 5) * 2)) * 3, 3),
+            },
+            overtemp: {
+              name: "Contact Overheating",
+              visual: "melt",
+              physicalDescription:
+                "Excessive current heats the contact mass. Contact material fuses together — the switch is permanently closed. The housing may deform or melt at the contact entry points.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 120,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
+            },
+          },
+        },
+        inductor: {
+          modes: {
+            overpower: {
+              name: "Winding Insulation Failure",
+              visual: "smoke",
+              physicalDescription:
+                "Enamel insulation on copper windings softens and carbonizes above ~180 °C. Turn-to-turn shorts develop, inductance collapses, and current spikes. Smoke with a characteristic burnt-plastic odor is emitted.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 130,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 40, 3),
+            },
+          },
+        },
+        heatsink: {
+          modes: {
+            overtemp: {
+              name: "Thermal Saturation",
+              visual: "glow",
+              physicalDescription:
+                "Fin temperature exceeds design limits. Aluminum oxidizes — fins discolor from silver to dark gray. Thermal compound between component and sink degrades and dries out, dramatically increasing interface resistance. Attached components overheat.",
+              trigger: (metrics) => 25 + metrics.thermalRise > 150,
+              severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 100, 3),
+            },
+          },
+        },
+      };
+
+      // ---------- Failure Detection ----------
+      function detectFailure(component, metrics) {
+        if (!component || !metrics) {
+          return { failed: false, severity: 0, mode: null, description: null, name: null, visual: null };
+        }
+        const profile = COMPONENT_FAILURE_PROFILES[component.type];
+        if (!profile) {
+          return { failed: false, severity: 0, mode: null, description: null, name: null, visual: null };
+        }
+        const props = component.properties || {};
+        let worstSeverity = 0;
+        let worstMode = null;
+        for (const [_modeName, modeData] of Object.entries(profile.modes)) {
+          if (modeData.trigger(metrics, props)) {
+            const sev = modeData.severity ? Math.max(0, modeData.severity(metrics, props)) : 1;
+            if (sev > worstSeverity) {
+              worstSeverity = sev;
+              worstMode = modeData;
+            }
+          }
+        }
+        if (worstSeverity <= 0) {
+          return { failed: false, severity: 0, mode: null, description: null, name: null, visual: null };
+        }
+        return {
+          failed: worstSeverity >= 2,
+          severity: worstSeverity,
+          mode: worstMode,
+          description: worstMode ? worstMode.physicalDescription : null,
+          name: worstMode ? worstMode.name : null,
+          visual: worstMode ? worstMode.visual : null,
+        };
+      }
+
+      // ---------- Failure Particles ----------
+      function createFailureParticles(group, mode) {
+        if (!scene || !group) {
+          return null;
+        }
+        const isSpark = mode === "arc" || mode === "burst";
+        const count = isSpark ? 42 : 26;
+        const positions = new Float32Array(count * 3);
+        const velocities = [];
+        const lifetimes = new Float32Array(count);
+
+        const pos = new THREE.Vector3();
+        group.getWorldPosition(pos);
+
+        for (let i = 0; i < count; i++) {
+          positions[i * 3] = pos.x + (Math.random() - 0.5) * 0.5;
+          positions[i * 3 + 1] = pos.y + Math.random() * 0.4;
+          positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.5;
+          if (isSpark) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 0.8 + Math.random() * 2.2;
+            velocities.push({
+              x: Math.cos(angle) * speed,
+              y: (0.5 + Math.random() * 2) * speed,
+              z: Math.sin(angle) * speed,
+            });
+            lifetimes[i] = 0.25 + Math.random() * 0.5;
+          } else {
+            velocities.push({
+              x: (Math.random() - 0.5) * 0.18,
+              y: 0.35 + Math.random() * 0.55,
+              z: (Math.random() - 0.5) * 0.18,
+            });
+            lifetimes[i] = 0.9 + Math.random() * 1.6;
+          }
+        }
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+        const color =
+          mode === "arc" ? 0xffff66 :
+          mode === "burst" ? 0xff8822 :
+          mode === "glow" ? 0xff6600 : 0x999999;
+
+        const mat = new THREE.PointsMaterial({
+          color,
+          size: isSpark ? 0.1 : 0.065,
+          transparent: true,
+          opacity: isSpark ? 0.95 : 0.75,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+
+        const points = new THREE.Points(geo, mat);
+        points.frustumCulled = false;
+        scene.add(points);
+
+        const maxAge = isSpark ? 1.8 : Infinity;
+        const system = { group, points, velocities, lifetimes, mode, age: 0, maxAge };
+        failureParticleSystems.push(system);
+        if (!group.userData.failureParticleSystem) {
+          group.userData.failureParticleSystem = system;
+        }
+        return system;
+      }
+
+      function clearFailureParticles(group) {
+        for (let s = failureParticleSystems.length - 1; s >= 0; s--) {
+          if (failureParticleSystems[s].group === group) {
+            const sys = failureParticleSystems[s];
+            if (scene) {
+              scene.remove(sys.points);
+            }
+            sys.points.geometry.dispose();
+            sys.points.material.dispose();
+            failureParticleSystems.splice(s, 1);
+          }
+        }
+        group.userData.failureParticleSystem = null;
+        group.userData.smokeActive = false;
+      }
+
+      function updateFailureParticles(delta) {
+        const tempPos = new THREE.Vector3();
+        for (let s = failureParticleSystems.length - 1; s >= 0; s--) {
+          const sys = failureParticleSystems[s];
+          sys.age += delta;
+          if (sys.maxAge !== Infinity && sys.age > sys.maxAge) {
+            if (scene) {
+              scene.remove(sys.points);
+            }
+            sys.points.geometry.dispose();
+            sys.points.material.dispose();
+            failureParticleSystems.splice(s, 1);
+            if (sys.group && sys.group.userData.failureParticleSystem === sys) {
+              sys.group.userData.failureParticleSystem = null;
+            }
+            continue;
+          }
+
+          const posAttr = sys.points.geometry.getAttribute("position");
+          sys.group.getWorldPosition(tempPos);
+          const isSpark = sys.mode === "arc" || sys.mode === "burst";
+
+          for (let i = 0; i < sys.velocities.length; i++) {
+            sys.lifetimes[i] -= delta;
+            if (sys.lifetimes[i] <= 0) {
+              if (!isSpark) {
+                // Respawn smoke at component origin
+                posAttr.array[i * 3] = tempPos.x + (Math.random() - 0.5) * 0.4;
+                posAttr.array[i * 3 + 1] = tempPos.y + Math.random() * 0.3;
+                posAttr.array[i * 3 + 2] = tempPos.z + (Math.random() - 0.5) * 0.4;
+                sys.velocities[i] = {
+                  x: (Math.random() - 0.5) * 0.18,
+                  y: 0.35 + Math.random() * 0.55,
+                  z: (Math.random() - 0.5) * 0.18,
+                };
+                sys.lifetimes[i] = 0.9 + Math.random() * 1.6;
+              } else {
+                posAttr.array[i * 3 + 1] = -200;
+              }
+              continue;
+            }
+            posAttr.array[i * 3] += sys.velocities[i].x * delta;
+            posAttr.array[i * 3 + 1] += sys.velocities[i].y * delta;
+            posAttr.array[i * 3 + 2] += sys.velocities[i].z * delta;
+          }
+          posAttr.needsUpdate = true;
+        }
+      }
+
+      // ---------- Failure Visual Effects ----------
+      function applyFailureVisuals(group, failure) {
+        if (!group || !failure || failure.severity <= 0) {
+          return;
+        }
+        const { visual, severity } = failure;
+        const intensity = Math.min(severity / 3, 1);
+
+        if (group.userData.failureMode !== visual) {
+          clearFailureParticles(group);
+          group.userData.failureMode = visual;
+        }
+
+        const core = group.userData.core;
+        const halo = group.userData.halo;
+
+        switch (visual) {
+          case "char":
+          case "smoke":
+            if (core && core.material) {
+              core.material.color.setRGB(
+                0.2 + (1 - intensity) * 0.4,
+                0.13 + (1 - intensity) * 0.15,
+                0.08
+              );
+              core.material.emissive.setRGB(0.1 + intensity * 0.04, 0.03, 0);
+              core.material.emissiveIntensity = 0.08;
+              core.material.roughness = 0.95;
+              core.material.metalness = 0;
+            }
+            if (halo) {
+              halo.material.color.setHex(0x331100);
+              halo.material.opacity = 0.08;
+            }
+            if (severity >= 1.2 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "blowout":
+            // LED specifically: all light out, lens darkens
+            group.traverse((child) => {
+              if (child.material) {
+                const m = child.material;
+                m.emissiveIntensity = 0;
+                m.color.setHex(0x150800);
+                m.roughness = 0.98;
+                m.metalness = 0;
+              }
+            });
+            if (severity >= 1.0 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "melt":
+            if (core && core.material) {
+              core.material.color.setRGB(0.75 - intensity * 0.25, 0.2 - intensity * 0.1, 0.02);
+              core.material.emissive.setRGB(0.55 - intensity * 0.1, 0.08, 0);
+              core.material.emissiveIntensity = 0.35 + intensity * 0.7;
+              core.material.roughness = 0.55;
+              core.material.metalness = 0.15;
+            }
+            // Sagging geometry: widen, compress vertically
+            {
+              const bS = group.userData.baseScale || 1;
+              group.scale.set(bS * (1 + intensity * 0.32), bS * (1 - intensity * 0.22), bS * (1 + intensity * 0.32));
+            }
+            if (halo) {
+              halo.material.color.setHex(0xff4400);
+              halo.material.opacity = 0.28 + intensity * 0.42;
+            }
+            if (severity >= 1.0 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "arc":
+            if (core && core.material) {
+              core.material.color.setRGB(0.18, 0.1, 0.06);
+              core.material.emissive.setRGB(0.2, 0.03, 0);
+              core.material.emissiveIntensity = 0.1;
+              core.material.roughness = 0.92;
+            }
+            if (!group.userData.smokeActive) {
+              createFailureParticles(group, "arc");
+              group.userData.smokeActive = true;
+            }
+            if (halo) {
+              halo.material.color.setHex(0xffee44);
+              halo.material.opacity = 0.4 + Math.sin(Date.now() * 0.025) * 0.35;
+            }
+            break;
+
+          case "burst":
+            if (core && core.material) {
+              core.material.color.setRGB(0.28, 0.12, 0.04);
+              core.material.emissive.setRGB(0.35, 0.08, 0);
+              core.material.emissiveIntensity = 0.18;
+              core.material.roughness = 0.92;
+            }
+            {
+              const bS = group.userData.baseScale || 1;
+              group.scale.set(bS * (1 + intensity * 0.42), bS * (1 + intensity * 0.28), bS * (1 + intensity * 0.42));
+            }
+            if (!group.userData.smokeActive) {
+              createFailureParticles(group, "burst");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "vent":
+            if (core && core.material) {
+              core.material.color.setRGB(0.45, 0.16, 0.04);
+              core.material.emissive.setRGB(0.25, 0.08, 0);
+              core.material.emissiveIntensity = 0.28 + intensity * 0.28;
+            }
+            {
+              const bS = group.userData.baseScale || 1;
+              group.scale.set(bS * (1 + intensity * 0.18), bS * (1 + intensity * 0.22), bS * (1 + intensity * 0.18));
+            }
+            if (severity >= 0.8 && !group.userData.smokeActive) {
+              createFailureParticles(group, "smoke");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          case "glow":
+            if (core && core.material) {
+              const r = 0.45 + intensity * 0.45;
+              const g = 0.1 + (1 - intensity) * 0.28;
+              core.material.color.setRGB(r, g, 0.02);
+              core.material.emissive.setRGB(r * 0.65, g * 0.1, 0);
+              core.material.emissiveIntensity = 0.28 + intensity * 0.75;
+            }
+            if (halo) {
+              halo.material.color.setHex(0xff6600);
+              halo.material.opacity = 0.25 + intensity * 0.45;
+            }
+            if (severity >= 1.5 && !group.userData.smokeActive) {
+              createFailureParticles(group, "glow");
+              group.userData.smokeActive = true;
+            }
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      function clearFailureVisuals(group) {
+        if (!group) {
+          return;
+        }
+        clearFailureParticles(group);
+        group.userData.failureMode = null;
+        group.userData.smokeActive = false;
+        group.scale.setScalar(group.userData.baseScale || 1);
+
+        const palette = group.userData.palette || COMPONENT_PALETTES.default;
+        const core = group.userData.core;
+        if (core && core.material) {
+          core.material.color.setHex(palette.base);
+          core.material.emissive.setHex(palette.glow);
+          core.material.emissiveIntensity = 0.35;
+          core.material.roughness = 0.28;
+          core.material.metalness = 0.35;
+        }
+        if (group.userData.halo) {
+          group.userData.halo.material.color.setHex(palette.glow);
+          group.userData.halo.material.opacity = 0.3;
+        }
+        // Restore other children that may have been overridden (e.g., LED bulb)
+        group.traverse((child) => {
+          if (child === core || !child.material) {
+            return;
+          }
+          const m = child.material;
+          if (m.color && m.emissiveIntensity !== undefined && m.emissiveIntensity < 0.1) {
+            m.emissiveIntensity = 0.35;
+          }
+        });
+      }
+
+      // ---------- Failure Analysis UI ----------
+      function renderFailureAnalysis(failureA, failureB) {
+        const containerA = document.getElementById("failure-a");
+        const containerB = document.getElementById("failure-b");
+        renderFailureCard(containerA, failureA);
+        renderFailureCard(containerB, failureB);
+      }
+
+      function renderFailureCard(container, failure) {
+        if (!container) {
+          return;
+        }
+        container.innerHTML = "";
+
+        if (!failure || failure.severity <= 0) {
+          const ok = document.createElement("div");
+          ok.className = "failure-ok";
+          ok.textContent = "Operating within ratings.";
+          container.appendChild(ok);
+          return;
+        }
+
+        const severityLabel =
+          failure.severity >= 2.5 ? "FAILED" :
+          failure.severity >= 1.5 ? "CRITICAL" :
+          failure.severity >= 0.8 ? "WARNING" : "STRESSED";
+
+        const severityClass =
+          failure.severity >= 2.5 ? "failure-failed" :
+          failure.severity >= 1.5 ? "failure-critical" :
+          failure.severity >= 0.8 ? "failure-warning" : "failure-stressed";
+
+        const badge = document.createElement("div");
+        badge.className = `failure-badge ${severityClass}`;
+        badge.textContent = severityLabel;
+
+        const name = document.createElement("div");
+        name.className = "failure-name";
+        name.textContent = failure.name || "Failure";
+
+        const desc = document.createElement("div");
+        desc.className = "failure-desc";
+        desc.textContent = failure.description || "";
+
+        container.appendChild(badge);
+        container.appendChild(name);
+        container.appendChild(desc);
+      }
+
+      function triggerFailureAnimation(group, failure) {
+        if (!group) {
+          return;
+        }
+        if (!failure || failure.severity <= 0) {
+          clearFailureVisuals(group);
+          return;
+        }
+        applyFailureVisuals(group, failure);
+        if (failure.severity >= 2) {
+          triggerPulse(Math.min(failure.severity / 3, 1));
+        }
       }
 
       function energizeComponent(group, energy) {
@@ -2279,6 +3040,23 @@
 
         updateMeshesForMetrics(metricsA, metricsB);
 
+        // Failure detection and visual simulation
+        const failureA = detectFailure(componentA, metricsA);
+        const failureB = componentB ? detectFailure(componentB, metricsB) : null;
+
+        const groupA = ensureComponentGroup("A", state.selectedA);
+        if (groupA) {
+          triggerFailureAnimation(groupA, failureA);
+        }
+        if (state.mode === "compare" && componentB) {
+          const groupB = ensureComponentGroup("B", state.selectedB);
+          if (groupB) {
+            triggerFailureAnimation(groupB, failureB);
+          }
+        }
+
+        renderFailureAnalysis(failureA, failureB);
+
         state.lastRun = {
           timestamp: new Date().toISOString(),
           mode: state.mode,
@@ -2346,6 +3124,16 @@
           resistance = Math.max(variables.loadImpedanceOhms || resistance || props.internalResistance || 1, 0.0001);
         }
 
+        if (component.type === "mosfet") {
+          const vth = props.vth ?? 4;
+          const rdsOn = Math.max(props.rds_on ?? 0.1, 0.0001);
+          resistance = voltage >= vth ? rdsOn : 1e8;
+        }
+
+        if (component.type === "heatsink") {
+          resistance = 1e8;
+        }
+
         let reactanceC = 0;
         if (typeof props.capacitance === "number" && props.capacitance > 0 && omega > 0) {
           reactanceC = -1 / (omega * props.capacitance);
@@ -2387,6 +3175,32 @@
           current = voltage / totalR;
           impedance = totalR;
           effectiveResistance = loadR;
+        }
+
+        if (component.type === "mosfet") {
+          const vth = props.vth ?? 4;
+          const rdsOn = Math.max(props.rds_on ?? 0.1, 0.0001);
+          const vdsMax = props.vds_max ?? 60;
+          const idMax = props.id_max ?? 10;
+          if (voltage >= vth) {
+            const vds = Math.min(voltage, vdsMax);
+            current = Math.min(vds / rdsOn, idMax);
+            voltageAcross = current * rdsOn;
+            impedance = rdsOn;
+            effectiveResistance = rdsOn;
+          } else {
+            current = 0;
+            voltageAcross = 0;
+            impedance = 1e8;
+            effectiveResistance = 1e8;
+          }
+        }
+
+        if (component.type === "heatsink") {
+          current = 0;
+          voltageAcross = 0;
+          impedance = 1e8;
+          effectiveResistance = 1e8;
         }
 
         const dutyCycle = Math.max(Math.min(variables.dutyCyclePercent ?? 100, 100), 0) / 100;
@@ -2578,11 +3392,13 @@
       function resetArena() {
         const groupA = ensureComponentGroup("A", state.selectedA);
         if (groupA) {
+          clearFailureVisuals(groupA);
           groupA.rotation.set(0, 0, 0);
           energizeComponent(groupA, 0.24);
         }
         const groupB = ensureComponentGroup("B", state.selectedB);
         if (groupB) {
+          clearFailureVisuals(groupB);
           groupB.rotation.set(0, 0, 0);
           energizeComponent(groupB, 0.24);
         }
@@ -2594,6 +3410,7 @@
         renderMetricGrid("metrics-a", null);
         renderMetricGrid("metrics-b", null);
         renderMetricGrid("metrics-delta", null);
+        renderFailureAnalysis(null, null);
         setStatus("Arena reset. Metrics cleared.");
       }
 
@@ -2665,6 +3482,7 @@
         renderMetricGrid("metrics-a", null);
         renderMetricGrid("metrics-b", null);
         renderMetricGrid("metrics-delta", null);
+        renderFailureAnalysis(null, null);
       }
 
       function bootstrap() {
