@@ -1,0 +1,47 @@
+name: Protect Main Branch
+
+# Auto-close any pull request targeting `main` that is NOT opened by the repository owner.
+# This keeps the repository public (readable) while preventing unauthorized code changes.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+    branches:
+      - main
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Close PR if not from repository owner
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const sender = context.payload.sender.login;
+
+            if (sender.toLowerCase() === owner.toLowerCase()) {
+              core.info(`PR opened by repo owner (${sender}) — allowing.`);
+              return;
+            }
+
+            core.notice(`PR opened by '${sender}', who is not the repo owner. Closing.`);
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `👋 Thanks for your interest in CircuiTry3D!\n\n` +
+                    `This repository is **view-only** — pull requests from outside contributors are not accepted at this time. ` +
+                    `Only the repository owner (@${owner}) can merge changes into \`main\`.\n\n` +
+                    `Feel free to fork the project and build on it in your own repository. 🙂`,
+            });
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              state: 'closed',
+            });
