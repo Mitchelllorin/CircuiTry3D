@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const ROOT = join(__dirname, '..');
-const LOGO_SVG_PATH = join(ROOT, 'public', 'circuit-logo.svg');
+const LOGO_SVG_PATH = join(ROOT, 'public', 'app-icon.svg');
 const PUBLIC_DIR = join(ROOT, 'public');
 const PUBLIC_ICONS_DIR = join(PUBLIC_DIR, 'icons');
 const ANDROID_RES_DIR = join(ROOT, 'android', 'app', 'src', 'main', 'res');
@@ -197,7 +197,7 @@ function pngsToIco(pngEntries) {
 }
 
 async function main() {
-  console.log('🎨 Generating web + Android icons from landing logo…');
+  console.log('🎨 Generating web + Android icons from app icon…');
 
   const rawLogoSvg = await readFile(LOGO_SVG_PATH, 'utf8');
   const logoSvg = normalizeSvg(rawLogoSvg);
