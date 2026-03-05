@@ -118,19 +118,48 @@
       width: 100%;
       height: 6px;
       border-radius: 999px;
-      background: rgba(136, 204, 255, 0.12);
       position: relative;
+      overflow: visible;
+    }
+    .status-bar-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: rgba(136, 204, 255, 0.12);
       overflow: hidden;
       box-shadow: 0 2px 12px rgba(0,0,0,0.4);
       border: 1px solid rgba(136, 204, 255, 0.18);
     }
+    .status-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg,
+        rgba(136,204,255,0.3) 0%,
+        rgba(136,204,255,0.65) 55%,
+        rgba(180,225,255,0.9) 80%,
+        rgba(255,255,255,0.97) 100%
+      );
+    }
     .status-bar::after {
       content: "";
       position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(136, 204, 255, 0.3) 0%, rgba(136, 204, 255, 1) 50%, rgba(136, 204, 255, 0.3) 100%);
-      transform: translateX(-100%);
-      animation: sweep-once 2.4s ease-out forwards;
+      top: 50%;
+      left: var(--photon-pos, 0%);
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 0%, rgba(200,235,255,0.75) 45%, transparent 100%);
+      box-shadow:
+        0 0 4px 2px rgba(255,255,255,0.95),
+        0 0 10px 4px rgba(136,204,255,1),
+        0 0 22px 8px rgba(136,204,255,0.75),
+        0 0 42px 18px rgba(136,204,255,0.32);
+      pointer-events: none;
+      opacity: var(--photon-opacity, 0);
+      transition: opacity 0.5s ease;
     }
     .status-text {
       font-size: 0.88rem;
@@ -140,6 +169,14 @@
       color: rgba(136, 204, 255, 0.92);
       font-weight: 600;
       text-align: center;
+      transition: opacity 0.25s ease;
+    }
+    .status-text.status-ready {
+      animation: status-ready-pulse 2.8s ease-in-out infinite;
+    }
+    @keyframes status-ready-pulse {
+      0%, 100% { opacity: 0.92; }
+      50% { opacity: 1; color: rgba(180, 230, 255, 1); }
     }
     .launch-button {
       display: inline-flex;
@@ -166,10 +203,6 @@
       color: #ffffff;
       transform: translateY(-2px);
       box-shadow: 0 12px 32px rgba(136, 204, 255, 0.3), 0 0 60px rgba(136, 204, 255, 0.2);
-    }
-    @keyframes sweep-once {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
     }
     @media (max-height: 640px) {
       body {
@@ -462,8 +495,12 @@
       </div>
       <div class="subtitle">Professional Circuit Design</div>
     <div class="status-wrapper">
-      <div class="status-text">3D Circuit Environment Ready</div>
-      <div class="status-bar"></div>
+      <div class="status-text" id="status-text">Initializing…</div>
+      <div class="status-bar" id="status-bar">
+        <div class="status-bar-track">
+          <div class="status-fill" id="status-fill"></div>
+        </div>
+      </div>
       <a class="launch-button" href="/app" id="launch-btn">Launch</a>
     </div>
   </div>
@@ -538,6 +575,81 @@
           }
         });
       });
+  })();
+</script>
+<script>
+  (function () {
+    var phases = [
+      { target: 16, msg: 'Firing up the time circuits\u2026' },
+      { target: 34, msg: 'Circumventing circuits\u2026' },
+      { target: 54, msg: 'Reining in photons\u2026' },
+      { target: 72, msg: 'Fighting the resistance\u2026' },
+      { target: 88, msg: 'Bending the space-time continuum\u2026' },
+      { target: 100, msg: 'Almost there\u2026' },
+    ];
+
+    var statusText = document.getElementById('status-text');
+    var statusFill = document.getElementById('status-fill');
+    var statusBar  = document.getElementById('status-bar');
+
+    if (!statusText || !statusFill || !statusBar) return;
+
+    var current = 0;
+    var lastPhaseIdx = -1;
+    var startTime = null;
+    var DURATION = 3800;
+
+    function easeInOut(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function getPhaseIndex(pct) {
+      for (var i = 0; i < phases.length; i++) {
+        if (pct < phases[i].target) return i;
+      }
+      return phases.length - 1;
+    }
+
+    function tick(ts) {
+      if (startTime === null) startTime = ts;
+      var elapsed = ts - startTime;
+      var t = Math.min(elapsed / DURATION, 1);
+      current = easeInOut(t) * 100;
+
+      statusFill.style.width = current + '%';
+      statusBar.style.setProperty('--photon-pos', current + '%');
+
+      var pi = getPhaseIndex(current);
+      if (pi !== lastPhaseIdx) {
+        lastPhaseIdx = pi;
+        var msg = phases[pi].msg;
+        statusText.style.opacity = '0';
+        setTimeout(function () {
+          statusText.textContent = msg;
+          statusText.style.opacity = '1';
+        }, 180);
+      }
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        statusFill.style.width = '100%';
+        statusBar.style.setProperty('--photon-pos', '100%');
+        setTimeout(function () {
+          statusBar.style.setProperty('--photon-opacity', '0');
+          statusText.style.opacity = '0';
+          setTimeout(function () {
+            statusText.textContent = '3D Circuit Environment Ready';
+            statusText.style.opacity = '1';
+            statusText.classList.add('status-ready');
+          }, 300);
+        }, 350);
+      }
+    }
+
+    statusText.textContent = phases[0].msg;
+    statusBar.style.setProperty('--photon-opacity', '1');
+    requestAnimationFrame(tick);
   })();
 </script>
 <script>
