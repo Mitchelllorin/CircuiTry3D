@@ -1,0 +1,6 @@
+# CODEOWNERS
+# Every file in this repository requires a review from @Mitchelllorin
+# before any pull request can be merged.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @Mitchelllorin
