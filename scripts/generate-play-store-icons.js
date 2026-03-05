@@ -37,18 +37,34 @@ const ANDROID_MIPMAPS = [
 ];
 
 /**
- * Load Lato Black from the system font directory and return a CSS
- * @font-face block embedding the font as a base64 data URI.  Falls back to an
- * empty string if the font file is not found (non-Linux environments).
+ * Load Inter 900 (Black) from @fontsource/inter if available (installed as a
+ * dev dependency), then fall back to Lato Black from the system font directory.
+ * Returns a CSS @font-face block embedding the font as a base64 data URI.
  *
- * Lato Black (weight 900) matches the logo wordmark's squared geometric style,
- * providing clean, heavy letterforms consistent with the brand identity.
+ * Inter 900 matches the CircuiTry3D logo wordmark exactly — clean geometric,
+ * squared-off letterforms consistent with the brand identity.
  */
 async function buildFontFaceCSS() {
+  // 1. Try @fontsource/inter (installed as devDependency) — exact logo font
+  const INTER_PATH = join(ROOT, 'node_modules', '@fontsource', 'inter', 'files', 'inter-latin-900-normal.woff2');
+  try {
+    const fontData = await readFile(INTER_PATH);
+    const b64 = fontData.toString('base64');
+    console.log('  ✓ Embedding Inter 900 from @fontsource/inter');
+    return `@font-face {
+  font-family: 'Inter';
+  src: url('data:font/woff2;base64,${b64}') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+}`;
+  } catch { /* fall through to system font */ }
+
+  // 2. Fall back to Lato Black (system font, geometric 900-weight sans-serif)
   const LATO_BLACK_PATH = '/usr/share/fonts/truetype/lato/Lato-Black.ttf';
   try {
     const fontData = await readFile(LATO_BLACK_PATH);
     const b64 = fontData.toString('base64');
+    console.warn('  ⚠  @fontsource/inter not found – using Lato Black fallback');
     return `@font-face {
   font-family: 'LatoBlack';
   src: url('data:font/truetype;base64,${b64}') format('truetype');
@@ -56,7 +72,7 @@ async function buildFontFaceCSS() {
   font-style: normal;
 }`;
   } catch {
-    console.warn('  ⚠  Lato-Black.ttf not found – falling back to system fonts');
+    console.warn('  ⚠  No local font found – falling back to system sans-serif');
     return '';
   }
 }
@@ -71,6 +87,10 @@ function makeIconHtml({ svgContent, size, fitRatio, fontFaceCSS, backgroundColor
 <html>
   <head>
     <meta charset="UTF-8" />
+    <!-- Inter 900 — same font as the CircuiTry3D logo wordmark (squared geometric letterforms) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet" />
     <style>
       ${fontFaceCSS}
       html, body { margin: 0; padding: 0; width: ${size}px; height: ${size}px; }
@@ -96,8 +116,14 @@ function makeIconHtml({ svgContent, size, fitRatio, fontFaceCSS, backgroundColor
 async function main() {
   console.log('🎨 Generating Play Store and Android icons from app-icon.svg…');
 
-  const svgContent = await readFile(ICON_SVG_PATH, 'utf8');
+  const svgRaw = await readFile(ICON_SVG_PATH, 'utf8');
   const fontFaceCSS = await buildFontFaceCSS();
+
+  // Inject the @font-face rule directly into the SVG's own <style> block so
+  // the font is guaranteed to be in scope regardless of embedding context.
+  const svgContent = fontFaceCSS
+    ? svgRaw.replace(/<style>/, `<style>${fontFaceCSS}\n      `)
+    : svgRaw;
 
   await mkdir(PLAY_STORE_ICONS_DIR, { recursive: true });
 
