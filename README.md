@@ -1,30 +1,156 @@
 # CircuiTry3D
 
-3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level - creating a new way to understand the abstract concepts - Illuminating Electricity. CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
+> **Illuminating Electricity** — a 3D, interactive electric circuit builder that visualizes current flow and behavior down to the atomic level using Ohm's Law.
+
+CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
+
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://circuitry3d.app)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+[![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
+
+---
 
 ## 🚀 Available Platforms
 
-- **Web Application** - Built with React + Vite, deployed on Vercel
-- **Android Application** - Native Android app using Capacitor (ready for Google Play Store)
+| Platform | Details |
+|---|---|
+| **Web App** | React 19 + Vite 7, deployed on Vercel |
+| **Android App** | Native app via Capacitor, available on Google Play Store |
 
-## 📱 Android App Setup
+---
 
-This project is now configured as an Android application ready for Google Play Store submission!
+## 🛠️ Tech Stack
 
-### Quick Links
+| Layer | Technology |
+|---|---|
+| Frontend | React 19 + TypeScript |
+| Build | Vite 7 |
+| 3D Rendering | Three.js |
+| Mobile | Capacitor 7 |
+| Routing | React Router DOM 7 |
+| Backend/API | Vercel Serverless Functions + Vercel KV |
+| Deployment | Vercel (web), Google Play Store (Android) |
+| Testing | Vitest + Playwright |
 
-- **🤖 [Auto-Publish Setup](PLAY_CONSOLE_AUTO_PUBLISH_SETUP.md)** ← **Start here** — connect GitHub Actions to Google Play so every merge publishes automatically
-- **📋 [Play Store Submission Guide](PLAY_STORE_SUBMISSION_GUIDE.md)** - Complete step-by-step instructions
-- **📦 [Package Summary](PLAY_STORE_PACKAGE_SUMMARY.md)** - Overview of all prepared materials
-- **🎨 Play Store Assets** - Located in `play-store-assets/` directory
+---
 
-### Building the Android App
+## 📦 Project Structure
+
+```
+CircuiTry3D/
+├── src/
+│   ├── components/       # Shared UI components
+│   ├── context/          # React context providers (Auth, Gamification, Classroom, …)
+│   ├── pages/            # Route-level page components
+│   ├── routes/           # App.tsx — React Router configuration
+│   ├── sim/              # Circuit simulation engine
+│   ├── schematic/        # Schematic rendering logic
+│   ├── services/         # Data-access & API helpers
+│   └── utils/            # Shared utilities
+├── public/
+│   ├── landing.html      # Landing page
+│   ├── legacy.html       # Circuit builder canvas (legacy)
+│   └── arena.html        # Component testing arena
+├── api/                  # Vercel serverless functions (e.g. /api/classroom)
+├── android/              # Capacitor Android project
+├── play-store-assets/    # Google Play Store graphics & metadata
+├── tests/                # Vitest unit & integration tests
+├── docs/                 # Electrical theory & circuit reference docs
+├── vite.config.ts
+├── vercel.json
+└── package.json
+```
+
+---
+
+## 🌐 Web Development
+
+### Requirements
+
+- Node.js >= 20
+
+### Getting Started
 
 ```bash
-# Option 1: Use the automated build script
+# Install dependencies
+npm install
+
+# Start the development server (http://localhost:3000)
+npm run dev
+
+# Production build
+npm run build
+
+# Preview the production build locally
+npm run preview
+```
+
+### Run Tests
+
+```bash
+# Run all unit tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+---
+
+## 🗺️ App Routes
+
+| Route | Description |
+|---|---|
+| `/` | Landing / home page |
+| `/app` | 3D circuit builder workspace |
+| `/arena` | Component testing arena |
+| `/practice` | Adaptive practice worksheets |
+| `/classroom` | Teacher dashboard & classroom mode |
+| `/community` | Community hub — circuit gallery & chat |
+| `/arcade` | Arcade / challenge mode |
+| `/account` | User profile & account settings |
+| `/pricing` | Pricing page |
+| `/textbook` | Integrated electrical theory textbook |
+| `/privacy` | Privacy policy |
+| `/data-safety` | Android data-safety disclosure |
+| `/app-access` | Download & platform links |
+| `/delete-account` | Account deletion request |
+
+---
+
+## 🔑 Key Features
+
+### ⚡ 3D Circuit Builder (`/app`)
+Build and simulate circuits in a 3D sandbox. Components snap to a grid and the live DC solver updates voltages and currents in real time. Zoom in to inspect atomic-level electron flow and see Ohm's Law at work.
+
+### 🎯 Adaptive Practice (`/practice`)
+The practice workspace tracks your recent W.I.R.E. (Write, Identify, Read, Evaluate) misses and surfaces the three problems that best target your current gaps. Recommendations update automatically as you complete worksheets.
+
+### 🏅 Gamification & Challenge Mode
+Every worksheet completion awards XP, streak bonuses, and badges via **GamificationContext**. The Challenge Mode dashboard shows XP progress, unique clears, a live leaderboard, and component unlocks (Precision Op-Amp, Sensor Pack, Power Lab, etc.). All progress is persisted to `localStorage` — no account required.
+
+### 🎓 Classroom Mode (`/classroom`)
+Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to Vercel KV via `/api/classroom`. Set `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel to enable cloud persistence; the app falls back to local storage without them.
+
+### 🧪 Community Hub (`/community`)
+Share circuit exports, post lab notes, and browse the circuit gallery. Member profiles (set via `/account`) roll up contributions automatically. The feed and gallery persist locally for offline use.
+
+### 📐 Schematic Mode
+A dedicated schematic view renders the same circuit as a clean 2D schematic diagram alongside the 3D builder, making it easy to compare real-world wiring with standard notation.
+
+---
+
+## 📱 Android App
+
+The project ships as a Capacitor-wrapped Android app ready for Google Play.
+
+### Build the AAB
+
+```bash
+# Option 1 — automated script
 ./build-android.sh
 
-# Option 2: Manual build
+# Option 2 — manual steps
 npm install
 npm run build
 npx cap sync android
@@ -32,112 +158,40 @@ cd android
 ./gradlew bundleRelease
 ```
 
-The signed AAB will be generated at: `android/app/build/outputs/bundle/release/app-release.aab`
-
-### What's Included
-
-✅ Complete Android project setup with Capacitor  
-✅ Signed keystore for release builds  
-✅ Configured AndroidManifest.xml with proper permissions  
-✅ App icons (512x512 PNG)  
-✅ Feature graphic (1024x500 PNG)  
-✅ Phone and tablet screenshots  
-✅ Complete metadata and descriptions  
-✅ Privacy policy  
-✅ Data safety documentation  
-✅ Build scripts and comprehensive guides  
-
-## 🌐 Web Development
-
-### Installation
-
-```bash
-npm install
+The signed AAB is generated at:
+```
+android/app/build/outputs/bundle/release/app-release.aab
 ```
 
-### Development
+### Play Store Resources
 
-```bash
-npm run dev
-```
+| File | Purpose |
+|---|---|
+| [PLAY_STORE_SUBMISSION_GUIDE.md](PLAY_STORE_SUBMISSION_GUIDE.md) | Step-by-step submission guide |
+| [PLAY_CONSOLE_AUTO_PUBLISH_SETUP.md](PLAY_CONSOLE_AUTO_PUBLISH_SETUP.md) | GitHub Actions → Play Console auto-publish |
+| [PLAY_STORE_PACKAGE_SUMMARY.md](PLAY_STORE_PACKAGE_SUMMARY.md) | Overview of prepared assets |
+| `play-store-assets/` | Icons, feature graphic, screenshots |
 
-### Build
-
-```bash
-npm run build
-```
-
-### Preview
-
-```bash
-npm run preview
-```
-
-## 📦 Project Structure
-
-```
-CircuiTry3D/
-├── android/              # Android app (Capacitor)
-├── play-store-assets/    # Google Play Store assets
-├── src/                  # React source code
-├── public/               # Static assets
-├── dist/                 # Built web app
-└── docs/                 # Documentation
-```
+---
 
 ## 👤 Founder
 
-- **Founder & Lead Developer:** Mitchell Lorin McKnight  
-- **Mission:** Replace abstract circuit lectures with immersive, feedback-rich practice spaces.  
-- **Dev Story:** Mitchell began CircuiTry3D after seeing students struggle to connect textbook schematics to physical behavior. The project focuses on letting learners inspect atomic-level current flow and reinforce W.I.R.E. habits inside a safe 3D sandbox.
+**Mitchell Lorin McKnight** — Founder & Lead Developer
 
-## 🔧 Technology Stack
+Mitchell began CircuiTry3D after seeing students struggle to connect textbook schematics to real physical behavior. The project focuses on letting learners inspect atomic-level current flow and reinforce W.I.R.E. habits inside a safe 3D sandbox.
 
-- **Frontend:** React 19 + TypeScript
-- **Build Tool:** Vite 7
-- **Mobile:** Capacitor
-- **Routing:** React Router DOM
-- **Deployment:** Vercel (web), Google Play Store (Android)
-
-## 🎯 Adaptive Practice Paths
-
-- The Practice workspace now tracks your recent W.I.R.E. misses and highlights the concepts and metrics that need reinforcement.
-- An adaptive queue surfaces the next three problems that best target those gaps, and helper shortcuts jump directly to the circuit diagram or Ohm's Law wheel you need most.
-- Recommendations update automatically as you solve worksheets, so progressing through the curated list keeps the challenge aligned with your current understanding.
-
-## 🏅 Challenge Mode Gamification
-
-- Each worksheet completion feeds the new **GamificationContext**, awarding base XP, first-clear bonuses, streak boosts, and badge rewards.
-- The refreshed **Challenge Mode dashboard** inside Practice surfaces XP progress, unique clears, recent rewards, and a live leaderboard seeded with mentor totals.
-- Badges such as Series Savant, Challenge Champion, and Concept Curator unlock automatically once their topology/difficulty goals are met.
-- Component unlocks (Precision Op-Amp, Sensor Pack, Power Lab, etc.) now track against your cumulative XP, so builders see exactly what they'll earn next.
-- All progress is persisted to `localStorage`, keeping classroom and home sessions in sync without an account requirement.
-
-## 🎓 Teacher Dashboard / Classroom Mode
-
-- Visit `/classroom` to create cohorts, invite students with shareable join codes, and schedule practice assignments sourced from the existing problem library.
-- The new **ClassroomContext** uses Vercel KV via the `/api/classroom` serverless route so class rosters, assignments, and analytics persist beyond the browser.
-- Configure `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel to enable cloud sync; without them the app falls back to local storage.
-- Teachers can monitor completion rates, average time-on-task, and the most common misconception tags per class, plus log quick progress updates for formative assessments.
-- Local development gracefully falls back to seeded demo data to showcase the workflow without requiring a deployed backend.
-
-## 🧪 Community Hub
-
-- Visit `/community` to swap quick lab notes, post Arena exports, and capture product feedback from other builders.
-- The Circuit Gallery and Lab Chat panels persist locally, so you can keep iterating on ideas even when you're offline.
-- Member profiles now live alongside the feed—sign in via `/account`, set a bio + accent color, and your contributions (chats, circuit shares, reviews) automatically roll up into your profile card.
-- Community stats highlight active members, shared circuits, and the real-time rating pulled from the Feedback Wall.
+---
 
 ## 📄 License
 
-ISC
+[ISC](https://opensource.org/licenses/ISC)
 
 ## 🤝 Contributing
 
-
+Pull requests are welcome! Please open an issue first to discuss what you'd like to change.
 
 ## 📞 Support
 
-- GitHub Issues: https://github.com/Mitchelllorin/CircuiTry3D/issues
-- Email: Mitchell Lorin McKnight — support@circuitry3d.app
+- **GitHub Issues:** https://github.com/Mitchelllorin/CircuiTry3D/issues
+- **Email:** support@circuitry3d.app
 
