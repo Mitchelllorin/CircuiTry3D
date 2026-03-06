@@ -193,6 +193,142 @@
   color: var(--text-secondary);
 }
 
+/* ── App Icon Download panel ─────────────────────────────────────────────── */
+
+.icon-download-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-emphasis);
+  border-radius: 14px;
+  padding: 1.3rem 1.5rem 1.2rem;
+  margin: 1.5rem 0 1.25rem;
+}
+
+.icon-download-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+  padding: 0;
+  border: none;
+}
+
+/* Override .legal-body h2 defaults for this heading */
+.legal-body .icon-download-heading {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  font-size: 1.05rem;
+}
+
+.icon-download-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 1.1rem;
+  line-height: 1.6;
+}
+
+.icon-download-body {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.icon-download-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.icon-download-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 24px;
+  display: block;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-darker);
+}
+
+.icon-download-preview-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.icon-download-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.icon-download-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.7rem 1.1rem;
+  border-radius: 10px;
+  background: var(--brand-primary-dim);
+  border: 1px solid rgba(136, 204, 255, 0.35);
+  color: var(--brand-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.icon-download-btn:hover {
+  background: rgba(136, 204, 255, 0.28);
+  border-color: var(--brand-primary);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.icon-download-btn-note {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.icon-download-btn:hover .icon-download-btn-note {
+  color: var(--text-secondary);
+}
+
+.icon-download-sizes-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 1rem 0 0;
+  line-height: 1.55;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.85rem;
+}
+
+.icon-download-sizes-note strong {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .icon-download-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .icon-download-preview {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .icon-download-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+  }
+}
+
 /* ── Play Console URL reference panel ───────────────────────────────────── */
 
 .console-url-panel {
