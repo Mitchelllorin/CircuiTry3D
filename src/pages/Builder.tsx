@@ -1029,7 +1029,15 @@ function ComponentLibraryCard({
   );
 }
 
-const INTRO_DIALOG_STEPS = [
+type IntroDialogStep = {
+  icon: string;
+  title: string;
+  body: string;
+  formula?: string;
+  analogy?: string;
+};
+
+const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
   {
     icon: "⚡",
     title: "What is an Electric Circuit?",
@@ -1074,7 +1082,7 @@ const INTRO_DIALOG_STEPS = [
     title: "You're Ready to Build!",
     body: "CircuiTry3D lets you design interactive 3D circuits and instantly see how Ohm's Law plays out in real time. Add a battery, connect resistors, draw wires, and watch current flow — all the way down to the atomic level.\n\nUse the W.I.R.E. table (Watts · Current · Resistance · Voltage) to read every metric in your circuit.",
   },
-] as const;
+];
 
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
@@ -2702,22 +2710,14 @@ export default function Builder() {
               {INTRO_DIALOG_STEPS[introDialogStep].body}
             </p>
             <div className="builder-intro-dialog-extras">
-              {"formula" in INTRO_DIALOG_STEPS[introDialogStep] && (
+              {INTRO_DIALOG_STEPS[introDialogStep].formula && (
                 <div className="builder-intro-dialog-formula">
-                  {(
-                    INTRO_DIALOG_STEPS[introDialogStep] as {
-                      formula: string;
-                    }
-                  ).formula}
+                  {INTRO_DIALOG_STEPS[introDialogStep].formula}
                 </div>
               )}
-              {"analogy" in INTRO_DIALOG_STEPS[introDialogStep] && (
+              {INTRO_DIALOG_STEPS[introDialogStep].analogy && (
                 <div className="builder-intro-dialog-analogy">
-                  {(
-                    INTRO_DIALOG_STEPS[introDialogStep] as {
-                      analogy: string;
-                    }
-                  ).analogy}
+                  {INTRO_DIALOG_STEPS[introDialogStep].analogy}
                 </div>
               )}
             </div>
@@ -2756,7 +2756,7 @@ export default function Builder() {
                   visibility: introDialogStep === 0 ? "hidden" : "visible",
                 }}
                 onClick={() =>
-                  setIntroDialogStep((s) => Math.max(0, s - 1))
+                  setIntroDialogStep((s) => s - 1)
                 }
               >
                 Back
