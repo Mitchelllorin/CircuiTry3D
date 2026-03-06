@@ -284,6 +284,19 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
     ],
   },
   {
+    title: "Two Separate Color Systems",
+    paragraphs: [
+      "The app uses two distinct color-coding systems that each serve a different purpose — they do not interfere with each other.",
+      "W.I.R.E. label colors (blue/yellow-orange/green/red) identify which electrical quantity you are looking at in the UI panels, worksheets, and legends.",
+      "Current flow animation colors are the moving particles in the 3D workspace. Their color shows how much current is flowing and how much resistance a segment has — ranging from dull red (slow/resistive) through orange and yellow to cyan and white (fast/free wire). The particle colors are not related to the W.I.R.E. label colors.",
+    ],
+    bullets: [
+      "W.I.R.E. colors = 'What quantity am I looking at?' (labels only).",
+      "Particle animation colors = 'How fast is current flowing through this wire?' (physics visualization only).",
+      "Both systems intentionally use a blue/orange/green palette but serve completely different purposes.",
+    ],
+  },
+  {
     title: "W - Watts (Power) — Blue",
     paragraphs: ["Watts describe how much energy a circuit uses each second. Shown in blue throughout the app."],
     bullets: [

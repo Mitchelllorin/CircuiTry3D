@@ -2,8 +2,20 @@
   --brand-blue: #88ccff;
   --brand-orange: #ff8844;
   --brand-green: #00ff88;
-  /* CircuiTry3D W.I.R.E. standard color system */
-  /* W = Watts (Power) = Blue, I = Current (Amps) = Yellow-Orange, R = Resistance (Ohms) = Green, E = Voltage = Red */
+  /*
+   * W.I.R.E. UI Label Color System
+   * --------------------------------
+   * These CSS variables color the LABELS that identify each electrical quantity in the UI
+   * (table headers, metric pills, legend badges, hint dialogs, etc.).
+   * They are purely presentational / HTML-layer styles and have NO effect on the
+   * 3D current-flow particle animation (which uses separate TypeScript/WebGL constants
+   * in src/schematic/currentFlowAnimation.ts and public/legacy.html).
+   *
+   * W = Watts (Power)      → Blue
+   * I = Current (Amps)     → Yellow-Orange
+   * R = Resistance (Ohms)  → Green
+   * E = Voltage (Volts)    → Red
+   */
   --wire-w: #4a90ff;
   --wire-i: #ffaa33;
   --wire-r: #00cc66;

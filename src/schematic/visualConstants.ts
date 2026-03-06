@@ -67,7 +67,15 @@ export const THREE_COLORS = {
 
 /**
  * Logo/branding colors (gradient-based)
- * Used in CircuitLogo.tsx for the app logo
+ * Used in CircuitLogo.tsx for the app logo AND as the source palette for the
+ * current-flow particle animation color ramp (see currentFlowAnimation.ts).
+ *
+ * NOTE — SEPARATE FROM THE W.I.R.E. UI LABEL SYSTEM:
+ * wireGradientStart/End and componentGradientStart are reused to tint the animated
+ * particles that visualize current *intensity*.  These animation ramp colors are a
+ * completely separate visual system from the CSS variables (--wire-w, --wire-i,
+ * --wire-r, --wire-e in layout.css) that color the W.I.R.E. quantity labels in the
+ * HTML layer.  Do not conflate the two systems.
  */
 export const LOGO_COLORS = {
   wireGradientStart: "#88ccff",

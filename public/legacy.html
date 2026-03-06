@@ -2170,6 +2170,13 @@
             text-shadow: 0 0 6px currentColor;
         }
         
+        /*
+         * W.I.R.E. UI Label Colors — for the analysis panel quantity badges only.
+         * These CSS rules color the labels that identify each electrical quantity
+         * (W = Watts, I = Current, R = Resistance, E = Voltage).
+         * They are separate from the FLOW_SPECTRUM_COLORS that tint the animated
+         * current-flow particles in the 3D canvas.
+         */
         .wire-w { border-color: #4488ff; }
         .wire-w .wire-letter { color: #4488ff; }
         .wire-w .wire-value { color: #4488ff; }
@@ -15121,6 +15128,11 @@ Made with ? for visual learners everywhere!
         }
 
         // Pre-built color constants for the current-flow speed spectrum (parsed once, cloned per call).
+        // NOTE — SEPARATE FROM THE W.I.R.E. UI LABEL SYSTEM:
+        // These colors tint the animated 3D particles to show current *intensity* and resistance.
+        // The spectrum (dull-red = slow/resistive -> white = fast/free-wire) is a physics-based
+        // visualization and is completely independent from the W.I.R.E. label colors defined in
+        // the CSS variables (--wire-w, --wire-i, --wire-r, --wire-e) used in the React UI.
         const FLOW_SPECTRUM_COLORS = {
             dullRed:   new THREE.Color('#8b0000'),
             orange:    new THREE.Color('#ff6600'),
