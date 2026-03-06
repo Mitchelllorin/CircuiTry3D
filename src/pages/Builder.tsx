@@ -1994,20 +1994,14 @@ export default function Builder() {
   const handleDismissIntroDialog = useCallback(() => {
     setIntroDialogVisible(false);
 
-    // Mark intro as seen
+    // Mark intro as seen so it doesn't appear again
     try {
       window.localStorage.setItem(INTRO_DIALOG_STORAGE_KEY, "1");
     } catch {
       // ignore storage write failures
     }
 
-    // Mark payoff as seen and launch the current-flow demo
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
-    }
-
+    // Launch the current-flow payoff demo immediately after closing the intro
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [runCurrentFlowPayoffSequence]);
 
@@ -2024,6 +2018,25 @@ export default function Builder() {
 
     firstRunPayoffTriggeredRef.current = true;
 
+    // Always check the intro key first so a stale payoff key can never
+    // silently prevent the intro dialog from appearing.
+    let hasSeenIntro = false;
+    try {
+      hasSeenIntro =
+        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
+    } catch {
+      hasSeenIntro = false;
+    }
+
+    if (!hasSeenIntro) {
+      // Show the intro dialog first; the payoff sequence runs after dismissal.
+      setIntroDialogStep(0);
+      setIntroDialogVisible(true);
+      setCircuitLocked(true);
+      return;
+    }
+
+    // Intro already seen — check whether the payoff demo should still run.
     let hasSeenPayoff = false;
     try {
       hasSeenPayoff =
@@ -2036,32 +2049,16 @@ export default function Builder() {
       return;
     }
 
-    // Check whether the user has seen the intro dialog before
-    let hasSeenIntro = false;
+    // Intro seen, payoff not yet seen — run the current-flow payoff demo once.
     try {
-      hasSeenIntro =
-        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
+      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
     } catch {
-      hasSeenIntro = false;
+      // ignore storage write failures
     }
 
-    if (!hasSeenIntro) {
-      // Show the intro dialog first; the payoff sequence runs after dismissal
-      setIntroDialogStep(0);
-      setIntroDialogVisible(true);
-      setCircuitLocked(true);
-    } else {
-      // Intro already seen — go straight to the current-flow payoff demo
-      try {
-        window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-      } catch {
-        // ignore storage write failures
-      }
-
-      // Lock circuit during first-visit payoff sequence so the user watches before editing
-      setCircuitLocked(true);
-      runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
-    }
+    // Lock circuit during first-visit payoff sequence so the user watches before editing
+    setCircuitLocked(true);
+    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
