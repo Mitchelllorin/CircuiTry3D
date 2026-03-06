@@ -33,6 +33,19 @@
       <stop offset="100%" stop-color="#0f172a"/>
     </radialGradient>
 
+    <!-- ── Workspace grid overlay ──
+         Mirrors the Three.js grid in the main circuit builder:
+           Fine  grid : 0x0a0a1a (#0a0a1a) — fineGrid   lines, 16 px cells
+           Coarse grid: 0x111122 (#111122) — gridHelper  lines, 32 px cells
+    -->
+    <pattern id="grid-fine" width="16" height="16" patternUnits="userSpaceOnUse">
+      <path d="M 16 0 L 0 0 0 16" fill="none" stroke="#0a0a1a" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="grid-coarse" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="url(#grid-fine)"/>
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#111122" stroke-width="1"/>
+    </pattern>
+
     <!-- ── Circuit glow (applied to wires, resistors, battery, dots) ── -->
     <!-- filterUnits="userSpaceOnUse" so it covers the whole 512×512 canvas,
          including peaks that extend outside the circuit rectangle          -->
@@ -49,6 +62,9 @@
 
   <!-- ── Background ── -->
   <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- ── Workspace grid overlay (drawn above background, below all circuit elements) ── -->
+  <rect width="512" height="512" fill="url(#grid-coarse)"/>
 
   <!-- ════════════════════════════════════════════════════════════
        WIRES — green #00ff88, stroke-width 6, matching circuit-logo.svg
