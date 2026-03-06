@@ -197,6 +197,52 @@ export default function PlayStoreCompliance() {
           document you can reference while filling out the Play Console form.
         </p>
 
+        {/* ── App Icon Downloads ──────────────────────────────────────────── */}
+        <div className="icon-download-panel">
+          <h2 className="icon-download-heading">🖼️ App Icon Downloads</h2>
+          <p className="icon-download-hint">
+            Download the app icon in the sizes required by Google Play Console.
+            Upload the <strong>512 × 512 PNG</strong> to{" "}
+            <em>Store listing → App icon</em> in the Play Console.
+          </p>
+          <div className="icon-download-body">
+            <div className="icon-download-preview">
+              <img
+                src="/icons/app-icon-512.png"
+                alt="CircuiTry3D app icon"
+                className="icon-download-img"
+                width={120}
+                height={120}
+              />
+              <span className="icon-download-preview-label">App Icon Preview</span>
+            </div>
+            <div className="icon-download-buttons">
+              <a
+                href="/icons/app-icon-512.png"
+                download="circuitry3d-icon-512.png"
+                className="icon-download-btn"
+                aria-label="Download 512×512 PNG app icon for Play Store"
+              >
+                ⬇ 512 × 512 PNG
+                <span className="icon-download-btn-note">Play Store high-res icon</span>
+              </a>
+              <a
+                href="/app-icon.svg"
+                download="circuitry3d-icon.svg"
+                className="icon-download-btn"
+                aria-label="Download SVG app icon"
+              >
+                ⬇ SVG (vector)
+                <span className="icon-download-btn-note">Scalable, any size</span>
+              </a>
+            </div>
+          </div>
+          <p className="icon-download-sizes-note">
+            <strong>Play Store icon requirement:</strong> 512 × 512 px · PNG · 32-bit (with alpha) ·
+            max 1 MB. This single icon is used for both phone and tablet listings.
+          </p>
+        </div>
+
         {/* ── Play Console URL reference ──────────────────────────────────── */}
         <div className="console-url-panel">
           <h2 className="console-url-panel-heading">🔗 Play Console URLs</h2>
