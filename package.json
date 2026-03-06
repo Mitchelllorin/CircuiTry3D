@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate-splash": "node generate-splash-images.js",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "generate-play-store-icons": "node scripts/generate-play-store-icons.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.4",
+    "@fontsource/inter": "^5.2.8",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@types/three": "^0.182.0",
