@@ -2008,9 +2008,8 @@ export default function Builder() {
       // ignore storage write failures
     }
 
-    setBottomMenuOpen(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
-  }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
+  }, [runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
     return () => {
@@ -2059,12 +2058,11 @@ export default function Builder() {
         // ignore storage write failures
       }
 
-      setBottomMenuOpen(true);
       // Lock circuit during first-visit payoff sequence so the user watches before editing
       setCircuitLocked(true);
       runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
     }
-  }, [isFrameReady, runCurrentFlowPayoffSequence, setBottomMenuOpen]);
+  }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {

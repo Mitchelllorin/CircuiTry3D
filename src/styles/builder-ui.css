@@ -632,8 +632,8 @@ body.builder-body {
   border: 1px solid rgba(136, 204, 255, 0.34);
   background: linear-gradient(
     140deg,
-    rgba(10, 24, 48, 0.9),
-    rgba(8, 32, 52, 0.94)
+    rgba(10, 24, 48, 0.82),
+    rgba(8, 32, 52, 0.82)
   );
   box-shadow:
     0 12px 28px rgba(3, 12, 32, 0.48),
@@ -4217,9 +4217,9 @@ body.builder-body {
 .builder-intro-dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4, 9, 26, 0.88);
-  backdrop-filter: blur(6px);
-  z-index: 300;
+  background: rgba(4, 9, 26, 0.48);
+  backdrop-filter: blur(3px);
+  z-index: 2200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4228,16 +4228,17 @@ body.builder-body {
 
 .builder-intro-dialog-card {
   position: relative;
-  width: min(540px, 100%);
-  background: rgba(10, 22, 50, 0.96);
+  width: min(400px, calc(100vw - 32px));
+  background: rgba(10, 24, 48, 0.82);
   border: 1px solid rgba(136, 204, 255, 0.32);
-  border-radius: 20px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7),
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(136, 204, 255, 0.08);
-  padding: clamp(20px, 5vw, 36px);
+  padding: clamp(12px, 3vw, 20px);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 .builder-intro-dialog-kicker {
@@ -4249,21 +4250,21 @@ body.builder-body {
 }
 
 .builder-intro-dialog-step-icon {
-  font-size: clamp(32px, 8vw, 48px);
+  font-size: clamp(20px, 4vw, 30px);
   line-height: 1;
   text-align: center;
 }
 
 .builder-intro-dialog-title {
   margin: 0;
-  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #f0f8ff;
 }
 
 .builder-intro-dialog-body {
-  font-size: clamp(0.85rem, 2.5vw, 0.97rem);
+  font-size: clamp(0.875rem, 1.8vw, 0.9rem);
   line-height: 1.65;
   color: rgba(210, 230, 255, 0.85);
   margin: 0;
@@ -4273,30 +4274,30 @@ body.builder-body {
 .builder-intro-dialog-extras {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .builder-intro-dialog-formula {
   display: inline-block;
-  padding: 8px 18px;
-  border-radius: 10px;
+  padding: 6px 14px;
+  border-radius: 8px;
   background: rgba(136, 204, 255, 0.1);
   border: 1px solid rgba(136, 204, 255, 0.3);
   font-family: "Fira Code", "Courier New", monospace;
-  font-size: clamp(0.95rem, 3vw, 1.15rem);
+  font-size: clamp(0.82rem, 2.2vw, 0.95rem);
   font-weight: 700;
   color: #88ccff;
   letter-spacing: 0.06em;
 }
 
 .builder-intro-dialog-analogy {
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
   background: rgba(0, 255, 136, 0.06);
   border-left: 3px solid rgba(0, 255, 136, 0.45);
-  font-size: clamp(0.8rem, 2.3vw, 0.88rem);
+  font-size: clamp(0.78rem, 1.8vw, 0.82rem);
   color: rgba(180, 240, 210, 0.9);
-  line-height: 1.55;
+  line-height: 1.5;
   white-space: pre-line;
 }
 
@@ -4356,9 +4357,9 @@ body.builder-body {
 }
 
 .builder-intro-dialog-btn {
-  border-radius: 12px;
-  padding: 10px 18px;
-  font-size: 0.85rem;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
