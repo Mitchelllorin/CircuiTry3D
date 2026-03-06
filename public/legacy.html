@@ -7501,6 +7501,7 @@ body.android-optimized .zoom-btn {
 
             updateFlowParticles();
             updateWorkspaceFailureParticles();
+            updateWorkspaceCameraShake();
 
             // Only update labels every few frames to reduce DOM manipulation overhead
             labelUpdateCounter++;
@@ -16586,11 +16587,28 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
 
         // Track failure state and particle systems per component
         const workspaceFailureState = new Map();   // componentId → failureResult
-        const workspaceFailureParticles = [];       // { points, velocities, lifetimes, pos, isSpark }
+        const workspaceFailureParticles = [];       // { points, velocities, lifetimes, ... }
+        // Camera-shake state for explosion effects
+        const workspaceCameraShake = { active: false, intensity: 0, duration: 0, elapsed: 0 };
         // Particle lifetime range (seconds). Particles spawn with life in [MIN, MAX].
-        const FAIL_PARTICLE_MIN_LIFE = 0.4;
-        const FAIL_PARTICLE_MAX_LIFE = 0.8;
+        const FAIL_PARTICLE_MIN_LIFE = 0.3;
+        const FAIL_PARTICLE_MAX_LIFE = 1.5;
         const FAIL_PARTICLE_TOTAL_LIFE = FAIL_PARTICLE_MIN_LIFE + FAIL_PARTICLE_MAX_LIFE;
+
+        // Gravity / buoyancy constants used by particle layers (units per second²).
+        // Positive values → particle rises; negative values → particle falls.
+        const FAIL_GRAV_EARTH = -4.0;   // sparks and debris fall under gravity
+        const FAIL_GRAV_FIRE  =  0.9;   // fire rises due to buoyancy
+        const FAIL_GRAV_SMOKE =  0.25;  // smoke drifts gently upward
+        const FAIL_GRAV_MELT  = -2.5;   // molten drips fall slower than debris
+        const FAIL_GRAV_VENT  =  0.6;   // pressurised gas vents upward
+
+        // Emissive flicker periods (milliseconds) — controls how fast each failure
+        // type animates its glow.  Shorter = faster / more agitated flicker.
+        const FAIL_FLICKER_ARC   =  55;  // rapid electrical arc discharge
+        const FAIL_FLICKER_BURST =  75;  // explosive combustion pulse
+        const FAIL_FLICKER_MELT  = 110;  // slow thermal melt glow
+        const FAIL_FLICKER_CHAR  =  95;  // fire flicker on charring component
 
         /**
          * Convert the legacy.html circuit metrics object to the format expected
@@ -16617,100 +16635,206 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         }
 
         /**
-         * Create a Three.js particle system for a failure effect at a component's
-         * world position.  Returns the particles object (added to scene).
+         * Create Three.js particle layer(s) for a failure effect at the component's
+         * world position.  Multiple overlapping layers are spawned depending on the
+         * visual type — e.g. burst produces an explosion debris cloud + fire + smoke.
+         * Each layer is stored as a separate entry in workspaceFailureParticles and
+         * receives its own gravity, turbulence, recycling behaviour, and velocity
+         * factory so particles recycle correctly when the component stays in failure.
          */
         function createWorkspaceParticles(component, visual) {
             if (!scene || !component.mesh) return null;
 
-            const isSpark = visual === 'arc' || visual === 'burst';
-            const count = isSpark ? 32 : 20;
-            const positions = new Float32Array(count * 3);
-            const velocities = [];
-            const lifetimes = new Float32Array(count);
+            const worldPos = new THREE.Vector3();
+            component.mesh.getWorldPosition(worldPos);
+            const baseX = worldPos.x, baseY = worldPos.y, baseZ = worldPos.z;
 
-            const pos = new THREE.Vector3();
-            component.mesh.getWorldPosition(pos);
+            // ── Velocity factory functions ─────────────────────────────────────
+            // Each returns a fresh {x,y,z} velocity for a newly spawned particle.
+            const velSpark   = () => { const a = Math.random() * Math.PI * 2; const s = 1.5 + Math.random() * 2.5; return { x: Math.cos(a) * s, y: 0.8 + Math.random() * 2.0, z: Math.sin(a) * s }; };
+            const velExplode = () => { const a = Math.random() * Math.PI * 2; const el = (Math.random() - 0.2) * Math.PI; const s = 2.0 + Math.random() * 4.0; return { x: Math.cos(a) * Math.cos(el) * s, y: Math.sin(el) * s + 0.5, z: Math.sin(a) * Math.cos(el) * s }; };
+            const velFire    = () => ({ x: (Math.random() - 0.5) * 0.5, y: 0.6 + Math.random() * 1.4, z: (Math.random() - 0.5) * 0.5 });
+            const velSmoke   = () => ({ x: (Math.random() - 0.5) * 0.2, y: 0.2 + Math.random() * 0.5, z: (Math.random() - 0.5) * 0.2 });
+            const velMelt    = () => ({ x: (Math.random() - 0.5) * 0.3, y: 0.15 + Math.random() * 0.25, z: (Math.random() - 0.5) * 0.3 });
+            const velVent    = () => ({ x: (Math.random() - 0.5) * 0.3, y: 0.9 + Math.random() * 1.8, z: (Math.random() - 0.5) * 0.3 });
+            const velEmber   = () => ({ x: (Math.random() - 0.5) * 0.4, y: 0.3 + Math.random() * 0.8, z: (Math.random() - 0.5) * 0.4 });
 
-            for (let i = 0; i < count; i++) {
-                positions[i * 3]     = pos.x + (Math.random() - 0.5) * 0.4;
-                positions[i * 3 + 1] = pos.y + Math.random() * 0.3;
-                positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.4;
+            // ── Gravity / buoyancy — reference module-level FAIL_GRAV_* constants ─
+            const GRAV_EARTH = FAIL_GRAV_EARTH;
+            const GRAV_FIRE  = FAIL_GRAV_FIRE;
+            const GRAV_SMOKE = FAIL_GRAV_SMOKE;
+            const GRAV_MELT  = FAIL_GRAV_MELT;
+            const GRAV_VENT  = FAIL_GRAV_VENT;
 
-                if (isSpark) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = 0.6 + Math.random() * 1.8;
-                    velocities.push({ x: Math.cos(angle) * speed, y: 0.5 + Math.random() * 1.5, z: Math.sin(angle) * speed });
-                } else {
-                    velocities.push({ x: (Math.random() - 0.5) * 0.15, y: 0.3 + Math.random() * 0.5, z: (Math.random() - 0.5) * 0.15 });
+            /**
+             * Spawn one particle-system layer and push it to workspaceFailureParticles.
+             * @param {number}   count      number of particles
+             * @param {number}   color      THREE hex color
+             * @param {number}   size       point size in world units
+             * @param {function} velFn      velocity factory () => {x,y,z}
+             * @param {number}   gravity    per-frame y acceleration (pos=rise, neg=fall)
+             * @param {number}   turbulence x/z sinusoidal noise amplitude per second
+             * @param {boolean}  recycling  true = particles respawn while component fails
+             * @param {number}   minLife    minimum particle lifetime (seconds)
+             * @param {number}   maxLife    extra lifetime randomness added to minLife
+             */
+            function makeLayer(count, color, size, velFn, gravity, turbulence, recycling, minLife, maxLife) {
+                const positions    = new Float32Array(count * 3);
+                const velocities   = [];
+                const lifetimes    = new Float32Array(count);
+                const maxLifetimes = new Float32Array(count);
+
+                for (let i = 0; i < count; i++) {
+                    positions[i * 3]     = baseX + (Math.random() - 0.5) * 0.5;
+                    positions[i * 3 + 1] = baseY + Math.random() * 0.4;
+                    positions[i * 3 + 2] = baseZ + (Math.random() - 0.5) * 0.5;
+                    velocities.push(velFn());
+                    const life = minLife + Math.random() * maxLife;
+                    lifetimes[i]    = life;
+                    maxLifetimes[i] = life;
                 }
-                lifetimes[i] = FAIL_PARTICLE_MIN_LIFE + Math.random() * FAIL_PARTICLE_MAX_LIFE;
+
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+                const mat = new THREE.PointsMaterial({
+                    color,
+                    size,
+                    transparent: true,
+                    opacity: 0.92,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                });
+
+                const points = new THREE.Points(geo, mat);
+                scene.add(points);
+
+                workspaceFailureParticles.push({
+                    points, velocities, lifetimes, maxLifetimes,
+                    componentId: component.id,
+                    gravity, turbulence, recycling,
+                    spawnPos: { x: baseX, y: baseY, z: baseZ },
+                    velFn,
+                    age: 0,
+                });
+
+                return points;
             }
 
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            // ── Per-visual effect configurations ──────────────────────────────
+            if (visual === 'burst') {
+                // CAPACITOR / ELECTROLYTIC EXPLOSION
+                // Layer 1: spherical debris cloud (one-shot, no recycling)
+                makeLayer(80, 0xff8800, 0.24, velExplode, GRAV_EARTH, 0.05, false, 0.3, 0.9);
+                // Layer 2: rising fire column (persistent)
+                makeLayer(55, 0xff5500, 0.28, velFire, GRAV_FIRE, 0.45, true, 0.4, 1.2);
+                // Layer 3: dense black smoke (persistent)
+                makeLayer(35, 0x444444, 0.34, velSmoke, GRAV_SMOKE, 0.22, true, 0.6, 1.8);
 
-            const color = isSpark ? 0xfde047 : 0x9ca3af;
-            const mat = new THREE.PointsMaterial({
-                color,
-                size: isSpark ? 0.18 : 0.14,
-                transparent: true,
-                opacity: 0.9,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending,
-            });
+            } else if (visual === 'blowout') {
+                // FUSE ELEMENT MELTS / FILAMENT BURNOUT / LED DIE
+                // Layer 1: radial spark burst (one-shot)
+                makeLayer(60, 0xffee66, 0.17, velSpark, GRAV_EARTH, 0.1, false, 0.3, 0.8);
+                // Layer 2: smoke trail (persistent)
+                makeLayer(22, 0x666666, 0.28, velSmoke, GRAV_SMOKE, 0.25, true, 0.4, 1.4);
 
-            const points = new THREE.Points(geo, mat);
-            scene.add(points);
+            } else if (visual === 'melt') {
+                // MOSFET / BJT / IC THERMAL MELTDOWN — glowing drips fall downward
+                // Layer 1: molten drips (fall under gravity)
+                makeLayer(40, 0xff5500, 0.23, velMelt, GRAV_MELT, 0.08, true, 0.5, 1.6);
+                // Layer 2: orange-core fire above melt point
+                makeLayer(25, 0xff8800, 0.20, velFire, GRAV_FIRE * 0.8, 0.3, true, 0.4, 1.2);
+                // Layer 3: thin smoke
+                makeLayer(15, 0x333333, 0.26, velSmoke, GRAV_SMOKE, 0.2, true, 0.4, 1.4);
 
-            workspaceFailureParticles.push({
-                points, velocities, lifetimes,
-                componentId: component.id,
-                isSpark,
-            });
+            } else if (visual === 'arc') {
+                // AVALANCHE BREAKDOWN / CONTACT ARCING — electrical discharge
+                // Layer 1: fast white-blue sparks
+                makeLayer(55, 0xeeeeff, 0.17, velSpark, GRAV_EARTH * 0.75, 0.18, true, 0.2, 0.7);
+                // Layer 2: secondary yellow sparks
+                makeLayer(30, 0xffee00, 0.14, velSpark, GRAV_EARTH * 0.6, 0.12, true, 0.2, 0.6);
 
-            return points;
+            } else if (visual === 'char') {
+                // RESISTOR THERMAL OVERLOAD / CARBON FILM ABLATION
+                // Layer 1: fire plume
+                makeLayer(45, 0xff6600, 0.23, velFire, GRAV_FIRE * 0.9, 0.38, true, 0.4, 1.3);
+                // Layer 2: rising smoke
+                makeLayer(22, 0x555555, 0.27, velSmoke, GRAV_SMOKE, 0.22, true, 0.5, 1.6);
+
+            } else if (visual === 'smoke') {
+                // INDUCTOR / MOTOR / TRANSFORMER WINDING FAILURE — heavy smoke
+                makeLayer(60, 0x888888, 0.32, velSmoke, GRAV_SMOKE * 0.85, 0.28, true, 0.6, 2.0);
+
+            } else if (visual === 'vent') {
+                // BATTERY THERMAL VENTING — pressurised gas release
+                // Layer 1: light-blue gas vent (fast upward)
+                makeLayer(45, 0xaaccee, 0.20, velVent, GRAV_VENT, 0.18, true, 0.4, 1.3);
+                // Layer 2: fire if vented gas ignites (persistent)
+                makeLayer(20, 0xff7700, 0.22, velFire, GRAV_FIRE, 0.4, true, 0.4, 1.1);
+
+            } else if (visual === 'glow') {
+                // THERMISTOR / HEATSINK THERMAL SATURATION — hot orange embers
+                makeLayer(22, 0xff8800, 0.17, velEmber, GRAV_FIRE * 0.6, 0.42, true, 0.5, 1.8);
+
+            } else {
+                // Fallback: generic smoke puff
+                makeLayer(25, 0x9ca3af, 0.14, velSmoke, GRAV_SMOKE, 0.22, true, 0.4, 1.0);
+            }
         }
 
         /**
          * Update all workspace failure particles each animation frame.
+         * Applies per-system gravity, turbulence noise, and recycles particles using
+         * the stored velocity factory so each effect type maintains its character.
          */
         function updateWorkspaceFailureParticles() {
             const dt = 0.016; // approximate delta at 60 fps
+            const time = Date.now() * 0.001; // seconds, for turbulence phase
+
             for (let pi = workspaceFailureParticles.length - 1; pi >= 0; pi--) {
                 const sys = workspaceFailureParticles[pi];
                 const positions = sys.points.geometry.attributes.position;
                 let alive = false;
+
                 for (let i = 0; i < sys.lifetimes.length; i++) {
                     sys.lifetimes[i] -= dt;
+
                     if (sys.lifetimes[i] > 0) {
                         alive = true;
+
+                        // Position update
                         positions.array[i * 3]     += sys.velocities[i].x * dt;
                         positions.array[i * 3 + 1] += sys.velocities[i].y * dt;
                         positions.array[i * 3 + 2] += sys.velocities[i].z * dt;
-                        // Gravity for sparks
-                        if (sys.isSpark) sys.velocities[i].y -= 1.5 * dt;
-                    } else {
-                        // Recycle this particle back to its component if it's still failing
+
+                        // Gravity / buoyancy (positive = rises, negative = falls)
+                        sys.velocities[i].y += sys.gravity * dt;
+
+                        // Per-particle turbulence — sinusoidal noise on x/z axes
+                        if (sys.turbulence > 0) {
+                            const phase = time + i * 0.37;
+                            sys.velocities[i].x += Math.sin(phase * 3.1) * sys.turbulence * dt;
+                            sys.velocities[i].z += Math.cos(phase * 2.7) * sys.turbulence * dt;
+                        }
+
+                    } else if (sys.recycling) {
+                        // Recycle this particle back to its component if still failing
                         const comp = components.find(c => c.id === sys.componentId);
                         if (comp && comp.mesh && workspaceFailureState.get(sys.componentId)?.severity > 0) {
-                            const pos = new THREE.Vector3();
-                            comp.mesh.getWorldPosition(pos);
-                            positions.array[i * 3]     = pos.x + (Math.random() - 0.5) * 0.4;
-                            positions.array[i * 3 + 1] = pos.y + Math.random() * 0.3;
-                            positions.array[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.4;
-                            if (sys.isSpark) {
-                                const angle = Math.random() * Math.PI * 2;
-                                const speed = 0.6 + Math.random() * 1.8;
-                                sys.velocities[i] = { x: Math.cos(angle) * speed, y: 0.5 + Math.random() * 1.5, z: Math.sin(angle) * speed };
-                            } else {
-                                sys.velocities[i] = { x: (Math.random() - 0.5) * 0.15, y: 0.3 + Math.random() * 0.5, z: (Math.random() - 0.5) * 0.15 };
-                            }
-                            sys.lifetimes[i] = FAIL_PARTICLE_MIN_LIFE + Math.random() * FAIL_PARTICLE_MAX_LIFE;
+                            const sp = sys.spawnPos;
+                            positions.array[i * 3]     = sp.x + (Math.random() - 0.5) * 0.5;
+                            positions.array[i * 3 + 1] = sp.y + Math.random() * 0.4;
+                            positions.array[i * 3 + 2] = sp.z + (Math.random() - 0.5) * 0.5;
+                            // Fresh velocity from the stored factory for this layer
+                            sys.velocities[i] = sys.velFn ? sys.velFn() : { x: (Math.random() - 0.5) * 0.3, y: 0.3 + Math.random() * 0.5, z: (Math.random() - 0.5) * 0.3 };
+                            const life = FAIL_PARTICLE_MIN_LIFE + Math.random() * FAIL_PARTICLE_MAX_LIFE;
+                            sys.lifetimes[i]    = life;
+                            if (sys.maxLifetimes) sys.maxLifetimes[i] = life;
                             alive = true;
                         }
                     }
                 }
+
                 positions.needsUpdate = true;
 
                 if (!alive) {
@@ -16718,11 +16842,15 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                     sys.points.geometry.dispose();
                     sys.points.material.dispose();
                     workspaceFailureParticles.splice(pi, 1);
-                } else {
-                    // Fade out material as overall intensity decays
-                    const maxLife = FAIL_PARTICLE_TOTAL_LIFE;
-                    const avgLife = sys.lifetimes.reduce((a, b) => a + Math.max(0, b), 0) / sys.lifetimes.length;
-                    sys.points.material.opacity = Math.min(0.9, Math.max(0, avgLife / maxLife * 0.9));
+                } else if (!sys.recycling) {
+                    // Fade out one-shot layers (explosion debris etc.)
+                    let sumLife = 0, liveCount = 0;
+                    for (let i = 0; i < sys.lifetimes.length; i++) {
+                        if (sys.lifetimes[i] > 0) { sumLife += sys.lifetimes[i]; liveCount++; }
+                    }
+                    if (liveCount > 0) {
+                        sys.points.material.opacity = Math.min(0.92, Math.max(0, (sumLife / liveCount) / FAIL_PARTICLE_TOTAL_LIFE * 0.92));
+                    }
                 }
             }
         }
@@ -16730,56 +16858,13 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         /**
          * Apply failure visual effects to a component's THREE.js mesh.
          * Mutates existing Phong/Lambert materials — no new geometry needed.
-         * Colors and emissive intensity encode the physical failure state.
+         * Colors and emissive intensity encode the physical failure state and
+         * animate over time to simulate fire flicker, arc flash, and melt glow.
          */
         function applyWorkspaceFailureVisuals(component, failure) {
             if (!component.mesh) return;
 
-            // Severity color ramp: 0=OK, 1=stressed (yellow), 2=critical (orange), 3=destroyed (dark char/black)
-            const SEVERITY_COLORS = {
-                char:    [0x422006, 0x1a0f00],  // stressed/destroyed: dark brown → black
-                blowout: [0x3b1210, 0x0a0202],  // dark red-black
-                melt:    [0x92400e, 0x3b1204],  // orange-brown → charred
-                arc:     [0xfef9c3, 0x3b1204],  // bright flash → char
-                burst:   [0x9a3412, 0x431407],  // dark orange/red
-                vent:    [0x78350f, 0x1c0e04],  // brown tan
-                smoke:   [0x374151, 0x111827],  // gray → dark
-                glow:    [0xfbbf24, 0xdc2626],  // yellow → red (overtemp)
-            };
-
-            const visual = failure.visual || 'char';
-            const sev = Math.min(failure.severity, 3);
-            const t = Math.min(sev / 3, 1);
-            const colors = SEVERITY_COLORS[visual] || SEVERITY_COLORS.char;
-            const baseColor = colors[0];
-            const destroyedColor = colors[1];
-            // Lerp between stressed color and destroyed color
-            const r = Math.round((((baseColor >> 16) & 0xff) * (1 - t) + ((destroyedColor >> 16) & 0xff) * t));
-            const g = Math.round((((baseColor >> 8)  & 0xff) * (1 - t) + ((destroyedColor >> 8)  & 0xff) * t));
-            const b = Math.round((((baseColor)       & 0xff) * (1 - t) + ((destroyedColor)       & 0xff) * t));
-            const targetColor = (r << 16) | (g << 8) | b;
-
-            // Emissive intensity: stressed glows, destroyed is dark
-            const emissiveColor = visual === 'glow' ? 0xff6600
-                : visual === 'arc'  ? 0xffff00
-                : visual === 'melt' ? 0xff4400
-                : 0x110500;
-            const emissiveIntensity = visual === 'glow' ? t * 0.8
-                : visual === 'arc' || visual === 'burst' ? 0.5 + Math.sin(Date.now() / 80) * 0.3
-                : 0.05 + t * 0.1;
-
-            // Apply to all body materials in the mesh group
-            component.mesh.traverse(child => {
-                if (!child.isMesh || !child.material) return;
-                // Skip selection box (invisible mesh)
-                if (child.userData && child.userData.isSelectionBox) return;
-                const m = child.material;
-                if (m.color) m.color.setHex(targetColor);
-                if (m.emissive) m.emissive.setHex(emissiveColor);
-                if (m.emissiveIntensity !== undefined) m.emissiveIntensity = emissiveIntensity;
-            });
-
-            // Store original colors if not already saved
+            // Store original colors on first call so clearWorkspaceFailureVisuals can restore them.
             if (!component.mesh.userData.originalColors) {
                 component.mesh.userData.originalColors = {};
                 component.mesh.traverse(child => {
@@ -16791,6 +16876,64 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                     };
                 });
             }
+
+            // Severity color ramp per visual type:
+            //   index 0 = stressed (sev ≈ 1), index 1 = destroyed (sev = 3)
+            const SEVERITY_COLORS = {
+                char:    [0xff6600, 0x120400],  // orange fire → near-black char
+                blowout: [0xffffff, 0x050000],  // white-hot flash → black
+                melt:    [0xff8800, 0x2a0800],  // bright orange → dark char
+                arc:     [0xddeeff, 0x050510],  // blue-white discharge → dark
+                burst:   [0xff6600, 0x180300],  // explosive orange → charred black
+                vent:    [0xffdd88, 0x1c0800],  // pale fire glow → dark
+                smoke:   [0x555566, 0x111827],  // gray → dark slate
+                glow:    [0xff6600, 0xcc2200],  // orange → deep red (still hot)
+            };
+
+            const visual = failure.visual || 'char';
+            const sev    = Math.min(failure.severity, 3);
+            const t      = Math.min(sev / 3, 1);
+            const colors = SEVERITY_COLORS[visual] || SEVERITY_COLORS.char;
+            const baseC  = colors[0];
+            const destC  = colors[1];
+
+            // Lerp body color between stressed and destroyed states
+            const r = Math.round(((baseC >> 16) & 0xff) * (1 - t) + ((destC >> 16) & 0xff) * t);
+            const g = Math.round(((baseC >>  8) & 0xff) * (1 - t) + ((destC >>  8) & 0xff) * t);
+            const b = Math.round(( baseC        & 0xff) * (1 - t) + ( destC        & 0xff) * t);
+            const targetColor = (r << 16) | (g << 8) | b;
+
+            // Emissive color and animated intensity per visual type
+            const now = Date.now();
+            const emissiveColor =
+                visual === 'arc'    ? 0x4466ff :  // blue electrical discharge
+                visual === 'glow'   ? 0xff3300 :  // deep red thermal
+                visual === 'burst'  ? 0xff6600 :  // orange explosion
+                visual === 'blowout'? 0xffaa00 :  // amber burnout
+                visual === 'melt'   ? 0xff5500 :  // orange-red melt
+                visual === 'vent'   ? 0xff8800 :  // warm venting glow
+                visual === 'char'   ? 0xff4400 :  // fire orange
+                                      0x220800;   // dim ember (smoke)
+
+            const emissiveIntensity =
+                visual === 'glow'    ? t * 1.2 :
+                visual === 'arc'     ? 0.8  + Math.sin(now / FAIL_FLICKER_ARC)   * 0.45 :  // rapid arc flicker
+                visual === 'burst'   ? 0.65 + Math.sin(now / FAIL_FLICKER_BURST) * 0.40 :  // explosion pulse
+                visual === 'blowout' ? t * 0.75 :
+                visual === 'melt'    ? 0.35 + t * 0.55 + Math.sin(now / FAIL_FLICKER_MELT) * 0.18 : // melt glow
+                visual === 'char'    ? 0.20 + t * 0.45 + Math.sin(now / FAIL_FLICKER_CHAR) * 0.12 : // fire flicker
+                visual === 'vent'    ? t * 0.45 :
+                                       0.05 + t * 0.18;
+
+            // Apply to all body materials in the mesh group
+            component.mesh.traverse(child => {
+                if (!child.isMesh || !child.material) return;
+                if (child.userData && child.userData.isSelectionBox) return;
+                const m = child.material;
+                if (m.color)               m.color.setHex(targetColor);
+                if (m.emissive)            m.emissive.setHex(emissiveColor);
+                if (m.emissiveIntensity !== undefined) m.emissiveIntensity = emissiveIntensity;
+            });
         }
 
         /**
@@ -16831,6 +16974,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         /**
          * Called after each circuit analysis with the per-component metrics map.
          * Detects failures and applies/clears 3D visuals for every component.
+         * Triggers screen flash and camera shake when a component newly crosses
+         * the high-severity threshold for explosive failure types.
          */
         function applyAllWorkspaceFailures(circuitVoltage, metricsByComponentId) {
             if (!window.FailureEngine) return;
@@ -16847,10 +16992,28 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 if (failure.severity > 0) {
                     workspaceFailureState.set(component.id, failure);
                     applyWorkspaceFailureVisuals(component, failure);
-                    // Only spawn particles if severity just crossed the threshold or visual changed
+                    // Only spawn particles if severity just crossed the threshold or no particles yet
                     const noParticles = !workspaceFailureParticles.some(p => p.componentId === component.id);
                     if (noParticles && failure.severity >= 1.5) {
                         createWorkspaceParticles(component, failure.visual);
+
+                        // Trigger dramatic screen effects when a component newly enters high failure
+                        const wasLowSev = !prev || prev.severity < 2;
+                        if (wasLowSev && failure.severity >= 2) {
+                            if (failure.visual === 'burst') {
+                                // Full explosion: bright flash + strong camera shake + hazard warning
+                                triggerExplosionFlash();
+                                triggerCameraShake(0.35, 0.7);
+                                showHazardWarning();
+                            } else if (failure.visual === 'blowout') {
+                                // Blowout: moderate flash + light shake
+                                triggerExplosionFlash();
+                                triggerCameraShake(0.18, 0.45);
+                            } else if (failure.visual === 'arc' || failure.visual === 'melt') {
+                                // Arc / melt: red short-circuit flash
+                                triggerShortCircuitFlash();
+                            }
+                        }
                     }
                 } else {
                     // Failure cleared — restore visuals
@@ -16873,6 +17036,38 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 removeWorkspaceParticlesFor(component.id);
                 workspaceFailureState.delete(component.id);
             });
+        }
+
+        /**
+         * Trigger a brief camera position jitter that simulates a physical shockwave.
+         * @param {number} intensity  peak displacement in world units (e.g. 0.3)
+         * @param {number} duration   shake duration in seconds (e.g. 0.6)
+         */
+        function triggerCameraShake(intensity, duration) {
+            workspaceCameraShake.active    = true;
+            workspaceCameraShake.intensity = intensity;
+            workspaceCameraShake.duration  = duration;
+            workspaceCameraShake.elapsed   = 0;
+        }
+
+        /**
+         * Advance camera-shake state each animation frame.
+         * Applies a decaying random offset to the camera position and re-aims it.
+         * Called from animate() every frame.
+         */
+        function updateWorkspaceCameraShake() {
+            if (!workspaceCameraShake.active || !camera) return;
+            const dt = 0.016;
+            workspaceCameraShake.elapsed += dt;
+            if (workspaceCameraShake.elapsed >= workspaceCameraShake.duration) {
+                workspaceCameraShake.active = false;
+                return;
+            }
+            const decay = 1 - workspaceCameraShake.elapsed / workspaceCameraShake.duration;
+            const amt   = workspaceCameraShake.intensity * decay;
+            camera.position.x += (Math.random() - 0.5) * amt;
+            camera.position.y += (Math.random() - 0.5) * amt;
+            camera.lookAt(cameraTarget);
         }
 
         /** Flash the screen with a fiery explosion radial gradient. */
