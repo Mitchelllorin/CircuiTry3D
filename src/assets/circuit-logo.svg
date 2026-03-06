@@ -58,7 +58,7 @@
   <rect width="300" height="300" fill="url(#bgGrid)"/>
 
   <!-- WIRES (green) -->
-  <g stroke="#00d4a0" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g stroke="#00ff88" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <!-- Left vertical wire (battery gap between y=130 and y=168) -->
     <line x1="65" y1="70"  x2="65" y2="130"/>
     <line x1="65" y1="168" x2="65" y2="228"/>
@@ -130,19 +130,21 @@
         stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
   <!-- 5A current indicator – top-left (current flowing right along top wire) -->
-  <g stroke="#d1d5db" stroke-width="1.5" fill="none">
-    <polyline points="65,91 65,82 84,82"/>
-    <polyline points="81,79 84,82 81,85"/>
+  <!-- L-bracket: vertical arm goes down from corner; horizontal arm goes right with → arrow -->
+  <g stroke="#d1d5db" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="82,115 82,87 120,87"/>
+    <polyline points="115,82 120,87 115,92"/>
   </g>
-  <text x="88" y="86" font-family="system-ui,-apple-system,sans-serif" font-size="10"
+  <text x="125" y="91" font-family="system-ui,-apple-system,sans-serif" font-size="12"
         fill="#d1d5db" font-weight="600">5A</text>
 
   <!-- 5A current indicator – bottom-right (current flowing left along bottom wire) -->
-  <g stroke="#d1d5db" stroke-width="1.5" fill="none">
-    <polyline points="235,207 235,216 216,216"/>
-    <polyline points="219,213 216,216 219,219"/>
+  <!-- L-bracket: vertical arm goes up from corner; horizontal arm goes left with ← arrow -->
+  <g stroke="#d1d5db" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="218,183 218,211 180,211"/>
+    <polyline points="185,206 180,211 185,216"/>
   </g>
-  <text x="213" y="213" font-family="system-ui,-apple-system,sans-serif" font-size="10"
+  <text x="175" y="208" font-family="system-ui,-apple-system,sans-serif" font-size="12"
         fill="#d1d5db" font-weight="600" text-anchor="end">5A</text>
 
   <!-- Animated photons (two particles with comet tails) -->
