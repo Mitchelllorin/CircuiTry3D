@@ -355,6 +355,11 @@
 
       document.querySelectorAll('.landing-footer-link').forEach((link) => {
         link.addEventListener('click', (event) => {
+          // Let download links work as native browser downloads — don't intercept them.
+          if (link.hasAttribute('download')) {
+            return;
+          }
+
           const href = link.getAttribute('href');
           if (!href) {
             return;
