@@ -113,7 +113,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
   "wire-guide": {
     label: "W.I.R.E. Guide",
     description:
-      "Use this checklist to solve one circuit at a time without guessing: identify the circuit type, capture known values, pick a formula, solve, then verify.",
+      "W.I.R.E. = Watts (blue) · Current/Amps (yellow-orange) · Resistance/Ohms (green) · Voltage (red). Use this checklist to solve one circuit at a time: identify the circuit type, capture known values, pick a formula, solve, then verify.",
     completionSummary:
       "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check loop on new circuits.",
     workspaceSyncCopy:

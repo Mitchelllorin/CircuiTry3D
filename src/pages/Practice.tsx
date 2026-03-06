@@ -939,28 +939,55 @@ export default function Practice({
       <PracticeHintDialog
         open={worksheetHintOpen}
         id="practice-worksheet-hint"
-        title="Worksheet Walkthrough"
+        title="How to Use the W.I.R.E. Table"
         onClose={() => setActiveHint(null)}
       >
         <p>
-          The plus icon opens the worksheet playbook so you always know how to
-          progress:
+          W.I.R.E. stands for <strong>W</strong>atts, <strong>I</strong> (current
+          in amps), <strong>R</strong>esistance (ohms), and <strong>E</strong> for
+          voltage. Each row is color-coded so you always know what you&apos;re
+          solving:
         </p>
-        <ul>
-          <li>
-            Lock in the givens first - they populate the worksheet automatically
-            when you load a problem.
+        <ul className="wire-hint-color-list">
+          <li className="wire-hint-w">
+            <strong>W — Watts (Power)</strong> — displayed in blue. Use{" "}
+            <code>W = E × I</code> or <code>W = I² × R</code>.
           </li>
-          <li>
-            Fill each blank W.I.R.E. cell by pairing a known value with the
-            correct formula; the cell turns green when it matches the solved
-            circuit.
+          <li className="wire-hint-i">
+            <strong>I — Current (Amps)</strong> — displayed in yellow-orange. Use{" "}
+            <code>I = E / R</code>.
           </li>
-          <li>
-            Every unknown must be correct to unlock the next challenge, so take
-            your time and check totals against the circuit diagram.
+          <li className="wire-hint-r">
+            <strong>R — Resistance (Ohms)</strong> — displayed in green. Use{" "}
+            <code>R = E / I</code>. For series: add resistances. For parallel: use
+            reciprocals.
+          </li>
+          <li className="wire-hint-e">
+            <strong>E — Voltage (Volts)</strong> — displayed in red. Use{" "}
+            <code>E = I × R</code>.
           </li>
         </ul>
+        <p>
+          <strong>Step-by-step:</strong>
+        </p>
+        <ol>
+          <li>
+            The <em>Given</em> cells are pre-filled from the schematic — these are
+            your starting values.
+          </li>
+          <li>
+            Pick a row where you have enough knowns to apply a formula, then type
+            your answer into the blank cell.
+          </li>
+          <li>
+            The cell turns <strong style={{ color: "var(--wire-r)" }}>green</strong> when
+            your value matches the solved circuit.
+          </li>
+          <li>
+            Work across all four rows (W, I, R, E) for every component column until
+            all cells are correct.
+          </li>
+        </ol>
         <button
           type="button"
           className="practice-hint-dismiss"

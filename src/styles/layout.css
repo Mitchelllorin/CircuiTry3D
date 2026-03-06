@@ -3,9 +3,10 @@
   --brand-orange: #ff8844;
   --brand-green: #00ff88;
   /* CircuiTry3D W.I.R.E. standard color system */
-  --wire-w: var(--brand-blue);
-  --wire-i: var(--brand-orange);
-  --wire-r: var(--brand-green);
+  /* W = Watts (Power) = Blue, I = Current (Amps) = Yellow-Orange, R = Resistance (Ohms) = Green, E = Voltage = Red */
+  --wire-w: #4a90ff;
+  --wire-i: #ffaa33;
+  --wire-r: #00cc66;
   --wire-e: #ff4444;
   --brand-blue-dim: rgba(136, 204, 255, 0.18);
   --brand-blue-glow: rgba(136, 204, 255, 0.42);

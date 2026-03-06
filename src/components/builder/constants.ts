@@ -761,10 +761,10 @@ export const WIRE_METRICS = [
 ];
 
 export const WIRE_LEGEND: HelpLegendItem[] = [
-  { id: "watts", letter: "W", label: "Wattage" },
-  { id: "current", letter: "I", label: "Current" },
-  { id: "resistance", letter: "R", label: "Resistance" },
-  { id: "voltage", letter: "E", label: "Voltage" },
+  { id: "watts", letter: "W", label: "Watts — Power" },
+  { id: "current", letter: "I", label: "Amps — Current" },
+  { id: "resistance", letter: "R", label: "Ohms — Resistance" },
+  { id: "voltage", letter: "E", label: "Volts — Voltage" },
 ];
 
 export const HELP_ENTRIES: HelpEntry[] = [

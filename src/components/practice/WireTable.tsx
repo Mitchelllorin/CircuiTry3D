@@ -344,6 +344,12 @@ export default function WireTable({ rows, revealAll, highlight, entries, onChang
       <div className="practice-table-header" role="row" style={{ gridTemplateColumns }}>
         <div className="practice-table-cell heading metric-label-heading" role="columnheader">
           <span className="metric-heading-title">W.I.R.E.</span>
+          <span className="wire-method-legend" aria-label="W.I.R.E. color key">
+            <span className="wire-method-key wire-method-key--w" title="W = Watts (Power) — Blue">W</span>
+            <span className="wire-method-key wire-method-key--i" title="I = Current (Amps) — Yellow-Orange">I</span>
+            <span className="wire-method-key wire-method-key--r" title="R = Resistance (Ohms) — Green">R</span>
+            <span className="wire-method-key wire-method-key--e" title="E = Voltage (Volts) — Red">E</span>
+          </span>
         </div>
         {rows.map((row, componentIndex) => (
           <div
