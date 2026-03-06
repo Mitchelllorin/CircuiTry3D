@@ -1,4 +1,4 @@
-<svg viewBox="14 0 240 130" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="CircuiTry3D Logo - Three Resistor Circuit">
+<svg viewBox="0 0 210 210" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="CircuiTry3D Logo - Series Circuit">
   <defs>
     <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#88ccff;stop-opacity:1" />
@@ -41,126 +41,131 @@
       <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
     </radialGradient>
 
-    <!-- Circuit flow path - flows along main wire, battery is a side branch -->
+    <!--
+      Square circuit flow path (120×120 loop).
+      Nodes: N1(45,45) N2(165,45) N3(165,165) N4(45,165)
+      Direction: N4 → up left wire (through battery) → N1
+                 → right top wire through R1 → N2
+                 → down right wire through R2 → N3
+                 → left bottom wire through R3 → N4
+    -->
     <path
       id="photonPath"
-      d="M 55 110
-         L 55 20
-         L 100 20
-         L 110 20
-         L 118 20
-         L 123 10
-         L 133 30
-         L 143 10
-         L 153 30
-         L 158 20
-         L 170 20
-         L 210 20
-         L 210 45
-         L 210 53
-         L 220 58
-         L 200 68
-         L 220 78
-         L 200 88
-         L 210 93
-         L 210 95
-         L 210 110
-         L 180 110
-         L 175 110
-         L 118 110
-         L 123 100
-         L 133 120
-         L 143 100
-         L 153 120
-         L 158 110
-         L 100 110
-         L 55 110"
+      d="M 45 165
+         L 45 45
+         L 75 45
+         L 83 45
+         L 88 35
+         L 98 55
+         L 108 35
+         L 118 55
+         L 123 45
+         L 135 45
+         L 165 45
+         L 165 75
+         L 165 87
+         L 175 92
+         L 155 102
+         L 175 112
+         L 155 122
+         L 165 127
+         L 165 135
+         L 165 165
+         L 135 165
+         L 123 165
+         L 118 175
+         L 108 155
+         L 98 175
+         L 88 155
+         L 83 165
+         L 75 165
+         L 45 165"
     />
   </defs>
 
   <g stroke="#00ff88" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round">
 
-    <!-- Left vertical branch with battery inserted in series -->
-    <line x1="55" y1="20" x2="55" y2="56" stroke="#00ff88" stroke-width="1.75" />
-    <line x1="55" y1="74" x2="55" y2="110" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Left vertical wire with battery inserted in series -->
+    <line x1="45" y1="45" x2="45" y2="93" stroke="#00ff88" stroke-width="1.75" />
+    <line x1="45" y1="117" x2="45" y2="165" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- Top horizontal wire from node 1 to R1 -->
-    <line x1="55" y1="20" x2="110" y2="20" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Top horizontal wire from N1 to R1 -->
+    <line x1="45" y1="45" x2="75" y2="45" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- R1 - Top horizontal resistor -->
-    <g transform="translate(140, 20)" stroke="url(#componentGradient)" stroke-width="2.5" filter="url(#glow)">
+    <!-- R1 – Top horizontal resistor, centered on top wire -->
+    <g transform="translate(105, 45)" stroke="url(#componentGradient)" stroke-width="2.5" filter="url(#glow)">
       <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
     </g>
 
-    <!-- Wire from R1 to node 2 -->
-    <line x1="170" y1="20" x2="210" y2="20" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Wire from R1 to N2 -->
+    <line x1="135" y1="45" x2="165" y2="45" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- Right vertical wire from node 2 to R2 -->
-    <line x1="210" y1="20" x2="210" y2="45" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Right vertical wire from N2 to R2 -->
+    <line x1="165" y1="45" x2="165" y2="75" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- R2 - Right vertical resistor -->
-    <g transform="translate(210, 75) rotate(90)" stroke="url(#componentGradient)" stroke-width="2.5" filter="url(#glow)">
+    <!-- R2 – Right vertical resistor, centered on right wire -->
+    <g transform="translate(165, 105) rotate(90)" stroke="url(#componentGradient)" stroke-width="2.5" filter="url(#glow)">
       <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
     </g>
 
-    <!-- Wire from R2 to node 3 -->
-    <line x1="210" y1="105" x2="210" y2="110" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Wire from R2 to N3 -->
+    <line x1="165" y1="135" x2="165" y2="165" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- Bottom horizontal wire from node 3 to R3 -->
-    <line x1="210" y1="110" x2="170" y2="110" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Bottom horizontal wire from N3 to R3 -->
+    <line x1="165" y1="165" x2="135" y2="165" stroke="#00ff88" stroke-width="1.75" />
 
-    <!-- R3 - Bottom horizontal resistor -->
-    <g transform="translate(140, 110)" stroke="url(#componentGradient)" stroke-width="2.5" filter="url(#glow)">
+    <!-- R3 – Bottom horizontal resistor, centered on bottom wire -->
+    <g transform="translate(105, 165)" stroke="url(#componentGradient)" stroke-width="2.5" filter="url(#glow)">
       <polyline points="-30,0 -22,0 -17,-10 -7,10 3,-10 13,10 18,0 30,0" />
     </g>
 
-    <!-- Wire from R3 to node 4 -->
-    <line x1="110" y1="110" x2="55" y2="110" stroke="#00ff88" stroke-width="1.75" />
+    <!-- Wire from R3 to N4 -->
+    <line x1="75" y1="165" x2="45" y2="165" stroke="#00ff88" stroke-width="1.75" />
 
     <!-- Junction nodes at corners -->
-    <circle cx="55" cy="20" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
-    <circle cx="210" cy="20" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
-    <circle cx="210" cy="110" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
-    <circle cx="55" cy="110" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
+    <circle cx="45" cy="45" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
+    <circle cx="165" cy="45" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
+    <circle cx="165" cy="165" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
+    <circle cx="45" cy="165" r="3" fill="#00ff88" stroke="#0f172a" stroke-width="1.2" />
 
     <!-- Junction nodes at component connections -->
-    <circle cx="110" cy="20" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-    <circle cx="170" cy="20" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-    <circle cx="210" cy="45" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-    <circle cx="210" cy="105" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-    <circle cx="170" cy="110" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
-    <circle cx="110" cy="110" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="75" cy="45" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="135" cy="45" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="165" cy="75" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="165" cy="135" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="135" cy="165" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
+    <circle cx="75" cy="165" r="2.5" fill="#00ff88" stroke="#0f172a" stroke-width="1" />
 
     <!-- Node number labels -->
-    <text x="42" y="14" font-size="8" fill="#94a3b8" font-weight="bold">1</text>
-    <text x="218" y="14" font-size="8" fill="#94a3b8" font-weight="bold">2</text>
-    <text x="218" y="122" font-size="8" fill="#94a3b8" font-weight="bold">3</text>
-    <text x="42" y="122" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
+    <text x="33" y="41" font-size="8" fill="#94a3b8" font-weight="bold">1</text>
+    <text x="172" y="41" font-size="8" fill="#94a3b8" font-weight="bold">2</text>
+    <text x="172" y="175" font-size="8" fill="#94a3b8" font-weight="bold">3</text>
+    <text x="33" y="175" font-size="8" fill="#94a3b8" font-weight="bold">4</text>
   </g>
 
   <!-- Battery schematic symbol centered on the left branch -->
   <g>
     <!-- Positive plate (longer + thicker, top) -->
-    <line x1="44" y1="56" x2="66" y2="56" stroke="#ff2b2b" stroke-width="4" stroke-linecap="square" />
+    <line x1="34" y1="93" x2="56" y2="93" stroke="#ff2b2b" stroke-width="4" stroke-linecap="square" />
     <!-- Negative plate (shorter + thinner, bottom) -->
-    <line x1="50" y1="74" x2="60" y2="74" stroke="#ff2b2b" stroke-width="2.2" stroke-linecap="square" />
+    <line x1="40" y1="117" x2="50" y2="117" stroke="#ff2b2b" stroke-width="2.2" stroke-linecap="square" />
   </g>
   <!-- Polarity marker + beside positive plate -->
-  <text x="40" y="54" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
+  <text x="29" y="91" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">+</text>
   <!-- 9V label to the left of the battery -->
-  <text x="34" y="67" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
+  <text x="25" y="108" font-size="10" fill="#88ccff" font-weight="bold" text-anchor="middle">9V</text>
   <!-- Polarity marker - beside negative plate -->
-  <text x="40" y="80" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">-</text>
+  <text x="29" y="122" font-size="10" fill="#ff6b6b" font-weight="bold" text-anchor="middle">-</text>
 
   <!-- Component labels -->
   <g font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#88ccff" text-anchor="middle" font-weight="600" stroke="#050b1f" stroke-width="2" paint-order="stroke fill">
-    <text x="146" y="9">R₁ = 3 kΩ</text>
-    <text x="229" y="77" text-anchor="end">R₂ =</text>
-    <text x="140" y="129">R₃ = 5 kΩ</text>
+    <text x="105" y="33">R₁ = 3 kΩ</text>
+    <text x="183" y="108" text-anchor="end">R₂ =</text>
+    <text x="105" y="181">R₃ = 5 kΩ</text>
   </g>
 
   <!-- Unknown-value prompt for R2 -->
-  <text x="235" y="77" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
+  <text x="187" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ff2b2b" font-weight="800" text-anchor="middle" stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
   <!-- Animated photons (two bright particles with comet tails) -->
   <g aria-hidden="true" filter="url(#photonGlow)">
