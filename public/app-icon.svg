@@ -45,27 +45,6 @@
       </feMerge>
     </filter>
 
-    <!-- ── Per-letter text glow filters ── -->
-    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.23  0 0 0 0 0.51  0 0 0 0 0.96  0 0 0 12 -4" result="cb"/>
-      <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-
-    <filter id="glowOrange" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.98  0 0 0 0 0.45  0 0 0 0 0.09  0 0 0 12 -4" result="cb"/>
-      <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-
-    <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.13  0 0 0 0 0.77  0 0 0 0 0.37  0 0 0 12 -4" result="cb"/>
-      <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
 
   <!-- ── Background ── -->
@@ -191,9 +170,9 @@
        Total 250.7 px · centre = 131 + 125.35 = 256.35 ≈ 256 ✓
        ════════════════════════════════════════════════════════════ -->
   <text x="131" y="291" class="ct3d-letter"
-        fill="#3b82f6" filter="url(#glowBlue)">C</text>
+        fill="#3b82f6">C</text>
   <text x="200" y="291" class="ct3d-letter"
-        fill="#f97316" filter="url(#glowOrange)">T</text>
+        fill="#f97316">T</text>
   <text x="259" y="291" class="ct3d-letter"
-        fill="#22c55e" filter="url(#glowGreen)">3D</text>
+        fill="#22c55e">3D</text>
 </svg>
