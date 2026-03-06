@@ -58,6 +58,13 @@
       </feMerge>
     </filter>
 
+    <!-- ── Arrowhead for 5 A current-direction corner indicators ── -->
+    <marker id="arrowCurrent"
+            markerWidth="10" markerHeight="8" refX="9" refY="4"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L0,8 L10,4 Z" fill="#ffffff" opacity="0.9"/>
+    </marker>
+
   </defs>
 
   <!-- ── Background ── -->
@@ -161,10 +168,10 @@
   <text x="20" y="274" text-anchor="middle"
         font-family="sans-serif" font-size="20" font-weight="700"
         fill="#ff6b6b">−</text>
-  <!-- Voltage label — matching circuit-logo.svg "9V" treatment -->
-  <text x="25" y="296" text-anchor="middle"
+  <!-- Voltage label — inline right of − marker, red matching battery color -->
+  <text x="80" y="274" text-anchor="start"
         font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700"
-        fill="#88ccff"
+        fill="#ff2b2b"
         stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">12V</text>
 
   <!-- ════════════════════════════════════════════════════════════
@@ -205,6 +212,31 @@
         font-family="system-ui, -apple-system, sans-serif" font-size="18"
         fill="#ff2b2b" font-weight="800" text-anchor="start"
         stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
+
+  <!-- ════════════════════════════════════════════════════════════
+       CURRENT INDICATORS — white, 5 A at TL and BR corners
+       TL: current flows ↑ along left wire then → along top wire
+       BR: current flows ↓ along right wire then ← along bottom wire
+       ════════════════════════════════════════════════════════════ -->
+  <!-- Top-left corner 5A arrow (inside circuit, near TL junction 56,98) -->
+  <path d="M 91,157 L 91,115 L 137,115"
+        fill="none" stroke="#ffffff" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round"
+        marker-end="url(#arrowCurrent)"/>
+  <text x="99" y="149"
+        font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
+        fill="#ffffff"
+        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
+
+  <!-- Bottom-right corner 5A arrow (inside circuit, near BR junction 456,414) -->
+  <path d="M 421,360 L 421,403 L 374,403"
+        fill="none" stroke="#ffffff" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round"
+        marker-end="url(#arrowCurrent)"/>
+  <text x="381" y="382"
+        font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
+        fill="#ffffff"
+        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
 
   <!-- ════════════════════════════════════════════════════════════
        CT3D TEXT — Liberation Sans Bold 96px, baseline y=291
