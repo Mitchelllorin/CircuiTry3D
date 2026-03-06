@@ -161,6 +161,11 @@
   <text x="20" y="274" text-anchor="middle"
         font-family="sans-serif" font-size="20" font-weight="700"
         fill="#ff6b6b">−</text>
+  <!-- Voltage label — matching circuit-logo.svg "9V" treatment -->
+  <text x="25" y="296" text-anchor="middle"
+        font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700"
+        fill="#88ccff"
+        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">12V</text>
 
   <!-- ════════════════════════════════════════════════════════════
        JUNCTION DOTS — purple #8844ff (matching the 3D app's junction sphere color 0x8844ff)
