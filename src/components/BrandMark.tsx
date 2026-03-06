@@ -1,4 +1,6 @@
-import circuitLogo from "../assets/circuit-logo.svg";
+// app-icon-no-text.svg is the app icon design without the CT3D text overlay,
+// shared across the landing page, in-app branding, and feature graphic.
+const circuitLogo = "/app-icon-no-text.svg";
 
 type BrandMarkSize = "xs" | "sm" | "md" | "lg" | "xl";
 

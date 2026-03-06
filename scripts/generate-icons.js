@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /**
- * Generates favicon + PWA + Android launcher icons from the landing logo.
+ * Generates favicon + PWA + Android launcher icons from the app icon design.
  *
  * Uses Playwright (already in devDependencies) to render the SVG into square
  * icon canvases and exports all required PNG/ICO/SVG assets.
+ *
+ * Source: public/app-icon-no-text.svg — the app-icon.svg design without the
+ * CT3D text overlay, so favicons and PWA icons match the app's visual brand.
  */
 import { chromium } from 'playwright';
 import { readFile, writeFile, mkdir } from 'fs/promises';
@@ -14,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const ROOT = join(__dirname, '..');
-const LOGO_SVG_PATH = join(ROOT, 'public', 'circuit-logo.svg');
+const LOGO_SVG_PATH = join(ROOT, 'public', 'app-icon-no-text.svg');
 const PUBLIC_DIR = join(ROOT, 'public');
 const PUBLIC_ICONS_DIR = join(PUBLIC_DIR, 'icons');
 const ANDROID_RES_DIR = join(ROOT, 'android', 'app', 'src', 'main', 'res');
@@ -197,7 +200,7 @@ function pngsToIco(pngEntries) {
 }
 
 async function main() {
-  console.log('🎨 Generating web + Android icons from landing logo…');
+  console.log('🎨 Generating web + Android icons from app icon design (no text)…');
 
   const rawLogoSvg = await readFile(LOGO_SVG_PATH, 'utf8');
   const logoSvg = normalizeSvg(rawLogoSvg);

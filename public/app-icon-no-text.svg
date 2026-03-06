@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CircuiTry3D app icon — series circuit frame matching circuit-logo.svg style.
+
+  Circuit corners (512×512 canvas):
+    TL (56,  98)   TR (456,  98)
+    BL (56, 414)   BR (456, 414)
+
+  LEFT   : Battery  — red plates (#ff2b2b) centred at y=256
+  TOP    : Resistor R1 — orange (#ff8844) 3-peak ANSI zigzag, body x=152→360, at y=98
+  RIGHT  : Resistor R2 — same zigzag rotated 90°, body y=182→330, at x=456
+  BOTTOM : Resistor R3 — reversed zigzag, body x=360→152, at y=414
+  WIRE   : green #00ff88 (matches circuit-logo.svg exactly)
+
+-->
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0f172a"/>
-  <svg x="16" y="16" width="481" height="481" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-    <defs>
+  <defs>
     <!-- ── Background gradient ── -->
     <radialGradient id="bg" cx="50%" cy="50%" r="64%">
       <stop offset="0%" stop-color="#1e293b"/>
@@ -213,5 +225,5 @@
         font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700"
         fill="#ffffff"
         stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">5A</text>
-  </svg>
+
 </svg>

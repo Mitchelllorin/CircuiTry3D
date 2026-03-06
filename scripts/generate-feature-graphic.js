@@ -43,9 +43,17 @@ function extractSvgInner(svg) {
 /**
  * Remove the CT3D letter text elements from the SVG inner content so the
  * feature graphic shows the circuit design only, without the text overlay.
+ *
+ * Depends on: the three <text> elements in app-icon.svg carrying
+ * class="ct3d-letter". If that class name ever changes this function must be
+ * updated to match.
  */
 function removeCt3dText(svgInner) {
-  return svgInner.replace(/<text[^>]*class="ct3d-letter"[^>]*>[\s\S]*?<\/text>/g, '');
+  const result = svgInner.replace(/<text[^>]*class="ct3d-letter"[^>]*>[\s\S]*?<\/text>/g, '');
+  if (result === svgInner) {
+    console.warn('⚠️  removeCt3dText: no ct3d-letter elements found — check app-icon.svg class names');
+  }
+  return result;
 }
 
 /**
