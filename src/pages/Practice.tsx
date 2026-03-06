@@ -405,6 +405,18 @@ export default function Practice({
   const ohmsWheelRef = useRef<HTMLDivElement | null>(null);
   const sprintStartRef = useRef<number | null>(null);
 
+  const resetSprint = useCallback(() => {
+    sprintStartRef.current = null;
+    setSprintActive(false);
+    setSprintElapsedMs(0);
+    setSprintLastMs(null);
+  }, []);
+
+  const resetArcade = useCallback(() => {
+    setAssistUsed(false);
+    resetSprint();
+  }, [resetSprint]);
+
   useEffect(() => {
     if (selectedProblemId === undefined) {
       lastControlledProblemId.current = undefined;
@@ -499,18 +511,6 @@ export default function Practice({
   const toggleHint = useCallback((hint: "target" | "worksheet") => {
     setActiveHint((previous) => (previous === hint ? null : hint));
   }, []);
-
-  const resetSprint = useCallback(() => {
-    sprintStartRef.current = null;
-    setSprintActive(false);
-    setSprintElapsedMs(0);
-    setSprintLastMs(null);
-  }, []);
-
-  const resetArcade = useCallback(() => {
-    setAssistUsed(false);
-    resetSprint();
-  }, [resetSprint]);
 
   const handleStartSprint = useCallback(() => {
     sprintStartRef.current = Date.now();

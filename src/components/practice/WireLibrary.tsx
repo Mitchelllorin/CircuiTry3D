@@ -58,6 +58,51 @@ const formatResistancePerMeter = (value: number): string =>
   `${formatNumber(value, value < 0.1 ? 4 : 3)} Ω/m`;
 const DEFAULT_WIRE_REFERENCE_METERS = 10;
 
+type WarningInfo = { text: string; level: "warning" | "critical" };
+
+const getWarningInfo = (warning: string | null | undefined): WarningInfo | null => {
+  if (!warning) return null;
+  switch (warning) {
+    case "ampacity":
+      return { text: "Approaching ampacity limit — wire will run warm at this load", level: "warning" };
+    case "ampacity-critical":
+      return { text: "Overcurrent — wire will overheat and may fail at this load", level: "critical" };
+    case "voltage":
+      return { text: "Near maximum voltage rating — check insulation class", level: "warning" };
+    case "voltage-critical":
+      return { text: "Voltage exceeds wire rating — insulation failure risk", level: "critical" };
+    default:
+      return { text: warning.replace(/-/g, " "), level: "warning" };
+  }
+};
+
+type DeltaInfo = { text: string; arrow: "up" | "down" | "none"; cls: string };
+
+const getDeltaInfo = (
+  delta: number,
+  precision: number,
+  unit: string,
+  higherIsBad = true,
+): DeltaInfo => {
+  if (Math.abs(delta) < Math.pow(10, -(precision + 1))) {
+    return { text: `± 0 ${unit}`, arrow: "none", cls: "wire-delta-neutral" };
+  }
+  const isUp = delta > 0;
+  const isBad = higherIsBad ? isUp : !isUp;
+  const arrow: "up" | "down" = isUp ? "up" : "down";
+  const sign = isUp ? "+" : "";
+  const text = `${sign}${formatNumber(delta, precision)} ${unit}`;
+  return { text, arrow, cls: isBad ? "wire-delta-bad" : "wire-delta-good" };
+};
+
+type UtilizationLevel = "safe" | "warning" | "critical";
+
+const getUtilizationLevel = (utilization: number): UtilizationLevel => {
+  if (utilization >= 1.0) return "critical";
+  if (utilization >= 0.8) return "warning";
+  return "safe";
+};
+
 const pickMoreSevereWarning = (
   current: string | null,
   candidate: string | null,
@@ -403,125 +448,245 @@ export default function WireLibrary({
       </header>
 
       <section className="wire-library-quickstart" aria-label="Wire guide quick start">
-        <h4>Quick start</h4>
-        <ol>
-          <li>Filter by category, material, insulation, or use-case search.</li>
-          <li>Select a wire row to preview expected W.I.R.E. changes.</li>
-          <li>Apply the selected wire to update the live circuit model.</li>
+        <h4>How it works</h4>
+        <ol className="wire-library-steps">
+          <li>
+            <span className="wire-step-num">1</span>
+            <span>Filter or search the table below to narrow down your wire options.</span>
+          </li>
+          <li>
+            <span className="wire-step-num">2</span>
+            <span>Click any row to select it — the preview panel will show how your circuit changes.</span>
+          </li>
+          <li>
+            <span className="wire-step-num">3</span>
+            <span>Hit <strong>Apply to circuit</strong> to lock in that wire's resistance and ampacity profile.</span>
+          </li>
         </ol>
-        <p className="wire-library-quickstart-status">{selectionStatusCopy}</p>
+        <p className="wire-library-quickstart-status" aria-live="polite">{selectionStatusCopy}</p>
       </section>
 
       {isBuilderWireIntegrationEnabled && (
         <section className="wire-library-integration" aria-live="polite">
-          <header className="wire-library-integration-header">
-            <div>
-              <strong>Step 3: Apply to live circuit</strong>
-              <p>
-                After you select a row, apply it here to update live W.I.R.E.
-                values with that wire&apos;s resistance and ampacity profile.
-              </p>
-            </div>
-            <span
-              className={`wire-library-profile-chip${activeWireSpec ? " active" : ""}`}
-            >
-              {activeWireSpec ? "Applied to circuit" : "Default model active"}
-            </span>
-          </header>
+          <div className="wire-library-integration-top">
+            <div className="wire-library-integration-info">
+              <div className="wire-library-integration-row">
+                <div className="wire-library-integration-slot">
+                  <span className="summary-label">Active wire model</span>
+                  <strong className="summary-value">
+                    {activeWireSpec ? activeWireSpec.gaugeLabel : "Default builder wire"}
+                  </strong>
+                  <p className="wire-library-integration-meta">
+                    {formatResistancePerMeter(activeWireResistance)} · {formatNumber(effectiveWireLengthMeters, 1)} m routed
+                  </p>
+                  <p className="wire-library-integration-meta">
+                    {`Wire path: ${formatNumber(existingWirePathResistance, 4)} Ω · ${wireCount} segment${wireCount !== 1 ? "s" : ""}`}
+                  </p>
+                </div>
+                <div className="wire-library-integration-slot">
+                  <span className="summary-label">Selected wire</span>
+                  <strong className="summary-value">
+                    {selectedWire ? selectedWire.gaugeLabel : "— none selected —"}
+                  </strong>
+                  <p className="wire-library-integration-meta">
+                    {selectedWire
+                      ? `${formatResistancePerMeter(selectedWire.resistanceOhmPerMeter)} · ${selectedWire.materialLabel}`
+                      : "Click a row below to select a wire and preview changes"}
+                  </p>
+                </div>
+              </div>
 
-          <div className="wire-library-integration-grid">
-            <div>
-              <span className="summary-label">Current wire model</span>
-              <strong className="summary-value">
-                {activeWireSpec ? activeWireSpec.gaugeLabel : "Default builder wire"}
-              </strong>
-              <p className="wire-library-integration-meta">
-                Resistance profile: {formatResistancePerMeter(activeWireResistance)}
-              </p>
+              {/* Live W.I.R.E. values */}
+              {liveMetrics && (
+                <div className="wire-library-live-wire" aria-label="Live circuit metrics">
+                  <div className="wire-library-live-wire-cells">
+                    <div className="wire-live-cell wire-live-w">
+                      <span className="wire-live-letter">W</span>
+                      <span className="wire-live-value">{formatNumber(liveMetrics.power, 2)} W</span>
+                      <span className="wire-live-label">Power</span>
+                    </div>
+                    <div className="wire-live-cell wire-live-i">
+                      <span className="wire-live-letter">I</span>
+                      <span className="wire-live-value">{formatNumber(liveMetrics.current, 3)} A</span>
+                      <span className="wire-live-label">Current</span>
+                    </div>
+                    <div className="wire-live-cell wire-live-r">
+                      <span className="wire-live-letter">R</span>
+                      <span className="wire-live-value">
+                        {liveMetrics.resistance !== null ? `${formatNumber(liveMetrics.resistance, 2)} Ω` : "—"}
+                      </span>
+                      <span className="wire-live-label">Resistance</span>
+                    </div>
+                    <div className="wire-live-cell wire-live-e">
+                      <span className="wire-live-letter">E</span>
+                      <span className="wire-live-value">{formatNumber(liveMetrics.voltage, 2)} V</span>
+                      <span className="wire-live-label">Voltage</span>
+                    </div>
+                  </div>
+                  {/* Utilization bars for active wire */}
+                  {Number.isFinite(liveMetrics.wireAmpacityUtilization) && (
+                    <div className="wire-util-row">
+                      <span className="wire-util-label">
+                        Ampacity {Math.round((liveMetrics.wireAmpacityUtilization as number) * 100)}%
+                        {liveMetrics.wireAmpacityLimitA ? ` (limit ${formatNumber(liveMetrics.wireAmpacityLimitA, 1)} A)` : ""}
+                      </span>
+                      <div className="wire-util-bar">
+                        <div
+                          className={`wire-util-bar-fill ${getUtilizationLevel(liveMetrics.wireAmpacityUtilization as number)}`}
+                          style={{ width: `${Math.min(100, (liveMetrics.wireAmpacityUtilization as number) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {Number.isFinite(liveMetrics.wireVoltageUtilization) && (
+                    <div className="wire-util-row">
+                      <span className="wire-util-label">
+                        Voltage rating {Math.round((liveMetrics.wireVoltageUtilization as number) * 100)}%
+                        {liveMetrics.wireVoltageLimitV ? ` (limit ${formatNumber(liveMetrics.wireVoltageLimitV, 0)} V)` : ""}
+                      </span>
+                      <div className="wire-util-bar">
+                        <div
+                          className={`wire-util-bar-fill ${getUtilizationLevel(liveMetrics.wireVoltageUtilization as number)}`}
+                          style={{ width: `${Math.min(100, (liveMetrics.wireVoltageUtilization as number) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {/* Live warning banner */}
+                  {(() => {
+                    const warnInfo = getWarningInfo(liveMetrics.wireWarning);
+                    return warnInfo ? (
+                      <div className={`wire-warning-banner wire-warning-${warnInfo.level}`} role="alert">
+                        <span className="wire-warning-icon">{warnInfo.level === "critical" ? "🔴" : "⚠️"}</span>
+                        <span>{warnInfo.text}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
             </div>
-            <div>
-              <span className="summary-label">Routed wire length</span>
-              <strong className="summary-value">
-                {`${formatNumber(effectiveWireLengthMeters, 2)} m`}
-              </strong>
-              <p className="wire-library-integration-meta">
-                {`Path resistance: ${formatNumber(existingWirePathResistance, 4)} Ω across ${wireCount} segments`}
-              </p>
-              {liveMetrics?.wireWarning ? (
-                <p className="wire-library-integration-meta">
-                  Live warning: {liveMetrics.wireWarning.replace("-", " ")}
-                </p>
-              ) : null}
-            </div>
-            <div>
-              <span className="summary-label">Selected wire row</span>
-              <strong className="summary-value">
-                {selectedWire ? selectedWire.gaugeLabel : "Choose a wire"}
-              </strong>
-              <p className="wire-library-integration-meta">
-                {selectedWire
-                  ? `Resistance: ${formatResistancePerMeter(selectedWire.resistanceOhmPerMeter)}`
-                  : "Select any row below to preview and apply"}
-              </p>
+
+            {/* Apply / Revert buttons */}
+            <div className="wire-library-integration-actions">
+              <span className={`wire-library-profile-chip${activeWireSpec ? " active" : ""}`}>
+                {activeWireSpec ? "Profile applied" : "Default active"}
+              </span>
+              <button
+                type="button"
+                className="wire-library-apply-btn"
+                onClick={() => {
+                  if (selectedWire && onApplyWire) {
+                    onApplyWire(selectedWire);
+                  }
+                }}
+                disabled={!canApplySelectedWire}
+                title={selectedWire ? `Apply ${selectedWire.gaugeLabel} to the circuit` : "Select a wire row first"}
+              >
+                {selectedWireAlreadyApplied ? "✓ Already active" : "Apply to circuit"}
+              </button>
+              <button
+                type="button"
+                className="wire-library-default-btn"
+                onClick={() => onClearAppliedWire?.()}
+                disabled={!activeWireSpec || !onClearAppliedWire}
+              >
+                Revert to default
+              </button>
             </div>
           </div>
 
+          {/* Preview card — shows estimated WIRE changes for the selected wire */}
           {selectedWirePreview && (
             <div className="wire-library-preview-card" role="status">
-              <strong>Estimated change after apply</strong>
-              <div className="wire-library-preview-grid">
-                <span>
-                  R: {formatNumber(selectedWirePreview.totalResistance, 4)} Ω (delta{" "}
-                  {selectedWirePreview.deltaResistance >= 0 ? "+" : ""}
-                  {formatNumber(selectedWirePreview.deltaResistance, 4)} Ω)
-                </span>
-                <span>
-                  I: {formatNumber(selectedWirePreview.current, 4)} A (delta{" "}
-                  {selectedWirePreview.deltaCurrent >= 0 ? "+" : ""}
-                  {formatNumber(selectedWirePreview.deltaCurrent, 4)} A)
-                </span>
-                <span>
-                  W: {formatNumber(selectedWirePreview.power, 4)} W (delta{" "}
-                  {selectedWirePreview.deltaPower >= 0 ? "+" : ""}
-                  {formatNumber(selectedWirePreview.deltaPower, 4)} W)
-                </span>
-                <span>
-                  Wire path: {formatNumber(selectedWirePreview.wirePathResistance, 4)} Ω over{" "}
-                  {formatNumber(selectedWirePreview.wireLengthMeters, 2)} m
-                </span>
-                {selectedWirePreview.warning ? (
-                  <span>
-                    Stress warning: {selectedWirePreview.warning.replace("-", " ")}
-                  </span>
-                ) : null}
+              <strong className="wire-preview-title">
+                Estimated circuit changes if you apply{" "}
+                <em>{selectedWire?.gaugeLabel}</em>
+              </strong>
+              <div className="wire-library-preview-metrics">
+                {(() => {
+                  const rDelta = getDeltaInfo(selectedWirePreview.deltaResistance, 3, "Ω", true);
+                  const iDelta = getDeltaInfo(selectedWirePreview.deltaCurrent, 4, "A", true);
+                  const wDelta = getDeltaInfo(selectedWirePreview.deltaPower, 3, "W", true);
+                  return (
+                    <>
+                      <div className="wire-preview-metric">
+                        <span className="wire-preview-letter">R</span>
+                        <span className="wire-preview-value">{formatNumber(selectedWirePreview.totalResistance, 3)} Ω</span>
+                        <span className={`wire-delta ${rDelta.cls}`}>
+                          <span className={`wire-delta-arrow wire-delta-arrow-${rDelta.arrow}`} aria-hidden="true" />
+                          {rDelta.text}
+                        </span>
+                      </div>
+                      <div className="wire-preview-metric">
+                        <span className="wire-preview-letter">I</span>
+                        <span className="wire-preview-value">{formatNumber(selectedWirePreview.current, 4)} A</span>
+                        <span className={`wire-delta ${iDelta.cls}`}>
+                          <span className={`wire-delta-arrow wire-delta-arrow-${iDelta.arrow}`} aria-hidden="true" />
+                          {iDelta.text}
+                        </span>
+                      </div>
+                      <div className="wire-preview-metric">
+                        <span className="wire-preview-letter">W</span>
+                        <span className="wire-preview-value">{formatNumber(selectedWirePreview.power, 3)} W</span>
+                        <span className={`wire-delta ${wDelta.cls}`}>
+                          <span className={`wire-delta-arrow wire-delta-arrow-${wDelta.arrow}`} aria-hidden="true" />
+                          {wDelta.text}
+                        </span>
+                      </div>
+                      <div className="wire-preview-metric wire-preview-path">
+                        <span className="wire-preview-letter">⊕</span>
+                        <span className="wire-preview-value">
+                          {formatNumber(selectedWirePreview.wirePathResistance, 4)} Ω wire path
+                        </span>
+                        <span className="wire-preview-meta">
+                          {formatNumber(selectedWirePreview.wireLengthMeters, 1)} m · {selectedWire?.materialLabel}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
+              {/* Preview utilization bars */}
+              {Number.isFinite(selectedWirePreview.ampacityUtilization) && (
+                <div className="wire-util-row">
+                  <span className="wire-util-label">
+                    Ampacity {Math.round((selectedWirePreview.ampacityUtilization as number) * 100)}%
+                    {selectedWirePreview.ampacityLimitA ? ` (limit ${formatNumber(selectedWirePreview.ampacityLimitA, 1)} A)` : ""}
+                  </span>
+                  <div className="wire-util-bar">
+                    <div
+                      className={`wire-util-bar-fill ${getUtilizationLevel(selectedWirePreview.ampacityUtilization as number)}`}
+                      style={{ width: `${Math.min(100, (selectedWirePreview.ampacityUtilization as number) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {Number.isFinite(selectedWirePreview.voltageUtilization) && (
+                <div className="wire-util-row">
+                  <span className="wire-util-label">
+                    Voltage rating {Math.round((selectedWirePreview.voltageUtilization as number) * 100)}%
+                    {selectedWirePreview.voltageLimitV ? ` (limit ${formatNumber(selectedWirePreview.voltageLimitV, 0)} V)` : ""}
+                  </span>
+                  <div className="wire-util-bar">
+                    <div
+                      className={`wire-util-bar-fill ${getUtilizationLevel(selectedWirePreview.voltageUtilization as number)}`}
+                      style={{ width: `${Math.min(100, (selectedWirePreview.voltageUtilization as number) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* Preview warning banner */}
+              {(() => {
+                const warnInfo = getWarningInfo(selectedWirePreview.warning);
+                return warnInfo ? (
+                  <div className={`wire-warning-banner wire-warning-${warnInfo.level}`} role="alert">
+                    <span className="wire-warning-icon">{warnInfo.level === "critical" ? "🔴" : "⚠️"}</span>
+                    <span>{warnInfo.text}</span>
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
-
-          <div className="wire-library-integration-actions">
-            <button
-              type="button"
-              className="wire-library-apply-btn"
-              onClick={() => {
-                if (selectedWire && onApplyWire) {
-                  onApplyWire(selectedWire);
-                }
-              }}
-              disabled={!canApplySelectedWire}
-            >
-              {selectedWireAlreadyApplied
-                ? "Selected wire is already active"
-                : "Apply selected wire to circuit"}
-            </button>
-            <button
-              type="button"
-              className="wire-library-default-btn"
-              onClick={() => onClearAppliedWire?.()}
-              disabled={!activeWireSpec || !onClearAppliedWire}
-            >
-              Revert to default wire model
-            </button>
-          </div>
         </section>
       )}
 
@@ -629,13 +794,16 @@ export default function WireLibrary({
                     data-category={materialSpec?.category}
                     data-selected={isSelected ? "true" : undefined}
                     data-active-profile={isActiveProfile ? "true" : undefined}
+                    onClick={() => setSelectedWireId(spec.id)}
+                    className="wire-library-table-row"
+                    title={isSelected ? `${spec.gaugeLabel} selected` : `Click to select ${spec.gaugeLabel}`}
                   >
                     <th scope="row">
                       <div className="wire-row-actions">
                         <button
                           type="button"
                           className={`wire-row-select-btn${isSelected ? " selected" : ""}`}
-                          onClick={() => setSelectedWireId(spec.id)}
+                          onClick={(e) => { e.stopPropagation(); setSelectedWireId(spec.id); }}
                           aria-pressed={isSelected}
                           title={
                             isSelected
@@ -643,7 +811,7 @@ export default function WireLibrary({
                               : `Select ${spec.gaugeLabel}`
                           }
                         >
-                          {isSelected ? "Selected" : "Select"}
+                          {isSelected ? "✓ Selected" : "Select"}
                         </button>
                         {isActiveProfile && (
                           <span className="wire-row-active-chip">Active</span>
