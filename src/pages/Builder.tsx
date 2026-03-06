@@ -97,6 +97,7 @@ type WorkspacePanelMode =
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
   "circuitry3d:onboarding:current-flow-payoff:v1";
+const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
@@ -1028,6 +1029,61 @@ function ComponentLibraryCard({
   );
 }
 
+type IntroDialogStep = {
+  icon: string;
+  title: string;
+  body: string;
+  formula?: string;
+  analogy?: string;
+};
+
+const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
+  {
+    icon: "⚡",
+    title: "What is an Electric Circuit?",
+    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken loop.",
+    analogy:
+      "🔄 Think of it like a water loop: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
+  },
+  {
+    icon: "🔋",
+    title: "Voltage (E) — The Electrical Push",
+    body: "Voltage, also called Electromotive Force (EMF) or potential difference, is the energy per unit charge that drives electrons through the circuit. It is measured in Volts (V).",
+    formula: "E  (Volts, V)",
+    analogy:
+      "💧 Imagine water pressure in a pipe. Higher pressure pushes more water through — higher voltage pushes more electrons through a conductor.",
+  },
+  {
+    icon: "➡️",
+    title: "Current (I) — The Flow of Electrons",
+    body: "Electric current is the rate at which electric charge flows past a point in a circuit. It is measured in Amperes (Amps, A). In a series circuit, the same current flows through every component.",
+    formula: "I  (Amperes, A)",
+    analogy:
+      "💧 Current is like the volume of water flowing through a pipe per second. A wider pipe (less resistance) allows more water (more current) to flow for the same pressure (voltage).",
+  },
+  {
+    icon: "🌀",
+    title: "Resistance (R) — Opposition to Flow",
+    body: "Resistance is the property of a material that opposes the flow of electric current. It converts electrical energy into heat or light. Resistance is measured in Ohms (Ω). Every real conductor and component has some resistance.",
+    formula: "R  (Ohms, Ω)",
+    analogy:
+      "💧 Resistance is like the narrowness of a pipe. A very narrow pipe (high resistance) restricts water flow even under high pressure. Resistors are deliberately added to control current.",
+  },
+  {
+    icon: "📐",
+    title: "Ohm's Law — The Fundamental Relationship",
+    body: "Ohm's Law states that the voltage across a conductor is directly proportional to the current flowing through it, with resistance as the constant of proportionality. This single equation lets you calculate any one of the three values if you know the other two.",
+    formula: "E = I × R",
+    analogy:
+      "🔧 Rearranged:\n  I = E ÷ R  →  more voltage or less resistance = more current\n  R = E ÷ I  →  knowing voltage and current reveals resistance",
+  },
+  {
+    icon: "🚀",
+    title: "You're Ready to Build!",
+    body: "CircuiTry3D lets you design interactive 3D circuits and instantly see how Ohm's Law plays out in real time. Add a battery, connect resistors, draw wires, and watch current flow — all the way down to the atomic level.\n\nUse the W.I.R.E. table (Watts · Current · Resistance · Voltage) to read every metric in your circuit.",
+  },
+];
+
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
@@ -1122,6 +1178,8 @@ export default function Builder() {
     useState(false);
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
     useState(false);
+  const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
+  const [introDialogStep, setIntroDialogStep] = useState(0);
 
   // Global workspace mode context - sync with local state
   const globalModeContext = useWorkspaceMode();
@@ -1933,12 +1991,56 @@ export default function Builder() {
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
 
+  const handleDismissIntroDialog = useCallback(() => {
+    setIntroDialogVisible(false);
+
+    // Mark intro as seen so it doesn't appear again
+    try {
+      window.localStorage.setItem(INTRO_DIALOG_STORAGE_KEY, "1");
+    } catch {
+      // ignore storage write failures
+    }
+
+    // Mark payoff as seen so the frame-ready effect doesn't trigger it a
+    // second time if the user revisits the page after dismissing the intro.
+    try {
+      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
+    } catch {
+      // ignore storage write failures
+    }
+
+    // Launch the current-flow payoff demo immediately after closing the intro
+    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
+  }, [runCurrentFlowPayoffSequence]);
+
   useEffect(() => {
     return () => {
       clearCurrentFlowPayoffTimers();
     };
   }, [clearCurrentFlowPayoffTimers]);
 
+  // Effect 1 — show the intro dialog immediately on mount if the user has never
+  // seen it.  This is intentionally independent of isFrameReady: the intro
+  // shows educational text and must appear even if the iframe fails to load.
+  useEffect(() => {
+    let hasSeenIntro = false;
+    try {
+      hasSeenIntro =
+        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
+    } catch {
+      hasSeenIntro = false;
+    }
+
+    if (!hasSeenIntro) {
+      setIntroDialogStep(0);
+      setIntroDialogVisible(true);
+      setCircuitLocked(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
+
+  // Effect 2 — once the iframe is ready, run the current-flow payoff demo if
+  // the intro has already been seen and the payoff hasn't run yet.
   useEffect(() => {
     if (!isFrameReady || firstRunPayoffTriggeredRef.current) {
       return;
@@ -1946,6 +2048,22 @@ export default function Builder() {
 
     firstRunPayoffTriggeredRef.current = true;
 
+    // If the intro hasn't been seen yet it is currently visible (shown by
+    // Effect 1 above).  The payoff sequence will run from
+    // handleDismissIntroDialog after the user dismisses the dialog.
+    let hasSeenIntro = false;
+    try {
+      hasSeenIntro =
+        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
+    } catch {
+      hasSeenIntro = false;
+    }
+
+    if (!hasSeenIntro) {
+      return;
+    }
+
+    // Intro already seen — check whether the payoff demo should still run.
     let hasSeenPayoff = false;
     try {
       hasSeenPayoff =
@@ -1958,17 +2076,17 @@ export default function Builder() {
       return;
     }
 
+    // Intro seen, payoff not yet seen — run the current-flow payoff demo once.
     try {
       window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
     } catch {
       // ignore storage write failures
     }
 
-    setBottomMenuOpen(true);
     // Lock circuit during first-visit payoff sequence so the user watches before editing
     setCircuitLocked(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
-  }, [isFrameReady, runCurrentFlowPayoffSequence, setBottomMenuOpen]);
+  }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
     if (!isCurrentFlowPayoffVisible) {
@@ -2575,6 +2693,121 @@ export default function Builder() {
             </button>
           </div>
         </Fragment>
+      )}
+
+      {isIntroDialogVisible && (
+        <div
+          className="builder-intro-dialog-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="intro-dialog-title"
+        >
+          <div className="builder-intro-dialog-card">
+            <button
+              type="button"
+              className="builder-intro-dialog-close"
+              aria-label="Close introduction"
+              onClick={handleDismissIntroDialog}
+            >
+              ×
+            </button>
+
+            <div className="builder-intro-dialog-kicker">
+              CircuiTry3D · Introduction
+            </div>
+
+            <div
+              className="builder-intro-dialog-step-icon"
+              aria-hidden="true"
+            >
+              {INTRO_DIALOG_STEPS[introDialogStep].icon}
+            </div>
+            <h2
+              className="builder-intro-dialog-title"
+              id="intro-dialog-title"
+            >
+              {INTRO_DIALOG_STEPS[introDialogStep].title}
+            </h2>
+            <p className="builder-intro-dialog-body">
+              {INTRO_DIALOG_STEPS[introDialogStep].body}
+            </p>
+            <div className="builder-intro-dialog-extras">
+              {INTRO_DIALOG_STEPS[introDialogStep].formula && (
+                <div className="builder-intro-dialog-formula">
+                  {INTRO_DIALOG_STEPS[introDialogStep].formula}
+                </div>
+              )}
+              {INTRO_DIALOG_STEPS[introDialogStep].analogy && (
+                <div className="builder-intro-dialog-analogy">
+                  {INTRO_DIALOG_STEPS[introDialogStep].analogy}
+                </div>
+              )}
+            </div>
+
+            <div
+              className="builder-intro-dialog-dots"
+              aria-hidden="true"
+            >
+              {INTRO_DIALOG_STEPS.map((_, i) => (
+                <span
+                  key={i}
+                  className={`builder-intro-dialog-dot${i === introDialogStep ? " is-active" : ""}`}
+                />
+              ))}
+            </div>
+
+            <div className="builder-intro-dialog-progress">
+              <div className="builder-intro-dialog-progress-bar">
+                <div
+                  className="builder-intro-dialog-progress-fill"
+                  style={{
+                    width: `${Math.round(((introDialogStep + 1) / INTRO_DIALOG_STEPS.length) * 100)}%`,
+                  }}
+                />
+              </div>
+              <div className="builder-intro-dialog-progress-text">
+                {introDialogStep + 1} / {INTRO_DIALOG_STEPS.length}
+              </div>
+            </div>
+
+            <div className="builder-intro-dialog-actions">
+              <button
+                type="button"
+                className="builder-intro-dialog-btn builder-intro-dialog-btn--secondary"
+                style={{
+                  visibility: introDialogStep === 0 ? "hidden" : "visible",
+                }}
+                onClick={() =>
+                  setIntroDialogStep((s) => s - 1)
+                }
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="builder-intro-dialog-btn builder-intro-dialog-btn--primary"
+                onClick={() => {
+                  if (introDialogStep < INTRO_DIALOG_STEPS.length - 1) {
+                    setIntroDialogStep((s) => s + 1);
+                  } else {
+                    handleDismissIntroDialog();
+                  }
+                }}
+              >
+                {introDialogStep === INTRO_DIALOG_STEPS.length - 1
+                  ? "Start Building →"
+                  : "Next"}
+              </button>
+              <button
+                type="button"
+                className="builder-intro-dialog-btn--skip"
+                onClick={handleDismissIntroDialog}
+              >
+                Skip intro
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {shouldShowCurrentFlowPayoffBanner && (
