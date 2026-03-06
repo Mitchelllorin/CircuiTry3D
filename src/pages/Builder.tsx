@@ -2001,6 +2001,14 @@ export default function Builder() {
       // ignore storage write failures
     }
 
+    // Mark payoff as seen so the frame-ready effect doesn't trigger it a
+    // second time if the user revisits the page after dismissing the intro.
+    try {
+      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
+    } catch {
+      // ignore storage write failures
+    }
+
     // Launch the current-flow payoff demo immediately after closing the intro
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [runCurrentFlowPayoffSequence]);
@@ -2011,15 +2019,10 @@ export default function Builder() {
     };
   }, [clearCurrentFlowPayoffTimers]);
 
+  // Effect 1 — show the intro dialog immediately on mount if the user has never
+  // seen it.  This is intentionally independent of isFrameReady: the intro
+  // shows educational text and must appear even if the iframe fails to load.
   useEffect(() => {
-    if (!isFrameReady || firstRunPayoffTriggeredRef.current) {
-      return;
-    }
-
-    firstRunPayoffTriggeredRef.current = true;
-
-    // Always check the intro key first so a stale payoff key can never
-    // silently prevent the intro dialog from appearing.
     let hasSeenIntro = false;
     try {
       hasSeenIntro =
@@ -2029,10 +2032,34 @@ export default function Builder() {
     }
 
     if (!hasSeenIntro) {
-      // Show the intro dialog first; the payoff sequence runs after dismissal.
       setIntroDialogStep(0);
       setIntroDialogVisible(true);
       setCircuitLocked(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
+
+  // Effect 2 — once the iframe is ready, run the current-flow payoff demo if
+  // the intro has already been seen and the payoff hasn't run yet.
+  useEffect(() => {
+    if (!isFrameReady || firstRunPayoffTriggeredRef.current) {
+      return;
+    }
+
+    firstRunPayoffTriggeredRef.current = true;
+
+    // If the intro hasn't been seen yet it is currently visible (shown by
+    // Effect 1 above).  The payoff sequence will run from
+    // handleDismissIntroDialog after the user dismisses the dialog.
+    let hasSeenIntro = false;
+    try {
+      hasSeenIntro =
+        window.localStorage.getItem(INTRO_DIALOG_STORAGE_KEY) === "1";
+    } catch {
+      hasSeenIntro = false;
+    }
+
+    if (!hasSeenIntro) {
       return;
     }
 
