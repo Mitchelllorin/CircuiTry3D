@@ -2,14 +2,10 @@
 /**
  * Generates the Play Store feature graphic (1024×500 px) for CircuiTry3D.
  *
- * The graphic embeds public/circuit-logo.svg directly in the right panel and
- * overlays a "high-current" treatment on R2 (the right-side vertical resistor):
- *   • Extra-bright gold glow on the R2 zigzag
- *   • Hot photon particles placed along R2's zigzag path
- *   • A "HIGH I ⚡" callout annotation
+ * The graphic embeds public/circuit-logo.svg directly in the right panel.
  *
  * Left panel shows the CircuiTry3D brand name with its signature letter colors
- * (C = blue, T = orange, 3D = green) and the "Illuminate Electricity" tagline.
+ * (Circui = blue, T = orange, ry = blue, 3D = green) and the "Illuminate Electricity" tagline.
  *
  * Uses Playwright (already in devDependencies) to render the HTML+SVG to PNG.
  *
@@ -47,38 +43,8 @@ function extractSvgInner(svg) {
 
 /**
  * Build the full HTML page that Playwright will render.
- *
- * Circuit-logo layout (300×300 viewBox, scaled to 400×400 at x=480, y=50):
- *   scale = 400/300 = 1.333…
- *   Inner coord (x_i, y_i) → outer coord (480 + x_i·4/3, 50 + y_i·4/3)
- *
- * R2 (right vertical resistor) in the circuit-logo 300×300 space:
- *   Centre: (235, 149).  Junctions: top (235, 107), bottom (235, 191).
- *   Zigzag (after transform="translate(235,149) rotate(90)"):
- *     inner global path ≈ (235,191)→(235,179)→(222,171)→(248,159)
- *                          →(222,147)→(248,135)→(235,127)→(235,107)
- *   Outer SVG path (×4/3 + offset):
- *     "793,305 793,289 776,278 811,262 776,246 811,230 793,219 793,193"
  */
 function makeHtml(svgInner) {
-  // Pre-computed R2 zigzag points in outer (1024×500) coordinate space.
-  const r2Outer = '793,305 793,289 776,278 811,262 776,246 811,230 793,219 793,193';
-
-  // Photon particles placed exactly at each vertex of R2's zigzag path.
-  const r2Photons = [
-    { cx: 793, cy: 302, r: 5.5 },   // near bottom junction
-    { cx: 776, cy: 278, r: 5   },   // left peak 1
-    { cx: 811, cy: 262, r: 5.5 },   // right peak 1
-    { cx: 776, cy: 246, r: 5   },   // left peak 2
-    { cx: 811, cy: 230, r: 5.5 },   // right peak 2
-    { cx: 793, cy: 197, r: 5   },   // near top junction
-  ];
-
-  const photonCircles = r2Photons
-    .map(({ cx, cy, r }) =>
-      `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#fg-hotPhoton)" filter="url(#fg-brightPhotonGlow)" opacity="0.95"/>`)
-    .join('\n    ');
-
   return `<!doctype html>
 <html>
 <head>
@@ -111,26 +77,6 @@ function makeHtml(svgInner) {
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#15202e" stroke-width="1"/>
     </pattern>
 
-    <!-- Glow for the R2 high-current overlay polyline -->
-    <filter id="fg-r2HighGlow" x="-200%" y="-80%" width="500%" height="260%">
-      <feGaussianBlur stdDeviation="11" result="big"/>
-      <feGaussianBlur stdDeviation="4"  result="med" in="SourceGraphic"/>
-      <feMerge>
-        <feMergeNode in="big"/>
-        <feMergeNode in="med"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Glow for hot photon particles (high-current branch) -->
-    <filter id="fg-brightPhotonGlow" x="-300%" y="-300%" width="700%" height="700%">
-      <feGaussianBlur stdDeviation="7" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
     <!-- Title text glow -->
     <filter id="fg-titleGlow">
       <feGaussianBlur stdDeviation="7" result="blur"/>
@@ -139,29 +85,6 @@ function makeHtml(svgInner) {
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <!-- Callout text glow -->
-    <filter id="fg-calloutGlow" x="-40%" y="-100%" width="180%" height="300%">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Hot photon fill: white core → warm gold rim -->
-    <radialGradient id="fg-hotPhoton" cx="35%" cy="35%" r="80%">
-      <stop offset="0%"   stop-color="#ffffff"/>
-      <stop offset="45%"  stop-color="#fff7d0"/>
-      <stop offset="100%" stop-color="#ffd700"/>
-    </radialGradient>
-
-    <!-- Current-direction arrowhead (gold) -->
-    <marker id="fg-arrowGold"
-            markerWidth="7" markerHeight="5" refX="6" refY="2.5"
-            orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M0,0 L0,5 L7,2.5 Z" fill="#ffd700" opacity="0.9"/>
-    </marker>
 
   </defs>
 
@@ -184,9 +107,8 @@ function makeHtml(svgInner) {
         font-size="52" font-weight="900"
         text-anchor="middle"
         filter="url(#fg-titleGlow)">
-    <tspan fill="#3b82f6">C</tspan><tspan fill="#cbd5e1">ircu</tspan><tspan
-           fill="#cbd5e1">i</tspan><tspan fill="#f97316">T</tspan><tspan
-           fill="#cbd5e1">ry</tspan><tspan fill="#22c55e">3D</tspan>
+    <tspan fill="#3b82f6">Circui</tspan><tspan fill="#f97316">T</tspan><tspan
+           fill="#3b82f6">ry</tspan><tspan fill="#22c55e">3D</tspan>
   </text>
 
   <!-- Tagline -->
@@ -214,7 +136,7 @@ function makeHtml(svgInner) {
 
 
   <!-- ═══════════════════════════════════════════════════════════
-       RIGHT PANEL  (x: 350 – 1024)  –  Circuit logo + high-current overlay
+       RIGHT PANEL  (x: 350 – 1024)  –  Circuit logo
 
        circuit-logo.svg has viewBox="0 0 300 300".
        Rendered at width=400, height=400 positioned at x=480, y=50.
@@ -226,47 +148,6 @@ function makeHtml(svgInner) {
        xmlns="http://www.w3.org/2000/svg">
     ${svgInner}
   </svg>
-
-  <!-- ── HIGH-CURRENT overlay on R2 (drawn in outer 1024×500 space) ──
-       R2 zigzag outer points: ${r2Outer}                              -->
-
-  <!-- Bright gold re-draw of R2 zigzag with intense glow -->
-  <polyline
-    points="${r2Outer}"
-    fill="none"
-    stroke="#ffd700"
-    stroke-width="6"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    filter="url(#fg-r2HighGlow)"
-    opacity="0.88"/>
-
-  <!-- Hot photon particles along R2's zigzag -->
-  ${photonCircles}
-
-  <!-- ── HIGH I callout to the right of R2 ── -->
-  <!-- lightning bolt -->
-  <text x="818" y="239"
-        font-family="system-ui,sans-serif"
-        font-size="16" fill="#ffd700"
-        text-anchor="start"
-        filter="url(#fg-calloutGlow)"
-        opacity="0.95">⚡</text>
-
-  <!-- label text -->
-  <text x="835" y="240"
-        font-family="'Inter','Segoe UI',Arial,Helvetica,sans-serif"
-        font-size="13" font-weight="700" letter-spacing="0.5"
-        fill="#ffd700" text-anchor="start"
-        stroke="#050b1f" stroke-width="1.2" paint-order="stroke fill"
-        filter="url(#fg-calloutGlow)"
-        opacity="0.95">HIGH I</text>
-
-  <!-- downward current-direction arrow alongside R2 -->
-  <line x1="831" y1="210" x2="831" y2="268"
-        stroke="#ffd700" stroke-width="2"
-        marker-end="url(#fg-arrowGold)"
-        opacity="0.75"/>
 
 </svg>
 </body>
