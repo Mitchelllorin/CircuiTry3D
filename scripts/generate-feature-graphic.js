@@ -25,9 +25,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 
-const ROOT         = join(__dirname, '..');
+const ROOT          = join(__dirname, '..');
 const LOGO_SVG_PATH = join(ROOT, 'public', 'circuit-logo.svg');
-const OUT          = join(ROOT, 'play-store-assets', 'graphics', 'feature-graphic.png');
+const OUT           = join(ROOT, 'play-store-assets', 'graphics', 'feature-graphic.png');
+// Also written to public/assets/ so Vite / Vercel serves it and the landing
+// page "Download feature graphic" link always reflects the latest render.
+const OUT_PUBLIC    = join(ROOT, 'public', 'assets', 'feature-graphic.png');
 
 const W = 1024, H = 500;
 
@@ -299,12 +302,14 @@ async function main() {
   await page.waitForTimeout(150); // allow filters / gradients to paint
 
   await mkdir(join(ROOT, 'play-store-assets', 'graphics'), { recursive: true });
+  await mkdir(join(ROOT, 'public', 'assets'), { recursive: true });
   const png = await page.screenshot({ type: 'png', fullPage: false });
   await writeFile(OUT, png);
+  await writeFile(OUT_PUBLIC, png);
 
   await browser.close();
 
-  console.log('✅ Feature graphic saved: play-store-assets/graphics/feature-graphic.png');
+  console.log('✅ Feature graphic saved:\n   play-store-assets/graphics/feature-graphic.png\n   public/assets/feature-graphic.png  (served at /assets/feature-graphic.png)');
 }
 
 main().catch((err) => {
