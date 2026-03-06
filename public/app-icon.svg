@@ -163,20 +163,43 @@
         fill="#ff6b6b">−</text>
 
   <!-- ════════════════════════════════════════════════════════════
-       JUNCTION DOTS — green #00ff88 (matching circuit-logo.svg)
+       JUNCTION DOTS — purple #8844ff (matching the 3D app's junction sphere color 0x8844ff)
        Large (r=9) at circuit corners; small (r=6) at component endpoints
+       stroke="#0f172a" matches circuit-logo.svg junction style
        ════════════════════════════════════════════════════════════ -->
-  <circle cx="56"  cy="98"  r="9" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="98"  r="9" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="414" r="9" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="56"  cy="414" r="9" fill="#00ff88" filter="url(#circuitGlow)"/>
+  <circle cx="56"  cy="98"  r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
+  <circle cx="456" cy="98"  r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
+  <circle cx="456" cy="414" r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
+  <circle cx="56"  cy="414" r="9" fill="#8844ff" stroke="#0f172a" stroke-width="1.5" filter="url(#circuitGlow)"/>
 
-  <circle cx="152" cy="98"  r="6" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="360" cy="98"  r="6" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="182" r="6" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="456" cy="330" r="6" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="360" cy="414" r="6" fill="#00ff88" filter="url(#circuitGlow)"/>
-  <circle cx="152" cy="414" r="6" fill="#00ff88" filter="url(#circuitGlow)"/>
+  <circle cx="152" cy="98"  r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
+  <circle cx="360" cy="98"  r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
+  <circle cx="456" cy="182" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
+  <circle cx="456" cy="330" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
+  <circle cx="360" cy="414" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
+  <circle cx="152" cy="414" r="6" fill="#8844ff" stroke="#0f172a" stroke-width="1"   filter="url(#circuitGlow)"/>
+
+  <!-- ════════════════════════════════════════════════════════════
+       COMPONENT LABELS — matching circuit-logo.svg label style
+       font-family / fill / stroke / paint-order identical to the wordmark logo
+       R1 above  (y=50, peaks at y=63),  R2 right  (x≈498, peaks at x=481),
+       R3 below  (y=469, peaks at y=449), red ? for R2 unknown value
+       ════════════════════════════════════════════════════════════ -->
+  <g font-family="system-ui, -apple-system, sans-serif" font-size="14"
+     fill="#88ccff" font-weight="600"
+     stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">
+    <!-- R1 — centred above top resistor -->
+    <text x="256" y="50"   text-anchor="middle">R&#x2081; = 3 k&#x03A9;</text>
+    <!-- R2 — to the right of right resistor (label ends just inside canvas) -->
+    <text x="498" y="260"  text-anchor="end">R&#x2082; =</text>
+    <!-- R3 — centred below bottom resistor -->
+    <text x="256" y="469"  text-anchor="middle">R&#x2083; = 5 k&#x03A9;</text>
+  </g>
+  <!-- Unknown-value prompt for R2 (red ?, matching circuit-logo.svg) -->
+  <text x="498" y="260"
+        font-family="system-ui, -apple-system, sans-serif" font-size="18"
+        fill="#ff2b2b" font-weight="800" text-anchor="start"
+        stroke="#050b1f" stroke-width="1.5" paint-order="stroke fill">?</text>
 
   <!-- ════════════════════════════════════════════════════════════
        CT3D TEXT — Liberation Sans Bold 96px, baseline y=291
