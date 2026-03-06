@@ -73,6 +73,7 @@ import {
   WIRE_LEGEND,
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
+import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
 import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 import PricingSection from "../components/PricingSection";
@@ -2291,7 +2292,8 @@ export default function Builder() {
   const builderFrameSrc = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-    return `${normalizedBase}legacy.html?embed=builder`;
+    const demoParam = IS_DEMO_MODE ? "&demo=true" : "";
+    return `${normalizedBase}legacy.html?embed=builder${demoParam}`;
   }, []);
   const activeHelpContent = HELP_VIEW_CONTENT[helpView];
   const layoutModeNames: Record<string, string> = {
@@ -2960,7 +2962,12 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Components Library</span>
               <div className="slider-stack">
-                {COMPONENT_ACTIONS.map((component) => (
+                {(IS_DEMO_MODE
+                  ? COMPONENT_ACTIONS.filter((c) =>
+                      DEMO_COMPONENT_IDS.includes(c.id)
+                    )
+                  : COMPONENT_ACTIONS
+                ).map((component) => (
                   <button
                     key={component.id}
                     type="button"
@@ -2988,6 +2995,30 @@ export default function Builder() {
                   </button>
                 ))}
               </div>
+              {IS_DEMO_MODE && (
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.circuitry3d.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    marginTop: "10px",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(136,204,255,0.28)",
+                    background: "rgba(136,204,255,0.07)",
+                    color: "rgba(170,210,255,0.85)",
+                    fontSize: "0.72rem",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  🔒 More components unlocked in the full version
+                  <br />
+                  <span style={{ opacity: 0.7 }}>Get it on Play Store →</span>
+                </a>
+              )}
             </div>
             <div className="slider-section">
               <span className="slider-heading">Quick Actions</span>

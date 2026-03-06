@@ -5,7 +5,9 @@ import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
 import TipsTicker from "../components/TipsTicker";
 import ErrorBoundary from "../components/ErrorBoundary";
+import DemoBanner from "../components/DemoBanner";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
+import { IS_DEMO_MODE } from "../utils/demoMode";
 import "../styles/layout.css";
 
 // Lazy-load heavy pages so they are code-split into separate chunks.
@@ -38,6 +40,8 @@ export default function App() {
   return (
     <WorkspaceModeProvider>
       <ErrorBoundary>
+      {/* Fixed demo-version banner – rendered above the entire app shell */}
+      <DemoBanner />
       <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route element={<AppLayout />}>
@@ -119,7 +123,11 @@ function AppLayout() {
   }, [location.pathname]);
 
   return (
-    <div className={shellClass} ref={shellRef}>
+    <div
+      className={shellClass}
+      ref={shellRef}
+      style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
+    >
       {/* Global Mode Bar - shown on all pages except landing */}
       {!isLanding && <GlobalModeBar />}
       <main className={contentClass}>

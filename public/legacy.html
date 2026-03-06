@@ -10,12 +10,19 @@
                 if (isEmbedded) {
                     document.documentElement.classList.add("embedded");
                 }
+                // Demo mode: limits component palette when accessed standalone
+                if (urlParams.has("demo")) {
+                    document.documentElement.classList.add("demo-mode");
+                }
             } catch (e) {
                 // Fallback: just check URL params
                 try {
                     var params = new URLSearchParams(window.location.search);
                     if (params.has("embed")) {
                         document.documentElement.classList.add("embedded");
+                    }
+                    if (params.has("demo")) {
+                        document.documentElement.classList.add("demo-mode");
                     }
                 } catch (err) {}
             }
@@ -102,6 +109,57 @@
         body.embedded #canvas,
         html.embedded #canvas {
             display: block !important;
+        }
+
+        /* ── Demo mode banner (standalone demo access) ─────────────────── */
+        #demo-mode-banner {
+            display: none;
+        }
+        html.demo-mode:not(.embedded) #demo-mode-banner {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 7px 16px;
+            background: linear-gradient(90deg, rgba(30,58,120,0.97) 0%, rgba(15,35,90,0.99) 100%);
+            border-bottom: 1px solid rgba(136,204,255,0.22);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.45);
+            font-family: "Inter","Poppins","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            font-size: 0.78rem;
+            color: rgba(200,225,255,0.9);
+            letter-spacing: 0.01em;
+        }
+        html.demo-mode:not(.embedded) #demo-mode-banner .demo-badge {
+            background: rgba(136,204,255,0.15);
+            border: 1px solid rgba(136,204,255,0.35);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #88ccff;
+            white-space: nowrap;
+        }
+        html.demo-mode:not(.embedded) #demo-mode-banner .demo-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(136,204,255,0.45);
+            background: rgba(136,204,255,0.12);
+            color: #c8e6ff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.75rem;
+            white-space: nowrap;
         }
         
         .menu-bar {
@@ -3258,6 +3316,14 @@
     </style>
 </head>
 <body>
+    <!-- Demo version banner – visible only in standalone demo mode (not embedded) -->
+    <div id="demo-mode-banner" role="banner" aria-label="Demo version notice">
+        <span class="demo-badge">⚡ Demo Version</span>
+        <span style="opacity:0.85">Limited component library &mdash; Battery, Resistor, LED, Switch, Ground &amp; Junction only.</span>
+        <a class="demo-cta" href="https://play.google.com/store/apps/details?id=com.circuitry3d.app" target="_blank" rel="noopener noreferrer">
+            🚀 Get Full Version on Play Store
+        </a>
+    </div>
     <!-- Landing Page -->
     <div id="landing-page" class="landing-page">
         <div class="landing-logo logo-pulse"><span class="logo-circui">Circui</span><span class="logo-try">Try</span><span style="color:#00ff88">3D</span></div>
