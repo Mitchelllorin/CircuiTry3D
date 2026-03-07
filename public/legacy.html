@@ -1896,13 +1896,9 @@
         }
 
         .zoom-controls {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 8px;
-            z-index: 96;
         }
 
         .panel-top-bar {
@@ -2412,11 +2408,6 @@
                 border-top: 2px solid rgba(0,255,136,0.4);
                 border-bottom: 2px solid rgba(0,255,136,0.4);
             }
-
-            .zoom-controls {
-                bottom: 20px;
-                right: 20px;
-            }
             
             .analysis-toggle {
                 width: 40px;
@@ -2523,11 +2514,6 @@
                 left: 10px;
                 right: 10px;
                 bottom: 10px;
-            }
-
-            .zoom-controls {
-                bottom: 80px;
-                right: 10px;
             }
             
             .status {
@@ -3541,11 +3527,10 @@
     
     <div class="panel-top-bar" id="panel-top-bar">
         <button class="analysis-toggle" onclick="toggleAnalysis()">Toggle</button>
-    </div>
-
-    <div class="zoom-controls" id="zoom-controls">
-        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
-        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
+        <div class="zoom-controls" id="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In">+</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out">−</button>
+        </div>
     </div>
 
     <div class="wire-analysis-fixed" id="wire-analysis">
