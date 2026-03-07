@@ -267,6 +267,18 @@ body {
   flex: 1;
 }
 
+/* Arena page — full-height iframe wrapper for arena.html */
+.arena-html-page {
+  flex: 1;
+  display: flex;
+  min-height: calc(100vh - 72px - var(--app-safe-area-top));
+  min-height: calc(100dvh - 72px - var(--app-safe-area-top));
+}
+
+.arena-html-page iframe {
+  flex: 1;
+}
+
 .app-shell.is-landing .app-content {
   overflow: visible;
 }

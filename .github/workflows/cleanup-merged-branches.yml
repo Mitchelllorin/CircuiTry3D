@@ -1,6 +1,10 @@
 name: Cleanup Merged Branches
 
 on:
+  # Run automatically every Monday at midnight UTC to keep the repo tidy
+  schedule:
+    - cron: '0 0 * * 1'
+  # Allow manual runs with an optional dry-run preview
   workflow_dispatch:
     inputs:
       dry_run:
@@ -17,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: read
     steps:
       - name: Delete branches merged into main
         uses: actions/github-script@v7
@@ -24,9 +29,12 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const dryRun = context.payload.inputs?.dry_run !== 'false';
+            // Scheduled runs always delete; manual runs default to dry-run for safety
+            const isScheduled = context.eventName === 'schedule';
+            const dryRun = isScheduled ? false : context.payload.inputs?.dry_run !== 'false';
             const protectedBranches = new Set(['main', 'master', 'develop']);
 
+            core.info(`Trigger: ${isScheduled ? 'scheduled' : 'manual'}`);
             core.info(`Mode: ${dryRun ? 'DRY RUN (no branches will be deleted)' : 'LIVE (branches will be deleted)'}`);
 
             // Collect all remote branches
@@ -35,10 +43,20 @@ jobs:
               { owner, repo, per_page: 100 }
             );
 
+            // Build a set of branch names that have an open pull request so we
+            // never delete a branch someone is actively reviewing.
+            const openPRs = await github.paginate(
+              github.rest.pulls.list,
+              { owner, repo, state: 'open', per_page: 100 }
+            );
+            const branchesWithOpenPRs = new Set(openPRs.map(pr => pr.head.ref));
+            core.info(`Skipping ${branchesWithOpenPRs.size} branch(es) with open pull requests`);
+
             let toDelete = [];
             for (const branch of allBranches) {
               const name = branch.name;
               if (protectedBranches.has(name)) continue;
+              if (branchesWithOpenPRs.has(name)) continue;
 
               // A branch is merged if its tip is reachable from main.
               // behind_by == 0 means the branch has no commits that main doesn't have.
@@ -57,7 +75,7 @@ jobs:
               }
             }
 
-            core.info(`\nFound ${toDelete.length} merged branch(es):`);
+            core.info(`\nFound ${toDelete.length} merged branch(es) to clean up:`);
             for (const name of toDelete) {
               core.info(`  - ${name}`);
             }
