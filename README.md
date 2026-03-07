@@ -124,7 +124,7 @@ npm run test:watch
 Build and simulate circuits in a 3D sandbox. Components snap to a grid and the live DC solver updates voltages and currents in real time. Zoom in to inspect atomic-level electron flow and see Ohm's Law at work.
 
 ### 🎯 Adaptive Practice (`/practice`)
-The practice workspace tracks your recent W.I.R.E. (Write, Identify, Read, Evaluate) misses and surfaces the three problems that best target your current gaps. Recommendations update automatically as you complete worksheets.
+The practice workspace tracks your recent W.I.R.E. (Watts, Current, Resistance, Voltage) misses and surfaces the three problems that best target your current gaps. Recommendations update automatically as you complete worksheets.
 
 ### 🏅 Gamification & Challenge Mode
 Every worksheet completion awards XP, streak bonuses, and badges via **GamificationContext**. The Challenge Mode dashboard shows XP progress, unique clears, a live leaderboard, and component unlocks (Precision Op-Amp, Sensor Pack, Power Lab, etc.). All progress is persisted to `localStorage` — no account required.
