@@ -66,6 +66,7 @@ import type {
 import {
   COMPONENT_ACTIONS,
   QUICK_ACTIONS,
+  QUICK_ADD_COMPONENTS,
   WIRE_TOOL_ACTIONS,
   CURRENT_MODE_ACTIONS,
   VIEW_CONTROL_ACTIONS,
@@ -2705,6 +2706,38 @@ export default function Builder() {
               title="Edit / Select (E)"
             >
               <IconPencil className="edge-action-icon-svg" />
+            </button>
+          </div>
+
+          {/* Centered component quick-add bar — ports the intent of legacy-html
+              PR #467 / #516 (which targeted a hidden element) to the correct
+              React layer so changes are always visible in the production app */}
+          <div className="quick-add-bar" aria-label="Quick add components">
+            {QUICK_ADD_COMPONENTS.map((component) => (
+              <button
+                key={component.id}
+                type="button"
+                className="quick-add-btn"
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                title={component.description || component.label}
+              >
+                <span className="quick-add-btn-icon" aria-hidden="true">{component.icon}</span>
+                <span className="quick-add-btn-label">{component.label}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className={`quick-add-btn${modeState.isWireMode ? " quick-add-btn--active" : ""}`}
+              onClick={() => triggerBuilderAction("toggle-wire-mode")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-pressed={modeState.isWireMode}
+              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+            >
+              <img src={wireStrippersIcon} alt="" className="quick-add-btn-icon" aria-hidden="true" />
+              <span className="quick-add-btn-label">Wire</span>
             </button>
           </div>
         </Fragment>

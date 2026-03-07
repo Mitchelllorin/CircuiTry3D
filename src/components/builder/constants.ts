@@ -517,6 +517,20 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
   },
 ];
 
+/**
+ * The components shown in the always-visible centered quick-add bar
+ * in the React Builder workspace: Battery, Resistor, LED, and Junction.
+ * A Wire-mode toggle button is appended separately in the JSX.
+ * Together these five shortcuts cover the most common circuit-building
+ * tasks without requiring the user to open the full component library panel.
+ */
+export const QUICK_ADD_COMPONENTS: ComponentAction[] = (
+  ["battery", "resistor", "led", "junction"] as const
+).flatMap((id) => {
+  const found = COMPONENT_ACTIONS.find((c) => c.id === id);
+  return found ? [found] : [];
+});
+
 export const QUICK_ACTIONS: QuickAction[] = [
   {
     id: "select",
