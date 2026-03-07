@@ -24,3 +24,4 @@ android/app/keystore/*.keystore
 android/app/keystore/*.jks
 android/app/keystore/*.p12
 
+tmp-screenshots/
