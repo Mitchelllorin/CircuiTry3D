@@ -12,7 +12,9 @@
     "generate-splash": "node generate-splash-images.js",
     "generate-icons": "node scripts/generate-icons.js",
     "generate-play-store-icons": "node scripts/generate-play-store-icons.js",
-    "generate-feature-graphic": "node scripts/generate-feature-graphic.js"
+    "generate-feature-graphic": "node scripts/generate-feature-graphic.js",
+    "generate-screenshots": "node scripts/generate-screenshots.js",
+    "generate-screenshots:local": "node scripts/generate-screenshots.js --local"
   },
   "repository": {
     "type": "git",

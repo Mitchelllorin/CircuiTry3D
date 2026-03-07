@@ -14,6 +14,79 @@ const CONSOLE_URLS: ConsoleUrl[] = [
   { label: "App Access", field: "App content → App access", url: `${SITE_ORIGIN}/app-access` },
 ];
 
+// ── Screenshot groups for Play Console ─────────────────────────────────────
+
+type ScreenshotFile = { filename: string; downloadAs: string };
+
+type ScreenshotGroup = {
+  id: string;
+  icon: string;
+  label: string;
+  consoleField: string;
+  requirement: string;
+  files: ScreenshotFile[];
+};
+
+const SCREENSHOT_GROUPS: ScreenshotGroup[] = [
+  {
+    id: "phone",
+    icon: "📱",
+    label: "Phone",
+    consoleField: "Store listing → Phone screenshots",
+    requirement: "Portrait · 1080 × 1920 px · 9:16",
+    files: [
+      { filename: "phone-screenshot-1.png", downloadAs: "circuitry3d-phone-1.png" },
+      { filename: "phone-screenshot-2.png", downloadAs: "circuitry3d-phone-2.png" },
+      { filename: "phone-screenshot-3.png", downloadAs: "circuitry3d-phone-3.png" },
+      { filename: "phone-screenshot-4.png", downloadAs: "circuitry3d-phone-4.png" },
+    ],
+  },
+  {
+    id: "7in-tablet",
+    icon: "📟",
+    label: "7-inch Tablet",
+    consoleField: "Store listing → 7-inch tablet screenshots",
+    requirement: "Portrait · 1200 × 1920 px · min 1024×600",
+    files: [
+      { filename: "7in-tablet-screenshot-1.png", downloadAs: "circuitry3d-7in-tablet-1.png" },
+      { filename: "7in-tablet-screenshot-2.png", downloadAs: "circuitry3d-7in-tablet-2.png" },
+    ],
+  },
+  {
+    id: "10in-tablet",
+    icon: "🖥️",
+    label: "10-inch Tablet",
+    consoleField: "Store listing → 10-inch tablet screenshots",
+    requirement: "Landscape · 1920 × 1200 px · min 1200×800",
+    files: [
+      { filename: "10in-tablet-screenshot-1.png", downloadAs: "circuitry3d-10in-tablet-1.png" },
+      { filename: "10in-tablet-screenshot-2.png", downloadAs: "circuitry3d-10in-tablet-2.png" },
+    ],
+  },
+  {
+    id: "chromebook",
+    icon: "💻",
+    label: "Chromebook",
+    consoleField: "Store listing → Chromebook screenshots",
+    requirement: "Landscape only · 1920 × 1080 px · min 1920×1080",
+    files: [
+      { filename: "chromebook-screenshot-1.png", downloadAs: "circuitry3d-chromebook-1.png" },
+      { filename: "chromebook-screenshot-2.png", downloadAs: "circuitry3d-chromebook-2.png" },
+    ],
+  },
+  {
+    id: "android-xr",
+    icon: "🥽",
+    label: "Android XR",
+    consoleField: "Store listing → Android XR screenshots",
+    requirement: "Landscape only · 1920 × 1080 px · min 1920×1080",
+    files: [
+      { filename: "android-xr-screenshot-1.png", downloadAs: "circuitry3d-android-xr-1.png" },
+      { filename: "android-xr-screenshot-2.png", downloadAs: "circuitry3d-android-xr-2.png" },
+    ],
+  },
+];
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -240,6 +313,49 @@ export default function PlayStoreCompliance() {
           <p className="icon-download-sizes-note">
             <strong>Play Store icon requirement:</strong> 512 × 512 px · PNG · 32-bit (with alpha) ·
             max 1 MB. This single icon is used for both phone and tablet listings.
+          </p>
+        </div>
+
+        {/* ── Screenshots Downloads ───────────────────────────────────────── */}
+        <div className="screenshot-download-panel">
+          <h2 className="screenshot-download-heading">📸 Store Listing Screenshots</h2>
+          <p className="screenshot-download-hint">
+            Download screenshots for each device category and upload them to the matching section
+            in <em>Google Play Console → Store listing</em>. Run{" "}
+            <code>npm run generate-screenshots</code> in the repository to regenerate all files
+            from the live site.
+          </p>
+          <div className="screenshot-download-groups">
+            {SCREENSHOT_GROUPS.map((group) => (
+              <div key={group.id} className="screenshot-download-group">
+                <div className="screenshot-download-group-header">
+                  <span className="screenshot-download-group-icon" aria-hidden="true">{group.icon}</span>
+                  <div>
+                    <span className="screenshot-download-group-label">{group.label}</span>
+                    <span className="screenshot-download-group-field">{group.consoleField}</span>
+                    <span className="screenshot-download-group-req">{group.requirement}</span>
+                  </div>
+                </div>
+                <div className="screenshot-download-group-files">
+                  {group.files.map(({ filename, downloadAs }) => (
+                    <a
+                      key={filename}
+                      href={`/screenshots/${filename}`}
+                      download={downloadAs}
+                      className="screenshot-download-btn"
+                      aria-label={`Download ${downloadAs}`}
+                    >
+                      ⬇ {downloadAs}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="screenshot-download-note">
+            <strong>Tip:</strong> Each screenshot is already sized to meet the Play Console minimum.
+            If the app is updated, re-run <code>npm run generate-screenshots</code> to refresh all
+            files, then re-upload to the Play Console.
           </p>
         </div>
 
