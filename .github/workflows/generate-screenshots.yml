@@ -1,0 +1,74 @@
+name: Generate Play Store Screenshots
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      NODE_VERSION: '20.19.0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Start preview server
+        run: npm run preview &
+
+      - name: Wait for preview server
+        run: |
+          echo "Waiting for preview server on port 4173..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 >/dev/null 2>&1; then
+              echo "Server is ready."
+              exit 0
+            fi
+            echo "  attempt $i/30…"
+            sleep 2
+          done
+          echo "::error::Preview server did not become ready after 60 seconds."
+          exit 1
+
+      - name: Generate screenshots
+        run: npm run generate-screenshots:local
+
+      - name: Upload play-store-assets/screenshots as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-store-screenshots
+          path: play-store-assets/screenshots/
+          if-no-files-found: error
+
+      - name: Commit updated screenshots
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add play-store-assets/screenshots/ public/screenshots/
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit."
+          else
+            git commit -m "chore: regenerate Play Store screenshots [skip ci]"
+            git push
+          fi
