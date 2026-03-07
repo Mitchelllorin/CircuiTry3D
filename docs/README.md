@@ -36,6 +36,7 @@ These documents define how CircuiTry3D implements electrical simulation:
 | [CIRCUIT_SIMULATION_REFERENCE.md](./CIRCUIT_SIMULATION_REFERENCE.md) | DC solver technical details, MNA implementation, visualization |
 | [circuit-error-outcomes.md](./circuit-error-outcomes.md) | Error handling, open/short circuit detection, validation feedback |
 | [FUSE_ENGINE.md](./FUSE_ENGINE.md) | **FUSE™ — Failure Understanding Simulation Engine** — proprietary component failure detection, physics profiles, visual effects, and marketing guide |
+| [ARENA_MARKETING.md](./ARENA_MARKETING.md) | **Arena Marketing Strategy & Partnership Playbook** — school board outreach, manufacturer product placement, CTE grant positioning, email templates |
 
 ---
 
@@ -85,6 +86,7 @@ docs/
 ├── CIRCUIT_SIMULATION_REFERENCE.md     ← Solver technical details
 ├── circuit-error-outcomes.md           ← Error handling
 ├── FUSE_ENGINE.md                      ← FUSE™ failure engine — tech spec & marketing guide
+├── ARENA_MARKETING.md                  ← Arena marketing, school board & manufacturer outreach
 │
 ├── schematic-style-guidelines.md       ← Visual standards
 └── circuit-topology-reference.md       ← Layout conventions
