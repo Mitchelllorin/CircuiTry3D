@@ -13190,6 +13190,9 @@ Made with ? for visual learners everywhere!
 
             components.forEach(comp => {
                 if (!comp) return;
+                // Failed components act as open circuits — no current flows through them.
+                if (workspaceFailureState.get(comp.id)?.failed) return;
+
                 if (comp.type === 'battery') {
                     const { neg, pos } = getBatteryTerminals(comp);
                     const nNeg = neg ? nodeOf(neg) : null;
@@ -13414,6 +13417,8 @@ Made with ? for visual learners everywhere!
 
         function getComponentCurrentFromSolution(component, solution) {
             if (!component || !solution || solution.status !== 'solved') return NaN;
+            // Failed components act as open circuits — no current flows.
+            if (workspaceFailureState.get(component.id)?.failed) return 0;
             const entry = solution.elementCurrents?.get(component.id);
             if (entry && typeof entry.amps === 'number') {
                 return entry.amps;
