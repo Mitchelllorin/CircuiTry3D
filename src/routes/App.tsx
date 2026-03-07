@@ -90,13 +90,20 @@ function AppLayout() {
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
+  // arena.html is a full-screen self-contained 3D app (like landing.html).
+  // Hide the React shell chrome (GlobalModeBar, TipsTicker, footer) so
+  // arena.html's own navigation is the only nav the user sees.
+  const isArena = location.pathname === "/arena";
   const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
     "app-shell",
     isLanding && "is-landing",
     isWorkspace && "is-workspace",
+    isArena && "is-arena",
   ].filter(Boolean).join(" ");
+  // Arena uses its own full-viewport CSS scoped to `.app-shell.is-arena` in layout.css.
+  // Only landing.html needs the `is-landing` content class.
   const contentClass = isLanding ? "app-content is-landing" : "app-content";
 
   useLayoutEffect(() => {
@@ -132,15 +139,15 @@ function AppLayout() {
       ref={shellRef}
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
-      {/* Global Mode Bar - shown on all pages except landing */}
-      {!isLanding && <GlobalModeBar />}
+      {/* Global Mode Bar - shown on all pages except landing and the arena (which has its own nav) */}
+      {!isLanding && !isArena && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Tips & facts ticker - shown on all pages except landing */}
-      {!isLanding && <TipsTicker />}
-      {/* Site footer with legal links - shown on all pages except landing & workspace */}
-      {!isLanding && !isWorkspace && (
+      {/* Tips & facts ticker - shown on all pages except landing and arena */}
+      {!isLanding && !isArena && <TipsTicker />}
+      {/* Site footer with legal links - shown on all pages except landing, workspace, and arena */}
+      {!isLanding && !isWorkspace && !isArena && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">Privacy Policy</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
