@@ -321,10 +321,54 @@ export default function PlayStoreCompliance() {
           <h2 className="screenshot-download-heading">📸 Store Listing Screenshots</h2>
           <p className="screenshot-download-hint">
             Download screenshots for each device category and upload them to the matching section
-            in <em>Google Play Console → Store listing</em>. Run{" "}
-            <code>npm run generate-screenshots</code> in the repository to regenerate all files
-            from the live site.
+            in <em>Google Play Console → Store listing</em>.
           </p>
+
+          {/* ── Screenshot Generator CTA ──────────────────────────────────── */}
+          <div style={{
+            margin: "16px 0 20px",
+            padding: "18px 20px",
+            background: "rgba(136,204,255,0.08)",
+            border: "1px solid rgba(136,204,255,0.35)",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            flexWrap: "wrap",
+          }}>
+            <div style={{ flex: 1, minWidth: "200px" }}>
+              <p style={{ margin: "0 0 4px", fontWeight: 700, color: "var(--brand-primary)", fontSize: "0.95rem" }}>
+                🖼️ Generate fresh screenshots
+              </p>
+              <p style={{ margin: 0, color: "rgba(200,220,255,0.65)", fontSize: "0.82rem", lineHeight: 1.5 }}>
+                Canvas-rendered app screenshots at the exact Play Store dimensions for every
+                device type — 10-in tablet, 7-in tablet, Android XR, and Chromebook.
+                Each screenshot shows the real app UI with your circuit builder and current-flow visualiser.
+              </p>
+            </div>
+            <Link
+              to="/screenshots"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "12px 24px",
+                background: "var(--brand-primary)",
+                color: "#04070c",
+                borderRadius: "8px",
+                fontWeight: 800,
+                fontSize: "0.9rem",
+                textDecoration: "none",
+                letterSpacing: ".05em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              ⬇ OPEN SCREENSHOT GENERATOR
+            </Link>
+          </div>
+
           <div className="screenshot-download-groups">
             {SCREENSHOT_GROUPS.map((group) => (
               <div key={group.id} className="screenshot-download-group">
@@ -353,9 +397,10 @@ export default function PlayStoreCompliance() {
             ))}
           </div>
           <p className="screenshot-download-note">
-            <strong>Tip:</strong> Each screenshot is already sized to meet the Play Console minimum.
-            If the app is updated, re-run <code>npm run generate-screenshots</code> to refresh all
-            files, then re-upload to the Play Console.
+            <strong>Tip:</strong> Use the{" "}
+            <Link to="/screenshots" style={{ color: "var(--brand-primary)" }}>Screenshot Generator</Link>{" "}
+            to produce fresh screenshots at any time directly in your browser — no build step needed.
+            Then re-upload to the Play Console.
           </p>
         </div>
 

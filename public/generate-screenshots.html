@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — Play Store Screenshot Generator</title>
+  <style>
+    :root {
+      --bg: #040c18; --surface: #0b1420; --panel: #0e1e38;
+      --blue: #88ccff; --orange: #ff8844; --green: #00ff88; --teal: #2dd4bf;
+      --text: #f3f8ff; --muted: rgba(200,220,255,0.55);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: "Inter", system-ui, sans-serif; padding: 24px; }
+    h1 { font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; }
+    h1 .b { color: var(--blue); } h1 .o { color: var(--orange); } h1 .g { color: var(--green); }
+    .sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 32px; letter-spacing: .04em; }
+    .section { background: var(--surface); border: 1px solid rgba(136,204,255,0.18); border-radius: 14px; padding: 20px 24px; margin-bottom: 28px; }
+    .section h2 { font-size: 1rem; font-weight: 700; color: var(--blue); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+    .section .dim { font-size: 0.78rem; color: var(--muted); margin-bottom: 14px; }
+    .previews { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 16px; }
+    .preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .preview-wrap span { font-size: 0.72rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+    canvas { border: 1px solid rgba(136,204,255,0.22); border-radius: 6px; display: block; max-width: 100%; }
+    .btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; letter-spacing: .05em; text-transform: uppercase; transition: all .2s; }
+    .btn-primary { background: var(--blue); color: #04070c; }
+    .btn-primary:hover { background: #aaddff; }
+    .btn-secondary { background: rgba(136,204,255,0.12); color: var(--blue); border: 1px solid rgba(136,204,255,0.38); }
+    .btn-secondary:hover { background: rgba(136,204,255,0.22); }
+    .btn-all { background: linear-gradient(135deg, #ff8844, #ff6010); color: #fff; font-size: 1rem; padding: 14px 36px; border-radius: 10px; border: none; cursor: pointer; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; transition: all .2s; }
+    .btn-all:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .download-all-section { background: var(--panel); border: 1px solid rgba(255,136,68,0.35); border-radius: 14px; padding: 24px; text-align: center; }
+    .download-all-section p { color: var(--muted); font-size: 0.85rem; margin-top: 10px; }
+    .badge { display: inline-block; background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.4); border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: var(--green); padding: 2px 8px; margin-left: 8px; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <h1><span class="b">Circui</span><span class="o">Try</span><span class="g">3D</span> — Play Store Screenshot Generator</h1>
+  <p class="sub">Canvas-rendered app screenshots at exact Google Play Console dimensions. Click any button to download.</p>
+
+  <div class="section" id="sec-tablet10">
+    <h2>10-Inch Tablet <span class="badge">Landscape</span></h2>
+    <div class="dim">1920 × 1200 px — Google Play required for 10-in tablet listing</div>
+    <div class="previews" id="prev-tablet10"></div>
+    <div class="btns">
+      <button class="btn btn-primary" onclick="dl(1920,1200,'builder','10in-tablet-screenshot-1.png')">⬇ DOWNLOAD Screenshot 1 — Circuit Builder</button>
+      <button class="btn btn-primary" onclick="dl(1920,1200,'flow','10in-tablet-screenshot-2.png')">⬇ DOWNLOAD Screenshot 2 — Live Current Flow</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-tablet7">
+    <h2>7-Inch Tablet <span class="badge">Portrait</span></h2>
+    <div class="dim">1200 × 1920 px — Google Play required for 7-in tablet listing</div>
+    <div class="previews" id="prev-tablet7"></div>
+    <div class="btns">
+      <button class="btn btn-primary" onclick="dl(1200,1920,'builder','7in-tablet-screenshot-1.png')">⬇ DOWNLOAD Screenshot 1 — Circuit Builder</button>
+      <button class="btn btn-primary" onclick="dl(1200,1920,'flow','7in-tablet-screenshot-2.png')">⬇ DOWNLOAD Screenshot 2 — Live Current Flow</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-xr">
+    <h2>Android XR <span class="badge">Immersive</span></h2>
+    <div class="dim">2560 × 1440 px — Google Play Android XR / Chrome XR listing</div>
+    <div class="previews" id="prev-xr"></div>
+    <div class="btns">
+      <button class="btn btn-primary" onclick="dl(2560,1440,'builder','android-xr-screenshot-1.png')">⬇ DOWNLOAD Screenshot 1 — XR Builder View</button>
+      <button class="btn btn-primary" onclick="dl(2560,1440,'flow','android-xr-screenshot-2.png')">⬇ DOWNLOAD Screenshot 2 — XR Current Flow</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-chromebook">
+    <h2>Chromebook <span class="badge">Landscape</span></h2>
+    <div class="dim">1920 × 1080 px — Google Play Chromebook listing</div>
+    <div class="previews" id="prev-chromebook"></div>
+    <div class="btns">
+      <button class="btn btn-primary" onclick="dl(1920,1080,'builder','chromebook-screenshot-1.png')">⬇ DOWNLOAD Screenshot 1 — Circuit Builder</button>
+      <button class="btn btn-primary" onclick="dl(1920,1080,'flow','chromebook-screenshot-2.png')">⬇ DOWNLOAD Screenshot 2 — Live Current Flow</button>
+    </div>
+  </div>
+
+  <div class="download-all-section">
+    <button class="btn-all" onclick="downloadAll()">⬇ DOWNLOAD ALL 8 SCREENSHOTS</button>
+    <p>Downloads all 8 screenshots (4 device types × 2 variants) as separate PNG files.</p>
+  </div>
+
+<script>
+// ─── Brand colours ───────────────────────────────────────────────
+const C = {
+  bgDeep:'#020a14', bgDark:'#040c18', bgSurface:'#0a1628', bgPanel:'#0d1c32',
+  bgPanel2:'#0b1726',
+  blue:'#88ccff', orange:'#ff8844', green:'#00ff88', teal:'#2dd4bf',
+  text:'#f3f8ff', muted:'rgba(200,220,255,0.6)',
+  wireGlow:'rgba(136,204,255,0.85)', wireBase:'#1a4a7a',
+  flowGlow:'rgba(45,212,191,0.9)', flowBase:'#0e4040',
+  compFill:'#0e2a44', compStroke:'#2dd4bf',
+  battFill:'#1a2a18', battStroke:'#00ff88',
+  xrBg:'#060218', xrAccent:'rgba(180,120,255,0.7)',
+};
+
+// ─── Isometric helpers ────────────────────────────────────────────
+function isoProject(x, y, z, ox, oy, sc) {
+  return { x: ox + (x - y) * sc * 0.866, y: oy + (x + y) * sc * 0.5 - z * sc };
+}
+
+// ─── Glow helper ─────────────────────────────────────────────────
+function withGlow(ctx, color, blur, fn) {
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore();
+}
+
+// ─── Grid (isometric dot grid) ───────────────────────────────────
+function drawIsoGrid(ctx, ox, oy, cols, rows, sc, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = C.blue;
+  for (let r = 0; r <= rows; r++) {
+    for (let c = 0; c <= cols; c++) {
+      const p = isoProject(c, r, 0, ox, oy, sc);
+      ctx.beginPath(); ctx.arc(p.x, p.y, 1.2, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ─── Draw a glowing wire segment (isometric) ─────────────────────
+function drawWire(ctx, p1, p2, flowing) {
+  const color = flowing ? C.teal : C.blue;
+  const blur  = flowing ? 22 : 12;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = flowing ? 4 : 3;
+  ctx.lineCap = 'round';
+  for (let i = 3; i >= 0; i--) {
+    ctx.shadowColor = color; ctx.shadowBlur = blur + i * 14;
+    ctx.globalAlpha = flowing ? 0.18 + i * 0.22 : 0.12 + i * 0.18;
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.shadowBlur = 6; ctx.shadowColor = color;
+  ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  ctx.restore();
+}
+
+// ─── Flow particles along a wire ─────────────────────────────────
+function drawParticles(ctx, p1, p2, count) {
+  ctx.save();
+  for (let i = 0; i < count; i++) {
+    const t = (i / count + 0.05) % 1;
+    const px = p1.x + (p2.x - p1.x) * t;
+    const py = p1.y + (p2.y - p1.y) * t;
+    ctx.shadowColor = C.teal; ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ffffff';
+    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(i * 2.3);
+    ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ─── 3D Resistor box ─────────────────────────────────────────────
+function drawResistor(ctx, cx, cy, label, value, flowing) {
+  const w = 46, h = 18, d = 9;
+  const color = flowing ? C.teal : '#2dd4bf';
+  ctx.save();
+  // top face
+  ctx.fillStyle = C.compFill; ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.shadowColor = color; ctx.shadowBlur = flowing ? 14 : 6;
+  ctx.beginPath();
+  ctx.moveTo(cx - w/2, cy); ctx.lineTo(cx + w/2, cy);
+  ctx.lineTo(cx + w/2 + d, cy - d); ctx.lineTo(cx - w/2 + d, cy - d);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // front face
+  ctx.fillStyle = '#0a2038';
+  ctx.beginPath();
+  ctx.moveTo(cx - w/2, cy); ctx.lineTo(cx + w/2, cy);
+  ctx.lineTo(cx + w/2, cy + h); ctx.lineTo(cx - w/2, cy + h);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // side face
+  ctx.fillStyle = '#071526';
+  ctx.beginPath();
+  ctx.moveTo(cx + w/2, cy); ctx.lineTo(cx + w/2 + d, cy - d);
+  ctx.lineTo(cx + w/2 + d, cy + h - d); ctx.lineTo(cx + w/2, cy + h);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // label
+  ctx.shadowBlur = 0; ctx.fillStyle = color; ctx.font = `bold 11px "Inter",sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx + 2, cy + h/2 + 1);
+  ctx.font = `9px "Inter",sans-serif`; ctx.fillStyle = 'rgba(200,230,255,0.7)';
+  ctx.fillText(value, cx + d/2, cy - d/2);
+  ctx.restore();
+}
+
+// ─── 3D Battery ──────────────────────────────────────────────────
+function drawBattery(ctx, cx, cy, flowing) {
+  const w = 28, h = 52, d = 10;
+  const color = C.green;
+  ctx.save();
+  // top face
+  ctx.fillStyle = C.battFill; ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  ctx.shadowColor = color; ctx.shadowBlur = flowing ? 16 : 7;
+  ctx.beginPath();
+  ctx.moveTo(cx - w/2, cy); ctx.lineTo(cx + w/2, cy);
+  ctx.lineTo(cx + w/2 + d, cy - d); ctx.lineTo(cx - w/2 + d, cy - d);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // front
+  ctx.fillStyle = '#0a1e10';
+  ctx.beginPath();
+  ctx.moveTo(cx - w/2, cy); ctx.lineTo(cx + w/2, cy);
+  ctx.lineTo(cx + w/2, cy + h); ctx.lineTo(cx - w/2, cy + h);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // side
+  ctx.fillStyle = '#060e08';
+  ctx.beginPath();
+  ctx.moveTo(cx + w/2, cy); ctx.lineTo(cx + w/2 + d, cy - d);
+  ctx.lineTo(cx + w/2 + d, cy + h - d); ctx.lineTo(cx + w/2, cy + h);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // terminals & label
+  ctx.shadowBlur = 0; ctx.fillStyle = color; ctx.font = `bold 10px "Inter",sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('9V', cx + 2, cy + h/2);
+  ctx.fillStyle = '#ccffcc'; ctx.font = '14px sans-serif';
+  ctx.fillText('+', cx + 2, cy + 7);
+  ctx.fillText('−', cx + 2, cy + h - 7);
+  ctx.restore();
+}
+
+// ─── Junction node ────────────────────────────────────────────────
+function drawNode(ctx, x, y, flowing) {
+  const color = flowing ? C.teal : C.blue;
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = flowing ? 18 : 10;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, flowing ? 5 : 4, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// ─── The main 3D circuit scene ────────────────────────────────────
+function drawCircuitScene(ctx, wx, wy, ww, wh, variant, isXR) {
+  const flowing = variant === 'flow';
+
+  // Workspace bg
+  const grad = ctx.createRadialGradient(wx + ww/2, wy + wh/2, 0, wx + ww/2, wy + wh/2, Math.max(ww, wh) * 0.7);
+  grad.addColorStop(0, isXR ? '#0d0228' : '#08172e');
+  grad.addColorStop(1, isXR ? '#020010' : '#020a14');
+  ctx.fillStyle = grad; ctx.fillRect(wx, wy, ww, wh);
+
+  // XR extra atmosphere
+  if (isXR) {
+    ctx.save();
+    const xrGrad = ctx.createRadialGradient(wx + ww*0.5, wy + wh*0.35, 0, wx + ww*0.5, wy + wh*0.35, ww*0.45);
+    xrGrad.addColorStop(0, 'rgba(140,60,255,0.18)');
+    xrGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = xrGrad; ctx.fillRect(wx, wy, ww, wh);
+    ctx.restore();
+  }
+
+  // Subtle grid
+  const sc = Math.min(ww, wh) * 0.038;
+  const gox = wx + ww * 0.5;
+  const goy = wy + wh * 0.55;
+  drawIsoGrid(ctx, gox, goy, 12, 8, sc, flowing ? 0.14 : 0.10);
+
+  // Circuit layout in iso-space (grid units)
+  // Nodes: TL(0,0), TR(4,0), BR(4,4), BL(0,4) — battery on left, R1 top, R2 right, R3 bottom
+  const csc = Math.min(ww, wh) * 0.078;
+  const cox = wx + ww * 0.5;
+  const coy = wy + wh * 0.50;
+
+  const TL = isoProject(0, 0, 0, cox, coy, csc);
+  const TR = isoProject(4, 0, 0, cox, coy, csc);
+  const BR = isoProject(4, 4, 0, cox, coy, csc);
+  const BL = isoProject(0, 4, 0, cox, coy, csc);
+
+  // Raise to z=1 for components
+  const TLz = isoProject(0, 0, 1, cox, coy, csc);
+  const TRz = isoProject(4, 0, 1, cox, coy, csc);
+  const BRz = isoProject(4, 4, 1, cox, coy, csc);
+  const BLz = isoProject(0, 4, 1, cox, coy, csc);
+
+  // Draw wires (ground level)
+  drawWire(ctx, TL, TR, flowing);  // top
+  drawWire(ctx, TR, BR, flowing);  // right
+  drawWire(ctx, BR, BL, flowing);  // bottom
+  drawWire(ctx, BL, TL, flowing);  // left (battery)
+
+  // Vertical riser wires at corners
+  drawWire(ctx, TL, TLz, flowing);
+  drawWire(ctx, TR, TRz, flowing);
+  drawWire(ctx, BR, BRz, flowing);
+  drawWire(ctx, BL, BLz, flowing);
+
+  // Draw top wires at z=1
+  drawWire(ctx, TLz, TRz, flowing); // top elevated
+  drawWire(ctx, BLz, BRz, flowing); // bottom elevated
+
+  // Flow particles
+  if (flowing) {
+    drawParticles(ctx, TLz, TRz, 5);
+    drawParticles(ctx, TRz, BRz, 5);
+    drawParticles(ctx, BRz, BLz, 5);
+    drawParticles(ctx, BLz, TLz, 5);
+  }
+
+  // Components
+  const midTop = { x: (TLz.x + TRz.x) / 2, y: (TLz.y + TRz.y) / 2 };
+  const midRight = { x: (TRz.x + BRz.x) / 2, y: (TRz.y + BRz.y) / 2 };
+  const midBot = { x: (BLz.x + BRz.x) / 2, y: (BLz.y + BRz.y) / 2 };
+  const midLeft = { x: (TLz.x + BLz.x) / 2, y: (TLz.y + BLz.y) / 2 };
+
+  drawResistor(ctx, midTop.x,  midTop.y - 10,  'R1', '1 kΩ', flowing);
+  drawResistor(ctx, midRight.x + 8, midRight.y - 10, 'R2', '2.2kΩ', flowing);
+  drawResistor(ctx, midBot.x,  midBot.y - 10,  'R3', '3.3kΩ', flowing);
+  drawBattery(ctx, midLeft.x - 6, midLeft.y - 26, flowing);
+
+  // Junction nodes
+  [TLz, TRz, BRz, BLz].forEach(p => drawNode(ctx, p.x, p.y, flowing));
+
+  // Floating data overlay (flow mode)
+  if (flowing) {
+    const ox = wx + ww * 0.04, oy = wy + wh * 0.05;
+    const bw = ww * 0.18, bh = wh * 0.32;
+    ctx.save();
+    ctx.fillStyle = 'rgba(8,18,36,0.82)';
+    ctx.strokeStyle = 'rgba(45,212,191,0.5)'; ctx.lineWidth = 1;
+    roundRect(ctx, ox, oy, bw, bh, 10); ctx.fill(); ctx.stroke();
+    const rows = [
+      { label:'VOLTAGE', value:'9.00 V',  color:'#ff4444' },
+      { label:'CURRENT', value:'1.37 mA', color:'#ffaa33' },
+      { label:'POWER',   value:'12.3 mW', color:'#4a90ff' },
+      { label:'Rtotal',  value:'6.56 kΩ', color:'#00cc66' },
+    ];
+    const rowH = bh / (rows.length + 1);
+    rows.forEach((r, i) => {
+      const ry = oy + rowH * (i + 0.7);
+      ctx.font = `bold ${Math.round(bw * 0.11)}px "Inter",sans-serif`;
+      ctx.fillStyle = C.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(r.label, ox + bw * 0.07, ry);
+      ctx.font = `800 ${Math.round(bw * 0.14)}px "Inter",sans-serif`;
+      ctx.fillStyle = r.color;
+      ctx.textAlign = 'right';
+      ctx.fillText(r.value, ox + bw * 0.93, ry);
+    });
+    ctx.restore();
+  }
+
+  // Mode badge
+  const modeLabel = isXR ? 'XR EXTENDED' : (flowing ? 'LIVE ANALYSIS' : '3D WORKSPACE');
+  const modeColor = isXR ? 'rgba(180,120,255,0.85)' : (flowing ? C.teal : C.blue);
+  const badgePad = 10, badgeH = 26;
+  ctx.save();
+  ctx.font = `700 11px "Inter",sans-serif`;
+  const mw = ctx.measureText(modeLabel).width + badgePad * 2;
+  const bx = wx + ww - mw - 14, by = wy + 12;
+  ctx.fillStyle = 'rgba(4,9,22,0.75)';
+  ctx.strokeStyle = modeColor; ctx.lineWidth = 1;
+  roundRect(ctx, bx, by, mw, badgeH, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = modeColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(modeLabel, bx + mw/2, by + badgeH/2);
+  ctx.restore();
+}
+
+// ─── Canvas roundRect polyfill ────────────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// ─── Top navigation bar ───────────────────────────────────────────
+function drawNavBar(ctx, w, h, navH) {
+  // Bar bg
+  ctx.fillStyle = C.bgPanel;
+  ctx.fillRect(0, 0, w, navH);
+  ctx.strokeStyle = 'rgba(136,204,255,0.25)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, navH); ctx.lineTo(w, navH); ctx.stroke();
+
+  const fs = Math.round(navH * 0.38);
+  ctx.font = `800 ${fs}px "Inter",sans-serif`;
+  ctx.textBaseline = 'middle';
+  const startX = navH * 0.6;
+  ctx.fillStyle = C.blue;      ctx.textAlign = 'left'; ctx.fillText('Circui', startX, navH/2);
+  const bw = ctx.measureText('Circui').width;
+  ctx.fillStyle = C.orange;    ctx.fillText('Try', startX + bw, navH/2);
+  const ow = ctx.measureText('Try').width;
+  ctx.fillStyle = C.green;     ctx.fillText('3D', startX + bw + ow, navH/2);
+
+  // Tag line
+  ctx.font = `400 ${Math.round(navH*0.22)}px "Inter",sans-serif`;
+  ctx.fillStyle = 'rgba(136,204,255,0.55)';
+  ctx.fillText('PROFESSIONAL CIRCUIT DESIGN', startX + bw + ow + ctx.measureText('3D').width + 12, navH/2);
+
+  // Right icons (symbolic)
+  const iconX = w - navH * 0.5;
+  ['⚙', '👤'].forEach((ic, i) => {
+    ctx.font = `${Math.round(navH * 0.35)}px sans-serif`;
+    ctx.fillStyle = 'rgba(136,204,255,0.7)'; ctx.textAlign = 'center';
+    ctx.fillText(ic, iconX - i * navH * 0.9, navH/2);
+  });
+}
+
+// ─── Left sidebar (component library) ────────────────────────────
+function drawLeftSidebar(ctx, x, y, w, h) {
+  ctx.fillStyle = C.bgPanel2; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(136,204,255,0.15)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w, y + h); ctx.stroke();
+
+  const fs = Math.round(w * 0.12);
+  ctx.font = `700 ${fs}px "Inter",sans-serif`;
+  ctx.fillStyle = 'rgba(136,204,255,0.5)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('LIBRARY', x + w/2, y + h * 0.02);
+
+  const components = [
+    { icon:'⚡', label:'Battery',   sub:'DC Source' },
+    { icon:'〜', label:'Resistor',  sub:'1Ω–1MΩ' },
+    { icon:'⊞', label:'Capacitor', sub:'µF–mF' },
+    { icon:'💡', label:'LED',       sub:'3–5V' },
+    { icon:'⊕', label:'Switch',    sub:'SPST' },
+    { icon:'≋', label:'Wire',      sub:'Connector' },
+    { icon:'△', label:'Transistor',sub:'NPN/PNP' },
+    { icon:'◈', label:'Diode',     sub:'1N4001' },
+  ];
+
+  const rowH = h * 0.1;
+  components.forEach((c, i) => {
+    const cy2 = y + h * 0.1 + i * rowH;
+    if (cy2 + rowH > y + h) return;
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(20,50,90,0.4)' : 'transparent';
+    ctx.fillRect(x, cy2, w, rowH);
+    ctx.font = `${Math.round(rowH * 0.45)}px sans-serif`;
+    ctx.fillStyle = C.teal; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(c.icon, x + w * 0.22, cy2 + rowH/2);
+    ctx.font = `600 ${Math.round(rowH * 0.28)}px "Inter",sans-serif`;
+    ctx.fillStyle = C.text; ctx.textAlign = 'left';
+    ctx.fillText(c.label, x + w * 0.38, cy2 + rowH * 0.28);
+    ctx.font = `${Math.round(rowH * 0.22)}px "Inter",sans-serif`;
+    ctx.fillStyle = C.muted;
+    ctx.fillText(c.sub, x + w * 0.38, cy2 + rowH * 0.62);
+  });
+}
+
+// ─── Right properties panel ───────────────────────────────────────
+function drawRightPanel(ctx, x, y, w, h, variant) {
+  ctx.fillStyle = C.bgPanel2; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(136,204,255,0.15)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke();
+
+  const fs = Math.round(w * 0.09);
+  ctx.font = `700 ${fs}px "Inter",sans-serif`;
+  ctx.fillStyle = 'rgba(136,204,255,0.5)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('CIRCUIT DATA', x + w/2, y + h * 0.02);
+
+  const metrics = [
+    { label:'W • Power',    value:'12.3 mW', color:'#4a90ff' },
+    { label:'I • Current',  value:'1.37 mA', color:'#ffaa33' },
+    { label:'R • Resistance','value':'6.56 kΩ', color:'#00cc66' },
+    { label:'E • Voltage',  value:'9.00 V',  color:'#ff4444' },
+  ];
+
+  const mh = h * 0.12;
+  metrics.forEach((m, i) => {
+    const my = y + h * 0.1 + i * (mh + h * 0.015);
+    ctx.fillStyle = 'rgba(15,35,65,0.7)';
+    roundRect(ctx, x + w*0.06, my, w*0.88, mh, 6); ctx.fill();
+    ctx.strokeStyle = m.color.replace(')', ',0.4)').replace('rgb', 'rgba'); ctx.lineWidth = 1;
+    roundRect(ctx, x + w*0.06, my, w*0.88, mh, 6); ctx.stroke();
+    ctx.font = `600 ${Math.round(mh*0.3)}px "Inter",sans-serif`;
+    ctx.fillStyle = 'rgba(200,220,255,0.6)'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(m.label, x + w*0.12, my + mh*0.3);
+    ctx.font = `800 ${Math.round(mh*0.38)}px "Inter",sans-serif`;
+    ctx.fillStyle = m.color; ctx.textAlign = 'right';
+    ctx.fillText(m.value, x + w*0.92, my + mh*0.68);
+  });
+
+  // Mode indicator
+  const modeY = y + h * 0.65;
+  const modeLabel = variant === 'flow' ? '● CIRCUIT RUNNING' : '○ CIRCUIT READY';
+  const modeColor = variant === 'flow' ? C.green : 'rgba(136,204,255,0.6)';
+  ctx.font = `700 ${Math.round(w*0.08)}px "Inter",sans-serif`;
+  ctx.fillStyle = modeColor; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(modeLabel, x + w/2, modeY);
+
+  // Ohm's law reminder
+  ctx.font = `${Math.round(w*0.065)}px "Inter",sans-serif`;
+  ctx.fillStyle = 'rgba(136,204,255,0.35)'; ctx.textAlign = 'center';
+  ctx.fillText('V = I × R', x + w/2, modeY + h * 0.06);
+  ctx.fillText('P = I × V', x + w/2, modeY + h * 0.11);
+}
+
+// ─── Bottom info strip (portrait layout) ─────────────────────────
+function drawBottomPanel(ctx, x, y, w, h, variant) {
+  ctx.fillStyle = C.bgPanel2; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(136,204,255,0.2)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+w, y); ctx.stroke();
+
+  const cols = [
+    { label:'VOLTAGE', value:'9.00 V',  color:'#ff4444' },
+    { label:'CURRENT', value:'1.37 mA', color:'#ffaa33' },
+    { label:'POWER',   value:'12.3 mW', color:'#4a90ff' },
+    { label:'RESIST.', value:'6.56 kΩ', color:'#00cc66' },
+  ];
+  const cw = w / cols.length;
+  cols.forEach((c, i) => {
+    const cx2 = x + cw * i + cw/2;
+    ctx.font = `600 ${Math.round(h*0.16)}px "Inter",sans-serif`;
+    ctx.fillStyle = 'rgba(200,220,255,0.45)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(c.label, cx2, y + h * 0.28);
+    ctx.font = `800 ${Math.round(h*0.24)}px "Inter",sans-serif`;
+    ctx.fillStyle = c.color;
+    ctx.fillText(c.value, cx2, y + h * 0.65);
+  });
+}
+
+// ─── Full scene renderer ──────────────────────────────────────────
+function renderScene(canvas, width, height, variant) {
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const isPortrait = height > width;
+  const isXR = width >= 2400;
+
+  // Full background
+  ctx.fillStyle = C.bgDeep; ctx.fillRect(0, 0, width, height);
+
+  // Dimensions
+  const navH   = Math.round(height * (isPortrait ? 0.045 : 0.055));
+  const sideW   = Math.round(width * (isPortrait ? 0.16 : 0.14));
+  const panelW  = isPortrait ? 0 : Math.round(width * (isXR ? 0.18 : 0.20));
+  const bottomH = isPortrait ? Math.round(height * 0.14) : 0;
+
+  const wsX = sideW;
+  const wsY = navH;
+  const wsW = width - sideW - panelW;
+  const wsH = height - navH - bottomH;
+
+  drawNavBar(ctx, width, height, navH);
+  drawLeftSidebar(ctx, 0, navH, sideW, height - navH);
+  drawCircuitScene(ctx, wsX, wsY, wsW, wsH, variant, isXR);
+
+  if (!isPortrait) {
+    drawRightPanel(ctx, width - panelW, navH, panelW, height - navH, variant);
+  } else {
+    drawBottomPanel(ctx, 0, height - bottomH, width, bottomH, variant);
+  }
+}
+
+// ─── Download a rendered screenshot ──────────────────────────────
+function dl(w, h, variant, filename) {
+  const canvas = document.createElement('canvas');
+  renderScene(canvas, w, h, variant);
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  }, 'image/png');
+}
+
+// ─── Download all 8 screenshots ───────────────────────────────────
+const ALL_SHOTS = [
+  [1920, 1200, 'builder', '10in-tablet-screenshot-1.png'],
+  [1920, 1200, 'flow',    '10in-tablet-screenshot-2.png'],
+  [1200, 1920, 'builder', '7in-tablet-screenshot-1.png'],
+  [1200, 1920, 'flow',    '7in-tablet-screenshot-2.png'],
+  [2560, 1440, 'builder', 'android-xr-screenshot-1.png'],
+  [2560, 1440, 'flow',    'android-xr-screenshot-2.png'],
+  [1920, 1080, 'builder', 'chromebook-screenshot-1.png'],
+  [1920, 1080, 'flow',    'chromebook-screenshot-2.png'],
+];
+
+function downloadAll() {
+  ALL_SHOTS.forEach(([w, h, v, f], i) => {
+    setTimeout(() => dl(w, h, v, f), i * 280);
+  });
+}
+
+// ─── Render preview thumbnails ────────────────────────────────────
+function renderPreviews() {
+  const configs = [
+    { id:'prev-tablet10', w:1920, h:1200, variants:['builder','flow'] },
+    { id:'prev-tablet7',  w:1200, h:1920, variants:['builder','flow'] },
+    { id:'prev-xr',       w:2560, h:1440, variants:['builder','flow'] },
+    { id:'prev-chromebook',w:1920,h:1080, variants:['builder','flow'] },
+  ];
+  const PREVIEW_W = 340;
+
+  configs.forEach(({ id, w, h, variants }) => {
+    const container = document.getElementById(id);
+    variants.forEach(v => {
+      const pw = PREVIEW_W, ph = Math.round(PREVIEW_W * h / w);
+      const canvas = document.createElement('canvas');
+      canvas.width = pw; canvas.height = ph;
+      canvas.style.width = pw + 'px'; canvas.style.height = ph + 'px';
+      // Render at full res then scale preview
+      const fullCanvas = document.createElement('canvas');
+      renderScene(fullCanvas, w, h, v);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(fullCanvas, 0, 0, pw, ph);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'preview-wrap';
+      const lbl = document.createElement('span');
+      lbl.textContent = v === 'builder' ? 'Circuit Builder' : 'Live Current Flow';
+      wrap.appendChild(canvas);
+      wrap.appendChild(lbl);
+      container.appendChild(wrap);
+    });
+  });
+}
+
+renderPreviews();
+</script>
+</body>
+</html>
