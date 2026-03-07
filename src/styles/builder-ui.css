@@ -825,6 +825,116 @@ body.builder-body {
   cursor: not-allowed;
 }
 
+/* ── Centered component quick-add bar ───────────────────────────────────
+   A horizontally centered pill strip shown over the workspace (outside the
+   iframe) so it always appears in the production React app at /#/app.
+   This is where Battery, Resistor, LED, Junction and Wire-mode shortcuts
+   belong — NOT inside legacy.html whose #quick-actions element is hidden
+   by `body.embedded #quick-actions { display:none }` when embedded.
+   ─────────────────────────────────────────────────────────────────────── */
+.quick-add-bar {
+  position: fixed;
+  top: calc(68px + var(--builder-safe-area-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 930;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(10, 18, 48, 0.82);
+  border: 1.5px solid rgba(170, 136, 255, 0.35);
+  border-radius: 36px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(3, 12, 32, 0.45);
+  white-space: nowrap;
+}
+
+.quick-add-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 52px;
+  padding: 6px 10px;
+  background: rgba(170, 136, 255, 0.18);
+  border: 1.5px solid rgba(170, 136, 255, 0.35);
+  border-radius: 20px;
+  color: rgba(210, 190, 255, 0.95);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.14s ease;
+  white-space: nowrap;
+}
+
+.quick-add-btn:hover:not(:disabled) {
+  background: rgba(170, 136, 255, 0.32);
+  border-color: rgba(170, 136, 255, 0.65);
+  transform: scale(1.06);
+}
+
+.quick-add-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.quick-add-btn:disabled,
+.quick-add-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.quick-add-btn--active {
+  background: rgba(136, 204, 255, 0.25);
+  border-color: var(--builder-cyan);
+  color: var(--builder-cyan);
+  box-shadow: 0 0 10px rgba(136, 204, 255, 0.3);
+}
+
+.quick-add-btn--active:hover:not(:disabled) {
+  background: rgba(136, 204, 255, 0.35);
+  border-color: var(--builder-cyan);
+  color: #fff;
+}
+
+.quick-add-btn-icon {
+  font-size: 13px;
+  line-height: 1;
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.quick-add-btn-label {
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 480px) {
+  .quick-add-bar {
+    gap: 4px;
+    padding: 5px 8px;
+  }
+
+  .quick-add-btn {
+    min-width: 38px;
+    padding: 5px 7px;
+  }
+
+  .quick-add-btn-label {
+    display: none;
+  }
+}
+
 /* Payoff banner explanation panel */
 .current-flow-payoff-explainer {
   display: grid;
