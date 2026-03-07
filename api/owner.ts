@@ -18,12 +18,17 @@ export const config = {
 const ALLOWED_ORIGIN = "https://www.circuitry3d.net";
 
 function makeCorsHeaders(requestOrigin: string | null): Record<string, string> {
-  // Allow requests from the production domain and from Vercel preview URLs.
-  const isVercelPreview =
+  // Allow requests from the production domain, any Vercel deployment URL
+  // (production like circuitry3d.vercel.app and preview branches), and
+  // localhost for local development with `vercel dev`.
+  const isVercelUrl =
     requestOrigin !== null &&
-    /^https:\/\/[a-z0-9-]+-[a-z0-9-]+\.vercel\.app$/.test(requestOrigin);
+    /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(requestOrigin);
+  const isLocalhost =
+    requestOrigin !== null &&
+    /^http:\/\/localhost(:\d+)?$/.test(requestOrigin);
   const allowedOrigin =
-    requestOrigin === ALLOWED_ORIGIN || isVercelPreview
+    requestOrigin === ALLOWED_ORIGIN || isVercelUrl || isLocalhost
       ? requestOrigin
       : ALLOWED_ORIGIN;
 
