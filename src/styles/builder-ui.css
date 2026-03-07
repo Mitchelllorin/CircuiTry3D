@@ -778,15 +778,30 @@ body.builder-body {
   }
 }
 
-/* Zoom controls overlay */
+/* Zoom controls overlay
+   Right offset clears the right menu toggle tab (--builder-menu-toggle-hit-width)
+   so the buttons never overlap the toggle, matching the pattern used by
+   .workspace-edge-actions--right. PR #515 originally applied this fix to the
+   hidden legacy.html #zoom-controls element; this is the correct React target. */
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(64px + var(--builder-safe-area-bottom));
-  right: calc(16px + var(--builder-safe-area-right));
+  right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: 920;
   display: flex;
   flex-direction: row;
   gap: 4px;
+  transition: right 0.32s ease;
+}
+
+/* When the right sidebar is open, push zoom controls left to clear the full open panel */
+.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
+  right: calc(
+    var(--builder-safe-area-right) +
+    var(--builder-menu-right-width) +
+    var(--builder-menu-toggle-hit-width) +
+    12px
+  );
 }
 
 .circuit-zoom-btn {
