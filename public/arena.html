@@ -545,6 +545,87 @@
         max-width: none;
       }
     }
+    /* ── Featured Components (Manufacturer Placement Framework) ── */
+    .featured-component-card {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(8, 15, 28, 0.7);
+      border: 1px solid rgba(136, 204, 255, 0.16);
+      cursor: pointer;
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .featured-component-card:hover {
+      border-color: rgba(136, 204, 255, 0.38);
+      background: rgba(12, 22, 42, 0.85);
+    }
+
+    .featured-component-card.selected {
+      border-color: rgba(57, 255, 183, 0.55);
+      background: rgba(5, 30, 22, 0.7);
+    }
+
+    .featured-component-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(224, 242, 254, 0.92);
+      letter-spacing: 0.02em;
+    }
+
+    .featured-component-mfr {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.65);
+    }
+
+    .featured-component-spec {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.8);
+      line-height: 1.5;
+    }
+
+    .featured-component-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .partner-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(15, 25, 50, 0.6);
+      border: 1px dashed rgba(136, 204, 255, 0.22);
+    }
+
+    .partner-cta-text {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.75);
+      line-height: 1.5;
+    }
+
+    .partner-cta-link {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #39ffb7;
+      text-decoration: none;
+      white-space: nowrap;
+      text-shadow: 0 0 8px rgba(57, 255, 183, 0.4);
+      transition: color 0.15s ease;
+    }
+
+    .partner-cta-link:hover {
+      color: #7fffd4;
+    }
   </style>
 </head>
 <body>
@@ -660,6 +741,20 @@
       <section class="panel-section">
         <div class="section-heading">Status</div>
         <div class="stat" id="stat-out">Ready.</div>
+      </section>
+      <section class="panel-section" id="featured-section">
+        <div class="panel-header">
+          <div class="section-heading">Featured Components</div>
+          <span class="chip-btn" style="cursor:default;pointer-events:none;">Real-World Specs</span>
+        </div>
+        <p class="panel-subtext">Test against real manufacturer datasheets. Click any card to load it into Component A.</p>
+        <div class="featured-component-grid" id="featured-component-grid">
+          <!-- Cards injected by script below -->
+        </div>
+        <div class="partner-cta">
+          <span class="partner-cta-text">Have a component you'd like featured here?</span>
+          <a class="partner-cta-link" href="/partnerships" target="_top">Partner with us →</a>
+        </div>
       </section>
     </div>
     </div>
@@ -3969,6 +4064,131 @@
       });
 
       bootstrap();
+    })();
+  </script>
+  <script>
+    // ── Featured Components — real manufacturer component data ──────────────
+    // This section powers the "Featured Components" product-placement framework.
+    // Each entry maps directly to a valid FailureEngine component type so
+    // clicking any card immediately pre-populates Component A with real specs.
+    (function () {
+      "use strict";
+
+      const FEATURED_COMPONENTS = [
+        {
+          id: "vishay-crcw0402-100r",
+          mfr: "Vishay",
+          name: "CRCW0402 100Ω",
+          spec: "0402 · 100Ω · 1% · 63mW",
+          type: "resistor",
+          props: { resistance: 100, powerRating: 0.063, tolerance: 0.01, thermalResistance: 300 },
+        },
+        {
+          id: "murata-gcj-1uf",
+          mfr: "Murata",
+          name: "GCJ316R71H105KA12D",
+          spec: "0805 · 1µF · 50V · X7R",
+          type: "capacitor",
+          props: { capacitance: 1e-6, maxVoltage: 50, esr: 0.05, thermalResistance: 45 },
+        },
+        {
+          id: "ti-lm7805",
+          mfr: "Texas Instruments",
+          name: "LM7805",
+          spec: "5V reg · 1A · TO-220",
+          type: "voltage_regulator",
+          props: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
+          id: "on-semi-1n4148",
+          mfr: "ON Semiconductor",
+          name: "1N4148",
+          spec: "100V · 300mA · signal diode",
+          type: "diode",
+          props: { forwardVoltage: 0.72, maxCurrent: 0.3, reverseVoltage: 100, thermalResistance: 250, powerRating: 0.5 },
+        },
+        {
+          id: "infineon-irf540n",
+          mfr: "Infineon",
+          name: "IRF540N",
+          spec: "N-MOSFET · 100V · 33A",
+          type: "mosfet",
+          props: { vth: 4, rds_on: 0.044, id_max: 33, vds_max: 100, vgs_max: 20, powerRating: 130, thermalResistance: 0.92, maxTempC: 175 },
+        },
+        {
+          id: "vishay-bzx84c-5v1",
+          mfr: "Vishay",
+          name: "BZX84C5V1",
+          spec: "Zener · 5.1V · 300mW",
+          type: "zener_diode",
+          props: { zenerVoltage: 5.1, maxCurrent: 0.059, powerRating: 0.3, thermalResistance: 500 },
+        },
+      ];
+
+      const grid = document.getElementById("featured-component-grid");
+      const selectA = document.getElementById("component-a");
+      if (!grid || !selectA) {
+        return;
+      }
+
+      let activeId = null;
+
+      function loadFeaturedComponent(fc) {
+        // Check if this featured component type already exists as an option;
+        // if not, register it on the fly via FailureEngine so FUSE™ analysis works.
+        let optionValue = null;
+        for (let i = 0; i < selectA.options.length; i++) {
+          if (selectA.options[i].text.toLowerCase().includes(fc.name.toLowerCase())) {
+            optionValue = selectA.options[i].value;
+            break;
+          }
+        }
+
+        // If the component type isn't in the select yet, add it
+        if (optionValue === null) {
+          // Register with FailureEngine so detectFailure works.
+          // An empty modes object is intentional here: the featured component
+          // inherits failure profiles from its resolved family (fc.type) via
+          // resolveComponentFamily(), so no custom modes need to be provided.
+          if (typeof FailureEngine !== "undefined" && FailureEngine.registerComponentType) {
+            FailureEngine.registerComponentType(fc.id, fc.type);
+            if (FailureEngine.registerFailureProfile) {
+              FailureEngine.registerFailureProfile(fc.id, {});
+            }
+          }
+
+          const opt = document.createElement("option");
+          opt.value = fc.id;
+          opt.text = `${fc.mfr} ${fc.name}`;
+          opt.dataset.featuredType = fc.type;
+          opt.dataset.featuredProps = JSON.stringify(fc.props);
+          selectA.appendChild(opt);
+          optionValue = fc.id;
+        }
+
+        selectA.value = optionValue;
+        selectA.dispatchEvent(new Event("change", { bubbles: true }));
+
+        // Update active card highlight
+        activeId = fc.id;
+        document.querySelectorAll(".featured-component-card").forEach((el) => {
+          el.classList.toggle("selected", el.dataset.fcId === fc.id);
+        });
+      }
+
+      FEATURED_COMPONENTS.forEach((fc) => {
+        const card = document.createElement("div");
+        card.className = "featured-component-card";
+        card.dataset.fcId = fc.id;
+        card.title = `Load ${fc.mfr} ${fc.name} into Component A`;
+        card.innerHTML = `
+          <div class="featured-component-mfr">${fc.mfr}</div>
+          <div class="featured-component-name">${fc.name}</div>
+          <div class="featured-component-spec">${fc.spec}</div>
+        `;
+        card.addEventListener("click", () => loadFeaturedComponent(fc));
+        grid.appendChild(card);
+      });
     })();
   </script>
 </body>

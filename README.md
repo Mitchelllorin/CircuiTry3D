@@ -120,23 +120,117 @@ npm run test:watch
 
 ## 🔑 Key Features
 
+### 💥 FUSE™ — Failure Understanding Simulation Engine
+> **CircuiTry3D's proprietary, zero-dependency component failure detection and visualization engine.**
+
+FUSE™ is what separates CircuiTry3D from every other circuit simulator.  While other tools only show what happens when a circuit works, FUSE™ shows exactly what happens when it **fails** — in real time, in 3D, with physics-accurate descriptions.
+
+| What FUSE™ delivers | Details |
+|---|---|
+| **Real-time failure detection** | Runs every simulation tick; evaluates every component against its rated limits |
+| **30+ named failure modes** | *Thermal Runaway, Junction Burnout, Avalanche Breakdown, Dielectric Breakdown, Electrolyte Boilover*, and more |
+| **18 component families** | Resistors, capacitors, LEDs, diodes, BJTs, MOSFETs, op-amps, regulators, ICs, batteries, switches, relays, fuses, motors, transformers, and more |
+| **Severity scoring (0–3)** | 0 = OK · 1 = Stressed · 2 = Critical · 3 = Destroyed |
+| **8 visual effect types** | *char, melt, arc, burst, blowout, vent, glow, smoke* — multi-layer Three.js particle systems with physics-accurate gravity and flicker |
+| **Physical descriptions** | Plain-language explanation of what is happening inside the component at the material level |
+| **Shared across platforms** | The same engine drives both the 3D Builder and the Component Arena — one source of truth |
+
+📖 Full technical spec and marketing guide: [`docs/FUSE_ENGINE.md`](docs/FUSE_ENGINE.md)
+
 ### ⚡ 3D Circuit Builder (`/app`)
-Build and simulate circuits in a 3D sandbox. Components snap to a grid and the live DC solver updates voltages and currents in real time. Zoom in to inspect atomic-level electron flow and see Ohm's Law at work.
+Build and simulate circuits in a 3D sandbox. Components snap to a grid and the live DC solver updates voltages and currents in real time.
+
+**Components supported:** Battery, Resistor, LED, Switch, Ground, Junction
+
+**W.I.R.E. Analysis Panel** — displays live Watts, Current, Resistance, and Voltage for every node. Each quantity is color-coded (blue = W, orange = I, green = R, red = E) and an Ohm's Law triangle plus power panel update in real time.
+
+**Junctions** — split any wire mid-run to create a branch point. Junctions let you build parallel and series-parallel circuits and apply KCL at every current-split/recombine node. Add via the **⬡ Junct** quick-action button, the `J` keyboard shortcut, or by tapping an existing wire in Wire Mode.
+
+**Multi-zoom current flow visualization** — four depth tiers (macro → close → atomic → deep-atomic) animate electron/conventional current flow as particles. Toggle between Electron Flow (negative→positive) and Conventional Current (positive→negative) from the View menu.
+
+**Wire Routing Modes** — choose Free-form, Manhattan (right-angles), Offset (parallel detours), or Arc (smooth sweeps) from the Tools menu.
+
+**Layout Modes** — Free, Square (textbook style), and Linear (vertical tree) keep circuits organized automatically.
+
+**Auto-Arrange** — one click re-flows the circuit into a clean textbook layout.
+
+**Schematic overlay** — a companion 2D schematic renders alongside the 3D view so learners can cross-reference real-world wiring with standard notation.
+
+**Interactive Tutorial** — in-app Quick Start Guide (Help → Tutorial) covering all menus, keyboard shortcuts, junction usage, routing modes, and W.I.R.E. concepts.
+
+**Keyboard shortcuts:** `B` Battery · `R` Resistor · `L` LED · `S` Switch · `J` Junction · `W` Wire Mode · `T` Rotate Mode · `Space` Toggle Menu
+
+**Live component failure detection** — every simulation tick the builder runs each component through the shared **FailureEngine** (`component-failure-engine.js`). When a component exceeds its rated limits it immediately triggers:
+- A **severity badge** overlaid on the component nameplate (severity scale: 0 = OK → 1 = stressed → 2 = critical → 3 = destroyed)
+- **Multi-layer Three.js particle effects** spawned at the component's 3D position — visual types include *char* (fire flicker), *melt* (molten drip), *arc* (blue electrical discharge), *burst* (explosion debris cloud + fire + smoke), *blowout* (white-hot flash), *vent* (pressurised gas), *glow* (thermal), and *smoke*
+- **Physics-accurate particle gravity** — sparks and debris fall, fire rises via buoyancy, smoke drifts gently upward, molten drips fall slower than debris
+- **Animated flicker** tuned per failure type (arc: 55 ms, burst: 75 ms, melt: 110 ms, char: 95 ms)
+- **Camera shake** on explosion events for dramatic emphasis
+
+Failure profiles are defined for all major component families: resistors, thermistors, capacitors, LEDs, diodes, Zener diodes, BJTs, MOSFETs, op-amps, voltage regulators, ICs/microcontrollers, batteries, switches, relays, fuses, lamps, motors, transformers, and crystal oscillators.
+
+### 🧪 Component Arena & FUSE™ Engine (`/arena`)
+The **Component Arena** is a dedicated stress-testing environment powered by the **FUSE™ (Failure Understanding Simulation Engine)** — the same underlying `FailureEngine` library that drives real-time failure detection in the 3D Builder.
+
+**Testing Modes:**
+- *Single Component* — run a configurable stress test on one component
+- *Compare (A vs B)* — side-by-side stress test with a relative delta panel
+
+**Configurable Test Variables:** Voltage, Frequency, Ambient Temperature, Humidity, Duty Cycle, Duration, and Load Impedance
+
+**Analysis Output:**
+- Component summary cards (A, B, and delta metrics)
+- **FUSE™ failure analysis** — evaluates each component against its physics-based failure profile and reports the failure name (e.g. *Thermal Overload*, *Junction Burnout*, *Avalanche Breakdown*, *Dielectric Breakdown*), severity level (0–3), and a physical description of the failure mechanism
+- Animated failure particle effects: smoke, arc, burst, glow, flame, explosion, debris, and shockwave flash
+- Status indicators with pass/warn/fail states
+
+**Data Exchange:**
+- Export results as JSON
+- Load a circuit export directly from the Builder into the Arena
+- Import custom JSON test scenarios
 
 ### 🎯 Adaptive Practice (`/practice`)
 The practice workspace tracks your recent W.I.R.E. (Watts, Current, Resistance, Voltage) misses and surfaces the three problems that best target your current gaps. Recommendations update automatically as you complete worksheets.
 
-### 🏅 Gamification & Challenge Mode
+**Problem types:** Series, Parallel, Mixed, Combination Challenge, and Random
+
+**Built-in educational tools:** Ohm's Law Triangle Deck, Ohm's Law Wheel calculator, Kirchhoff's Laws reference, Resistor Color Code decoder, Wire Library reference, and step-by-step solution breakdowns
+
+### 🏅 Gamification & Arcade Mode
 Every worksheet completion awards XP, streak bonuses, and badges via **GamificationContext**. The Challenge Mode dashboard shows XP progress, unique clears, a live leaderboard, and component unlocks (Precision Op-Amp, Sensor Pack, Power Lab, etc.). All progress is persisted to `localStorage` — no account required.
+
+**Arcade games (`/arcade`):** RetroCircuitMaze, OhmsRacer, VoltFighter — XP-based progression unlocks new components and difficulty tiers.
 
 ### 🎓 Classroom Mode (`/classroom`)
 Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to Vercel KV via `/api/classroom`. Set `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel to enable cloud persistence; the app falls back to local storage without them.
 
-### 🧪 Community Hub (`/community`)
+Supports grade levels: Grade 8, Grades 9–10, Grades 11–12, Higher Education, and CTE programs.
+
+### 🧑‍🤝‍🧑 Community Hub (`/community`)
 Share circuit exports, post lab notes, and browse the circuit gallery. Member profiles (set via `/account`) roll up contributions automatically. The feed and gallery persist locally for offline use.
 
+### 📚 Integrated Textbook (`/textbook`)
+An in-app electrical theory reference with chapters organized by grade/year. Each chapter includes formula definitions, worked examples, variable descriptions, and links to relevant practice problems.
+
 ### 📐 Schematic Mode
-A dedicated schematic view renders the same circuit as a clean 2D schematic diagram alongside the 3D builder, making it easy to compare real-world wiring with standard notation.
+A dedicated schematic view renders the same circuit as a clean 2D schematic diagram alongside the 3D builder, making it easy to compare real-world wiring with standard notation. Supports both American and IEC symbol standards.
+
+---
+
+## 💳 Pricing
+
+Pricing is available at [`/pricing`](https://circuitry3d.app/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
+
+| Plan | Price (Annual) | Who it's for | Highlights |
+|---|---|---|---|
+| **Free Sandbox** | Free | Explorers | 3 active circuits · Core components · W.I.R.E. analysis preview · Community hub · FUSE™ severity badge only |
+| **Student Plan** | $92 / student / yr | Students | 10 active circuits · Full component library · W.I.R.E. analysis tools · **Full FUSE™ failure names + visual effects** · Community hub |
+| **Educator License** | $299 / educator / yr | Teachers | Unlimited saved circuits · Advanced W.I.R.E. coaching · Lesson templates & assessments · **Full FUSE™ analysis + physical descriptions + Component Arena** · Priority support |
+| **Institutional License** | Contact us | Schools & districts | Bulk educator seats · Dedicated onboarding · SIS integrations & SSO · Curriculum alignment toolkit · **Custom FUSE™ component profiles** |
+
+**Add-on — Certification Bundle** *(Coming Soon)* — $99 / yr: Guided certification pathway, accredited PD modules, printable achievement badges.
+
+Volume discounts available for 25+ seats. Custom enterprise packages available — contact support@circuitry3d.app.
 
 ---
 
