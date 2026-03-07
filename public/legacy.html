@@ -4150,6 +4150,11 @@
         const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
         let currentFlowParticles = [];
+        let currentWireGlows    = []; // additive-blended glow tubes around active wires
+        let currentLatticeAtoms = []; // Cu⁺ lattice ion spheres (atomic zoom)
+        let currentProbabilityClouds = []; // electron probability-cloud hazes (atomic zoom)
+        let flowActivationTime  = 0;  // performance.now() when flow last activated
+        let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
 
@@ -5342,6 +5347,56 @@ body.android-optimized .zoom-btn {
         const ORBITAL_RING_ROTATION_OFFSET = 0.4;
         const ORBITAL_RING_Z_ROTATION_FACTOR = 4;
         const ORBITAL_RING_X_ROTATION_FACTOR = 2;
+
+        // ── Multi-scale current-flow visualization constants ─────────────────
+        // Zoom distance thresholds that control which visualization tier is active.
+        // ZOOM_DEEP_ATOMIC < ZOOM_ATOMIC < ZOOM_CLOSE  (all ≤ CLOSE_ZOOM_THRESHOLD)
+        const ZOOM_DEEP_ATOMIC = 0.8;  // below this distance: full Bohr / probability cloud
+        // (ZOOM_ATOMIC == ATOMIC_ZOOM_THRESHOLD == 3.0, ZOOM_CLOSE == CLOSE_ZOOM_THRESHOLD == 8.0)
+
+        // Wire energy-glow overlay (additive blending, all tiers)
+        const WIRE_GLOW_RADIUS        = 0.30;   // tube radius (world units)
+        const WIRE_GLOW_BASE_OPACITY  = 0.09;   // resting opacity
+        const WIRE_GLOW_PULSE_AMP     = 0.06;   // opacity added by sine pulse
+        const WIRE_GLOW_RADIAL_SEGS   = 7;      // cylinder sides (low-poly for performance)
+        const WIRE_GLOW_SPEED_SCALE   = 2.2;    // opacity boost at max current speed
+
+        // Particle pulsation (all tiers)
+        const PULSE_SPEED             = 0.055;  // radians per globalFlowTime tick
+        const PULSE_OPACITY_AMP       = 0.16;   // opacity swing amplitude
+        const PULSE_SCALE_AMP         = 0.08;   // scale swing amplitude
+
+        // Activation flash (circuit-complete event)
+        const ACTIVATION_FLASH_MS     = 800;    // duration of flash in ms
+        const ACTIVATION_FLASH_PEAK   = 3.5;    // emissive multiplier peak
+
+        // Comet trails (close + atomic zoom, d < CLOSE_ZOOM_THRESHOLD)
+        const TRAIL_COUNT             = 3;       // trail segments behind each electron
+        const TRAIL_STEP             = 0.025;   // progress gap between trail segments
+        const TRAIL_SIZE_RATIO        = 0.58;   // each segment shrinks by this factor
+        const TRAIL_OPACITY_BASE      = 0.30;   // first trail segment opacity
+        const TRAIL_OPACITY_RATIO     = 0.50;   // each segment fades by this factor
+
+        // Speed-based elongation (close + atomic zoom)
+        const ELONGATION_MAX          = 3.8;    // max scale along direction of travel
+        const ELONGATION_SPEED_NORM   = 0.18;   // speed at which elongation saturates
+
+        // Copper lattice atoms (atomic zoom only, d < ATOMIC_ZOOM_THRESHOLD)
+        const LATTICE_SPACING         = 0.38;   // scene units between Cu⁺ ions
+        const LATTICE_ATOM_RADIUS     = 0.14;   // ion sphere radius
+        const LATTICE_MAX_ATOMS       = isMobile ? 40 : 80; // cap for performance
+        const LATTICE_HEAT_THRESHOLD  = 0.05;   // current (A) above which ions glow
+
+        // Thermal jitter on electrons (atomic zoom)
+        const THERMAL_JITTER          = 0.018;  // max random displacement per axis
+
+        // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
+        const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
+        const PROB_CLOUD_OPACITY      = 0.06;   // base opacity of probability haze
+
+        // Animation micro-constants
+        const TANGENT_SAMPLE_DELTA    = 0.01;   // progress offset used to approximate wire tangent
+        const GOLDEN_ANGLE_RAD        = 137.5 * (Math.PI / 180); // golden angle in radians (lattice packing)
 
         // Junction class
         class Junction {
@@ -7499,7 +7554,9 @@ body.android-optimized .zoom-btn {
             }
             lastFrameTime = currentTime;
 
-            updateFlowParticles();
+            globalFlowTime++;
+            updateFlowParticles(currentTime);
+            updateWireGlows(currentTime);
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
 
@@ -7531,7 +7588,7 @@ body.android-optimized .zoom-btn {
             }
         }
 
-        function updateFlowParticles() {
+        function updateFlowParticles(currentTime) {
             // Re-create particles if atomic mode has changed (threshold crossing)
             const atomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             if (atomicMode !== lastAtomicMode && currentFlowState) {
@@ -7540,13 +7597,28 @@ body.android-optimized .zoom-btn {
                 return;
             }
 
+            // Compute activation flash multiplier (decays over ACTIVATION_FLASH_MS)
+            let activationBoost = 0;
+            if (flowActivationTime > 0 && currentTime) {
+                const elapsed = currentTime - flowActivationTime;
+                if (elapsed < ACTIVATION_FLASH_MS) {
+                    const t = elapsed / ACTIVATION_FLASH_MS;
+                    // Sharp rise then exponential decay: peak at ~15% into flash
+                    activationBoost = ACTIVATION_FLASH_PEAK * Math.exp(-t * 5.5) * Math.sin(t * Math.PI);
+                }
+            }
+
+            // Determine zoom tier once per frame
+            const inAtomicZoom = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const inCloseZoom  = cameraDistance < CLOSE_ZOOM_THRESHOLD;
+            const inDeepAtomic = cameraDistance < ZOOM_DEEP_ATOMIC;
+
             // Iterate backwards when removing items to avoid index issues
             for (let i = currentFlowParticles.length - 1; i >= 0; i--) {
                 const particle = currentFlowParticles[i];
                 try {
                     if (!particle?.userData?.wire || !particle.userData.isFlowing) {
-                        scene.remove(particle);
-                        currentFlowParticles.splice(i, 1);
+                        _removeFlowParticle(particle, i);
                         continue;
                     }
 
@@ -7554,46 +7626,180 @@ body.android-optimized .zoom-btn {
                     const wire = wireData.wire;
 
                     if (!wire || !wire.curve) {
-                        scene.remove(particle);
-                        currentFlowParticles.splice(i, 1);
+                        _removeFlowParticle(particle, i);
                         continue;
                     }
 
+                    // ── Advance position along wire ──────────────────────────
                     const step = (wireData.speed || 0.01) * (wireData.direction || 1);
                     wireData.progress += step;
 
-                    if (wireData.progress > 1) {
-                        wireData.progress -= 1;
-                    } else if (wireData.progress < 0) {
-                        wireData.progress += 1;
-                    }
+                    if (wireData.progress > 1) wireData.progress -= 1;
+                    else if (wireData.progress < 0) wireData.progress += 1;
 
                     const position = wire.curve.getPoint(wireData.progress);
-                    if (position && position.isVector3) {
-                        particle.position.copy(position);
-                    }
+                    if (!position || !position.isVector3) continue;
 
-                    // Scale particles dynamically when zoomed close for near-atomic visualization
+                    // ── Thermal jitter in atomic zoom ────────────────────────
+                    if (inAtomicZoom) {
+                        position.x += (Math.random() - 0.5) * THERMAL_JITTER;
+                        position.y += (Math.random() - 0.5) * THERMAL_JITTER;
+                        position.z += (Math.random() - 0.5) * THERMAL_JITTER;
+                    }
+                    particle.position.copy(position);
+
+                    // ── Zoom-driven uniform scale ────────────────────────────
+                    let baseZoomScale = 1;
                     if (cameraDistance < CLOSE_ZOOM_THRESHOLD) {
-                        const zoomScale = Math.min(MAX_PARTICLE_SCALE, CLOSE_ZOOM_THRESHOLD / cameraDistance);
-                        particle.scale.setScalar(zoomScale);
-                    } else if (particle.scale.x !== 1) {
-                        particle.scale.setScalar(1);
+                        baseZoomScale = Math.min(MAX_PARTICLE_SCALE, CLOSE_ZOOM_THRESHOLD / cameraDistance);
                     }
 
-                    // Animate orbital ring when in near-atomic mode
-                    if (wireData.orbitalRing) {
-                        wireData.orbitalRing.rotation.z += wireData.speed * ORBITAL_RING_Z_ROTATION_FACTOR;
-                        wireData.orbitalRing.rotation.x += wireData.speed * ORBITAL_RING_X_ROTATION_FACTOR;
+                    // ── Speed-based elongation along wire tangent ────────────
+                    if (inCloseZoom) {
+                        const absSpeed  = Math.abs(wireData.speed || 0);
+                        const elongT    = Math.min(1, absSpeed / ELONGATION_SPEED_NORM);
+                        const elongScale = 1 + (ELONGATION_MAX - 1) * elongT;
+
+                        // Approximate tangent by sampling two nearby points
+                        const pA = wire.curve.getPoint(Math.max(0, wireData.progress - TANGENT_SAMPLE_DELTA));
+                        const pB = wire.curve.getPoint(Math.min(1, wireData.progress + TANGENT_SAMPLE_DELTA));
+                        if (pA && pB && pA.isVector3 && pB.isVector3) {
+                            const tangent = pB.clone().sub(pA).normalize();
+                            // Align Y axis of particle (geometry long axis) to tangent
+                            const q  = new THREE.Quaternion().setFromUnitVectors(worldUpVector, tangent.lengthSq() > 0.0001 ? tangent : worldUpVector);
+                            particle.setRotationFromQuaternion(q);
+                            particle.scale.set(baseZoomScale, baseZoomScale * elongScale, baseZoomScale);
+                        } else {
+                            particle.scale.setScalar(baseZoomScale);
+                        }
+                    } else {
+                        if (particle.scale.x !== 1) particle.scale.setScalar(1);
+                    }
+
+                    // ── Opacity & scale pulsation ────────────────────────────
+                    const phase     = wireData.pulsePhase || 0;
+                    const sinVal    = Math.sin(globalFlowTime * PULSE_SPEED + phase);
+                    const baseOp    = wireData.baseOpacity || 0.7;
+                    const pulseOp   = Math.max(0.1, Math.min(1, baseOp + sinVal * PULSE_OPACITY_AMP));
+
+                    if (particle.material) {
+                        // Apply activation flash on top of pulse
+                        const flashBoost = activationBoost > 0 ? activationBoost : 0;
+                        particle.material.opacity = Math.min(1, pulseOp);
+                        particle.material.emissiveIntensity = wireData.baseEmissive + sinVal * 0.25 + flashBoost;
+                    }
+
+                    // ── Comet trails (close and atomic zoom) ─────────────────
+                    if (inCloseZoom && wireData.trailMeshes && wireData.trailMeshes.length > 0) {
+                        for (let t = 0; t < wireData.trailMeshes.length; t++) {
+                            const trail = wireData.trailMeshes[t];
+                            if (!trail) continue;
+                            // Each trail segment is TRAIL_STEP behind the particle (in direction of motion)
+                            const offset = TRAIL_STEP * (t + 1) * (wireData.direction || 1) * -1;
+                            let trailProg = wireData.progress + offset;
+                            if (trailProg > 1) trailProg -= 1;
+                            if (trailProg < 0) trailProg += 1;
+                            const tp = wire.curve.getPoint(trailProg);
+                            if (tp && tp.isVector3) {
+                                trail.position.copy(tp);
+                                // Scale trail with same zoom factor
+                                const trailScale = baseZoomScale * Math.pow(TRAIL_SIZE_RATIO, t + 1);
+                                trail.scale.setScalar(trailScale);
+                                trail.visible = true;
+                            }
+                        }
+                    } else if (wireData.trailMeshes) {
+                        // Hide trails when not in close zoom
+                        wireData.trailMeshes.forEach(t => { if (t) t.visible = false; });
+                    }
+
+                    // ── Orbital rings (atomic zoom) ──────────────────────────
+                    if (inAtomicZoom) {
+                        const ringSpeed = wireData.speed * ORBITAL_RING_Z_ROTATION_FACTOR;
+                        if (wireData.orbitalRing) {
+                            wireData.orbitalRing.rotation.z += ringSpeed;
+                            wireData.orbitalRing.rotation.x += wireData.speed * ORBITAL_RING_X_ROTATION_FACTOR;
+                        }
+                        if (wireData.orbitalRing2) {
+                            // Counter-rotate second ring for a richer, gyroscopic look
+                            wireData.orbitalRing2.rotation.z -= ringSpeed * 0.7;
+                            wireData.orbitalRing2.rotation.y += wireData.speed * ORBITAL_RING_X_ROTATION_FACTOR * 1.3;
+                        }
+                        if (wireData.orbitalRing3) {
+                            wireData.orbitalRing3.rotation.x += ringSpeed * 0.55;
+                            wireData.orbitalRing3.rotation.z -= wireData.speed * ORBITAL_RING_Z_ROTATION_FACTOR * 0.4;
+                        }
                     }
 
                 } catch (error) {
                     console.error(`Error updating particle ${i}:`, error);
-                    scene.remove(particle);
-                    currentFlowParticles.splice(i, 1);
+                    _removeFlowParticle(particle, i);
                 }
             }
         }
+
+        /** Remove a flow particle and its associated trail meshes from the scene. */
+        function _removeFlowParticle(particle, index) {
+            if (particle) {
+                // Clean up trail meshes
+                if (particle.userData?.trailMeshes) {
+                    particle.userData.trailMeshes.forEach(trail => {
+                        if (trail) scene.remove(trail);
+                    });
+                }
+                scene.remove(particle);
+            }
+            currentFlowParticles.splice(index, 1);
+        }
+
+        /** Pulse the opacity of wire energy-glow tubes each frame. */
+        function updateWireGlows(currentTime) {
+            if (!currentWireGlows.length) return;
+            for (let i = 0; i < currentWireGlows.length; i++) {
+                const g = currentWireGlows[i];
+                if (!g || !g.mesh || !g.mesh.material) continue;
+                const sinVal = Math.sin(globalFlowTime * PULSE_SPEED * 0.6 + g.phase);
+                // Glow intensifies when camera is closer
+                const proximityBoost = cameraDistance < CLOSE_ZOOM_THRESHOLD
+                    ? (CLOSE_ZOOM_THRESHOLD / Math.max(0.5, cameraDistance)) * 0.12
+                    : 0;
+                g.mesh.material.opacity = Math.max(0.01, Math.min(0.55,
+                    g.baseOpacity + sinVal * WIRE_GLOW_PULSE_AMP + proximityBoost));
+            }
+        }
+
+        /** Remove all wire energy-glow meshes from the scene. */
+        function clearWireGlows() {
+            currentWireGlows.forEach(g => {
+                if (g && g.mesh) {
+                    if (g.mesh.geometry) g.mesh.geometry.dispose();
+                    if (g.mesh.material) g.mesh.material.dispose();
+                    scene.remove(g.mesh);
+                }
+            });
+            currentWireGlows = [];
+        }
+
+        /** Remove all lattice-atom and probability-cloud meshes from the scene. */
+        function clearLatticeAtoms() {
+            currentLatticeAtoms.forEach(m => {
+                if (m) {
+                    if (m.geometry) m.geometry.dispose();
+                    if (m.material) m.material.dispose();
+                    scene.remove(m);
+                }
+            });
+            currentLatticeAtoms = [];
+            currentProbabilityClouds.forEach(m => {
+                if (m) {
+                    if (m.geometry) m.geometry.dispose();
+                    if (m.material) m.material.dispose();
+                    scene.remove(m);
+                }
+            });
+            currentProbabilityClouds = [];
+        }
+
 
         function updateCameraPosition() {
             const x = cameraDistance * Math.cos(cameraAngleY) * Math.cos(cameraAngleX);
@@ -15145,136 +15351,231 @@ Made with ? for visual learners everywhere!
         //   overall brightness reflect how much total current is flowing.
         const COLOR_RESISTANCE_WEIGHT = 0.55;
         const COLOR_CURRENT_WEIGHT = 0.45;
-        // Emissive strength multiplier for particle glow.
-        const PARTICLE_EMISSIVE_MULTIPLIER = 0.65;
+        // Emissive strength multiplier for particle glow — increased for richer atomic visuals.
+        const PARTICLE_EMISSIVE_MULTIPLIER = 0.85;
 
         function animateCurrentFlow(flowState) {
+            // ── Tear down previous visualization ────────────────────────────
             currentFlowParticles.forEach(particle => {
-                if (particle && scene) {
+                if (particle) {
+                    if (particle.userData?.trailMeshes) {
+                        particle.userData.trailMeshes.forEach(t => { if (t) scene.remove(t); });
+                    }
                     scene.remove(particle);
                 }
             });
             currentFlowParticles = [];
+            clearWireGlows();
+            clearLatticeAtoms();
 
             // Sync atomic mode flag so updateFlowParticles doesn't immediately re-trigger
             lastAtomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
 
             currentFlowState = flowState || null;
 
-            const hasFlow = Boolean(flowState?.hasFlow);
+            const hasFlow    = Boolean(flowState?.hasFlow);
             const currentValue = flowState?.currentValue ?? 0;
 
             if (!hasFlow || currentValue <= 0) {
                 return;
             }
 
+            // Mark activation time for the circuit-completion flash
+            flowActivationTime = performance.now();
+
             const segments = (flowState.wireSegments && flowState.wireSegments.length > 0)
                 ? flowState.wireSegments
                 : wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
 
-            if (!segments.length) {
-                return;
-            }
+            if (!segments.length) return;
 
-            const baseSpeed = calculateFlowSpeed(currentValue);
-            const baseParticleCount = isMobile ? 4 : 5;
-            const maxParticles = isMobile ? 12 : 18;
+            const baseSpeed        = calculateFlowSpeed(currentValue);
+            const baseParticleCount = isMobile ? 4 : 6;
+            const maxParticles      = isMobile ? 14 : 22;
+            const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
+            const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const intensity         = Math.min(1, currentValue / 0.5);
+
+            // Current-scaled wire glow opacity — brighter wires at higher current
+            const wireGlowOpacity = Math.min(0.32,
+                WIRE_GLOW_BASE_OPACITY + intensity * WIRE_GLOW_SPEED_SCALE * WIRE_GLOW_BASE_OPACITY);
 
             segments.forEach((segment, segmentIndex) => {
                 const wire = segment.wire;
-                if (!wire || !wire.wireGroup) {
-                    return;
-                }
+                if (!wire || !wire.wireGroup) return;
 
                 // Always recreate the curve to ensure it uses current terminal positions.
-                // This is necessary because terminal positions may have changed since the wire was created.
-                try {
-                    wire.createCurve();
-                } catch (e) {
-                    console.warn('Could not create wire curve:', e);
-                }
-                if (!wire.curve) {
-                    return;
-                }
+                try { wire.createCurve(); } catch (e) { console.warn('Could not create wire curve:', e); }
+                if (!wire.curve) return;
 
-                const segmentSpeed = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
-                // Compute per-segment color so particles near resistors appear dull red and
-                // particles on free wires appear blue-white, following the speed spectrum.
-                const flowColor = calculateCurrentColor(flowState, segment.speedFactor);
+                const segmentSpeed       = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
+                const flowColor          = calculateCurrentColor(flowState, segment.speedFactor);
                 const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
 
-                let dynamicCount = Math.floor((currentValue * (isMobile ? 18 : 24)) * (segment.speedFactor || 1));
+                let dynamicCount = Math.floor((currentValue * (isMobile ? 20 : 28)) * (segment.speedFactor || 1));
                 dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
 
-                const particleCount = dynamicCount;
-                const intensity = Math.min(1, currentValue / 0.5);
+                // ── Wire energy-glow overlay (additive blended tube) ─────────
+                if (wire.segments && wire.segments.length > 0) {
+                    wire.segments.forEach(seg => {
+                        try {
+                            const segLen = seg.start.distanceTo(seg.end);
+                            if (segLen < 0.05) return;
+                            const glowGeom = new THREE.CylinderGeometry(
+                                WIRE_GLOW_RADIUS, WIRE_GLOW_RADIUS, segLen, WIRE_GLOW_RADIAL_SEGS);
+                            const glowMat  = new THREE.MeshBasicMaterial({
+                                color: flowColor.hex,
+                                transparent: true,
+                                opacity: wireGlowOpacity,
+                                blending: THREE.AdditiveBlending,
+                                depthWrite: false,
+                                side: THREE.FrontSide
+                            });
+                            const glowMesh = new THREE.Mesh(glowGeom, glowMat);
+                            glowMesh.position.copy(seg.mesh.position);
+                            glowMesh.rotation.copy(seg.mesh.rotation);
+                            scene.add(glowMesh);
+                            currentWireGlows.push({
+                                mesh: glowMesh,
+                                baseOpacity: wireGlowOpacity,
+                                phase: Math.random() * Math.PI * 2
+                            });
+                        } catch (e) { /* skip this segment */ }
+                    });
+                }
 
-                for (let i = 0; i < particleCount; i++) {
+                // ── Copper lattice atoms (atomic zoom only) ──────────────────
+                if (inAtomicZoom) {
+                    _spawnLatticeAtoms(wire, currentValue, flowColor);
+                }
+
+                // ── Electron probability cloud (deep atomic zoom only) ────────
+                if (inDeepAtomic) {
+                    _spawnProbabilityCloud(wire, flowColor);
+                }
+
+                // ── Electron particles ───────────────────────────────────────
+                for (let i = 0; i < dynamicCount; i++) {
                     try {
                         const particleSize = 0.09 + (intensity * 0.07);
-                        const particleGeometry = new THREE.SphereGeometry(particleSize, isMobile ? 8 : 12, isMobile ? 6 : 10);
+                        const particleGeometry = new THREE.SphereGeometry(
+                            particleSize, isMobile ? 8 : 14, isMobile ? 6 : 10);
 
-                        const baseMaterialProps = {
-                            color: flowColor.hex,
-                            emissive: flowColor.emissive,
-                            shininess: 160,
-                            transparent: true
-                        };
+                        const isMisty = currentFlowStyle === 'misty';
+                        const baseOpacity   = isMisty ? 0.40 + intensity * 0.30
+                                                       : 0.88 + intensity * 0.10;
+                        const baseEmissive  = isMisty ? 0.95 : 1.45;
 
-                        if (currentFlowStyle === 'misty') {
-                            baseMaterialProps.opacity = 0.4 + (intensity * 0.3);
-                            baseMaterialProps.emissiveIntensity = 0.9;
-                        } else {
-                            baseMaterialProps.opacity = 0.88 + (intensity * 0.1);
-                            baseMaterialProps.emissiveIntensity = 1.3;
-                        }
-
-                        const particleMaterial = new THREE.MeshPhongMaterial(baseMaterialProps);
+                        const particleMaterial = new THREE.MeshPhongMaterial({
+                            color:             flowColor.hex,
+                            emissive:          flowColor.emissive,
+                            shininess:         180,
+                            transparent:       true,
+                            opacity:           baseOpacity,
+                            emissiveIntensity: baseEmissive
+                        });
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
 
-                        const initialProgress = (i / particleCount) + (segmentIndex * 0.17);
+                        const initialProgress = (i / dynamicCount) + (segmentIndex * 0.17);
                         const clampedProgress = ((initialProgress % 1) + 1) % 1;
 
                         const initialPosition = wire.curve.getPoint(clampedProgress);
                         particle.position.copy(initialPosition);
 
-                        // Add orbital rings in near-atomic zoom mode for electron shell visualization
-                        let orbitalRing = null;
-                        if (cameraDistance < ATOMIC_ZOOM_THRESHOLD) {
-                            const ringGeometry = new THREE.TorusGeometry(particleSize * ORBITAL_RING_RADIUS_FACTOR, particleSize * ORBITAL_RING_TUBE_FACTOR, ORBITAL_RING_RADIAL_SEGMENTS, ORBITAL_RING_TUBULAR_SEGMENTS);
-                            const ringMaterial = new THREE.MeshBasicMaterial({
-                                color: flowColor.hex,
-                                transparent: true,
-                                opacity: 0.6,
-                                side: THREE.DoubleSide
-                            });
-                            orbitalRing = new THREE.Mesh(ringGeometry, ringMaterial);
+                        // ── Orbital rings (atomic zoom only) ────────────────
+                        let orbitalRing  = null;
+                        let orbitalRing2 = null;
+                        let orbitalRing3 = null;
+
+                        if (inAtomicZoom) {
+                            // Ring 1 — primary orbital plane
+                            const r1Geom = new THREE.TorusGeometry(
+                                particleSize * ORBITAL_RING_RADIUS_FACTOR,
+                                particleSize * ORBITAL_RING_TUBE_FACTOR,
+                                ORBITAL_RING_RADIAL_SEGMENTS,
+                                ORBITAL_RING_TUBULAR_SEGMENTS);
+                            orbitalRing = new THREE.Mesh(r1Geom, new THREE.MeshBasicMaterial({
+                                color: flowColor.hex, transparent: true, opacity: 0.65,
+                                side: THREE.DoubleSide, depthWrite: false,
+                                blending: THREE.AdditiveBlending
+                            }));
                             orbitalRing.rotation.x = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
                             particle.add(orbitalRing);
 
-                            // Second smaller orbital ring at a perpendicular angle for richer atomic look
-                            const ring2Geometry = new THREE.TorusGeometry(particleSize * ORBITAL_RING_RADIUS_FACTOR * 0.65, particleSize * ORBITAL_RING_TUBE_FACTOR, ORBITAL_RING_RADIAL_SEGMENTS, ORBITAL_RING_TUBULAR_SEGMENTS);
-                            const ring2Material = new THREE.MeshBasicMaterial({
-                                color: flowColor.hex,
-                                transparent: true,
-                                opacity: 0.35,
-                                side: THREE.DoubleSide
-                            });
-                            const orbitalRing2 = new THREE.Mesh(ring2Geometry, ring2Material);
+                            // Ring 2 — tilted 65% radius, counter-rotating
+                            const r2Geom = new THREE.TorusGeometry(
+                                particleSize * ORBITAL_RING_RADIUS_FACTOR * 0.65,
+                                particleSize * ORBITAL_RING_TUBE_FACTOR,
+                                ORBITAL_RING_RADIAL_SEGMENTS,
+                                ORBITAL_RING_TUBULAR_SEGMENTS);
+                            orbitalRing2 = new THREE.Mesh(r2Geom, new THREE.MeshBasicMaterial({
+                                color: flowColor.hex, transparent: true, opacity: 0.40,
+                                side: THREE.DoubleSide, depthWrite: false,
+                                blending: THREE.AdditiveBlending
+                            }));
                             orbitalRing2.rotation.y = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
                             orbitalRing2.rotation.z = Math.PI / 4;
                             particle.add(orbitalRing2);
+
+                            // Ring 3 — smallest, perpendicular, represents f-orbital influence
+                            if (!isMobile) {
+                                const r3Geom = new THREE.TorusGeometry(
+                                    particleSize * ORBITAL_RING_RADIUS_FACTOR * 0.42,
+                                    particleSize * ORBITAL_RING_TUBE_FACTOR * 0.7,
+                                    ORBITAL_RING_RADIAL_SEGMENTS,
+                                    ORBITAL_RING_TUBULAR_SEGMENTS);
+                                orbitalRing3 = new THREE.Mesh(r3Geom, new THREE.MeshBasicMaterial({
+                                    color: 0xffffff, transparent: true, opacity: 0.22,
+                                    side: THREE.DoubleSide, depthWrite: false,
+                                    blending: THREE.AdditiveBlending
+                                }));
+                                orbitalRing3.rotation.z = ORBITAL_RING_BASE_ROTATION * 0.5 + (i % 2) * Math.PI * 0.5;
+                                orbitalRing3.rotation.x = Math.PI * 0.25 + (i % 3) * 0.3;
+                                particle.add(orbitalRing3);
+                            }
+                        }
+
+                        // ── Comet trail meshes (close + atomic zoom) ─────────
+                        const trailMeshes = [];
+                        if (inCloseZoom) {
+                            let trailOpacity = TRAIL_OPACITY_BASE;
+                            let trailSize    = particleSize * TRAIL_SIZE_RATIO;
+                            for (let t = 0; t < TRAIL_COUNT; t++) {
+                                const tGeom = new THREE.SphereGeometry(trailSize, 6, 4);
+                                const tMat  = new THREE.MeshPhongMaterial({
+                                    color:       flowColor.hex,
+                                    emissive:    flowColor.emissive,
+                                    transparent: true,
+                                    opacity:     trailOpacity,
+                                    shininess:   60,
+                                    blending:    THREE.AdditiveBlending,
+                                    depthWrite:  false
+                                });
+                                const tMesh = new THREE.Mesh(tGeom, tMat);
+                                tMesh.position.copy(initialPosition);
+                                scene.add(tMesh);
+                                trailMeshes.push(tMesh);
+                                trailOpacity *= TRAIL_OPACITY_RATIO;
+                                trailSize    *= TRAIL_SIZE_RATIO;
+                            }
                         }
 
                         particle.userData = {
                             wire,
-                            progress: clampedProgress,
-                            speed: segmentSpeed,
-                            direction: directionMultiplier,
+                            progress:      clampedProgress,
+                            speed:         segmentSpeed,
+                            direction:     directionMultiplier,
                             flowColor,
-                            isFlowing: true,
-                            flowStyle: currentFlowStyle,
-                            orbitalRing
+                            isFlowing:     true,
+                            flowStyle:     currentFlowStyle,
+                            orbitalRing,
+                            orbitalRing2,
+                            orbitalRing3,
+                            trailMeshes,
+                            pulsePhase:    Math.random() * Math.PI * 2,
+                            baseOpacity,
+                            baseEmissive
                         };
 
                         scene.add(particle);
@@ -15285,6 +15586,93 @@ Made with ? for visual learners everywhere!
                 }
             });
         }
+
+        /**
+         * Spawn Cu⁺ lattice-ion spheres along a wire for atomic-zoom visualization.
+         * Ions are fixed (they don't move); their emissive glow increases with current
+         * to represent resistive Joule heating as drifting electrons collide with them.
+         */
+        function _spawnLatticeAtoms(wire, currentValue, flowColor) {
+            if (!wire.curve) return;
+            // Estimate wire length by sampling the curve at regular intervals
+            const SAMPLE_COUNT = 20;
+            let estimatedLength = 0;
+            let prevPt = wire.curve.getPoint(0);
+            for (let s = 1; s <= SAMPLE_COUNT; s++) {
+                const pt = wire.curve.getPoint(s / SAMPLE_COUNT);
+                if (pt && prevPt && pt.isVector3 && prevPt.isVector3) {
+                    estimatedLength += pt.distanceTo(prevPt);
+                }
+                prevPt = pt;
+            }
+            const totalAtoms = Math.min(LATTICE_MAX_ATOMS,
+                Math.max(4, Math.round(estimatedLength / LATTICE_SPACING)));
+            const heatT       = Math.min(1, currentValue / (LATTICE_HEAT_THRESHOLD * 20));
+            // Copper is copper-orange; heat shifts toward red-orange
+            const copperColor = new THREE.Color(0xb87333);
+            const hotColor    = new THREE.Color(0xff5500);
+            const ionColor    = copperColor.clone().lerp(hotColor, heatT * 0.6);
+            const emissiveHex = ionColor.clone().multiplyScalar(0.25 + heatT * 0.5).getHex();
+
+            const ionGeom = new THREE.SphereGeometry(
+                LATTICE_ATOM_RADIUS, isMobile ? 6 : 9, isMobile ? 4 : 6);
+            const ionMat  = new THREE.MeshPhongMaterial({
+                color:             ionColor.getHex(),
+                emissive:          emissiveHex,
+                emissiveIntensity: 0.4 + heatT * 1.2,
+                shininess:         220,
+                transparent:       true,
+                opacity:           0.82
+            });
+
+            for (let k = 0; k < totalAtoms; k++) {
+                try {
+                    const t   = k / totalAtoms;
+                    const pos = wire.curve.getPoint(t);
+                    if (!pos || !pos.isVector3) continue;
+                    // Offset ions slightly off the wire centre to distinguish them from electrons
+                    const radialOffset = 0.10;
+                    const angle = k * GOLDEN_ANGLE_RAD;
+                    pos.x += Math.cos(angle) * radialOffset;
+                    pos.z += Math.sin(angle) * radialOffset;
+                    const ionMesh = new THREE.Mesh(ionGeom, ionMat);
+                    ionMesh.position.copy(pos);
+                    scene.add(ionMesh);
+                    currentLatticeAtoms.push(ionMesh);
+                } catch (e) { /* skip */ }
+            }
+        }
+
+        /**
+         * Spawn a semi-transparent probability-cloud haze around a wire for deep-atomic zoom.
+         * Represents the delocalised electron wavefunction that fills the conductor.
+         * Uses additive blending so the cloud brightens naturally on top of the wire colour.
+         */
+        function _spawnProbabilityCloud(wire, flowColor) {
+            if (!wire.segments) return;
+            wire.segments.forEach(seg => {
+                try {
+                    const segLen = seg.start.distanceTo(seg.end);
+                    if (segLen < 0.05) return;
+                    const cloudGeom = new THREE.CylinderGeometry(
+                        PROB_CLOUD_RADIUS, PROB_CLOUD_RADIUS, segLen, 10);
+                    const cloudMat  = new THREE.MeshBasicMaterial({
+                        color:       flowColor.hex,
+                        transparent: true,
+                        opacity:     PROB_CLOUD_OPACITY,
+                        blending:    THREE.AdditiveBlending,
+                        depthWrite:  false,
+                        side:        THREE.BackSide
+                    });
+                    const cloudMesh = new THREE.Mesh(cloudGeom, cloudMat);
+                    cloudMesh.position.copy(seg.mesh.position);
+                    cloudMesh.rotation.copy(seg.mesh.rotation);
+                    scene.add(cloudMesh);
+                    currentProbabilityClouds.push(cloudMesh);
+                } catch (e) { /* skip */ }
+            });
+        }
+
 
         function calculateCurrentColor(flowState, speedFactor) {
             if (flowState?.warning === 'short') {
@@ -16450,9 +16838,16 @@ Made with ? for visual learners everywhere!
             componentPlacementIndex = 0;
             
             currentFlowParticles.forEach(particle => {
-                if (particle) scene.remove(particle);
+                if (particle) {
+                    if (particle.userData?.trailMeshes) {
+                        particle.userData.trailMeshes.forEach(t => { if (t) scene.remove(t); });
+                    }
+                    scene.remove(particle);
+                }
             });
             currentFlowParticles = [];
+            clearWireGlows();
+            clearLatticeAtoms();
 
             // Clear all failure visuals and particles
             clearAllWorkspaceFailures();
