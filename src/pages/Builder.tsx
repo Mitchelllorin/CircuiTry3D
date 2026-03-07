@@ -273,50 +273,63 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
   {
     title: "W.I.R.E. Overview",
     paragraphs: [
-      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits.",
+      "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits. Each value has a dedicated color so you can spot it instantly in any panel or worksheet.",
       "Use this solve loop: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
-      "W - Watts (power)",
-      "I - Current (amperes)",
-      "R - Resistance (ohms)",
-      "E - EMF / Voltage (volts)",
+      "W - Watts (Power) — color: Blue",
+      "I - Current (Amps) — color: Yellow-Orange",
+      "R - Resistance (Ohms) — color: Green",
+      "E - EMF / Voltage (Volts) — color: Red",
     ],
   },
   {
-    title: "W - Watts (Power)",
-    paragraphs: ["Watts describe how much energy a circuit uses each second."],
+    title: "Two Separate Color Systems",
+    paragraphs: [
+      "The app uses two distinct color-coding systems that each serve a different purpose — they do not interfere with each other.",
+      "W.I.R.E. label colors (blue/yellow-orange/green/red) identify which electrical quantity you are looking at in the UI panels, worksheets, and legends.",
+      "Current flow animation colors are the moving particles in the 3D workspace. Their color shows how much current is flowing and how much resistance a segment has — ranging from dull red (slow/resistive) through orange and yellow to cyan and white (fast/free wire). The particle colors are not related to the W.I.R.E. label colors.",
+    ],
     bullets: [
-      "Formula: P = V x I.",
+      "W.I.R.E. colors = 'What quantity am I looking at?' (labels only).",
+      "Particle animation colors = 'How fast is current flowing through this wire?' (physics visualization only).",
+      "Both systems intentionally use a blue/orange/green palette but serve completely different purposes.",
+    ],
+  },
+  {
+    title: "W - Watts (Power) — Blue",
+    paragraphs: ["Watts describe how much energy a circuit uses each second. Shown in blue throughout the app."],
+    bullets: [
+      "Formula: W = E × I or W = I^2 × R.",
       "Watch for power changes as you adjust voltage or current.",
       "Higher power means brighter lights and increased heat generation.",
     ],
   },
   {
-    title: "I - Current (Amperes)",
-    paragraphs: ["Current is the flow rate of electrons through the circuit."],
+    title: "I - Current (Amps) — Yellow-Orange",
+    paragraphs: ["Current is the flow rate of electrons through the circuit. Shown in yellow-orange throughout the app."],
     bullets: [
-      "Formula: I = V / R (Ohm's Law).",
+      "Formula: I = E / R (Ohm's Law).",
       "Compare electron flow and conventional current visualisations inside the workspace.",
       "Measured in amperes; increasing resistance lowers current for a fixed voltage.",
     ],
   },
   {
-    title: "R - Resistance (Ohms)",
+    title: "R - Resistance (Ohms) — Green",
     paragraphs: [
-      "Resistance opposes current flow and is set by components like resistors and LEDs.",
+      "Resistance opposes current flow and is set by components like resistors and LEDs. Shown in green throughout the app.",
     ],
     bullets: [
-      "Formula: R = V / I.",
+      "Formula: R = E / I.",
       "Higher resistance reduces current under the same voltage.",
       "Use resistors to protect LEDs and control current draw.",
     ],
   },
   {
-    title: "E - EMF / Voltage (Volts)",
-    paragraphs: ["Voltage is the electrical pressure supplied by your source."],
+    title: "E - EMF / Voltage (Volts) — Red",
+    paragraphs: ["Voltage is the electrical pressure supplied by your source. Shown in red throughout the app."],
     bullets: [
-      "Formula: V = I x R.",
+      "Formula: E = I × R.",
       "Raising voltage increases current if resistance stays the same.",
       "Battery components provide the EMF that drives the circuit.",
     ],
@@ -326,7 +339,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
     paragraphs: ["Keep the classic triangles in mind when solving problems."],
     bullets: [
       "Ohm's Law triangle (E over I and R) helps rearrange for voltage, current, or resistance.",
-      "Power triangle (P over V and I) ties wattage to voltage and current.",
+      "Power triangle (W over E and I) ties wattage to voltage and current.",
       "Remember: adjusting one value affects the others across the circuit.",
     ],
   },
@@ -336,7 +349,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
       "Build small circuits and watch the analysis panel respond in real time.",
     ],
     bullets: [
-      "Start by writing known W, I, R, and E values before solving anything.",
+      "Start by writing known W (blue), I (yellow-orange), R (green), and E (red) values before solving anything.",
       "Solve one unknown at a time and record units to avoid table mistakes.",
       "Add or remove resistors to see how total resistance changes.",
       "Swap battery voltages to explore how EMF affects the rest of the system.",
@@ -633,7 +646,7 @@ const HELP_VIEW_CONTENT: Record<
   "wire-guide": {
     title: "W.I.R.E. Guide",
     description:
-      "Understand how Watts, Current, Resistance, and Voltage relate while you design.",
+      "W = Watts (blue) · I = Current/Amps (yellow-orange) · R = Resistance/Ohms (green) · E = Voltage (red). Use these four values and their color codes to design, analyze, and solve circuits.",
     sections: WIRE_GUIDE_SECTIONS,
   },
   schematic: {

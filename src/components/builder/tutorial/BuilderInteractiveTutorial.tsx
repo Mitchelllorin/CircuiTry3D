@@ -108,7 +108,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "wire-metrics",
         title: "Step 6 — Read W.I.R.E. (live circuit metrics)",
         body:
-          "Look at the W.I.R.E. metrics (W, I, R, E). Change the resistor value (long-press the resistor) and watch current and power respond.",
+          "The W.I.R.E. panel labels each quantity with a fixed color: W (Watts/Power) = blue, I (Current) = yellow-orange, R (Resistance) = green, E (Voltage) = red. The glowing particles moving along the wires use a separate color system — they show current speed and resistance, not the W, I, R, or E categories. Change the resistor value (long-press the resistor) and watch the metrics respond.",
         canSkipRequirement: true,
         isComplete: () => true,
       },

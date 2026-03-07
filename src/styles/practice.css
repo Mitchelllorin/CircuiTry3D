@@ -1257,6 +1257,47 @@
   outline: none;
 }
 
+/* W.I.R.E. color-coded hint list */
+.wire-hint-color-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wire-hint-color-list li {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  border-left: 3px solid;
+}
+
+.wire-hint-w {
+  border-left-color: #4a90ff;
+  background: rgba(74, 144, 255, 0.1);
+  color: #a8ccff;
+}
+
+.wire-hint-i {
+  border-left-color: #ffaa33;
+  background: rgba(255, 170, 51, 0.1);
+  color: #ffd080;
+}
+
+.wire-hint-r {
+  border-left-color: #00cc66;
+  background: rgba(0, 204, 102, 0.1);
+  color: #80ffbb;
+}
+
+.wire-hint-e {
+  border-left-color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+  color: #ffaaaa;
+}
+
 .diagram-card {
   background: rgba(12, 30, 58, 0.74);
   border: 1px solid rgba(124, 188, 255, 0.32);
@@ -1521,6 +1562,42 @@
   opacity: 0.8;
 }
 
+.wire-method-legend {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.wire-method-key {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.wire-method-key--w {
+  color: #4a90ff;
+  background: rgba(74, 144, 255, 0.15);
+}
+
+.wire-method-key--i {
+  color: #ffaa33;
+  background: rgba(255, 170, 51, 0.15);
+}
+
+.wire-method-key--r {
+  color: #00cc66;
+  background: rgba(0, 204, 102, 0.15);
+}
+
+.wire-method-key--e {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.15);
+}
+
 /* W.I.R.E. layout: Component column headings (R1, R2, Battery, Totals as columns) */
 .component-heading {
   gap: 6px;
@@ -1584,23 +1661,23 @@
 }
 
 .metric-pill.metric-watts {
-  background: rgba(30, 180, 220, 0.24);
-  color: #12c8ff;
+  background: rgba(74, 144, 255, 0.22);
+  color: #4a90ff;
 }
 
 .metric-pill.metric-current {
-  background: rgba(245, 180, 90, 0.28);
-  color: #ffcf6e;
+  background: rgba(255, 170, 51, 0.22);
+  color: #ffaa33;
 }
 
 .metric-pill.metric-resistance {
-  background: rgba(140, 220, 120, 0.3);
-  color: #a0ff98;
+  background: rgba(0, 204, 102, 0.2);
+  color: #00cc66;
 }
 
 .metric-pill.metric-voltage {
-  background: rgba(255, 110, 110, 0.28);
-  color: #ff867d;
+  background: rgba(255, 68, 68, 0.22);
+  color: #ff4444;
 }
 
 .metric-caption {
@@ -2108,11 +2185,11 @@
 }
 
 .kirchhoff-card[data-law="kcl"] {
-  border-left: 3px solid #ffcf6e;
+  border-left: 3px solid #ffaa33;
 }
 
 .kirchhoff-card[data-law="kvl"] {
-  border-left: 3px solid #ff867d;
+  border-left: 3px solid #ff4444;
 }
 
 .kirchhoff-header {
@@ -2442,23 +2519,39 @@
 }
 
 .practice-wire-metric.metric-w {
-  border-color: rgba(59, 130, 246, 0.45);
+  border-color: rgba(74, 144, 255, 0.45);
   background: linear-gradient(135deg, rgba(30, 64, 175, 0.35) 0%, rgba(30, 64, 175, 0.05) 100%);
 }
 
+.practice-wire-metric.metric-w .wire-metric-letter {
+  color: #4a90ff;
+}
+
 .practice-wire-metric.metric-i {
-  border-color: rgba(251, 146, 60, 0.45);
-  background: linear-gradient(135deg, rgba(194, 65, 12, 0.33) 0%, rgba(194, 65, 12, 0.05) 100%);
+  border-color: rgba(255, 170, 51, 0.45);
+  background: linear-gradient(135deg, rgba(194, 100, 12, 0.33) 0%, rgba(194, 100, 12, 0.05) 100%);
+}
+
+.practice-wire-metric.metric-i .wire-metric-letter {
+  color: #ffaa33;
 }
 
 .practice-wire-metric.metric-r {
-  border-color: rgba(52, 211, 153, 0.45);
+  border-color: rgba(0, 204, 102, 0.45);
   background: linear-gradient(135deg, rgba(5, 122, 85, 0.38) 0%, rgba(5, 122, 85, 0.06) 100%);
 }
 
+.practice-wire-metric.metric-r .wire-metric-letter {
+  color: #00cc66;
+}
+
 .practice-wire-metric.metric-e {
-  border-color: rgba(248, 113, 113, 0.45);
+  border-color: rgba(255, 68, 68, 0.45);
   background: linear-gradient(135deg, rgba(185, 28, 28, 0.4) 0%, rgba(185, 28, 28, 0.06) 100%);
+}
+
+.practice-wire-metric.metric-e .wire-metric-letter {
+  color: #ff4444;
 }
 
 @media (max-width: 720px) {

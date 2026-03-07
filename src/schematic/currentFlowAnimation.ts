@@ -25,6 +25,17 @@ const parseHexColor = (hex: string, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+/**
+ * Brand palette colors used to tint the animated current-flow particles.
+ *
+ * NOTE — SEPARATE FROM THE W.I.R.E. UI LABEL SYSTEM:
+ * These Three.js hex colors drive the schematic particle animation and indicate
+ * current *intensity* (how much current is flowing) via a speed/brightness ramp.
+ * They have nothing to do with the CSS variables (--wire-w, --wire-i, --wire-r, --wire-e)
+ * used to color the W.I.R.E. quantity labels in the HTML/CSS layer.  Both systems
+ * intentionally draw from a similar blue/orange/green brand palette, but they serve
+ * completely different purposes and live in separate rendering layers.
+ */
 const BRAND_FLOW_COLORS = {
   negative: parseHexColor(LOGO_COLORS.wireGradientStart, 0x88ccff),
   mid: parseHexColor(LOGO_COLORS.componentGradientStart, 0xff8844),
@@ -32,9 +43,10 @@ const BRAND_FLOW_COLORS = {
 } as const;
 
 /**
- * Color scheme for current intensity visualization
- * Uses existing brand palette tokens already shared across the app.
- * Low -> high current: brand blue -> brand orange -> brand green
+ * Color ramp for current intensity visualization.
+ * Maps low → medium → high current to blue → orange → green.
+ * This indicates *how much* current is flowing, NOT *which quantity* (W/I/R/E) is being shown.
+ * See CSS --wire-w / --wire-i / --wire-r / --wire-e in layout.css for the W.I.R.E. label colors.
  */
 export const CURRENT_FLOW_COLOR_RAMP = {
   slow: BRAND_FLOW_COLORS.negative,

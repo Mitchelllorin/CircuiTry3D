@@ -10,9 +10,9 @@
   --builder-blue: #88ccff;
   --builder-orange: #ff8844;
   --builder-green: #00ff88;
-  --wire-w: var(--builder-blue);
-  --wire-i: var(--builder-orange);
-  --wire-r: var(--builder-green);
+  --wire-w: #4a90ff;
+  --wire-i: #ffaa33;
+  --wire-r: #00cc66;
   --wire-e: #ff4444;
   --builder-cyan: #88ccff;
   --builder-text: #e8f6ff;
@@ -2410,19 +2410,35 @@ body.builder-body {
 }
 
 .wire-metric.watts {
-  border-color: rgba(68, 136, 255, 0.45);
+  border-color: rgba(74, 144, 255, 0.45);
 }
 
 .wire-metric.current {
-  border-color: rgba(255, 136, 0, 0.48);
+  border-color: rgba(255, 170, 51, 0.48);
 }
 
 .wire-metric.resistance {
-  border-color: rgba(0, 255, 136, 0.45);
+  border-color: rgba(0, 204, 102, 0.45);
 }
 
 .wire-metric.voltage {
   border-color: rgba(255, 68, 68, 0.48);
+}
+
+.wire-metric.watts .metric-letter {
+  color: var(--wire-w);
+}
+
+.wire-metric.current .metric-letter {
+  color: var(--wire-i);
+}
+
+.wire-metric.resistance .metric-letter {
+  color: var(--wire-r);
+}
+
+.wire-metric.voltage .metric-letter {
+  color: var(--wire-e);
 }
 
 .metric-letter {
@@ -3693,6 +3709,22 @@ body.builder-body {
 .legend-letter {
   font-size: 22px;
   font-weight: 700;
+}
+
+.legend-item.w .legend-letter {
+  color: var(--wire-w);
+}
+
+.legend-item.i .legend-letter {
+  color: var(--wire-i);
+}
+
+.legend-item.r .legend-letter {
+  color: var(--wire-r);
+}
+
+.legend-item.e .legend-letter {
+  color: var(--wire-e);
 }
 
 .legend-label {

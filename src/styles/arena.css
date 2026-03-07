@@ -642,6 +642,22 @@ body.builder-body .arena-page {
   color: rgba(226, 232, 240, 0.7);
 }
 
+.metric-w .metric-letter {
+  color: #4a90ff;
+}
+
+.metric-i .metric-letter {
+  color: #ffaa33;
+}
+
+.metric-r .metric-letter {
+  color: #00cc66;
+}
+
+.metric-e .metric-letter {
+  color: #ff4444;
+}
+
 .arena-metric .metric-value {
   font-size: 1.05rem;
   font-weight: 600;
@@ -653,22 +669,22 @@ body.builder-body .arena-page {
 }
 
 .metric-w {
-  border-color: rgba(59, 130, 246, 0.45);
+  border-color: rgba(74, 144, 255, 0.45);
   background: linear-gradient(135deg, rgba(30, 64, 175, 0.35) 0%, rgba(30, 64, 175, 0.05) 100%);
 }
 
 .metric-i {
-  border-color: rgba(251, 146, 60, 0.45);
-  background: linear-gradient(135deg, rgba(194, 65, 12, 0.33) 0%, rgba(194, 65, 12, 0.05) 100%);
+  border-color: rgba(255, 170, 51, 0.45);
+  background: linear-gradient(135deg, rgba(194, 100, 12, 0.33) 0%, rgba(194, 100, 12, 0.05) 100%);
 }
 
 .metric-r {
-  border-color: var(--brand-primary-dim);
+  border-color: rgba(0, 204, 102, 0.45);
   background: linear-gradient(135deg, rgba(5, 122, 85, 0.38) 0%, rgba(5, 122, 85, 0.06) 100%);
 }
 
 .metric-e {
-  border-color: rgba(248, 113, 113, 0.45);
+  border-color: rgba(255, 68, 68, 0.45);
   background: linear-gradient(135deg, rgba(185, 28, 28, 0.4) 0%, rgba(185, 28, 28, 0.06) 100%);
 }
 
