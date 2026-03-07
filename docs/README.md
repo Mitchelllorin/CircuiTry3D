@@ -35,6 +35,7 @@ These documents define how CircuiTry3D implements electrical simulation:
 | [CIRCUIT_RULES.md](./CIRCUIT_RULES.md) | Platform-specific rules (C3D-001 through C3D-010), validation logic |
 | [CIRCUIT_SIMULATION_REFERENCE.md](./CIRCUIT_SIMULATION_REFERENCE.md) | DC solver technical details, MNA implementation, visualization |
 | [circuit-error-outcomes.md](./circuit-error-outcomes.md) | Error handling, open/short circuit detection, validation feedback |
+| [FUSE_ENGINE.md](./FUSE_ENGINE.md) | **FUSE™ — Failure Understanding Simulation Engine** — proprietary component failure detection, physics profiles, visual effects, and marketing guide |
 
 ---
 
@@ -65,6 +66,7 @@ These documents define schematic appearance and layout:
 | `src/components/builder/constants.ts` | Component metadata and ANSI/IEEE symbols |
 | `src/schematic/catalog.ts` | 3D component catalog |
 | `src/schematic/threeFactory.ts` | Three.js 3D model generation |
+| `public/js/component-failure-engine.js` | **FUSE™ engine** — component failure profiles, family map, `detectFailure()` |
 
 ---
 
@@ -82,6 +84,7 @@ docs/
 ├── CIRCUIT_RULES.md                    ← Platform implementation rules
 ├── CIRCUIT_SIMULATION_REFERENCE.md     ← Solver technical details
 ├── circuit-error-outcomes.md           ← Error handling
+├── FUSE_ENGINE.md                      ← FUSE™ failure engine — tech spec & marketing guide
 │
 ├── schematic-style-guidelines.md       ← Visual standards
 └── circuit-topology-reference.md       ← Layout conventions

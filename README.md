@@ -120,6 +120,23 @@ npm run test:watch
 
 ## 🔑 Key Features
 
+### 💥 FUSE™ — Failure Understanding Simulation Engine
+> **CircuiTry3D's proprietary, zero-dependency component failure detection and visualization engine.**
+
+FUSE™ is what separates CircuiTry3D from every other circuit simulator.  While other tools only show what happens when a circuit works, FUSE™ shows exactly what happens when it **fails** — in real time, in 3D, with physics-accurate descriptions.
+
+| What FUSE™ delivers | Details |
+|---|---|
+| **Real-time failure detection** | Runs every simulation tick; evaluates every component against its rated limits |
+| **30+ named failure modes** | *Thermal Runaway, Junction Burnout, Avalanche Breakdown, Dielectric Breakdown, Electrolyte Boilover*, and more |
+| **18 component families** | Resistors, capacitors, LEDs, diodes, BJTs, MOSFETs, op-amps, regulators, ICs, batteries, switches, relays, fuses, motors, transformers, and more |
+| **Severity scoring (0–3)** | 0 = OK · 1 = Stressed · 2 = Critical · 3 = Destroyed |
+| **8 visual effect types** | *char, melt, arc, burst, blowout, vent, glow, smoke* — multi-layer Three.js particle systems with physics-accurate gravity and flicker |
+| **Physical descriptions** | Plain-language explanation of what is happening inside the component at the material level |
+| **Shared across platforms** | The same engine drives both the 3D Builder and the Component Arena — one source of truth |
+
+📖 Full technical spec and marketing guide: [`docs/FUSE_ENGINE.md`](docs/FUSE_ENGINE.md)
+
 ### ⚡ 3D Circuit Builder (`/app`)
 Build and simulate circuits in a 3D sandbox. Components snap to a grid and the live DC solver updates voltages and currents in real time.
 
@@ -206,10 +223,10 @@ Pricing is available at [`/pricing`](https://circuitry3d.app/#/pricing). Plans a
 
 | Plan | Price (Annual) | Who it's for | Highlights |
 |---|---|---|---|
-| **Free Sandbox** | Free | Explorers | 3 active circuits · Core components · W.I.R.E. analysis preview · Community hub |
-| **Student Plan** | $92 / student / yr | Students | 10 active circuits · Full component library · W.I.R.E. analysis tools · Community hub |
-| **Educator License** | $299 / educator / yr | Teachers | Unlimited saved circuits · Advanced W.I.R.E. coaching · Lesson templates & assessments · Priority support |
-| **Institutional License** | Contact us | Schools & districts | Bulk educator seats · Dedicated onboarding · SIS integrations & SSO · Curriculum alignment toolkit |
+| **Free Sandbox** | Free | Explorers | 3 active circuits · Core components · W.I.R.E. analysis preview · Community hub · FUSE™ severity badge only |
+| **Student Plan** | $92 / student / yr | Students | 10 active circuits · Full component library · W.I.R.E. analysis tools · **Full FUSE™ failure names + visual effects** · Community hub |
+| **Educator License** | $299 / educator / yr | Teachers | Unlimited saved circuits · Advanced W.I.R.E. coaching · Lesson templates & assessments · **Full FUSE™ analysis + physical descriptions + Component Arena** · Priority support |
+| **Institutional License** | Contact us | Schools & districts | Bulk educator seats · Dedicated onboarding · SIS integrations & SSO · Curriculum alignment toolkit · **Custom FUSE™ component profiles** |
 
 **Add-on — Certification Bundle** *(Coming Soon)* — $99 / yr: Guided certification pathway, accredited PD modules, printable achievement badges.
 
