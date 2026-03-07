@@ -143,23 +143,33 @@ Build and simulate circuits in a 3D sandbox. Components snap to a grid and the l
 
 **Keyboard shortcuts:** `B` Battery · `R` Resistor · `L` LED · `S` Switch · `J` Junction · `W` Wire Mode · `T` Rotate Mode · `Space` Toggle Menu
 
+**Live component failure detection** — every simulation tick the builder runs each component through the shared **FailureEngine** (`component-failure-engine.js`). When a component exceeds its rated limits it immediately triggers:
+- A **severity badge** overlaid on the component nameplate (severity scale: 0 = OK → 1 = stressed → 2 = critical → 3 = destroyed)
+- **Multi-layer Three.js particle effects** spawned at the component's 3D position — visual types include *char* (fire flicker), *melt* (molten drip), *arc* (blue electrical discharge), *burst* (explosion debris cloud + fire + smoke), *blowout* (white-hot flash), *vent* (pressurised gas), *glow* (thermal), and *smoke*
+- **Physics-accurate particle gravity** — sparks and debris fall, fire rises via buoyancy, smoke drifts gently upward, molten drips fall slower than debris
+- **Animated flicker** tuned per failure type (arc: 55 ms, burst: 75 ms, melt: 110 ms, char: 95 ms)
+- **Camera shake** on explosion events for dramatic emphasis
+
+Failure profiles are defined for all major component families: resistors, thermistors, capacitors, LEDs, diodes, Zener diodes, BJTs, MOSFETs, op-amps, voltage regulators, ICs/microcontrollers, batteries, switches, relays, fuses, lamps, motors, transformers, and crystal oscillators.
+
 ### 🧪 Component Arena & FUSE™ Engine (`/arena`)
-The **Component Arena** is a dedicated testing environment powered by the **FUSE™ (Failure Understanding Simulation Engine)**.
+The **Component Arena** is a dedicated stress-testing environment powered by the **FUSE™ (Failure Understanding Simulation Engine)** — the same underlying `FailureEngine` library that drives real-time failure detection in the 3D Builder.
 
 **Testing Modes:**
-- *Single Component* — run a stress test on one component under configurable conditions
-- *Compare (A vs B)* — side-by-side analysis with a relative delta panel
+- *Single Component* — run a configurable stress test on one component
+- *Compare (A vs B)* — side-by-side stress test with a relative delta panel
 
 **Configurable Test Variables:** Voltage, Frequency, Ambient Temperature, Humidity, Duty Cycle, Duration, and Load Impedance
 
 **Analysis Output:**
-- Component summary cards (A, B, and delta)
-- FUSE™ failure analysis — simulates failure modes including smoke, arc, burst, flame, explosion, and debris particle effects
+- Component summary cards (A, B, and delta metrics)
+- **FUSE™ failure analysis** — evaluates each component against its physics-based failure profile and reports the failure name (e.g. *Thermal Overload*, *Junction Burnout*, *Avalanche Breakdown*, *Dielectric Breakdown*), severity level (0–3), and a physical description of the failure mechanism
+- Animated failure particle effects: smoke, arc, burst, glow, flame, explosion, debris, and shockwave flash
 - Status indicators with pass/warn/fail states
 
 **Data Exchange:**
 - Export results as JSON
-- Load a circuit export from the Builder directly into the Arena
+- Load a circuit export directly from the Builder into the Arena
 - Import custom JSON test scenarios
 
 ### 🎯 Adaptive Practice (`/practice`)
