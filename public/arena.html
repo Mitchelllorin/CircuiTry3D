@@ -626,6 +626,141 @@
     .partner-cta-link:hover {
       color: #7fffd4;
     }
+
+    /* ── FUSE™ Tier Gating UI ──────────────────────────────────────────────── */
+    .fuse-tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: auto;
+      cursor: pointer;
+      border: 1px solid;
+      transition: opacity 0.18s ease, box-shadow 0.18s ease;
+      user-select: none;
+      background: none;
+      font-family: inherit;
+      line-height: 1.6;
+    }
+
+    .fuse-tier-badge:hover {
+      box-shadow: 0 0 10px currentColor;
+      opacity: 0.9;
+    }
+
+    .fuse-tier-free         { border-color: rgba(148,163,184,0.4); color: #94a3b8; background: rgba(148,163,184,0.08); }
+    .fuse-tier-student      { border-color: rgba(57,255,183,0.5);  color: #39ffb7; background: rgba(57,255,183,0.10); }
+    .fuse-tier-educator     { border-color: rgba(96,165,250,0.55); color: #93c5fd; background: rgba(96,165,250,0.10); }
+    .fuse-tier-institutional{ border-color: rgba(168,85,247,0.6);  color: #c4b5fd; background: rgba(168,85,247,0.10); }
+
+    .fuse-locked {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.6);
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px dashed rgba(136, 204, 255, 0.2);
+      background: rgba(8, 15, 28, 0.4);
+    }
+
+    .fuse-locked-icon {
+      opacity: 0.55;
+    }
+
+    .fuse-upgrade-btn {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 150, 50, 0.6);
+      color: #fb923c;
+      background: rgba(255, 150, 50, 0.1);
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      pointer-events: auto;
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .fuse-upgrade-btn:hover {
+      background: rgba(255, 150, 50, 0.2);
+    }
+
+    /* Plan Preview selector inside the panel */
+    .plan-preview-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .plan-chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid rgba(136, 204, 255, 0.25);
+      color: rgba(148, 163, 184, 0.7);
+      background: rgba(12, 22, 42, 0.4);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .plan-chip:hover {
+      border-color: rgba(136, 204, 255, 0.5);
+      color: #e2e8f0;
+    }
+
+    .plan-chip.active {
+      background: rgba(57, 255, 183, 0.12);
+      border-color: rgba(57, 255, 183, 0.5);
+      color: #39ffb7;
+    }
+
+    .plan-preview-note {
+      font-size: 10px;
+      color: rgba(100, 116, 139, 0.75);
+      line-height: 1.5;
+      margin-top: 2px;
+    }
+
+    /* "Powered by FUSE™" footer */
+    .fuse-footer {
+      text-align: center;
+      font-size: 10px;
+      color: rgba(100, 116, 139, 0.72);
+      letter-spacing: 0.06em;
+      padding: 10px 8px 4px;
+      border-top: 1px solid rgba(136, 204, 255, 0.1);
+    }
+
+    .fuse-footer-brand {
+      color: #ff9944;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .fuse-footer a {
+      color: #39ffb7;
+      text-decoration: none;
+    }
+
+    .fuse-footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -635,6 +770,7 @@
       <span class="arena-brand-orange">Try</span>
       <span class="arena-brand-green">3D</span>
       <span class="fuse-tag" title="Failure Understanding Simulation Engine — FUSE™">FUSE™</span>
+      <button class="fuse-tier-badge fuse-tier-free" id="tier-badge" title="FUSE™ access tier — click to preview other tiers">Free</button>
     </div>
     <nav class="arena-nav" aria-label="Main navigation">
       <a class="arena-nav-btn" href="/" target="_top">Home</a>
@@ -756,16 +892,28 @@
           <a class="partner-cta-link" href="/partnerships" target="_top">Partner with us →</a>
         </div>
       </section>
+
+      <!-- Plan Preview — lets users demo different FUSE™ access tiers -->
+      <section class="panel-section" id="plan-preview-section">
+        <div class="section-heading">Plan Preview</div>
+        <p class="plan-preview-note">Preview FUSE™ gating for each access tier. In production, your plan is determined by your account.</p>
+        <div class="plan-preview-row" id="plan-chips">
+          <button class="plan-chip active" data-tier="free">Free</button>
+          <button class="plan-chip" data-tier="student">Student</button>
+          <button class="plan-chip" data-tier="educator">Educator</button>
+          <button class="plan-chip" data-tier="institutional">Institutional</button>
+        </div>
+      </section>
+
+      <div class="fuse-footer">
+        Powered by <span class="fuse-footer-brand">FUSE™</span> · Failure Understanding Simulation Engine ·
+        <a href="/pricing" target="_top">Upgrade Plan →</a>
+      </div>
     </div>
     </div>
     <div id="explosion-dom-flash" aria-hidden="true"></div>
     <canvas id="arena"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
-    <script>
-      if (typeof window.THREE === "undefined") {
-        document.write('<script src="vendor/three.min.js"><\\/script>');
-      }
-    </script>
+    <script src="vendor/three.min.js"></script>
     <script src="js/component-failure-engine.js"></script>
     <script>
     (() => {
@@ -797,6 +945,111 @@
       };
 
       const ARENA_STORAGE_KEY = "circuiTry3d.arena.import";
+
+      // ── FUSE™ Tier Gating ──────────────────────────────────────────────────
+      // Tier hierarchy: free → student → educator → institutional
+      // In production, the tier is determined by server-side authentication.
+      // The tier stored in localStorage here is for demo/preview purposes only.
+      const FUSE_TIER_STORAGE_KEY = "circuiTry3d.fuseTier";
+
+      const FUSE_TIERS = {
+        free:          { label: "Free",          rank: 0 },
+        student:       { label: "Student",       rank: 1 },
+        educator:      { label: "Educator",      rank: 2 },
+        institutional: { label: "Institutional", rank: 3 },
+      };
+
+      function getFuseTier() {
+        try {
+          const stored = window.localStorage?.getItem(FUSE_TIER_STORAGE_KEY);
+          if (stored && FUSE_TIERS[stored]) {
+            return stored;
+          }
+        } catch (_) { /* storage unavailable */ }
+        return "free";
+      }
+
+      function setFuseTier(tier) {
+        if (!FUSE_TIERS[tier]) {
+          return;
+        }
+        try {
+          window.localStorage?.setItem(FUSE_TIER_STORAGE_KEY, tier);
+        } catch (_) { /* storage unavailable */ }
+        updateTierUI(tier);
+        // Re-run last test with the new tier so gating applies immediately.
+        if (state.lastRun) {
+          runTest();
+        }
+      }
+
+      function fuseTierAtLeast(required) {
+        return FUSE_TIERS[getFuseTier()]?.rank >= (FUSE_TIERS[required]?.rank ?? 0);
+      }
+
+      function updateTierUI(tier) {
+        const badge = document.getElementById("tier-badge");
+        if (badge) {
+          badge.textContent = FUSE_TIERS[tier]?.label ?? "Free";
+          badge.className = `fuse-tier-badge fuse-tier-${tier}`;
+        }
+        // Sync plan-chip active state
+        document.querySelectorAll(".plan-chip").forEach((chip) => {
+          chip.classList.toggle("active", chip.dataset.tier === tier);
+        });
+        // Show/hide export button based on tier
+        const exportBtn = document.getElementById("btn-export");
+        if (exportBtn) {
+          exportBtn.disabled = !fuseTierAtLeast("educator");
+          exportBtn.title = fuseTierAtLeast("educator")
+            ? "Export results as JSON"
+            : "Export requires Educator or higher plan — upgrade to unlock";
+        }
+        // Show/hide compare mode based on tier
+        const modeSelect = document.getElementById("mode");
+        if (modeSelect) {
+          const compareOpt = modeSelect.querySelector('option[value="compare"]');
+          if (compareOpt) {
+            compareOpt.disabled = !fuseTierAtLeast("student");
+            compareOpt.textContent = fuseTierAtLeast("student")
+              ? "Compare (A vs B)"
+              : "Compare (A vs B) 🔒";
+          }
+          // Revert to single mode if free tier is set while in compare mode
+          if (!fuseTierAtLeast("student") && state.mode === "compare") {
+            state.mode = "single";
+            modeSelect.value = "single";
+            updateCompareVisibility();
+          }
+        }
+      }
+
+      function initTierUI() {
+        const tier = getFuseTier();
+        updateTierUI(tier);
+
+        // Tier badge click cycles through tiers (dev convenience)
+        const badge = document.getElementById("tier-badge");
+        if (badge) {
+          badge.addEventListener("click", () => {
+            const tierKeys = Object.keys(FUSE_TIERS);
+            const current = getFuseTier();
+            const next = tierKeys[(tierKeys.indexOf(current) + 1) % tierKeys.length];
+            setFuseTier(next);
+          });
+        }
+
+        // Plan Preview chips
+        document.querySelectorAll(".plan-chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const t = chip.dataset.tier;
+            if (t && FUSE_TIERS[t]) {
+              setFuseTier(t);
+            }
+          });
+        });
+      }
+      // ── End FUSE™ Tier Gating ───────────────────────────────────────────────
 
       const STORAGE_KEYS = {
         prefix: "circuitry:arena-session:",
@@ -1973,6 +2226,7 @@
             core = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), material);
             break;
           }
+        }
 
         group.add(core);
         group.userData.core = core;
@@ -2815,6 +3069,8 @@
           return;
         }
 
+        const tier = getFuseTier();
+
         const severityLabel =
           failure.severity >= 2.5 ? "DESTROYED" :
           failure.severity >= 1.5 ? "CRITICAL" :
@@ -2841,18 +3097,59 @@
         badge.className = `failure-badge ${severityClass}`;
         badge.textContent = `${icon} ${severityLabel}`;
 
-        const name = document.createElement("div");
-        name.className = "failure-name";
-        name.textContent = failure.name || "Failure";
-
-        const desc = document.createElement("div");
-        desc.className = "failure-desc";
-        desc.textContent = failure.description || "";
-
         container.appendChild(fuseLabel);
         container.appendChild(badge);
-        container.appendChild(name);
-        container.appendChild(desc);
+
+        // ── Tier gate: failure name (Student+) ─────────────────────────────
+        if (fuseTierAtLeast("student")) {
+          const name = document.createElement("div");
+          name.className = "failure-name";
+          name.textContent = failure.name || "Failure";
+          container.appendChild(name);
+        } else {
+          const locked = document.createElement("div");
+          locked.className = "fuse-locked";
+          const lockIcon1 = document.createElement("span");
+          lockIcon1.className = "fuse-locked-icon";
+          lockIcon1.textContent = "🔒";
+          const lockText1 = document.createElement("span");
+          lockText1.textContent = "Failure name hidden on Free plan";
+          const upgradeLink1 = document.createElement("a");
+          upgradeLink1.className = "fuse-upgrade-btn";
+          upgradeLink1.href = "/pricing";
+          upgradeLink1.target = "_top";
+          upgradeLink1.textContent = "Upgrade";
+          locked.appendChild(lockIcon1);
+          locked.appendChild(lockText1);
+          locked.appendChild(upgradeLink1);
+          container.appendChild(locked);
+        }
+
+        // ── Tier gate: physical description (Educator+) ────────────────────
+        if (fuseTierAtLeast("educator")) {
+          const desc = document.createElement("div");
+          desc.className = "failure-desc";
+          desc.textContent = failure.description || "";
+          container.appendChild(desc);
+        } else if (fuseTierAtLeast("student")) {
+          // Student sees a teaser prompt for the description
+          const locked = document.createElement("div");
+          locked.className = "fuse-locked";
+          const lockIcon2 = document.createElement("span");
+          lockIcon2.className = "fuse-locked-icon";
+          lockIcon2.textContent = "🔒";
+          const lockText2 = document.createElement("span");
+          lockText2.textContent = "Physical description unlocks on Educator plan";
+          const upgradeLink2 = document.createElement("a");
+          upgradeLink2.className = "fuse-upgrade-btn";
+          upgradeLink2.href = "/pricing";
+          upgradeLink2.target = "_top";
+          upgradeLink2.textContent = "Upgrade";
+          locked.appendChild(lockIcon2);
+          locked.appendChild(lockText2);
+          locked.appendChild(upgradeLink2);
+          container.appendChild(locked);
+        }
       }
 
       function triggerFailureAnimation(group, failure) {
@@ -2863,9 +3160,16 @@
           clearFailureVisuals(group);
           return;
         }
-        applyFailureVisuals(group, failure);
-        if (failure.severity >= 2) {
-          triggerPulse(Math.min(failure.severity / 3, 1));
+        // ── Tier gate: visual particle effects (Student+) ──────────────────
+        if (fuseTierAtLeast("student")) {
+          applyFailureVisuals(group, failure);
+          if (failure.severity >= 2) {
+            triggerPulse(Math.min(failure.severity / 3, 1));
+          }
+        } else {
+          // Free tier: clear particles, just energize the component at a high level
+          clearFailureParticles(group);
+          energizeComponent(group, Math.min(failure.severity / 3 + 0.3, 1));
         }
       }
 
@@ -3483,6 +3787,17 @@
           state.selectedA = state.components[0];
         }
 
+        // ── Tier gate: compare mode (Student+) ────────────────────────────
+        if (state.mode === "compare" && !fuseTierAtLeast("student")) {
+          state.mode = "single";
+          const modeSelect = document.getElementById("mode");
+          if (modeSelect) {
+            modeSelect.value = "single";
+          }
+          updateCompareVisibility();
+          setStatus("Compare mode requires a Student plan or higher. Running single component test.");
+        }
+
         const componentA = state.selectedA;
         const metricsA = computeComponentMetrics(componentA, state.testVariables);
         let componentB = null;
@@ -3535,11 +3850,22 @@
           importManifest: state.importManifest,
         };
 
-        const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
-        if (metricsB) {
-          summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
+        // ── FUSE™-branded status message ──────────────────────────────────
+        const worstFailure = (failureB && failureB.severity > (failureA?.severity ?? 0)) ? failureB : failureA;
+        let statusMsg;
+        if (worstFailure && worstFailure.severity > 0 && fuseTierAtLeast("student")) {
+          const sev = worstFailure.severity.toFixed(1);
+          statusMsg = `FUSE™ detected: ${worstFailure.name} — severity ${sev}/3`;
+        } else if (worstFailure && worstFailure.severity > 0) {
+          statusMsg = `FUSE™ detected a failure condition — upgrade to Student plan to see details`;
+        } else {
+          const summaryParts = [`A: ${formatWithUnit(metricsA.currentRms, "A")} - ${formatWithUnit(metricsA.powerDissipation, "W")}`];
+          if (metricsB) {
+            summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
+          }
+          statusMsg = `FUSE™: All components operating within rated limits. ${summaryParts.join(" | ")}`;
         }
-        setStatus(`Test complete. ${summaryParts.join(" | ")}`);
+        setStatus(statusMsg);
       }
 
       function summarizeComponent(component) {
@@ -3937,6 +4263,12 @@
       }
 
       function exportResults() {
+        // ── Tier gate: Export Results (Educator+) ─────────────────────────
+        if (!fuseTierAtLeast("educator")) {
+          setStatus("Export requires an Educator plan or higher. Visit /pricing to upgrade.");
+          return;
+        }
+
         if (!state.lastRun) {
           setStatus("Run a test before exporting results.");
           return;
@@ -4010,6 +4342,7 @@
       function bootstrap() {
         initThree();
         registerEvents();
+        initTierUI();
         initializeCatalog();
         populateComponentSelectors();
         readTestVariables();
