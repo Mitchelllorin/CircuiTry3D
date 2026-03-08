@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import BrandSignature from "../components/BrandSignature";
 
 const CONTACT = {
   schoolBoard: "hello@circuitry3d.com?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",
@@ -11,7 +10,6 @@ export default function Partnerships() {
   return (
     <div style={styles.page}>
       <div style={styles.heroSection}>
-        <BrandSignature size="lg" />
         <h1 style={styles.heroTitle}>Partner with CircuiTry3D</h1>
         <p style={styles.heroSub}>
           Reach electronics educators, CTE programs, and students actively learning circuit design —

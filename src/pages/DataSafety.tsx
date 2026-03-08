@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import BrandSignature from "../components/BrandSignature";
 import "../styles/legal.css";
 
 type DataRow = {
@@ -89,7 +88,6 @@ export default function DataSafety() {
       <Link to="/" className="legal-back">← Home</Link>
 
       <header className="legal-header">
-        <BrandSignature size="sm" decorative />
         <span className="legal-eyebrow">Transparency</span>
         <h1>Data Safety</h1>
         <p className="legal-meta">Last updated: October 25, 2025 · Version 1.0.0</p>
