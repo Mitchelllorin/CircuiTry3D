@@ -12622,6 +12622,11 @@ Made with ? for visual learners everywhere!
                     setStatus('⚡ SHORT CIRCUIT: Separate the terminals or add resistance to protect the build.');
                 } else if (flowMeta.reason === 'no-source') {
                     setStatus('⚡ Add a battery to power the circuit and start current flow.');
+                } else if (flowMeta.reason === 'open') {
+                    const failedEntry = [...workspaceFailureState.values()].find(f => f?.failed);
+                    if (failedEntry) {
+                        setStatus(`⚠ COMPONENT FAILURE: ${failedEntry.name || 'Component'} has failed — circuit is open and current flow has stopped.`);
+                    }
                 }
             } else if (flowMeta.warning === 'short') {
                 triggerShortCircuitFlash();
@@ -13010,6 +13015,9 @@ Made with ? for visual learners everywhere!
                 if (component.type === 'battery' || sides.length !== 2) {
                     return;
                 }
+
+                // Failed components act as open circuits — no current flows through them.
+                if (workspaceFailureState.get(component.id)?.failed) return;
 
                 const [sideA, sideB] = sides;
                 const keyA = getTerminalKey(component, sideA);
@@ -14516,6 +14524,9 @@ Made with ? for visual learners everywhere!
                 if (conductingTypes.includes(comp.type)) {
                     // Only conduct if switch is ON
                     if (comp.type === 'switch' && !comp.properties?.isOn) return;
+
+                    // Failed components act as open circuits — no current flows through them.
+                    if (workspaceFailureState.get(comp.id)?.failed) return;
 
                     // Get all terminal keys that exist in the graph for this component
                     const compId = comp?.id || String(comp);
