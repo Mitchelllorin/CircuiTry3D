@@ -39,6 +39,9 @@
   --builder-edge-actions-gap: 12px;
   --builder-edge-action-button-size: 44px;
   --builder-edge-action-icon-size: 20px;
+  /* Tracks the bottom panel stage's `bottom` value so zoom controls can sit
+     directly above it. Updated in each breakpoint that changes the stage offset. */
+  --builder-bottom-stage-bottom: 24px;
 }
 
 body.builder-body {
@@ -791,16 +794,34 @@ body.builder-body {
    Right offset clears the right menu toggle tab (--builder-menu-toggle-hit-width)
    so the buttons never overlap the toggle, matching the pattern used by
    .workspace-edge-actions--right. PR #515 originally applied this fix to the
-   hidden legacy.html #zoom-controls element; this is the correct React target. */
+   hidden legacy.html #zoom-controls element; this is the correct React target.
+   Bottom offset sits the controls just above the Insights panel toggle so they
+   never overlap the panel in either its open or closed state. */
 .circuit-zoom-controls {
   position: fixed;
-  bottom: calc(64px + var(--builder-safe-area-bottom));
+  bottom: calc(
+    var(--builder-bottom-stage-bottom) +
+    var(--builder-menu-toggle-width) +
+    8px +
+    var(--builder-safe-area-bottom)
+  );
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: 920;
   display: flex;
   flex-direction: row;
   gap: 4px;
-  transition: right 0.32s ease;
+  transition: right 0.32s ease, bottom 0.32s ease;
+}
+
+/* When the Insights panel is open, raise zoom controls above the full panel height */
+.builder-shell[data-bottom-menu-open="true"] .circuit-zoom-controls {
+  bottom: calc(
+    var(--builder-bottom-stage-bottom) +
+    var(--builder-menu-bottom-height) +
+    var(--builder-menu-toggle-width) +
+    8px +
+    var(--builder-safe-area-bottom)
+  );
 }
 
 /* When the right sidebar is open, push zoom controls left to clear the full open panel */
@@ -3909,6 +3930,7 @@ body.builder-body {
     --builder-menu-toggle-width: 22px;
     --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 28px;
+    --builder-bottom-stage-bottom: 20px;
   }
 
   .builder-menu-stage-left,
@@ -3947,6 +3969,7 @@ body.builder-body {
     --builder-ticker-height: 26px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
+    --builder-bottom-stage-bottom: 16px;
   }
 
   .builder-menu-stage-left,
@@ -4066,6 +4089,7 @@ body.builder-body {
     --builder-menu-toggle-height: 44px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
+    --builder-bottom-stage-bottom: 12px;
   }
 
   /* Hide the decorative ticker to free vertical space. */
