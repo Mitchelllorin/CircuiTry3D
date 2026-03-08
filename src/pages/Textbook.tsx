@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import textbook, { allChapters, getChaptersByYear } from "../data/electricalTextbook";
 import type { TextbookChapter, TextbookSection, Formula } from "../data/electricalTextbook";
-import BrandSignature from "../components/BrandSignature";
 import "../styles/textbook.css";
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -146,7 +145,6 @@ export default function Textbook() {
     <div className="tb-page">
       {/* ── Header ── */}
       <header className="tb-header">
-        <BrandSignature size="sm" decorative className="tb-brand" />
         <div className="tb-header-text">
           <p className="tb-header-eyebrow">Reference Library</p>
           <h1 className="tb-header-title">{textbook.title}</h1>

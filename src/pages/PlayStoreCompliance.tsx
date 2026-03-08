@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import BrandSignature from "../components/BrandSignature";
 import "../styles/legal.css";
 
 const SITE_ORIGIN = "https://circuitry3d.app";
@@ -255,7 +254,6 @@ export default function PlayStoreCompliance() {
       <Link to="/" className="legal-back">← Home</Link>
 
       <header className="legal-header">
-        <BrandSignature size="sm" decorative />
         <span className="legal-eyebrow">Google Play Store</span>
         <h1>Play Store Compliance</h1>
         <p className="legal-meta">

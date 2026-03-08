@@ -237,6 +237,15 @@ body.builder-body {
   margin: 0;
 }
 
+/* Brand home link in mode bar */
+.mode-tab--brand {
+  text-decoration: none;
+}
+
+.mode-tab--brand .circuitry-brandmark__img {
+  display: block;
+}
+
 /* Scroll indicator for mode bar */
 .mode-bar-scroll-indicator {
   display: flex;

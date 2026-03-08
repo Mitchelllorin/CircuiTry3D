@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import BrandSignature from "../components/BrandSignature";
 import "../styles/legal.css";
 
 const DELETION_EMAIL = "privacy@circuitry3d.app";
@@ -22,7 +21,6 @@ export default function DeleteAccount() {
       <Link to="/" className="legal-back">← Home</Link>
 
       <header className="legal-header">
-        <BrandSignature size="sm" decorative />
         <span className="legal-eyebrow">Account Management</span>
         <h1>Delete Your Account</h1>
         <p className="legal-meta">CircuiTry3D · Permanent account &amp; data removal</p>

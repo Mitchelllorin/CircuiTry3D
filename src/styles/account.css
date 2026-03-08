@@ -19,19 +19,6 @@
   box-shadow: 0 18px 40px -24px var(--brand-primary-glow);
 }
 
-.account-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-  opacity: 0.95;
-}
-
-.account-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px var(--brand-primary-glow));
-}
-
 .account-eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.18em;

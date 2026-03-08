@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import type { WorkspaceMode } from "./builder/types";
+import BrandMark from "./BrandMark";
 import "../styles/builder-ui.css";
 import wireResourceLogo from "../assets/wire-resource-logo.svg";
 
@@ -96,18 +97,14 @@ export function GlobalModeBar() {
         </div>
       )}
       <div className="workspace-mode-bar workspace-mode-bar--global" ref={modeBarRef}>
-        <button
-          type="button"
-          className="mode-tab mode-tab--icon-only"
-          data-active={
-            isWorkspacePage && workspaceMode === "build" ? "true" : undefined
-          }
-          onClick={handleBuildClick}
-          aria-label="Open workspace"
-          title="Workspace hub"
+        <Link
+          to="/"
+          className="mode-tab mode-tab--icon-only mode-tab--brand"
+          aria-label="CircuiTry3D – Home"
+          title="Home"
         >
-          <span className="mode-icon" aria-hidden="true">🏠</span>
-        </button>
+          <BrandMark size="xs" decorative />
+        </Link>
         <button
           type="button"
           className="mode-tab"

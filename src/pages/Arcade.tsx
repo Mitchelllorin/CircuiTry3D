@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import BrandSignature from "../components/BrandSignature";
 import RetroCircuitMaze from "../components/arcade/RetroCircuitMaze";
 import OhmsRacer from "../components/arcade/OhmsRacer";
 import VoltFighter from "../components/arcade/VoltFighter";
@@ -238,7 +237,6 @@ export default function Arcade() {
     <div className="arcade-page">
       <header className="arcade-hero">
         <div className="arcade-hero-copy">
-          <BrandSignature size="sm" decorative className="arcade-brand" />
           <p className="arcade-eyebrow">Circuit Arcade</p>
           <h1>Speed sprints, clean clears, and retro maze runs in one hub.</h1>
           <p>
