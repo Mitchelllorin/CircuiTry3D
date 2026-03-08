@@ -287,6 +287,17 @@ body {
   height: 100dvh;
 }
 
+/* Arena page gets full-viewport treatment — no mode bar / ticker / footer */
+.app-shell.is-arena .app-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell.is-arena .app-content > * {
+  padding: 0;
+  overflow: hidden;
+}
+
 @media (max-width: 960px) {
   .app-header {
     height: auto;
@@ -316,7 +327,7 @@ body {
 }
 
 /* Add top padding to content when mode bar is present on non-workspace pages */
-.app-shell:not(.is-landing):not(.is-workspace) .app-content {
+.app-shell:not(.is-landing):not(.is-workspace):not(.is-arena) .app-content {
   padding-top: calc(var(--app-mode-bar-height, 0px) + var(--app-mode-bar-gap, 12px) + var(--app-safe-area-top));
 }
 
