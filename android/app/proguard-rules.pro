@@ -5,17 +5,27 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+# ── Capacitor core ──────────────────────────────────────────────────────────
+# Keep all public Capacitor Plugin API so the JS bridge can call into native.
+-keep class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep @com.getcapacitor.annotation.PluginMethod class * { *; }
+-keepclassmembers class * extends com.getcapacitor.Plugin {
+    @com.getcapacitor.annotation.PluginMethod public *;
+}
+
+# ── WebView JavaScript interface ────────────────────────────────────────────
+# If you ever add a @JavascriptInterface class, keep it here:
+# -keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
-#}
+# }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── AndroidX / support ──────────────────────────────────────────────────────
+# AndroidX libraries ship their own consumer ProGuard rules, so no broad keep
+# is needed here.  Suppress warnings for any unused AndroidX references.
+-dontwarn androidx.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Preserve source-file names for crash reports ────────────────────────────
+# Remove these two lines to further obfuscate the stack traces in production.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

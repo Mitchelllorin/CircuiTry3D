@@ -14,78 +14,9 @@ const CONSOLE_URLS: ConsoleUrl[] = [
   { label: "App Access", field: "App content → App access", url: `${SITE_ORIGIN}/app-access` },
 ];
 
-// ── Screenshot groups for Play Console ─────────────────────────────────────
-
-type ScreenshotFile = { filename: string; downloadAs: string };
-
-type ScreenshotGroup = {
-  id: string;
-  icon: string;
-  label: string;
-  consoleField: string;
-  requirement: string;
-  files: ScreenshotFile[];
-};
-
-const SCREENSHOT_GROUPS: ScreenshotGroup[] = [
-  {
-    id: "phone",
-    icon: "📱",
-    label: "Phone",
-    consoleField: "Store listing → Phone screenshots",
-    requirement: "Portrait · 1080 × 1920 px · 9:16",
-    files: [
-      { filename: "phone-screenshot-1.png", downloadAs: "circuitry3d-phone-1.png" },
-      { filename: "phone-screenshot-2.png", downloadAs: "circuitry3d-phone-2.png" },
-      { filename: "phone-screenshot-3.png", downloadAs: "circuitry3d-phone-3.png" },
-      { filename: "phone-screenshot-4.png", downloadAs: "circuitry3d-phone-4.png" },
-    ],
-  },
-  {
-    id: "7in-tablet",
-    icon: "📟",
-    label: "7-inch Tablet",
-    consoleField: "Store listing → 7-inch tablet screenshots",
-    requirement: "Portrait · 1200 × 1920 px · min 1024×600",
-    files: [
-      { filename: "7in-tablet-screenshot-1.png", downloadAs: "circuitry3d-7in-tablet-1.png" },
-      { filename: "7in-tablet-screenshot-2.png", downloadAs: "circuitry3d-7in-tablet-2.png" },
-    ],
-  },
-  {
-    id: "10in-tablet",
-    icon: "🖥️",
-    label: "10-inch Tablet",
-    consoleField: "Store listing → 10-inch tablet screenshots",
-    requirement: "Landscape · 1920 × 1200 px · min 1200×800",
-    files: [
-      { filename: "10in-tablet-screenshot-1.png", downloadAs: "circuitry3d-10in-tablet-1.png" },
-      { filename: "10in-tablet-screenshot-2.png", downloadAs: "circuitry3d-10in-tablet-2.png" },
-    ],
-  },
-  {
-    id: "chromebook",
-    icon: "💻",
-    label: "Chromebook",
-    consoleField: "Store listing → Chromebook screenshots",
-    requirement: "Landscape only · 1920 × 1080 px · min 1920×1080",
-    files: [
-      { filename: "chromebook-screenshot-1.png", downloadAs: "circuitry3d-chromebook-1.png" },
-      { filename: "chromebook-screenshot-2.png", downloadAs: "circuitry3d-chromebook-2.png" },
-    ],
-  },
-  {
-    id: "android-xr",
-    icon: "🥽",
-    label: "Android XR",
-    consoleField: "Store listing → Android XR screenshots",
-    requirement: "Landscape only · 1920 × 1080 px · min 1920×1080",
-    files: [
-      { filename: "android-xr-screenshot-1.png", downloadAs: "circuitry3d-android-xr-1.png" },
-      { filename: "android-xr-screenshot-2.png", downloadAs: "circuitry3d-android-xr-2.png" },
-    ],
-  },
-];
+// Screenshot PNG files are kept in play-store-assets/screenshots/ in the
+// repository.  They are NOT bundled into the app to keep the install size
+// small.  Developers can generate fresh ones via the Screenshot Generator.
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -316,12 +247,15 @@ export default function PlayStoreCompliance() {
           </p>
         </div>
 
-        {/* ── Screenshots Downloads ───────────────────────────────────────── */}
+        {/* ── Screenshots ─────────────────────────────────────────────────── */}
         <div className="screenshot-download-panel">
           <h2 className="screenshot-download-heading">📸 Store Listing Screenshots</h2>
           <p className="screenshot-download-hint">
-            Download screenshots for each device category and upload them to the matching section
-            in <em>Google Play Console → Store listing</em>.
+            Pre-generated PNGs for every device category live in{" "}
+            <code>play-store-assets/screenshots/</code> in the repository.
+            Screenshot files are <strong>not</strong> bundled into the app to keep the install
+            size small — upload them to <em>Google Play Console → Store listing</em> directly
+            from your local checkout.
           </p>
 
           {/* ── Screenshot Generator CTA ──────────────────────────────────── */}
@@ -368,40 +302,6 @@ export default function PlayStoreCompliance() {
               ⬇ OPEN SCREENSHOT GENERATOR
             </Link>
           </div>
-
-          <div className="screenshot-download-groups">
-            {SCREENSHOT_GROUPS.map((group) => (
-              <div key={group.id} className="screenshot-download-group">
-                <div className="screenshot-download-group-header">
-                  <span className="screenshot-download-group-icon" aria-hidden="true">{group.icon}</span>
-                  <div>
-                    <span className="screenshot-download-group-label">{group.label}</span>
-                    <span className="screenshot-download-group-field">{group.consoleField}</span>
-                    <span className="screenshot-download-group-req">{group.requirement}</span>
-                  </div>
-                </div>
-                <div className="screenshot-download-group-files">
-                  {group.files.map(({ filename, downloadAs }) => (
-                    <a
-                      key={filename}
-                      href={`/screenshots/${filename}`}
-                      download={downloadAs}
-                      className="screenshot-download-btn"
-                      aria-label={`Download ${downloadAs}`}
-                    >
-                      ⬇ {downloadAs}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="screenshot-download-note">
-            <strong>Tip:</strong> Use the{" "}
-            <Link to="/screenshots" style={{ color: "var(--brand-primary)" }}>Screenshot Generator</Link>{" "}
-            to produce fresh screenshots at any time directly in your browser — no build step needed.
-            Then re-upload to the Play Console.
-          </p>
         </div>
 
         {/* ── Play Console URL reference ──────────────────────────────────── */}
@@ -482,8 +382,7 @@ export default function PlayStoreCompliance() {
           <h3>Need a copy of all documents?</h3>
           <p>
             Each card above has an individual download. All source documents also live in the
-            repository under <code>play-store-assets/metadata/</code> and{" "}
-            <code>public/store-docs/</code>.
+            repository under <code>play-store-assets/metadata/</code>.
           </p>
           <p>
             Questions or review requests:{" "}
