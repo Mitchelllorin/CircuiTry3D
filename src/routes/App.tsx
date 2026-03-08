@@ -90,14 +90,16 @@ function AppLayout() {
   const location = useLocation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
+  const isArena = location.pathname === "/arena";
   const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
     "app-shell",
     isLanding && "is-landing",
     isWorkspace && "is-workspace",
+    isArena && "is-arena",
   ].filter(Boolean).join(" ");
-  const contentClass = isLanding ? "app-content is-landing" : "app-content";
+  const contentClass = isLanding || isArena ? "app-content is-landing" : "app-content";
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -132,15 +134,15 @@ function AppLayout() {
       ref={shellRef}
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
-      {/* Global Mode Bar - shown on all pages except landing */}
-      {!isLanding && <GlobalModeBar />}
+      {/* Global Mode Bar - shown on all pages except landing and arena */}
+      {!isLanding && !isArena && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Tips & facts ticker - shown on all pages except landing */}
-      {!isLanding && <TipsTicker />}
-      {/* Site footer with legal links - shown on all pages except landing & workspace */}
-      {!isLanding && !isWorkspace && (
+      {/* Tips & facts ticker - shown on all pages except landing and arena */}
+      {!isLanding && !isArena && <TipsTicker />}
+      {/* Site footer with legal links - shown on all pages except landing, workspace & arena */}
+      {!isLanding && !isWorkspace && !isArena && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">Privacy Policy</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>

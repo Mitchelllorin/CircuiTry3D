@@ -24,6 +24,13 @@ export function Component3DViewer({
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleResizeRef = useRef<(() => void) | null>(null);
+  // Use a ref for isRotating so toggling rotation doesn't rebuild the Three.js scene
+  const isRotatingRef = useRef(isRotating);
+
+  // Keep the ref in sync with the prop without re-running the setup effect
+  useEffect(() => {
+    isRotatingRef.current = isRotating;
+  }, [isRotating]);
 
   useEffect(() => {
     if (!canvasRef.current || typeof window === 'undefined') {
@@ -246,7 +253,7 @@ export function Component3DViewer({
         const deltaTime = Math.min(elapsed, frameInterval * 2) / 1000;
         animationTime += deltaTime;
 
-        if (isRotating) {
+        if (isRotatingRef.current) {
           // Slow rotation: 12 seconds per revolution like a car in a showroom.
           componentGroup.rotation.y = animationTime * (Math.PI / 6);
         }
@@ -346,7 +353,7 @@ export function Component3DViewer({
         sceneRef.current = null;
       }
     };
-  }, [componentType, isRotating]);
+  }, [componentType]);
 
   return (
     <canvas
