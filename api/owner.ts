@@ -76,10 +76,11 @@ export default async function handler(request: Request): Promise<Response> {
 
   const secret = process.env.OWNER_SECRET;
   if (!secret) {
-    // OWNER_SECRET not configured — return a generic auth failure so we don't
-    // disclose implementation details to potential attackers.
-    return new Response(AUTH_FAILURE, {
-      status: 401,
+    // OWNER_SECRET is not configured in this Vercel deployment.
+    // Return 503 with a flag so the client can show a helpful setup message
+    // to the owner (not a generic "wrong password" error).
+    return new Response(JSON.stringify({ ok: false, misconfigured: true }), {
+      status: 503,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

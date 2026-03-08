@@ -1,8 +1,23 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { IS_DEMO_MODE, OWNER_STORAGE_KEY } from "../utils/demoMode";
 
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
+
+type UnlockStatus = "idle" | "loading" | "error" | "misconfigured";
+
+function getPasswordBorderColor(status: UnlockStatus): string {
+  if (status === "error") return "rgba(255,120,120,0.6)";
+  if (status === "misconfigured") return "rgba(255,200,80,0.6)";
+  return "rgba(136,204,255,0.3)";
+}
+
+const codeTagStyle: React.CSSProperties = {
+  fontFamily: "monospace",
+  background: "rgba(255,200,80,0.12)",
+  padding: "0 3px",
+  borderRadius: "3px",
+};
 
 /**
  * A fixed banner shown at the top of every page when the app is running in
@@ -16,7 +31,7 @@ const PLAY_STORE_URL =
 export default function DemoBanner() {
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<UnlockStatus>("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!IS_DEMO_MODE) {
@@ -46,6 +61,11 @@ export default function DemoBanner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
+      if (res.status === 503) {
+        // OWNER_SECRET env var is not configured in this Vercel deployment.
+        setStatus("misconfigured");
+        return;
+      }
       if (!res.ok) {
         setStatus("error");
         setPassword("");
@@ -240,7 +260,7 @@ export default function DemoBanner() {
               autoComplete="current-password"
               style={{
                 background: "rgba(136,204,255,0.07)",
-                border: `1px solid ${status === "error" ? "rgba(255,120,120,0.6)" : "rgba(136,204,255,0.3)"}`,
+                border: `1px solid ${getPasswordBorderColor(status)}`,
                 borderRadius: "6px",
                 padding: "8px 12px",
                 color: "rgba(200,225,255,0.9)",
@@ -252,6 +272,17 @@ export default function DemoBanner() {
             {status === "error" && (
               <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,120,120,0.9)" }}>
                 Incorrect password. Try again.
+              </p>
+            )}
+
+            {status === "misconfigured" && (
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,200,80,0.9)", lineHeight: 1.5 }}>
+                <strong>OWNER_SECRET not configured.</strong>
+                <br />
+                In your Vercel project go to{" "}
+                <strong>Settings → Environment Variables</strong>, add a variable
+                named exactly <code style={codeTagStyle}>OWNER_SECRET</code> and
+                set its <em>value</em> to your chosen password.
               </p>
             )}
 
@@ -273,17 +304,17 @@ export default function DemoBanner() {
               </button>
               <button
                 type="submit"
-                disabled={status === "loading" || !password}
+                disabled={status === "loading" || status === "misconfigured" || !password}
                 style={{
                   padding: "7px 18px",
                   borderRadius: "6px",
                   border: "1px solid rgba(136,204,255,0.45)",
                   background: "rgba(136,204,255,0.15)",
                   color: "#c8e6ff",
-                  cursor: status === "loading" ? "default" : "pointer",
+                  cursor: status === "loading" || status === "misconfigured" ? "default" : "pointer",
                   fontWeight: 600,
                   fontSize: "0.82rem",
-                  opacity: !password ? 0.5 : 1,
+                  opacity: !password || status === "misconfigured" ? 0.5 : 1,
                 }}
               >
                 {status === "loading" ? "Verifying…" : "Unlock"}
