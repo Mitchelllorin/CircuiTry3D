@@ -97,6 +97,37 @@ npm run test:watch
 
 ---
 
+## 🔐 Environment Variables
+
+All secrets are set in **Vercel → Project → Settings → Environment Variables** as plain (non-shared) variables.
+
+### Unlocking the full version (owner preview)
+
+The web build runs in **demo mode** by default (limited component library). To preview your full changes:
+
+1. Go to **Vercel → your project → Settings → Environment Variables**
+2. Click **Add New**
+3. Enter:
+   - **Name:** `OWNER_SECRET`
+   - **Value:** any password you choose (e.g. `MySecret123`)
+   - **Environment:** Production, Preview, and Development
+4. Click **Save**
+5. Trigger a new deployment (push a commit, or use **Redeploy**)
+6. Open the deployed site — tap the 🔑 icon in the demo banner and enter your password
+
+> The password is never exposed in the client bundle — it lives only on the server.
+
+### Optional: Classroom cloud sync
+
+Without these the classroom feature still works but saves to browser localStorage only.
+
+| Variable | Description |
+|---|---|
+| `CLASSROOM_KV_URL` | REST endpoint URL of your Upstash Redis instance |
+| `CLASSROOM_KV_TOKEN` | Bearer token for that instance |
+
+---
+
 ## 🗺️ App Routes
 
 | Route | Description |
@@ -202,7 +233,7 @@ Every worksheet completion awards XP, streak bonuses, and badges via **Gamificat
 **Arcade games (`/arcade`):** RetroCircuitMaze, OhmsRacer, VoltFighter — XP-based progression unlocks new components and difficulty tiers.
 
 ### 🎓 Classroom Mode (`/classroom`)
-Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to Vercel KV via `/api/classroom`. Set `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel to enable cloud persistence; the app falls back to local storage without them.
+Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to an Upstash-compatible KV store via `/api/classroom`. Set `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` in Vercel to enable cloud persistence; the app falls back to local storage without them.
 
 Supports grade levels: Grade 8, Grades 9–10, Grades 11–12, Higher Education, and CTE programs.
 

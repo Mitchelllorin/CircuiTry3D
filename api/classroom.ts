@@ -1,4 +1,3 @@
-import { kv } from "@vercel/kv";
 import type { ClassroomDocument } from "../src/model/classroom";
 import {
   applyClassroomAction,
@@ -22,6 +21,45 @@ const corsHeaders = {
 
 const keyForTeacher = (teacherId: string) => `classroom:${teacherId}`;
 
+// ---------------------------------------------------------------------------
+// Minimal Upstash-compatible KV helpers.
+//
+// Set CLASSROOM_KV_URL and CLASSROOM_KV_TOKEN in Vercel → Settings →
+// Environment Variables (plain, non-shared vars).  When these are absent the
+// endpoint returns 503 and the client falls back to localStorage.
+// ---------------------------------------------------------------------------
+
+const KV_URL = process.env.CLASSROOM_KV_URL;
+const KV_TOKEN = process.env.CLASSROOM_KV_TOKEN;
+
+function kvConfigured(): boolean {
+  return Boolean(KV_URL && KV_TOKEN);
+}
+
+async function kvGet(key: string): Promise<string | null> {
+  if (!KV_URL || !KV_TOKEN) throw new Error("CLASSROOM_KV_URL / CLASSROOM_KV_TOKEN are not set");
+  const res = await fetch(`${KV_URL}/get/${encodeURIComponent(key)}`, {
+    headers: { Authorization: `Bearer ${KV_TOKEN}` },
+  });
+  if (!res.ok) throw new Error(`KV GET failed: ${res.status}`);
+  const data = (await res.json()) as { result: string | null };
+  return data.result;
+}
+
+async function kvSet(key: string, value: string): Promise<void> {
+  if (!KV_URL || !KV_TOKEN) throw new Error("CLASSROOM_KV_URL / CLASSROOM_KV_TOKEN are not set");
+  // Use the pipeline endpoint so arbitrary JSON values are safe in the body.
+  const res = await fetch(`${KV_URL}/pipeline`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${KV_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([["set", key, value]]),
+  });
+  if (!res.ok) throw new Error(`KV SET failed: ${res.status}`);
+}
+
 type ClassroomRequest =
   | { action: "load"; teacherId: string }
   | { action: "createClass"; teacherId: string; payload: CreateClassroomPayload }
@@ -37,6 +75,12 @@ export default async function handler(request: Request): Promise<Response> {
 
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+  }
+
+  if (!kvConfigured()) {
+    // CLASSROOM_KV_URL / CLASSROOM_KV_TOKEN not set — the client will fall back
+    // to localStorage automatically.
+    return new Response("Classroom KV not configured", { status: 503, headers: corsHeaders });
   }
 
   try {
@@ -66,7 +110,7 @@ export default async function handler(request: Request): Promise<Response> {
 }
 
 const readDocument = async (teacherId: string): Promise<ClassroomDocument> => {
-  const raw = await kv.get<string>(keyForTeacher(teacherId));
+  const raw = await kvGet(keyForTeacher(teacherId));
   if (!raw) {
     return ensureDocument(null, teacherId);
   }
@@ -81,7 +125,7 @@ const readDocument = async (teacherId: string): Promise<ClassroomDocument> => {
 };
 
 const writeDocument = async (teacherId: string, document: ClassroomDocument) => {
-  await kv.set(keyForTeacher(teacherId), JSON.stringify(document));
+  await kvSet(keyForTeacher(teacherId), JSON.stringify(document));
 };
 
 const mapAction = (request: ClassroomRequest): ClassroomAction | null => {
