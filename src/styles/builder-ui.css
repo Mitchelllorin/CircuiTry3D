@@ -850,28 +850,27 @@ body.builder-body {
 }
 
 /* ── Centered component quick-add bar ───────────────────────────────────
-   A horizontally centered pill strip shown over the workspace (outside the
-   iframe) so it always appears in the production React app at /#/app.
-   This is where Battery, Resistor, LED, Junction and Wire-mode shortcuts
-   belong — NOT inside legacy.html whose #quick-actions element is hidden
-   by `body.embedded #quick-actions { display:none }` when embedded.
+   Positioned directly below the ticker feed so it never covers live metrics.
+   Uses 3D WebGL thumbnails (useComponent3DThumbnail) instead of 2D schematic
+   symbols for a consistent look with the rest of the 3D builder.
    ─────────────────────────────────────────────────────────────────────── */
 .quick-add-bar {
   position: fixed;
-  top: calc(68px + var(--builder-safe-area-top));
+  /* Place directly below the ticker bar */
+  top: calc(72px + var(--builder-ticker-height, 32px) + 4px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 930;
+  z-index: 920;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 3px;
+  padding: 3px 6px;
   background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
   border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
-  border-radius: 28px;
+  border-radius: 22px;
   backdrop-filter: blur(14px);
-  box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
+  box-shadow: 0 2px 10px rgba(3, 12, 32, 0.5);
   white-space: nowrap;
 }
 
@@ -880,12 +879,12 @@ body.builder-body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-width: 44px;
-  padding: 4px 8px;
-  background: rgba(136, 204, 255, 0.1);
+  gap: 1px;
+  min-width: 36px;
+  padding: 2px 5px;
+  background: rgba(136, 204, 255, 0.08);
   border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
-  border-radius: 16px;
+  border-radius: 12px;
   color: var(--builder-text, #e8f6ff);
   cursor: pointer;
   font-family: inherit;
@@ -930,23 +929,26 @@ body.builder-body {
   color: #fff;
 }
 
-/* SVG schematic symbol container inside each button */
+/* 3D thumbnail image inside each button */
 .quick-add-btn-symbol {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  width: 28px;
   height: 22px;
   flex-shrink: 0;
 }
 
-.quick-add-btn-symbol-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+/* 3D rendered thumbnail (WebGL data URL) */
+.quick-add-btn-3d-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
-/* Fallback for components without a schematic symbol */
+/* Fallback for components without a 3D model (while loading) */
 .quick-add-btn-icon-text {
   font-size: 11px;
   line-height: 1;
@@ -954,34 +956,51 @@ body.builder-body {
 
 /* Wire-mode button image */
 .quick-add-btn-wire-img {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   filter: brightness(0.9);
 }
 
 .quick-add-btn-label {
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--builder-muted, rgba(200, 220, 255, 0.72));
 }
 
+@media (max-width: 960px) {
+  .quick-add-bar {
+    top: calc(68px + var(--builder-ticker-height, 28px) + 4px + var(--builder-safe-area-top));
+  }
+}
+
+@media (max-width: 720px) {
+  .quick-add-bar {
+    top: calc(64px + var(--builder-ticker-height, 26px) + 4px + var(--builder-safe-area-top));
+  }
+}
+
 @media (max-width: 480px) {
   .quick-add-bar {
-    gap: 3px;
-    padding: 3px 6px;
+    gap: 2px;
+    padding: 2px 5px;
   }
 
   .quick-add-btn {
-    min-width: 36px;
-    padding: 4px 6px;
+    min-width: 30px;
+    padding: 2px 4px;
   }
 
   .quick-add-btn-symbol {
-    width: 28px;
+    width: 24px;
     height: 20px;
+  }
+
+  .quick-add-btn-3d-img {
+    width: 22px;
+    height: 22px;
   }
 
   .quick-add-btn-label {
