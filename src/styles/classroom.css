@@ -26,19 +26,6 @@
   border: 1px solid var(--classroom-border);
 }
 
-.classroom-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 0.75rem;
-  opacity: 0.95;
-}
-
-.classroom-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px var(--brand-primary-glow));
-}
-
 .classroom-header h1 {
   margin: 0.35rem 0;
   font-size: clamp(2rem, 3vw, 2.6rem);
@@ -118,14 +105,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-}
-
-.classroom-panel-brand {
-  opacity: 0.9;
-}
-
-.classroom-panel-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 10px 22px var(--brand-primary-glow));
 }
 
 .classroom-panel-header h2,

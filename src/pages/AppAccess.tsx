@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import BrandSignature from "../components/BrandSignature";
 import "../styles/legal.css";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
@@ -11,7 +10,6 @@ export default function AppAccess() {
       <Link to="/" className="legal-back">← Home</Link>
 
       <header className="legal-header">
-        <BrandSignature size="sm" decorative />
         <span className="legal-eyebrow">Mobile App</span>
         <h1>Get the App</h1>
         <p className="legal-meta">CircuiTry3D · {PACKAGE_NAME}</p>

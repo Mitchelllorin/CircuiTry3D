@@ -34,19 +34,6 @@
   margin: 0 32px;
 }
 
-.community-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-  opacity: 0.95;
-}
-
-.community-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 14px 34px var(--brand-primary-glow));
-}
-
 .community-eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -120,15 +107,6 @@
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-}
-
-.panel-brand {
-  margin-top: 4px;
-  opacity: 0.92;
-}
-
-.panel-brand .circuitry-brandmark__img {
-  filter: drop-shadow(0 10px 22px var(--brand-primary-glow));
 }
 
 .panel-header h2 {
