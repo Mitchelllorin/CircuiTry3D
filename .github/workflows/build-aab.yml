@@ -82,14 +82,10 @@ jobs:
           : "${ANDROID_STORE_PASSWORD:?Missing secret ANDROID_STORE_PASSWORD}"
           : "${ANDROID_KEY_PASSWORD:?Missing secret ANDROID_KEY_PASSWORD}"
 
-          # Fall back to the committed new-upload-key.jks when ANDROID_KEYSTORE_BASE64 is not set
+          : "${ANDROID_KEYSTORE_BASE64:?Missing secret ANDROID_KEYSTORE_BASE64 — store the base64-encoded keystore in GitHub Secrets}"
           KEYSTORE_FILENAME="${ANDROID_KEYSTORE_FILENAME:-upload-key.jks}"
           mkdir -p android/app/keystore
-          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "android/app/keystore/${KEYSTORE_FILENAME}"
-          else
-            cp new-upload-key.jks "android/app/keystore/${KEYSTORE_FILENAME}"
-          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "android/app/keystore/${KEYSTORE_FILENAME}"
 
           # Determine the signing alias.  If ANDROID_KEY_ALIAS is set but does not exist in the
           # keystore (e.g. stale secret after a keystore reset), auto-detect the first alias found
@@ -150,6 +146,13 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
+      - name: Upload mapping file (deobfuscation)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-mapping-v${{ env.VERSION_NAME }}-${{ env.SHORT_SHA }}
+          path: android/app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
+
       - name: Publish to Play Store internal testing
         if: env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
         uses: r0adkll/upload-google-play@v1
@@ -157,6 +160,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.circuitry3d.app
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          mappingFile: android/app/build/outputs/mapping/release/mapping.txt
           track: internal
           status: completed
 
