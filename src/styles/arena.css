@@ -572,6 +572,9 @@ body.builder-body .arena-page {
   flex-direction: column;
   gap: 18px;
   flex: 1;
+  /* Break out of arena-body horizontal padding for full-bleed battle stage */
+  margin-left: -32px;
+  margin-right: -32px;
 }
 
 .arena-card {
@@ -1031,15 +1034,12 @@ body.builder-body .arena-page {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px; /* Add gap between panels to prevent overlap */
-  border-radius: 24px;
-  border: 3px solid rgba(0, 245, 255, 0.3);
-  background: linear-gradient(180deg, #020617 0%, #0a0f1e 50%, #020617 100%);
+  gap: 0;
+  border-radius: 0;
+  border: none;
+  background: #020617;
   overflow: hidden;
-  box-shadow:
-    0 0 100px rgba(0, 245, 255, 0.15),
-    0 30px 80px rgba(0, 0, 0, 0.5),
-    inset 0 0 100px rgba(0, 245, 255, 0.05);
+  box-shadow: none;
   min-height: 70vh;
   width: 100%;
 }
@@ -1115,7 +1115,7 @@ body.builder-body .arena-page {
 
 .arena-battle-panel {
   position: relative;
-  padding: 24px 16px;
+  padding: 40px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3098,6 +3098,11 @@ body.builder-body .arena-page {
     padding: 20px 16px;
   }
 
+  .arena-battle-section {
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+
   .arena-metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -3834,6 +3839,12 @@ body.builder-body .arena-page {
   margin: 0;
   padding: 14px 14px calc(22px + var(--builder-safe-area-bottom));
   gap: 14px;
+}
+
+/* Reset battle section full-bleed breakout in workspace (different layout context) */
+.arena-body--workspace-split .arena-battle-section {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .arena-page--workspace .arena-card {
