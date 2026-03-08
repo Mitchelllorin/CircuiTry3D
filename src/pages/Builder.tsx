@@ -15,7 +15,7 @@ import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
-import { getSchematicSymbol } from "../components/circuit/SchematicSymbols";
+import { getSchematicSymbol, type ComponentSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
 import { CompactTroubleshootPanel } from "../components/builder/panels/CompactTroubleshootPanel";
@@ -2713,20 +2713,43 @@ export default function Builder() {
               PR #467 / #516 (which targeted a hidden element) to the correct
               React layer so changes are always visible in the production app */}
           <div className="quick-add-bar" aria-label="Quick add components">
-            {QUICK_ADD_COMPONENTS.map((component) => (
-              <button
-                key={component.id}
-                type="button"
-                className="quick-add-btn"
-                onClick={() => handleComponentAction(component)}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                title={component.description || component.label}
-              >
-                <span className="quick-add-btn-icon" aria-hidden="true">{component.icon}</span>
-                <span className="quick-add-btn-label">{component.label}</span>
-              </button>
-            ))}
+            {QUICK_ADD_COMPONENTS.map((component) => {
+              const symKey = (() => {
+                const t = component.builderType ?? component.id;
+                if (t === "bjt-npn" || t === "bjt") return "transistor-npn";
+                if (t === "bjt-pnp") return "transistor-pnp";
+                return t;
+              })() as ComponentSymbol;
+              const SymbolComp = getSchematicSymbol(symKey);
+              const symRotation = symKey === "battery" ? -90 : 0;
+              return (
+                <button
+                  key={component.id}
+                  type="button"
+                  className="quick-add-btn"
+                  onClick={() => handleComponentAction(component)}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  title={component.description || component.label}
+                >
+                  <span className="quick-add-btn-symbol" aria-hidden="true">
+                    {SymbolComp ? (
+                      <svg
+                        className="quick-add-btn-symbol-svg"
+                        viewBox="-36 -36 72 72"
+                        focusable="false"
+                        aria-hidden="true"
+                      >
+                        <SymbolComp x={0} y={0} rotation={symRotation} scale={0.9} showLabel={false} />
+                      </svg>
+                    ) : (
+                      <span className="quick-add-btn-icon-text" aria-hidden="true">{component.icon}</span>
+                    )}
+                  </span>
+                  <span className="quick-add-btn-label">{component.label}</span>
+                </button>
+              );
+            })}
             <button
               type="button"
               className={`quick-add-btn${modeState.isWireMode ? " quick-add-btn--active" : ""}`}
@@ -2736,7 +2759,9 @@ export default function Builder() {
               aria-pressed={modeState.isWireMode}
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
-              <img src={wireStrippersIcon} alt="" className="quick-add-btn-icon" aria-hidden="true" />
+              <span className="quick-add-btn-symbol" aria-hidden="true">
+                <img src={wireStrippersIcon} alt="" className="quick-add-btn-wire-img" aria-hidden="true" />
+              </span>
               <span className="quick-add-btn-label">Wire</span>
             </button>
           </div>
