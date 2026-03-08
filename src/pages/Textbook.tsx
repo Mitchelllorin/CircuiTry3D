@@ -1,6 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import textbook, { allChapters, getChaptersByYear } from "../data/electricalTextbook";
 import type { TextbookChapter, TextbookSection, Formula } from "../data/electricalTextbook";
+import { getChapterQuiz, getYearFinal } from "../data/textbookQuizzes";
+import type { QuizQuestion } from "../data/textbookQuizzes";
 import "../styles/textbook.css";
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -87,7 +89,14 @@ function SectionView({ section }: { section: TextbookSection }) {
   );
 }
 
-function ChapterView({ chapter }: { chapter: TextbookChapter }) {
+function ChapterView({
+  chapter,
+  onStartQuiz,
+}: {
+  chapter: TextbookChapter;
+  onStartQuiz: () => void;
+}) {
+  const hasQuiz = !!getChapterQuiz(chapter.id);
   return (
     <div className="tb-chapter-view">
       <div className="tb-chapter-header">
@@ -100,16 +109,206 @@ function ChapterView({ chapter }: { chapter: TextbookChapter }) {
       {chapter.sections.map((section) => (
         <SectionView key={section.id} section={section} />
       ))}
+      {hasQuiz && (
+        <div className="tb-quiz-cta">
+          <div className="tb-quiz-cta-text">
+            <span className="tb-quiz-cta-icon">📝</span>
+            <div>
+              <p className="tb-quiz-cta-title">Chapter Quiz</p>
+              <p className="tb-quiz-cta-desc">
+                Test your understanding of Chapter {chapter.number}: {chapter.title}
+              </p>
+            </div>
+          </div>
+          <button type="button" className="tb-quiz-start-btn" onClick={onStartQuiz}>
+            Take Quiz
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Quiz Panel ───────────────────────────────────────────────────────────────
+
+function QuizPanel({
+  title,
+  subtitle,
+  questions,
+  onBack,
+}: {
+  title: string;
+  subtitle: string;
+  questions: QuizQuestion[];
+  onBack: () => void;
+}) {
+  const [answers, setAnswers] = useState<(number | null)[]>(() =>
+    Array(questions.length).fill(null),
+  );
+  const [submitted, setSubmitted] = useState(false);
+
+  const score = useMemo(() => {
+    if (!submitted) return 0;
+    return answers.filter((a, i) => a === questions[i].correctIndex).length;
+  }, [submitted, answers, questions]);
+
+  const allAnswered = answers.every((a) => a !== null);
+
+  const handleSelect = (qIdx: number, optIdx: number) => {
+    if (submitted) return;
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[qIdx] = optIdx;
+      return next;
+    });
+  };
+
+  const handleSubmit = () => {
+    if (allAnswered) setSubmitted(true);
+  };
+
+  const handleRetry = () => {
+    setAnswers(Array(questions.length).fill(null));
+    setSubmitted(false);
+  };
+
+  const pct = submitted ? Math.round((score / questions.length) * 100) : 0;
+
+  function getGradeLabel(p: number): string {
+    if (p >= 90) return "Excellent";
+    if (p >= 70) return "Good";
+    if (p >= 50) return "Pass";
+    return "Needs Review";
+  }
+
+  function getGradeClass(p: number): string {
+    if (p >= 90) return "grade-excellent";
+    if (p >= 70) return "grade-good";
+    if (p >= 50) return "grade-pass";
+    return "grade-fail";
+  }
+
+  const grade = getGradeLabel(pct);
+  const gradeClass = getGradeClass(pct);
+
+  return (
+    <div className="tb-quiz-panel">
+      <div className="tb-quiz-panel-header">
+        <button type="button" className="tb-quiz-back-btn" onClick={onBack} aria-label="Back">
+          ← Back
+        </button>
+        <div className="tb-quiz-panel-title-group">
+          <h2 className="tb-quiz-panel-title">{title}</h2>
+          <p className="tb-quiz-panel-subtitle">{subtitle}</p>
+        </div>
+      </div>
+
+      {submitted && (
+        <div className={`tb-quiz-score-banner ${gradeClass}`}>
+          <span className="tb-quiz-score-num">
+            {score} / {questions.length}
+          </span>
+          <span className="tb-quiz-score-pct">{pct}%</span>
+          <span className="tb-quiz-score-grade">{grade}</span>
+        </div>
+      )}
+
+      <ol className="tb-quiz-question-list">
+        {questions.map((q, qIdx) => {
+          const selected = answers[qIdx];
+          const isCorrect = submitted && selected === q.correctIndex;
+          const isWrong = submitted && selected !== null && selected !== q.correctIndex;
+
+          return (
+            <li
+              key={q.id}
+              className={`tb-quiz-question${submitted ? (isCorrect ? " is-correct" : " is-wrong") : ""}`}
+            >
+              <p className="tb-quiz-q-text">
+                <span className="tb-quiz-q-num">{qIdx + 1}.</span> {q.question}
+              </p>
+              <ul className="tb-quiz-options" role="list">
+                {q.options.map((opt, optIdx) => {
+                  const isSelected = selected === optIdx;
+                  const showCorrect = submitted && optIdx === q.correctIndex;
+                  const showWrong = submitted && isSelected && optIdx !== q.correctIndex;
+                  return (
+                    <li key={optIdx}>
+                      <button
+                        type="button"
+                        className={[
+                          "tb-quiz-option",
+                          isSelected && !submitted && "is-selected",
+                          showCorrect && "is-correct",
+                          showWrong && "is-wrong",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        onClick={() => handleSelect(qIdx, optIdx)}
+                        disabled={submitted}
+                        aria-pressed={isSelected}
+                      >
+                        <span className="tb-quiz-option-letter">
+                          {String.fromCharCode(65 + optIdx)}
+                        </span>
+                        {opt}
+                        {showCorrect && <span className="tb-quiz-option-check">✓</span>}
+                        {showWrong && <span className="tb-quiz-option-cross">✗</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {submitted && (
+                <div className={`tb-quiz-explanation${isWrong ? " is-wrong" : ""}`}>
+                  <span className="tb-quiz-explanation-label">
+                    {isCorrect ? "✓ Correct" : "✗ Incorrect"} —{" "}
+                  </span>
+                  {q.explanation}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="tb-quiz-actions">
+        {!submitted ? (
+          <button
+            type="button"
+            className="tb-quiz-submit-btn"
+            onClick={handleSubmit}
+            disabled={!allAnswered}
+          >
+            {allAnswered ? "Check Answers" : `Answer all ${questions.length} questions to submit`}
+          </button>
+        ) : (
+          <>
+            <button type="button" className="tb-quiz-retry-btn" onClick={handleRetry}>
+              Retry Quiz
+            </button>
+            <button type="button" className="tb-quiz-back-btn-bottom" onClick={onBack}>
+              Back to {title.includes("Final") ? "Textbook" : "Chapter"}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+type ContentMode =
+  | { kind: "chapter" }
+  | { kind: "chapter-quiz" }
+  | { kind: "final"; year: 1 | 2 };
+
 export default function Textbook() {
   const [selectedChapterId, setSelectedChapterId] = useState<string>(allChapters[0].id);
   const [activeYear, setActiveYear] = useState<1 | 2 | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [contentMode, setContentMode] = useState<ContentMode>({ kind: "chapter" });
 
   const selectedChapter: TextbookChapter | undefined = useMemo(
     () => allChapters.find((ch) => ch.id === selectedChapterId),
@@ -134,12 +333,40 @@ export default function Textbook() {
     );
   }, [activeYear, searchQuery]);
 
-  const handleChapterSelect = (id: string) => {
-    setSelectedChapterId(id);
-    // Scroll content area back to top
+  const scrollContentToTop = () => {
     const content = document.querySelector<HTMLElement>(".tb-content");
     if (content) content.scrollTop = 0;
   };
+
+  const handleChapterSelect = (id: string) => {
+    setSelectedChapterId(id);
+    setContentMode({ kind: "chapter" });
+    scrollContentToTop();
+  };
+
+  const handleStartChapterQuiz = useCallback(() => {
+    setContentMode({ kind: "chapter-quiz" });
+    scrollContentToTop();
+  }, []);
+
+  const handleOpenFinal = (year: 1 | 2) => {
+    setContentMode({ kind: "final", year });
+    scrollContentToTop();
+  };
+
+  const handleBackToChapter = () => {
+    setContentMode({ kind: "chapter" });
+    scrollContentToTop();
+  };
+
+  // Resolve quiz / final data for the current content mode
+  const chapterQuiz =
+    contentMode.kind === "chapter-quiz" && selectedChapter
+      ? getChapterQuiz(selectedChapter.id)
+      : undefined;
+
+  const yearFinal =
+    contentMode.kind === "final" ? getYearFinal(contentMode.year) : undefined;
 
   return (
     <div className="tb-page">
@@ -157,9 +384,24 @@ export default function Textbook() {
               key={year}
               type="button"
               className={`tb-year-tab${activeYear === year ? " is-active" : ""}`}
-              onClick={() => setActiveYear(year)}
+              onClick={() => {
+                setActiveYear(year);
+                setContentMode({ kind: "chapter" });
+              }}
             >
               {year === "all" ? "All Chapters" : `Year ${year}`}
+            </button>
+          ))}
+          <span className="tb-year-tabs-sep" aria-hidden="true" />
+          {([1, 2] as const).map((year) => (
+            <button
+              key={`final-${year}`}
+              type="button"
+              className={`tb-year-tab tb-final-tab${contentMode.kind === "final" && contentMode.year === year ? " is-active" : ""}`}
+              onClick={() => handleOpenFinal(year)}
+              title={`Year ${year} Final Examination`}
+            >
+              📋 Yr {year} Final
             </button>
           ))}
         </div>
@@ -183,7 +425,7 @@ export default function Textbook() {
               <li key={chapter.id}>
                 <button
                   type="button"
-                  className={`tb-chapter-btn${selectedChapterId === chapter.id ? " is-active" : ""}`}
+                  className={`tb-chapter-btn${selectedChapterId === chapter.id && contentMode.kind !== "final" ? " is-active" : ""}`}
                   onClick={() => handleChapterSelect(chapter.id)}
                 >
                   <span className="tb-chapter-num">Ch {chapter.number}</span>
@@ -200,8 +442,24 @@ export default function Textbook() {
 
         {/* ── Content ── */}
         <main className="tb-content" aria-label="Textbook content">
-          {selectedChapter ? (
-            <ChapterView chapter={selectedChapter} />
+          {contentMode.kind === "chapter-quiz" && chapterQuiz && selectedChapter ? (
+            <QuizPanel
+              key={`quiz-${selectedChapter.id}`}
+              title={`Chapter ${selectedChapter.number} Quiz`}
+              subtitle={selectedChapter.title}
+              questions={chapterQuiz.questions}
+              onBack={handleBackToChapter}
+            />
+          ) : contentMode.kind === "final" && yearFinal ? (
+            <QuizPanel
+              key={`final-${contentMode.year}`}
+              title={yearFinal.title}
+              subtitle={yearFinal.description}
+              questions={yearFinal.questions}
+              onBack={handleBackToChapter}
+            />
+          ) : selectedChapter ? (
+            <ChapterView chapter={selectedChapter} onStartQuiz={handleStartChapterQuiz} />
           ) : (
             <div className="tb-empty">Select a chapter from the sidebar to begin reading.</div>
           )}
