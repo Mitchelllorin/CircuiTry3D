@@ -4,7 +4,7 @@
   "description": "3D Interactive Electric Circuit Builder - Illuminating Electricity for Education",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "landscape",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "categories": ["education", "utilities"],

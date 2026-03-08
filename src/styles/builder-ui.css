@@ -781,7 +781,7 @@ body.builder-body {
   }
 }
 
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
   .current-flow-payoff-banner {
     display: none;
   }
@@ -4059,7 +4059,7 @@ body.builder-body {
    Short landscape phones (low vertical space)
    Keep UI usable when rotated.
    ============================================ */
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
   :root {
     /* Reduce bottom drawer footprint on short screens. */
     --builder-menu-bottom-height: 160px;
@@ -4135,6 +4135,18 @@ body.builder-body {
     padding: 6px 12px;
     font-size: 10px;
     gap: 8px;
+  }
+
+  /* Tighten quick-add bar to sit just below the reduced 44px header. */
+  .quick-add-bar {
+    top: calc(52px + var(--builder-safe-area-top));
+  }
+
+  /* Prevent panel modals from filling the entire landscape viewport. */
+  .builder-panel-shell,
+  .builder-panel {
+    max-height: 75vh;
+    max-height: 75dvh;
   }
 }
 
