@@ -21,11 +21,31 @@ export const OWNER_STORAGE_KEY = "circuitry3d_owner_unlocked";
 /** Returns true when the owner has unlocked full access via /api/owner. */
 function isOwnerUnlocked(): boolean {
   try {
+    if (typeof location === "undefined") {
+      return false;
+    }
     // Handle ?demo_reset — clear the unlock and redirect to the clean URL.
-    if (typeof location !== "undefined" && new URLSearchParams(location.search).has("demo_reset")) {
+    // The parameter may appear in the regular query string (before #) or
+    // inside the hash portion (e.g. /#/?demo_reset) when using HashRouter.
+    const hashPrefix = /^#\/?/;
+    const hasDemoReset =
+      new URLSearchParams(location.search).has("demo_reset") ||
+      new URLSearchParams(location.hash.replace(hashPrefix, "")).has(
+        "demo_reset"
+      );
+    if (hasDemoReset) {
       localStorage.removeItem(OWNER_STORAGE_KEY);
       const url = new URL(location.href);
       url.searchParams.delete("demo_reset");
+      // Also strip it from the hash if present.
+      if (url.hash) {
+        const hashParams = new URLSearchParams(
+          url.hash.replace(hashPrefix, "")
+        );
+        hashParams.delete("demo_reset");
+        const newHash = hashParams.toString();
+        url.hash = newHash ? `/${newHash}` : "/";
+      }
       location.replace(url.toString());
       return false;
     }
