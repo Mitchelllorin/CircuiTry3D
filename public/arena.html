@@ -179,19 +179,6 @@
       transform: none;
     }
 
-    .btn-battle {
-      border-color: rgba(251, 191, 36, 0.55);
-      background: rgba(120, 53, 15, 0.45);
-      color: #fde68a;
-      text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
-    }
-
-    .btn-battle:hover {
-      background: rgba(180, 83, 9, 0.55);
-      border-color: rgba(251, 191, 36, 0.9);
-      box-shadow: 0 10px 25px rgba(251, 191, 36, 0.3);
-    }
-
     .file-btn {
       position: relative;
       overflow: hidden;
@@ -435,10 +422,6 @@
       display: none;
     }
 
-    .is-compare .compare-only {
-      display: flex;
-    }
-
     .failure-analysis {
       display: flex;
       flex-direction: column;
@@ -645,7 +628,7 @@
     }
   </style>
 </head>
-<body class="is-compare">
+<body>
   <header class="arena-header">
     <div class="arena-brand" aria-label="CircuiTry3D">
       <span class="arena-brand-green">Circui</span>
@@ -664,7 +647,6 @@
   </header>
   <div class="hud">
     <button class="btn" id="btn-reset" data-command="reset">Reset</button>
-    <button class="btn btn-battle" id="btn-battle" data-command="battle">⚔ Battle</button>
     <button class="btn" id="btn-run" data-command="run-test">Run Test</button>
     <button class="btn" id="btn-export" data-command="export">Export Results</button>
     <button class="btn" id="btn-import-builder">Load Builder Export</button>
@@ -686,7 +668,7 @@
           <label for="mode">Mode</label>
           <select id="mode">
             <option value="single">Single Component</option>
-            <option value="compare" selected>Compare (A vs B)</option>
+            <option value="compare">Compare (A vs B)</option>
           </select>
         </div>
       </section>
@@ -1030,7 +1012,6 @@
       const failureParticleSystems = [];
       const shockwaves = [];        // Expanding shockwave ring meshes
       const explosionFlashes = [];  // One-time point-light flash objects
-      let _flashRafId = null;       // Track active DOM flash fade RAF to prevent overlap
 
       function initThree() {
         const canvas = document.getElementById("arena");
@@ -2439,11 +2420,6 @@
         const flashEl = document.getElementById("explosion-dom-flash");
         if (flashEl) {
           const peak = Math.min(intensity * 0.88, 0.88);
-          // Cancel any in-progress flash fade to prevent overlapping RAF loops
-          if (_flashRafId !== null) {
-            cancelAnimationFrame(_flashRafId);
-            _flashRafId = null;
-          }
           flashEl.style.transition = "none";
           flashEl.style.opacity = String(peak);
           const startMs = performance.now();
@@ -2451,13 +2427,12 @@
             const elapsed = (now - startMs) / 1000;
             if (elapsed < 0.7) {
               flashEl.style.opacity = String(Math.max(0, peak * (1 - elapsed / 0.55)));
-              _flashRafId = requestAnimationFrame(fadeFlash);
+              requestAnimationFrame(fadeFlash);
             } else {
               flashEl.style.opacity = "0";
-              _flashRafId = null;
             }
           }
-          _flashRafId = requestAnimationFrame(fadeFlash);
+          requestAnimationFrame(fadeFlash);
         }
       }
 
@@ -3139,7 +3114,11 @@
 
       function updateCompareVisibility() {
         const compare = state.mode === "compare";
-        document.body.classList.toggle("is-compare", compare);
+        document.querySelectorAll(".compare-only").forEach((element) => {
+          // "flex" is used explicitly: setting "" would clear the inline style, restoring
+          // the CSS rule `.compare-only { display: none }` which would hide the element again.
+          element.style.display = compare ? "flex" : "none";
+        });
         if (componentGroupB) {
           componentGroupB.visible = compare && Boolean(state.selectedB);
         }
@@ -3921,16 +3900,6 @@
           case "reset":
             resetArena();
             break;
-          case "battle": {
-            state.mode = "compare";
-            const sel = document.getElementById("mode");
-            if (sel) {
-              sel.value = "compare";
-            }
-            updateCompareVisibility();
-            runTest();
-            break;
-          }
           case "run-test":
             runTest();
             break;
