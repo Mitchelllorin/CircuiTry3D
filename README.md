@@ -44,11 +44,12 @@ Whether you teach middle school science, high school CTE electronics, or first-y
 ### 🏭 Manufacturers & Component Retailers
 CircuiTry3D's **Component Arena** is a unique channel to put your real-world datasheets in front of students and teachers at the exact moment they are learning what your components do — and why they fail if misused.
 
-- Feature your components (resistors, capacitors, ICs, MOSFETs, LEDs, and more) as Named Sponsored Components in the Arena
-- Students interact with **your rated specs** — voltage limits, temperature ranges, current capacity — and the FUSE™ engine explains what happens physically when those specs are exceeded
-- Every failure card credits the component family and its physical behavior, creating lasting brand and product awareness in the engineering pipeline
-- Direct link from Arena components to your product page or datasheet
-- *Contact support@circuitry3d.app to discuss featured component placement*
+- Feature your components as **Named Sponsored Components** in the Arena's Featured Components panel
+- Students interact with your rated specs — voltage limits, temperature ranges, current capacity — and the FUSE™ engine explains what happens physically when those specs are exceeded
+- Every FUSE™ failure card credits the manufacturer and part number, creating lasting brand awareness in the engineering pipeline
+- Direct link from the Arena card to your product page or datasheet
+
+*See the full [For Component Manufacturers](#-for-component-manufacturers) section below for placement details, what to submit, and how to get started.*
 
 ### 🙋 The Average Curious Learner
 You don't need an engineering background to use CircuiTry3D.
@@ -403,6 +404,105 @@ The **Educator License** ($299/educator/yr) unlocks:
 For **Institutional Licenses** (schools and districts), contact support@circuitry3d.app — bulk educator seats, dedicated onboarding, SIS integrations, SSO, and curriculum alignment toolkit are included.
 
 > 📋 For outreach templates, grant funding angles, and a competitive comparison table, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md).
+
+---
+
+## 🏭 For Component Manufacturers
+
+The **Component Arena** is the only place in any circuit simulator where a student can load a real manufacturer part by name, run a physics-accurate stress test against its actual datasheet values, and watch it fail — in 3D — with a plain-language explanation of exactly what happened inside the component.
+
+**That makes CircuiTry3D the only educational tool where your component is the subject of the lesson, not a sidebar.**
+
+### How Product Placement Works
+
+The Arena's **Featured Components** panel displays a curated set of real-world parts. Students select a card, and FUSE™ instantly loads that component's manufacturer name, part number, and datasheet specifications into the stress-test engine. The simulation runs against your actual electrical and thermal parameters — not generic defaults.
+
+```
+┌─────────────────────────────────────────────────┐
+│  Featured Components                Real-World Specs │
+│  ─────────────────────────────────────────────── │
+│  ┌──────────────┐  ┌──────────────┐              │
+│  │ VISHAY       │  │ MURATA       │              │
+│  │ CRCW0402     │  │ GCJ316R71H   │              │
+│  │ 100Ω · 63mW  │  │ 1µF · 50V   │              │
+│  └──────────────┘  └──────────────┘              │
+│  ┌──────────────┐  ┌──────────────┐              │
+│  │ TEXAS INSTR. │  │ INFINEON     │              │
+│  │ LM7805       │  │ IRF540N      │              │
+│  │ 5V · 1A reg  │  │ N-FET 100V  │              │
+│  └──────────────┘  └──────────────┘              │
+│                                                  │
+│  Have a component you'd like featured here?      │
+│  Partner with us →                               │
+└─────────────────────────────────────────────────┘
+```
+
+### What Manufacturers Get
+
+| Benefit | Details |
+|---|---|
+| **Brand card in the Arena panel** | Manufacturer name, part number, and spec line displayed to every Arena user |
+| **Datasheet-accurate simulation** | FUSE™ runs the failure physics against your exact rated values — not generic component defaults |
+| **Named failure modes** | Failure cards reference your component's specific failure mechanism (e.g. *Thermal Runaway*, *Avalanche Breakdown*) |
+| **Product page link** | Direct clickable link from the Arena card to your datasheet or product page |
+| **Engineering pipeline exposure** | CTE students, post-secondary electronics students, and educators are the exact audience entering the engineering workforce |
+| **Mentioned in partner documentation** | Referenced in CircuiTry3D educational materials and marketing content |
+
+### Component Families Available for Placement
+
+FUSE™ has physics-accurate failure profiles for all of these families — any can be featured:
+
+Resistors · Thermistors · Capacitors · Inductors · LEDs · Diodes · Zener Diodes · MOSFETs · BJTs · Op-Amps · Voltage Regulators · ICs / Microcontrollers · Batteries · Switches · Relays · Fuses · Lamps · Motors · Transformers · Crystal Oscillators
+
+Custom component types can also be registered via the FUSE™ extensibility API (`FailureEngine.registerComponentType` / `registerFailureProfile`).
+
+### What You Need to Submit
+
+To add a Featured Component card, provide:
+
+| Field | Example |
+|---|---|
+| Manufacturer name | `Vishay` |
+| Part number | `CRCW0402 100Ω` |
+| One-line spec summary | `0402 · 100Ω · 1% · 63mW` |
+| Component family | `resistor` |
+| Key datasheet parameters | `resistance`, `powerRating`, `tolerance`, `thermalResistance` |
+| Product page URL | `https://www.vishay.com/...` |
+| Logo (optional) | SVG or PNG |
+
+The key datasheet parameters vary by component family (e.g. a MOSFET needs `vth`, `rds_on`, `id_max`, `vds_max`, `powerRating`, `thermalResistance`). Our team handles the mapping — you supply the numbers from your datasheet.
+
+### How to Get Started
+
+1. **Email us** at [hello@circuitry3d.com](mailto:hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership) with:
+   - Your company name and the component families you'd like featured
+   - Part numbers and links to the relevant datasheets
+2. **We map your specs** to a FUSE™ component profile and build the card
+3. **Card goes live** in the Featured Components panel — visible to all Arena users
+
+You can also request a **live demo** showing the Arena running a FUSE™ simulation on one of your existing parts before committing to placement.
+
+### Why This Is Different from Traditional Ad Placement
+
+- **Contextual, not interruptive** — your component appears because the student is actively running a stress test, not because they scrolled past a banner
+- **Brand + education** — students associate your part number with a hands-on learning experience they'll remember for years
+- **Accurate physics** — the simulation uses your real datasheet, so every interaction reinforces the quality and precision of your component
+- **Direct link to purchase** — the moment of maximum learning engagement is also the moment they can click through to your product page
+
+### Competitive Context
+
+| Capability | Falstad | TinkerCAD | Multisim | LTspice | **CircuiTry3D Arena** |
+|---|---|---|---|---|---|
+| Component failure simulation | ✗ | ✗ | ✗ | ✗ | **✓ FUSE™** |
+| Real manufacturer specs in simulation | ✗ | ✗ | ✗ | ✗ | **✓ Featured Components** |
+| Named failure modes (30+) | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Physics descriptions of failure | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Direct link to product page | ✗ | ✗ | ✗ | ✗ | **✓** |
+| 3D failure visualization | ✗ | ✗ | ✗ | ✗ | **✓** |
+
+> 📋 For full pitch deck structure, email templates, and outreach strategy, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md) — Part 3: Manufacturer Product Placement.
+>
+> 🤝 To start the conversation, visit the in-app [Partnerships page](https://circuitry3d.app/#/partnerships) or email [hello@circuitry3d.com](mailto:hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership).
 
 ---
 
