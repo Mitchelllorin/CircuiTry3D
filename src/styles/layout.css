@@ -298,6 +298,17 @@ body {
   overflow: hidden;
 }
 
+.arena-page-wrapper {
+  flex: 1;
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.arena-page-wrapper iframe {
+  flex: 1;
+}
+
 @media (max-width: 960px) {
   .app-header {
     height: auto;
