@@ -270,19 +270,35 @@ export default function DemoBanner() {
             />
 
             {status === "error" && (
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,120,120,0.9)" }}>
-                Incorrect password. Try again.
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,120,120,0.9)", lineHeight: 1.5 }}>
+                Incorrect password. Try again.{" "}
+                <span style={{ opacity: 0.8 }}>
+                  (The password is case-sensitive and must match the value you
+                  set for <code style={codeTagStyle}>OWNER_SECRET</code> in
+                  Vercel.)
+                </span>
               </p>
             )}
 
             {status === "misconfigured" && (
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,200,80,0.9)", lineHeight: 1.5 }}>
-                <strong>OWNER_SECRET not configured.</strong>
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,200,80,0.9)", lineHeight: 1.6 }}>
+                <strong>OWNER_SECRET is not configured.</strong>
                 <br />
-                In your Vercel project go to{" "}
-                <strong>Settings → Environment Variables</strong>, add a variable
-                named exactly <code style={codeTagStyle}>OWNER_SECRET</code> and
-                set its <em>value</em> to your chosen password.
+                In your Vercel project, go to{" "}
+                <strong>Settings → Environment Variables</strong> and add a new
+                variable:
+                <br />
+                <span style={{ display: "inline-block", marginTop: "4px" }}>
+                  • <strong>Name&nbsp;(Key):</strong>{" "}
+                  <code style={codeTagStyle}>OWNER_SECRET</code>
+                  &nbsp;— must be typed exactly like this (all caps, underscore,
+                  no spaces).
+                  <br />
+                  • <strong>Value:</strong> your chosen password.
+                </span>
+                <br />
+                After saving, <strong>redeploy</strong> the project so the new
+                variable takes effect.
               </p>
             )}
 

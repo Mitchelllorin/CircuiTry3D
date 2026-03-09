@@ -74,7 +74,9 @@ export default async function handler(request: Request): Promise<Response> {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
-  const secret = process.env.OWNER_SECRET;
+  // Trim surrounding whitespace that can sneak in when copying a value into
+  // the Vercel dashboard or when environment files include trailing newlines.
+  const secret = (process.env.OWNER_SECRET ?? "").trim();
   if (!secret) {
     // OWNER_SECRET is not configured in this Vercel deployment.
     // Return 503 with a flag so the client can show a helpful setup message
@@ -95,7 +97,9 @@ export default async function handler(request: Request): Promise<Response> {
     });
   }
 
-  const supplied = typeof body?.password === "string" ? body.password : "";
+  // Trim the submitted password too — it's easy to accidentally include a
+  // leading/trailing space when pasting a password.
+  const supplied = typeof body?.password === "string" ? body.password.trim() : "";
   const ok = await safeCompare(supplied, secret);
 
   return new Response(JSON.stringify({ ok }), {
