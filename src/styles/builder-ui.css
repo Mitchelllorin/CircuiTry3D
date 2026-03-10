@@ -7,14 +7,12 @@
   --builder-border: rgba(136, 204, 255, 0.28);
   --builder-border-strong: rgba(136, 204, 255, 0.45);
   --builder-border-cyan: rgba(136, 204, 255, 0.28);
-  --builder-blue: #88ccff;
-  --builder-orange: #ff8844;
-  --builder-green: #00ff88;
-  --wire-w: #4a90ff;
-  --wire-i: #ffaa33;
-  --wire-r: #00cc66;
-  --wire-e: #ff4444;
-  --builder-cyan: #88ccff;
+  /* Alias global brand colors — single source of truth lives in layout.css */
+  --builder-blue: var(--brand-blue);
+  --builder-orange: var(--brand-orange);
+  --builder-green: var(--brand-green);
+  --builder-cyan: var(--brand-blue);
+  /* --wire-w/i/r/e intentionally omitted: defined once in layout.css */
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
@@ -84,7 +82,7 @@ body.builder-body {
     transparent
   );
   backdrop-filter: blur(14px);
-  z-index: 900;
+  z-index: var(--z-builder-logo);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,7 +147,7 @@ body.builder-body {
   left: 50%;
   transform: translateX(-50%);
   /* Keep the workspace bar above all builder overlays (arena, help, etc.) */
-  z-index: 2100;
+  z-index: var(--z-demo-banner);
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
@@ -263,7 +261,7 @@ body.builder-body {
   position: fixed;
   top: calc(12px + var(--builder-safe-area-top));
   left: calc(50% - min(600px, calc(50vw - 12px)) - 28px);
-  z-index: 2101;
+  z-index: var(--z-demo-banner-top);
   background: rgba(10, 24, 48, 0.95);
   border: 1px solid var(--builder-border);
   border-radius: 50%;
@@ -341,7 +339,7 @@ body.builder-body {
   );
   right: auto;
   left: auto;
-  z-index: 940;
+  z-index: var(--z-builder-toolbar-top);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -634,7 +632,7 @@ body.builder-body {
   );
   left: 50%;
   transform: translateX(-50%);
-  z-index: 930;
+  z-index: var(--z-builder-floats);
   width: min(640px, calc(100vw - 28px));
   padding: 14px 16px;
   border-radius: 14px;
@@ -796,7 +794,7 @@ body.builder-body {
   position: fixed;
   top: calc(68px + var(--builder-safe-area-top));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
-  z-index: 920;
+  z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
   gap: 4px;
@@ -850,7 +848,7 @@ body.builder-body {
   top: calc(68px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 930;
+  z-index: var(--z-builder-floats);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1168,7 +1166,7 @@ body.builder-body {
   gap: 0;
   align-items: stretch;
   overflow: visible;
-  z-index: 820;
+  z-index: var(--z-builder-side-menu);
   transition:
     width 0.32s ease,
     height 0.32s ease;
@@ -1274,7 +1272,7 @@ body.builder-body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
-  z-index: 1300;
+  z-index: var(--z-builder-top);
 }
 
 .builder-panel-overlay.open {
@@ -1314,7 +1312,7 @@ body.builder-body {
   position: absolute;
   top: 16px;
   right: 16px;
-  z-index: 10;
+  z-index: var(--z-raised);
   pointer-events: none;
   opacity: 0.95;
 }
@@ -1417,7 +1415,7 @@ body.builder-body {
   background: rgba(255, 136, 0, 0.95);
   color: #0a1a2f;
   font-size: 14px;
-  z-index: 10;
+  z-index: var(--z-raised);
   font-weight: 600;
   line-height: 1;
   display: flex;
@@ -1599,7 +1597,7 @@ body.builder-body {
   margin-bottom: 0;
   align-self: center;
   position: relative;
-  z-index: 10;
+  z-index: var(--z-raised);
 }
 
 /* Left toggle tab positioned at right side of the flex container */
@@ -2654,7 +2652,7 @@ body.builder-body {
   background: rgba(10, 24, 48, 0.88);
   border-bottom: 1px solid rgba(0, 255, 136, 0.22);
   overflow: hidden;
-  z-index: 810;
+  z-index: var(--z-builder-side-panel);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
@@ -2807,7 +2805,7 @@ body.builder-body {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  z-index: 810;
+  z-index: var(--z-builder-side-panel);
   backdrop-filter: blur(10px);
   text-align: center;
 }
@@ -2873,7 +2871,7 @@ body.builder-body {
       var(--builder-navy-alt) 45%,
       var(--builder-navy-deep)
     );
-  z-index: 100;
+  z-index: var(--z-dropdown);
   touch-action: none;
   overflow: hidden;
   isolation: isolate;
@@ -2906,7 +2904,7 @@ body.builder-body {
 .builder-arena-workspace {
   position: fixed;
   inset: 0;
-  z-index: 1185;
+  z-index: var(--z-builder-widget);
   display: flex;
   justify-content: flex-end;
   align-items: stretch;
@@ -2996,7 +2994,7 @@ body.builder-body {
   justify-content: center;
   padding: clamp(16px, 4vw, 48px);
   pointer-events: auto;
-  z-index: 120;
+  z-index: var(--z-dropdown-overlay);
 }
 
 .builder-workspace-lock-card {
@@ -3047,7 +3045,7 @@ body.builder-body {
   position: fixed;
   top: auto;
   bottom: calc(var(--builder-floating-action-offset) + var(--builder-safe-area-bottom));
-  z-index: 800;
+  z-index: var(--z-builder-scene);
   pointer-events: none;
   display: flex;
 }
@@ -3174,7 +3172,7 @@ body.builder-body {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  z-index: 650;
+  z-index: var(--z-builder-canvas);
   user-select: none;
   opacity: var(--logo-opacity);
   text-shadow: 0 0 44px rgba(0, 255, 136, var(--logo-glow-primary)), 0 0 68px rgba(136, 204, 255, var(--logo-glow-secondary));
@@ -3201,7 +3199,7 @@ body.builder-body {
   flex-direction: column;
   align-items: flex-end;
   gap: 12px;
-  z-index: 700;
+  z-index: var(--z-builder-tool-menu);
 }
 
 .logo-controls-toggle {
@@ -3647,7 +3645,7 @@ body.builder-body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
-  z-index: 1210;
+  z-index: var(--z-mode-bar);
 }
 
 .builder-help-modal.open {
@@ -3690,7 +3688,7 @@ body.builder-body {
   color: #0a1a2f;
   font-size: 18px;
   cursor: pointer;
-  z-index: 10;
+  z-index: var(--z-raised);
 }
 
 .help-back {
@@ -3706,7 +3704,7 @@ body.builder-body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
-  z-index: 10;
+  z-index: var(--z-raised);
   transition:
     background 0.2s ease,
     transform 0.2s ease,
@@ -4404,7 +4402,7 @@ body.builder-body {
   inset: 0;
   background: rgba(4, 9, 26, 0.48);
   backdrop-filter: blur(3px);
-  z-index: 2200;
+  z-index: var(--z-full-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

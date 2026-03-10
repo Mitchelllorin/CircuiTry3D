@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: var(--z-storage-modal);
   padding: 1rem;
   backdrop-filter: blur(4px);
 }
@@ -400,7 +400,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  z-index: 9999;
+  z-index: var(--z-storage-backdrop);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   max-width: 90vw;
   animation: slideDown 0.3s ease;

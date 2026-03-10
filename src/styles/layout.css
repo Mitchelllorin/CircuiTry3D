@@ -51,6 +51,63 @@
   --app-safe-area-top: env(safe-area-inset-top, 0px);
   --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --app-mode-bar-gap: 12px;
+
+  /* ── Z-index layer tokens ────────────────────────────────────────────────
+   * Single source of truth for all stacking context values.
+   * Use these variables instead of raw numbers so that layering changes
+   * propagate everywhere from one place.
+   *
+   * Rough bands:
+   *   1–20    base / header shell
+   *   90      global ticker
+   *   100–120 dropdowns / small overlays
+   *   650–940 builder workspace panels & toolbars
+   *   980     interactive tutorial
+   *   860–1300 compact panels, mode bar, builder top panel
+   *   1900–2200 modal overlays
+   *   9999–10000 critical always-on-top (storage modal)
+   * ────────────────────────────────────────────────────────────────────── */
+  /* Shell */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-tooltip: 15;
+  --z-header: 20;
+  /* Global ticker */
+  --z-ticker: 90;
+  /* Dropdowns / floating menus */
+  --z-dropdown: 100;
+  --z-dropdown-overlay: 120;
+  /* Builder workspace */
+  --z-builder-canvas: 650;
+  --z-builder-tool-menu: 700;
+  --z-builder-scene: 800;
+  --z-builder-side-panel: 810;
+  --z-builder-side-menu: 820;
+  --z-builder-logo: 900;
+  --z-builder-toolbar: 920;
+  --z-builder-floats: 930;
+  --z-builder-toolbar-top: 940;
+  /* Tutorial overlay */
+  --z-tutorial: 980;
+  /* Compact / mobile panels */
+  --z-compact-worksheet: 860;
+  --z-builder-widget: 1185;
+  --z-compact-settings: 1190;
+  --z-compact-troubleshoot: 1191;
+  --z-compact-guides: 1192;
+  --z-compact-worksheet-open: 1200;
+  --z-mode-bar: 1210;
+  --z-mode-panel: 1240;
+  --z-compact-overlay: 1250;
+  --z-builder-top: 1300;
+  /* Modal layers */
+  --z-modal-bg: 1900;
+  --z-demo-banner: 2100;
+  --z-demo-banner-top: 2101;
+  --z-full-overlay: 2200;
+  /* Critical always-on-top */
+  --z-storage-backdrop: 9999;
+  --z-storage-modal: 10000;
 }
 
 body {
@@ -161,7 +218,7 @@ body {
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--z-header);
 }
 
 .app-brand {
@@ -353,7 +410,7 @@ body {
   bottom: calc(var(--app-safe-area-bottom) + 12px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: var(--z-ticker);
   display: flex;
   align-items: center;
   gap: 10px;
