@@ -298,6 +298,17 @@ body {
   overflow: hidden;
 }
 
+/* Promo page — full-screen, no chrome, mirrors arena layout treatment */
+.app-shell.is-promo .app-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell.is-promo .app-content > * {
+  padding: 0;
+  overflow: hidden;
+}
+
 .arena-page-wrapper {
   flex: 1;
   display: flex;
