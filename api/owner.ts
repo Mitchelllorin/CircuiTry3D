@@ -15,22 +15,28 @@ export const config = {
   runtime: "edge",
 };
 
-const ALLOWED_ORIGIN = "https://www.circuitry3d.net";
+const ALLOWED_ORIGINS = new Set([
+  "https://www.circuitry3d.net",
+  "https://circuitry3d.net",
+]);
 
 function makeCorsHeaders(requestOrigin: string | null): Record<string, string> {
-  // Allow requests from the production domain, any Vercel deployment URL
-  // (production like circuitry3d.vercel.app and preview branches), and
-  // localhost for local development with `vercel dev`.
+  // Allow requests from the production domain (with or without www), any
+  // Vercel deployment URL (production like circuitry3d.vercel.app and preview
+  // branches), and localhost for local development with `vercel dev`.
   const isVercelUrl =
     requestOrigin !== null &&
     /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(requestOrigin);
   const isLocalhost =
     requestOrigin !== null &&
     /^http:\/\/localhost(:\d+)?$/.test(requestOrigin);
-  const allowedOrigin =
-    requestOrigin === ALLOWED_ORIGIN || isVercelUrl || isLocalhost
-      ? requestOrigin
-      : ALLOWED_ORIGIN;
+  const isAllowed =
+    (requestOrigin !== null && ALLOWED_ORIGINS.has(requestOrigin)) ||
+    isVercelUrl ||
+    isLocalhost;
+  const allowedOrigin = isAllowed
+    ? requestOrigin ?? "https://www.circuitry3d.net"
+    : "https://www.circuitry3d.net";
 
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
@@ -40,23 +46,27 @@ function makeCorsHeaders(requestOrigin: string | null): Record<string, string> {
   };
 }
 
-/** Constant-time string comparison to prevent timing attacks. */
+/**
+ * Timing-safe string comparison using Web Crypto SHA-256 digests.
+ *
+ * Both inputs are hashed first so the comparison always operates on two
+ * fixed-length 32-byte arrays.  This eliminates both length-based and
+ * content-based timing side-channels and uses the native Web Crypto API
+ * that is always available in Vercel's Edge Runtime.
+ */
 async function safeCompare(a: string, b: string): Promise<boolean> {
   const enc = new TextEncoder();
-  const aBytes = enc.encode(a);
-  const bBytes = enc.encode(b);
-  const maxLen = Math.max(aBytes.length, bBytes.length);
-  const aPadded = new Uint8Array(maxLen);
-  const bPadded = new Uint8Array(maxLen);
-  aPadded.set(aBytes);
-  bPadded.set(bBytes);
-
+  const [hashA, hashB] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const viewA = new Uint8Array(hashA);
+  const viewB = new Uint8Array(hashB);
+  // SHA-256 digests are always 32 bytes — XOR every byte and OR into diff.
   let diff = 0;
-  for (let i = 0; i < maxLen; i++) {
-    diff |= aPadded[i] ^ bPadded[i];
+  for (let i = 0; i < viewA.length; i++) {
+    diff |= viewA[i] ^ viewB[i];
   }
-  // Also account for length mismatch.
-  diff |= aBytes.length ^ bBytes.length;
   return diff === 0;
 }
 

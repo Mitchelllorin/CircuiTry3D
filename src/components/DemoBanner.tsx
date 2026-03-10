@@ -4,11 +4,12 @@ import { IS_DEMO_MODE, OWNER_STORAGE_KEY } from "../utils/demoMode";
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
 
-type UnlockStatus = "idle" | "loading" | "error" | "misconfigured";
+type UnlockStatus = "idle" | "loading" | "error" | "misconfigured" | "network_error";
 
 function getPasswordBorderColor(status: UnlockStatus): string {
   if (status === "error") return "rgba(255,120,120,0.6)";
   if (status === "misconfigured") return "rgba(255,200,80,0.6)";
+  if (status === "network_error") return "rgba(255,165,0,0.6)";
   return "rgba(136,204,255,0.3)";
 }
 
@@ -82,7 +83,7 @@ export default function DemoBanner() {
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     } catch {
-      setStatus("error");
+      setStatus("network_error");
     }
   };
 
@@ -280,6 +281,13 @@ export default function DemoBanner() {
               </p>
             )}
 
+            {status === "network_error" && (
+              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,165,0,0.9)", lineHeight: 1.5 }}>
+                Could not reach the authentication server. Check your connection
+                and try again.
+              </p>
+            )}
+
             {status === "misconfigured" && (
               <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,200,80,0.9)", lineHeight: 1.6 }}>
                 <strong>OWNER_SECRET is not configured.</strong>
@@ -295,6 +303,10 @@ export default function DemoBanner() {
                   no spaces).
                   <br />
                   • <strong>Value:</strong> your chosen password.
+                  <br />
+                  • <strong>Environment:</strong> make sure{" "}
+                  <em>Production</em> (and <em>Preview</em> if needed) are
+                  checked.
                 </span>
                 <br />
                 After saving, <strong>redeploy</strong> the project so the new
