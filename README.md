@@ -5,7 +5,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
 
-[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://circuitry3d.app)
+[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-181717?logo=github)](https://demo.circuitry3d.net)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -57,7 +57,7 @@ You don't need an engineering background to use CircuiTry3D.
 - **Just curious?** Open the Builder, drop in a battery and an LED, and watch it light up — then crank the voltage and watch it explode in 3D
 - **Visual learner?** Zoom all the way in from the wire surface to the atomic crystal lattice to see individual electrons vibrating and drifting through the metal in real time
 - **Self-studying?** The in-app textbook starts from "what is electricity?" and walks you through two full years of electrical engineering concepts with worked examples, formulas, and interactive practice
-- **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [circuitry3d.app](https://circuitry3d.app)
+- **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [demo.circuitry3d.net](https://demo.circuitry3d.net)
 
 ---
 
@@ -65,7 +65,7 @@ You don't need an engineering background to use CircuiTry3D.
 
 | Platform | Details |
 |---|---|
-| **Web App** | React 19 + Vite 7, deployed on Vercel |
+| **Web App** | React 19 + Vite 7, deployed on GitHub Pages |
 | **Android App** | Native app via Capacitor, available on Google Play Store |
 
 ---
@@ -79,8 +79,8 @@ You don't need an engineering background to use CircuiTry3D.
 | 3D Rendering | Three.js |
 | Mobile | Capacitor 7 |
 | Routing | React Router DOM 7 |
-| Backend/API | Vercel Serverless Functions + Vercel KV |
-| Deployment | Vercel (web), Google Play Store (Android) |
+| Backend/API | GitHub Actions CI/CD |
+| Deployment | GitHub Pages (web demo), Google Play Store (Android) |
 | Testing | Vitest + Playwright |
 
 ---
@@ -102,13 +102,12 @@ CircuiTry3D/
 │   ├── landing.html      # Landing page
 │   ├── legacy.html       # Circuit builder canvas (legacy)
 │   └── arena.html        # Component testing arena
-├── api/                  # Vercel serverless functions (e.g. /api/classroom)
+├── api/                  # Server-side API helpers (classroom mutations, etc.)
 ├── android/              # Capacitor Android project
 ├── play-store-assets/    # Google Play Store graphics & metadata
 ├── tests/                # Vitest unit & integration tests
 ├── docs/                 # Electrical theory & circuit reference docs
 ├── vite.config.ts
-├── vercel.json
 └── package.json
 ```
 
@@ -150,23 +149,11 @@ npm run test:watch
 
 ## 🔐 Environment Variables
 
-All secrets are set in **Vercel → Project → Settings → Environment Variables** as plain (non-shared) variables.
+The web demo at **demo.circuitry3d.net** (GitHub Pages) always runs in **demo mode** — limited to the core component set (Battery, Resistor, LED, Switch, Ground, Junction). The full component library ships with the Play Store / Android release.
 
-### Unlocking the full version (owner preview)
+### Demo mode
 
-The web build runs in **demo mode** by default (limited component library). To preview your full changes:
-
-1. Go to **Vercel → your project → Settings → Environment Variables**
-2. Click **Add New**
-3. Enter:
-   - **Name:** `OWNER_SECRET`
-   - **Value:** any password you choose (e.g. `MySecret123`)
-   - **Environment:** Production, Preview, and Development
-4. Click **Save**
-5. Trigger a new deployment (push a commit, or use **Redeploy**)
-6. Open the deployed site — tap the 🔑 icon in the demo banner and enter your password
-
-> The password is never exposed in the client bundle — it lives only on the server.
+The demo flag is set at build time via `VITE_DEMO_MODE=true` in `.env.production`. It applies automatically to every GitHub Pages deployment — no secrets or environment variables are needed.
 
 ### Optional: Classroom cloud sync
 
@@ -294,7 +281,7 @@ Every worksheet completion awards XP, streak bonuses, and badges via **Gamificat
 **Arcade games (`/arcade`):** RetroCircuitMaze, OhmsRacer, VoltFighter — XP-based progression unlocks new components and difficulty tiers.
 
 ### 🎓 Classroom Mode (`/classroom`)
-Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to an Upstash-compatible KV store via `/api/classroom`. Set `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` in Vercel to enable cloud persistence; the app falls back to local storage without them.
+Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to an Upstash-compatible KV store via `/api/classroom`. Set `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` in your environment to enable cloud persistence; the app falls back to local storage without them.
 
 Supports grade levels: Grade 8, Grades 9–10, Grades 11–12, Higher Education, and CTE programs.
 
@@ -390,7 +377,7 @@ The integrated textbook (`/textbook`) covers everything from "what is an electro
 2. Share the **join code** with your students
 3. Assign problems from the **W.I.R.E. problem library**, which maps to specific chapters in the in-app textbook
 4. Monitor real-time completion, accuracy, and concept-gap data from the teacher dashboard
-5. Enable **cloud sync** by setting `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` in Vercel to persist rosters and progress across devices
+5. Enable **cloud sync** by setting `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` to persist rosters and progress across devices
 
 ### Educator License Highlights
 
@@ -502,13 +489,13 @@ You can also request a **live demo** showing the Arena running a FUSE™ simulat
 
 > 📋 For full pitch deck structure, email templates, and outreach strategy, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md) — Part 3: Manufacturer Product Placement.
 >
-> 🤝 To start the conversation, visit the in-app [Partnerships page](https://circuitry3d.app/#/partnerships) or email [hello@circuitry3d.com](mailto:hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership).
+> 🤝 To start the conversation, visit the in-app [Partnerships page](https://demo.circuitry3d.net/#/partnerships) or email [hello@circuitry3d.com](mailto:hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership).
 
 ---
 
 ## 💳 Pricing
 
-Pricing is available at [`/pricing`](https://circuitry3d.app/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
+Pricing is available at [`/pricing`](https://demo.circuitry3d.net/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
 
 | Plan | Price (Annual) | Who it's for | Highlights |
 |---|---|---|---|
