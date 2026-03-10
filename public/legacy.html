@@ -12571,6 +12571,17 @@ Made with ? for visual learners everywhere!
             // Apply physics-based failure visuals to every component
             const circuitVoltage = analysis && isFinite(analysis.voltage) ? analysis.voltage : 0;
             applyAllWorkspaceFailures(circuitVoltage, metricsByComponentId);
+            // A failed component acts as an open circuit — halt current flow immediately.
+            // Without this check, flow would keep animating until the next analyzeCircuit() call.
+            let failedEntry = null;
+            for (const entry of workspaceFailureState.values()) {
+                if (entry?.failed) { failedEntry = entry; break; }
+            }
+            if (failedEntry && currentFlowState?.hasFlow) {
+                currentFlowState = { hasFlow: false, currentValue: 0, reason: 'component-failure' };
+                animateCurrentFlow(currentFlowState);
+                setStatus(`⚠ COMPONENT FAILURE: ${failedEntry.name || 'Component'} has failed — circuit is open and current flow has stopped.`);
+            }
         }
 
         // Circuit analysis
