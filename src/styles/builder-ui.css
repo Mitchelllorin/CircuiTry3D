@@ -794,23 +794,12 @@ body.builder-body {
    hidden legacy.html #zoom-controls element; this is the correct React target. */
 .circuit-zoom-controls {
   position: fixed;
-  bottom: calc(64px + var(--builder-safe-area-bottom));
+  top: calc(68px + var(--builder-safe-area-top));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: 920;
   display: flex;
   flex-direction: row;
   gap: 4px;
-  transition: right 0.32s ease;
-}
-
-/* When the right sidebar is open, push zoom controls left to clear the full open panel */
-.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  right: calc(
-    var(--builder-safe-area-right) +
-    var(--builder-menu-right-width) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
 }
 
 .circuit-zoom-btn {
