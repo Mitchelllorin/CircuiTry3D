@@ -122,6 +122,27 @@ const ELECTRICAL_FORMULAS: ElectricalFormula[] = [
       { symbol: "R", name: "Resistance (Ω)" },
     ],
   },
+  {
+    id: "parallel-two",
+    category: "derived",
+    formula: "R_eq = (R_a × R_b) / (R_a + R_b)",
+    description: "Collapse two parallel branches to one equivalent resistor",
+    variables: [
+      { symbol: "R_eq", name: "Equivalent resistance (Ω)" },
+      { symbol: "R_a", name: "Branch 1 resistance (Ω)" },
+      { symbol: "R_b", name: "Branch 2 resistance (Ω)" },
+    ],
+  },
+  {
+    id: "parallel-reciprocal",
+    category: "derived",
+    formula: "1/R_eq = 1/R_a + 1/R_b + 1/R_c",
+    description: "Collapse three or more parallel branches (reciprocal method)",
+    variables: [
+      { symbol: "R_eq", name: "Equivalent resistance (Ω)" },
+      { symbol: "R_a, R_b, R_c", name: "Branch resistances (Ω)" },
+    ],
+  },
 ];
 
 const TOPOLOGY_ORDER: PracticeTopology[] = [
@@ -960,7 +981,7 @@ export default function Practice({
           <li className="wire-hint-r">
             <strong>R — Resistance (Ohms)</strong> — displayed in green. Use{" "}
             <code>R = E / I</code>. For series: add resistances. For parallel: use
-            reciprocals.
+            reciprocals or product-over-sum.
           </li>
           <li className="wire-hint-e">
             <strong>E — Voltage (Volts)</strong> — displayed in red. Use{" "}
@@ -968,7 +989,7 @@ export default function Practice({
           </li>
         </ul>
         <p>
-          <strong>Step-by-step:</strong>
+          <strong>Series &amp; Parallel circuits — step-by-step:</strong>
         </p>
         <ol>
           <li>
@@ -986,6 +1007,39 @@ export default function Practice({
           <li>
             Work across all four rows (W, I, R, E) for every component column until
             all cells are correct.
+          </li>
+        </ol>
+        <p>
+          <strong>Combination (series-parallel) circuits — collapse first:</strong>
+        </p>
+        <ol>
+          <li>
+            <strong>Collapse parallel groups</strong> in your working space before
+            touching the table. Two branches:{" "}
+            <code>R_eq = (R_a × R_b) / (R_a + R_b)</code>. Three or more:{" "}
+            <code>1/R_eq = 1/R_a + 1/R_b + 1/R_c</code>.{" "}
+            <strong>R_eq is a working-space value only — it does NOT get its own
+            column in the table.</strong>
+          </li>
+          <li>
+            <strong>Totals column first:</strong> enter R_T (sum of all series
+            resistances including every R_eq) and E_T. Solve{" "}
+            <code>I_T = E_T / R_T</code> and enter it in the Totals-I cell.
+          </li>
+          <li>
+            <strong>Series elements</strong> share I_T — copy it into each series
+            component&apos;s I cell, then solve <code>E = I × R</code> for each.
+          </li>
+          <li>
+            <strong>Parallel-branch elements</strong> share the group voltage. The
+            group voltage = <code>I_T × R_eq</code> for that group. Enter it in
+            each branch&apos;s E cell, then solve <code>I = E / R</code> for each
+            branch.
+          </li>
+          <li>
+            <strong>Solve W = E × I</strong> last for every component. Verify:
+            component watts must sum to Totals-W, and all voltage drops must sum to
+            E_T.
           </li>
         </ol>
         <button

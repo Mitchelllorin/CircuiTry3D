@@ -378,26 +378,174 @@ const textbook: TextbookData = {
       id: "series-parallel-circuits",
       number: 5,
       year: 1,
-      title: "Series-Parallel Circuits",
+      title: "Combination (Series-Parallel) Circuits",
       overview:
-        "Most practical circuits combine series and parallel connections. The analysis technique is to simplify step-by-step: replace parallel groups with their equivalent resistance, then treat the result as a series circuit.",
+        "Most practical circuits combine series and parallel connections. The W.I.R.E. solving method requires you to first collapse every parallel group into a single equivalent resistor, reducing the network to a simple series loop. Only then do you fill the W.I.R.E. table and trace back through the original branches to find individual component values.",
       sections: [
         {
-          id: "analysis-method",
-          title: "Step-by-Step Analysis Method",
+          id: "combination-rules",
+          title: "Rules for Combination Circuits",
           body: [
-            "To solve a series-parallel circuit, work from the innermost parallel group outward, replacing each parallel combination with its equivalent resistance until only a simple series circuit remains.",
-            "Then solve the series circuit for total current, and trace back through the network to find individual branch values.",
+            "A combination circuit has components connected both in series and in parallel. Before applying Ohm's Law or the W.I.R.E. table, you must identify which portions are series paths and which are parallel branches.",
+            "Series portions obey series rules: current (I) is the same through every series element, and voltage drops add up to the source voltage. Parallel portions obey parallel rules: voltage (E) is the same across every branch, and branch currents add up to the total current entering the junction.",
           ],
           keyPoints: [
-            "Step 1: Identify all parallel groups",
-            "Step 2: Calculate equivalent resistance of each parallel group",
-            "Step 3: Redraw as a series circuit with equivalent resistances",
-            "Step 4: Find R_T and I_T",
-            "Step 5: Trace back for branch voltages and currents",
+            "Series rule — I is identical through every element on a single path: I_T = I_R1 = I_R2 = …",
+            "Parallel rule — E is identical across every branch: E_branch_a = E_branch_b = …",
+            "Collapse every parallel group into one equivalent resistor (R_eq) before applying series rules",
+            "After collapsing, the whole network becomes a simple series circuit — solve it with R_T = R_1 + R_eq + …",
+            "Trace back through the original branches after the series solve to find individual I and E values",
+          ],
+        },
+        {
+          id: "collapse-parallel",
+          title: "Step 1 — Collapse Parallel Groups to Equivalent Resistors",
+          body: [
+            "Before filling the W.I.R.E. table you must replace every parallel group with a single equivalent resistor (R_eq). Use the product-over-sum formula for exactly two branches or the reciprocal formula for three or more branches.",
+            "Work from the innermost parallel group outward. Each collapse removes one group from the schematic. Redraw after each collapse so you can see the simplified circuit clearly.",
+          ],
+          formulas: [
+            {
+              name: "Parallel Equivalent — Two Branches (Product over Sum)",
+              expression: "R_eq = (R_a × R_b) / (R_a + R_b)",
+              variables: {
+                R_eq: "Equivalent resistance of the parallel pair (Ω)",
+                R_a: "Branch 1 resistance (Ω)",
+                R_b: "Branch 2 resistance (Ω)",
+              },
+              example:
+                "R_a = 150 Ω, R_b = 300 Ω → R_eq = (150 × 300) / (150 + 300) = 45 000 / 450 = 100 Ω",
+            },
+            {
+              name: "Parallel Equivalent — Three or More Branches (Reciprocal Method)",
+              expression: "1/R_eq = 1/R_a + 1/R_b + 1/R_c + …",
+              variables: {
+                R_eq: "Equivalent parallel resistance (Ω)",
+              },
+              example:
+                "1/R_eq = 1/60 + 1/30 = 1/60 + 2/60 = 3/60 → R_eq = 20 Ω",
+            },
+            {
+              name: "Equal Resistors in Parallel",
+              expression: "R_eq = R / n",
+              variables: {
+                R: "Value of one resistor (Ω)",
+                n: "Number of equal branches",
+              },
+              example:
+                "Four 200 Ω resistors in parallel: R_eq = 200 / 4 = 50 Ω",
+            },
+          ],
+          keyPoints: [
+            "Collapse the innermost parallel group first",
+            "Replace the group with its single R_eq and redraw the schematic",
+            "Repeat until only series elements remain",
+            "Label each R_eq clearly (e.g. R₂₃ for the R₂ ∥ R₃ group) so the trace-back step is easy to follow",
+            "R_eq is a working-space calculation — it does NOT appear as a column in the W.I.R.E. table",
+          ],
+        },
+        {
+          id: "series-solve",
+          title: "Step 2 — Solve the Simplified Series Circuit",
+          body: [
+            "After collapsing all parallel groups the circuit is a simple series loop. Apply series rules: R_T equals the sum of all series resistances (including every R_eq). Then use Ohm's Law to find I_T. This single current flows through every element in the series path, including each equivalent resistor.",
+          ],
+          formulas: [
+            {
+              name: "Total Series Resistance (after collapsing parallel groups)",
+              expression: "R_T = R_1 + R_eq + R_2 + … + R_n",
+              variables: {
+                R_T: "Total circuit resistance (Ω)",
+                R_eq: "Equivalent resistance of any collapsed parallel group (Ω)",
+              },
+              example:
+                "R₁ = 100 Ω, R₂₃(eq) = 100 Ω, R₄ = 75 Ω → R_T = 100 + 100 + 75 = 275 Ω",
+            },
+            {
+              name: "Total Current",
+              expression: "I_T = E_T / R_T",
+              variables: {
+                I_T: "Total circuit current (A)",
+                E_T: "Source voltage (V)",
+                R_T: "Total resistance (Ω)",
+              },
+              example: "E_T = 30 V, R_T = 275 Ω → I_T = 30 / 275 ≈ 0.109 A",
+            },
+          ],
+        },
+        {
+          id: "traceback",
+          title: "Step 3 — Trace Back to Find Branch Values",
+          body: [
+            "I_T flows through every series element. Multiply I_T by each series resistance (or R_eq) to get the voltage drop across that section. The voltage across a parallel group equals I_T × R_eq for that group.",
+            "Inside each original parallel group, every branch has the same voltage (the group voltage found above). Divide that branch voltage by each branch resistance to find the individual branch currents.",
+            "Verify with KCL: branch currents must sum to I_T at every junction. Verify with KVL: all voltage drops around any complete loop must sum to E_T.",
+          ],
+          formulas: [
+            {
+              name: "Voltage Drop Across Each Series Section",
+              expression: "E_x = I_T × R_x",
+              variables: {
+                E_x: "Voltage drop across component or equivalent x (V)",
+                I_T: "Total series current (A)",
+                R_x: "Resistance of that component or equivalent (Ω)",
+              },
+              example: "I_T = 0.109 A, R₁ = 100 Ω → E_R1 = 0.109 × 100 = 10.9 V",
+            },
+            {
+              name: "Branch Current (from parallel group voltage)",
+              expression: "I_branch = E_group / R_branch",
+              variables: {
+                I_branch: "Current through one parallel branch (A)",
+                E_group: "Voltage across the parallel group (V)",
+                R_branch: "Resistance of that branch (Ω)",
+              },
+              example:
+                "E_group = 10.9 V, R₂ = 150 Ω → I_R2 = 10.9 / 150 ≈ 0.073 A",
+            },
+          ],
+          keyPoints: [
+            "Voltage across a parallel group = I_T × R_eq for that group",
+            "Use that group voltage with each branch's R to find each branch current (I = E / R)",
+            "KCL check: branch currents into any junction must equal branch currents out",
+            "KVL check: all voltage drops around any loop must sum to the source voltage",
+          ],
+        },
+        {
+          id: "wire-table-combination",
+          title: "Using the W.I.R.E. Table for Combination Circuits",
+          body: [
+            "The W.I.R.E. table (Watts · Current · Resistance · Voltage) is the standard trades worksheet for recording and solving circuit values. The table has one column per real component plus a Circuit Totals column. R_eq values are working-space calculations only — they are NOT entered as columns in the table.",
+            "Fill the W.I.R.E. table in this sequence: (1) enter all given values in their cells; (2) write R_T and E_T in the Totals column; (3) solve and enter I_T in the Totals-I cell; (4) for series-path components, copy I_T into their I cell; (5) for parallel-branch components, enter the shared branch voltage in their E cell, then solve I = E/R; (6) solve W = E × I for every component; (7) confirm that component watts sum to Totals-W.",
+          ],
+          keyPoints: [
+            "Rows: W (Watts/Power, blue) · I (Current/Amps, yellow-orange) · R (Resistance/Ohms, green) · E (Voltage/Volts, red)",
+            "Columns: one per real component (R₁, R₂, R₃, …) plus Circuit Totals",
+            "Series elements share the same I — copy I_T into each series element's I cell",
+            "Parallel branches share the same E — copy the group voltage into each branch's E cell",
+            "Solve W = E × I last for each component after both E and I are known",
+            "Final check: sum of all component W values must equal Totals-W",
           ],
           realWorldExamples: [
+            "On a BC trades exam, given values are printed on the schematic. You collapse parallel groups in the working space, fill the W.I.R.E. table for every real component, then verify your answer in the Totals row.",
             "Automotive electrical systems use series-parallel combinations: the battery (series stacking) powers parallel circuits for lighting, engine control, and accessories.",
+          ],
+        },
+        {
+          id: "worked-example",
+          title: "Worked Example: R₁ — (R₂ ∥ R₃) — R₄",
+          body: [
+            "Given: E_T = 30 V, R₁ = 100 Ω, R₂ = 150 Ω, R₃ = 300 Ω, R₄ = 75 Ω. R₂ and R₃ are in parallel; this parallel group is in series with R₁ and R₄.",
+            "Collapse: R₂₃ = (150 × 300) / (150 + 300) = 45 000 / 450 = 100 Ω. Redrawn series circuit: R₁ (100 Ω) → R₂₃ (100 Ω) → R₄ (75 Ω).",
+            "Series solve: R_T = 100 + 100 + 75 = 275 Ω. I_T = 30 / 275 ≈ 0.109 A.",
+            "Voltage drops: E_R1 = 0.109 × 100 ≈ 10.9 V. E_R23 = 0.109 × 100 ≈ 10.9 V. E_R4 = 0.109 × 75 ≈ 8.2 V. KVL check: 10.9 + 10.9 + 8.2 = 30 V ✓",
+            "Branch currents: I_R2 = 10.9 / 150 ≈ 0.073 A. I_R3 = 10.9 / 300 ≈ 0.036 A. KCL check: 0.073 + 0.036 ≈ 0.109 A = I_T ✓",
+            "W.I.R.E. table — Watts column: W_R1 = 10.9 × 0.109 ≈ 1.19 W. W_R2 = 10.9 × 0.073 ≈ 0.80 W. W_R3 = 10.9 × 0.036 ≈ 0.39 W. W_R4 = 8.2 × 0.109 ≈ 0.89 W. Total W = 1.19 + 0.80 + 0.39 + 0.89 ≈ 3.27 W. Check: E_T × I_T = 30 × 0.109 ≈ 3.27 W ✓",
+          ],
+          keyPoints: [
+            "Full methodology: Collapse parallel → redraw → solve series → trace back → fill W.I.R.E. table → verify with KVL and KCL",
+            "The W.I.R.E. Totals column holds R_T, I_T, E_T, and W_T — the collapsed-circuit totals",
+            "Never skip the KVL and KCL verification steps — they catch arithmetic errors before they reach the final answer",
           ],
         },
       ],

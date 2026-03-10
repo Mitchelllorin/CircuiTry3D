@@ -113,9 +113,9 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
   "wire-guide": {
     label: "W.I.R.E. Guide",
     description:
-      "W.I.R.E. = Watts (blue) · Current/Amps (yellow-orange) · Resistance/Ohms (green) · Voltage (red). These colors label the quantities in the UI panels. The animated particles in the 3D workspace use a separate color system showing current speed — those colors are unrelated. Use this checklist to solve one circuit at a time: identify the circuit type, capture known values, pick a formula, solve, then verify.",
+      "W.I.R.E. = Watts (blue) · Current/Amps (yellow-orange) · Resistance/Ohms (green) · Voltage (red). These colors label the quantities in the UI panels. The animated particles in the 3D workspace use a separate color system showing current speed — those colors are unrelated. Use this checklist to solve one circuit at a time: identify the type, collapse any parallel groups to a simple series circuit, fill the W.I.R.E. table with known values, solve unknowns with formulas, then trace back through branches.",
     completionSummary:
-      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the same solve-check loop on new circuits.",
+      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the collapse → fill table → solve → verify loop on new circuits.",
     workspaceSyncCopy:
       "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
@@ -123,37 +123,37 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "wire-identify-circuit-type",
         title: "Identify the circuit type",
         detail:
-          "Determine if the circuit is series (one path), parallel (branched paths with junction nodes), or combination (series and parallel together). For parallel/combination circuits, sketch the branches and mark each junction node — this is how textbooks show it and how you start the W.I.R.E. process.",
+          "Determine if the circuit is series (one path), parallel (branched paths with junction nodes), or combination (series and parallel together). For combination circuits, sketch the branches and mark each junction node — every junction is a branch point where current splits or rejoins.",
       },
       {
         id: "wire-collapse-parallel",
-        title: "Collapse parallel branches to equivalent series",
+        title: "Collapse parallel groups to get a simple series circuit",
         detail:
-          "For parallel or combination circuits: calculate each parallel branch's equivalent resistance first (R_eq = 1/(1/R_a + 1/R_b)). Replace the whole parallel section with that single equivalent resistor. Now the circuit looks like a simple series loop — solve it using R_T = R_1 + R_2 + … .",
+          "For each parallel group, calculate R_eq using the product-over-sum formula (two branches: R_eq = (R_a × R_b) / (R_a + R_b)) or the reciprocal method (three+ branches: 1/R_eq = 1/R_a + 1/R_b + 1/R_c). Replace the whole parallel group with that single R_eq. Repeat until only series elements remain. R_eq is a working-space calculation — it does NOT get its own column in the W.I.R.E. table.",
       },
       {
-        id: "wire-identify-knowns",
-        title: "Capture known values first",
+        id: "wire-fill-table-series",
+        title: "Fill the W.I.R.E. table — Totals column first",
         detail:
-          "Write down any known W, I, R, or E values from the (now simplified) circuit before choosing a formula.",
+          "Enter all given values in the table. In the Circuit Totals column, fill in R_T (sum of series resistances including every R_eq) and E_T (source voltage). Then solve I_T = E_T / R_T and enter it in the Totals-I cell. This is the current shared by every series element in the simplified circuit.",
       },
       {
-        id: "wire-select-formula",
-        title: "Choose one target unknown",
+        id: "wire-fill-table-components",
+        title: "Fill individual component columns",
         detail:
-          "Pick one unknown to solve and use a formula that matches the values you already know.",
+          "Series elements: copy I_T into their I cell, then solve E = I × R for each. Parallel-branch elements: the group voltage = I_T × R_eq — enter that in each branch's E cell, then solve I = E / R for each branch. Solve W = E × I last for every component. Final check: component watts must sum to Totals-W.",
       },
       {
         id: "wire-verify-totals",
-        title: "Solve and label units",
+        title: "Verify with KVL and KCL",
         detail:
-          "Record the answer with units (W, A, ohm, V) so worksheet rows stay clear and easy to check. For combination circuits, work back through the branches to find individual component voltages and currents.",
+          "KVL check: all voltage drops around any complete loop must sum to E_T. KCL check: branch currents leaving any junction must sum to the current entering. If totals do not match, recheck the collapse step and R_T calculation.",
       },
       {
         id: "wire-open-practice",
-        title: "Apply and verify in Practice Worksheets",
+        title: "Apply in Practice Worksheets",
         detail:
-          "Compare your solved value against live simulator metrics, then update the worksheet totals row.",
+          "Open a Practice Worksheet to work through a combination circuit problem using this exact method. The worksheet gives you one column per real component — use the W.I.R.E. table rows (W, I, R, E) to record each value as you solve.",
       },
     ],
   },
@@ -345,11 +345,19 @@ export function CompactGuidesPanel({
                   </li>
                   <li>
                     <span>Need voltage (E)</span>
-                    <code>E = I * R</code>
+                    <code>E = I × R</code>
                   </li>
                   <li>
                     <span>Need power (W)</span>
-                    <code>W = E * I</code>
+                    <code>W = E × I</code>
+                  </li>
+                  <li>
+                    <span>Collapse 2 parallel branches</span>
+                    <code>R_eq = (R_a × R_b) / (R_a + R_b)</code>
+                  </li>
+                  <li>
+                    <span>Collapse 3+ parallel branches</span>
+                    <code>1/R_eq = 1/R_a + 1/R_b + 1/R_c</code>
                   </li>
                 </ul>
               </aside>

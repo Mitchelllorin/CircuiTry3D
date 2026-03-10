@@ -125,7 +125,15 @@ export function BuilderInteractiveTutorial(props: {
         id: "junction-parallel",
         title: "Step 8 — Build a parallel path",
         body:
-          "Add a second resistor and wire it in parallel using junctions. With parallel paths, current divides and total resistance drops. This is the foundation for analyzing 'squares within squares' circuit layouts.",
+          "Add a second resistor and wire it in parallel using junctions. Current divides between the branches and total resistance drops below the smallest branch. This parallel section is what you will collapse into a single R_eq when solving.",
+        canSkipRequirement: true,
+        isComplete: () => true,
+      },
+      {
+        id: "wire-table-method",
+        title: "Step 9 — Solve with the W.I.R.E. table",
+        body:
+          "The W.I.R.E. table is the standard worksheet for any circuit. Rows: W (Watts) · I (Current) · R (Resistance) · E (Voltage). Columns: one per real component plus Circuit Totals. For combination circuits, follow this order: First, collapse each parallel group to R_eq in your working space using (R_a × R_b) / (R_a + R_b). R_eq is a working-space value only — it does NOT get its own table column. Second, fill the Totals column: enter R_T (all series resistances added) and E_T, then solve I_T = E_T / R_T. Third, fill component columns: series elements copy I_T into their I cell; parallel-branch elements copy the group voltage (I_T × R_eq) into their E cell and solve I = E / R. Fourth, solve W = E × I for every component and verify that component watts sum to Totals-W. Open Practice Worksheets to try this on a real problem.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -133,7 +141,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "done",
         title: "Done — you're ready for complex circuits",
         body:
-          "You've mastered the basics: components, wires, junctions, and W.I.R.E. metrics. Use junctions to break down series-parallel problems into manageable sections—analyze each branch, then combine for the total.",
+          "You've mastered the full approach: place components, close the loop, read W.I.R.E. metrics, add junctions for parallel paths, collapse parallel groups to R_eq, then fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets to work through series, parallel, and combination problems using this exact method.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
