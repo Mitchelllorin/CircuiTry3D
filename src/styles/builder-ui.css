@@ -788,13 +788,13 @@ body.builder-body {
 }
 
 /* Zoom controls overlay
-   Right offset clears the right menu toggle tab (--builder-menu-toggle-hit-width)
-   so the buttons never overlap the toggle, matching the pattern used by
-   .workspace-edge-actions--right. PR #515 originally applied this fix to the
-   hidden legacy.html #zoom-controls element; this is the correct React target. */
+   Positioned below both the nav bar and the status ticker so they are never
+   obscured by those UI layers. Right offset clears the right menu toggle tab
+   (--builder-menu-toggle-hit-width) so the buttons never overlap the toggle,
+   matching the pattern used by .workspace-edge-actions--right. */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(68px + var(--builder-safe-area-top));
+  top: calc(108px + var(--builder-safe-area-top));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: 920;
   display: flex;
@@ -847,7 +847,7 @@ body.builder-body {
    ─────────────────────────────────────────────────────────────────────── */
 .quick-add-bar {
   position: fixed;
-  top: calc(68px + var(--builder-safe-area-top));
+  top: calc(108px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: 930;
@@ -919,13 +919,13 @@ body.builder-body {
   color: #fff;
 }
 
-/* SVG schematic symbol container inside each button */
+/* SVG schematic symbol / 3D thumbnail container inside each button */
 .quick-add-btn-symbol {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
-  height: 22px;
+  height: 28px;
   flex-shrink: 0;
 }
 
@@ -947,6 +947,16 @@ body.builder-body {
   height: 24px;
   object-fit: contain;
   filter: brightness(0.9);
+}
+
+/* 3D thumbnail image inside quick-add buttons (replaces schematic SVG) */
+.quick-add-btn-thumb-img {
+  width: 32px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: brightness(1.1) saturate(1.15)
+    drop-shadow(0 2px 4px rgba(4, 10, 26, 0.45));
 }
 
 .quick-add-btn-label {
@@ -2765,6 +2775,12 @@ body.builder-body {
     height: var(--builder-ticker-height, 28px);
   }
 
+  /* Ticker bottom at 68+28=96px; position zoom controls and quick-add-bar just below */
+  .circuit-zoom-controls,
+  .quick-add-bar {
+    top: calc(100px + var(--builder-safe-area-top));
+  }
+
   .ticker-content {
     font-size: 10px;
     gap: 12px;
@@ -2776,6 +2792,12 @@ body.builder-body {
   .builder-ticker-feed {
     top: calc(64px + var(--builder-safe-area-top));
     height: var(--builder-ticker-height, 26px);
+  }
+
+  /* Ticker bottom at 64+26=90px; position zoom controls and quick-add-bar just below */
+  .circuit-zoom-controls,
+  .quick-add-bar {
+    top: calc(94px + var(--builder-safe-area-top));
   }
 
   .ticker-content {
@@ -4064,6 +4086,12 @@ body.builder-body {
 
   .builder-logo-header {
     height: calc(44px + var(--builder-safe-area-top));
+  }
+
+  /* Ticker is hidden; place zoom controls and quick-add-bar just below the nav bar */
+  .circuit-zoom-controls,
+  .quick-add-bar {
+    top: calc(56px + var(--builder-safe-area-top));
   }
 
   .workspace-mode-bar {

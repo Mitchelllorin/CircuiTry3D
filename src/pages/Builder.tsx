@@ -1044,6 +1044,61 @@ function ComponentLibraryCard({
   );
 }
 
+type QuickAddButtonProps = {
+  component: ComponentAction;
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
+};
+
+function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const thumbSrc = useComponent3DThumbnail(
+    component.builderType ?? component.id,
+    { animated: isHovered }
+  );
+
+  const symKey = (() => {
+    const t = component.builderType ?? component.id;
+    if (t === "bjt-npn" || t === "bjt") return "transistor-npn";
+    if (t === "bjt-pnp") return "transistor-pnp";
+    return t;
+  })() as ComponentSymbol;
+  const SymbolComp = getSchematicSymbol(symKey);
+  const symRotation = symKey === "battery" ? -90 : 0;
+
+  return (
+    <button
+      type="button"
+      className="quick-add-btn"
+      onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
+      title={title}
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => setIsHovered(false)}
+    >
+      <span className="quick-add-btn-symbol" aria-hidden="true">
+        {thumbSrc ? (
+          <img src={thumbSrc} alt="" className="quick-add-btn-thumb-img" aria-hidden="true" />
+        ) : SymbolComp ? (
+          <svg
+            className="quick-add-btn-symbol-svg"
+            viewBox="-36 -36 72 72"
+            focusable="false"
+            aria-hidden="true"
+          >
+            <SymbolComp x={0} y={0} rotation={symRotation} scale={0.9} showLabel={false} />
+          </svg>
+        ) : (
+          <span className="quick-add-btn-icon-text" aria-hidden="true">{component.icon}</span>
+        )}
+      </span>
+      <span className="quick-add-btn-label">{component.label}</span>
+    </button>
+  );
+}
+
 type IntroDialogStep = {
   icon: string;
   title: string;
@@ -2713,43 +2768,15 @@ export default function Builder() {
               PR #467 / #516 (which targeted a hidden element) to the correct
               React layer so changes are always visible in the production app */}
           <div className="quick-add-bar" aria-label="Quick add components">
-            {QUICK_ADD_COMPONENTS.map((component) => {
-              const symKey = (() => {
-                const t = component.builderType ?? component.id;
-                if (t === "bjt-npn" || t === "bjt") return "transistor-npn";
-                if (t === "bjt-pnp") return "transistor-pnp";
-                return t;
-              })() as ComponentSymbol;
-              const SymbolComp = getSchematicSymbol(symKey);
-              const symRotation = symKey === "battery" ? -90 : 0;
-              return (
-                <button
-                  key={component.id}
-                  type="button"
-                  className="quick-add-btn"
-                  onClick={() => handleComponentAction(component)}
-                  disabled={controlsDisabled}
-                  aria-disabled={controlsDisabled}
-                  title={component.description || component.label}
-                >
-                  <span className="quick-add-btn-symbol" aria-hidden="true">
-                    {SymbolComp ? (
-                      <svg
-                        className="quick-add-btn-symbol-svg"
-                        viewBox="-36 -36 72 72"
-                        focusable="false"
-                        aria-hidden="true"
-                      >
-                        <SymbolComp x={0} y={0} rotation={symRotation} scale={0.9} showLabel={false} />
-                      </svg>
-                    ) : (
-                      <span className="quick-add-btn-icon-text" aria-hidden="true">{component.icon}</span>
-                    )}
-                  </span>
-                  <span className="quick-add-btn-label">{component.label}</span>
-                </button>
-              );
-            })}
+            {QUICK_ADD_COMPONENTS.map((component) => (
+              <QuickAddButton
+                key={component.id}
+                component={component}
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                title={component.description || component.label}
+              />
+            ))}
             <button
               type="button"
               className={`quick-add-btn${modeState.isWireMode ? " quick-add-btn--active" : ""}`}
@@ -2993,12 +3020,6 @@ export default function Builder() {
           </div>
         </section>
       )}
-
-      <div className="builder-logo-header" aria-hidden="true">
-        <div className="builder-logo-mark">
-          <BrandMark size="lg" decorative />
-        </div>
-      </div>
 
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
@@ -3698,18 +3719,6 @@ export default function Builder() {
           </button>
         </div>
       )}
-
-      <div
-        ref={floatingLogoRef}
-        className="builder-floating-logo"
-        aria-hidden="true"
-      >
-        <span className="builder-logo-text" aria-hidden="true">
-          <span className="builder-logo-circui">Circui</span>
-          <span className="builder-logo-try">Try</span>
-          <span className="builder-logo-3d">3D</span>
-        </span>
-      </div>
 
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
         <WorkspaceModePanel
