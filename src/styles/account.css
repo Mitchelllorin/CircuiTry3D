@@ -15,7 +15,7 @@
   background: var(--bg-overlay);
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
-  padding: 24px;
+  padding: calc(24px + var(--app-safe-area-top)) 24px 24px;
   box-shadow: 0 18px 40px -24px var(--brand-primary-glow);
 }
 
