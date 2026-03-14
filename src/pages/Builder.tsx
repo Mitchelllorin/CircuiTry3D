@@ -3720,6 +3720,18 @@ export default function Builder() {
         </div>
       )}
 
+      <div
+        ref={floatingLogoRef}
+        className="builder-floating-logo"
+        aria-hidden="true"
+      >
+        <span className="builder-logo-text" aria-hidden="true">
+          <span className="builder-logo-circui">Circui</span>
+          <span className="builder-logo-try">Try</span>
+          <span className="builder-logo-3d">3D</span>
+        </span>
+      </div>
+
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
         <WorkspaceModePanel
           title={workspacePanelMeta.title}
