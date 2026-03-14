@@ -889,6 +889,150 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Composition-aware physics integration
+  //
+  // When ComponentCompositions is loaded (via loadCompositions), detectFailure
+  // gains access to real material properties and derives tighter, physically
+  // accurate failure thresholds for every component type.
+  //
+  // Internal stores (populated by loadCompositions):
+  //   _compositions   — map of componentType → composition object
+  //   _materials      — map of materialKey   → material object
+  // ---------------------------------------------------------------------------
+  let _compositions = {};
+  let _materials = {};
+
+  /**
+   * Load physical composition data into the failure engine.
+   * Called automatically by component-compositions.js if it loads after this
+   * file, or manually at application start.
+   *
+   * @param {Array}  compositions  — COMPONENT_COMPOSITIONS array
+   * @param {Object} materials     — MATERIAL_LIBRARY record
+   */
+  function loadCompositions(compositions, materials) {
+    if (!Array.isArray(compositions) || typeof materials !== "object" || !materials) {
+      return;
+    }
+    _materials = materials;
+    _compositions = {};
+    compositions.forEach((comp) => {
+      if (comp && typeof comp.componentType === "string") {
+        const key = comp.componentType.toLowerCase();
+        _compositions[key] = comp;
+        // Also index by aliases so look-ups work for any type string
+        if (Array.isArray(comp.aliases)) {
+          comp.aliases.forEach((alias) => {
+            _compositions[alias.toLowerCase()] = comp;
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Return composition-derived failure thresholds for a component type.
+   * Returns null when no composition data has been loaded for this type.
+   *
+   * Returned object:
+   *   criticalLimitC  {number|null}  — operating temperature limit of the critical sub-component
+   *   meltingPointC   {number|null}  — meltingPoint of the critical material
+   *   thermalMass     {number|null}  — estimated thermal mass (J/K) — proportional to mass-weighted
+   *                                    sum of density × specificHeat across sub-components
+   *   criticalMat     {Object|null}  — raw material record for the critical sub-component
+   *   composition     {Object|null}  — full composition record
+   */
+  function getCompositionThresholds(typeOrAlias) {
+    const key = (typeOrAlias || "").toLowerCase().trim();
+    const comp = _compositions[key];
+    if (!comp) return null;
+
+    const critical = comp.subComponents
+      ? comp.subComponents.find((s) => s.isCritical) || comp.subComponents[0]
+      : null;
+
+    const criticalMat = critical ? _materials[critical.materialKey] : null;
+    const criticalLimitC =
+      critical && typeof critical.operatingLimitC === "number"
+        ? critical.operatingLimitC
+        : criticalMat
+        ? criticalMat.meltingPoint
+        : null;
+
+    // Estimate relative thermal mass from sub-component density × specificHeat × massFraction
+    let thermalMass = null;
+    if (comp.subComponents && comp.subComponents.length) {
+      let sum = 0;
+      comp.subComponents.forEach((sub) => {
+        const mat = _materials[sub.materialKey];
+        if (mat) {
+          sum += mat.density * mat.specificHeat * (sub.massFraction || 0);
+        }
+      });
+      thermalMass = sum > 0 ? sum : null;
+    }
+
+    return {
+      criticalLimitC,
+      meltingPointC: criticalMat ? criticalMat.meltingPoint : null,
+      thermalMass,
+      criticalMat,
+      composition: comp,
+    };
+  }
+
+  // Wrap detectFailure to incorporate composition-derived thresholds.
+  // This enriches the result without changing any existing trigger / severity logic.
+  const _detectFailureBase = detectFailure;
+  function detectFailureWithComposition(component, metrics) {
+    const result = _detectFailureBase(component, metrics);
+    if (!component) return result;
+
+    const family = resolveComponentFamily(component.type, component.properties);
+    const thresholds = getCompositionThresholds(component.type)
+      || getCompositionThresholds(family);
+
+    if (!thresholds) return result;
+
+    const currentTempC = 25 + (metrics.thermalRise || 0);
+
+    // If a critical limit exists from composition and the current temperature
+    // exceeds it — even if the base engine did not detect a failure — surface
+    // a material-level overheat warning/failure.
+    if (typeof thresholds.criticalLimitC === "number" && currentTempC > thresholds.criticalLimitC) {
+      const ratio = (currentTempC - thresholds.criticalLimitC) /
+                    Math.max(thresholds.criticalLimitC * 0.15, 10);
+      const compositeSeverity = Math.min(ratio * 2.5, 3);
+
+      if (compositeSeverity > result.severity) {
+        const matName = thresholds.criticalMat ? thresholds.criticalMat.name : "critical element";
+        return {
+          failed: compositeSeverity >= 2,
+          severity: compositeSeverity,
+          family,
+          mode: null,
+          name: "Material Thermal Limit Exceeded",
+          visual: compositeSeverity >= 2 ? "melt" : "glow",
+          description: `${matName} operating limit of ${thresholds.criticalLimitC} °C exceeded (current: ${currentTempC.toFixed(0)} °C). ` +
+            (thresholds.composition ? `Component construction: ${thresholds.composition.constructionNote}` : ""),
+          compositionBased: true,
+          criticalLimitC: thresholds.criticalLimitC,
+        };
+      }
+    }
+
+    // Annotate result with composition metadata when available
+    if (result.severity > 0) {
+      result.compositionNote = thresholds.composition
+        ? thresholds.composition.constructionNote
+        : null;
+      result.criticalLimitC = thresholds.criticalLimitC;
+    }
+
+    return result;
+  }
+
+  // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
   const FailureEngine = {
@@ -896,9 +1040,11 @@
     COMPONENT_PROFILES,
     COMPONENT_FAILURE_PROFILES,
     resolveComponentFamily,
-    detectFailure,
+    detectFailure: detectFailureWithComposition,
     registerComponentType,
     registerFailureProfile,
+    loadCompositions,
+    getCompositionThresholds,
   };
 
   // Support CommonJS (vitest / Node) and browser globals

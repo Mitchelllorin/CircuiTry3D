@@ -498,6 +498,151 @@
       font-style: italic;
     }
 
+    /* ── Composition Panel ─────────────────────────────────────────────── */
+    .composition-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .composition-note {
+      font-size: 11px;
+      color: rgba(148, 163, 184, 0.85);
+      line-height: 1.5;
+      padding: 6px 8px;
+      border-radius: 7px;
+      background: rgba(8, 15, 28, 0.45);
+      border: 1px solid rgba(136, 204, 255, 0.10);
+      margin-bottom: 8px;
+    }
+    .composition-sub-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .composition-sub-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .composition-sub-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .composition-sub-name {
+      flex: 1;
+      min-width: 0;
+      color: var(--text-strong);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .composition-sub-role {
+      font-size: 10px;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .composition-critical-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(239, 68, 68, 0.20);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      flex-shrink: 0;
+    }
+    .composition-mass-bar-wrap {
+      width: 36px;
+      height: 5px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .composition-mass-bar {
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(100, 200, 255, 0.55);
+    }
+    .composition-mat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .composition-mat-cell {
+      background: rgba(8, 15, 28, 0.50);
+      border: 1px solid rgba(136, 204, 255, 0.10);
+      border-radius: 7px;
+      padding: 5px 7px;
+    }
+    .composition-mat-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 2px;
+    }
+    .composition-mat-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: #7dd3fc;
+    }
+    .composition-mat-unit {
+      font-size: 9px;
+      color: #64748b;
+    }
+    .composition-limit-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      background: rgba(239, 68, 68, 0.10);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+    .composition-cutaway-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(100, 200, 255, 0.10);
+      border: 1px solid rgba(100, 200, 255, 0.30);
+      color: #7dd3fc;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .composition-cutaway-btn:hover {
+      background: rgba(100, 200, 255, 0.20);
+      border-color: rgba(100, 200, 255, 0.55);
+    }
+    .composition-cutaway-btn.active {
+      background: rgba(100, 200, 255, 0.25);
+      border-color: rgba(100, 200, 255, 0.70);
+      color: #bae6fd;
+    }
+    .composition-empty {
+      font-size: 11px;
+      color: #64748b;
+      font-style: italic;
+    }
+    /* ── end Composition Panel ─────────────────────────────────────────── */
+
     #explosion-dom-flash {
       position: fixed;
       inset: 0;
@@ -738,6 +883,13 @@
         <div class="section-heading">FUSE™ Analysis — B</div>
         <div class="failure-analysis" id="failure-b"></div>
       </section>
+      <section class="panel-section" id="composition-section">
+        <div class="panel-header">
+          <div class="section-heading">⚛ Component Composition</div>
+          <button class="chip-btn composition-cutaway-btn" id="btn-cutaway" type="button" title="Toggle cutaway 3D view showing internal structure">🔬 Cutaway</button>
+        </div>
+        <div id="composition-a"></div>
+      </section>
       <section class="panel-section">
         <div class="section-heading">Status</div>
         <div class="stat" id="stat-out">Ready.</div>
@@ -767,6 +919,7 @@
       }
     </script>
     <script src="js/component-failure-engine.js"></script>
+    <script src="js/component-compositions.js"></script>
     <script>
     (() => {
       "use strict";
@@ -783,6 +936,7 @@
         components: [],
         selectedA: null,
         selectedB: null,
+        showCutaway: false,
         testVariables: {
           voltage: 5,
           frequencyHz: 1000,
@@ -2855,7 +3009,213 @@
         container.appendChild(desc);
       }
 
-      function triggerFailureAnimation(group, failure) {
+      // ---------- Composition Panel ----------
+      // Material swatch colours — one per material category for visual distinction
+      const MATERIAL_SWATCH_COLORS = {
+        silicon: "#7070c0", silicon_dioxide: "#aaccee", gan_semiconductor: "#ffe040",
+        gaas_semiconductor: "#ffb030", copper: "#b87333", gold: "#ffd700",
+        aluminum: "#c0c8d0", aluminum_alloy_6061: "#a0aab8", nickel: "#909090",
+        tin: "#c0c0c0", solder_lead_tin: "#888888", silver_tin_eutectic: "#d8d8d8",
+        steel: "#707070", stainless_steel: "#909090", brass: "#c8a020",
+        zinc: "#b0c030", ag_cdo: "#e0e0a0", nichrome: "#887040",
+        alumina: "#e8e0c0", carbon_film: "#303030", ferrite: "#404050",
+        glass: "#aaddff", manganese_dioxide: "#5a3010", epoxy_resin: "#204010",
+        epoxy_mold_compound: "#101010", polycarbonate: "#2244aa", rubber: "#181818",
+        kraft_paper: "#c8a060", electrolyte_etg: "#886010", electrolyte_koh: "#183820",
+        coil_insulation: "#603010",
+      };
+
+      function renderCompositionPanel(component) {
+        const container = document.getElementById("composition-a");
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (!component) {
+          const empty = document.createElement("div");
+          empty.className = "composition-empty";
+          empty.textContent = "Select a component to view its physical composition.";
+          container.appendChild(empty);
+          return;
+        }
+
+        // Fetch composition data from ComponentCompositions library
+        const CC = typeof window.ComponentCompositions !== "undefined" ? window.ComponentCompositions : null;
+        const comp = CC ? CC.getComponentComposition(component.type) || CC.getComponentComposition(component.family || "") : null;
+        if (!comp) {
+          const empty = document.createElement("div");
+          empty.className = "composition-empty";
+          empty.textContent = `No composition data available for type "${component.type}".`;
+          container.appendChild(empty);
+          return;
+        }
+
+        // Construction note
+        const noteEl = document.createElement("div");
+        noteEl.className = "composition-note";
+        noteEl.textContent = comp.constructionNote || "";
+        container.appendChild(noteEl);
+
+        // Sub-component list
+        const listLabel = document.createElement("div");
+        listLabel.className = "composition-label";
+        listLabel.textContent = "Sub-Components";
+        container.appendChild(listLabel);
+
+        const list = document.createElement("div");
+        list.className = "composition-sub-list";
+        (comp.subComponents || []).forEach((sub) => {
+          const row = document.createElement("div");
+          row.className = "composition-sub-item";
+
+          const swatch = document.createElement("div");
+          swatch.className = "composition-sub-swatch";
+          swatch.style.background = MATERIAL_SWATCH_COLORS[sub.materialKey] || "#555";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "composition-sub-name";
+          nameSpan.textContent = sub.name;
+          nameSpan.title = sub.role;
+
+          const barWrap = document.createElement("div");
+          barWrap.className = "composition-mass-bar-wrap";
+          barWrap.title = `Mass fraction: ${Math.round(sub.massFraction * 100)}%`;
+          const bar = document.createElement("div");
+          bar.className = "composition-mass-bar";
+          bar.style.width = `${Math.round(sub.massFraction * 100)}%`;
+          barWrap.appendChild(bar);
+
+          row.appendChild(swatch);
+          row.appendChild(nameSpan);
+          row.appendChild(barWrap);
+
+          if (sub.isCritical) {
+            const badge = document.createElement("span");
+            badge.className = "composition-critical-badge";
+            badge.textContent = "CRITICAL";
+            badge.title = sub.operatingLimitC != null
+              ? `Operating limit: ${sub.operatingLimitC} °C`
+              : "Thermally limiting element";
+            row.appendChild(badge);
+          }
+          list.appendChild(row);
+        });
+        container.appendChild(list);
+
+        // Critical material properties
+        const criticalSub = (comp.subComponents || []).find((s) => s.isCritical);
+        if (criticalSub && CC) {
+          const matList = CC.getComponentMaterials(component.type) || [];
+          const critMat = matList.find((m) => m.key === criticalSub.materialKey);
+          if (critMat) {
+            const matLabel = document.createElement("div");
+            matLabel.className = "composition-label";
+            matLabel.textContent = `Critical Material — ${critMat.name}`;
+            container.appendChild(matLabel);
+
+            const grid = document.createElement("div");
+            grid.className = "composition-mat-grid";
+
+            const cells = [
+              { label: "Thermal Cond.", value: critMat.thermalConductivity.toFixed(1), unit: "W/m·K" },
+              { label: "Specific Heat",  value: critMat.specificHeat,                  unit: "J/kg·K" },
+              { label: "Density",        value: critMat.density.toFixed(2),             unit: "g/cm³" },
+              { label: "Melt / Limit",   value: criticalSub.operatingLimitC != null ? criticalSub.operatingLimitC : critMat.meltingPoint, unit: "°C" },
+            ];
+            cells.forEach((cell) => {
+              const cellEl = document.createElement("div");
+              cellEl.className = "composition-mat-cell";
+              const lbl = document.createElement("div");
+              lbl.className = "composition-mat-label";
+              lbl.textContent = cell.label;
+              const val = document.createElement("div");
+              val.className = "composition-mat-value";
+              val.innerHTML = `${cell.value} <span class="composition-mat-unit">${cell.unit}</span>`;
+              cellEl.appendChild(lbl);
+              cellEl.appendChild(val);
+              grid.appendChild(cellEl);
+            });
+            container.appendChild(grid);
+
+            // Operating limit row
+            const limitRow = document.createElement("div");
+            limitRow.className = "composition-limit-row";
+            const limitVal = criticalSub.operatingLimitC != null
+              ? criticalSub.operatingLimitC
+              : critMat.meltingPoint;
+            limitRow.innerHTML = `⚠️ FUSE™ critical limit: <strong>&nbsp;${limitVal} °C</strong>&nbsp;— ${criticalSub.name}`;
+            container.appendChild(limitRow);
+          }
+        }
+      }
+
+      function applyCutawayToGroup(group, componentType, enabled) {
+        if (!group || !THREE) return;
+        const CC = typeof window.ComponentCompositions !== "undefined" ? window.ComponentCompositions : null;
+        const comp = CC ? CC.getComponentComposition(componentType) : null;
+
+        // Adjust outer shell transparency
+        group.traverse((child) => {
+          if (child.isMesh && !child.userData.isInternalLayer) {
+            if (child.material) {
+              child.material.transparent = enabled;
+              child.material.opacity = enabled ? 0.25 : (child.userData.baseOpacity || 1.0);
+            }
+          }
+        });
+
+        // Remove existing internal layers
+        const toRemove = [];
+        group.traverse((child) => {
+          if (child.userData.isInternalLayer) toRemove.push(child);
+        });
+        toRemove.forEach((child) => group.remove(child));
+
+        if (!enabled || !comp || !comp.internalLayers) return;
+
+        // Add internal layers
+        comp.internalLayers.forEach((layer) => {
+          let geo;
+          const s = layer.scale || [1, 1, 1];
+          switch (layer.type) {
+            case "cylinder": geo = new THREE.CylinderGeometry(s[0] * 0.5, s[0] * 0.5, s[1], 32); break;
+            case "sphere":   geo = new THREE.SphereGeometry(s[0] * 0.5, 24, 16); break;
+            case "cone":     geo = new THREE.ConeGeometry(s[0] * 0.5, s[1], 24); break;
+            case "torus":    geo = new THREE.TorusGeometry(s[0] * 0.5, s[1] * 0.12, 16, 32); break;
+            default:         geo = new THREE.BoxGeometry(s[0], s[1], s[2]); break;
+          }
+          const color = layer.color ? parseInt(layer.color.replace("#", ""), 16) : 0xaaaaaa;
+          const mat = new THREE.MeshStandardMaterial({
+            color,
+            transparent: true,
+            opacity: typeof layer.opacity === "number" ? layer.opacity : 0.8,
+            metalness: 0.2,
+            roughness: 0.6,
+          });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.userData.isInternalLayer = true;
+          mesh.userData.layerLabel = layer.label || "";
+          const p = layer.position || [0, 0, 0];
+          mesh.position.set(p[0], p[1], p[2]);
+          if (layer.rotation) {
+            mesh.rotation.set(layer.rotation[0], layer.rotation[1], layer.rotation[2]);
+          }
+          group.add(mesh);
+        });
+      }
+
+      function updateCutaway() {
+        const btn = document.getElementById("btn-cutaway");
+        if (btn) {
+          btn.classList.toggle("active", state.showCutaway);
+          btn.textContent = state.showCutaway ? "🔬 Cutaway ON" : "🔬 Cutaway";
+        }
+        if (componentGroupA && state.selectedA) {
+          applyCutawayToGroup(componentGroupA, state.selectedA.type || state.selectedA.family || "", state.showCutaway);
+        }
+        if (componentGroupB && state.selectedB) {
+          applyCutawayToGroup(componentGroupB, state.selectedB.type || state.selectedB.family || "", state.showCutaway);
+        }
+      }
         if (!group) {
           return;
         }
@@ -2951,9 +3311,13 @@
           raw.properties || {}
         );
         const metadata = Object.assign({}, raw.metadata || {}, { resolvedFamily: family });
+        if (raw.partNumber)   metadata.partNumber = raw.partNumber;
+        if (raw.manufacturer) metadata.vendor     = raw.manufacturer;
+        if (raw.datasheetUrl) metadata.datasheetUrl = raw.datasheetUrl;
         const id = typeof raw.id === "string" && raw.id.length > 0 ? raw.id : `${type}-${Math.random().toString(36).slice(2, 9)}`;
         const name = raw.name || metadata.displayName || raw.identifier || id;
-        return {
+
+        const normalized = {
           id,
           name,
           type,
@@ -2962,6 +3326,20 @@
           metadata,
           source: sourceLabel || metadata.source || "library",
         };
+
+        // Preserve manufacturer composition data so FUSE and the composition panel can use it
+        if (raw.composition && typeof raw.composition === "object") {
+          normalized.composition = raw.composition;
+          // Register the custom composition via the API (handles FailureEngine sync internally)
+          if (typeof window.ComponentCompositions !== "undefined" &&
+              typeof window.ComponentCompositions.registerComposition === "function") {
+            window.ComponentCompositions.registerComposition(
+              Object.assign({ componentType: type, aliases: [] }, raw.composition)
+            );
+          }
+        }
+
+        return normalized;
       }
 
       function initializeCatalog() {
@@ -2970,6 +3348,7 @@
         state.selectedA = state.components[0] || null;
         state.selectedB = state.components.length > 1 ? state.components[1] : state.components[0] || null;
         renderImportSummary(buildSummaryFromComponents(state.components));
+        renderCompositionPanel(state.selectedA);
       }
 
       function registerEvents() {
@@ -3062,6 +3441,14 @@
             }
           });
         });
+
+        const cutawayBtn = document.getElementById("btn-cutaway");
+        if (cutawayBtn) {
+          cutawayBtn.addEventListener("click", () => {
+            state.showCutaway = !state.showCutaway;
+            updateCutaway();
+          });
+        }
       }
 
       function populateComponentSelectors() {
@@ -3134,6 +3521,10 @@
           energizeComponent(groupB, 0.24);
         }
         updateCompareVisibility();
+        renderCompositionPanel(state.selectedA);
+        if (state.showCutaway) {
+          updateCutaway();
+        }
       }
 
       function readTestVariables() {
@@ -3385,6 +3776,7 @@
         populateComponentSelectors();
         updateCompareVisibility();
         updateImportStatus();
+        renderCompositionPanel(state.selectedA);
         setStatus("Loaded component set from import.");
         return true;
       }
@@ -3451,15 +3843,54 @@
         reader.onload = () => {
           try {
             const data = JSON.parse(reader.result);
-            const applied = applyImportEnvelope(data, {
-              sessionId: data.sessionId || null,
-              label: data.sessionName || "Uploaded Dataset",
-              source: "upload",
-            });
-            if (applied) {
-              setStatus("Imported components from JSON file.");
-            } else {
-              setStatus("Unable to import data from JSON file. Check format.");
+
+            // Detect manufacturer component spec format (single spec or array)
+            // A manufacturer spec has: type, partNumber, manufacturer, name, properties
+            const isManufacturerSpec = (obj) =>
+              obj && typeof obj === "object" && typeof obj.partNumber === "string" &&
+              typeof obj.manufacturer === "string" && typeof obj.type === "string";
+
+            let applied = false;
+
+            if (isManufacturerSpec(data)) {
+              // Single manufacturer component spec
+              const comp = normalizeComponent(data, `${data.manufacturer} (manufacturer)`);
+              if (comp) {
+                state.components = [comp, ...state.components.filter((c) => c.id !== comp.id)];
+                state.selectedA = comp;
+                populateComponentSelectors();
+                updateCompareVisibility();
+                updateImportStatus();
+                renderCompositionPanel(comp);
+                setStatus(`Loaded manufacturer component: ${comp.name} (${data.manufacturer}).`);
+                applied = true;
+              }
+            } else if (Array.isArray(data) && data.length && isManufacturerSpec(data[0])) {
+              // Array of manufacturer specs
+              const normalized = data.map((item) => normalizeComponent(item, `${item.manufacturer || "manufacturer"}`)).filter(Boolean);
+              if (normalized.length) {
+                state.components = [...normalized, ...state.components.filter((c) => !normalized.some((n) => n.id === c.id))];
+                state.selectedA = normalized[0];
+                populateComponentSelectors();
+                updateCompareVisibility();
+                updateImportStatus();
+                renderCompositionPanel(normalized[0]);
+                setStatus(`Loaded ${normalized.length} manufacturer component(s).`);
+                applied = true;
+              }
+            }
+
+            if (!applied) {
+              applied = applyImportEnvelope(data, {
+                sessionId: data.sessionId || null,
+                label: data.sessionName || "Uploaded Dataset",
+                source: "upload",
+              });
+              if (applied) {
+                setStatus("Imported components from JSON file.");
+              } else {
+                setStatus("Unable to import data from JSON file. Check format.");
+              }
             }
           } catch (error) {
             console.error("JSON import error", error);
@@ -4008,6 +4439,16 @@
       }
 
       function bootstrap() {
+        // Initialise FUSE composition-aware physics from the pre-loaded library
+        if (typeof window.ComponentCompositions !== "undefined" &&
+            typeof window.FailureEngine !== "undefined" &&
+            typeof window.FailureEngine.loadCompositions === "function") {
+          window.FailureEngine.loadCompositions(
+            window.ComponentCompositions.COMPONENT_COMPOSITIONS,
+            window.ComponentCompositions.MATERIAL_LIBRARY
+          );
+        }
+
         initThree();
         registerEvents();
         initializeCatalog();
