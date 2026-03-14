@@ -1,3 +1,7 @@
+import type { InternalLayer } from '../../data/componentCompositions';
+
+export type { InternalLayer };
+
 export type Component3DGeometry = {
   type: string;
   label: string;
@@ -17,6 +21,12 @@ export type Component3DGeometry = {
       radius: number;
       color?: string;
     }>;
+    /**
+     * Internal layer geometry used in cutaway / exploded 3D view.
+     * Populated from COMPONENT_COMPOSITIONS.internalLayers so that the
+     * 3D viewer can show material cross-sections when cutaway mode is active.
+     */
+    internalLayers?: InternalLayer[];
   };
 };
 
@@ -899,4 +909,30 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
 
 export function getComponent3D(type: string): Component3DGeometry | undefined {
   return COMPONENT_3D_LIBRARY.find(comp => comp.type === type);
+}
+
+/**
+ * Return a component geometry definition with internalLayers merged in from
+ * the composition data.  Use this instead of getComponent3D() when rendering
+ * a cutaway or exploded view.
+ */
+export async function getComponent3DWithInternals(type: string): Promise<Component3DGeometry | undefined> {
+  const base = getComponent3D(type);
+  if (!base) return undefined;
+
+  // Lazily import composition data so the 3D library itself stays lightweight
+  try {
+    const { getComponentComposition } = await import('../../data/componentCompositions');
+    const comp = getComponentComposition(type);
+    if (!comp || !comp.internalLayers || comp.internalLayers.length === 0) return base;
+    return {
+      ...base,
+      geometry: {
+        ...base.geometry,
+        internalLayers: comp.internalLayers,
+      },
+    };
+  } catch {
+    return base;
+  }
 }
