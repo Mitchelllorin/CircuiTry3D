@@ -3501,7 +3501,7 @@
                     <li>Priority email support</li>
                 </ul>
                 <div class="subscription-plan-cta">
-                    <a class="subscription-plan-button" href="mailto:hello@circuitry3d.com?subject=Educator%20License%20Subscription">Subscribe</a>
+                    <button type="button" class="subscription-plan-button" onclick="launchPlayStorePurchase('educator', subscriptionPricingState.activeCycle, 'mailto:hello@circuitry3d.com?subject=Educator%20License%20Subscription')">Subscribe</button>
                 </div>
             </article>
 
@@ -10678,10 +10678,88 @@ body.android-optimized .zoom-btn {
             setStatus('⚡ Sandbox ready - choose a component to begin building!');
         }
 
+        /**
+         * Launch a Play Store subscription purchase.
+         * On Android (Capacitor), opens the native billing sheet.
+         * On web, falls back to the provided mailto: href.
+         *
+         * @param {string} planId   - e.g. "educator"
+         * @param {string} cycle    - "monthly" | "annual"
+         * @param {string} fallback - mailto: href used outside Android
+         */
+        async function launchPlayStorePurchase(planId, cycle, fallback) {
+            const PLAN_SKUS = {
+                student: {
+                    monthly: 'circuitry3d_student_monthly',
+                    annual: 'circuitry3d_student_annual',
+                },
+                educator: {
+                    monthly: 'circuitry3d_educator_monthly',
+                    annual: 'circuitry3d_educator_annual',
+                },
+            };
+
+            const isAndroid =
+                typeof window.Capacitor !== 'undefined' &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform();
+
+            if (isAndroid) {
+                const activeCycle = subscriptionPricingState.activeCycle || 'annual';
+                const sku = PLAN_SKUS[planId]?.[activeCycle];
+                if (sku) {
+                    try {
+                        await window.Capacitor.Plugins.Billing.initialize();
+                        await window.Capacitor.Plugins.Billing.purchase({ sku });
+                        return;
+                    } catch (err) {
+                        console.warn('Play Store billing failed, falling back:', err);
+                    }
+                }
+            }
+
+            // Fallback: open mailto link for web / institutional / unsupported plans
+            window.location.href = fallback;
+        }
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', setupSubscriptionPricing, { once: true });
         } else {
             setupSubscriptionPricing();
+        }
+
+        // Pre-initialize the Play Store billing client on Android so it is
+        // ready by the time the user reaches the pricing overlay.
+        if (typeof window.Capacitor !== 'undefined' &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform()) {
+            window.Capacitor.Plugins.Billing.initialize().catch(() => {
+                // Billing unavailable; purchase will retry on demand
+            });
+
+            // Store the tier when a purchase completes (handles both new
+            // purchases and any pending purchase that completes on launch).
+            window.Capacitor.Plugins.Billing.addListener('purchaseCompleted', (result) => {
+                if (result.success && Array.isArray(result.products)) {
+                    const PRODUCT_TIER_MAP = {
+                        circuitry3d_student_monthly: 'student',
+                        circuitry3d_student_annual: 'student',
+                        circuitry3d_educator_monthly: 'educator',
+                        circuitry3d_educator_annual: 'educator',
+                    };
+                    const TIER_ORDER = ['free', 'student', 'educator', 'institutional'];
+                    let best = 'free';
+                    for (const pid of result.products) {
+                        const t = PRODUCT_TIER_MAP[pid];
+                        if (t && TIER_ORDER.indexOf(t) > TIER_ORDER.indexOf(best)) {
+                            best = t;
+                        }
+                    }
+                    try {
+                        localStorage.setItem('circuitry3d_subscription_tier', best);
+                    } catch (_) {}
+                }
+            }).catch(() => {});
         }
 
         document.addEventListener('keydown', event => {

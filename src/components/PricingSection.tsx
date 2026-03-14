@@ -1,7 +1,13 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import pricingSource from "../data/pricing.json";
 import BrandSignature from "./BrandSignature";
+import {
+  initBilling,
+  isAndroidApp,
+  PLAN_SKUS,
+  purchasePlan,
+} from "../utils/playStoreBilling";
 import "../styles/pricing.css";
 
 type BillingCycleId = "monthly" | "annual";
@@ -101,6 +107,15 @@ export default function PricingSection() {
     return preferred ?? DEFAULT_CYCLE;
   });
 
+  const onAndroid = isAndroidApp();
+
+  // Initialize the Play Store billing client once on Android
+  useEffect(() => {
+    if (onAndroid) {
+      void initBilling();
+    }
+  }, [onAndroid]);
+
   const cycles = useMemo(() => pricingData.billingCycles.map((cycle) => normalizeCycle(cycle.id)), []);
 
   const activeCycle = billingCycle;
@@ -110,9 +125,39 @@ export default function PricingSection() {
     setBillingCycle(cycle);
   };
 
-  const renderCTA = (cta: CallToAction) => {
+  /**
+   * Handle a subscribe CTA for a paid plan.
+   * On Android: opens the Play Store subscription sheet.
+   * On web: navigates to the mailto: fallback href.
+   */
+  const handleSubscribeClick = useCallback(
+    async (planId: string, fallbackHref: string) => {
+      const launched = await purchasePlan(planId, activeCycle);
+      if (!launched) {
+        window.location.href = fallbackHref;
+      }
+    },
+    [activeCycle]
+  );
+
+  const renderCTA = (cta: CallToAction, planId?: string) => {
     if (cta.type === "link") {
       const isInternal = cta.href.startsWith("/");
+
+      // On Android, paid plans with a known Play Store SKU get a native billing button
+      if (onAndroid && planId && PLAN_SKUS[planId]) {
+        return (
+          <button
+            type="button"
+            className="pricing-cta"
+            data-cta-type="play-store"
+            onClick={() => handleSubscribeClick(planId, cta.href)}
+          >
+            {cta.label}
+          </button>
+        );
+      }
+
       if (isInternal) {
         return (
           <Link className="pricing-cta" to={cta.href} data-cta-type="internal">
@@ -197,7 +242,7 @@ export default function PricingSection() {
                   {plan.bulk.notes && <p>{plan.bulk.notes}</p>}
                 </div>
               )}
-              <div className="plan-cta-wrapper">{renderCTA(plan.cta)}</div>
+              <div className="plan-cta-wrapper">{renderCTA(plan.cta, plan.id)}</div>
             </article>
           );
         })}
