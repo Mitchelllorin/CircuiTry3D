@@ -56,8 +56,8 @@
       "renewal": "Auto-renews, cancel anytime",
       "cta": {
         "label": "Subscribe",
-        "type": "stripeCheckout",
-        "sku": "student-plan"
+        "type": "link",
+        "href": "mailto:hello@circuitry3d.com?subject=Student%20Plan%20Subscription"
       }
     },
     {
@@ -81,8 +81,8 @@
       "renewal": "Auto-renews, cancel anytime",
       "cta": {
         "label": "Subscribe",
-        "type": "stripeCheckout",
-        "sku": "educator-license"
+        "type": "link",
+        "href": "mailto:hello@circuitry3d.com?subject=Educator%20License%20Subscription"
       }
     },
     {
@@ -137,9 +137,5 @@
         "href": "mailto:hello@circuitry3d.com?subject=Certification%20Bundle%20Interest"
       }
     }
-  ],
-  "stripe": {
-    "status": "pending",
-    "note": "Stripe checkout links will populate sku-based buttons"
-  }
+  ]
 }
