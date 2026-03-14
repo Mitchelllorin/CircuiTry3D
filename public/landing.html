@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CircuiTry3D</title>
-  <meta name="theme-color" content="#0f172a" />
+  <title>CircuiTry3D — Illuminate Electricity</title>
+  <meta name="description" content="3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level — Illuminating Electricity." />
+  <meta name="theme-color" content="#050b1f" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -12,111 +13,488 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    html, body {
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --blue:   #88ccff;
+      --orange: #ff8844;
+      --green:  #00ff88;
+      --purple: #c084fc;
+      --bg:     #050b1f;
+      --bg2:    #080f26;
+      --card:   rgba(13, 25, 60, 0.72);
+      --border: rgba(136, 204, 255, 0.14);
+      --text:   #f9fafc;
+      --muted:  #9db8ff;
+    }
+    html {
       width: 100%;
-      min-height: 100%;
+      scroll-behavior: smooth;
     }
     body {
-      margin: 0;
+      width: 100%;
       min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* ── Utility ──────────────────────────────────────────────────── */
+    .c-blue   { color: var(--blue);   text-shadow: 0 0 20px rgba(136,204,255,.6); }
+    .c-orange { color: var(--orange); text-shadow: 0 0 18px rgba(255,136,68,.55); }
+    .c-green  { color: var(--green);  text-shadow: 0 0 20px rgba(0,255,136,.6);  }
+    .c-purple { color: var(--purple); text-shadow: 0 0 18px rgba(192,132,252,.55); }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Shared section layout ────────────────────────────────────── */
+    .section {
+      width: 100%;
+      padding: clamp(64px, 10vw, 100px) clamp(16px, 5vw, 48px);
+    }
+    .section-inner {
+      max-width: 1040px;
+      margin-inline: auto;
+    }
+    .section-eyebrow {
+      font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .section-title {
+      font-size: clamp(1.9rem, 5.5vw, 3.4rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.08;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .section-subtitle {
+      font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+      color: var(--muted);
+      text-align: center;
+      max-width: 640px;
+      margin-inline: auto;
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════════════════════════ */
+    .hero {
+      position: relative;
       min-height: 100svh;
-      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding:
-        max(16px, env(safe-area-inset-top, 0px))
-        max(12px, env(safe-area-inset-right, 0px))
-        max(16px, env(safe-area-inset-bottom, 0px))
-        max(12px, env(safe-area-inset-left, 0px));
-      background: radial-gradient(125% 125% at 50% 10%, rgba(47,84,235,0.25) 0%, rgba(9,17,43,0.85) 45%, #050b1f 100%);
-      color: #f9fafc;
-      font-family: "Inter", "Poppins", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden;
+        max(80px, env(safe-area-inset-top, 0px))
+        max(16px, env(safe-area-inset-right, 0px))
+        max(80px, env(safe-area-inset-bottom, 0px))
+        max(16px, env(safe-area-inset-left, 0px));
       text-align: center;
+      overflow: hidden;
     }
-    body::before {
+    .hero::before {
       content: "";
-      position: fixed;
+      position: absolute;
       inset: 0;
-      background: radial-gradient(80% 80% at 50% 20%, rgba(15,54,120,0.35) 0%, rgba(4,9,26,0.8) 60%, rgba(4,9,26,0.95) 100%);
-      pointer-events: none;
-      mix-blend-mode: screen;
-      opacity: 0.9;
+      background:
+        radial-gradient(120% 100% at 50% 0%, rgba(47,84,235,0.28) 0%, rgba(9,17,43,0.9) 55%, var(--bg) 100%);
+      z-index: 0;
     }
-    .landing-page {
+    .hero-content {
       position: relative;
       z-index: 1;
-      width: min(960px, 100%);
-      max-width: calc(100vw - 24px);
-      padding: clamp(32px, 6vw, 56px) 12px;
-      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: clamp(18px, 5vw, 44px);
-      text-align: center;
+      gap: clamp(16px, 4vw, 32px);
+      max-width: 860px;
+      width: 100%;
     }
+
+    /* Wordmark */
     .wordmark {
-      font-size: clamp(38px, 9.4vw, 92px);
+      font-size: clamp(42px, 10vw, 96px);
       font-weight: 900;
       letter-spacing: -0.015em;
       display: inline-flex;
-      gap: 6px;
-      margin-inline: auto;
-      filter: drop-shadow(0 0 22px rgba(40,255,190,0.4));
+      gap: 0;
+      filter: drop-shadow(0 0 24px rgba(40,255,190,0.38));
+      line-height: 1;
     }
-    .wordmark span { display: inline-block; }
-    .wordmark .brand-blue {
-      color: #88ccff;
-      text-shadow: 0 0 18px rgba(136, 204, 255, 0.7), 0 0 34px rgba(136, 204, 255, 0.55);
-    }
-    .wordmark .brand-orange {
-      color: #ff8844;
-      text-shadow: 0 0 16px rgba(255, 136, 68, 0.65), 0 0 30px rgba(255, 136, 68, 0.55);
-    }
-    .wordmark .brand-green {
-      color: #00ff88;
-      text-shadow: 0 0 18px rgba(0, 255, 136, 0.7), 0 0 34px rgba(0, 255, 136, 0.55);
-    }
+    .wordmark .brand-blue   { color: var(--blue);   text-shadow: 0 0 18px rgba(136,204,255,.7),  0 0 34px rgba(136,204,255,.5); }
+    .wordmark .brand-orange { color: var(--orange);  text-shadow: 0 0 16px rgba(255,136,68,.65), 0 0 30px rgba(255,136,68,.5); }
+    .wordmark .brand-green  { color: var(--green);   text-shadow: 0 0 18px rgba(0,255,136,.7),   0 0 34px rgba(0,255,136,.5); }
+
+    /* Logo icon */
     .logo-mark {
-      width: clamp(180px, 46vw, 300px);
+      width: clamp(140px, 36vw, 240px);
+      filter: drop-shadow(0 0 20px rgba(45,212,191,0.42));
+    }
+    .logo-mark img { width: 100%; height: auto; display: block; }
+
+    /* Hero headline & tagline */
+    .hero-headline {
+      font-size: clamp(1.6rem, 5vw, 3.2rem);
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+    }
+    .hero-tagline {
+      font-size: clamp(0.95rem, 2.2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 580px;
+      line-height: 1.6;
+    }
+
+    /* Feature chips */
+    .hero-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .chip {
+      padding: 6px 15px;
+      border-radius: 100px;
+      font-size: clamp(0.68rem, 1.8vw, 0.8rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: 1.5px solid;
+    }
+    .chip-blue   { border-color: rgba(136,204,255,.45); color: var(--blue);   background: rgba(136,204,255,.08); }
+    .chip-green  { border-color: rgba(0,255,136,.4);    color: var(--green);  background: rgba(0,255,136,.07);  }
+    .chip-orange { border-color: rgba(255,136,68,.42);  color: var(--orange); background: rgba(255,136,68,.07); }
+    .chip-purple { border-color: rgba(192,132,252,.42); color: var(--purple); background: rgba(192,132,252,.07);}
+
+    /* CTA buttons */
+    .hero-cta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 4px;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 36px;
+      border-radius: 100px;
+      font-weight: 800;
+      font-size: clamp(0.85rem, 2.2vw, 1rem);
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--green) 100%);
+      color: #050b1f;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 28px rgba(0,255,136,.22), 0 4px 16px rgba(0,0,0,.45);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,255,136,.32), 0 6px 22px rgba(0,0,0,.5); }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 30px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+      letter-spacing: 0.03em;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid rgba(136,204,255,.38);
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+    }
+    .btn-secondary:hover { border-color: rgba(136,204,255,.75); color: var(--blue); background: rgba(136,204,255,.06); }
+
+    /* Scroll hint */
+    .scroll-hint {
+      position: absolute;
+      bottom: max(20px, env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: rgba(136,204,255,0.38);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      animation: bounce 2.2s ease-in-out infinite;
+      z-index: 1;
+    }
+    .scroll-hint svg { opacity: 0.55; }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50%       { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FEATURES GRID
+    ═══════════════════════════════════════════════════════════════ */
+    .features-section {
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 52px;
+    }
+    .feat-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 26px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .feat-card:hover { border-color: rgba(136,204,255,.32); transform: translateY(-3px); }
+    .feat-icon { font-size: 1.8rem; margin-bottom: 12px; display: block; }
+    .feat-name { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .feat-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ZOOM TIERS
+    ═══════════════════════════════════════════════════════════════ */
+    .zoom-section {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .zoom-tiers {
+      display: flex;
+      gap: clamp(6px, 2vw, 20px);
+      align-items: flex-end;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 48px;
+    }
+    .zoom-tier {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .zoom-orb {
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-inline: auto;
-      filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.45));
+      font-size: clamp(0.9rem, 2.5vw, 1.3rem);
+      position: relative;
+      flex-shrink: 0;
     }
-    .logo-mark img {
-      width: 100%;
-      height: auto;
-      display: block;
+    .zoom-orb::after {
+      content: "";
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      opacity: 0.28;
     }
-    .subtitle {
-      color: #9db8ff;
+    .zoom-label {
+      font-size: clamp(0.55rem, 1.4vw, 0.72rem);
       font-weight: 700;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.42em;
-      padding-inline-start: 0.42em;
-      font-size: clamp(0.72rem, 2.4vw, 0.95rem);
-      margin-top: -6px;
       text-align: center;
-      opacity: 0.92;
     }
+    .zoom-sublabel {
+      font-size: clamp(0.5rem, 1.2vw, 0.62rem);
+      color: rgba(157,184,255,0.55);
+      text-align: center;
+      margin-top: -6px;
+    }
+    .tier-arrow {
+      font-size: clamp(0.9rem, 2vw, 1.3rem);
+      color: var(--muted);
+      opacity: 0.4;
+      margin-bottom: 22px;
+      align-self: center;
+    }
+    .zoom-desc {
+      max-width: 640px;
+      margin: 32px auto 0;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FUSE™ SECTION
+    ═══════════════════════════════════════════════════════════════ */
+    .fuse-section {
+      background: var(--bg);
+    }
+    .fuse-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .fuse-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      backdrop-filter: blur(8px);
+      transition: border-color 0.2s ease;
+    }
+    .fuse-card:hover { border-color: rgba(136,204,255,.28); }
+    .fuse-card-status {
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 5px;
+    }
+    .status-ok       { background: rgba(0,255,136,.14);  color: #00ff88; }
+    .status-stressed { background: rgba(255,165,0,.14);  color: #ffa500; }
+    .status-warning  { background: rgba(255,136,68,.14); color: #ff8844; }
+    .status-failed   { background: rgba(255,60,60,.14);  color: #ff5555; }
+    .fuse-card-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .fuse-card-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.45; }
+    .fuse-note {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: rgba(157,184,255,0.55);
+    }
+    .fuse-note strong { color: var(--orange); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       WIRE SYSTEM
+    ═══════════════════════════════════════════════════════════════ */
+    .wire-section {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .wire-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 48px;
+    }
+    @media (max-width: 600px) {
+      .wire-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .wire-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 16px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .wire-letter {
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .wire-name { font-size: 0.78rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .wire-unit { font-size: 0.68rem; color: var(--muted); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PLATFORM
+    ═══════════════════════════════════════════════════════════════ */
+    .platform-section { background: var(--bg); }
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 48px;
+    }
+    .platform-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .platform-card:hover { border-color: rgba(136,204,255,.32); transform: translateY(-3px); }
+    .platform-icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+    .platform-name { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .platform-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FINAL CTA
+    ═══════════════════════════════════════════════════════════════ */
+    .cta-section {
+      background: linear-gradient(180deg, var(--bg) 0%, rgba(20,40,100,0.35) 50%, var(--bg) 100%);
+      text-align: center;
+    }
+    .cta-wrap {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 36px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════════════════ */
+    .landing-footer {
+      padding: 24px 16px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.3rem 0.6rem;
+      font-size: 0.72rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .landing-footer-link {
+      color: rgba(147,197,253,0.5);
+      text-decoration: none;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s ease;
+    }
+    .landing-footer-link:hover { color: rgba(147,197,253,0.9); }
+    .landing-footer-sep { color: rgba(147,197,253,0.22); }
+    .fuse-badge {
+      color: rgba(147,197,253,0.32);
+      font-size: 0.65rem;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .fuse-badge abbr { text-decoration: none; font-style: normal; }
+
+    /* ── Loading animation (hero status bar) ─────────────────────── */
     .status-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
-      width: min(420px, 100%);
-      margin-inline: auto;
+      width: min(380px, 100%);
     }
     .status-bar {
       width: 100%;
-      height: 6px;
+      height: 5px;
       border-radius: 999px;
       position: relative;
       overflow: visible;
@@ -125,10 +503,9 @@
       position: absolute;
       inset: 0;
       border-radius: 999px;
-      background: rgba(136, 204, 255, 0.12);
+      background: rgba(136,204,255,.1);
       overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-      border: 1px solid rgba(136, 204, 255, 0.18);
+      border: 1px solid rgba(136,204,255,.16);
     }
     .status-fill {
       position: absolute;
@@ -136,10 +513,10 @@
       width: 0%;
       border-radius: 999px;
       background: linear-gradient(90deg,
-        rgba(136,204,255,0.3) 0%,
-        rgba(136,204,255,0.65) 55%,
-        rgba(180,225,255,0.9) 80%,
-        rgba(255,255,255,0.97) 100%
+        rgba(136,204,255,.3) 0%,
+        rgba(136,204,255,.65) 55%,
+        rgba(180,225,255,.9) 80%,
+        rgba(255,255,255,.97) 100%
       );
     }
     .status-bar::after {
@@ -148,162 +525,360 @@
       top: 50%;
       left: var(--photon-pos, 0%);
       transform: translate(-50%, -50%);
-      width: 14px;
-      height: 14px;
+      width: 12px; height: 12px;
       border-radius: 50%;
-      background: radial-gradient(circle, #ffffff 0%, rgba(200,235,255,0.75) 45%, transparent 100%);
+      background: radial-gradient(circle, #fff 0%, rgba(200,235,255,.7) 45%, transparent 100%);
       box-shadow:
-        0 0 4px 2px rgba(255,255,255,0.95),
+        0 0 4px 2px rgba(255,255,255,.9),
         0 0 10px 4px rgba(136,204,255,1),
-        0 0 22px 8px rgba(136,204,255,0.75),
-        0 0 42px 18px rgba(136,204,255,0.32);
+        0 0 22px 8px rgba(136,204,255,.7),
+        0 0 40px 16px rgba(136,204,255,.28);
       pointer-events: none;
       opacity: var(--photon-opacity, 0);
       transition: opacity 0.5s ease;
     }
     .status-text {
-      font-size: 0.88rem;
+      font-size: 0.82rem;
       letter-spacing: 0.16em;
       padding-inline-start: 0.16em;
       text-transform: uppercase;
-      color: rgba(136, 204, 255, 0.92);
+      color: rgba(136,204,255,.88);
       font-weight: 600;
       text-align: center;
       transition: opacity 0.25s ease;
     }
-    .status-text.status-ready {
-      animation: status-ready-pulse 2.8s ease-in-out infinite;
-    }
+    .status-text.status-ready { animation: status-ready-pulse 2.8s ease-in-out infinite; }
     @keyframes status-ready-pulse {
-      0%, 100% { opacity: 0.92; }
-      50% { opacity: 1; color: rgba(180, 230, 255, 1); }
-    }
-    .launch-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px 48px;
-      border-radius: 999px;
-      border: 2px solid rgba(136, 204, 255, 0.42);
-      background: rgba(136, 204, 255, 0.15);
-      color: #f8fafc;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 0.24em;
-      font-size: 0.85rem;
-      font-weight: 700;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 24px rgba(136, 204, 255, 0.2), 0 0 40px rgba(136, 204, 255, 0.1);
-      margin-top: 8px;
-    }
-    .launch-button:hover {
-      border-color: rgba(136, 204, 255, 0.75);
-      background: rgba(136, 204, 255, 0.25);
-      color: #ffffff;
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(136, 204, 255, 0.3), 0 0 60px rgba(136, 204, 255, 0.2);
-    }
-    @media (max-height: 640px) {
-      body {
-        justify-content: flex-start;
-        align-items: center;
-        padding-top: max(48px, env(safe-area-inset-top, 0px));
-      }
-      .landing-page { gap: 22px; }
-    }
-    @media (orientation: landscape) and (max-height: 480px) {
-      body {
-        justify-content: flex-start;
-        align-items: center;
-        padding-top: max(12px, env(safe-area-inset-top, 0px));
-        padding-left: max(16px, env(safe-area-inset-left, 0px));
-        padding-right: max(16px, env(safe-area-inset-right, 0px));
-        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-      }
-      .landing-page {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 12px 24px;
-        align-items: center;
-        justify-content: center;
-        padding: 8px;
-      }
-      .logo-mark {
-        width: clamp(72px, 18vw, 110px);
-      }
-      .wordmark {
-        font-size: clamp(24px, 6vw, 40px);
-      }
-      .subtitle {
-        display: none;
-      }
-      .status-wrapper {
-        gap: 8px;
-      }
-    }
-    .landing-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 8px 16px;
-      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 0.25rem 0.5rem;
-      font-size: 0.72rem;
-      z-index: 10;
-    }
-    .landing-footer-link {
-      color: rgba(147, 197, 253, 0.55);
-      text-decoration: none;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: color 0.15s ease;
-    }
-    .landing-footer-link:hover {
-      color: rgba(147, 197, 253, 0.9);
-    }
-    .landing-footer-sep {
-      color: rgba(147, 197, 253, 0.25);
-    }
-    .fuse-badge {
-      color: rgba(147, 197, 253, 0.35);
-      font-size: 0.65rem;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-    }
-    .fuse-badge abbr {
-      text-decoration: none;
-      font-style: normal;
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; color: rgba(180,230,255,1); }
     }
 
+    /* ── Divider ──────────────────────────────────────────────────── */
+    .section-divider {
+      width: min(120px, 30%);
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(136,204,255,.35), transparent);
+      margin: 0 auto 52px;
+    }
+
+    /* ── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .platform-grid { grid-template-columns: 1fr; }
+    }
+    @media (orientation: landscape) and (max-height: 520px) {
+      .hero { min-height: auto; padding-top: 40px; padding-bottom: 40px; }
+      .logo-mark { width: 100px; }
+      .wordmark { font-size: clamp(28px, 7vw, 52px); }
+    }
   </style>
 </head>
 <body>
-  <div class="landing-page">
-      <div class="wordmark">
-        <span class="brand-blue">Circui</span>
-        <span class="brand-orange">Try</span>
-        <span class="brand-green">3D</span>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="hero" aria-label="Hero">
+    <div class="hero-content">
+      <div class="wordmark" aria-label="CircuiTry3D">
+        <span class="brand-blue">Circui</span><span class="brand-orange">Try</span><span class="brand-green">3D</span>
       </div>
       <div class="logo-mark" aria-hidden="true">
         <img src="/app-icon-no-text.svg" alt="" />
       </div>
-      <div class="subtitle">Professional Circuit Design</div>
-    <div class="status-wrapper">
-      <div class="status-text" id="status-text">Initializing…</div>
-      <div class="status-bar" id="status-bar">
-        <div class="status-bar-track">
-          <div class="status-fill" id="status-fill"></div>
+      <h1 class="hero-headline">
+        <span class="c-green">Illuminate</span> Electricity
+      </h1>
+      <p class="hero-tagline">
+        Build, simulate, and explore electric circuits in interactive 3D —
+        from wire-level current all the way down to quantum probability clouds.
+      </p>
+      <div class="hero-chips">
+        <span class="chip chip-blue">Ohm's Law Engine</span>
+        <span class="chip chip-green">5-Tier Zoom</span>
+        <span class="chip chip-orange">FUSE™ Failure Sim</span>
+        <span class="chip chip-purple">Schematic Mode</span>
+        <span class="chip chip-blue">W.I.R.E. Routing</span>
+      </div>
+
+      <!-- Loading / ready status -->
+      <div class="status-wrapper">
+        <div class="status-text" id="status-text">Initializing…</div>
+        <div class="status-bar" id="status-bar">
+          <div class="status-bar-track">
+            <div class="status-fill" id="status-fill"></div>
+          </div>
         </div>
       </div>
-      <a class="launch-button" href="/app" id="launch-btn">Launch</a>
+
+      <div class="hero-cta">
+        <a class="btn-primary" href="/app" id="launch-btn">
+          ⚡ Launch Builder
+        </a>
+        <a class="btn-secondary" href="/arena" id="arena-btn">
+          Open Arena →
+        </a>
+      </div>
     </div>
-  </div>
+    <div class="scroll-hint" aria-hidden="true">
+      <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="14" height="18" rx="7" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="8" cy="7" r="2" fill="currentColor"/>
+      </svg>
+      Scroll to explore
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FEATURES
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section features-section" id="features" aria-labelledby="features-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">What you can do</p>
+      <h2 class="section-title" id="features-title">
+        One platform.<br><span class="c-green">Infinite circuits.</span>
+      </h2>
+      <p class="section-subtitle">
+        Everything you need to build, simulate, and deeply understand electric circuits —
+        from first principles to full failure analysis.
+      </p>
+      <div class="features-grid">
+        <article class="feat-card">
+          <span class="feat-icon">⚡</span>
+          <div class="feat-name">3D Circuit Builder</div>
+          <div class="feat-desc">Drag-and-drop resistors, capacitors, LEDs, and more onto a live 3D workspace. Ohm's law powers every simulation — watch voltage and current update the instant you connect a wire.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🔬</span>
+          <div class="feat-name">Multi-Scale Visualization</div>
+          <div class="feat-desc">Five interactive zoom tiers take you from circuit-level current flow all the way down to quantum probability clouds. No microscope required — just scroll in.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">💥</span>
+          <div class="feat-name">FUSE™ Failure Engine</div>
+          <div class="feat-desc">The Failure Understanding Simulation Engine stress-tests every component with smoke, arcs, and controlled explosions. Fail safely. Learn deeply.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">📐</span>
+          <div class="feat-name">Schematic Mode</div>
+          <div class="feat-desc">Professional 2D schematics auto-generated from your 3D build. Switch between 3D and schematic views without losing any of your work.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🎓</span>
+          <div class="feat-name">Classroom Tools</div>
+          <div class="feat-desc">Assign circuits, track student progress, and grade labs at scale. Purpose-built for educators who want more than a static diagram.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🕹️</span>
+          <div class="feat-name">Practice Arcade</div>
+          <div class="feat-desc">Circuit puzzles and timed challenges that sharpen your skills. Level up from Ohm's law basics to complex multi-loop networks.</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ZOOM TIERS
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section zoom-section" id="zoom" aria-labelledby="zoom-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Multi-scale visualization</p>
+      <h2 class="section-title" id="zoom-title">
+        Zoom into <span class="c-green">electrons</span>
+      </h2>
+      <p class="section-subtitle">
+        Five seamless zoom tiers reveal electricity at every scale —
+        from the full circuit down to the quantum world.
+      </p>
+      <div class="zoom-tiers" role="list" aria-label="Zoom tiers">
+        <div class="zoom-tier" role="listitem">
+          <div class="zoom-orb" style="width:clamp(54px,8vw,74px);height:clamp(54px,8vw,74px);background:rgba(136,204,255,.1);color:var(--blue);" aria-hidden="true">⚡</div>
+          <div class="zoom-label" style="color:var(--blue);">Macro</div>
+          <div class="zoom-sublabel">Circuit view</div>
+        </div>
+        <div class="tier-arrow" aria-hidden="true">→</div>
+        <div class="zoom-tier" role="listitem">
+          <div class="zoom-orb" style="width:clamp(46px,7vw,64px);height:clamp(46px,7vw,64px);background:rgba(0,255,136,.09);color:var(--green);" aria-hidden="true">〰</div>
+          <div class="zoom-label" style="color:var(--green);">Close</div>
+          <div class="zoom-sublabel">Current flow</div>
+        </div>
+        <div class="tier-arrow" aria-hidden="true">→</div>
+        <div class="zoom-tier" role="listitem">
+          <div class="zoom-orb" style="width:clamp(38px,6vw,54px);height:clamp(38px,6vw,54px);background:rgba(255,136,68,.09);color:var(--orange);" aria-hidden="true">⬡</div>
+          <div class="zoom-label" style="color:var(--orange);">Atomic</div>
+          <div class="zoom-sublabel">Lattice + electrons</div>
+        </div>
+        <div class="tier-arrow" aria-hidden="true">→</div>
+        <div class="zoom-tier" role="listitem">
+          <div class="zoom-orb" style="width:clamp(30px,5vw,44px);height:clamp(30px,5vw,44px);background:rgba(192,132,252,.09);color:var(--purple);" aria-hidden="true">◉</div>
+          <div class="zoom-label" style="color:var(--purple);">Deep</div>
+          <div class="zoom-sublabel">Orbital detail</div>
+        </div>
+        <div class="tier-arrow" aria-hidden="true">→</div>
+        <div class="zoom-tier" role="listitem">
+          <div class="zoom-orb" style="width:clamp(22px,4vw,34px);height:clamp(22px,4vw,34px);background:rgba(255,255,255,.05);color:#ccc;" aria-hidden="true">∿</div>
+          <div class="zoom-label" style="color:#999;">Quantum</div>
+          <div class="zoom-sublabel">Probability clouds</div>
+        </div>
+      </div>
+      <p class="zoom-desc">
+        Pinch or scroll to zoom — the simulation adapts at every scale,
+        showing FCC thermal vibration, electron drift, and quantum wave functions
+        in real time.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FUSE™
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section fuse-section" id="fuse" aria-labelledby="fuse-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Component Arena · FUSE™</p>
+      <h2 class="section-title" id="fuse-title">
+        <span class="c-orange">Fail</span> safely.&nbsp;
+        <span class="c-green">Learn</span> deeply.
+      </h2>
+      <p class="section-subtitle">
+        The <strong>F</strong>ailure <strong>U</strong>nderstanding <strong>S</strong>imulation <strong>E</strong>ngine™
+        applies realistic thermal and electrical stress models to every component —
+        complete with smoke, arcs, and explosions.
+      </p>
+      <div class="fuse-panel" role="list" aria-label="Component status examples">
+        <div class="fuse-card" role="listitem">
+          <span class="fuse-card-status status-ok">OK</span>
+          <div class="fuse-card-name">Resistor 10 kΩ</div>
+          <div class="fuse-card-desc">Operating at 12 % rated power — thermally stable with comfortable margin.</div>
+        </div>
+        <div class="fuse-card" role="listitem">
+          <span class="fuse-card-status status-stressed">Stressed</span>
+          <div class="fuse-card-name">Capacitor 100 µF</div>
+          <div class="fuse-card-desc">Approaching voltage limit — ripple current elevated, ESR warming.</div>
+        </div>
+        <div class="fuse-card" role="listitem">
+          <span class="fuse-card-status status-warning">Warning</span>
+          <div class="fuse-card-name">LED (Red)</div>
+          <div class="fuse-card-desc">Forward current exceeds spec — junction heating, dimming imminent.</div>
+        </div>
+        <div class="fuse-card" role="listitem">
+          <span class="fuse-card-status status-failed">Failed</span>
+          <div class="fuse-card-name">Fuse 0.5 A</div>
+          <div class="fuse-card-desc">Overcurrent event detected — element vaporized, circuit open.</div>
+        </div>
+      </div>
+      <p class="fuse-note">
+        Powered by <strong>FUSE™</strong> — a first-order thermal time-constant model
+        that simulates real-world component degradation over time.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       W.I.R.E. SYSTEM
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section wire-section" id="wire" aria-labelledby="wire-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Electrical quantities</p>
+      <h2 class="section-title" id="wire-title">
+        The <span class="c-blue">W.I.R.E.</span> system
+      </h2>
+      <p class="section-subtitle">
+        Every simulation tracks the four fundamental electrical quantities —
+        color-coded so you always know what's happening at a glance.
+      </p>
+      <div class="wire-grid" role="list" aria-label="W.I.R.E. electrical quantities">
+        <div class="wire-card" role="listitem">
+          <div class="wire-letter c-blue">W</div>
+          <div class="wire-name">Watts</div>
+          <div class="wire-unit">Power · P</div>
+        </div>
+        <div class="wire-card" role="listitem">
+          <div class="wire-letter c-orange">I</div>
+          <div class="wire-name">Amperes</div>
+          <div class="wire-unit">Current · I</div>
+        </div>
+        <div class="wire-card" role="listitem">
+          <div class="wire-letter c-green">R</div>
+          <div class="wire-name">Ohms</div>
+          <div class="wire-unit">Resistance · R</div>
+        </div>
+        <div class="wire-card" role="listitem">
+          <div class="wire-letter" style="color:#ff4444;text-shadow:0 0 18px rgba(255,68,68,.55);">E</div>
+          <div class="wire-name">Volts</div>
+          <div class="wire-unit">Voltage · V</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PLATFORM
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section platform-section" id="platform" aria-labelledby="platform-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Built for everyone</p>
+      <h2 class="section-title" id="platform-title">
+        A complete <span class="c-blue">learning platform</span>
+      </h2>
+      <p class="section-subtitle">
+        Whether you're a student, educator, hobbyist, or engineer —
+        CircuiTry3D has the tools you need.
+      </p>
+      <div class="platform-grid">
+        <article class="platform-card">
+          <span class="platform-icon">🏟️</span>
+          <div class="platform-name">Component Arena</div>
+          <div class="platform-desc">Test individual components under customizable loads with live FUSE™ failure analysis and side-by-side comparison.</div>
+        </article>
+        <article class="platform-card">
+          <span class="platform-icon">🎓</span>
+          <div class="platform-name">Classroom</div>
+          <div class="platform-desc">Assign circuits, set parameters, track student progress, and grade lab submissions — all in one place.</div>
+        </article>
+        <article class="platform-card">
+          <span class="platform-icon">🌐</span>
+          <div class="platform-name">Community</div>
+          <div class="platform-desc">Share your builds, fork circuits from other users, post reviews, and learn from a global community of circuit enthusiasts.</div>
+        </article>
+        <article class="platform-card">
+          <span class="platform-icon">📱</span>
+          <div class="platform-name">Android App</div>
+          <div class="platform-desc">Full mobile experience — build and simulate on the go. The same powerful engine, optimized for touch.</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FINAL CTA
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section cta-section" aria-labelledby="cta-title">
+    <div class="section-inner">
+      <div class="section-divider" aria-hidden="true"></div>
+      <p class="section-eyebrow">Ready?</p>
+      <h2 class="section-title" id="cta-title">
+        The future of electronics education<br>
+        is <span class="c-green">interactive</span>,
+        <span class="c-blue">immersive</span>,
+        and <span class="c-orange">illuminated</span>.
+      </h2>
+      <p class="section-subtitle">
+        Start building circuits in 3D for free — no account required.
+      </p>
+      <div class="cta-wrap">
+        <a class="btn-primary" href="/app" id="cta-launch-btn">
+          ⚡ Launch Builder
+        </a>
+        <a class="btn-secondary" href="/pricing" id="cta-pricing-btn">
+          View pricing
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════════════════════ -->
   <footer class="landing-footer">
     <nav aria-label="Legal information">
       <a class="landing-footer-link" href="/privacy">Privacy Policy</a>
@@ -312,154 +887,136 @@
       <span class="landing-footer-sep" aria-hidden="true">·</span>
       <a class="landing-footer-link" href="/delete-account">Delete Account</a>
       <span class="landing-footer-sep" aria-hidden="true">·</span>
+      <a class="landing-footer-link" href="/partnerships">Partnerships</a>
+      <span class="landing-footer-sep" aria-hidden="true">·</span>
       <a class="landing-footer-link" href="/assets/feature-graphic.png" download="CircuiTry3D-feature-graphic.png">Feature Graphic ↓</a>
     </nav>
     <span class="landing-footer-sep" aria-hidden="true">·</span>
     <span class="fuse-badge">Powered by <abbr title="Failure Understanding Simulation Engine">FUSE™</abbr></span>
   </footer>
-  <script>
-    (function(){
-      const normalisePath = (href) => {
-        if (!href || typeof href !== "string") {
-          return "/";
-        }
 
+  <!-- ═══════════════════════════════════════════════════════════════
+       NAVIGATION BRIDGE (postMessage → React Router)
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      var normalisePath = function (href) {
+        if (!href || typeof href !== "string") return "/";
         try {
-          const url = new URL(href, window.location.origin);
-          return `${url.pathname}${url.search}${url.hash}` || "/";
-        } catch (error) {
-          return href.charAt(0) === "/" ? href : `/${href}`;
+          var url = new URL(href, window.location.origin);
+          return (url.pathname + url.search + url.hash) || "/";
+        } catch (_) {
+          return href.charAt(0) === "/" ? href : "/" + href;
         }
       };
 
-      const sendNavigationMessage = (pathTarget) => {
-        if (!pathTarget) {
-          return false;
-        }
-
+      var sendNavigationMessage = function (pathTarget) {
+        if (!pathTarget) return false;
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: "landing:navigate", path: pathTarget }, "*");
             return true;
           }
-        } catch (error) {
-          // Ignore bridge failures and fall back to default navigation
+        } catch (_) {
+          // Ignore bridge failures — fall back to native navigation
         }
-
         return false;
       };
 
-      const launchButton = document.getElementById('launch-btn');
-      if (launchButton) {
-        launchButton.addEventListener('click', (event) => {
-          const href = launchButton.getAttribute('href');
-          if (!href) {
-            return;
-          }
-
-          const pathTarget = normalisePath(href);
-          const handled = sendNavigationMessage(pathTarget);
-          if (handled) {
-            event.preventDefault();
-          }
+      var interceptLink = function (el) {
+        el.addEventListener("click", function (event) {
+          if (el.hasAttribute("download")) return;
+          var href = el.getAttribute("href");
+          if (!href) return;
+          var pathTarget = normalisePath(href);
+          var handled = sendNavigationMessage(pathTarget);
+          if (handled) event.preventDefault();
         });
+      };
+
+      // Intercept all internal nav links
+      document.querySelectorAll(
+        "#launch-btn, #arena-btn, #cta-launch-btn, #cta-pricing-btn, .landing-footer-link"
+      ).forEach(interceptLink);
+    })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO LOADING ANIMATION
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      var phases = [
+        { target: 16,  msg: 'Firing up the time circuits\u2026' },
+        { target: 34,  msg: 'Circumventing circuits\u2026' },
+        { target: 54,  msg: 'Reining in photons\u2026' },
+        { target: 72,  msg: 'Fighting the resistance\u2026' },
+        { target: 88,  msg: 'Bending the space-time continuum\u2026' },
+        { target: 100, msg: 'Almost there\u2026' },
+      ];
+
+      var statusText = document.getElementById("status-text");
+      var statusFill = document.getElementById("status-fill");
+      var statusBar  = document.getElementById("status-bar");
+
+      if (!statusText || !statusFill || !statusBar) return;
+
+      var lastPhaseIdx = -1;
+      var startTime    = null;
+      var DURATION     = 9000;
+
+      function easeInOut(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       }
 
-      document.querySelectorAll('.landing-footer-link').forEach((link) => {
-        link.addEventListener('click', (event) => {
-          // Let download links work as native browser downloads — don't intercept them.
-          if (link.hasAttribute('download')) {
-            return;
-          }
-
-          const href = link.getAttribute('href');
-          if (!href) {
-            return;
-          }
-
-          const pathTarget = normalisePath(href);
-          const handled = sendNavigationMessage(pathTarget);
-          if (handled) {
-            event.preventDefault();
-          }
-        });
-      });
-  })();
-</script>
-<script>
-  (function () {
-    var phases = [
-      { target: 16, msg: 'Firing up the time circuits\u2026' },
-      { target: 34, msg: 'Circumventing circuits\u2026' },
-      { target: 54, msg: 'Reining in photons\u2026' },
-      { target: 72, msg: 'Fighting the resistance\u2026' },
-      { target: 88, msg: 'Bending the space-time continuum\u2026' },
-      { target: 100, msg: 'Almost there\u2026' },
-    ];
-
-    var statusText = document.getElementById('status-text');
-    var statusFill = document.getElementById('status-fill');
-    var statusBar  = document.getElementById('status-bar');
-
-    if (!statusText || !statusFill || !statusBar) return;
-
-    var current = 0;
-    var lastPhaseIdx = -1;
-    var startTime = null;
-    var DURATION = 9000;
-
-    function easeInOut(t) {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    }
-
-    function getPhaseIndex(pct) {
-      for (var i = 0; i < phases.length; i++) {
-        if (pct < phases[i].target) return i;
-      }
-      return phases.length - 1;
-    }
-
-    function tick(ts) {
-      if (startTime === null) startTime = ts;
-      var elapsed = ts - startTime;
-      var t = Math.min(elapsed / DURATION, 1);
-      current = easeInOut(t) * 100;
-
-      statusFill.style.width = current + '%';
-      statusBar.style.setProperty('--photon-pos', current + '%');
-
-      var pi = getPhaseIndex(current);
-      if (pi !== lastPhaseIdx) {
-        lastPhaseIdx = pi;
-        var msg = phases[pi].msg;
-        statusText.style.opacity = '0';
-        setTimeout(function () {
-          statusText.textContent = msg;
-          statusText.style.opacity = '1';
-        }, 180);
+      function getPhaseIndex(pct) {
+        for (var i = 0; i < phases.length; i++) {
+          if (pct < phases[i].target) return i;
+        }
+        return phases.length - 1;
       }
 
-      if (t < 1) {
-        requestAnimationFrame(tick);
-      } else {
-        statusFill.style.width = '100%';
-        statusBar.style.setProperty('--photon-pos', '100%');
-        setTimeout(function () {
-          statusBar.style.setProperty('--photon-opacity', '0');
-          statusText.style.opacity = '0';
+      function tick(ts) {
+        if (startTime === null) startTime = ts;
+        var elapsed = ts - startTime;
+        var t       = Math.min(elapsed / DURATION, 1);
+        var current = easeInOut(t) * 100;
+
+        statusFill.style.width = current + "%";
+        statusBar.style.setProperty("--photon-pos", current + "%");
+
+        var pi = getPhaseIndex(current);
+        if (pi !== lastPhaseIdx) {
+          lastPhaseIdx = pi;
+          var msg = phases[pi].msg;
+          statusText.style.opacity = "0";
           setTimeout(function () {
-            statusText.textContent = '3D Circuit Environment Ready';
-            statusText.style.opacity = '1';
-            statusText.classList.add('status-ready');
-          }, 300);
-        }, 350);
-      }
-    }
+            statusText.textContent = msg;
+            statusText.style.opacity = "1";
+          }, 180);
+        }
 
-    statusText.textContent = phases[0].msg;
-    statusBar.style.setProperty('--photon-opacity', '1');
-    requestAnimationFrame(tick);
-  })();
-</script>
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          statusFill.style.width = "100%";
+          statusBar.style.setProperty("--photon-pos", "100%");
+          setTimeout(function () {
+            statusBar.style.setProperty("--photon-opacity", "0");
+            statusText.style.opacity = "0";
+            setTimeout(function () {
+              statusText.textContent = "3D Circuit Environment Ready";
+              statusText.style.opacity = "1";
+              statusText.classList.add("status-ready");
+            }, 300);
+          }, 350);
+        }
+      }
+
+      statusText.textContent = phases[0].msg;
+      statusBar.style.setProperty("--photon-opacity", "1");
+      requestAnimationFrame(tick);
+    })();
+  </script>
 </body>
 </html>
