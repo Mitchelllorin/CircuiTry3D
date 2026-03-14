@@ -1,24 +1,29 @@
 /**
  * Demo mode utilities.
  *
- * The Vercel-hosted web build is a demo/preview version with a limited set of
+ * The GitHub Pages web build is a demo/preview version with a limited set of
  * components. The full component library is available in the Play Store release.
  *
  * Set VITE_DEMO_MODE=true at build time (see .env.production) to enable demo
  * mode. When the flag is absent or false the full component set is used.
  *
- * The owner can unlock the full version at runtime by authenticating via the
- * /api/owner endpoint. The unlock is persisted in localStorage under
- * OWNER_STORAGE_KEY and is checked on every page load.
+ * The owner can unlock the full version at runtime by entering their password
+ * in the DemoBanner dialog.  The password is verified client-side against
+ * VITE_OWNER_KEY_HASH (the SHA-256 hex digest of the owner password, injected
+ * at build time from the OWNER_KEY_HASH GitHub Actions secret).  On success
+ * the unlock flag is persisted in localStorage under OWNER_STORAGE_KEY.
  *
  * To reset back to demo mode append ?demo_reset to any URL (e.g.
- * https://circuitry3d.vercel.app/?demo_reset).
+ * https://demo.circuitry3d.net/?demo_reset).
  */
 
 /** localStorage key that stores the owner-unlock flag. */
 export const OWNER_STORAGE_KEY = "circuitry3d_owner_unlocked";
 
-/** Returns true when the owner has unlocked full access via /api/owner. */
+/**
+ * Returns true when the owner has unlocked full access.
+ * Handles ?demo_reset to revoke a stored unlock token.
+ */
 function isOwnerUnlocked(): boolean {
   try {
     if (typeof location === "undefined") {
@@ -78,3 +83,44 @@ export const DEMO_COMPONENT_IDS: readonly string[] = [
   "ground",
   "junction",
 ] as const;
+
+/**
+ * The SHA-256 hex digest of the owner password, embedded at build time.
+ * Empty when the OWNER_KEY_HASH secret was not provided during the build.
+ */
+const OWNER_KEY_HASH = (import.meta.env.VITE_OWNER_KEY_HASH ?? "").trim();
+
+/**
+ * True when an owner key hash has been configured in this build.
+ * Used by DemoBanner to decide whether to show the 🔑 unlock button.
+ */
+export const OWNER_KEY_HASH_CONFIGURED: boolean = OWNER_KEY_HASH.length > 0;
+
+/**
+ * Verifies the supplied owner password client-side by hashing it with
+ * SHA-256 and comparing the result to the build-time VITE_OWNER_KEY_HASH.
+ *
+ * Uses the Web Crypto API (available in all modern browsers and in the Vite
+ * dev/preview server environment).  Returns false immediately when
+ * OWNER_KEY_HASH is not configured in this build.
+ */
+export async function verifyOwnerPassword(password: string): Promise<boolean> {
+  if (!OWNER_KEY_HASH) return false;
+  const enc = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    enc.encode(password.trim())
+  );
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  // Constant-time comparison: XOR every character code and OR into diff.
+  // SHA-256 hex output is always 64 chars; if lengths somehow differ, fold
+  // the mismatch into diff without an early return to avoid leaking length.
+  let diff = hashHex.length !== OWNER_KEY_HASH.length ? 1 : 0;
+  const len = Math.min(hashHex.length, OWNER_KEY_HASH.length);
+  for (let i = 0; i < len; i++) {
+    diff |= hashHex.charCodeAt(i) ^ OWNER_KEY_HASH.charCodeAt(i);
+  }
+  return diff === 0;
+}

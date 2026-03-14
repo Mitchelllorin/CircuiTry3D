@@ -1,33 +1,30 @@
 import React, { useRef, useState } from "react";
-import { IS_DEMO_MODE, OWNER_STORAGE_KEY } from "../utils/demoMode";
+import {
+  IS_DEMO_MODE,
+  OWNER_KEY_HASH_CONFIGURED,
+  OWNER_STORAGE_KEY,
+  verifyOwnerPassword,
+} from "../utils/demoMode";
 
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
 
-type UnlockStatus = "idle" | "loading" | "error" | "misconfigured" | "network_error";
+type UnlockStatus = "idle" | "loading" | "error";
 
 function getPasswordBorderColor(status: UnlockStatus): string {
   if (status === "error") return "rgba(255,120,120,0.6)";
-  if (status === "misconfigured") return "rgba(255,200,80,0.6)";
-  if (status === "network_error") return "rgba(255,165,0,0.6)";
   return "rgba(136,204,255,0.3)";
 }
 
-const codeTagStyle: React.CSSProperties = {
-  fontFamily: "monospace",
-  background: "rgba(255,200,80,0.12)",
-  padding: "0 3px",
-  borderRadius: "3px",
-};
-
 /**
  * A fixed banner shown at the top of every page when the app is running in
- * demo mode (i.e. the Vercel web deployment). Informs users that this is a
- * limited preview and directs them to the Play Store for the full release.
+ * demo mode (i.e. the GitHub Pages web deployment). Informs users that this
+ * is a limited preview and directs them to the Play Store for the full release.
  *
  * The owner can click the subtle lock icon to enter their owner password.
- * A successful authentication call to /api/owner stores the unlock flag in
- * localStorage and reloads the page with full-access enabled.
+ * The password is verified client-side against the VITE_OWNER_KEY_HASH build
+ * constant (SHA-256 hex digest). On success the unlock flag is stored in
+ * localStorage and the page reloads with full-access enabled.
  */
 export default function DemoBanner() {
   const [unlockOpen, setUnlockOpen] = useState(false);
@@ -57,24 +54,8 @@ export default function DemoBanner() {
     if (!password) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/owner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      if (res.status === 503) {
-        // OWNER_SECRET env var is not configured in this Vercel deployment.
-        setStatus("misconfigured");
-        return;
-      }
-      if (!res.ok) {
-        setStatus("error");
-        setPassword("");
-        setTimeout(() => inputRef.current?.focus(), 50);
-        return;
-      }
-      const data = (await res.json()) as { ok: boolean };
-      if (data.ok) {
+      const ok = await verifyOwnerPassword(password);
+      if (ok) {
         localStorage.setItem(OWNER_STORAGE_KEY, "true");
         window.location.reload();
       } else {
@@ -83,7 +64,9 @@ export default function DemoBanner() {
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     } catch {
-      setStatus("network_error");
+      setStatus("error");
+      setPassword("");
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
 
@@ -172,7 +155,8 @@ export default function DemoBanner() {
           🚀 Get Full Version on Play Store
         </a>
 
-        {/* Subtle owner-unlock button — visible but unobtrusive */}
+        {/* Subtle owner-unlock button — only shown when OWNER_KEY_HASH is configured */}
+        {OWNER_KEY_HASH_CONFIGURED && (
         <button
           type="button"
           aria-label="Owner access"
@@ -198,6 +182,7 @@ export default function DemoBanner() {
         >
           🔑
         </button>
+        )}
       </div>
 
       {/* Owner unlock dialog */}
@@ -272,45 +257,7 @@ export default function DemoBanner() {
 
             {status === "error" && (
               <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,120,120,0.9)", lineHeight: 1.5 }}>
-                Incorrect password. Try again.{" "}
-                <span style={{ opacity: 0.8 }}>
-                  (The password is case-sensitive and must match the value you
-                  set for <code style={codeTagStyle}>OWNER_SECRET</code> in
-                  Vercel.)
-                </span>
-              </p>
-            )}
-
-            {status === "network_error" && (
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,165,0,0.9)", lineHeight: 1.5 }}>
-                Could not reach the authentication server. Check your connection
-                and try again.
-              </p>
-            )}
-
-            {status === "misconfigured" && (
-              <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,200,80,0.9)", lineHeight: 1.6 }}>
-                <strong>OWNER_SECRET is not configured.</strong>
-                <br />
-                In your Vercel project, go to{" "}
-                <strong>Settings → Environment Variables</strong> and add a new
-                variable:
-                <br />
-                <span style={{ display: "inline-block", marginTop: "4px" }}>
-                  • <strong>Name&nbsp;(Key):</strong>{" "}
-                  <code style={codeTagStyle}>OWNER_SECRET</code>
-                  &nbsp;— must be typed exactly like this (all caps, underscore,
-                  no spaces).
-                  <br />
-                  • <strong>Value:</strong> your chosen password.
-                  <br />
-                  • <strong>Environment:</strong> make sure{" "}
-                  <em>Production</em> (and <em>Preview</em> if needed) are
-                  checked.
-                </span>
-                <br />
-                After saving, <strong>redeploy</strong> the project so the new
-                variable takes effect.
+                Incorrect password. Try again.
               </p>
             )}
 
@@ -332,17 +279,17 @@ export default function DemoBanner() {
               </button>
               <button
                 type="submit"
-                disabled={status === "loading" || status === "misconfigured" || !password}
+                disabled={status === "loading" || !password}
                 style={{
                   padding: "7px 18px",
                   borderRadius: "6px",
                   border: "1px solid rgba(136,204,255,0.45)",
                   background: "rgba(136,204,255,0.15)",
                   color: "#c8e6ff",
-                  cursor: status === "loading" || status === "misconfigured" ? "default" : "pointer",
+                  cursor: status === "loading" ? "default" : "pointer",
                   fontWeight: 600,
                   fontSize: "0.82rem",
-                  opacity: !password || status === "misconfigured" ? 0.5 : 1,
+                  opacity: !password ? 0.5 : 1,
                 }}
               >
                 {status === "loading" ? "Verifying…" : "Unlock"}
