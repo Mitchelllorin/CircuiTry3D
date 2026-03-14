@@ -297,9 +297,16 @@
           visual: "char",
           physicalDescription:
             "Carbon film ablates from the ceramic substrate. The body chars and darkens, then cracks open. Acrid smoke and carbon particles are emitted. Resistance drifts high before the element opens completely.",
-          trigger: (metrics, props) => metrics.powerDissipation > (props.powerRating ?? 0.25) * 1.5,
+          // Trigger once effective thermal power exceeds the rated dissipation.
+          // Real resistors begin accumulating thermal stress above their rated power —
+          // not just at 1.5× it — so the warning→failure progression is visible.
+          trigger: (metrics, props) => metrics.powerDissipation > (props.powerRating ?? 0.25),
+          // Severity scales continuously from 0 (at rated power) → 3 (at 2× rated).
+          // severity = 2 (failed) when power = 1.667× rated; severity = 1.5 (warning
+          // particles) at 1.5× rated.  Matches physical reality: components degrade
+          // progressively rather than jumping straight from OK to destroyed.
           severity: (metrics, props) =>
-            Math.min((metrics.powerDissipation / ((props.powerRating ?? 0.25) * 2)) * 3, 3),
+            Math.min(((metrics.powerDissipation / (props.powerRating ?? 0.25)) - 1) * 3, 3),
         },
         overtemp: {
           name: "Temperature Limit Exceeded",

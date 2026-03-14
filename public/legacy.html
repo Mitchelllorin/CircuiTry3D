@@ -3688,6 +3688,17 @@
         let currentLatticeAtoms = []; // Cu⁺ lattice ion spheres (atomic zoom)
         let currentProbabilityClouds = []; // electron probability-cloud hazes (atomic zoom)
         let flowActivationTime  = 0;  // performance.now() when flow last activated
+        /** Default first-order thermal time constant (s) for small components with no explicit τ. */
+        const FUSE_THERMAL_TAU_DEFAULT = 5;
+        /**
+         * Cadence (ms) for thermal-state re-analyses while a circuit is live.
+         * Half of τ gives smooth severity steps without expensive per-frame re-analysis.
+         */
+        const FUSE_THERMAL_RECHECK_MS  = FUSE_THERMAL_TAU_DEFAULT * 500; // 2500 ms
+        /** performance.now() timestamp when current last began flowing (0 = not flowing). */
+        let fuseOnsetStartTime = 0;
+        /** setTimeout ID for the next scheduled FUSE thermal re-check. */
+        let fuseOnsetTimer     = null;
         let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
@@ -12571,6 +12582,17 @@ Made with ? for visual learners everywhere!
             // Apply physics-based failure visuals to every component
             const circuitVoltage = analysis && isFinite(analysis.voltage) ? analysis.voltage : 0;
             applyAllWorkspaceFailures(circuitVoltage, metricsByComponentId);
+            // A failed component acts as an open circuit — halt current flow immediately.
+            // Without this check, flow would keep animating until the next analyzeCircuit() call.
+            let failedEntry = null;
+            for (const entry of workspaceFailureState.values()) {
+                if (entry?.failed) { failedEntry = entry; break; }
+            }
+            if (failedEntry && currentFlowState?.hasFlow) {
+                currentFlowState = { hasFlow: false, currentValue: 0, reason: 'component-failure' };
+                animateCurrentFlow(currentFlowState);
+                setStatus(`⚠ COMPONENT FAILURE: ${failedEntry.name || 'Component'} has failed — circuit is open and current flow has stopped.`);
+            }
         }
 
         // Circuit analysis
@@ -14859,6 +14881,10 @@ Made with ? for visual learners everywhere!
         const PARTICLE_EMISSIVE_MULTIPLIER = 0.85;
 
         function animateCurrentFlow(flowState) {
+            // Capture whether the circuit was already flowing BEFORE we update the state.
+            // Used below to detect the no-flow → flow transition for FUSE thermal onset.
+            const wasFlowing = Boolean(currentFlowState?.hasFlow);
+
             // ── Tear down previous visualization ────────────────────────────
             currentFlowParticles.forEach(particle => {
                 if (particle) {
@@ -14881,11 +14907,42 @@ Made with ? for visual learners everywhere!
             const currentValue = flowState?.currentValue ?? 0;
 
             if (!hasFlow || currentValue <= 0) {
+                // Circuit no longer flowing — cancel any pending FUSE re-check and
+                // reset the thermal onset clock so the next circuit start is fresh.
+                clearTimeout(fuseOnsetTimer);
+                fuseOnsetTimer     = null;
+                fuseOnsetStartTime = 0;
                 return;
             }
 
             // Mark activation time for the circuit-completion flash
             flowActivationTime = performance.now();
+
+            // ── FUSE thermal onset ───────────────────────────────────────────
+            // Start the thermal clock the first time current flows after an open
+            // circuit.  Don't reset it on subsequent calls while still flowing
+            // (e.g. atomic-zoom re-trigger) so the accumulated heat is preserved.
+            if (!wasFlowing) {
+                fuseOnsetStartTime = performance.now();
+                // Cancel any stale timer left from a previous flow cycle before
+                // starting a fresh chain, so only one re-analysis chain is live.
+                clearTimeout(fuseOnsetTimer);
+                fuseOnsetTimer = null;
+                // Schedule recurring re-analyses so buildFailureMetrics can advance
+                // the thermal state over time.  Uses a self-rescheduling closure so
+                // the timer stops automatically when flow ends.
+                const scheduleFuseCheck = () => {
+                    clearTimeout(fuseOnsetTimer);
+                    fuseOnsetTimer = setTimeout(() => {
+                        if (currentFlowState?.hasFlow && typeof analyzeCircuit === 'function') {
+                            analyzeCircuit();
+                            scheduleFuseCheck();
+                        }
+                    }, FUSE_THERMAL_RECHECK_MS);
+                };
+                scheduleFuseCheck();
+            }
+            // ────────────────────────────────────────────────────────────────
 
             const segments = (flowState.wireSegments && flowState.wireSegments.length > 0)
                 ? flowState.wireSegments
@@ -16512,21 +16569,48 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         /**
          * Convert the legacy.html circuit metrics object to the format expected
          * by FailureEngine.detectFailure().
+         *
+         * Applies a first-order thermal time-constant model so that components heat
+         * up gradually rather than reaching steady-state temperature instantaneously.
+         * Physical equation:  ΔT(t) = ΔT_ss × (1 − e^(−t / τ))
+         *
+         * τ is taken from component.properties.thermalTimeConstant when set, otherwise
+         * falls back to FUSE_THERMAL_TAU_DEFAULT.  The same fraction is applied to
+         * powerDissipation so that both the overpower and overtemp checks in the
+         * failure engine reflect the component's actual thermal state at time t.
          */
         function buildFailureMetrics(component, runtimeMetrics, circuitVoltage) {
-            const props = component.properties || {};
+            const props    = component.properties || {};
             const thermalR = props.thermalResistance || 60;
-            const power = (runtimeMetrics && isFinite(runtimeMetrics.power)) ? runtimeMetrics.power : 0;
-            const current = (runtimeMetrics && isFinite(runtimeMetrics.current)) ? runtimeMetrics.current : 0;
-            const voltageDrop = (runtimeMetrics && isFinite(runtimeMetrics.voltageDrop))
-                ? runtimeMetrics.voltageDrop
-                : (circuitVoltage || 0);
+
+            // Per-component τ override, otherwise use the module default.
+            const thermalTau = (typeof props.thermalTimeConstant === 'number' && props.thermalTimeConstant > 0)
+                ? props.thermalTimeConstant
+                : FUSE_THERMAL_TAU_DEFAULT;
+
+            const power       = (runtimeMetrics && isFinite(runtimeMetrics.power))       ? runtimeMetrics.power       : 0;
+            const current     = (runtimeMetrics && isFinite(runtimeMetrics.current))     ? runtimeMetrics.current     : 0;
+            const voltageDrop = (runtimeMetrics && isFinite(runtimeMetrics.voltageDrop)) ? runtimeMetrics.voltageDrop : (circuitVoltage || 0);
+
+            // Thermal fraction: how much of the steady-state heat the component has
+            // accumulated since current first started flowing.  Starts at 0 and
+            // asymptotically approaches 1 with time constant thermalTau.
+            const tSeconds       = (fuseOnsetStartTime > 0 && power > 0)
+                ? (performance.now() - fuseOnsetStartTime) / 1000
+                : 0;
+            const thermalFraction = tSeconds > 0 ? (1 - Math.exp(-tSeconds / thermalTau)) : 0;
+
+            // Effective power dissipation: the actual power scaled by how heated-up
+            // the component currently is.  This is what drives overpower severity in
+            // the failure engine — not the instantaneous dissipation, which would fire
+            // failure checks the moment the circuit closes.
+            const powerDissipation = power * thermalFraction;
 
             return {
-                powerDissipation: power,
+                powerDissipation,
                 currentRms: current,
                 operatingVoltage: voltageDrop,
-                thermalRise: (power * thermalR) / 1000,
+                thermalRise: (powerDissipation * thermalR) / 1000,
                 impedance: (runtimeMetrics && isFinite(runtimeMetrics.resistance)) ? runtimeMetrics.resistance : 0,
                 storedEnergy: 0,
                 energyDelivered: 0,
