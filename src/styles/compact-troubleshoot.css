@@ -3,7 +3,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1191;
+  z-index: var(--z-compact-troubleshoot);
   max-height: 56vh;
   background: rgba(10, 20, 35, 0.625);
   border-top: 2px solid rgba(136, 204, 255, 0.36);
@@ -14,7 +14,7 @@
 
 .compact-troubleshoot-panel.open {
   transform: translateY(0);
-  z-index: 1250;
+  z-index: var(--z-compact-overlay);
 }
 
 .compact-troubleshoot-header {

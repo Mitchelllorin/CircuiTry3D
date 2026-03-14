@@ -6,7 +6,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1240;
+  z-index: var(--z-mode-panel);
   height: calc(100vh - var(--workspace-mode-panel-top-offset));
   height: calc(100dvh - var(--workspace-mode-panel-top-offset));
   max-height: calc(100vh - var(--workspace-mode-panel-top-offset));

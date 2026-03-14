@@ -4,7 +4,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1192;
+  z-index: var(--z-compact-guides);
   height: calc(100vh - var(--compact-guides-top-offset));
   height: calc(100dvh - var(--compact-guides-top-offset));
   max-height: calc(100vh - var(--compact-guides-top-offset));
@@ -18,7 +18,7 @@
 
 .compact-guides-panel.open {
   transform: translateY(0);
-  z-index: 1250;
+  z-index: var(--z-compact-overlay);
 }
 
 .compact-guides-header {
