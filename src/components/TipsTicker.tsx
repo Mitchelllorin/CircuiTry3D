@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import CIRCUIT_TIPS_FACTS from "../data/circuitTipsFacts";
+import { AskAboutTip } from "./AskAboutTip";
 
 const ROTATION_INTERVAL_MS = 12000;
 const DISMISSED_STORAGE_KEY = "circuitry3d:tips-ticker:dismissed:v1";
@@ -16,6 +17,8 @@ function getRandomIndex(length: number, exclude: number): number {
 }
 
 export function TipsTicker() {
+  const [askOpen, setAskOpen] = useState(false);
+
   const [dismissed, setDismissed] = useState(() => {
     try {
       return window.localStorage.getItem(DISMISSED_STORAGE_KEY) === "true";
@@ -78,37 +81,51 @@ export function TipsTicker() {
   const entry = CIRCUIT_TIPS_FACTS[currentIndex];
 
   return (
-    <div className="tips-ticker" role="status" aria-live="polite" aria-atomic="true">
-      <span
-        className={`tips-ticker__badge tips-ticker__badge--${entry.kind}`}
-        aria-label={entry.kind === "tip" ? "Tip" : entry.kind === "trick" ? "Trick" : "Did you know"}
-      >
-        {entry.kind === "tip" ? "💡 Tip" : entry.kind === "trick" ? "🔧 Trick" : "⚡ Fact"}
-      </span>
-      <span className={`tips-ticker__text${visible ? " tips-ticker__text--visible" : ""}`}>
-        {entry.text}
-      </span>
-      <div className="tips-ticker__actions">
-        <button
-          type="button"
-          className="tips-ticker__btn"
-          onClick={handleNext}
-          aria-label="Next tip"
-          title="Next tip"
+    <>
+      {askOpen && (
+        <AskAboutTip entry={entry} onClose={() => setAskOpen(false)} />
+      )}
+      <div className="tips-ticker" role="status" aria-live="polite" aria-atomic="true">
+        <span
+          className={`tips-ticker__badge tips-ticker__badge--${entry.kind}`}
+          aria-label={entry.kind === "tip" ? "Tip" : entry.kind === "trick" ? "Trick" : "Did you know"}
         >
-          →
-        </button>
-        <button
-          type="button"
-          className="tips-ticker__btn tips-ticker__btn--dismiss"
-          onClick={handleDismiss}
-          aria-label="Dismiss tips"
-          title="Dismiss"
-        >
-          ×
-        </button>
+          {entry.kind === "tip" ? "💡 Tip" : entry.kind === "trick" ? "🔧 Trick" : "⚡ Fact"}
+        </span>
+        <span className={`tips-ticker__text${visible ? " tips-ticker__text--visible" : ""}`}>
+          {entry.text}
+        </span>
+        <div className="tips-ticker__actions">
+          <button
+            type="button"
+            className="tips-ticker__btn tips-ticker__btn--ask"
+            onClick={() => setAskOpen(true)}
+            aria-label="Ask about this topic"
+            title="Ask me about this"
+          >
+            💬
+          </button>
+          <button
+            type="button"
+            className="tips-ticker__btn"
+            onClick={handleNext}
+            aria-label="Next tip"
+            title="Next tip"
+          >
+            →
+          </button>
+          <button
+            type="button"
+            className="tips-ticker__btn tips-ticker__btn--dismiss"
+            onClick={handleDismiss}
+            aria-label="Dismiss tips"
+            title="Dismiss"
+          >
+            ×
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
