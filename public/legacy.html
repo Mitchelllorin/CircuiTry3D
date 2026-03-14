@@ -3445,11 +3445,6 @@
             <span class="subscription-kicker">Subscription Success</span>
             <h2 id="subscription-pricing-title">Launch CircuiTry3D across your program</h2>
             <p>Planning a classroom, campus, or district rollout? This playbook highlights the support included in every subscription tier so your team can move from pilot to full adoption with confidence.</p>
-            <div class="subscription-status" data-subscription-status="pending">
-                <span class="subscription-status-label">Billing status</span>
-                <span class="subscription-status-value">Pending</span>
-                <span class="subscription-status-note">Stripe checkout links will populate sku-based buttons as soon as they are live.</span>
-            </div>
         </div>
         <div class="subscription-cycle-toggle" role="group" aria-label="Billing cycle selector">
             <button type="button" class="subscription-cycle-btn active" data-cycle="annual" aria-pressed="true" onclick="setSubscriptionPricingCycle('annual')">
@@ -3506,7 +3501,7 @@
                     <li>Priority email support</li>
                 </ul>
                 <div class="subscription-plan-cta">
-                    <button type="button" class="subscription-plan-button" onclick="launchStripeComingSoon('educator-license')">Stripe checkout (coming soon)</button>
+                    <a class="subscription-plan-button" href="mailto:hello@circuitry3d.com?subject=Educator%20License%20Subscription">Subscribe</a>
                 </div>
             </article>
 
@@ -3608,7 +3603,7 @@
             <div class="subscription-faq-grid">
                 <details class="subscription-faq-item">
                     <summary>How do we purchase educator seats?</summary>
-                    <p>Start with a discovery call so we can confirm seat counts and billing cadence. Stripe checkout links roll out soon; until then we issue invoices or purchase orders.</p>
+                    <p>Start with a discovery call so we can confirm seat counts and billing cadence. We issue invoices or purchase orders.</p>
                 </details>
                 <details class="subscription-faq-item">
                     <summary>Can we mix monthly and annual billing?</summary>
@@ -10681,11 +10676,6 @@ body.android-optimized .zoom-btn {
                 toggleMenuBar();
             }
             setStatus('⚡ Sandbox ready - choose a component to begin building!');
-        }
-
-        function launchStripeComingSoon(sku) {
-            console.info('Stripe checkout pending integration', { sku });
-            alert('Stripe checkout coming soon. Contact us to activate your subscription.');
         }
 
         if (document.readyState === 'loading') {

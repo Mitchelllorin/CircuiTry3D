@@ -19,11 +19,6 @@ type CallToAction =
       label: string;
       type: "link";
       href: string;
-    }
-  | {
-      label: string;
-      type: "stripeCheckout";
-      sku: string;
     };
 
 type Plan = {
@@ -58,10 +53,6 @@ type PricingData = {
   billingCycles: BillingCycle[];
   plans: Plan[];
   addons?: AddOn[];
-  stripe?: {
-    status: string;
-    note?: string;
-  };
 };
 
 const pricingData = pricingSource as PricingData;
@@ -119,12 +110,6 @@ export default function PricingSection() {
     setBillingCycle(cycle);
   };
 
-  const handleStripeClick = (sku: string) => {
-    // Placeholder for future Stripe integration
-    console.info("Stripe checkout pending integration", { sku });
-    window.alert?.("Stripe checkout coming soon. Contact us to activate your subscription.");
-  };
-
   const renderCTA = (cta: CallToAction) => {
     if (cta.type === "link") {
       const isInternal = cta.href.startsWith("/");
@@ -148,17 +133,6 @@ export default function PricingSection() {
         </a>
       );
     }
-
-    return (
-      <button
-        type="button"
-        className="pricing-cta"
-        data-cta-type="stripe"
-        onClick={() => handleStripeClick(cta.sku)}
-      >
-        {cta.label}
-      </button>
-    );
   };
 
   return (
@@ -265,11 +239,6 @@ export default function PricingSection() {
       )}
 
       <footer className="pricing-footer">
-        {pricingData.stripe && (
-          <p className="pricing-stripe-note" data-stripe-status={pricingData.stripe.status}>
-            Stripe integration status: {pricingData.stripe.status}. {pricingData.stripe.note ?? ""}
-          </p>
-        )}
         <p className="pricing-contact-help">
           Need a custom package? <a href="mailto:hello@circuitry3d.com">Contact our team</a> for tailored pricing.
         </p>
