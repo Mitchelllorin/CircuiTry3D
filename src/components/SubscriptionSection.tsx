@@ -1,16 +1,6 @@
 import { Link } from "react-router-dom";
-import pricingSource from "../data/pricing.json";
 import BrandSignature from "./BrandSignature";
 import "../styles/pricing.css";
-
-type StripeMeta = {
-  status: string;
-  note?: string;
-};
-
-type SubscriptionMeta = {
-  stripe?: StripeMeta;
-};
 
 type SupportCard = {
   id: string;
@@ -31,8 +21,6 @@ type FaqItem = {
   question: string;
   answer: string;
 };
-
-const subscriptionMeta = pricingSource as SubscriptionMeta;
 
 const SUPPORT_CARDS: SupportCard[] = [
   {
@@ -98,7 +86,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "seats",
     question: "How do we purchase educator seats?",
     answer:
-      "Start with a discovery call so we can confirm seat counts and billing cadence. Stripe checkout links roll out soon; until then we issue invoices or purchase orders.",
+      "Start with a discovery call so we can confirm seat counts and billing cadence. We issue invoices or purchase orders.",
   },
   {
     id: "billing",
@@ -121,8 +109,6 @@ const FAQ_ITEMS: FaqItem[] = [
 ];
 
 export default function SubscriptionSection() {
-  const stripe = subscriptionMeta.stripe;
-
   return (
     <section className="subscription-section" aria-labelledby="subscription-title">
       <div className="subscription-hero">
@@ -133,13 +119,6 @@ export default function SubscriptionSection() {
           Planning a classroom, campus, or district rollout? This playbook highlights the support included in every
           subscription tier so your team can move from pilot to full adoption with confidence.
         </p>
-        {stripe && (
-          <div className="subscription-status" data-subscription-status={stripe.status}>
-            <span className="subscription-status-label">Billing status</span>
-            <span className="subscription-status-value">{stripe.status}</span>
-            {stripe.note && <span className="subscription-status-note">{stripe.note}</span>}
-          </div>
-        )}
       </div>
 
       <div className="subscription-grid" role="list">

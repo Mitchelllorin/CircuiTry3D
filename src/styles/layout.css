@@ -51,6 +51,63 @@
   --app-safe-area-top: env(safe-area-inset-top, 0px);
   --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --app-mode-bar-gap: 12px;
+
+  /* ── Z-index layer tokens ────────────────────────────────────────────────
+   * Single source of truth for all stacking context values.
+   * Use these variables instead of raw numbers so that layering changes
+   * propagate everywhere from one place.
+   *
+   * Rough bands:
+   *   1–20    base / header shell
+   *   90      global ticker
+   *   100–120 dropdowns / small overlays
+   *   650–940 builder workspace panels & toolbars
+   *   980     interactive tutorial
+   *   860–1300 compact panels, mode bar, builder top panel
+   *   1900–2200 modal overlays
+   *   9999–10000 critical always-on-top (storage modal)
+   * ────────────────────────────────────────────────────────────────────── */
+  /* Shell */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-tooltip: 15;
+  --z-header: 20;
+  /* Global ticker */
+  --z-ticker: 90;
+  /* Dropdowns / floating menus */
+  --z-dropdown: 100;
+  --z-dropdown-overlay: 120;
+  /* Builder workspace */
+  --z-builder-canvas: 650;
+  --z-builder-tool-menu: 700;
+  --z-builder-scene: 800;
+  --z-builder-side-panel: 810;
+  --z-builder-side-menu: 820;
+  --z-builder-logo: 900;
+  --z-builder-toolbar: 920;
+  --z-builder-floats: 930;
+  --z-builder-toolbar-top: 940;
+  /* Tutorial overlay */
+  --z-tutorial: 980;
+  /* Compact / mobile panels */
+  --z-compact-worksheet: 860;
+  --z-builder-widget: 1185;
+  --z-compact-settings: 1190;
+  --z-compact-troubleshoot: 1191;
+  --z-compact-guides: 1192;
+  --z-compact-worksheet-open: 1200;
+  --z-mode-bar: 1210;
+  --z-mode-panel: 1240;
+  --z-compact-overlay: 1250;
+  --z-builder-top: 1300;
+  /* Modal layers */
+  --z-modal-bg: 1900;
+  --z-demo-banner: 2100;
+  --z-demo-banner-top: 2101;
+  --z-full-overlay: 2200;
+  /* Critical always-on-top */
+  --z-storage-backdrop: 9999;
+  --z-storage-modal: 10000;
 }
 
 body {
@@ -161,7 +218,7 @@ body {
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--z-header);
 }
 
 .app-brand {
@@ -298,6 +355,17 @@ body {
   overflow: hidden;
 }
 
+/* Promo page — full-screen, no chrome, mirrors arena layout treatment */
+.app-shell.is-promo .app-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell.is-promo .app-content > * {
+  padding: 0;
+  overflow: hidden;
+}
+
 .arena-page-wrapper {
   flex: 1;
   display: flex;
@@ -353,7 +421,7 @@ body {
   bottom: calc(var(--app-safe-area-bottom) + 12px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: var(--z-ticker);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -438,6 +506,10 @@ body {
   font-size: 1.1rem;
 }
 
+.tips-ticker__btn--ask {
+  font-size: 0.85rem;
+}
+
 @media (max-width: 600px) {
   .tips-ticker {
     border-radius: 12px;
@@ -446,7 +518,279 @@ body {
   }
 }
 
-/* ── App footer ──────────────────────────────────────────────────────────── */
+/* ── Ask About Tip — bottom sheet ─────────────────────────────────────────── */
+.ask-about-tip__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(4, 7, 12, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: ask-backdrop-in 0.22s ease;
+}
+
+@keyframes ask-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ask-about-tip__sheet {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  background: #111827;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 48px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  animation: ask-sheet-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes ask-sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.ask-about-tip__close {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ask-about-tip__close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--text-primary);
+}
+
+/* Scrollable article area */
+.ask-about-tip__scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 56px 20px 16px;
+  overscroll-behavior: contain;
+}
+
+/* Concept card at the top */
+.ask-about-tip__card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.ask-about-tip__card--tip  { border-color: rgba(136, 204, 255, 0.3); }
+.ask-about-tip__card--fact { border-color: rgba(255, 136,  68, 0.3); }
+.ask-about-tip__card--trick{ border-color: rgba(  0, 255, 136, 0.3); }
+
+.ask-about-tip__card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ask-about-tip__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ask-about-tip__badge--tip {
+  background: var(--brand-blue-dim);
+  color: var(--brand-blue);
+  border: 1px solid rgba(136, 204, 255, 0.3);
+}
+
+.ask-about-tip__badge--fact {
+  background: var(--brand-orange-dim);
+  color: var(--brand-secondary);
+  border: 1px solid rgba(255, 136, 68, 0.3);
+}
+
+.ask-about-tip__badge--trick {
+  background: var(--brand-green-dim);
+  color: var(--brand-green);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+/* Article lead paragraph */
+.ask-about-tip__lead {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.55;
+  margin: 0 0 20px;
+}
+
+/* Deeper-dive section */
+.ask-about-tip__section-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.ask-about-tip__section-body {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0 0 20px;
+}
+
+/* Chat thread */
+.ask-about-tip__thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ask-about-tip__msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.ask-about-tip__msg--user {
+  justify-content: flex-end;
+}
+
+.ask-about-tip__msg--user .ask-about-tip__msg-text {
+  background: var(--brand-blue-dim);
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 16px 16px 4px 16px;
+  max-width: 80%;
+}
+
+.ask-about-tip__msg--assistant .ask-about-tip__msg-text {
+  color: var(--text-secondary);
+  max-width: 90%;
+}
+
+.ask-about-tip__msg-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Typing indicator */
+.ask-about-tip__typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+}
+
+.ask-about-tip__typing span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: ask-dot-bounce 1.1s ease-in-out infinite;
+}
+
+.ask-about-tip__typing span:nth-child(2) { animation-delay: 0.18s; }
+.ask-about-tip__typing span:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes ask-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Input bar — pinned at the bottom */
+.ask-about-tip__input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px calc(var(--app-safe-area-bottom) + 12px);
+  background: #111827;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ask-about-tip__input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.ask-about-tip__input::placeholder {
+  color: var(--text-muted);
+}
+
+.ask-about-tip__input:focus {
+  border-color: rgba(136, 204, 255, 0.45);
+}
+
+.ask-about-tip__send {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand-blue);
+  color: #04070c;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.ask-about-tip__send:hover:not(:disabled) {
+  background: #aaddff;
+}
+
+.ask-about-tip__send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (min-width: 601px) {
+  .ask-about-tip__sheet {
+    margin: 0 auto;
+  }
+}
+
+
 .app-footer {
   display: flex;
   align-items: center;

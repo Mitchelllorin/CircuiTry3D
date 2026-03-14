@@ -5,7 +5,7 @@
   right: 0;
   background: rgba(10, 20, 35, 0.625);
   border-top: 2px solid rgba(136, 204, 255, 0.4);
-  z-index: 860;
+  z-index: var(--z-compact-worksheet);
   max-height: 50vh;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   transform: translateY(calc(100% - 48px));
@@ -14,7 +14,7 @@
 
 .compact-worksheet-panel.open {
   transform: translateY(0);
-  z-index: 1200;
+  z-index: var(--z-compact-worksheet-open);
 }
 
 .compact-worksheet-header {

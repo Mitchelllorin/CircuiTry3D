@@ -1,9 +1,9 @@
 // CircuiTry3D Service Worker
 // Provides offline capability and caching for the PWA
 
-const CACHE_NAME = 'circuitry3d-v2';
-const STATIC_CACHE = 'circuitry3d-static-v2';
-const DYNAMIC_CACHE = 'circuitry3d-dynamic-v2';
+const CACHE_NAME = 'circuitry3d-v3';
+const STATIC_CACHE = 'circuitry3d-static-v3';
+const DYNAMIC_CACHE = 'circuitry3d-dynamic-v3';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -80,8 +80,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For navigation requests, try network first for fresh content
-  if (request.mode === 'navigate') {
+  // HTML files (including those loaded in iframes like legacy.html, landing.html,
+  // arena.html) must always be fetched from the network first so that merged
+  // changes are immediately visible after a deploy.  Navigation requests get
+  // the same treatment.
+  const isHtmlRequest = request.mode === 'navigate' || url.pathname.endsWith('.html');
+  if (isHtmlRequest) {
     event.respondWith(
       fetch(request)
         .then((response) => {

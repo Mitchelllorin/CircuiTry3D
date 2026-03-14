@@ -23,6 +23,15 @@
           "value": "frame-ancestors 'self' https://www.circuitry3d.net"
         }
       ]
+    },
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
     }
   ]
 }

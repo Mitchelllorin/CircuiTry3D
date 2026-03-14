@@ -1046,18 +1046,23 @@ function ComponentLibraryCard({
 
 type QuickAddButtonProps = {
   component: ComponentAction;
-  controlsDisabled: boolean;
-  onAction: (component: ComponentAction) => void;
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
 };
 
-function QuickAddButton({ component, controlsDisabled, onAction }: QuickAddButtonProps) {
-  const builderType = component.builderType ?? component.id;
-  const thumbSrc = useComponent3DThumbnail(builderType);
+function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const thumbSrc = useComponent3DThumbnail(
+    component.builderType ?? component.id,
+    { animated: isHovered }
+  );
 
   const symKey = (() => {
-    if (builderType === "bjt-npn" || builderType === "bjt") return "transistor-npn";
-    if (builderType === "bjt-pnp") return "transistor-pnp";
-    return builderType;
+    const t = component.builderType ?? component.id;
+    if (t === "bjt-npn" || t === "bjt") return "transistor-npn";
+    if (t === "bjt-pnp") return "transistor-pnp";
+    return t;
   })() as ComponentSymbol;
   const SymbolComp = getSchematicSymbol(symKey);
   const symRotation = symKey === "battery" ? -90 : 0;
@@ -1066,14 +1071,16 @@ function QuickAddButton({ component, controlsDisabled, onAction }: QuickAddButto
     <button
       type="button"
       className="quick-add-btn"
-      onClick={() => onAction(component)}
-      disabled={controlsDisabled}
-      aria-disabled={controlsDisabled}
-      title={component.description || component.label}
+      onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
+      title={title}
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => setIsHovered(false)}
     >
       <span className="quick-add-btn-symbol" aria-hidden="true">
         {thumbSrc ? (
-          <img src={thumbSrc} alt="" className="quick-add-btn-thumbnail" aria-hidden="true" />
+          <img src={thumbSrc} alt="" className="quick-add-btn-thumb-img" aria-hidden="true" />
         ) : SymbolComp ? (
           <svg
             className="quick-add-btn-symbol-svg"
@@ -2765,8 +2772,9 @@ export default function Builder() {
               <QuickAddButton
                 key={component.id}
                 component={component}
-                controlsDisabled={controlsDisabled}
-                onAction={handleComponentAction}
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                title={component.description || component.label}
               />
             ))}
             <button
@@ -3012,12 +3020,6 @@ export default function Builder() {
           </div>
         </section>
       )}
-
-      <div className="builder-logo-header" aria-hidden="true">
-        <div className="builder-logo-mark">
-          <BrandMark size="lg" decorative />
-        </div>
-      </div>
 
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
