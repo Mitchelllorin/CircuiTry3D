@@ -41,7 +41,7 @@ export type TextbookData = {
 
 const textbook: TextbookData = {
   title: "Electrical Studies",
-  subtitle: "Year 1 & Year 2 — DC Fundamentals to AC Theory",
+  subtitle: "Year 1 & Year 2 — DC Fundamentals, AC Theory & Practical Wiring",
   edition: "CircuiTry3D Reference Edition",
   chapters: [
     // ─────────────────────────────────────────────────────────────────────────
@@ -1437,6 +1437,343 @@ const textbook: TextbookData = {
             "Larger wire gauge (smaller AWG number or larger mm²) = lower resistance = less voltage drop",
             "Longer runs require larger conductors to maintain acceptable voltage drop",
             "Use voltage drop tables in the CEC appendix for quick calculations",
+          ],
+        },
+      ],
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  PRACTICAL WIRING — HOME & CONSTRUCTION
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+      id: "home-wiring",
+      number: 19,
+      year: 2,
+      title: "Home Wiring & Residential Circuits",
+      overview:
+        "Residential wiring brings electrical theory into the real world of homes and apartments. This chapter covers the service entrance, distribution panels, branch circuit types, protective devices, grounding, and the key code requirements every new electrician must know before touching a panel.",
+      sections: [
+        {
+          id: "service-entrance",
+          title: "The Service Entrance & Distribution Panel",
+          body: [
+            "The utility company delivers power to a home through the service entrance — typically three conductors: two ungrounded (hot) legs at 120 V each relative to neutral, and a neutral conductor. The two hot legs are 180° out of phase, giving 240 V between them for large appliances (dryers, ranges, water heaters).",
+            "The main distribution panel (load centre or breaker box) contains the main breaker, a neutral bus bar, a grounding bus bar, and individual circuit breakers for each branch circuit. In Canada the panel is governed by CEC Section 26; in the United States by NEC Article 230 (service) and 408 (panelboards).",
+            "The main breaker is the first point of overcurrent protection for the entire home. It is rated for the total service ampacity — commonly 100 A, 150 A, or 200 A in residential applications. Never exceed the service rating when adding circuits.",
+          ],
+          keyPoints: [
+            "North American residential service: 120/240 V, single-phase, 60 Hz",
+            "Two hot buses (L1, L2) + neutral bus + grounding bus in the panel",
+            "Main breaker protects the entire service; individual breakers protect branch circuits",
+            "Panel label must list the circuit directory — always keep it updated",
+            "Service entrance conductors are the utility's responsibility up to and including the meter",
+          ],
+          safetyNotes: [
+            "The lugs feeding the main breaker are ALWAYS live — even with the main breaker OFF. Only the utility company can de-energize them.",
+            "Never work inside the main panel without confirming the main breaker is OFF and testing with a verified meter.",
+            "Lock-out / Tag-out (LOTO) procedures are mandatory in commercial and industrial environments.",
+          ],
+          realWorldExamples: [
+            "A 200 A, 40-space panel is the Canadian/US standard for new single-family construction — it provides room for future loads and electric vehicle circuits.",
+            "When a panel is 'double-tapped' (two wires on one breaker terminal), it is a code violation unless the breaker is specifically rated for two conductors.",
+          ],
+        },
+        {
+          id: "branch-circuits",
+          title: "Branch Circuit Types & Ratings",
+          body: [
+            "A branch circuit runs from the panel to one or more outlets or fixtures. The circuit rating is determined by the overcurrent device (breaker or fuse) protecting it — 15 A, 20 A, 30 A, and 50 A are the most common residential ratings.",
+            "A 15 A circuit uses 14 AWG copper wire (or 2.5 mm² in metric). A 20 A circuit uses 12 AWG (3.5 mm²). Never install undersized wire on an oversized breaker — this creates a fire hazard because the wire will overheat before the breaker trips.",
+            "Dedicated circuits serve a single appliance or outlet group (e.g., refrigerator, microwave, dishwasher, HVAC). Multiwire branch circuits (MWBC) share a neutral between two hot legs; the breaker must be a 2-pole or have a handle tie so both legs disconnect simultaneously.",
+          ],
+          formulas: [
+            {
+              name: "Maximum Continuous Load on a Branch Circuit",
+              expression: "I_continuous_max = 0.80 × I_breaker",
+              variables: {
+                I_continuous_max: "Maximum continuous current draw (A)",
+                I_breaker: "Overcurrent device rating (A)",
+              },
+              example: "20 A breaker: max continuous load = 0.80 × 20 = 16 A",
+            },
+            {
+              name: "Number of Outlets per Circuit (Guideline)",
+              expression: "N_max = I_breaker × 0.80 / I_per_outlet",
+              variables: {
+                N_max: "Maximum recommended outlets",
+                I_breaker: "Breaker rating (A)",
+                I_per_outlet: "Estimated load per outlet (typically 1.5 A for general use)",
+              },
+              example: "15 A breaker, 1.5 A/outlet: N_max = 12 / 1.5 = 8 outlets",
+            },
+          ],
+          keyPoints: [
+            "15 A circuit → 14 AWG wire (minimum); 20 A circuit → 12 AWG wire (minimum)",
+            "Never use a larger breaker to 'fix' a tripping circuit — find the overload",
+            "Kitchen and dining room require at least two 20 A small-appliance circuits (CEC/NEC)",
+            "Bathrooms require at least one dedicated 20 A circuit",
+            "Garage and outdoor receptacles must be on dedicated, GFCI-protected circuits",
+          ],
+          safetyNotes: [
+            "Always verify wire gauge matches the breaker rating before energising a circuit.",
+            "Aluminum wiring (common 1965–1973) requires special connectors and devices rated 'CO/ALR' — never use standard copper-rated devices on aluminum wiring.",
+          ],
+          realWorldExamples: [
+            "A bedroom with five general-purpose outlets draws far less than 1.5 A × 5 = 7.5 A in practice, leaving ample headroom on a 15 A circuit.",
+            "An electric vehicle Level 2 charger (7.2 kW @ 240 V = 30 A) requires a dedicated 40 A, 240 V circuit with 8 AWG wire.",
+          ],
+        },
+        {
+          id: "protective-devices",
+          title: "GFCI, AFCI & Surge Protection",
+          body: [
+            "A Ground Fault Circuit Interrupter (GFCI) measures the difference between current flowing out on the hot conductor and returning on the neutral. If the difference exceeds about 5 mA (indicating current is flowing through a person or unintended path), the GFCI trips within 25 ms — fast enough to prevent electrocution.",
+            "An Arc Fault Circuit Interrupter (AFCI) monitors the waveform of the current and detects the high-frequency signature of an arcing fault — the type of fault that causes house fires from damaged or pinched wires. AFCIs are now required on virtually all bedroom and living-area circuits in the CEC (2018+) and NEC (2014+).",
+            "Combination AFCI+GFCI breakers provide both protections on a single device and are increasingly required in kitchens, bathrooms, garages, outdoors, and finished basements.",
+          ],
+          keyPoints: [
+            "GFCI: protects people from ground-fault shock (trips at ~5 mA imbalance)",
+            "AFCI: protects property from arc-fault fires",
+            "GFCI required locations (CEC/NEC): bathrooms, kitchens, garages, outdoors, basements, crawl spaces, near pools/spas",
+            "AFCI required locations: bedrooms, living rooms, hallways, closets, and most finished areas",
+            "Test GFCI and AFCI devices monthly using the TEST button",
+            "A GFCI receptacle can protect downstream receptacles when wired correctly (LOAD terminals)",
+          ],
+          safetyNotes: [
+            "Never bypass or remove GFCI/AFCI protection — these devices save lives.",
+            "If a GFCI trips repeatedly on a circuit, investigate the root cause (damaged insulation, moisture ingress) before resetting.",
+          ],
+          realWorldExamples: [
+            "A hairdryer dropped into a bathtub: without GFCI the person would receive a lethal shock; with GFCI the circuit trips in under 25 ms.",
+            "Nails or staples piercing wire insulation in walls cause arc faults that ignite nearby wood framing — AFCI detects this before a fire starts.",
+          ],
+        },
+        {
+          id: "grounding-bonding",
+          title: "Grounding & Bonding",
+          body: [
+            "Grounding provides a low-impedance path from the electrical system to the earth, stabilising voltage and directing fault current safely away from people. Equipment grounding conductors (EGC — the bare copper or green wire) connect metal enclosures, conduit, and device cases to the grounding bus.",
+            "The grounding electrode system (GES) connects the panel grounding bus to the earth via ground rods, water pipes, concrete-encased electrodes (Ufer ground), or a combination. CEC and NEC specify the minimum electrode configuration.",
+            "Bonding ensures all metallic systems (plumbing, gas piping, HVAC ductwork, panel enclosure) are at the same electrical potential, eliminating dangerous voltage differences that could cause a shock if a person bridges two systems simultaneously.",
+            "The neutral and ground are bonded together at only one point in a residential system — at the main service panel. In sub-panels, the neutral must be isolated from the ground bus to prevent multiple ground paths (which can cause stray currents and nuisance GFCI trips).",
+          ],
+          keyPoints: [
+            "Grounding: connects to the earth to dissipate fault energy",
+            "Bonding: connects metallic systems together to equalise potential",
+            "EGC (bare copper / green): safety ground carried with every circuit",
+            "Neutral-ground bond at main panel only — isolated at sub-panels",
+            "Two ground rods minimum, ≥ 1.8 m (6 ft) apart and ≥ 2.4 m (8 ft) deep each",
+            "Ground fault path must have low enough impedance to trip the breaker quickly",
+          ],
+          safetyNotes: [
+            "Never cut or remove the equipment grounding conductor (green wire / bare copper) — it is the last line of defence against a shock from a faulty appliance.",
+            "Three-to-two prong adapters ('cheater plugs') defeat the grounding system — avoid them.",
+            "Floating or open neutrals are extremely dangerous — they can cause voltage imbalances that destroy appliances and create shock hazards.",
+          ],
+          realWorldExamples: [
+            "A washing machine with a faulty motor that contacts the metal drum: the EGC carries the fault current to ground, tripping the breaker before anyone touches the drum.",
+            "Bonding the gas pipe to the electrical panel prevents a voltage difference if a fault energises the pipe — critical near water heaters and stoves.",
+          ],
+        },
+        {
+          id: "wiring-methods-residential",
+          title: "Wiring Methods in Residential Construction",
+          body: [
+            "Non-metallic sheathed cable (NM-B, trade name Romex®) is the most common wiring method in North American wood-frame homes. It consists of two or more insulated conductors plus a bare ground, wrapped in a plastic outer jacket. NM cable must be protected where exposed to physical damage.",
+            "Armoured cable (AC, trade name BX) and metal-clad cable (MC) use a flexible metal armour jacket for physical protection and are required in some jurisdictions or wherever NM is not permitted (e.g., some commercial or multi-family applications).",
+            "Electrical metallic tubing (EMT) and rigid conduit house individual conductors (THWN-2, XHHW) and are used in garages, basements, exposed locations, and commercial work. Conduit systems are easily modified and repaired by pulling new wire.",
+          ],
+          keyPoints: [
+            "NM-B cable: 90°C rated conductors, PVC jacket — dry locations only, wood frame construction",
+            "MC / AC cable: flexible metal jacket — damp/wet rated versions available",
+            "EMT: lightweight steel tubing, easy to bend — most common in commercial work",
+            "Rigid conduit (RMC / IMC): heavier wall — used for service entrances and exposed outdoor runs",
+            "PVC conduit (Schedule 40/80): for underground and corrosive environments",
+            "Maximum fill: conduit fill must not exceed 40% of conduit area for three or more conductors (NEC/CEC tables)",
+          ],
+          safetyNotes: [
+            "Staple NM cable every 1.4 m (4.5 ft) and within 300 mm (12 in) of every box — loose cable can sag and be damaged.",
+            "Protect NM cable with a metal plate wherever it passes through a stud or joist within 32 mm (1.25 in) of the face — to prevent nails or screws from piercing it.",
+          ],
+          realWorldExamples: [
+            "Running NM-B from the panel to a bedroom: drill 25 mm holes through studs, secure with cable staples, and leave 150 mm (6 in) of conductor free inside each box.",
+            "Garage circuits use EMT conduit on the surface of concrete block walls because NM cable is not permitted in exposed locations subject to physical damage.",
+          ],
+        },
+      ],
+    },
+
+    {
+      id: "construction-wiring",
+      number: 20,
+      year: 2,
+      title: "Construction & Field Wiring — Techniques, Tips & Tricks",
+      overview:
+        "Book knowledge must translate into confident, code-compliant field work. This chapter bridges theory and practice: rough-in procedures, box-fill calculations, wire-pulling strategies, splicing techniques, device installation, and the professional habits that separate a competent tradesperson from a beginner.",
+      sections: [
+        {
+          id: "rough-in",
+          title: "Rough-In: Planning, Layout & Box Installation",
+          body: [
+            "Rough-in is the phase where all cable, conduit, and boxes are installed before walls are closed. Planning is everything — a forgotten circuit costs hours of drywall repair later. Walk the job with the blueprints, mark every box location with a pencil, and confirm with the general contractor before drilling.",
+            "Outlet boxes are typically set at 300 mm (12 in) from finished floor to the centre of the box; switch boxes at 1200 mm (48 in). These are industry standards, not code minimums — confirm with the owner or inspector if unusual heights are required.",
+            "Box fill calculations ensure the box is large enough for all conductors, devices, and fittings. Each conductor counts as one 'conductor equivalent' based on its AWG size; devices (switches, outlets) count as two; cable clamps count as one; and the EGC is counted once regardless of how many are present.",
+          ],
+          formulas: [
+            {
+              name: "Box Fill — Conductor Volume",
+              expression: "V_total = Σ(n_i × v_i) ≤ V_box",
+              variables: {
+                V_total: "Total required volume (cm³ or in³)",
+                "n_i": "Number of items of type i (conductors, devices, clamps)",
+                "v_i": "Volume allowance per item (from NEC Table 314.16(B) or CEC Table 12-3)",
+                V_box: "Box rated volume (stamped on box, cm³ or in³)",
+              },
+              example: "14 AWG: 2.0 in³ each; 12 AWG: 2.25 in³ each; device = 2 × largest conductor volume",
+            },
+          ],
+          keyPoints: [
+            "Measure twice, drill once — confirm stud spacing and any plumbing/HVAC in the wall cavity",
+            "Standard residential outlet height: 300 mm (12 in); switch: 1200 mm (48 in) AFF (Above Finished Floor)",
+            "Old-work (remodel) boxes have built-in clamps that grip the drywall — no screws to studs required",
+            "New-work boxes nail or screw to studs, set flush with the planned finished wall surface",
+            "Always install boxes plumb and level — a crooked box shows through a cover plate",
+          ],
+          safetyNotes: [
+            "Before drilling through any wall, check with a stud finder and a wire/pipe detector — hitting a live cable or water pipe is a serious hazard.",
+            "Wear safety glasses when drilling overhead — debris and metal chips fall directly toward your eyes.",
+          ],
+          realWorldExamples: [
+            "Running a new 20 A kitchen circuit: locate the panel, plan the route through the basement ceiling, drill up through the bottom plate, drop into a new single-gang box nailed to a stud.",
+            "When retrofitting an outlet in a finished wall, use an old-work box: cut the drywall to the template, feed cable from the attic or basement, and secure the box by tightening the built-in clamps.",
+          ],
+        },
+        {
+          id: "wire-pulling",
+          title: "Wire Pulling & Cable Fishing Techniques",
+          body: [
+            "In new construction, cables are 'run' through open stud bays before drywall. In renovation work, cables must be 'fished' through closed walls using fish tape, fish sticks (glow rods), or a wire-fishing kit.",
+            "The standard fishing sequence: drill entry and exit holes; drop a weighted string (or chain) from above, or push fish tape from below; attach cable to the fish tape with electrical tape wrapped tightly so the joint won't snag; pull smoothly and steadily, avoiding sharp tugs that can kink the cable.",
+            "When pulling wire through conduit, use wire-pulling lubricant (cable lube, never grease or soap) on long runs to reduce friction and prevent insulation damage. Calculate the pulling tension and observe the maximum allowable pulling tension for the cable to avoid stretching conductors.",
+            "For long conduit runs, install pull boxes every 90° of total bend — the NEC and CEC permit a maximum of 360° of total bend between pull points to prevent damage to wire insulation.",
+          ],
+          keyPoints: [
+            "Fish tape: flat steel or fibreglass tape, pushed through conduit or wall cavity to pull back cable",
+            "Glow rods: fibreglass push-and-lock sticks ideal for fishing inside finished walls and ceilings",
+            "Always leave a 'pull string' (nylon twine) in conduit after pulling wire — it makes future wire additions easy",
+            "Maximum conduit fill: 40% for 3+ conductors, 31% for 2 conductors, 53% for 1 conductor (NEC/CEC)",
+            "Label both ends of every cable or conductor immediately after pulling — memory is unreliable",
+          ],
+          safetyNotes: [
+            "Never fish wire near a fireplace, chimney, or heat source — insulation can melt and create a fire hazard.",
+            "De-energise all nearby circuits before fishing in finished walls — you may unknowingly be adjacent to a live cable.",
+            "Wear gloves when handling fish tape — the edges are sharp and tape under tension can snap back violently.",
+          ],
+          realWorldExamples: [
+            "Adding a ceiling light: drill through the top plate into the attic, push a glow rod down the interior wall cavity, attach NM cable to the rod tip with tape, and pull up through the top plate to the attic, then route to the panel.",
+            "EMT conduit run in a commercial space: pre-bend all offsets and elbows on the bench, string pull wire through each section before joining, then fish conductors in one pull using cable lube.",
+          ],
+        },
+        {
+          id: "splicing-terminations",
+          title: "Splicing, Terminations & Device Wiring",
+          body: [
+            "All wire splices must be made inside an accessible junction box — no splices are permitted inside walls or ceilings. Use approved connectors: twist-on wire connectors (wire nuts), push-in connectors (WAGO-style or Ideal In-Sure), or compression-type connectors for larger conductors.",
+            "Proper technique for wire nuts: strip 20–25 mm (¾–1 in) of insulation, twist conductors clockwise together with lineman's pliers before applying the wire nut (for copper), then twist the nut clockwise until tight. Tug each conductor individually to verify it cannot pull free.",
+            "For device wiring, connect the black (hot) conductor to the brass-coloured screw, white (neutral) to the silver-coloured screw, and bare/green (ground) to the green screw. 'Black to brass, white to silver' is the universal memory aid.",
+            "Back-stabbing (push-in holes on the back of cheap receptacles) is permitted by code but is notorious for intermittent failures and overheating. Use the screw terminals — wrap the conductor 3/4 of the way around the screw clockwise so tightening the screw draws the wire in rather than pushing it out.",
+            "Pigtailing is the practice of adding a short tail from a shared splice to a device terminal, instead of connecting two conductors directly to one screw. Code requires pigtailing when more than one conductor would otherwise share a terminal not rated for two wires.",
+          ],
+          keyPoints: [
+            "Black to brass screw (hot), white to silver screw (neutral), green/bare to green screw (ground)",
+            "Always pigtail at outlets in the middle of a run — do not use the receptacle as a pass-through",
+            "Tug-test every wire nut and push-in connector",
+            "Strip length: 20–25 mm for wire nuts; follow the strip gauge on the device for terminals",
+            "Use the correct wire nut size — the colour-coded chart on the package specifies the conductor combinations",
+            "Aluminum conductors need anti-oxidant compound (Noalox) and AL-rated connectors",
+          ],
+          safetyNotes: [
+            "Never make a splice outside a box — concealed splices are a leading cause of electrical fires.",
+            "Overheated wire nuts indicate overloaded circuits or poor connections — both must be corrected immediately.",
+            "Always de-energize the circuit AND verify with a non-contact voltage tester before touching any conductor.",
+          ],
+          realWorldExamples: [
+            "Adding an outlet mid-run: open the nearest outlet box, pigtail to the existing hot and neutral, run NM cable to the new box, and connect the new device.",
+            "WAGO lever-nut connectors are reusable and ideal for lighting fixtures where repeated adjustments may be needed during commissioning.",
+          ],
+        },
+        {
+          id: "testing-commissioning",
+          title: "Testing, Commissioning & Troubleshooting",
+          body: [
+            "Before energising any new circuit, perform a visual inspection: confirm correct wire gauge, proper connector selection, no bare conductors outside boxes, no nicks or abrasions in insulation, and box fill compliance. Visual checks catch the majority of installation errors.",
+            "Use a continuity tester or multimeter in resistance mode to verify the ground and neutral are correctly connected before power-up. A megohmmeter (Megger) is used to perform insulation resistance tests on longer runs — a healthy circuit should show > 1 MΩ insulation resistance at 500 V DC.",
+            "After energising, use a multimeter or receptacle tester to confirm correct voltage and polarity at every outlet. A three-light receptacle tester shows correct wiring, open ground, open neutral, open hot, hot/ground reversed, and hot/neutral reversed in seconds.",
+            "Troubleshooting follows a systematic process: (1) identify the symptom (no power, tripping breaker, GFCI won't reset), (2) isolate the circuit, (3) test from the source toward the load, (4) identify the fault, (5) repair and retest. Never guess — measure.",
+          ],
+          formulas: [
+            {
+              name: "Insulation Resistance Test (Minimum Pass)",
+              expression: "R_insulation ≥ 1 MΩ (new installations) at 500 V DC",
+              variables: {
+                "R_insulation": "Insulation resistance measured by Megger (MΩ)",
+              },
+              example: "A 30 m NM cable run should read well above 100 MΩ if insulation is undamaged.",
+            },
+            {
+              name: "Voltage at Outlet (Acceptable Range)",
+              expression: "V_outlet = 114–126 V (North America, nominal 120 V)",
+              variables: {
+                V_outlet: "Measured voltage at receptacle (V)",
+              },
+              example: "If V_outlet < 110 V under load, check for loose connections or undersized wire.",
+            },
+          ],
+          keyPoints: [
+            "Test before energising: continuity of ground, no short between hot and neutral",
+            "Use a non-contact voltage tester (NCV) as a first check — it never gives a false zero, only false positives",
+            "Follow up NCV with a contact meter to confirm voltage and polarity",
+            "A tripping breaker = overload or short circuit; a GFCI tripping = ground fault or leakage",
+            "Label every circuit in the panel directory BEFORE the final inspection",
+            "Document your work: as-built notes and photos are invaluable for future service",
+          ],
+          safetyNotes: [
+            "Always assume a circuit is live until your own meter proves otherwise — never rely on someone else's lock-out.",
+            "Test your meter on a known live source before using it to verify a de-energized circuit — a faulty meter can give a false zero reading.",
+            "Keep a record of circuits you have locked out — if you must leave the job, tag all lock-outs clearly.",
+          ],
+          realWorldExamples: [
+            "Receptacle with no power: check the panel for a tripped breaker, then test at the outlet with a multimeter — if voltage is present on the hot but not across hot/neutral, the neutral connection is open.",
+            "Nuisance GFCI tripping: disconnect each downstream outlet one at a time while monitoring the GFCI — the circuit that eliminates the trip reveals the fault location (often moisture in an outdoor box).",
+          ],
+        },
+        {
+          id: "professional-tips",
+          title: "Professional Tips & Field Best Practices",
+          body: [
+            "Organisation is speed: sort and label every cable at the panel before pulling. Colour-coded tape on conductors entering the same panel space saves hours at trim-out. Develop a personal labelling system and use it consistently on every job.",
+            "Work safely, not just quickly. The seconds saved by skipping a lock-out or not testing a circuit are not worth the risk. Electricians who build safe habits early have long, productive careers; those who cut corners often do not.",
+            "Respect the inspector. The electrical inspector is not your adversary — they are the last line of defence for the home's occupants. Understand the local amendments to the CEC or NEC in your jurisdiction, discuss grey areas proactively, and fix deficiencies promptly without argument.",
+            "Keep your tools calibrated and in good condition. A multimeter with a low battery can give erratic readings. Test probes with cracked insulation are a shock hazard. Replace broken tools immediately.",
+            "Continuous learning separates journeypersons from tradespeople: read the code book, attend manufacturer training sessions, pursue your Red Seal or master licence, and mentor apprentices — teaching reinforces your own understanding.",
+          ],
+          keyPoints: [
+            "Label cables at the panel before pulling to avoid the 'mystery cable' problem",
+            "Use consistent colour-coding: black/red = hot legs, white = neutral, green/bare = ground, grey = neutral in 277/480 V systems",
+            "Never re-use wire nuts that have been removed — they may not grip securely the second time",
+            "Keep a spare circuit in every panel for future use — adding circuits later is costly",
+            "Photograph your rough-in before drywall — you will thank yourself at every future service call",
+            "Learn to read the blueprint: understanding symbols and one-line diagrams is as important as hands-on skill",
+          ],
+          safetyNotes: [
+            "Personal Protective Equipment (PPE): safety glasses, insulated gloves (Class 00 or 0 for residential voltages), hard hat on construction sites, CSA/ANSI-approved footwear.",
+            "Arc Flash: even residential panels can deliver dangerous arc-flash energy — wear appropriate PPE when working on energised equipment, even at 120/240 V.",
+            "If in doubt, call for help. No job is worth a fatality or serious injury. Experienced electricians and inspectors are resources, not judges.",
+          ],
+          realWorldExamples: [
+            "Photographing stud bays before drywall: a quick phone photo of each wall section shows every cable's exact path — invaluable when hanging a TV years later.",
+            "A consistent panel schedule kept in the panel door prevents accidental de-energization of the wrong circuit during service work — always update the directory when adding or relocating circuits.",
+            "Mentoring an apprentice by explaining the 'why' behind every code rule (not just the 'what') creates safer, more competent electricians and reinforces your own code knowledge.",
           ],
         },
       ],
