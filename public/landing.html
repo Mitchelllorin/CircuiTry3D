@@ -35,11 +35,19 @@
     body {
       width: 100%;
       min-height: 100vh;
-      background: var(--bg);
+      background: transparent;
       color: var(--text);
       font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow-x: hidden;
       overflow-y: auto;
+    }
+
+    /* ── Background canvas (animated circuit field from promo) ────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
     }
 
     /* ── Utility ──────────────────────────────────────────────────── */
@@ -248,6 +256,7 @@
     .features-section {
       background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
     }
+
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -574,6 +583,7 @@
   </style>
 </head>
 <body>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
   <!-- ═══════════════════════════════════════════════════════════════
        HERO
@@ -1017,6 +1027,160 @@
       statusBar.style.setProperty("--photon-opacity", "1");
       requestAnimationFrame(tick);
     })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       BACKGROUND CANVAS — animated particle / circuit field
+       (same visual as the promo video)
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var canvas = document.getElementById("bg-canvas");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+
+    var W, H;
+    var MAX_PARTICLES = 220;
+    var particles = [];
+    var NODE_COUNT = 28;
+    var nodes = [];
+    var globalTime = 0;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth  * (window.devicePixelRatio || 1);
+      H = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+      canvas.style.width  = window.innerWidth  + "px";
+      canvas.style.height = window.innerHeight + "px";
+      buildNodes();
+    }
+    window.addEventListener("resize", resize);
+
+    var COLORS = [
+      "rgba(136,204,255,",
+      "rgba(0,255,136,",
+      "rgba(255,136,68,",
+      "rgba(192,132,252,",
+    ];
+
+    function buildNodes() {
+      nodes.length = 0;
+      for (var i = 0; i < NODE_COUNT; i++) {
+        nodes.push({
+          x:     Math.random() * W,
+          y:     Math.random() * H,
+          vx:    (Math.random() - 0.5) * 0.18,
+          vy:    (Math.random() - 0.5) * 0.18,
+          r:     Math.random() * 3 + 1.5,
+          phase: Math.random() * Math.PI * 2,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        });
+      }
+    }
+
+    function spawnParticle(from, to) {
+      if (particles.length >= MAX_PARTICLES) return;
+      particles.push({
+        x: from.x, y: from.y,
+        tx: to.x,  ty: to.y,
+        t: 0,
+        speed: Math.random() * 0.012 + 0.006,
+        size:  Math.random() * 2.5 + 1,
+        color: from.color,
+        trail: [],
+      });
+    }
+
+    function draw() {
+      globalTime += 0.008;
+      ctx.clearRect(0, 0, W, H);
+
+      /* Background gradient */
+      var grad = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, W * 0.75);
+      grad.addColorStop(0,   "rgba(15,30,80,0.55)");
+      grad.addColorStop(0.5, "rgba(4,10,30,0.65)");
+      grad.addColorStop(1,   "rgba(3,7,22,0.8)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      /* Move nodes */
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      }
+
+      /* Draw edges between nearby nodes */
+      for (var i = 0; i < nodes.length; i++) {
+        for (var j = i + 1; j < nodes.length; j++) {
+          var dx = nodes[j].x - nodes[i].x;
+          var dy = nodes[j].y - nodes[i].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > W * 0.28) continue;
+          var alpha = (1 - dist / (W * 0.28)) * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          /* Orthogonal "circuit trace" routing */
+          ctx.lineTo(nodes[i].x, nodes[j].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = nodes[i].color + alpha + ")";
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+          if (Math.random() < 0.0015) spawnParticle(nodes[i], nodes[j]);
+        }
+      }
+
+      /* Draw nodes */
+      for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        var pulse = 0.6 + 0.4 * Math.sin(globalTime * 1.8 + node.phase);
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = node.color + (0.55 * pulse) + ")";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r * pulse * 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = node.color + (0.06 * pulse) + ")";
+        ctx.fill();
+      }
+
+      /* Move & draw flow particles */
+      for (var particleIdx = particles.length - 1; particleIdx >= 0; particleIdx--) {
+        var p = particles[particleIdx];
+        p.t += p.speed;
+        if (p.t >= 1) { particles.splice(particleIdx, 1); continue; }
+        var px, py;
+        if (p.t < 0.5) {
+          var t2 = p.t * 2;
+          px = p.x;
+          py = p.y + (p.ty - p.y) * t2;
+        } else {
+          var t2b = (p.t - 0.5) * 2;
+          px = p.x + (p.tx - p.x) * t2b;
+          py = p.ty;
+        }
+        p.trail.push({ x: px, y: py });
+        if (p.trail.length > 10) p.trail.shift();
+        for (var trailIdx = 0; trailIdx < p.trail.length; trailIdx++) {
+          var pt = p.trail[trailIdx];
+          var a = (trailIdx / p.trail.length) * 0.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, p.size * (trailIdx / p.trail.length), 0, Math.PI * 2);
+          ctx.fillStyle = p.color + a + ")";
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + "0.9)";
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+  })();
   </script>
 </body>
 </html>
