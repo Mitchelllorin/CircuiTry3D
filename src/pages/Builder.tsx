@@ -916,6 +916,29 @@ const IconPencil = ({ className }: IconProps) => (
   </svg>
 );
 
+const IconCursor = ({ className }: IconProps) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <path d="M5 3.5 15.5 10l-4.5 1.25L9 16.5 5 3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconRuler = ({ className }: IconProps) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <rect x="2.5" y="7.5" width="15" height="5" rx="1" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M5.5 7.5v2m3-2v3m3-3v2m3-2v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+);
+
+function getQuickActionIcon(actionId: string, className: string) {
+  switch (actionId) {
+    case "select":   return <IconCursor className={className} />;
+    case "measure":  return <IconRuler className={className} />;
+    case "clear":    return <IconTrash className={className} />;
+    case "simulate": return <IconPlay className={className} />;
+    default:         return null;
+  }
+}
+
 /**
  * Hook to detect when an element is visible in the viewport
  * Used to lazy-load expensive 3D thumbnails only when needed
@@ -3147,7 +3170,10 @@ export default function Builder() {
                           : undefined
                       }
                     >
-                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-quick-icon-row">
+                        {getQuickActionIcon(action.id, "slider-quick-icon")}
+                        <span className="slider-label">{action.label}</span>
+                      </span>
                       <span className="slider-description">
                         {action.description}
                       </span>
