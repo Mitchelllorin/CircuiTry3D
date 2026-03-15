@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — What's New</title>
+  <meta name="theme-color" content="#050b1f" />
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --blue:   #88ccff;
+      --orange: #ff8844;
+      --green:  #00ff88;
+      --purple: #c084fc;
+      --red:    #ff4455;
+      --yellow: #ffd060;
+      --bg:     #050b1f;
+      --card:   rgba(13, 25, 60, 0.85);
+      --text:   #f9fafc;
+      --muted:  #9db8ff;
+    }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Canvas layer ──────────────────────────────────────────────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Stage container ───────────────────────────────────────────── */
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Scene base ────────────────────────────────────────────────── */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px 48px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.7s ease;
+    }
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── Typography helpers ────────────────────────────────────────── */
+    .eyebrow {
+      font-size: clamp(0.65rem, 2vw, 0.85rem);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 0.3s, transform 0.55s ease 0.3s;
+    }
+    .scene.active .eyebrow { opacity: 1; transform: translateY(0); }
+
+    .headline {
+      font-size: clamp(2rem, 7vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s;
+      max-width: 900px;
+    }
+    .scene.active .headline { opacity: 1; transform: translateY(0); }
+
+    .tagline {
+      font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+      color: var(--muted);
+      font-weight: 500;
+      text-align: center;
+      max-width: 620px;
+      margin-top: 16px;
+      line-height: 1.55;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease 0.75s, transform 0.6s ease 0.75s;
+    }
+    .scene.active .tagline { opacity: 1; transform: translateY(0); }
+
+    /* ── Brand colours ─────────────────────────────────────────────── */
+    .c-blue   { color: var(--blue);   text-shadow: 0 0 22px rgba(136,204,255,.65); }
+    .c-orange { color: var(--orange); text-shadow: 0 0 20px rgba(255,136,68,.6);  }
+    .c-green  { color: var(--green);  text-shadow: 0 0 22px rgba(0,255,136,.65);  }
+    .c-purple { color: var(--purple); text-shadow: 0 0 20px rgba(192,132,252,.6); }
+    .c-red    { color: var(--red);    text-shadow: 0 0 20px rgba(255,68,85,.6);   }
+    .c-yellow { color: var(--yellow); text-shadow: 0 0 18px rgba(255,208,96,.55); }
+
+    /* ── Logo wordmark ─────────────────────────────────────────────── */
+    .wordmark {
+      font-size: clamp(3rem, 11vw, 7rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      display: flex;
+      gap: 0;
+      filter: drop-shadow(0 0 30px rgba(40,255,190,.35));
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.7s ease 0.2s, transform 0.7s cubic-bezier(.34,1.56,.64,1) 0.2s;
+      line-height: 1;
+    }
+    .scene.active .wordmark { opacity: 1; transform: scale(1); }
+
+    /* ── Feature chips ─────────────────────────────────────────────── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 24px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.55s ease 1s, transform 0.55s ease 1s;
+    }
+    .scene.active .chips { opacity: 1; transform: translateY(0); }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: 1.5px solid;
+    }
+    .chip-blue   { border-color: rgba(136,204,255,.5); color: var(--blue);   background: rgba(136,204,255,.08); }
+    .chip-green  { border-color: rgba(0,255,136,.4);  color: var(--green);  background: rgba(0,255,136,.07);  }
+    .chip-orange { border-color: rgba(255,136,68,.45); color: var(--orange); background: rgba(255,136,68,.07); }
+    .chip-purple { border-color: rgba(192,132,252,.45);color: var(--purple); background: rgba(192,132,252,.07);}
+    .chip-red    { border-color: rgba(255,68,85,.45);  color: var(--red);    background: rgba(255,68,85,.07);  }
+
+    /* ── CTA buttons ────────────────────────────────────────────────── */
+    .cta-wrap {
+      margin-top: 32px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 1.1s, transform 0.55s ease 1.1s;
+    }
+    .scene.active .cta-wrap { opacity: 1; transform: translateY(0); }
+    .btn-primary {
+      display: inline-block;
+      padding: 14px 34px;
+      border-radius: 100px;
+      font-weight: 800;
+      font-size: clamp(0.85rem, 2.5vw, 1rem);
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--green) 100%);
+      color: #050b1f;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 30px rgba(0,255,136,.25), 0 4px 16px rgba(0,0,0,.4);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,255,136,.35), 0 6px 22px rgba(0,0,0,.5); }
+    .btn-secondary {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+      letter-spacing: 0.03em;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid rgba(136,204,255,.4);
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease;
+    }
+    .btn-secondary:hover { border-color: rgba(136,204,255,.8); color: var(--blue); }
+
+    /* ── Progress bar ───────────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      z-index: 100;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px rgba(0,255,136,.6);
+    }
+
+    /* ── Scene dots ─────────────────────────────────────────────────── */
+    #scene-dots {
+      position: fixed;
+      bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px;
+      z-index: 100;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(136,204,255,.25);
+      transition: background 0.3s ease, transform 0.3s ease;
+      cursor: pointer;
+    }
+    .dot.active { background: var(--green); transform: scale(1.3); }
+
+    /* ── Controls ───────────────────────────────────────────────────── */
+    #controls {
+      position: fixed;
+      top: 18px; right: 18px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+    .ctrl-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(13,25,60,.7);
+      border: 1.5px solid rgba(136,204,255,.3);
+      color: var(--blue);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ctrl-btn:hover { background: rgba(20,40,90,.85); border-color: rgba(136,204,255,.65); }
+
+    /* ── Back-to-app link ────────────────────────────────────────────── */
+    #back-link {
+      position: fixed;
+      top: 18px; left: 18px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgba(136,204,255,.55);
+      text-decoration: none;
+      z-index: 100;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.15s ease;
+    }
+    #back-link:hover { color: var(--blue); }
+
+    /* ── Scan line overlay ─────────────────────────────────────────── */
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.04) 3px,
+        rgba(0,0,0,0.04) 4px
+      );
+      opacity: 0.55;
+    }
+
+    /* ── Flare overlay ──────────────────────────────────────────────── */
+    #flare {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.65) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #flare.flash { opacity: 1; transition: none; }
+
+    /* ════════════════════════════════════════════════════════════════
+       SCENE-SPECIFIC COMPONENTS
+    ════════════════════════════════════════════════════════════════ */
+
+    /* ── Scene 0 – subtitle badge ────────────────────────────────── */
+    .sequel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(0,255,136,.4);
+      background: rgba(0,255,136,.07);
+      font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 20px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+    }
+    .scene.active .sequel-badge { opacity: 1; transform: translateY(0); }
+
+    /* ── Arena Battle ────────────────────────────────────────────── */
+    .battle-arena {
+      display: flex;
+      align-items: stretch;
+      gap: clamp(8px, 2vw, 20px);
+      margin-top: 28px;
+      width: 100%;
+      max-width: 820px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease 0.85s, transform 0.6s ease 0.85s;
+    }
+    .scene.active .battle-arena { opacity: 1; transform: translateY(0); }
+
+    .battle-vs {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      gap: 6px;
+    }
+    .vs-label {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 900;
+      color: var(--yellow);
+      text-shadow: 0 0 18px rgba(255,208,96,.55);
+      letter-spacing: 0.02em;
+    }
+    .vs-divider {
+      width: 2px;
+      flex: 1;
+      background: linear-gradient(to bottom, transparent, rgba(255,208,96,.35), transparent);
+      min-height: 40px;
+    }
+
+    .battle-card {
+      flex: 1;
+      background: var(--card);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: clamp(12px, 2.5vw, 20px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .battle-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0.06;
+      background: var(--card-tint, transparent);
+    }
+    .battle-card.card-a { --card-tint: var(--blue); border-color: rgba(136,204,255,.28); }
+    .battle-card.card-b { --card-tint: var(--orange); border-color: rgba(255,136,68,.28); }
+
+    .battle-card-label {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .label-a { color: var(--blue); }
+    .label-b { color: var(--orange); }
+
+    .battle-card-name {
+      font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+      font-weight: 800;
+      color: var(--text);
+    }
+    .battle-card-type {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: -6px;
+    }
+
+    .stat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stat-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .stat-bar-track {
+      flex: 1;
+      height: 5px;
+      background: rgba(255,255,255,.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1.5s cubic-bezier(.22,1,.36,1) 1.2s;
+      width: 0%;
+    }
+    .scene.active .stat-bar-fill { width: var(--fill-w, 50%); }
+    .fill-blue   { background: linear-gradient(90deg, rgba(136,204,255,.6), var(--blue)); }
+    .fill-orange { background: linear-gradient(90deg, rgba(255,136,68,.6), var(--orange)); }
+    .fill-green  { background: linear-gradient(90deg, rgba(0,255,136,.6), var(--green)); }
+    .fill-purple { background: linear-gradient(90deg, rgba(192,132,252,.6), var(--purple)); }
+
+    .battle-status {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+    .st-ok      { background: rgba(0,255,136,.14); color: #00ff88; }
+    .st-stress  { background: rgba(255,160,0,.14);  color: #ffa500; }
+    .st-warn    { background: rgba(255,136,68,.14); color: #ff8844; }
+    .st-fail    { background: rgba(255,50,50,.14);  color: #ff5555; }
+    .st-winner  {
+      background: rgba(255,208,96,.18);
+      color: var(--yellow);
+      border: 1px solid rgba(255,208,96,.35);
+      animation: winner-pulse 1.2s ease-in-out infinite 1.8s;
+    }
+
+    @keyframes winner-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,208,96,0); }
+      50%       { box-shadow: 0 0 12px 3px rgba(255,208,96,.3); }
+    }
+
+    /* ── Practice Challenge ──────────────────────────────────────── */
+    .challenge-ui {
+      width: 100%;
+      max-width: 700px;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease 0.8s, transform 0.6s ease 0.8s;
+    }
+    .scene.active .challenge-ui { opacity: 1; transform: translateY(0); }
+
+    .challenge-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .challenge-title {
+      font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+      font-weight: 800;
+      color: var(--text);
+    }
+    .challenge-meta {
+      display: flex;
+      gap: 10px;
+    }
+    .meta-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .badge-diff  { background: rgba(192,132,252,.14); color: var(--purple); }
+    .badge-topic { background: rgba(136,204,255,.12); color: var(--blue); }
+
+    .circuit-diagram {
+      background: var(--card);
+      border: 1.5px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(6px, 2vw, 16px);
+      flex-wrap: wrap;
+      backdrop-filter: blur(8px);
+    }
+
+    .cdiag-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .cdiag-box {
+      width: clamp(44px, 8vw, 60px);
+      height: clamp(36px, 6vw, 48px);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.75rem, 2vw, 0.9rem);
+      font-weight: 800;
+      border: 1.5px solid;
+    }
+    .cdiag-label {
+      font-size: clamp(0.58rem, 1.4vw, 0.68rem);
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+    }
+    .cdiag-wire {
+      display: flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: 1.2rem;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+    /* Live current indicator on wire */
+    .wire-current {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .wire-dot {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: wire-travel 1.4s linear infinite;
+    }
+    @keyframes wire-travel {
+      0%   { left: -4px; opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { left: calc(100% + 4px); opacity: 0; }
+    }
+
+    .answer-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .answer-label {
+      font-size: clamp(0.8rem, 2vw, 0.95rem);
+      font-weight: 700;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+    .answer-input {
+      flex: 1;
+      min-width: 140px;
+      background: rgba(255,255,255,.05);
+      border: 1.5px solid rgba(136,204,255,.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--green);
+      font-size: clamp(0.85rem, 2.2vw, 1rem);
+      font-weight: 700;
+      font-family: "Inter", monospace;
+      outline: none;
+      cursor: default;
+    }
+    .answer-input.filled {
+      border-color: rgba(0,255,136,.5);
+      background: rgba(0,255,136,.06);
+      animation: correct-flash 0.4s ease 2.4s both;
+    }
+    @keyframes correct-flash {
+      0%   { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+      50%  { box-shadow: 0 0 18px 4px rgba(0,255,136,.35); }
+      100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    }
+    .answer-unit {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .ohms-hint {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(13,25,60,.65);
+      border: 1.5px solid rgba(255,255,255,.07);
+      border-radius: 12px;
+      padding: 12px 18px;
+      backdrop-filter: blur(6px);
+    }
+    .ohms-formula {
+      font-size: clamp(1rem, 3vw, 1.4rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+    .ohms-sep {
+      width: 1px; height: 32px;
+      background: rgba(255,255,255,.12);
+      flex-shrink: 0;
+    }
+    .ohms-breakdown {
+      font-size: clamp(0.62rem, 1.6vw, 0.75rem);
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .timer-bar {
+      height: 4px;
+      background: rgba(255,255,255,.07);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .timer-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      width: 100%;
+      transition: width 7s linear 1s;
+    }
+    .scene.active .timer-fill { width: 28%; }
+
+    /* streak badge */
+    .streak-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(255,208,96,.4);
+      background: rgba(255,208,96,.08);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: var(--yellow);
+    }
+
+    /* ── FUSE Event ──────────────────────────────────────────────── */
+    .fuse-event-panel {
+      width: 100%;
+      max-width: 740px;
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease 0.8s, transform 0.6s ease 0.8s;
+    }
+    .scene.active .fuse-event-panel { opacity: 1; transform: translateY(0); }
+
+    .fuse-ev-card {
+      background: var(--card);
+      border: 1.5px solid rgba(255,255,255,.09);
+      border-radius: 13px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+    }
+    .fuse-ev-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--ev-tint, transparent);
+      opacity: 0;
+      border-radius: inherit;
+      transition: opacity 1s ease var(--ev-delay, 0s);
+    }
+    .scene.active .fuse-ev-card::after { opacity: 1; }
+
+    .ev-smoke  { --ev-tint: radial-gradient(circle at 50% 0%, rgba(100,100,100,.18) 0%, transparent 70%); --ev-delay: 1s; }
+    .ev-arc    { --ev-tint: radial-gradient(circle at 50% 0%, rgba(136,204,255,.18) 0%, transparent 70%); --ev-delay: 1.2s; }
+    .ev-flame  { --ev-tint: radial-gradient(circle at 50% 0%, rgba(255,80,0,.22) 0%, transparent 70%);   --ev-delay: 1.4s; }
+    .ev-explode{ --ev-tint: radial-gradient(circle at 50% 0%, rgba(255,50,50,.22) 0%, transparent 70%);  --ev-delay: 1.6s; }
+
+    .ev-tag {
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 4px;
+      margin-bottom: 7px;
+      display: inline-block;
+    }
+    .ev-smoke-t  { background: rgba(150,150,150,.18); color: #aaa; }
+    .ev-arc-t    { background: rgba(136,204,255,.16); color: var(--blue); }
+    .ev-flame-t  { background: rgba(255,120,0,.16);   color: #ff8022; }
+    .ev-explode-t{ background: rgba(255,50,50,.16);   color: var(--red); }
+
+    .ev-name {
+      font-size: clamp(0.82rem, 2vw, 0.98rem);
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .ev-desc {
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .ev-icon {
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+      display: block;
+      animation: none;
+    }
+    .scene.active .ev-smoke  .ev-icon { animation: float-icon 2s ease-in-out infinite 1s; }
+    .scene.active .ev-arc    .ev-icon { animation: flicker 0.18s linear infinite 1.2s; }
+    .scene.active .ev-flame  .ev-icon { animation: float-icon 1.1s ease-in-out infinite 1.4s; }
+    .scene.active .ev-explode .ev-icon{ animation: shake 0.15s linear infinite 1.6s, fade-in-icon 0.4s ease 1.6s both; }
+
+    @keyframes float-icon  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes flicker     { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @keyframes shake       { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+    @keyframes fade-in-icon{ from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+
+    /* thermal bar */
+    .thermal-row {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .thermal-label {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .thermal-track {
+      height: 4px;
+      background: rgba(255,255,255,.07);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .thermal-fill {
+      height: 100%;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 1.8s cubic-bezier(.22,1,.36,1) var(--t-delay, 1s);
+    }
+    .scene.active .thermal-fill { width: var(--t-w, 50%); }
+    .tf-safe    { background: linear-gradient(90deg, #00cc66, #00ff88); --t-w: 32%; --t-delay: 1s; }
+    .tf-med     { background: linear-gradient(90deg, #cc8800, #ffa500); --t-w: 74%; --t-delay: 1.2s; }
+    .tf-high    { background: linear-gradient(90deg, #cc4400, #ff8022); --t-w: 91%; --t-delay: 1.4s; }
+    .tf-over    { background: linear-gradient(90deg, #aa0000, #ff4455); --t-w: 100%; --t-delay: 1.6s; }
+
+    /* ── Zoom tiers (Scene 4) ─────────────────────────────────────── */
+    .zoom-showcase {
+      display: flex;
+      gap: clamp(8px, 2vw, 20px);
+      margin-top: 28px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.9s;
+    }
+    .scene.active .zoom-showcase { opacity: 1; }
+    .zoom-tier {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .zoom-orb {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .zoom-orb::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      opacity: 0.35;
+    }
+    .zoom-label {
+      font-size: clamp(0.55rem, 1.5vw, 0.72rem);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .tier-arrow {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--muted);
+      opacity: 0.5;
+      margin-bottom: 12px;
+      align-self: center;
+    }
+
+    /* zoom depth indicator */
+    .zoom-depth-bar {
+      width: 100%;
+      max-width: 520px;
+      margin-top: 18px;
+      opacity: 0;
+      transition: opacity 0.6s ease 1.1s;
+    }
+    .scene.active .zoom-depth-bar { opacity: 1; }
+    .zoom-depth-track {
+      height: 6px;
+      background: rgba(255,255,255,.07);
+      border-radius: 3px;
+      position: relative;
+      overflow: visible;
+    }
+    .zoom-depth-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--blue), var(--purple), var(--green));
+      width: 0%;
+      transition: width 2s cubic-bezier(.22,1,.36,1) 1.3s;
+    }
+    .scene.active .zoom-depth-fill { width: 100%; }
+    .zoom-depth-cursor {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 12px var(--green);
+      right: 0%;
+      transition: right 2s cubic-bezier(.22,1,.36,1) 1.3s;
+    }
+    .scene.active .zoom-depth-cursor { right: 0%; }
+    .zoom-depth-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+    .zdl {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Classroom / Community (Scene 5) ─────────────────────────── */
+    .feat-duo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      max-width: 760px;
+      width: 100%;
+      margin-top: 24px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease 0.85s, transform 0.6s ease 0.85s;
+    }
+    .scene.active .feat-duo { opacity: 1; transform: translateY(0); }
+    @media (max-width: 480px) { .feat-duo { grid-template-columns: 1fr; } }
+
+    .feat-block {
+      background: var(--card);
+      border: 1.5px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 18px 20px;
+      backdrop-filter: blur(8px);
+    }
+    .feat-block-icon { font-size: 1.7rem; margin-bottom: 10px; display: block; }
+    .feat-block-name { font-size: clamp(0.88rem, 2.2vw, 1rem); font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .feat-block-desc { font-size: 0.7rem; color: var(--muted); line-height: 1.45; }
+
+    .feat-list {
+      list-style: none;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .feat-list li {
+      font-size: 0.68rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .feat-list li::before {
+      content: '▸';
+      color: var(--green);
+      font-size: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    /* ── Responsive: hide battle-arena's full detail on tiny screens ── */
+    @media (max-width: 420px) {
+      .fuse-event-panel { grid-template-columns: 1fr; }
+      .battle-arena { flex-direction: column; }
+      .vs-divider { display: none; }
+      .vs-label { writing-mode: initial; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div id="scanlines"></div>
+  <div id="flare"></div>
+
+  <!-- Back link -->
+  <a id="back-link" href="/#/" target="_top">← CircuiTry3D</a>
+
+  <!-- Controls -->
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-prev" title="Previous scene">&#8592;</button>
+    <button class="ctrl-btn" id="btn-play" title="Pause/Play">&#10074;&#10074;</button>
+    <button class="ctrl-btn" id="btn-next" title="Next scene">&#8594;</button>
+  </div>
+
+  <!-- Progress bar -->
+  <div id="progress-bar" style="width:0%"></div>
+
+  <!-- Scene dots -->
+  <div id="scene-dots"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SCENES                                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div id="stage">
+
+    <!-- ─── SCENE 0 · "What's New" Intro ─────────────────────────── -->
+    <div class="scene" id="scene-0">
+      <div class="sequel-badge">&#9654; What's New in CircuiTry3D</div>
+      <div class="wordmark">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="font-size:clamp(1rem,3vw,1.35rem); font-weight:300; margin-top:20px;">
+        Arena&nbsp;Battles &nbsp;·&nbsp; Practice&nbsp;Challenges &nbsp;·&nbsp; FUSE™&nbsp;Events
+        <br>
+        <span style="color:rgba(136,204,255,.4); font-size:0.78em;">More gameplay. More explosions. More electrons.</span>
+      </p>
+    </div>
+
+    <!-- ─── SCENE 1 · Arena Battle ────────────────────────────────── -->
+    <div class="scene" id="scene-1">
+      <p class="eyebrow">Component Arena · Battle Mode</p>
+      <h1 class="headline">
+        Pick Your&nbsp;<span class="c-orange">Fighter</span>
+      </h1>
+      <p class="tagline">
+        Load two components side-by-side in Compare&nbsp;mode. Apply voltage, crank the current,
+        and watch FUSE™ decide who survives.
+      </p>
+
+      <div class="battle-arena">
+        <!-- Card A -->
+        <div class="battle-card card-a">
+          <span class="battle-card-label label-a">Component A</span>
+          <div class="battle-card-name">Metal-Film Resistor</div>
+          <div class="battle-card-type">R = 4.7 kΩ · 0.5 W</div>
+          <div class="stat-row">
+            <div class="stat-item">
+              <span class="stat-label">Power</span>
+              <div class="stat-bar-track"><div class="stat-bar-fill fill-blue" style="--fill-w:38%"></div></div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Temp</span>
+              <div class="stat-bar-track"><div class="stat-bar-fill fill-green" style="--fill-w:45%"></div></div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Stress</span>
+              <div class="stat-bar-track"><div class="stat-bar-fill fill-blue" style="--fill-w:30%"></div></div>
+            </div>
+          </div>
+          <span class="battle-status st-ok">Stable</span>
+          <span class="battle-status st-winner" style="margin-top:4px;">🏆 Winner</span>
+        </div>
+
+        <!-- VS divider -->
+        <div class="battle-vs">
+          <div class="vs-divider"></div>
+          <span class="vs-label">VS</span>
+          <div class="vs-divider"></div>
+        </div>
+
+        <!-- Card B -->
+        <div class="battle-card card-b">
+          <span class="battle-card-label label-b">Component B</span>
+          <div class="battle-card-name">Carbon Comp Resistor</div>
+          <div class="battle-card-type">R = 4.7 kΩ · 0.25 W</div>
+          <div class="stat-row">
+            <div class="stat-item">
+              <span class="stat-label">Power</span>
+              <div class="stat-bar-track"><div class="stat-bar-fill fill-orange" style="--fill-w:92%"></div></div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Temp</span>
+              <div class="stat-bar-track"><div class="stat-bar-fill fill-orange" style="--fill-w:88%"></div></div>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Stress</span>
+              <div class="stat-bar-track"><div class="stat-bar-fill fill-orange" style="--fill-w:100%"></div></div>
+            </div>
+          </div>
+          <span class="battle-status st-warn">Overloaded</span>
+          <span class="battle-status st-fail" style="margin-top:4px;">💥 Failed</span>
+        </div>
+      </div>
+
+      <div class="chips" style="margin-top:18px;">
+        <span class="chip chip-blue">Compare A&nbsp;vs&nbsp;B</span>
+        <span class="chip chip-orange">FUSE™ Live&nbsp;Analysis</span>
+        <span class="chip chip-green">Real-Time&nbsp;Stats</span>
+      </div>
+    </div>
+
+    <!-- ─── SCENE 2 · Practice Challenge ─────────────────────────── -->
+    <div class="scene" id="scene-2">
+      <p class="eyebrow">Practice Section · Ohm's Law Challenges</p>
+      <h1 class="headline" style="font-size:clamp(1.8rem,5.5vw,3.8rem);">
+        Solve the&nbsp;<span class="c-blue">Circuit</span>
+      </h1>
+
+      <div class="challenge-ui">
+        <div class="challenge-header">
+          <span class="challenge-title">Find the current through R₂</span>
+          <div class="challenge-meta">
+            <span class="meta-badge badge-diff">Intermediate</span>
+            <span class="meta-badge badge-topic">Series / Parallel</span>
+          </div>
+        </div>
+
+        <!-- Circuit diagram mockup -->
+        <div class="circuit-diagram">
+          <div class="cdiag-node">
+            <div class="cdiag-box" style="background:rgba(0,255,136,.09); border-color:rgba(0,255,136,.35); color:var(--green);">9V</div>
+            <div class="cdiag-label">Battery</div>
+          </div>
+          <div class="cdiag-wire wire-current" style="position:relative; width:clamp(20px,4vw,40px);">
+            <div style="width:100%; height:2px; background:rgba(136,204,255,.3); border-radius:1px;"></div>
+            <div class="wire-dot"></div>
+          </div>
+          <div class="cdiag-node">
+            <div class="cdiag-box" style="background:rgba(136,204,255,.09); border-color:rgba(136,204,255,.35); color:var(--blue);">R₁<br><span style="font-size:.75em;font-weight:600;">1kΩ</span></div>
+            <div class="cdiag-label">Resistor 1</div>
+          </div>
+          <div class="cdiag-wire" style="width:clamp(20px,4vw,40px);">
+            <div style="width:100%; height:2px; background:rgba(136,204,255,.3); border-radius:1px;"></div>
+          </div>
+          <div class="cdiag-node">
+            <div class="cdiag-box" style="background:rgba(192,132,252,.09); border-color:rgba(192,132,252,.35); color:var(--purple);">R₂<br><span style="font-size:.75em;font-weight:600;">2kΩ</span></div>
+            <div class="cdiag-label">Resistor 2</div>
+          </div>
+          <div class="cdiag-wire" style="width:clamp(20px,4vw,40px);">
+            <div style="width:100%; height:2px; background:rgba(136,204,255,.3); border-radius:1px;"></div>
+          </div>
+          <div class="cdiag-node">
+            <div class="cdiag-box" style="background:rgba(255,136,68,.09); border-color:rgba(255,136,68,.35); color:var(--orange);">LED</div>
+            <div class="cdiag-label">2.0 V fwd</div>
+          </div>
+        </div>
+
+        <div class="answer-row">
+          <span class="answer-label">I = V / R<sub>total</sub> =</span>
+          <div class="answer-input filled">2.33</div>
+          <span class="answer-unit">mA</span>
+          <span class="streak-badge">🔥 7-streak</span>
+        </div>
+
+        <div class="ohms-hint">
+          <span class="ohms-formula"><span class="c-blue">V</span> = <span class="c-orange">I</span> × <span class="c-green">R</span></span>
+          <div class="ohms-sep"></div>
+          <div class="ohms-breakdown">
+            V = 9 V, R₁+R₂ = 3 kΩ<br>
+            I = (9 − 2.0) / 3000 ≈ <strong style="color:var(--green);">2.33 mA</strong>
+          </div>
+        </div>
+
+        <div class="timer-bar"><div class="timer-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- ─── SCENE 3 · FUSE Event Showcase ────────────────────────── -->
+    <div class="scene" id="scene-3">
+      <p class="eyebrow">FUSE™ Failure Engine · Event Gallery</p>
+      <h1 class="headline">
+        <span class="c-red">Fail</span>&nbsp;is a&nbsp;<span class="c-green">Feature</span>
+      </h1>
+      <p class="tagline">
+        FUSE™ renders four distinct failure modes in real time — each driven by actual
+        thermal and electrical physics, not canned animations.
+      </p>
+
+      <div class="fuse-event-panel">
+        <!-- Smoke -->
+        <div class="fuse-ev-card ev-smoke">
+          <span class="ev-tag ev-smoke-t">Smoke</span>
+          <span class="ev-icon">💨</span>
+          <div class="ev-name">Thermal Runaway</div>
+          <div class="ev-desc">Steady overpower dissipation heats the package. Smoke particles stream upward from the hotspot.</div>
+          <div class="thermal-row">
+            <div class="thermal-label">Temp rise</div>
+            <div class="thermal-track"><div class="thermal-fill tf-med"></div></div>
+          </div>
+        </div>
+        <!-- Arc -->
+        <div class="fuse-ev-card ev-arc">
+          <span class="ev-tag ev-arc-t">Arc Flash</span>
+          <span class="ev-icon">⚡</span>
+          <div class="ev-name">Dielectric Breakdown</div>
+          <div class="ev-desc">Voltage spike ionises air between terminals. Blue-white spark channels flicker at kHz rate.</div>
+          <div class="thermal-row">
+            <div class="thermal-label">Peak V</div>
+            <div class="thermal-track"><div class="thermal-fill tf-high"></div></div>
+          </div>
+        </div>
+        <!-- Flame -->
+        <div class="fuse-ev-card ev-flame">
+          <span class="ev-tag ev-flame-t">Flame</span>
+          <span class="ev-icon">🔥</span>
+          <div class="ev-name">Ignition</div>
+          <div class="ev-desc">Sustained overcurrent past thermal mass limit ignites the component body. Orange flame particles rise and fade.</div>
+          <div class="thermal-row">
+            <div class="thermal-label">Energy</div>
+            <div class="thermal-track"><div class="thermal-fill tf-high"></div></div>
+          </div>
+        </div>
+        <!-- Explosion -->
+        <div class="fuse-ev-card ev-explode">
+          <span class="ev-tag ev-explode-t">Explosion</span>
+          <span class="ev-icon">💥</span>
+          <div class="ev-name">Catastrophic Failure</div>
+          <div class="ev-desc">Shockwave + debris burst triggered when energy exceeds critical limit. Shards scatter across the arena floor.</div>
+          <div class="thermal-row">
+            <div class="thermal-label">Severity</div>
+            <div class="thermal-track"><div class="thermal-fill tf-over"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SCENE 4 · Multi-Scale Zoom ───────────────────────────── -->
+    <div class="scene" id="scene-4">
+      <p class="eyebrow">Multi-Scale Visualisation · 5 Zoom Tiers</p>
+      <h1 class="headline">
+        From&nbsp;<span class="c-blue">Circuit</span>&nbsp;to&nbsp;<span class="c-purple">Quantum</span>
+      </h1>
+      <p class="tagline">
+        Scroll into a wire and watch the view transform — current ribbons,
+        FCC metal lattice, electron probability clouds, and beyond.
+      </p>
+
+      <div class="zoom-showcase">
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(48px,8vw,68px);height:clamp(48px,8vw,68px);background:rgba(136,204,255,.12);color:var(--blue);">⚡</div>
+          <div class="zoom-label" style="color:var(--blue);">Macro</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(40px,6.5vw,58px);height:clamp(40px,6.5vw,58px);background:rgba(0,255,136,.1);color:var(--green);">〰</div>
+          <div class="zoom-label" style="color:var(--green);">Close</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(34px,5.5vw,50px);height:clamp(34px,5.5vw,50px);background:rgba(255,136,68,.1);color:var(--orange);">⬡</div>
+          <div class="zoom-label" style="color:var(--orange);">Atomic</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(28px,4.5vw,42px);height:clamp(28px,4.5vw,42px);background:rgba(192,132,252,.1);color:var(--purple);">◉</div>
+          <div class="zoom-label" style="color:var(--purple);">Deep</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(22px,3.5vw,34px);height:clamp(22px,3.5vw,34px);background:rgba(255,255,255,.06);color:#fff;">∿</div>
+          <div class="zoom-label" style="color:#888;">Quantum</div>
+        </div>
+      </div>
+
+      <div class="zoom-depth-bar">
+        <div class="zoom-depth-track">
+          <div class="zoom-depth-fill"></div>
+        </div>
+        <div class="zoom-depth-labels">
+          <span class="zdl">d &gt; 8</span>
+          <span class="zdl">3–8</span>
+          <span class="zdl">0.8–3</span>
+          <span class="zdl">0.3–0.8</span>
+          <span class="zdl">d &lt; 0.3</span>
+        </div>
+      </div>
+
+      <div class="chips" style="margin-top:18px;">
+        <span class="chip chip-blue">FCC Lattice</span>
+        <span class="chip chip-purple">Probability Clouds</span>
+        <span class="chip chip-green">Electron Drift</span>
+        <span class="chip chip-orange">Orbital Rings</span>
+      </div>
+    </div>
+
+    <!-- ─── SCENE 5 · Classroom + Community ─────────────────────── -->
+    <div class="scene" id="scene-5">
+      <p class="eyebrow">Learn Together · Teach Smarter</p>
+      <h1 class="headline" style="font-size:clamp(1.8rem,5.5vw,3.8rem);">
+        <span class="c-green">Classroom</span>&nbsp;&amp;&nbsp;<span class="c-purple">Community</span>
+      </h1>
+      <p class="tagline">
+        Assign live circuit labs to an entire class in seconds. Share your builds
+        publicly and fork circuits from peers around the world.
+      </p>
+
+      <div class="feat-duo">
+        <div class="feat-block">
+          <span class="feat-block-icon">🎓</span>
+          <div class="feat-block-name">Classroom Mode</div>
+          <div class="feat-block-desc">Built for educators and students alike.</div>
+          <ul class="feat-list">
+            <li>Assign practice problems with one click</li>
+            <li>Live progress dashboard for every student</li>
+            <li>Auto-graded circuit labs</li>
+            <li>Adaptive difficulty — meets each learner</li>
+          </ul>
+        </div>
+        <div class="feat-block">
+          <span class="feat-block-icon">🌐</span>
+          <div class="feat-block-name">Community Hub</div>
+          <div class="feat-block-desc">Share, fork, and learn from the global network.</div>
+          <ul class="feat-list">
+            <li>Publish your circuits publicly</li>
+            <li>Fork and remix any shared build</li>
+            <li>Leaderboards &amp; streaks</li>
+            <li>Upvote favourite designs</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="chips" style="margin-top:18px;">
+        <span class="chip chip-purple">Adaptive&nbsp;Practice</span>
+        <span class="chip chip-blue">Lab&nbsp;Reports</span>
+        <span class="chip chip-green">W.I.R.E.&nbsp;Table</span>
+        <span class="chip chip-orange">Schematic&nbsp;Auto-gen</span>
+      </div>
+    </div>
+
+    <!-- ─── SCENE 6 · Outro / CTA ─────────────────────────────────── -->
+    <div class="scene" id="scene-6">
+      <div class="wordmark">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="font-size:clamp(1rem,2.8vw,1.3rem); margin-top:18px;">
+        More gameplay. More depth. More&nbsp;<span class="c-orange">explosions</span>.<br>
+        <span style="color:rgba(136,204,255,.45); font-size:0.82em;">
+          The most powerful circuit learning platform — now with Arena&nbsp;Battle &amp; Practice.
+        </span>
+      </p>
+      <div class="cta-wrap">
+        <a class="btn-primary" href="/#/app" target="_top">Launch&nbsp;Builder</a>
+        <a class="btn-secondary" href="/#/arena" target="_top">Open&nbsp;Arena</a>
+        <a class="btn-secondary" href="/#/practice" target="_top">Practice</a>
+      </div>
+    </div>
+
+  </div><!-- /#stage -->
+
+  <script>
+  (() => {
+    "use strict";
+
+    /* ── Constants ──────────────────────────────────────────────────── */
+    const SCENE_COUNT = 7;
+    const SCENE_MS    = 7000;   // ms each scene stays visible
+    const TRANSIT_MS  = 700;    // CSS fade duration
+
+    /* ── State ──────────────────────────────────────────────────────── */
+    let currentScene = 0;
+    let playing      = true;
+    let timerId      = null;
+    let progressRaf  = null;
+    let sceneStart   = performance.now();
+
+    /* ── DOM helpers ────────────────────────────────────────────────── */
+    const stages  = /** @type {HTMLElement[]} */ (Array.from(document.querySelectorAll(".scene")));
+    const dotsEl  = document.getElementById("scene-dots");
+    const progBar = document.getElementById("progress-bar");
+    const btnPlay = document.getElementById("btn-play");
+    const flare   = document.getElementById("flare");
+
+    /* ── Build navigation dots ──────────────────────────────────────── */
+    for (let i = 0; i < SCENE_COUNT; i++) {
+      const d = document.createElement("div");
+      d.className = "dot" + (i === 0 ? " active" : "");
+      d.addEventListener("click", () => goTo(i, true));
+      dotsEl.appendChild(d);
+    }
+    function getDots() { return /** @type {HTMLDivElement[]} */ (Array.from(dotsEl.querySelectorAll(".dot"))); }
+
+    /* ── Flash transition ────────────────────────────────────────────── */
+    function triggerFlare() {
+      flare.classList.add("flash");
+      requestAnimationFrame(() => requestAnimationFrame(() => flare.classList.remove("flash")));
+    }
+
+    /* ── Go to scene ─────────────────────────────────────────────────── */
+    function goTo(idx, resetTimer = false) {
+      const prev = currentScene;
+      currentScene = (idx + SCENE_COUNT) % SCENE_COUNT;
+      stages[prev].classList.remove("active");
+      stages[currentScene].classList.add("active");
+      getDots().forEach((d, i) => d.classList.toggle("active", i === currentScene));
+      triggerFlare();
+      if (resetTimer) {
+        clearTimeout(timerId);
+        sceneStart = performance.now();
+        if (playing) scheduleNext();
+      }
+    }
+
+    /* ── Advance ──────────────────────────────────────────────────────── */
+    function advance() {
+      goTo(currentScene + 1);
+      sceneStart = performance.now();
+      if (playing) scheduleNext();
+    }
+    function scheduleNext() {
+      clearTimeout(timerId);
+      timerId = setTimeout(advance, SCENE_MS);
+    }
+
+    /* ── Progress bar ─────────────────────────────────────────────────── */
+    function tickProgress() {
+      if (playing) {
+        const elapsed = performance.now() - sceneStart;
+        progBar.style.width = Math.min(100, (elapsed / SCENE_MS) * 100) + "%";
+      }
+      progressRaf = requestAnimationFrame(tickProgress);
+    }
+
+    /* ── Play / Pause ────────────────────────────────────────────────── */
+    function togglePlay() {
+      playing = !playing;
+      btnPlay.innerHTML = playing ? "&#10074;&#10074;" : "&#9654;";
+      if (playing) {
+        sceneStart = performance.now() - (parseFloat(progBar.style.width) / 100) * SCENE_MS;
+        scheduleNext();
+      } else {
+        clearTimeout(timerId);
+      }
+    }
+
+    /* ── Button / keyboard controls ────────────────────────────────── */
+    document.getElementById("btn-prev").addEventListener("click", () => goTo(currentScene - 1, true));
+    document.getElementById("btn-next").addEventListener("click", () => goTo(currentScene + 1, true));
+    btnPlay.addEventListener("click", togglePlay);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") goTo(currentScene + 1, true);
+      if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   goTo(currentScene - 1, true);
+      if (e.key === " " || e.key === "k") { e.preventDefault(); togglePlay(); }
+    });
+
+    /* ── Boot ────────────────────────────────────────────────────────── */
+    stages[0].classList.add("active");
+    scheduleNext();
+    tickProgress();
+
+    /* ══════════════════════════════════════════════════════════════════
+       BACKGROUND CANVAS — animated circuit field (same style as promo)
+    ══════════════════════════════════════════════════════════════════ */
+    const canvas = document.getElementById("bg-canvas");
+    const ctx    = canvas.getContext("2d");
+
+    let W, H;
+    const MAX_PARTICLES = 260;
+    const particles     = [];
+    const NODE_COUNT    = 32;
+    const nodes         = [];
+    let   globalTime    = 0;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth  * (window.devicePixelRatio || 1);
+      H = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+      canvas.style.width  = window.innerWidth  + "px";
+      canvas.style.height = window.innerHeight + "px";
+      buildNodes();
+    }
+    window.addEventListener("resize", resize);
+
+    const COLORS = [
+      "rgba(136,204,255,",
+      "rgba(0,255,136,",
+      "rgba(255,136,68,",
+      "rgba(192,132,252,",
+    ];
+
+    function buildNodes() {
+      nodes.length = 0;
+      for (let i = 0; i < NODE_COUNT; i++) {
+        nodes.push({
+          x:     Math.random() * W,
+          y:     Math.random() * H,
+          vx:    (Math.random() - 0.5) * 0.18,
+          vy:    (Math.random() - 0.5) * 0.18,
+          r:     Math.random() * 3 + 1.5,
+          phase: Math.random() * Math.PI * 2,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        });
+      }
+    }
+
+    function spawnParticle(a, b) {
+      if (particles.length >= MAX_PARTICLES) return;
+      particles.push({ x: a.x, y: a.y, tx: b.x, ty: b.y, t: 0,
+        speed: Math.random() * 0.012 + 0.006,
+        size:  Math.random() * 2.5 + 1,
+        color: a.color, trail: [] });
+    }
+
+    function draw() {
+      globalTime += 0.008;
+      ctx.clearRect(0, 0, W, H);
+
+      const grad = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, W * 0.75);
+      grad.addColorStop(0,   "rgba(15,30,80,0.55)");
+      grad.addColorStop(0.5, "rgba(4,10,30,0.65)");
+      grad.addColorStop(1,   "rgba(3,7,22,0.8)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      });
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > W * 0.26) continue;
+          const alpha = (1 - dist / (W * 0.26)) * 0.22;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[i].x, nodes[j].y);          /* L-shaped: go vertical first, then horizontal */
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = nodes[i].color + alpha + ")";
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+          if (Math.random() < 0.0018) spawnParticle(nodes[i], nodes[j]);
+        }
+      }
+
+      nodes.forEach(n => {
+        const pulse = 0.6 + 0.4 * Math.sin(globalTime * 1.8 + n.phase);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + (0.55 * pulse) + ")";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse * 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + (0.06 * pulse) + ")";
+        ctx.fill();
+      });
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.t += p.speed;
+        if (p.t >= 1) { particles.splice(i, 1); continue; }
+        let px, py;
+        if (p.t < 0.5) {
+          px = p.x; py = p.y + (p.ty - p.y) * (p.t * 2);
+        } else {
+          px = p.x + (p.tx - p.x) * ((p.t - 0.5) * 2); py = p.ty;
+        }
+        p.trail.push({ x: px, y: py });
+        if (p.trail.length > 10) p.trail.shift();
+        p.trail.forEach((pt, ti) => {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, p.size * (ti / p.trail.length), 0, Math.PI * 2);
+          ctx.fillStyle = p.color + (ti / p.trail.length) * 0.5 + ")";
+          ctx.fill();
+        });
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + "0.9)";
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+  })();
+  </script>
+</body>
+</html>
