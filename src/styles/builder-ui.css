@@ -792,7 +792,7 @@ body.builder-body {
    matching the pattern used by .workspace-edge-actions--right. */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(108px + var(--builder-safe-area-top));
+  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: var(--z-builder-toolbar);
   display: flex;
@@ -845,7 +845,7 @@ body.builder-body {
    ─────────────────────────────────────────────────────────────────────── */
 .quick-add-bar {
   position: fixed;
-  top: calc(108px + var(--builder-safe-area-top));
+  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-builder-floats);
@@ -1517,8 +1517,10 @@ body.builder-body {
   gap: 8px;
 }
 
-.builder-panel-overlay--arena .arena-page {
+.builder-panel-overlay--arena .arena-page,
+body.builder-body .builder-panel-overlay--arena .arena-page {
   height: 100%;
+  max-height: none;
   display: flex;
   flex-direction: column;
 }
@@ -1528,7 +1530,8 @@ body.builder-body {
   padding-right: 24px;
 }
 
-.builder-panel-overlay--arena .arena-body {
+.builder-panel-overlay--arena .arena-body,
+body.builder-body .builder-panel-overlay--arena .arena-body {
   flex: 1 1 auto;
   min-height: 0;
   max-width: none;
@@ -2780,10 +2783,10 @@ body.builder-body {
     height: var(--builder-ticker-height, 28px);
   }
 
-  /* Ticker bottom at 68+28=96px; position zoom controls and quick-add-bar just below */
+  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
   .circuit-zoom-controls,
   .quick-add-bar {
-    top: calc(100px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 52px + var(--builder-safe-area-top));
   }
 
   .ticker-content {
@@ -2799,10 +2802,10 @@ body.builder-body {
     height: var(--builder-ticker-height, 26px);
   }
 
-  /* Ticker bottom at 64+26=90px; position zoom controls and quick-add-bar just below */
+  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
   .circuit-zoom-controls,
   .quick-add-bar {
-    top: calc(94px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 48px + var(--builder-safe-area-top));
   }
 
   .ticker-content {
@@ -4096,7 +4099,7 @@ body.builder-body {
   /* Ticker is hidden; place zoom controls and quick-add-bar just below the nav bar */
   .circuit-zoom-controls,
   .quick-add-bar {
-    top: calc(56px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
   }
 
   .workspace-mode-bar {

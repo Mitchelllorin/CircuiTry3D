@@ -3632,10 +3632,10 @@
         </div>
     </div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+    <script src="vendor/three.min.js"></script>
     <script>
         if (typeof window.THREE === "undefined") {
-            document.write('<script src="vendor/three.min.js"><\\/script>');
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"><\\/script>');
         }
     </script>
     <script src="js/component-failure-engine.js"></script>
@@ -7944,7 +7944,7 @@ body.android-optimized .zoom-btn {
             const gridSize = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
             
-            gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x333366, 0x111122);
+            gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x4444aa, 0x222244);
             scene.add(gridHelper);
             
             // Fine grid overlay - only on desktop
