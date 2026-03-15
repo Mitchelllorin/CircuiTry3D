@@ -792,7 +792,7 @@ body.builder-body {
    matching the pattern used by .workspace-edge-actions--right. */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(var(--app-mode-bar-height, 54px) + 56px + var(--builder-safe-area-top));
+  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: var(--z-builder-toolbar);
   display: flex;
@@ -845,7 +845,7 @@ body.builder-body {
    ─────────────────────────────────────────────────────────────────────── */
 .quick-add-bar {
   position: fixed;
-  top: calc(var(--app-mode-bar-height, 54px) + 56px + var(--builder-safe-area-top));
+  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-builder-floats);
@@ -2786,7 +2786,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
   .circuit-zoom-controls,
   .quick-add-bar {
-    top: calc(var(--app-mode-bar-height, 54px) + 52px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 52px + var(--builder-safe-area-top));
   }
 
   .ticker-content {
@@ -2805,7 +2805,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
   .circuit-zoom-controls,
   .quick-add-bar {
-    top: calc(var(--app-mode-bar-height, 54px) + 48px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 48px + var(--builder-safe-area-top));
   }
 
   .ticker-content {
@@ -4099,7 +4099,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   /* Ticker is hidden; place zoom controls and quick-add-bar just below the nav bar */
   .circuit-zoom-controls,
   .quick-add-bar {
-    top: calc(var(--app-mode-bar-height, 40px) + 18px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
   }
 
   .workspace-mode-bar {
