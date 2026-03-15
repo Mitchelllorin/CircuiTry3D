@@ -4843,7 +4843,8 @@ body.android-optimized .zoom-btn {
         let lastTouchPos = { x: 0, y: 0 };
         let lastTwoFingerCenter = { x: 0, y: 0 };
         let lastPinchDistance = 0;
-        let lastAtomicMode = false;
+        let lastAtomicMode  = false;
+        let lastQuantumMode = false;
 
         // Mobile detection
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -4933,6 +4934,59 @@ body.android-optimized .zoom-btn {
         // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
         const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
         const PROB_CLOUD_OPACITY      = 0.06;   // base opacity of probability haze
+
+        // ── Quantum zoom tier (deepest — d < ZOOM_QUANTUM) ──────────────────
+        // Below this threshold the view is close enough to resolve individual orbital
+        // subshell structure.  A Fermi-sea backdrop and per-electron orbital lobes are
+        // shown to communicate wave-particle duality and the delocalized electron sea
+        // described by the free-electron (Drude/Sommerfeld) model of conductors.
+        const ZOOM_QUANTUM            = 0.3;    // below: quantum orbital detail active
+
+        // s-orbital corona — semi-transparent outer sphere that "breathes" to represent
+        // the radial probability density |ψ₁ₛ|² of the conduction electron.
+        const CORONA_RADIUS_FACTOR    = 1.9;    // corona sphere radius / particle radius
+        const CORONA_OPACITY          = 0.18;   // resting opacity of corona
+        const CORONA_BREATH_AMP       = 0.10;   // opacity oscillation amplitude
+        const CORONA_BREATH_SPEED     = 0.038;  // radians per globalFlowTime tick
+
+        // p-orbital lobes — dumbbell pair attached to each electron at atomic zoom,
+        // oriented perpendicular to the direction of drift (as in sp hybridisation).
+        // Represents the angular momentum component of conducting-band wave functions.
+        const P_LOBE_RADIUS_FACTOR    = 1.55;   // lobe sphere radius / particle radius
+        const P_LOBE_OFFSET_FACTOR    = 1.6;    // lobe centre distance / particle radius
+        const P_LOBE_OPACITY          = 0.38;   // lobe opacity
+        const P_LOBE_PULSE_SPEED      = 0.045;  // lobe pulsation rate (slightly different from corona)
+
+        // FCC copper lattice — copper crystallises in a face-centred cubic structure
+        // (a = 3.615 Å).  We model one unit cell per lattice site using four fractional
+        // basis positions and stack them along the wire axis, giving each lattice atom
+        // a correct nearest-neighbour environment.
+        const FCC_UNIT_SIZE           = LATTICE_SPACING * 0.95; // scene units per unit cell
+        // FCC basis in (x=along-wire, y=across, z=across) fractional coordinates
+        // [0,0,0], face centres: [½,½,0], [½,0,½], [0,½,½]
+        const FCC_BASIS = [
+            [ 0.0,  0.0,  0.0],
+            [ 0.5,  0.5,  0.0],
+            [ 0.5,  0.0,  0.5],
+            [ 0.0,  0.5,  0.5]
+        ];
+        // Thermal vibration of Cu⁺ ions — increases with Joule heating (∝ current)
+        const LATTICE_VIBRATION_AMP   = 0.016;  // max displacement per axis
+        const LATTICE_VIBRATION_SPEED = 0.09;   // angular frequency per globalFlowTime tick
+
+        // Multi-shell probability cloud — the electron wavefunction has a characteristic
+        // exponential radial decay.  Three concentric cylinder shells approximate the
+        // inner (dense), mid, and outer (sparse) regions of the electron density cloud.
+        const PROB_CLOUD_INNER_FACTOR = 0.45;   // inner shell radius / PROB_CLOUD_RADIUS
+        const PROB_CLOUD_OUTER_FACTOR = 1.75;   // outer shell radius / PROB_CLOUD_RADIUS
+        const PROB_CLOUD_INNER_OP_MUL = 2.8;    // inner shell opacity multiplier
+        const PROB_CLOUD_OUTER_OP_MUL = 0.35;   // outer shell opacity multiplier
+
+        // Fermi-sea backdrop (quantum zoom) — extremely faint diffuse teal glow to
+        // represent the delocalised sea of conduction electrons that fills the metal
+        // even where no individual drift electron is currently shown.
+        const FERMI_SEA_OPACITY       = 0.032;
+        const FERMI_SEA_RADIUS_FACTOR = 1.35;   // Fermi-sea cloud radius / PROB_CLOUD_RADIUS
 
         // Animation micro-constants
         const TANGENT_SAMPLE_DELTA    = 0.01;   // progress offset used to approximate wire tangent
@@ -7093,6 +7147,7 @@ body.android-optimized .zoom-btn {
             globalFlowTime++;
             updateFlowParticles(currentTime);
             updateWireGlows(currentTime);
+            updateLatticeAtoms();
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
 
@@ -7125,10 +7180,12 @@ body.android-optimized .zoom-btn {
         }
 
         function updateFlowParticles(currentTime) {
-            // Re-create particles if atomic mode has changed (threshold crossing)
-            const atomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
-            if (atomicMode !== lastAtomicMode && currentFlowState) {
-                lastAtomicMode = atomicMode;
+            // Re-create particles if atomic or quantum mode has changed (threshold crossing)
+            const atomicMode  = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const quantumMode = cameraDistance < ZOOM_QUANTUM;
+            if ((atomicMode !== lastAtomicMode || quantumMode !== lastQuantumMode) && currentFlowState) {
+                lastAtomicMode  = atomicMode;
+                lastQuantumMode = quantumMode;
                 animateCurrentFlow(currentFlowState);
                 return;
             }
@@ -7145,9 +7202,9 @@ body.android-optimized .zoom-btn {
             }
 
             // Determine zoom tier once per frame
-            const inAtomicZoom = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
-            const inCloseZoom  = cameraDistance < CLOSE_ZOOM_THRESHOLD;
-            const inDeepAtomic = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inAtomicZoom  = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const inCloseZoom   = cameraDistance < CLOSE_ZOOM_THRESHOLD;
+            const inDeepAtomic  = cameraDistance < ZOOM_DEEP_ATOMIC;
 
             // Iterate backwards when removing items to avoid index issues
             for (let i = currentFlowParticles.length - 1; i >= 0; i--) {
@@ -7267,6 +7324,25 @@ body.android-optimized .zoom-btn {
                         }
                     }
 
+                    // ── s-orbital corona breathing (close + atomic zoom) ──────
+                    // The corona opacity oscillates at a frequency slightly offset from
+                    // the main pulse to represent the zero-point quantum fluctuation of
+                    // the electron charge density (|ψ|² time-dependence).
+                    if (wireData.coronaMesh && wireData.coronaMesh.material) {
+                        const coronaSin = Math.sin(globalFlowTime * CORONA_BREATH_SPEED + (wireData.pulsePhase || 0) * 1.3);
+                        wireData.coronaMesh.material.opacity = Math.max(0.03,
+                            Math.min(0.38, CORONA_OPACITY + coronaSin * CORONA_BREATH_AMP));
+                    }
+
+                    // ── p-orbital lobe pulsation (atomic zoom) ────────────────
+                    // The two lobes pulse antiphase (one brightens as the other dims),
+                    // mimicking the angular-momentum precession of the p wave function.
+                    if (wireData.pLobe1?.material && wireData.pLobe2?.material) {
+                        const lobeSin = Math.sin(globalFlowTime * P_LOBE_PULSE_SPEED + (wireData.pulsePhase || 0) * 0.7);
+                        wireData.pLobe1.material.opacity = Math.max(0.05, Math.min(0.65, P_LOBE_OPACITY + lobeSin * 0.18));
+                        wireData.pLobe2.material.opacity = Math.max(0.05, Math.min(0.65, P_LOBE_OPACITY - lobeSin * 0.18));
+                    }
+
                 } catch (error) {
                     console.error(`Error updating particle ${i}:`, error);
                     _removeFlowParticle(particle, i);
@@ -7301,6 +7377,36 @@ body.android-optimized .zoom-btn {
                     : 0;
                 g.mesh.material.opacity = Math.max(0.01, Math.min(0.55,
                     g.baseOpacity + sinVal * WIRE_GLOW_PULSE_AMP + proximityBoost));
+            }
+        }
+
+        /**
+         * Animate the thermal vibration of Cu⁺ lattice ions each frame.
+         *
+         * Ions oscillate around their FCC base positions with an amplitude proportional
+         * to the Joule heat deposited by electron–lattice scattering (∝ I²R).  This
+         * reproduces the temperature-dependent mean-square displacement described by
+         * the Debye model and visible in molecular-dynamics simulations of hot copper.
+         */
+        function updateLatticeAtoms() {
+            if (!currentLatticeAtoms.length) return;
+            for (let i = 0; i < currentLatticeAtoms.length; i++) {
+                const ion = currentLatticeAtoms[i];
+                if (!ion || !ion.userData?.basePosition) continue;
+                try {
+                    const ud  = ion.userData;
+                    const amp = LATTICE_VIBRATION_AMP * (0.4 + ud.heatT * 1.6);
+                    const t   = globalFlowTime * LATTICE_VIBRATION_SPEED + ud.vibPhase;
+                    // Three incommensurate frequency multipliers (1.0×, 1.37×, 0.79×) plus
+                    // phase offsets (0, 1 rad, 2 rad) break any synchronisation between
+                    // axes — the resulting Lissajous-like trajectory approximates the
+                    // anisotropic thermal motion of an FCC lattice atom (Debye model).
+                    ion.position.set(
+                        ud.basePosition.x + Math.sin(t)             * amp,
+                        ud.basePosition.y + Math.sin(t * 1.37 + 1)  * amp,
+                        ud.basePosition.z + Math.sin(t * 0.79 + 2)  * amp
+                    );
+                } catch (e) { /* skip */ }
             }
         }
 
@@ -14966,8 +15072,9 @@ Made with ? for visual learners everywhere!
             clearWireGlows();
             clearLatticeAtoms();
 
-            // Sync atomic mode flag so updateFlowParticles doesn't immediately re-trigger
-            lastAtomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            // Sync atomic/quantum mode flags so updateFlowParticles doesn't immediately re-trigger
+            lastAtomicMode  = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            lastQuantumMode = cameraDistance < ZOOM_QUANTUM;
 
             currentFlowState = flowState || null;
 
@@ -15024,6 +15131,7 @@ Made with ? for visual learners everywhere!
             const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
             const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inQuantumZoom     = cameraDistance < ZOOM_QUANTUM;
             const intensity         = Math.min(1, currentValue / 0.5);
 
             // Current-scaled wire glow opacity — brighter wires at higher current
@@ -15084,6 +15192,11 @@ Made with ? for visual learners everywhere!
                     _spawnProbabilityCloud(wire, flowColor);
                 }
 
+                // ── Fermi-sea backdrop (quantum zoom only) ───────────────────
+                if (inQuantumZoom) {
+                    _spawnFermiSea(wire, flowColor);
+                }
+
                 // ── Electron particles ───────────────────────────────────────
                 for (let i = 0; i < dynamicCount; i++) {
                     try {
@@ -15116,6 +15229,16 @@ Made with ? for visual learners everywhere!
                         let orbitalRing  = null;
                         let orbitalRing2 = null;
                         let orbitalRing3 = null;
+                        // ── s-orbital corona (close zoom and above) ──────────
+                        // A semi-transparent sphere wrapping the electron represents the
+                        // 1s radial probability density |ψ|². It "breathes" in the update
+                        // loop to show the quantum-mechanical oscillation of charge density.
+                        let coronaMesh   = null;
+                        // ── p-orbital lobes (atomic zoom) ────────────────────
+                        // Two lobes oriented perpendicular to the drift direction model the
+                        // angular part of the p-wave function (Y₁₀ or Y₁±₁ harmonics).
+                        let pLobe1       = null;
+                        let pLobe2       = null;
 
                         if (inAtomicZoom) {
                             // Ring 1 — primary orbital plane
@@ -15163,6 +15286,58 @@ Made with ? for visual learners everywhere!
                                 orbitalRing3.rotation.x = Math.PI * 0.25 + (i % 3) * 0.3;
                                 particle.add(orbitalRing3);
                             }
+
+                            // s-orbital corona — breathes in updateFlowParticles
+                            const coronaGeom = new THREE.SphereGeometry(
+                                particleSize * CORONA_RADIUS_FACTOR,
+                                isMobile ? 7 : 10, isMobile ? 5 : 7);
+                            coronaMesh = new THREE.Mesh(coronaGeom, new THREE.MeshBasicMaterial({
+                                color:       flowColor.hex,
+                                transparent: true,
+                                opacity:     CORONA_OPACITY,
+                                side:        THREE.BackSide,
+                                depthWrite:  false,
+                                blending:    THREE.AdditiveBlending
+                            }));
+                            particle.add(coronaMesh);
+
+                            // p-orbital lobes — two spheres along the Y axis of the particle
+                            // (the update loop rotates the particle to align Y with the wire
+                            // tangent when in close zoom, so they naturally orient transversely
+                            // when the particle is travelling along the wire).
+                            if (!isMobile) {
+                                const lobeGeom = new THREE.SphereGeometry(
+                                    particleSize * P_LOBE_RADIUS_FACTOR,
+                                    8, 5);
+                                const lobeMat = new THREE.MeshBasicMaterial({
+                                    color:       flowColor.hex,
+                                    transparent: true,
+                                    opacity:     P_LOBE_OPACITY,
+                                    depthWrite:  false,
+                                    blending:    THREE.AdditiveBlending
+                                });
+                                pLobe1 = new THREE.Mesh(lobeGeom, lobeMat);
+                                pLobe1.position.set(0,  particleSize * P_LOBE_OFFSET_FACTOR, 0);
+                                particle.add(pLobe1);
+
+                                pLobe2 = new THREE.Mesh(lobeGeom, lobeMat.clone());
+                                pLobe2.position.set(0, -particleSize * P_LOBE_OFFSET_FACTOR, 0);
+                                particle.add(pLobe2);
+                            }
+                        } else if (inCloseZoom) {
+                            // Even outside full atomic zoom, add a subtle corona in close view
+                            const coronaGeom = new THREE.SphereGeometry(
+                                particleSize * CORONA_RADIUS_FACTOR * 0.85,
+                                isMobile ? 6 : 8, isMobile ? 4 : 6);
+                            coronaMesh = new THREE.Mesh(coronaGeom, new THREE.MeshBasicMaterial({
+                                color:       flowColor.hex,
+                                transparent: true,
+                                opacity:     CORONA_OPACITY * 0.6,
+                                side:        THREE.BackSide,
+                                depthWrite:  false,
+                                blending:    THREE.AdditiveBlending
+                            }));
+                            particle.add(coronaMesh);
                         }
 
                         // ── Comet trail meshes (close + atomic zoom) ─────────
@@ -15201,6 +15376,9 @@ Made with ? for visual learners everywhere!
                             orbitalRing,
                             orbitalRing2,
                             orbitalRing3,
+                            coronaMesh,
+                            pLobe1,
+                            pLobe2,
                             trailMeshes,
                             pulsePhase:    Math.random() * Math.PI * 2,
                             baseOpacity,
@@ -15218,8 +15396,16 @@ Made with ? for visual learners everywhere!
 
         /**
          * Spawn Cu⁺ lattice-ion spheres along a wire for atomic-zoom visualization.
-         * Ions are fixed (they don't move); their emissive glow increases with current
-         * to represent resistive Joule heating as drifting electrons collide with them.
+         *
+         * Ion positions now follow the copper Face-Centred Cubic (FCC) crystal structure
+         * (a ≈ 3.615 Å, rendered at FCC_UNIT_SIZE scene units per unit cell).  Each
+         * "slice" along the wire contains the four FCC basis sites shifted into the local
+         * cross-section of the wire, giving each atom a nearest-neighbour environment
+         * consistent with real copper.  Ions are stored with a `basePosition` so the
+         * `updateLatticeAtoms` function can animate thermal vibration.
+         *
+         * Emissive glow increases with current to represent Joule heating from electron–
+         * lattice scattering (resistivity mechanism described by Drude/Bloch models).
          */
         function _spawnLatticeAtoms(wire, currentValue, flowColor) {
             if (!wire.curve) return;
@@ -15234,10 +15420,14 @@ Made with ? for visual learners everywhere!
                 }
                 prevPt = pt;
             }
-            const totalAtoms = Math.min(LATTICE_MAX_ATOMS,
-                Math.max(4, Math.round(estimatedLength / LATTICE_SPACING)));
+
+            // Number of FCC unit-cell slices along the wire (capped for performance)
+            const sliceCount = Math.min(
+                Math.floor(LATTICE_MAX_ATOMS / 4),
+                Math.max(2, Math.round(estimatedLength / FCC_UNIT_SIZE)));
+
             const heatT       = Math.min(1, currentValue / (LATTICE_HEAT_THRESHOLD * 20));
-            // Copper is copper-orange; heat shifts toward red-orange
+            // Copper is copper-orange; heat shifts toward red-orange (Joule heating tint)
             const copperColor = new THREE.Color(0xb87333);
             const hotColor    = new THREE.Color(0xff5500);
             const ionColor    = copperColor.clone().lerp(hotColor, heatT * 0.6);
@@ -15254,28 +15444,69 @@ Made with ? for visual learners everywhere!
                 opacity:           0.82
             });
 
-            for (let k = 0; k < totalAtoms; k++) {
-                try {
-                    const t   = k / totalAtoms;
-                    const pos = wire.curve.getPoint(t);
-                    if (!pos || !pos.isVector3) continue;
-                    // Offset ions slightly off the wire centre to distinguish them from electrons
-                    const radialOffset = 0.10;
-                    const angle = k * GOLDEN_ANGLE_RAD;
-                    pos.x += Math.cos(angle) * radialOffset;
-                    pos.z += Math.sin(angle) * radialOffset;
-                    const ionMesh = new THREE.Mesh(ionGeom, ionMat);
-                    ionMesh.position.copy(pos);
-                    scene.add(ionMesh);
-                    currentLatticeAtoms.push(ionMesh);
-                } catch (e) { /* skip */ }
+            // Build a right-hand frame (tangent, normal, binormal) at each slice position
+            // so we can place FCC cross-section atoms correctly oriented to the wire.
+            const _tmpTan = new THREE.Vector3();
+            const _tmpNrm = new THREE.Vector3();
+            const _tmpBin = new THREE.Vector3();
+
+            for (let slice = 0; slice < sliceCount; slice++) {
+                const t = slice / sliceCount;
+                const pos = wire.curve.getPoint(t);
+                if (!pos || !pos.isVector3) continue;
+
+                // Approximate tangent via forward difference
+                const tNext = Math.min(1, t + 1 / sliceCount);
+                const posNext = wire.curve.getPoint(tNext);
+                if (!posNext || !posNext.isVector3) continue;
+                _tmpTan.copy(posNext).sub(pos).normalize();
+                if (_tmpTan.lengthSq() < 0.0001) continue;
+
+                // Build an arbitrary normal perpendicular to tangent
+                _tmpNrm.set(0, 1, 0);
+                if (Math.abs(_tmpTan.dot(_tmpNrm)) > 0.9) _tmpNrm.set(1, 0, 0);
+                _tmpBin.crossVectors(_tmpTan, _tmpNrm).normalize();
+                _tmpNrm.crossVectors(_tmpBin, _tmpTan).normalize();
+
+                // Place the four FCC basis atoms in this cross-sectional slice
+                for (let b = 0; b < FCC_BASIS.length; b++) {
+                    try {
+                        const [bx, by, bz] = FCC_BASIS[b];
+                        // FCC_BASIS values are in [0, 0.5] fractional coordinates.
+                        // Subtracting 0.25 centres each unit-cell slice on the wire curve
+                        // sample point, so atoms are spread symmetrically on both sides.
+                        // The cross-sectional directions (normal/binormal) use a 1.4×
+                        // scale vs. the tangent direction to give each slice a roughly
+                        // square footprint in the wire cross-section, compensating for the
+                        // fact that the FCC cell is slightly rectangular when projected
+                        // this way.
+                        const ionPos = pos.clone()
+                            .addScaledVector(_tmpTan, (bx - 0.25) * FCC_UNIT_SIZE)
+                            .addScaledVector(_tmpNrm, (by - 0.25) * FCC_UNIT_SIZE * 1.4)
+                            .addScaledVector(_tmpBin, (bz - 0.25) * FCC_UNIT_SIZE * 1.4);
+
+                        const ionMesh = new THREE.Mesh(ionGeom, ionMat);
+                        ionMesh.position.copy(ionPos);
+                        // Store base position and vibration phase for updateLatticeAtoms
+                        ionMesh.userData = {
+                            basePosition: ionPos.clone(),
+                            vibPhase:     (slice * 4 + b) * GOLDEN_ANGLE_RAD,
+                            heatT
+                        };
+                        scene.add(ionMesh);
+                        currentLatticeAtoms.push(ionMesh);
+                    } catch (e) { /* skip */ }
+                }
             }
         }
 
         /**
-         * Spawn a semi-transparent probability-cloud haze around a wire for deep-atomic zoom.
-         * Represents the delocalised electron wavefunction that fills the conductor.
-         * Uses additive blending so the cloud brightens naturally on top of the wire colour.
+         * Spawn a multi-shell semi-transparent probability-cloud haze around a wire for
+         * deep-atomic zoom.  Three concentric cylindrical shells approximate the radial
+         * probability density |ψₙₗ|²(r) of the delocalised conduction-electron wave
+         * function: a dense inner core, a mid-density shell, and a faint outer halo.
+         * This reproduces the exponential radial falloff seen in hydrogen-like wave
+         * functions and in DFT charge-density images of copper.
          */
         function _spawnProbabilityCloud(wire, flowColor) {
             if (!wire.segments) return;
@@ -15283,21 +15514,82 @@ Made with ? for visual learners everywhere!
                 try {
                     const segLen = seg.start.distanceTo(seg.end);
                     if (segLen < 0.05) return;
-                    const cloudGeom = new THREE.CylinderGeometry(
-                        PROB_CLOUD_RADIUS, PROB_CLOUD_RADIUS, segLen, 10);
-                    const cloudMat  = new THREE.MeshBasicMaterial({
-                        color:       flowColor.hex,
+
+                    // Helper: add one cylindrical shell at `radius` with `opacity`
+                    const addShell = (radius, opacity, side) => {
+                        const geom = new THREE.CylinderGeometry(radius, radius, segLen, 10);
+                        const mat  = new THREE.MeshBasicMaterial({
+                            color:       flowColor.hex,
+                            transparent: true,
+                            opacity,
+                            blending:    THREE.AdditiveBlending,
+                            depthWrite:  false,
+                            side
+                        });
+                        const mesh = new THREE.Mesh(geom, mat);
+                        mesh.position.copy(seg.mesh.position);
+                        mesh.rotation.copy(seg.mesh.rotation);
+                        scene.add(mesh);
+                        currentProbabilityClouds.push(mesh);
+                    };
+
+                    // Inner core — highest electron density (front face so it's visible inside)
+                    addShell(
+                        PROB_CLOUD_RADIUS * PROB_CLOUD_INNER_FACTOR,
+                        PROB_CLOUD_OPACITY * PROB_CLOUD_INNER_OP_MUL,
+                        THREE.FrontSide);
+
+                    // Mid shell — intermediate density
+                    addShell(
+                        PROB_CLOUD_RADIUS,
+                        PROB_CLOUD_OPACITY,
+                        THREE.BackSide);
+
+                    // Outer halo — sparse outer electron density
+                    addShell(
+                        PROB_CLOUD_RADIUS * PROB_CLOUD_OUTER_FACTOR,
+                        PROB_CLOUD_OPACITY * PROB_CLOUD_OUTER_OP_MUL,
+                        THREE.BackSide);
+                } catch (e) { /* skip */ }
+            });
+        }
+
+        /**
+         * Spawn a faint Fermi-sea backdrop for the quantum zoom tier (d < ZOOM_QUANTUM).
+         * Represents the background sea of delocalised conduction electrons that fills
+         * the metal everywhere — the quantum-mechanical "electron gas" of the
+         * Sommerfeld free-electron model.  Rendered as a very faint teal outer cloud.
+         */
+        function _spawnFermiSea(wire, flowColor) {
+            if (!wire.segments) return;
+            // Tint toward teal/electric-blue (0x00ffee) to visually distinguish the
+            // Fermi sea from individual drift electrons, which use the warm red-to-white
+            // current-colour spectrum.  Teal evokes the quantum-mechanical electron gas
+            // imagery common in physics textbooks.  Lerp 0.45 keeps the base flow colour
+            // visible so the sea still responds to circuit state (short-circuit red, etc.).
+            const fermiColor = new THREE.Color(flowColor.hex).lerp(new THREE.Color(0x00ffee), 0.45);
+            wire.segments.forEach(seg => {
+                try {
+                    const segLen = seg.start.distanceTo(seg.end);
+                    if (segLen < 0.05) return;
+                    const geom = new THREE.CylinderGeometry(
+                        PROB_CLOUD_RADIUS * FERMI_SEA_RADIUS_FACTOR,
+                        PROB_CLOUD_RADIUS * FERMI_SEA_RADIUS_FACTOR,
+                        segLen, 10);
+                    const mat = new THREE.MeshBasicMaterial({
+                        color:       fermiColor.getHex(),
                         transparent: true,
-                        opacity:     PROB_CLOUD_OPACITY,
+                        opacity:     FERMI_SEA_OPACITY,
                         blending:    THREE.AdditiveBlending,
                         depthWrite:  false,
                         side:        THREE.BackSide
                     });
-                    const cloudMesh = new THREE.Mesh(cloudGeom, cloudMat);
-                    cloudMesh.position.copy(seg.mesh.position);
-                    cloudMesh.rotation.copy(seg.mesh.rotation);
-                    scene.add(cloudMesh);
-                    currentProbabilityClouds.push(cloudMesh);
+                    const mesh = new THREE.Mesh(geom, mat);
+                    mesh.position.copy(seg.mesh.position);
+                    mesh.rotation.copy(seg.mesh.rotation);
+                    scene.add(mesh);
+                    // Reuse the probability-cloud array for cleanup (cleared together)
+                    currentProbabilityClouds.push(mesh);
                 } catch (e) { /* skip */ }
             });
         }
