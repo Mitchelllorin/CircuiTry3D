@@ -366,6 +366,16 @@ body {
   overflow: hidden;
 }
 
+.app-shell.is-promo2 .app-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell.is-promo2 .app-content > * {
+  padding: 0;
+  overflow: hidden;
+}
+
 .arena-page-wrapper {
   flex: 1;
   display: flex;

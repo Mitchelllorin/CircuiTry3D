@@ -30,6 +30,7 @@ const Textbook = lazy(() => import("../pages/Textbook"));
 const Screenshots = lazy(() => import("../pages/Screenshots"));
 const Partnerships = lazy(() => import("../pages/Partnerships"));
 const Promo = lazy(() => import("../pages/Promo"));
+const Promo2 = lazy(() => import("../pages/Promo2"));
 
 function PageFallback() {
   return (
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/screenshots" element={<Screenshots />} />
             <Route path="/partnerships" element={<Partnerships />} />
             <Route path="/promo" element={<Promo />} />
+            <Route path="/promo2" element={<Promo2 />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -94,6 +96,7 @@ function AppLayout() {
   const isWorkspace = location.pathname === "/app";
   const isArena = location.pathname === "/arena";
   const isPromo = location.pathname === "/promo";
+  const isPromo2 = location.pathname === "/promo2";
   const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
@@ -102,8 +105,9 @@ function AppLayout() {
     isWorkspace && "is-workspace",
     isArena && "is-arena",
     isPromo && "is-promo",
+    isPromo2 && "is-promo2",
   ].filter(Boolean).join(" ");
-  const contentClass = isLanding || isArena || isPromo ? "app-content is-landing" : "app-content";
+  const contentClass = isLanding || isArena || isPromo || isPromo2 ? "app-content is-landing" : "app-content";
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -139,14 +143,14 @@ function AppLayout() {
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
       {/* Global Mode Bar - shown on all pages except landing, arena, and promo */}
-      {!isLanding && !isArena && !isPromo && <GlobalModeBar />}
+      {!isLanding && !isArena && !isPromo && !isPromo2 && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
       {/* Tips & facts ticker - shown on all pages except landing, arena, and promo */}
-      {!isLanding && !isArena && !isPromo && <TipsTicker />}
+      {!isLanding && !isArena && !isPromo && !isPromo2 && <TipsTicker />}
       {/* Site footer with legal links - shown on all pages except landing, workspace, arena & promo */}
-      {!isLanding && !isWorkspace && !isArena && !isPromo && (
+      {!isLanding && !isWorkspace && !isArena && !isPromo && !isPromo2 && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">Privacy Policy</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
