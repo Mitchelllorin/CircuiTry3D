@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Vercel
 
 on:
   push:
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
-# Only one deployment at a time; don't cancel an in-progress run.
+# Only one production deployment at a time; don't cancel an in-progress run.
 concurrency:
-  group: gh-pages
+  group: vercel-production
   cancel-in-progress: false
 
 jobs:
@@ -35,20 +35,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (demo mode)
-        env:
-          VITE_DEMO_MODE: 'true'
-          # OWNER_KEY_HASH is the SHA-256 hex digest of the owner password.
-          # Set this in GitHub → Settings → Secrets and variables → Actions
-          # as a repository secret named OWNER_KEY_HASH.
-          VITE_OWNER_KEY_HASH: ${{ secrets.OWNER_KEY_HASH }}
+      - name: Build
         run: npm run build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist
-          # Preserve the pr-preview/ subdirectory so active PR previews
-          # are not wiped on each production deployment.
-          keep_files: true
+      - name: Deploy to Vercel (Production)
+        run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -2,27 +2,25 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 # One preview deployment per PR at a time; cancel any in-progress build
 # for the same PR so the latest push always wins.
 concurrency:
-  group: pr-preview-${{ github.event.pull_request.number }}
+  group: vercel-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   deploy-preview:
-    if: github.event.action != 'closed'
     name: Deploy Preview
     runs-on: ubuntu-latest
 
     env:
       NODE_VERSION: '20.19.0'
-      PR_NUMBER: ${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout
@@ -37,32 +35,45 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (preview mode)
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Vercel (Preview)
+        id: deploy
+        run: |
+          OUTPUT=$(npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes --json 2>/dev/null || npx vercel --token ${{ secrets.VERCEL_TOKEN }} --yes 2>&1)
+          DEPLOY_URL=$(echo "$OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('url',''))" 2>/dev/null || echo "$OUTPUT" | grep -E '^https://' | tail -1)
+          echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
         env:
-          VITE_DEMO_MODE: 'true'
-          VITE_OWNER_KEY_HASH: ${{ secrets.OWNER_KEY_HASH }}
-        # Deploy sub-path: /pr-preview/pr-<number>/
-        run: npm run build -- --base=/pr-preview/pr-${{ env.PR_NUMBER }}/
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Deploy PR preview
-        uses: rossjrw/pr-preview-action@v1
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
         with:
-          source-dir: dist
-          preview-branch: gh-pages
-          umbrella-dir: pr-preview
-          action: deploy
-          token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const marker = '<!-- vercel-preview -->';
+            const body = `${marker}\n### 🔍 Vercel Preview Deployment\n\nYour preview is ready: ${url}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
-  remove-preview:
-    if: github.event.action == 'closed'
-    name: Remove Preview
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Remove PR preview
-        uses: rossjrw/pr-preview-action@v1
-        with:
-          preview-branch: gh-pages
-          umbrella-dir: pr-preview
-          action: remove
-          token: ${{ secrets.GITHUB_TOKEN }}
