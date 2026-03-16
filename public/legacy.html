@@ -82,6 +82,11 @@
             display: block !important;
         }
 
+        /* In embedded mode the React host drives the analysis panel; hide the manual toggle. */
+        html.embedded #analysis-toggle-strip {
+            display: none !important;
+        }
+
         /* ── Demo mode banner (standalone demo access) ─────────────────── */
         #demo-mode-banner {
             display: none;
@@ -3377,6 +3382,162 @@
             font-size: 12px;
             font-weight: bold;
         }
+
+        /* ── W.I.R.E. Measurement / Meter panel ─────────────────────────── */
+        .meter-mode-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meter-mode-btn {
+            flex: 1;
+            padding: 8px 4px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #ccc;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 56px;
+            text-align: center;
+        }
+
+        .meter-mode-btn.secondary {
+            background: rgba(255,255,255,0.07);
+            color: #888;
+        }
+
+        .meter-mode-btn:not(.secondary) {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000;
+        }
+
+        .meter-probe-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .meter-probe-label {
+            font-weight: 700;
+            min-width: 52px;
+            flex-shrink: 0;
+        }
+
+        .meter-probe-label.probe-a { color: #ff4444; }
+        .meter-probe-label.probe-b { color: #333; background: #ccc; border-radius: 4px; padding: 0 4px; }
+
+        .meter-probe-value {
+            color: #ccc;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .meter-reading-box {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid rgba(0,255,136,0.5);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .meter-reading-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #00ff88;
+            font-family: 'Consolas', 'Monaco', monospace;
+            letter-spacing: 0.04em;
+        }
+
+        .meter-subreading {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+            min-height: 14px;
+        }
+
+        .meter-instructions-text {
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .meter-action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .meter-action-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ccc;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .meter-action-btn:hover { background: rgba(255,255,255,0.15); }
+
+        .scope-panel-inner {
+            margin-top: 8px;
+        }
+
+        #scope-canvas {
+            width: 100%;
+            height: 100px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid rgba(136, 204, 255, 0.25);
+        }
+
+        .scope-readout-text {
+            font-size: 11px;
+            color: #8bc7ff;
+            text-align: right;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+
+        /* Analysis panel toggle strip */
+        .wire-analysis-toggle-strip {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 91;
+        }
+
+        .wire-analysis-toggle-btn {
+            background: #00ff88;
+            border: 3px solid #fff;
+            color: #000;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,255,136,0.35);
+            transition: transform 0.2s;
+        }
+
+        .wire-analysis-toggle-btn:hover { transform: scale(1.08); }
     </style>
 </head>
 <body>
@@ -3632,6 +3793,210 @@
         </div>
     </div>
     
+    <!-- ═══ W.I.R.E. Analysis Panel ════════════════════════════════════ -->
+    <div id="wire-analysis" class="wire-analysis-fixed collapsed" role="complementary" aria-label="W.I.R.E. Analysis Panel">
+
+        <!-- Tab bar -->
+        <div class="analysis-tabs" role="tablist">
+            <button id="tab-worksheet" class="analysis-tab active" role="tab" aria-selected="true"  aria-controls="content-worksheet" onclick="switchAnalysisTab('worksheet')">Worksheet</button>
+            <button id="tab-eir"       class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-eir"       onclick="switchAnalysisTab('eir')">EIR</button>
+            <button id="tab-power"     class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-power"     onclick="switchAnalysisTab('power')">Power</button>
+            <button id="tab-problem"   class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-problem"   onclick="switchAnalysisTab('problem')">Problem</button>
+            <button id="tab-practice"  class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-practice"  onclick="switchAnalysisTab('practice')">Practice</button>
+            <button id="tab-meter"     class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-meter"     onclick="switchAnalysisTab('meter')">⚡ Meter</button>
+        </div>
+
+        <!-- ── Worksheet tab ─────────────────────────────────────────────── -->
+        <div id="content-worksheet" class="analysis-content" role="tabpanel">
+            <div class="worksheet-panel">
+                <div class="worksheet-title">⚡ W.I.R.E. Analysis</div>
+                <div id="component-list" class="component-list"></div>
+                <div class="calculations-section">
+                    <div class="calculation-step step-voltage">
+                        <span class="step-label">Voltage (E)</span>
+                        <span class="step-formula" id="voltage-formula">V_total = ?</span>
+                        <span class="step-value" id="calc-voltage">0.0V</span>
+                    </div>
+                    <div class="calculation-step step-current">
+                        <span class="step-label">Current (I)</span>
+                        <span class="step-formula">I = E ÷ R</span>
+                        <span class="step-value" id="calc-current">0.000A</span>
+                    </div>
+                    <div class="calculation-step step-resistance">
+                        <span class="step-label">Resistance (R)</span>
+                        <span class="step-formula" id="resistance-formula">R_total = ?</span>
+                        <span class="step-value" id="calc-resistance">∞</span>
+                    </div>
+                    <div class="calculation-step step-power">
+                        <span class="step-label">Power (W)</span>
+                        <span class="step-formula">W = I × E</span>
+                        <span class="step-value" id="calc-power">0.00W</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── EIR triangle tab ───────────────────────────────────────────── -->
+        <div id="content-eir" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="vir-triangle">
+                <div class="triangle-container">
+                    <div class="triangle-shape"></div>
+                    <div class="triangle-sections">
+                        <div class="triangle-v" onclick="explainOhmsLaw('E')">E</div>
+                        <div class="triangle-i" onclick="explainOhmsLaw('I')">I</div>
+                        <div class="triangle-r" onclick="explainOhmsLaw('R')">R</div>
+                    </div>
+                </div>
+                <div class="triangle-formula" id="eir-formula">Tap E, I, or R to learn Ohm's Law</div>
+            </div>
+            <div class="circuit-diagram">
+                <div class="diagram-title">Circuit Schematic</div>
+                <div id="circuit-schematic" class="circuit-schematic">
+                    <div class="schematic-line">Add components to see</div>
+                    <div class="schematic-line">the circuit diagram</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Power triangle tab ─────────────────────────────────────────── -->
+        <div id="content-power" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="vir-triangle">
+                <div class="triangle-container">
+                    <div class="triangle-shape"></div>
+                    <div class="triangle-sections">
+                        <div class="triangle-v" onclick="explainPowerLaw('W')">W</div>
+                        <div class="triangle-i" onclick="explainPowerLaw('I')">I</div>
+                        <div class="triangle-r" onclick="explainPowerLaw('E')">E</div>
+                    </div>
+                </div>
+                <div class="triangle-formula" id="power-formula">Tap W, I, or E to learn Power Law</div>
+            </div>
+        </div>
+
+        <!-- ── Problem mode tab ───────────────────────────────────────────── -->
+        <div id="content-problem" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="problem-mode">
+                <div class="problem-title">🎯 Problem Mode</div>
+                <div class="unknown-input">
+                    <label for="student-voltage">Voltage (V):</label>
+                    <input id="student-voltage" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <div class="unknown-input">
+                    <label for="student-current">Current (A):</label>
+                    <input id="student-current" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <div class="unknown-input">
+                    <label for="student-resistance">Resistance (Ω):</label>
+                    <input id="student-resistance" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <div class="unknown-input">
+                    <label for="student-power">Power (W):</label>
+                    <input id="student-power" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <button class="check-answer-btn" onclick="checkStudentAnswers()">Check Answers</button>
+                <div id="answer-feedback" class="result-feedback"></div>
+            </div>
+        </div>
+
+        <!-- ── Practice tab ───────────────────────────────────────────────── -->
+        <div id="content-practice" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="practice-buttons">
+                <button id="btn-series"      class="practice-btn" onclick="loadPresetCircuit('series_basic')">Series</button>
+                <button id="btn-parallel"    class="practice-btn" onclick="loadPresetCircuit('parallel_basic')">Parallel</button>
+                <button id="btn-mixed"       class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed</button>
+                <button id="btn-combination" class="practice-btn" onclick="loadPresetCircuit('combination_advanced')">Advanced</button>
+            </div>
+            <div id="practice-problem-card" class="practice-problem-card" style="display:none">
+                <div id="practice-question"    class="problem-question"></div>
+                <div id="practice-description" class="problem-description"></div>
+                <ul  id="objectives-list"      style="color:#ccc;font-size:12px;padding-left:18px;margin-bottom:8px;"></ul>
+            </div>
+            <div id="practice-help-text" class="wire-instructions">
+                Select a circuit above to begin a guided W.I.R.E. practice problem.
+            </div>
+            <div id="wire-table-wrapper" class="wire-table-wrapper" style="display:none">
+                <div class="wire-table-header">
+                    W.I.R.E. Worksheet
+                    <span id="wire-table-scenario"></span>
+                </div>
+                <p id="wire-table-guide" class="wire-table-guide"></p>
+                <table class="wire-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Voltage (V)</th>
+                            <th>Current (A)</th>
+                            <th>Resistance (Ω)</th>
+                            <th>Power (W)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wire-table-body"></tbody>
+                </table>
+                <p id="wire-table-note" class="wire-table-note"></p>
+                <div class="wire-table-actions">
+                    <button id="wire-table-toggle-solutions" class="practice-btn secondary" style="padding:6px 12px;font-size:11px;" onclick="toggleWireTableSolutions()">Show Solutions</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                <button onclick="previousPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">◀ Prev</button>
+                <span style="font-size:11px;color:#888;white-space:nowrap;">
+                    <span id="problem-counter">0</span> / <span id="total-problems">0</span>
+                </span>
+                <button onclick="nextPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">Next ▶</button>
+            </div>
+        </div>
+
+        <!-- ── Meter tab ──────────────────────────────────────────────────── -->
+        <div id="content-meter" class="analysis-content" style="display:none" role="tabpanel">
+
+            <!-- Mode selector buttons -->
+            <div class="meter-mode-buttons">
+                <button id="meter-mode-voltage"    class="meter-mode-btn"           onclick="setMeterMode('voltage')">V</button>
+                <button id="meter-mode-current"    class="meter-mode-btn secondary" onclick="setMeterMode('current')">A</button>
+                <button id="meter-mode-resistance" class="meter-mode-btn secondary" onclick="setMeterMode('resistance')">Ω</button>
+                <button id="meter-mode-scope"      class="meter-mode-btn secondary" onclick="setMeterMode('scope')">〜 Scope</button>
+            </div>
+
+            <!-- Probe display -->
+            <div class="meter-probe-row">
+                <span class="meter-probe-label probe-a">🔴 A:</span>
+                <span id="meter-probe-a" class="meter-probe-value">—</span>
+            </div>
+            <div class="meter-probe-row">
+                <span class="meter-probe-label probe-b">⚫ B:</span>
+                <span id="meter-probe-b" class="meter-probe-value">—</span>
+            </div>
+
+            <!-- Main reading -->
+            <div class="meter-reading-box">
+                <div id="meter-reading" class="meter-reading-value">—</div>
+                <div id="meter-subreading" class="meter-subreading"></div>
+            </div>
+
+            <!-- Instructions -->
+            <div id="meter-instructions" class="meter-instructions-text">Enable probes to begin measuring.</div>
+
+            <!-- Oscilloscope panel (shown only in scope mode) -->
+            <div id="scope-panel" class="scope-panel-inner" style="display:none">
+                <canvas id="scope-canvas" width="440" height="100"></canvas>
+                <div id="scope-readout" class="scope-readout-text"></div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="meter-action-row">
+                <button id="meter-toggle-armed" class="meter-action-btn" onclick="toggleMeterArmed()">Enable probes</button>
+                <button class="meter-action-btn" onclick="clearMeterSelection()">Clear</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toggle button for the analysis panel (shown in non-embedded standalone mode) -->
+    <div class="wire-analysis-toggle-strip" id="analysis-toggle-strip">
+        <button class="wire-analysis-toggle-btn analysis-toggle" onclick="toggleAnalysis()" title="Toggle W.I.R.E. Analysis Panel" aria-label="Toggle W.I.R.E. Analysis Panel">⚡</button>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
     <script src="vendor/three.min.js"></script>
     <script>
         if (typeof window.THREE === "undefined") {
@@ -15480,13 +15845,15 @@ Made with ? for visual learners everywhere!
             document.querySelectorAll('.analysis-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeTab) activeTab.classList.add('active');
+
             // Show/hide content panels
             document.querySelectorAll('.analysis-content').forEach(content => {
                 content.style.display = 'none';
             });
-            document.getElementById(`content-${tabName}`).style.display = 'block';
+            const activeContent = document.getElementById(`content-${tabName}`);
+            if (activeContent) activeContent.style.display = 'block';
             
             currentAnalysisTab = tabName;
             
