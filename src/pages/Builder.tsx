@@ -85,6 +85,7 @@ import Classroom from "./Classroom";
 import Arcade from "./Arcade";
 import Textbook from "./Textbook";
 import WireLibrary from "../components/practice/WireLibrary";
+import { AIHelperPanel } from "../components/builder/AIHelperPanel";
 
 type WorkspacePanelMode =
   | "arena"
@@ -1485,7 +1486,7 @@ export default function Builder() {
   const circuitStorage = useCircuitStorage();
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
-
+  const [isAIHelperOpen, setIsAIHelperOpen] = useState(false);
   // Create a mock circuit state for demo (in production, extract from iframe)
   const currentCircuitState = useMemo(() => ({
     nodes: [],
@@ -4031,6 +4032,25 @@ export default function Builder() {
         isLeftMenuOpen={isLeftMenuOpen}
         onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
       />
+
+      {/* Circuit AI helper — floating action button + sliding chat panel */}
+      <AIHelperPanel
+        isOpen={isAIHelperOpen}
+        circuitState={circuitState}
+        onClose={() => setIsAIHelperOpen(false)}
+      />
+      <button
+        type="button"
+        className={`ai-helper-fab${isAIHelperOpen ? " ai-helper-fab--open" : ""}`}
+        onClick={() => setIsAIHelperOpen((prev) => !prev)}
+        aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
+        aria-expanded={isAIHelperOpen}
+        title="Circuit AI — ask anything about circuits or the app"
+      >
+        <span className="ai-helper-fab__icon" aria-hidden="true">
+          {isAIHelperOpen ? "✕" : "⚡"}
+        </span>
+      </button>
     </div>
   );
 }

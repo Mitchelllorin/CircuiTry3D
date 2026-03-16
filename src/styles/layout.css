@@ -100,6 +100,8 @@
   --z-mode-panel: 1240;
   --z-compact-overlay: 1250;
   --z-builder-top: 1300;
+  /* AI helper FAB + panel — above compact panels, below modals */
+  --z-ai-helper: 1350;
   /* Modal layers */
   --z-modal-bg: 1900;
   --z-demo-banner: 2100;
