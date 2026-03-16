@@ -34,6 +34,7 @@ const Promo2 = lazy(() => import("../pages/Promo2"));
 const Promo3 = lazy(() => import("../pages/Promo3"));
 const Promo4 = lazy(() => import("../pages/Promo4"));
 const Promo5 = lazy(() => import("../pages/Promo5"));
+const Promo7 = lazy(() => import("../pages/Promo7"));
 
 function PageFallback() {
   return (
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/promo3" element={<Promo3 />} />
             <Route path="/promo4" element={<Promo4 />} />
             <Route path="/promo5" element={<Promo5 />} />
+            <Route path="/promo7" element={<Promo7 />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -106,7 +108,8 @@ function AppLayout() {
   const isPromo3 = location.pathname === "/promo3";
   const isPromo4 = location.pathname === "/promo4";
   const isPromo5 = location.pathname === "/promo5";
-  const isAnyPromo = isPromo || isPromo2 || isPromo3 || isPromo4 || isPromo5;
+  const isPromo7 = location.pathname === "/promo7";
+  const isAnyPromo = isPromo || isPromo2 || isPromo3 || isPromo4 || isPromo5 || isPromo7;
   const shellRef = useRef<HTMLDivElement>(null);
 
   const shellClass = [
@@ -119,6 +122,7 @@ function AppLayout() {
     isPromo3 && "is-promo3",
     isPromo4 && "is-promo4",
     isPromo5 && "is-promo5",
+    isPromo7 && "is-promo7",
   ].filter(Boolean).join(" ");
   const contentClass = isLanding || isArena || isAnyPromo ? "app-content is-landing" : "app-content";
 
