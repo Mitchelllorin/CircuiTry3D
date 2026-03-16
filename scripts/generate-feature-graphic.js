@@ -23,7 +23,7 @@ const __dirname  = dirname(__filename);
 const ROOT          = join(__dirname, '..');
 const ICON_SVG_PATH = join(ROOT, 'public', 'app-icon.svg');
 const OUT           = join(ROOT, 'play-store-assets', 'graphics', 'feature-graphic.png');
-// Also written to public/assets/ so Vite / Vercel serves it and the landing
+// Also written to public/assets/ so Vite serves it and the landing
 // page "Download feature graphic" link always reflects the latest render.
 const OUT_PUBLIC    = join(ROOT, 'public', 'assets', 'feature-graphic.png');
 
