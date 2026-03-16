@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — Build. Simulate. Master.</title>
+  <meta name="description" content="3D interactive circuit builder that illuminates electricity — build circuits, watch current flow down to the atomic level, and see what happens when components fail." />
+  <style>
+    /* ── Reset & base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --c-bg:        #040d1a;
+      --c-surface:   #0a1628;
+      --c-border:    rgba(0, 200, 255, 0.15);
+      --c-accent:    #00c8ff;
+      --c-green:     #00ff88;
+      --c-orange:    #ff6b35;
+      --c-red:       #ff3b3b;
+      --c-text:      #e2e8f0;
+      --c-muted:     #64748b;
+      --font:        'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: var(--font);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── Utility ─────────────────────────────────────────────────────────── */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    /* ── Animated grid backdrop ──────────────────────────────────────────── */
+    .grid-backdrop {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Electron particle canvas ────────────────────────────────────────── */
+    #particle-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Section wrapper ─────────────────────────────────────────────────── */
+    section { position: relative; z-index: 2; }
+
+    /* ── HERO ────────────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,200,255,0.08) 0%, transparent 70%);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border: 1px solid var(--c-accent);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--c-accent);
+      margin-bottom: 1.5rem;
+      animation: fadeInDown 0.8s ease both;
+    }
+
+    .hero-badge .dot {
+      width: 7px; height: 7px;
+      background: var(--c-green);
+      border-radius: 50%;
+      animation: pulse-dot 1.6s ease-in-out infinite;
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      animation: fadeInUp 0.9s ease 0.2s both;
+      background: linear-gradient(135deg, #fff 30%, var(--c-accent) 70%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      margin-top: 1rem;
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      color: var(--c-muted);
+      max-width: 640px;
+      animation: fadeInUp 0.9s ease 0.4s both;
+    }
+
+    .hero-tagline {
+      margin-top: 0.5rem;
+      font-size: clamp(0.95rem, 2vw, 1.15rem);
+      font-style: italic;
+      color: var(--c-accent);
+      animation: fadeInUp 0.9s ease 0.55s both;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2.5rem;
+      animation: fadeInUp 0.9s ease 0.7s both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.85rem 2.2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn:hover { transform: translateY(-3px); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--c-accent), #0080ff);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(0,200,255,0.35);
+    }
+    .btn-primary:hover { box-shadow: 0 0 36px rgba(0,200,255,0.55); }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--c-border);
+      color: var(--c-text);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--c-muted);
+      font-size: 0.78rem;
+      animation: fadeIn 1s ease 1.2s both;
+    }
+
+    .scroll-arrow {
+      width: 20px; height: 20px;
+      border-right: 2px solid var(--c-muted);
+      border-bottom: 2px solid var(--c-muted);
+      transform: rotate(45deg);
+      animation: bounce-down 1.5s ease infinite;
+    }
+
+    /* ── DEMO VIDEO REEL ──────────────────────────────────────────────────── */
+    .reel {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--c-accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+
+    .section-body {
+      color: var(--c-muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .video-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 40px rgba(0,200,255,0.12);
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .video-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Fallback when video file is not available yet */
+    .video-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #050e1f, #0a1a38);
+      gap: 1rem;
+    }
+
+    .video-fallback .icon {
+      font-size: 3rem;
+      animation: glow-pulse 2s ease-in-out infinite;
+    }
+
+    .video-fallback p {
+      font-size: 0.88rem;
+      color: var(--c-muted);
+      text-align: center;
+      padding: 0 1rem;
+    }
+
+    /* Animated circuit preview shown in fallback */
+    .circuit-preview {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wire-h, .wire-v {
+      position: absolute;
+      background: rgba(0,200,255,0.25);
+      border-radius: 2px;
+    }
+
+    .wire-h { height: 3px; }
+    .wire-v { width: 3px; }
+
+    .comp-box {
+      position: absolute;
+      border: 2px solid;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .electron {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--c-accent);
+      box-shadow: 0 0 8px var(--c-accent);
+    }
+
+    .video-card-info {
+      padding: 1.25rem 1.5rem 1.5rem;
+    }
+
+    .video-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .video-card-desc {
+      font-size: 0.88rem;
+      color: var(--c-muted);
+    }
+
+    .scene-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 0.5rem;
+    }
+
+    .tag-success { background: rgba(0,255,136,0.12); color: var(--c-green); }
+    .tag-failure { background: rgba(255,59,59,0.12); color: var(--c-red); }
+    .tag-advanced { background: rgba(0,200,255,0.12); color: var(--c-accent); }
+
+    /* ── FEATURES STRIP ───────────────────────────────────────────────────── */
+    .features {
+      padding: 5rem 2rem;
+      background: linear-gradient(180deg, transparent, rgba(0,200,255,0.03) 50%, transparent);
+    }
+
+    .features-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(0,200,255,0.35);
+    }
+
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-desc {
+      font-size: 0.88rem;
+      color: var(--c-muted);
+      line-height: 1.65;
+    }
+
+    /* ── FAILURE SHOWCASE ─────────────────────────────────────────────────── */
+    .failure-showcase {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .failure-showcase { grid-template-columns: 1fr; }
+    }
+
+    .failure-visual {
+      position: relative;
+      aspect-ratio: 4/3;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .failure-visual canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .failure-overlay-text {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      right: 1.5rem;
+      background: rgba(4,13,26,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,59,59,0.3);
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.82rem;
+      color: #fca5a5;
+    }
+
+    .failure-content .section-label { color: var(--c-red); }
+
+    .failure-list {
+      list-style: none;
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .failure-list li {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      font-size: 0.95rem;
+      color: var(--c-muted);
+    }
+
+    .failure-list li::before {
+      content: '⚡';
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── BOT USAGE PANEL ──────────────────────────────────────────────────── */
+    .bot-panel {
+      padding: 5rem 2rem;
+      background: var(--c-surface);
+      border-top: 1px solid var(--c-border);
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .bot-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .bot-code {
+      margin: 2rem auto 0;
+      background: #020810;
+      border: 1px solid rgba(0,200,255,0.2);
+      border-radius: 14px;
+      padding: 1.5rem 2rem;
+      text-align: left;
+      overflow-x: auto;
+      max-width: 680px;
+    }
+
+    .bot-code pre {
+      font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: #c9e0ff;
+      white-space: pre;
+    }
+
+    .bot-code .kw  { color: #c084fc; }
+    .bot-code .str { color: var(--c-green); }
+    .bot-code .cmt { color: #475569; font-style: italic; }
+    .bot-code .num { color: #fb923c; }
+
+    .bot-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+      text-align: left;
+    }
+
+    .bot-step {
+      background: rgba(0,200,255,0.05);
+      border: 1px solid var(--c-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .bot-step-num {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--c-accent);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .bot-step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .bot-step-desc {
+      font-size: 0.82rem;
+      color: var(--c-muted);
+    }
+
+    /* ── FOOTER CTA ───────────────────────────────────────────────────────── */
+    .footer-cta {
+      padding: 6rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .footer-cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(0,200,255,0.06) 0%, transparent 70%);
+    }
+
+    .footer-cta .section-title { font-size: clamp(2rem, 5vw, 3.5rem); }
+
+    footer {
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--c-muted);
+      border-top: 1px solid var(--c-border);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── Keyframes ─────────────────────────────────────────────────────────── */
+    @keyframes fadeInDown  { from { opacity:0; transform:translateY(-18px); } to { opacity:1; transform:none; } }
+    @keyframes fadeInUp    { from { opacity:0; transform:translateY(18px);  } to { opacity:1; transform:none; } }
+    @keyframes fadeIn      { from { opacity:0; } to { opacity:1; } }
+    @keyframes pulse-dot   { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(0.75); } }
+    @keyframes glow-pulse  { 0%,100% { text-shadow: 0 0 8px var(--c-accent); } 50% { text-shadow: 0 0 24px var(--c-accent); } }
+    @keyframes bounce-down { 0%,100% { transform:rotate(45deg) translateY(0); } 50% { transform:rotate(45deg) translateY(5px); } }
+    @keyframes electron-flow {
+      0%   { transform: translateX(-100%); opacity:0; }
+      10%  { opacity:1; }
+      90%  { opacity:1; }
+      100% { transform: translateX(200%); opacity:0; }
+    }
+    @keyframes spark {
+      0%   { transform:scale(1) translate(0,0); opacity:1; }
+      100% { transform:scale(0) translate(var(--dx), var(--dy)); opacity:0; }
+    }
+    @keyframes heat-flicker {
+      0%,100% { filter: brightness(1) saturate(1); }
+      25%      { filter: brightness(1.4) saturate(1.6); }
+      50%      { filter: brightness(0.85) saturate(0.9); }
+      75%      { filter: brightness(1.6) saturate(1.8); }
+    }
+
+    /* ── Scroll reveal ────────────────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="grid-backdrop" aria-hidden="true"></div>
+<canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+<!-- ── HERO ────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Live Demo Available
+  </div>
+  <h1 class="hero-title">CircuiTry3D</h1>
+  <p class="hero-sub">Build circuits in real 3-D space. Watch electrons flow. See what happens when things go wrong.</p>
+  <p class="hero-tagline">Illuminating Electricity — down to the atomic level.</p>
+  <div class="hero-cta-group">
+    <a href="/#/app" class="btn btn-primary">⚡ Open the Builder</a>
+    <a href="/#/practice" class="btn btn-secondary">🎓 Try a Practice Circuit</a>
+  </div>
+  <div class="hero-scroll-hint" aria-hidden="true">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ── DEMO REEL ───────────────────────────────────────────────────────────── -->
+<section class="reel">
+  <div class="reveal">
+    <div class="section-label">Bot-Recorded Gameplay</div>
+    <h2 class="section-title">Real Circuits. Real Failures. Real Physics.</h2>
+    <p class="section-body">
+      Every clip below was recorded by the CircuiTry3D automated circuit bot — it builds, simulates, and stresses circuits
+      so you can see exactly what the app looks like in action.
+    </p>
+  </div>
+
+  <div class="video-grid reveal">
+
+    <!-- Scene 01 — Series -->
+    <div class="video-card">
+      <div class="video-wrapper">
+        <video id="vid-series" src="./promo-footage/scene-01-series.webm"
+               autoplay muted loop playsinline
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        </video>
+        <div class="video-fallback" id="fallback-series">
+          <div class="circuit-preview" id="preview-series"></div>
+        </div>
+      </div>
+      <div class="video-card-info">
+        <span class="scene-tag tag-success">✅ Success</span>
+        <div class="video-card-title">Series Circuit — Current Flows</div>
+        <div class="video-card-desc">24 V battery drives electrons through three series resistors. Zoom into the atomic level and watch the particle stream.</div>
+      </div>
+    </div>
+
+    <!-- Scene 02 — Parallel -->
+    <div class="video-card">
+      <div class="video-wrapper">
+        <video id="vid-parallel" src="./promo-footage/scene-02-parallel.webm"
+               autoplay muted loop playsinline
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        </video>
+        <div class="video-fallback" id="fallback-parallel">
+          <div class="circuit-preview" id="preview-parallel"></div>
+        </div>
+      </div>
+      <div class="video-card-info">
+        <span class="scene-tag tag-success">✅ Success</span>
+        <div class="video-card-title">Parallel Circuit — Multiple Paths</div>
+        <div class="video-card-desc">Three branches share the same voltage rail. Watch independent electron streams split and rejoin at the nodes.</div>
+      </div>
+    </div>
+
+    <!-- Scene 03 — Overload / Failure -->
+    <div class="video-card">
+      <div class="video-wrapper">
+        <video id="vid-overload" src="./promo-footage/scene-03-overload.webm"
+               autoplay muted loop playsinline
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        </video>
+        <div class="video-fallback" id="fallback-overload">
+          <div class="circuit-preview" id="preview-overload"></div>
+        </div>
+      </div>
+      <div class="video-card-info">
+        <span class="scene-tag tag-failure">🔥 Failure</span>
+        <div class="video-card-title">Overloaded Resistor — Thermal Failure</div>
+        <div class="video-card-desc">A 1 Ω resistor on 24 V dissipates 576 W. The FUSE thermal engine triggers runaway — the component fails dramatically.</div>
+      </div>
+    </div>
+
+    <!-- Scene 04 — Mixed / Advanced -->
+    <div class="video-card">
+      <div class="video-wrapper">
+        <video id="vid-mixed" src="./promo-footage/scene-04-mixed.webm"
+               autoplay muted loop playsinline
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        </video>
+        <div class="video-fallback" id="fallback-mixed">
+          <div class="circuit-preview" id="preview-mixed"></div>
+        </div>
+      </div>
+      <div class="video-card-info">
+        <span class="scene-tag tag-advanced">🔬 Advanced</span>
+        <div class="video-card-title">Series-Parallel Combination</div>
+        <div class="video-card-desc">Seven components in a layered network — series trunk, parallel branch box, LED return path. The full WIRE methodology applied.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FEATURES ────────────────────────────────────────────────────────────── -->
+<section class="features">
+  <div class="features-inner">
+    <div class="reveal" style="text-align:center; margin-bottom: 0.5rem;">
+      <div class="section-label">Why CircuiTry3D</div>
+      <h2 class="section-title">Everything you need to understand circuits</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Real-Time Simulation</div>
+        <div class="feature-desc">Ohm's Law and Kirchhoff's rules computed on every edit. Currents, voltages, and power dissipation update instantly.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔬</div>
+        <div class="feature-title">Atomic Zoom</div>
+        <div class="feature-desc">Five zoom tiers from macro overview to FCC lattice quantum view — watch electron probability clouds shift as current changes.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔥</div>
+        <div class="feature-title">FUSE Failure Engine</div>
+        <div class="feature-desc">Thermal time-constant model triggers realistic component overload, arc flash, and melt animations in real time.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🎓</div>
+        <div class="feature-title">W.I.R.E. Worksheet</div>
+        <div class="feature-desc">Built-in practice mode with guided problems, Ohm's Law identity selection, and KVL/KCL verification.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI Circuit Helper</div>
+        <div class="feature-desc">Stuck on a circuit? The AI helper explains the topology, suggests fixes, and walks through the math step by step.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📐</div>
+        <div class="feature-title">Smart Wire Routing</div>
+        <div class="feature-desc">Freeform, orthogonal, and taxi routing modes with snap-to-grid and auto-arrange keep schematics clean and readable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAILURE SHOWCASE ─────────────────────────────────────────────────────── -->
+<section>
+  <div class="failure-showcase">
+    <div class="failure-visual reveal" id="failure-canvas-wrap">
+      <canvas id="failure-canvas"></canvas>
+      <div class="failure-overlay-text" id="failure-status">
+        ⚡ Simulation running — 24 V / 1 Ω = 24 A
+      </div>
+    </div>
+    <div class="failure-content reveal">
+      <div class="section-label">FUSE Failure Engine</div>
+      <h2 class="section-title">Fail safely — in 3D</h2>
+      <p style="color: var(--c-muted); font-size:1rem; margin-bottom:1rem;">
+        CircuiTry3D doesn't just show current flow — it models what happens when circuits are overloaded.
+        The FUSE thermal engine accumulates heat using a first-order time-constant model and triggers
+        cinematic failure animations.
+      </p>
+      <ul class="failure-list">
+        <li>Thermal runaway starts at 1× rated power dissipation</li>
+        <li>Time-constant τ = 5 s — heat builds realistically over seconds</li>
+        <li>Arc flash, fire flicker, and melt glow animations on failure</li>
+        <li>FUSE tier gating: advanced failure modes unlock with subscription tiers</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── BOT USAGE PANEL ─────────────────────────────────────────────────────── -->
+<section class="bot-panel">
+  <div class="bot-inner reveal">
+    <div class="section-label">Circuit Bot</div>
+    <h2 class="section-title">Automated Gameplay Recording</h2>
+    <p style="color:var(--c-muted); font-size:1rem; margin-top:0.5rem;">
+      The footage above was captured by <strong style="color:var(--c-text)">scripts/circuit-bot.js</strong> — a Playwright
+      automation script that drives the circuit builder, loads presets, runs simulations, and records
+      cinematic WebM clips ready for your video editor.
+    </p>
+
+    <div class="bot-code">
+<pre><span class="cmt"># Install Playwright browser (first time only)</span>
+npx playwright install chromium
+
+<span class="cmt"># Record all 5 scenes from production site</span>
+npm run circuit-bot
+
+<span class="cmt"># Record from a local dev server</span>
+npm run dev <span class="cmt">&amp;</span>
+npm run circuit-bot -- <span class="str">--local</span>
+
+<span class="cmt"># Record a single scene</span>
+npm run circuit-bot -- <span class="str">--local --scene scene-03-overload</span>
+
+<span class="cmt"># Merge clips into one reel (requires ffmpeg)</span>
+ffmpeg -f concat -safe <span class="num">0</span> \
+  -i &lt;(ls promo-footage/scene-*.webm | sed <span class="str">"s/.*/file '&amp;'/"</span>) \
+  -c copy promo-footage/promo-reel.webm</pre>
+    </div>
+
+    <div class="bot-steps">
+      <div class="bot-step">
+        <div class="bot-step-num">01</div>
+        <div class="bot-step-title">Load Preset</div>
+        <div class="bot-step-desc">The bot posts a <code>load-preset</code> action via the builder bridge API — no UI clicks needed.</div>
+      </div>
+      <div class="bot-step">
+        <div class="bot-step-num">02</div>
+        <div class="bot-step-title">Cinematic Camera</div>
+        <div class="bot-step-desc">Smooth zoom-in / zoom-out sequences move from the macro overview down to atomic level and back.</div>
+      </div>
+      <div class="bot-step">
+        <div class="bot-step-num">03</div>
+        <div class="bot-step-title">Simulate &amp; Fail</div>
+        <div class="bot-step-desc">Success circuits flow gracefully. The overload preset triggers real thermal failure after a dramatic pause.</div>
+      </div>
+      <div class="bot-step">
+        <div class="bot-step-num">04</div>
+        <div class="bot-step-title">Export WebM</div>
+        <div class="bot-step-desc">Playwright records each scene at 1920×1080. Combine with ffmpeg or drag into any NLE for the final cut.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER CTA ───────────────────────────────────────────────────────────── -->
+<section class="footer-cta">
+  <div class="reveal">
+    <h2 class="section-title">Ready to illuminate electricity?</h2>
+    <p style="color:var(--c-muted); margin-top:0.75rem; font-size:1.05rem;">
+      Build your first circuit in seconds. No account required.
+    </p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem;">
+      <a href="/#/app" class="btn btn-primary">⚡ Start Building</a>
+      <a href="/#/pricing" class="btn btn-secondary">💎 View Pricing</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 CircuiTry3D · Built for curious minds ·
+    <a href="/#/app" style="color:var(--c-accent); text-decoration:none;">Open App</a> ·
+    <a href="/#/practice" style="color:var(--c-accent); text-decoration:none;">Practice</a> ·
+    <a href="/#/pricing" style="color:var(--c-accent); text-decoration:none;">Pricing</a>
+  </p>
+</footer>
+
+<script>
+/* ── Particle canvas — floating electrons ─────────────────────────────────── */
+(function () {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COUNT = 60;
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * 2000,
+      y: Math.random() * 1200,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: 1.2 + Math.random() * 2,
+      alpha: 0.15 + Math.random() * 0.45,
+      pulse: Math.random() * Math.PI * 2,
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw faint connection lines between close particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d  = Math.hypot(dx, dy);
+        if (d < 160) {
+          ctx.save();
+          ctx.globalAlpha = (1 - d / 160) * 0.06;
+          ctx.strokeStyle = '#00c8ff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    // Draw particles
+    for (const p of particles) {
+      p.pulse += 0.02;
+      const a = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse));
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = '#00c8ff';
+      ctx.shadowColor = '#00c8ff';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+}());
+
+/* ── Fallback animated circuit previews ───────────────────────────────────── */
+(function () {
+  function buildSeriesPreview(container) {
+    container.style.background = 'linear-gradient(135deg, #040d1a, #0a1628)';
+    container.style.position = 'relative';
+    container.innerHTML = `
+      <!-- Battery -->
+      <div style="position:absolute;left:8%;top:50%;transform:translateY(-50%);
+           width:48px;height:80px;border:2px solid #00ff88;border-radius:8px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.6rem;color:#00ff88;font-weight:700;background:rgba(0,255,136,0.08);">BAT</div>
+      <!-- Top wire -->
+      <div style="position:absolute;top:calc(50% - 40px);left:calc(8% + 50px);right:8%;height:3px;background:rgba(0,200,255,0.3);"></div>
+      <!-- Bottom wire -->
+      <div style="position:absolute;top:calc(50% + 38px);left:calc(8% + 50px);right:8%;height:3px;background:rgba(0,200,255,0.3);"></div>
+      <!-- R1 -->
+      <div style="position:absolute;top:calc(50% - 51px);left:30%;width:60px;height:22px;
+           border:2px solid #00c8ff;border-radius:4px;display:flex;align-items:center;
+           justify-content:center;font-size:0.55rem;color:#00c8ff;font-weight:700;
+           background:rgba(0,200,255,0.1);">R1 150Ω</div>
+      <!-- R2 -->
+      <div style="position:absolute;top:calc(50% - 51px);left:53%;width:60px;height:22px;
+           border:2px solid #00c8ff;border-radius:4px;display:flex;align-items:center;
+           justify-content:center;font-size:0.55rem;color:#00c8ff;font-weight:700;
+           background:rgba(0,200,255,0.1);">R2 200Ω</div>
+      <!-- R3 -->
+      <div style="position:absolute;top:calc(50% - 51px);left:76%;width:60px;height:22px;
+           border:2px solid #00c8ff;border-radius:4px;display:flex;align-items:center;
+           justify-content:center;font-size:0.55rem;color:#00c8ff;font-weight:700;
+           background:rgba(0,200,255,0.1);">R3 250Ω</div>
+      <!-- Electron 1 -->
+      <div class="electron" id="e1s" style="top:calc(50% - 44px);left:0%;
+           animation:electron-flow 2.2s linear infinite;"></div>
+      <!-- Electron 2 -->
+      <div class="electron" id="e2s" style="top:calc(50% - 44px);left:0%;
+           animation:electron-flow 2.2s linear 0.7s infinite;"></div>
+      <!-- Electron 3 -->
+      <div class="electron" id="e3s" style="top:calc(50% - 44px);left:0%;
+           animation:electron-flow 2.2s linear 1.4s infinite;"></div>
+      <!-- Label -->
+      <div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);
+           font-size:0.65rem;color:rgba(0,200,255,0.5);letter-spacing:0.08em;white-space:nowrap;">
+        SERIES — 24 V · 40 mA
+      </div>
+    `;
+  }
+
+  function buildOverloadPreview(container) {
+    container.style.background = 'linear-gradient(135deg, #1a0505, #200a0a)';
+    container.innerHTML = `
+      <!-- Battery -->
+      <div style="position:absolute;left:12%;top:50%;transform:translateY(-50%);
+           width:48px;height:80px;border:2px solid #ff6b35;border-radius:8px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.6rem;color:#ff6b35;font-weight:700;background:rgba(255,107,53,0.08);">24V</div>
+      <!-- Resistor — overheating -->
+      <div style="position:absolute;top:50%;left:60%;transform:translate(-50%,-50%);
+           width:70px;height:40px;border:2px solid #ff3b3b;border-radius:8px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.6rem;color:#ff3b3b;font-weight:700;
+           background:rgba(255,59,59,0.15);
+           animation:heat-flicker 0.6s ease infinite;">1 Ω ⚠</div>
+      <!-- Wires -->
+      <div style="position:absolute;top:calc(50% - 40px);left:calc(12% + 50px);right:12%;height:3px;background:rgba(255,107,53,0.4);"></div>
+      <div style="position:absolute;top:calc(50% + 38px);left:calc(12% + 50px);right:12%;height:3px;background:rgba(255,107,53,0.4);"></div>
+      <!-- DANGER sparks (CSS only) -->
+      <div style="position:absolute;top:38%;left:56%;width:10px;height:10px;
+           background:#ff3b3b;border-radius:50%;box-shadow:0 0 12px #ff3b3b;
+           animation:heat-flicker 0.3s ease infinite;"></div>
+      <!-- Label -->
+      <div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);
+           font-size:0.65rem;color:rgba(255,59,59,0.7);letter-spacing:0.08em;white-space:nowrap;">
+        OVERLOAD — 24 A · 576 W  🔥
+      </div>
+    `;
+  }
+
+  function buildParallelPreview(container) {
+    container.style.background = 'linear-gradient(135deg, #040d1a, #061528)';
+    container.innerHTML = `
+      <!-- Battery -->
+      <div style="position:absolute;left:5%;top:50%;transform:translateY(-50%);
+           width:44px;height:76px;border:2px solid #00ff88;border-radius:8px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.58rem;color:#00ff88;font-weight:700;background:rgba(0,255,136,0.08);">12V</div>
+      <!-- Rails -->
+      <div style="position:absolute;top:25%;left:calc(5% + 46px);right:8%;height:3px;background:rgba(0,200,255,0.35);"></div>
+      <div style="position:absolute;top:75%;left:calc(5% + 46px);right:8%;height:3px;background:rgba(0,200,255,0.35);"></div>
+      <!-- Branch 1 -->
+      <div style="position:absolute;top:25%;left:32%;width:3px;height:50%;background:rgba(0,200,255,0.3);"></div>
+      <div style="position:absolute;top:50%;left:calc(32% - 22px);transform:translateY(-50%);
+           width:44px;height:20px;border:1px solid #00c8ff;border-radius:4px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.52rem;color:#00c8ff;">100Ω</div>
+      <!-- Branch 2 -->
+      <div style="position:absolute;top:25%;left:55%;width:3px;height:50%;background:rgba(0,200,255,0.3);"></div>
+      <div style="position:absolute;top:50%;left:calc(55% - 22px);transform:translateY(-50%);
+           width:44px;height:20px;border:1px solid #00c8ff;border-radius:4px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.52rem;color:#00c8ff;">220Ω</div>
+      <!-- Branch 3 -->
+      <div style="position:absolute;top:25%;left:76%;width:3px;height:50%;background:rgba(0,200,255,0.3);"></div>
+      <div style="position:absolute;top:50%;left:calc(76% - 22px);transform:translateY(-50%);
+           width:44px;height:20px;border:1px solid #00c8ff;border-radius:4px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:0.52rem;color:#00c8ff;">330Ω</div>
+      <!-- Label -->
+      <div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);
+           font-size:0.65rem;color:rgba(0,200,255,0.5);letter-spacing:0.08em;white-space:nowrap;">
+        PARALLEL — 12 V · 3 BRANCHES
+      </div>
+    `;
+  }
+
+  function buildMixedPreview(container) {
+    container.style.background = 'linear-gradient(135deg, #040d1a, #060e20)';
+    container.innerHTML = `
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+           flex-direction:column;gap:0.5rem;">
+        <div style="font-size:2rem;animation:glow-pulse 2s ease-in-out infinite;">🔬</div>
+        <div style="font-size:0.78rem;color:rgba(0,200,255,0.7);letter-spacing:0.08em;text-transform:uppercase;">
+          Series + Parallel + LED
+        </div>
+        <div style="font-size:0.65rem;color:var(--c-muted);">7 components · 24 V · KVL/KCL verified</div>
+      </div>
+    `;
+  }
+
+  // Wire up fallbacks after DOM is ready
+  buildSeriesPreview(document.getElementById('preview-series'));
+  buildParallelPreview(document.getElementById('preview-parallel'));
+  buildOverloadPreview(document.getElementById('preview-overload'));
+  buildMixedPreview(document.getElementById('preview-mixed'));
+
+  // Show fallback immediately if video src not found (404) — also handles the case
+  // where promo-footage WebM files haven't been generated yet.
+  document.querySelectorAll('.video-wrapper video').forEach((vid) => {
+    // If the video can't load, show the fallback sibling
+    vid.addEventListener('error', () => {
+      vid.style.display = 'none';
+      const fallback = vid.nextElementSibling;
+      if (fallback) fallback.style.display = 'flex';
+    });
+    // Proactively hide video and show fallback if src leads to a 404
+    fetch(vid.src, { method: 'HEAD' })
+      .then((r) => {
+        if (!r.ok) {
+          vid.style.display = 'none';
+          const fallback = vid.nextElementSibling;
+          if (fallback) fallback.style.display = 'flex';
+        }
+      })
+      .catch(() => {});
+  });
+}());
+
+/* ── Failure canvas animation ─────────────────────────────────────────────── */
+(function () {
+  const canvas = document.getElementById('failure-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  let t = 0;
+  let phase = 0; // 0=flowing, 1=heating, 2=failed
+
+  const STATUS = document.getElementById('failure-status');
+  const MESSAGES = [
+    '⚡ Simulation running — 24 V / 1 Ω = 24 A',
+    '🌡 FUSE: thermal onset detected — T rising fast',
+    '⚠ FUSE: critical temperature exceeded — power cut!',
+  ];
+
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = canvas.width  = rect.width  || 600;
+    H = canvas.height = rect.height || 400;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Spark particles
+  const sparks = [];
+  function spawnSparks(x, y) {
+    for (let i = 0; i < 12; i++) {
+      sparks.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6 - 3,
+        life: 1,
+        decay: 0.04 + Math.random() * 0.06,
+        r: 2 + Math.random() * 4,
+      });
+    }
+  }
+
+  // Electron flow dots
+  const electrons = Array.from({ length: 8 }, (_, i) => ({
+    progress: i / 8,
+    speed: 0.004 + Math.random() * 0.002,
+  }));
+
+  function getElectronPos(progress) {
+    // Simple rectangular path: top, right, bottom, left
+    const bx = W * 0.18, by = H * 0.3, bw = W * 0.64, bh = H * 0.4;
+    const perim = (bw + bh) * 2;
+    const d = progress * perim;
+    if (d < bw)           return { x: bx + d,        y: by };
+    if (d < bw + bh)      return { x: bx + bw,       y: by + (d - bw) };
+    if (d < bw * 2 + bh)  return { x: bx + bw - (d - bw - bh), y: by + bh };
+    return { x: bx, y: by + bh - (d - bw * 2 - bh) };
+  }
+
+  // Cycle phase every few seconds
+  setInterval(() => {
+    phase = (phase + 1) % 3;
+    if (STATUS) STATUS.textContent = MESSAGES[phase];
+    if (phase === 2) {
+      spawnSparks(W * 0.62, H * 0.5);
+    }
+  }, 3500);
+
+  function draw() {
+    t++;
+    ctx.clearRect(0, 0, W, H);
+
+    const bx = W * 0.18, by = H * 0.3, bw = W * 0.64, bh = H * 0.4;
+
+    // Wire glow colour
+    const flickerAmt = phase === 1 ? 0.5 + 0.5 * Math.sin(t * 0.25) : phase === 2 ? 0 : 1;
+    const wireCol = phase === 2
+      ? `rgba(80,80,80,0.5)`
+      : `rgba(0,${Math.round(160 + 40 * flickerAmt)},${Math.round(200 + 55 * flickerAmt)}, ${0.45 + 0.2 * flickerAmt})`;
+
+    // Draw circuit rectangle
+    ctx.strokeStyle = wireCol;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = wireCol;
+    ctx.shadowBlur = phase === 2 ? 0 : 8;
+    ctx.strokeRect(bx, by, bw, bh);
+    ctx.shadowBlur = 0;
+
+    // Battery (left side)
+    const batAlpha = phase === 2 ? 0.3 : 0.9;
+    ctx.save();
+    ctx.globalAlpha = batAlpha;
+    ctx.fillStyle = '#00ff88';
+    ctx.fillRect(bx - 6, H * 0.5 - 22, 12, 44);
+    ctx.fillStyle = '#040d1a';
+    ctx.font = `bold ${Math.round(W * 0.018)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('BAT', bx, H * 0.5 + 4);
+    ctx.restore();
+
+    // Resistor (right-center, inside circuit)
+    const resX = bx + bw * 0.62, resY = by + bh * 0.5;
+    const heatColor = phase === 0
+      ? '#00c8ff'
+      : phase === 1
+        ? `rgb(${Math.round(100 + 155 * flickerAmt)}, ${Math.round(100 - 50 * flickerAmt)}, 50)`
+        : '#ff3b3b';
+    ctx.save();
+    ctx.strokeStyle = heatColor;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = heatColor;
+    ctx.shadowBlur = phase === 1 ? 12 * flickerAmt : phase === 2 ? 20 * Math.abs(Math.sin(t * 0.1)) : 4;
+    ctx.strokeRect(resX - 28, resY - 14, 56, 28);
+    ctx.fillStyle = heatColor + '22';
+    ctx.fillRect(resX - 28, resY - 14, 56, 28);
+    ctx.fillStyle = heatColor;
+    ctx.font = `bold ${Math.round(W * 0.015)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('1 Ω', resX, resY + 5);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Power label
+    if (phase !== 2) {
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = heatColor;
+      ctx.font = `${Math.round(W * 0.013)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('576 W', resX, resY - 20);
+      ctx.restore();
+    }
+
+    // Electrons
+    if (phase !== 2) {
+      for (const e of electrons) {
+        e.progress = (e.progress + e.speed * (phase === 1 ? 2.2 : 1)) % 1;
+        const { x, y } = getElectronPos(e.progress);
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = phase === 1 ? '#ff6b35' : '#00c8ff';
+        ctx.shadowColor = phase === 1 ? '#ff6b35' : '#00c8ff';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Sparks
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i];
+      s.x  += s.vx;
+      s.y  += s.vy;
+      s.vy += 0.3;
+      s.life -= s.decay;
+      if (s.life <= 0) { sparks.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = s.life;
+      ctx.fillStyle = '#ff3b3b';
+      ctx.shadowColor = '#ff6b35';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // "FAILED" overlay
+    if (phase === 2) {
+      ctx.save();
+      const flashAlpha = 0.4 + 0.4 * Math.abs(Math.sin(t * 0.08));
+      ctx.globalAlpha = flashAlpha;
+      ctx.fillStyle = '#ff3b3b';
+      ctx.font = `bold ${Math.round(W * 0.055)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('COMPONENT FAILED', W / 2, H / 2);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+}());
+
+/* ── Scroll-reveal ───────────────────────────────────────────────────────────── */
+(function () {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+}());
+</script>
+</body>
+</html>

@@ -13,7 +13,9 @@
     "generate-play-store-icons": "node scripts/generate-play-store-icons.js",
     "generate-feature-graphic": "node scripts/generate-feature-graphic.js",
     "generate-screenshots": "node scripts/generate-screenshots.js",
-    "generate-screenshots:local": "node scripts/generate-screenshots.js --local"
+    "generate-screenshots:local": "node scripts/generate-screenshots.js --local",
+    "circuit-bot": "node scripts/circuit-bot.js",
+    "circuit-bot:local": "node scripts/circuit-bot.js --local"
   },
   "repository": {
     "type": "git",
