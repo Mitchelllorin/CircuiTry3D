@@ -539,6 +539,7 @@ body.builder-body {
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
 .workspace-edge-actions--right {
   right: calc(
+    var(--builder-menu-toggle-hit-width) +
     clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
   );
   left: auto;
@@ -591,6 +592,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
+      var(--builder-menu-toggle-hit-width) +
       clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
     );
     /* Position above the Insights toggle to avoid overlap */
@@ -639,6 +641,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
+      var(--builder-menu-toggle-hit-width) +
       clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
     );
     left: auto;
@@ -827,18 +830,32 @@ body.builder-body {
 }
 
 /* Zoom controls overlay
-   Positioned below both the nav bar and the status ticker so they are never
-   obscured by those UI layers. Right offset clears the right menu toggle tab
-   (--builder-menu-toggle-hit-width) so the buttons never overlap the toggle,
-   matching the pattern used by .workspace-edge-actions--right. */
+   Positioned in the bottom-right corner so they are never obscured by the
+   centered quick-add bar (which lives at the top).  They sit below the
+   workspace-edge-actions because edge-actions use bottom ≥ 96 px while
+   zoom controls use bottom: 8 px — so there is always ≥ 52 px of clearance
+   regardless of viewport height.  Right offset clears the right menu toggle
+   tab (--builder-menu-toggle-hit-width). */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
+  top: auto;
+  bottom: calc(8px + var(--builder-safe-area-bottom));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
   gap: 4px;
+}
+
+/* When the right side menu is open, shift zoom controls left to stay clear
+   of the open panel (mirrors the pattern used by .workspace-edge-actions--right). */
+.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
+  right: calc(
+    env(safe-area-inset-right, 0px) +
+    var(--builder-menu-right-width) +
+    var(--builder-menu-toggle-hit-width) +
+    12px
+  );
 }
 
 .circuit-zoom-btn {
@@ -1252,7 +1269,7 @@ body.builder-body {
 
 .builder-menu-stage-left,
 .builder-menu-stage-right {
-  /* Start below the ticker strip (ticker top 72px + height 32px + 4px gap = 108px).
+  /* Start below the ticker strip (--builder-ticker-top + --builder-ticker-height + 4px gap).
      This prevents the toggle buttons from being hidden behind the ticker band. */
   top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 4px + var(--builder-safe-area-top));
   bottom: calc(28px + var(--builder-safe-area-bottom));
@@ -2857,8 +2874,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 28px);
   }
 
-  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
-  .circuit-zoom-controls,
+  /* Position quick-add-bar below the actual mode bar + ticker */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 52px + var(--builder-safe-area-top));
   }
@@ -2876,8 +2892,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 26px);
   }
 
-  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
-  .circuit-zoom-controls,
+  /* Position quick-add-bar below the actual mode bar + ticker */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 48px + var(--builder-safe-area-top));
   }
@@ -4178,8 +4193,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: calc(44px + var(--builder-safe-area-top));
   }
 
-  /* Ticker is hidden; place zoom controls and quick-add-bar just below the nav bar */
-  .circuit-zoom-controls,
+  /* Ticker is hidden; place quick-add-bar just below the nav bar */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
   }
@@ -4213,7 +4227,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .workspace-edge-actions--right {
-    /* Position above the Insights toggle to avoid overlap */
+    /* Position above the Insights toggle to avoid overlap, and clear of the sidebar toggle */
+    right: calc(
+      var(--builder-menu-toggle-hit-width) +
+      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+    );
     bottom: calc(
       var(--builder-menu-toggle-height) +
       20px +
