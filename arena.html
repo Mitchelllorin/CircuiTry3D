@@ -1180,6 +1180,9 @@
         renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.domElement.style.touchAction = "none";
         renderer.domElement.style.cursor = "grab";
 
