@@ -4965,7 +4965,7 @@ body.android-optimized .zoom-btn {
                 const group = new THREE.Group();
                 
                 // Main purple sphere
-                const bodyGeometry = new THREE.SphereGeometry(0.25, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const bodyGeometry = new THREE.SphereGeometry(0.20, isMobile ? 12 : 16, isMobile ? 8 : 12);
                 const bodyMaterial = new THREE.MeshPhongMaterial({ 
                     color: 0x8844ff,
                     emissive: 0x221188,
@@ -4995,7 +4995,7 @@ body.android-optimized .zoom-btn {
             }
 
             createConnectionPoint() {
-                const pointGeometry = new THREE.SphereGeometry(0.14, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const pointGeometry = new THREE.SphereGeometry(0.11, isMobile ? 12 : 16, isMobile ? 8 : 12);
                 const pointMaterial = new THREE.MeshPhongMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x007777,
@@ -6230,7 +6230,7 @@ body.android-optimized .zoom-btn {
             createConnectionPoints() {
                 this.connectionPoints = [];
 
-                const pointGeometry = new THREE.SphereGeometry(0.15, isMobile ? 16 : 20, isMobile ? 12 : 16);
+                const pointGeometry = new THREE.SphereGeometry(0.12, isMobile ? 16 : 20, isMobile ? 12 : 16);
                 const leftPos = new THREE.Vector3(-1.2, 0, 0);
                 const rightPos = new THREE.Vector3(1.2, 0, 0);
                 const centerPos = new THREE.Vector3(0, 0, 0);
@@ -10132,7 +10132,7 @@ body.android-optimized .zoom-btn {
             if (highlight) {
                 connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
-                connectionPoint.scale.setScalar(1.4);
+                connectionPoint.scale.setScalar(1.2);
             } else {
                 if (pointData.junction) {
                     connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
