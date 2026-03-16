@@ -31,6 +31,7 @@ import SolutionSteps from "../components/practice/SolutionSteps";
 import TriangleDeck from "../components/practice/TriangleDeck";
 import OhmsLawWheel from "../components/practice/OhmsLawWheel";
 import KirchhoffLaws from "../components/practice/KirchhoffLaws";
+import JunctionGuide from "../components/practice/JunctionGuide";
 import CircuitDiagram from "../components/practice/CircuitDiagram";
 import ResistorColorCode from "../components/practice/ResistorColorCode";
 import { ProgressDashboard } from "../components/gamification/ProgressDashboard";
@@ -1515,6 +1516,7 @@ export default function Practice({
           </section>
 
           <section className="practice-supplement">
+            <JunctionGuide />
             <KirchhoffLaws />
             <TriangleDeck />
             <div ref={ohmsWheelRef} id="practice-ohms-wheel" className="practice-helper-anchor">
