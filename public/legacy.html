@@ -3977,6 +3977,13 @@ body.android-optimized .zoom-btn {
                     }
                     break;
                 }
+                case 'builder:ping': {
+                    // Parent is polling to confirm the iframe is ready
+                    // (handles the race where legacy:ready was sent before
+                    // the React listener was registered).
+                    notifyParentReady();
+                    break;
+                }
                 case 'builder:request-mode-state': {
                     notifyParentModeState();
                     break;
@@ -7055,7 +7062,6 @@ body.android-optimized .zoom-btn {
                     lastTouchEnd = now;
                 }, false);
 
-                notifyParentReady();
                 notifyParentAnalysisState();
                 notifyParentToolState('select');
                 applyRoutingMode(getRouterMode(), {
@@ -7068,6 +7074,11 @@ body.android-optimized .zoom-btn {
             } catch (error) {
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
+            } finally {
+                // Always notify the parent frame so the React UI never stays
+                // stuck in its "loading / disabled" state, even when init()
+                // encounters a non-fatal error.
+                notifyParentReady();
             }
         }
 
@@ -7943,8 +7954,13 @@ body.android-optimized .zoom-btn {
             // Main grid - reduced complexity for mobile
             const gridSize = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
-            
-            gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x4444aa, 0x222244);
+
+            // Use brighter grid colours on mobile / Android so the grid remains
+            // visible against the very dark scene background (0x0a0a1a).
+            const mainGridColor = isMobile ? 0x6666bb : 0x4444aa;
+            const subGridColor  = isMobile ? 0x444499 : 0x222244;
+
+            gridHelper = new THREE.GridHelper(gridSize, gridDivisions, mainGridColor, subGridColor);
             scene.add(gridHelper);
             
             // Fine grid overlay - only on desktop
@@ -10744,9 +10760,47 @@ body.android-optimized .zoom-btn {
         if (typeof window.Capacitor !== 'undefined' &&
                 typeof window.Capacitor.isNativePlatform === 'function' &&
                 window.Capacitor.isNativePlatform()) {
-            window.Capacitor.Plugins.Billing.initialize().catch(() => {
-                // Billing unavailable; purchase will retry on demand
-            });
+            // Note: the tier-mapping logic below mirrors src/utils/playStoreBilling.ts.
+            // legacy.html runs inside a sandboxed iframe and cannot import TypeScript
+            // modules directly, so the mapping is kept inline here.
+            window.Capacitor.Plugins.Billing.initialize()
+                .then(() => {
+                    // After successful initialization, restore any active
+                    // subscriptions so the stored tier reflects the user's
+                    // current Play Store entitlement on every app launch
+                    // (handles fresh installs and app re-installs where
+                    // localStorage has been cleared).
+                    return window.Capacitor.Plugins.Billing.restorePurchases();
+                })
+                .then((result) => {
+                    // restorePurchases returns { purchases: [{products: [...], ...}] }
+                    const purchaseList = result && Array.isArray(result.purchases)
+                        ? result.purchases
+                        : [];
+                    const PRODUCT_TIER_MAP = {
+                        circuitry3d_student_monthly: 'student',
+                        circuitry3d_student_annual: 'student',
+                        circuitry3d_educator_monthly: 'educator',
+                        circuitry3d_educator_annual: 'educator',
+                    };
+                    const TIER_ORDER = ['free', 'student', 'educator', 'institutional'];
+                    let best = 'free';
+                    for (const purchase of purchaseList) {
+                        const pids = Array.isArray(purchase.products) ? purchase.products : [];
+                        for (const pid of pids) {
+                            const t = PRODUCT_TIER_MAP[pid];
+                            if (t && TIER_ORDER.indexOf(t) > TIER_ORDER.indexOf(best)) {
+                                best = t;
+                            }
+                        }
+                    }
+                    try {
+                        localStorage.setItem('circuitry3d_subscription_tier', best);
+                    } catch (_) {}
+                })
+                .catch(() => {
+                    // Billing unavailable; purchase will retry on demand
+                });
 
             // Store the tier when a purchase completes (handles both new
             // purchases and any pending purchase that completes on launch).
@@ -17245,6 +17299,15 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             }, { once: true });
         }
         // ─────────────────────────────────────────────────────────────────────
+
+        // Ensure the canvas is visible before Three.js initialises the WebGL
+        // renderer.  Some Android WebViews refuse to create a context on a
+        // hidden canvas (display:none), which would silently fail and leave
+        // the workspace blank.  launchApplication() still runs on the load
+        // event for any remaining layout bookkeeping, but the canvas must be
+        // visible first.
+        const _preInitCanvas = document.getElementById('canvas');
+        if (_preInitCanvas) _preInitCanvas.style.display = 'block';
 
         // Start the application
         init();

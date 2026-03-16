@@ -8,6 +8,7 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
+import { initBilling, restorePurchases, isAndroidApp } from "./utils/playStoreBilling";
 
 function renderFatalOverlay(payload: {
   title: string;
@@ -120,6 +121,16 @@ try {
   }).catch((error) => {
     console.warn('[App] Android initialization failed:', error);
   });
+
+  // On Android, initialize the Play Store billing client and restore any
+  // active subscriptions so the stored tier is correct before the UI renders.
+  if (isAndroidApp()) {
+    initBilling()
+      .then(() => restorePurchases())
+      .catch((error) => {
+        console.warn('[App] Billing restore failed:', error);
+      });
+  }
 
   createRoot(container).render(
     <React.StrictMode>
