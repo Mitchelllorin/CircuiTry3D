@@ -6,20 +6,39 @@ import BrandMark from "./BrandMark";
 import "../styles/builder-ui.css";
 import wireResourceLogo from "../assets/wire-resource-logo.svg";
 
+type SecondaryTab = {
+  mode: WorkspaceMode;
+  icon: string;
+  label: string;
+  title: string;
+};
+
 type ModeBarScrollState = {
   canScrollLeft: boolean;
   canScrollRight: boolean;
 };
+
+/* Secondary / less-used tabs grouped under the "More ⋯" button */
+const SECONDARY_TABS: SecondaryTab[] = [
+  { mode: "arcade",    icon: "🎯", label: "Arcade",    title: "Circuit Arcade" },
+  { mode: "classroom", icon: "🎓", label: "Classroom", title: "Classroom" },
+  { mode: "community", icon: "🌐", label: "Community", title: "Community" },
+  { mode: "account",   icon: "👤", label: "Account",   title: "Account" },
+  { mode: "pricing",   icon: "💳", label: "Pricing",   title: "Pricing" },
+  { mode: "textbook",  icon: "📖", label: "Textbook",  title: "Year 1 & Year 2 Electrical Studies Textbook" },
+];
 
 export function GlobalModeBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { workspaceMode, setWorkspaceMode } = useWorkspaceMode();
   const modeBarRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [modeBarScrollState, setModeBarScrollState] = useState<ModeBarScrollState>({
     canScrollLeft: false,
     canScrollRight: false,
   });
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const isWorkspacePage = location.pathname === "/app";
   const isLandingPage = location.pathname === "/";
@@ -54,9 +73,22 @@ export function GlobalModeBar() {
     };
   }, [checkModeBarScroll]);
 
+  /* Close the More dropdown when clicking outside it */
+  useEffect(() => {
+    if (!isMoreOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setIsMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isMoreOpen]);
+
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
+      setIsMoreOpen(false);
       // Keep all top-nav workflows anchored to the main workspace shell.
       if (!isWorkspacePage) {
         navigate("/app");
@@ -89,6 +121,9 @@ export function GlobalModeBar() {
     handleModeClick("wire-guide");
   }, [handleModeClick]);
 
+  /* Whether any secondary tab is the active mode (so the More button appears highlighted) */
+  const isSecondaryActive = SECONDARY_TABS.some((t) => t.mode === workspaceMode);
+
   return (
     <>
       {modeBarScrollState.canScrollLeft && (
@@ -97,6 +132,7 @@ export function GlobalModeBar() {
         </div>
       )}
       <div className="workspace-mode-bar workspace-mode-bar--global" ref={modeBarRef}>
+        {/* Brand home link */}
         <Link
           to="/"
           className="mode-tab mode-tab--icon-only mode-tab--brand"
@@ -105,6 +141,8 @@ export function GlobalModeBar() {
         >
           <BrandMark size="xs" decorative />
         </Link>
+
+        {/* ── Primary tabs ── */}
         <button
           type="button"
           className="mode-tab"
@@ -163,61 +201,6 @@ export function GlobalModeBar() {
         <button
           type="button"
           className="mode-tab"
-          data-active={workspaceMode === "arcade" ? "true" : undefined}
-          onClick={() => handleModeClick("arcade")}
-          aria-label="Arcade"
-          title="Circuit Arcade"
-        >
-          <span className="mode-icon" aria-hidden="true">🎯</span>
-          <span className="mode-label">Arcade</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "classroom" ? "true" : undefined}
-          onClick={() => handleModeClick("classroom")}
-          aria-label="Classroom"
-          title="Classroom"
-        >
-          <span className="mode-icon" aria-hidden="true">🎓</span>
-          <span className="mode-label">Classroom</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "community" ? "true" : undefined}
-          onClick={() => handleModeClick("community")}
-          aria-label="Community"
-          title="Community"
-        >
-          <span className="mode-icon" aria-hidden="true">🌐</span>
-          <span className="mode-label">Community</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "account" ? "true" : undefined}
-          onClick={() => handleModeClick("account")}
-          aria-label="Account"
-          title="Account"
-        >
-          <span className="mode-icon" aria-hidden="true">👤</span>
-          <span className="mode-label">Account</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "pricing" ? "true" : undefined}
-          onClick={() => handleModeClick("pricing")}
-          aria-label="Pricing"
-          title="Pricing"
-        >
-          <span className="mode-icon" aria-hidden="true">💳</span>
-          <span className="mode-label">Pricing</span>
-        </button>
-        <button
-          type="button"
-          className="mode-tab"
           data-active={workspaceMode === "wire-guide" ? "true" : undefined}
           onClick={handleWireGuideClick}
           aria-label="Wire guide mode"
@@ -231,17 +214,42 @@ export function GlobalModeBar() {
           />
           <span className="mode-label">Wire Guide</span>
         </button>
-        <button
-          type="button"
-          className="mode-tab"
-          data-active={workspaceMode === "textbook" ? "true" : undefined}
-          onClick={() => handleModeClick("textbook")}
-          aria-label="Electrical Textbook — Year 1 and Year 2 reference"
-          title="Year 1 & Year 2 Electrical Studies Textbook"
-        >
-          <span className="mode-icon" aria-hidden="true">📖</span>
-          <span className="mode-label">Textbook</span>
-        </button>
+
+        {/* ── Secondary tabs behind "More" dropdown ── */}
+        <div className="mode-tab--more" ref={moreMenuRef}>
+          <button
+            type="button"
+            className="mode-tab"
+            data-active={isSecondaryActive ? "true" : undefined}
+            onClick={() => setIsMoreOpen((o) => !o)}
+            aria-label="More pages"
+            aria-expanded={isMoreOpen}
+            title="Arcade, Classroom, Community, Account, Pricing, Textbook"
+          >
+            <span className="mode-icon" aria-hidden="true">⋯</span>
+            <span className="mode-label">More</span>
+          </button>
+          {isMoreOpen && (
+            <div className="mode-more-dropdown" role="menu">
+              {SECONDARY_TABS.map((tab) => (
+                <button
+                  key={tab.mode}
+                  type="button"
+                  className="mode-tab"
+                  data-active={workspaceMode === tab.mode ? "true" : undefined}
+                  onClick={() => handleModeClick(tab.mode)}
+                  aria-label={tab.label}
+                  title={tab.title}
+                  role="menuitem"
+                >
+                  <span className="mode-icon" aria-hidden="true">{tab.icon}</span>
+                  <span className="mode-label">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {modeBarScrollState.canScrollRight && (
           <div className="mode-bar-scroll-indicator mode-bar-scroll-indicator--inline" aria-hidden="true">
             <span className="scroll-indicator-arrow">›</span>
