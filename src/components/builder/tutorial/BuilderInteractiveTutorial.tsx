@@ -116,7 +116,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "junction-intro",
         title: "Step 7 — Junctions: branch your circuit",
         body:
-          "Click anywhere on an existing wire to drop a junction node (amber dot) and immediately start a new branch from that point. Junctions are the required branch nodes for parallel and series-parallel analysis. Look for the pulsing '+' indicator when hovering over a wire.",
+          "Junctions (bright yellow dots) are the key to building ANY circuit shape. Hover over a wire to see the pulsing '+' indicator, then click to drop a junction and immediately start a new branch from that point — no matter where on the wire you land. The new wire follows your current wiring mode (free, square, routing, etc.). Press J as a shortcut to add a junction at any time. Junctions are essential for parallel and series-parallel circuits.",
         canSkipRequirement: true,
         isComplete: ({ circuit }) =>
           Boolean((circuit?.counts.junctions ?? 0) > 0),
@@ -125,7 +125,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "junction-parallel",
         title: "Step 8 — Build a parallel path",
         body:
-          "Add a second resistor and wire it in parallel using junctions. Current divides between the branches and total resistance drops below the smallest branch. This parallel section is what you will collapse into a single R_eq when solving.",
+          "Place two junctions on the wire that connects your battery to the resistor — one on each side. Then add a second resistor and wire it between those two junctions to create a parallel branch. Each wiring mode draws a different style of route from a junction: free draws straight lines, square routes at 90°, and routing uses smart pathfinding. Current divides between the branches and total resistance drops below the smallest individual branch.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
