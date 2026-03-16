@@ -872,8 +872,8 @@ ffmpeg -f concat -safe <span class="num">0</span> \
   const COUNT = 60;
   for (let i = 0; i < COUNT; i++) {
     particles.push({
-      x: Math.random() * 2000,
-      y: Math.random() * 1200,
+      x: Math.random() * W,
+      y: Math.random() * H,
       vx: (Math.random() - 0.5) * 0.5,
       vy: (Math.random() - 0.5) * 0.5,
       r: 1.2 + Math.random() * 2,
@@ -1066,25 +1066,15 @@ ffmpeg -f concat -safe <span class="num">0</span> \
   buildOverloadPreview(document.getElementById('preview-overload'));
   buildMixedPreview(document.getElementById('preview-mixed'));
 
-  // Show fallback immediately if video src not found (404) — also handles the case
-  // where promo-footage WebM files haven't been generated yet.
+  // Rely on the native video error event to switch to fallback previews.
+  // This fires automatically when the browser cannot load the WebM source
+  // (e.g. promo-footage files haven't been generated yet).
   document.querySelectorAll('.video-wrapper video').forEach((vid) => {
-    // If the video can't load, show the fallback sibling
     vid.addEventListener('error', () => {
       vid.style.display = 'none';
       const fallback = vid.nextElementSibling;
       if (fallback) fallback.style.display = 'flex';
     });
-    // Proactively hide video and show fallback if src leads to a 404
-    fetch(vid.src, { method: 'HEAD' })
-      .then((r) => {
-        if (!r.ok) {
-          vid.style.display = 'none';
-          const fallback = vid.nextElementSibling;
-          if (fallback) fallback.style.display = 'flex';
-        }
-      })
-      .catch(() => {});
   });
 }());
 
