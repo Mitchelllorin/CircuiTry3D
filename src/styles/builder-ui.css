@@ -619,8 +619,9 @@ body.builder-body {
   }
 
   /* On very small screens, the bottom Insights drawer and edge actions fight for space.
-     Hide edge actions while the drawer is open to avoid button/menu overlaps. */
-  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions {
+     Hide edge actions and zoom controls while the drawer is open to avoid button/menu overlaps. */
+  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions,
+  .builder-shell[data-bottom-menu-open="true"] .circuit-zoom-controls {
     display: none;
   }
 }
@@ -786,14 +787,13 @@ body.builder-body {
 }
 
 /* Zoom controls overlay
-   Positioned below both the nav bar and the status ticker so they are never
-   obscured by those UI layers. Right offset clears the right menu toggle tab
-   (--builder-menu-toggle-hit-width) so the buttons never overlap the toggle,
-   matching the pattern used by .workspace-edge-actions--right. */
+   Centered at the bottom of the workspace so they are always visible and
+   never obscured by the nav bar, ticker, or right-side UI panels. */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
-  right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
+  bottom: calc(8px + var(--builder-safe-area-bottom));
+  left: 50%;
+  transform: translateX(-50%);
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
@@ -2814,8 +2814,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 28px);
   }
 
-  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
-  .circuit-zoom-controls,
+  /* Position quick-add-bar below the actual mode bar + ticker */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 52px + var(--builder-safe-area-top));
   }
@@ -2833,8 +2832,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 26px);
   }
 
-  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
-  .circuit-zoom-controls,
+  /* Position quick-add-bar below the actual mode bar + ticker */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 48px + var(--builder-safe-area-top));
   }
@@ -4127,8 +4125,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: calc(44px + var(--builder-safe-area-top));
   }
 
-  /* Ticker is hidden; place zoom controls and quick-add-bar just below the nav bar */
-  .circuit-zoom-controls,
+  /* Ticker is hidden; place quick-add-bar just below the nav bar */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
   }
