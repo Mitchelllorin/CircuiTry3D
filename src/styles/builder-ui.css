@@ -32,6 +32,10 @@
   --builder-safe-area-right: env(safe-area-inset-right, 0px);
   --builder-ticker-height: 32px;
   --builder-ticker-gap: 8px;
+  /* Top of the ticker strip (below the mode bar at 12px + ~48px mode-bar height + gap).
+     Side menus, quick-add-bar and zoom controls all key off this value so that nothing
+     overlaps the ticker band. */
+  --builder-ticker-top: 72px;
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
@@ -146,8 +150,8 @@ body.builder-body {
   top: calc(12px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
-  /* Keep the workspace bar above all builder overlays (arena, help, etc.) */
-  z-index: var(--z-demo-banner);
+  /* Keep the workspace bar above all builder panels and compact overlays */
+  z-index: var(--z-builder-top);
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
@@ -261,7 +265,7 @@ body.builder-body {
   position: fixed;
   top: calc(12px + var(--builder-safe-area-top));
   left: calc(50% - min(600px, calc(50vw - 12px)) - 28px);
-  z-index: var(--z-demo-banner-top);
+  z-index: var(--z-builder-top);
   background: rgba(10, 24, 48, 0.95);
   border: 1px solid var(--builder-border);
   border-radius: 50%;
@@ -327,6 +331,43 @@ body.builder-body {
 .mode-bar-spacer {
   flex: 1;
   min-width: 12px;
+}
+
+/* ── Mode-bar "More" dropdown ────────────────────────────────────────────── */
+.mode-tab--more {
+  position: relative;
+}
+
+.mode-more-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: rgba(10, 24, 48, 0.97);
+  border: 1px solid var(--builder-border);
+  border-radius: 14px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: var(--z-builder-top);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 32px rgba(3, 12, 32, 0.7);
+  animation: mode-dropdown-in 0.18s ease;
+  pointer-events: auto;
+}
+
+@keyframes mode-dropdown-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.mode-more-dropdown .mode-tab {
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
 }
 
 /* Edge-positioned workspace action buttons (Undo, Redo, Open, Save, Simulate, Clear) */
@@ -498,6 +539,7 @@ body.builder-body {
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
 .workspace-edge-actions--right {
   right: calc(
+    var(--builder-menu-toggle-hit-width) +
     clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
   );
   left: auto;
@@ -550,6 +592,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
+      var(--builder-menu-toggle-hit-width) +
       clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
     );
     /* Position above the Insights toggle to avoid overlap */
@@ -598,6 +641,7 @@ body.builder-body {
 
   .workspace-edge-actions--right {
     right: calc(
+      var(--builder-menu-toggle-hit-width) +
       clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
     );
     left: auto;
@@ -628,7 +672,7 @@ body.builder-body {
 .current-flow-payoff-banner {
   position: fixed;
   top: calc(
-    84px + var(--builder-safe-area-top) + var(--builder-ticker-height, 32px)
+    var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top)
   );
   left: 50%;
   transform: translateX(-50%);
@@ -752,7 +796,7 @@ body.builder-body {
 @media (max-width: 960px) {
   .current-flow-payoff-banner {
     top: calc(
-      78px + var(--builder-safe-area-top) + var(--builder-ticker-height, 28px)
+      var(--builder-ticker-top, 68px) + var(--builder-ticker-height, 28px) + 12px + var(--builder-safe-area-top)
     );
   }
 }
@@ -760,7 +804,7 @@ body.builder-body {
 @media (max-width: 720px) {
   .current-flow-payoff-banner {
     top: calc(
-      72px + var(--builder-safe-area-top) + var(--builder-ticker-height, 26px)
+      var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 26px) + 12px + var(--builder-safe-area-top)
     );
     width: calc(100vw - 20px);
     padding: 12px 12px;
@@ -786,18 +830,32 @@ body.builder-body {
 }
 
 /* Zoom controls overlay
-   Positioned below both the nav bar and the status ticker so they are never
-   obscured by those UI layers. Right offset clears the right menu toggle tab
-   (--builder-menu-toggle-hit-width) so the buttons never overlap the toggle,
-   matching the pattern used by .workspace-edge-actions--right. */
+   Positioned in the bottom-right corner so they are never obscured by the
+   centered quick-add bar (which lives at the top).  They sit below the
+   workspace-edge-actions because edge-actions use bottom ≥ 96 px while
+   zoom controls use bottom: 8 px — so there is always ≥ 52 px of clearance
+   regardless of viewport height.  Right offset clears the right menu toggle
+   tab (--builder-menu-toggle-hit-width). */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
+  top: auto;
+  bottom: calc(8px + var(--builder-safe-area-bottom));
   right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
   gap: 4px;
+}
+
+/* When the right side menu is open, shift zoom controls left to stay clear
+   of the open panel (mirrors the pattern used by .workspace-edge-actions--right). */
+.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
+  right: calc(
+    env(safe-area-inset-right, 0px) +
+    var(--builder-menu-right-width) +
+    var(--builder-menu-toggle-hit-width) +
+    12px
+  );
 }
 
 .circuit-zoom-btn {
@@ -1211,7 +1269,9 @@ body.builder-body {
 
 .builder-menu-stage-left,
 .builder-menu-stage-right {
-  top: calc(84px + var(--builder-safe-area-top));
+  /* Start below the ticker strip (--builder-ticker-top + --builder-ticker-height + 4px gap).
+     This prevents the toggle buttons from being hidden behind the ticker band. */
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 4px + var(--builder-safe-area-top));
   bottom: calc(28px + var(--builder-safe-area-bottom));
 }
 
@@ -2814,8 +2874,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 28px);
   }
 
-  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
-  .circuit-zoom-controls,
+  /* Position quick-add-bar below the actual mode bar + ticker */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 52px + var(--builder-safe-area-top));
   }
@@ -2833,8 +2892,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 26px);
   }
 
-  /* Position zoom controls and quick-add-bar below the actual mode bar + ticker */
-  .circuit-zoom-controls,
+  /* Position quick-add-bar below the actual mode bar + ticker */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 48px + var(--builder-safe-area-top));
   }
@@ -3959,11 +4017,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-toggle-width: 22px;
     --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 28px;
+    /* Ticker starts at 68px on tablets */
+    --builder-ticker-top: 68px;
   }
 
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    top: calc(80px + var(--builder-safe-area-top));
+    /* ticker-top(68) + ticker-height(28) + gap(4) = 100px */
+    top: calc(var(--builder-ticker-top, 68px) + var(--builder-ticker-height, 28px) + 4px + var(--builder-safe-area-top));
     bottom: calc(24px + var(--builder-safe-area-bottom));
   }
 
@@ -3997,11 +4058,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-ticker-height: 26px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
+    /* Ticker starts at 64px on mobile */
+    --builder-ticker-top: 64px;
   }
 
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    top: calc(76px + var(--builder-safe-area-top));
+    /* ticker-top(64) + ticker-height(26) + gap(4) = 94px */
+    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 26px) + 4px + var(--builder-safe-area-top));
     bottom: calc(184px + var(--builder-safe-area-bottom));
   }
 
@@ -4116,6 +4180,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-toggle-height: 44px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
+    /* Ticker is hidden; side menus position just below the mode bar */
+    --builder-ticker-top: 0px;
   }
 
   /* Hide the decorative ticker to free vertical space. */
@@ -4127,8 +4193,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: calc(44px + var(--builder-safe-area-top));
   }
 
-  /* Ticker is hidden; place zoom controls and quick-add-bar just below the nav bar */
-  .circuit-zoom-controls,
+  /* Ticker is hidden; place quick-add-bar just below the nav bar */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
   }
@@ -4162,7 +4227,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .workspace-edge-actions--right {
-    /* Position above the Insights toggle to avoid overlap */
+    /* Position above the Insights toggle to avoid overlap, and clear of the sidebar toggle */
+    right: calc(
+      var(--builder-menu-toggle-hit-width) +
+      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
+    );
     bottom: calc(
       var(--builder-menu-toggle-height) +
       20px +
@@ -4171,13 +4240,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .builder-menu-stage-left {
-    top: calc(56px + var(--builder-safe-area-top));
+    /* Ticker hidden; position below mode bar (~44px) + gap */
+    top: calc(max(var(--app-mode-bar-height, 38px), 38px) + 14px + var(--builder-safe-area-top));
     bottom: calc(16px + var(--builder-safe-area-bottom));
     left: var(--builder-safe-area-left);
   }
 
   .builder-menu-stage-right {
-    top: calc(56px + var(--builder-safe-area-top));
+    top: calc(max(var(--app-mode-bar-height, 38px), 38px) + 14px + var(--builder-safe-area-top));
     bottom: calc(16px + var(--builder-safe-area-bottom));
     right: var(--builder-safe-area-right);
   }
