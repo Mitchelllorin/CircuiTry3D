@@ -8466,15 +8466,13 @@ body.android-optimized .zoom-btn {
             const gridSize      = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
 
-            // Use the brightest colours for the native Capacitor (Android) build so
-            // the grid lines remain visible against the very dark scene background
-            // (0x0a0a1a) even on displays with narrower contrast ranges or when
-            // Android WebView renders colours slightly differently from Chrome.
-            const isNative = (typeof window.Capacitor !== 'undefined' &&
-                typeof window.Capacitor.isNativePlatform === 'function' &&
-                window.Capacitor.isNativePlatform());
-            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x6666cc);
-            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x3333aa);
+            // Use the brightest colours for any Android device (browser or native)
+            // so grid lines remain visible against the dark scene background on
+            // every GPU driver (Adreno, Mali, PowerVR) and contrast range.
+            // isAndroidDevice already covers both Android WebView and Capacitor
+            // native Android, so no separate isNative check is needed here.
+            const mainGridColor = isAndroidDevice ? 0x9999dd : (isMobile ? 0x8888cc : 0x6666cc);
+            const subGridColor  = isAndroidDevice ? 0x7777bb : (isMobile ? 0x6666aa : 0x3333aa);
 
             if (isAndroidDevice) {
                 // Android WebView has known GL_LINES rendering issues across GPU
