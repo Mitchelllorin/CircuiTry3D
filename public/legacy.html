@@ -5438,13 +5438,13 @@ body.android-optimized .zoom-btn {
 
             if (canvas) {
                 const rect = canvas.getBoundingClientRect();
-                width = rect.width;
-                height = rect.height;
+                width  = rect.width  || window.innerWidth  || 1;
+                height = rect.height || window.innerHeight || 1;
                 offsetX = rect.left;
                 offsetY = rect.top;
             } else {
-                width = window.innerWidth;
-                height = window.innerHeight;
+                width = window.innerWidth  || 1;
+                height = window.innerHeight || 1;
                 offsetX = 0;
                 offsetY = 0;
             }
@@ -7419,14 +7419,38 @@ body.android-optimized .zoom-btn {
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
-                    powerPreference: isMobile ? "low-power" : "high-performance"
+                    powerPreference: isMobile ? "low-power" : "high-performance",
+                    // Never bail out due to performance caveats — some mobile GPUs
+                    // (especially Android WebView) report caveats even for perfectly
+                    // functional WebGL contexts.  Without this the renderer silently
+                    // returns null and the workspace stays blank.
+                    failIfMajorPerformanceCaveat: false
                 });
                 renderer.setSize(_vw, _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.1;
-                renderer.outputColorSpace = THREE.SRGBColorSpace;
+                // THREE.SRGBColorSpace was added in r152; the vendored build is r128
+                // which exposes the same intent as THREE.sRGBEncoding.  Prefer the
+                // modern constant when present, fall back gracefully for older builds.
+                if (THREE.SRGBColorSpace !== undefined) {
+                    renderer.outputColorSpace = THREE.SRGBColorSpace;
+                } else if (THREE.sRGBEncoding !== undefined) {
+                    renderer.outputEncoding = THREE.sRGBEncoding;
+                }
+
+                // Recover gracefully when the browser discards the WebGL context
+                // (common on mobile when the tab is backgrounded or memory pressure
+                // occurs).  Without these handlers the canvas stays blank forever.
+                canvas.addEventListener('webglcontextlost', function (event) {
+                    event.preventDefault();
+                    console.warn('[Canvas] WebGL context lost — will restore on resume');
+                }, false);
+                canvas.addEventListener('webglcontextrestored', function () {
+                    console.log('[Canvas] WebGL context restored — restarting animation loop');
+                    requestAnimationFrame(animate);
+                }, false);
                 
                 raycaster = new THREE.Raycaster();
                 raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;
@@ -9733,8 +9757,10 @@ body.android-optimized .zoom-btn {
                 return;
             }
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || 1;
+            const rectHeight = rect.height || window.innerHeight || 1;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
             
@@ -10022,8 +10048,10 @@ body.android-optimized .zoom-btn {
             }
 
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || 1;
+            const rectHeight = rect.height || window.innerHeight || 1;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
 
             const wireMeshes = [];
@@ -10371,8 +10399,10 @@ body.android-optimized .zoom-btn {
             }
             
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || 1;
+            const rectHeight = rect.height || window.innerHeight || 1;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
             
@@ -10903,8 +10933,10 @@ body.android-optimized .zoom-btn {
 
         function screenToWorld(clientX, clientY) {
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || 1;
+            const rectHeight = rect.height || window.innerHeight || 1;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
             
@@ -17823,8 +17855,26 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         const _preInitCanvas = document.getElementById('canvas');
         if (_preInitCanvas) _preInitCanvas.style.display = 'block';
 
-        // Start the application
-        init();
+        // Start the application only once the iframe has non-zero viewport
+        // dimensions.  On Android/Capacitor (and some mobile browsers) the
+        // first layout tick can report 0×0; calling init() at that point
+        // causes THREE.WebGLRenderer to create a 1×1 context that never
+        // resizes, leaving the workspace blank.  Poll at 50 ms intervals for
+        // up to ~2 s, then fall through unconditionally so we never block.
+        (function _scheduleInit(attempts) {
+            const viewportWidth  = window.innerWidth  ||
+                      (document.documentElement && document.documentElement.clientWidth)  || 0;
+            const viewportHeight = window.innerHeight ||
+                      (document.documentElement && document.documentElement.clientHeight) || 0;
+            if (viewportWidth > 0 && viewportHeight > 0) {
+                init();
+            } else if (attempts < 40) {
+                setTimeout(function () { _scheduleInit(attempts + 1); }, 50);
+            } else {
+                // Dimension never resolved — initialise anyway with CSS fallbacks
+                init();
+            }
+        })(0);
     </script>
 </body>
 </html>
