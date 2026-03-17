@@ -32,3 +32,6 @@ android/app/keystore/*.p12
 instruction-string.txt
 
 tmp-screenshots/
+
+# Circuit bot recorded footage (large binary files, generated locally)
+promo-footage/

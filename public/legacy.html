@@ -82,6 +82,11 @@
             display: block !important;
         }
 
+        /* In embedded mode the React host drives the analysis panel; hide the manual toggle. */
+        html.embedded #analysis-toggle-strip {
+            display: none !important;
+        }
+
         /* ── Demo mode banner (standalone demo access) ─────────────────── */
         #demo-mode-banner {
             display: none;
@@ -3377,6 +3382,162 @@
             font-size: 12px;
             font-weight: bold;
         }
+
+        /* ── W.I.R.E. Measurement / Meter panel ─────────────────────────── */
+        .meter-mode-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meter-mode-btn {
+            flex: 1;
+            padding: 8px 4px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #ccc;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 56px;
+            text-align: center;
+        }
+
+        .meter-mode-btn.secondary {
+            background: rgba(255,255,255,0.07);
+            color: #888;
+        }
+
+        .meter-mode-btn:not(.secondary) {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000;
+        }
+
+        .meter-probe-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .meter-probe-label {
+            font-weight: 700;
+            min-width: 52px;
+            flex-shrink: 0;
+        }
+
+        .meter-probe-label.probe-a { color: #ff4444; }
+        .meter-probe-label.probe-b { color: #333; background: #ccc; border-radius: 4px; padding: 0 4px; }
+
+        .meter-probe-value {
+            color: #ccc;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .meter-reading-box {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid rgba(0,255,136,0.5);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .meter-reading-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #00ff88;
+            font-family: 'Consolas', 'Monaco', monospace;
+            letter-spacing: 0.04em;
+        }
+
+        .meter-subreading {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+            min-height: 14px;
+        }
+
+        .meter-instructions-text {
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .meter-action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .meter-action-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ccc;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .meter-action-btn:hover { background: rgba(255,255,255,0.15); }
+
+        .scope-panel-inner {
+            margin-top: 8px;
+        }
+
+        #scope-canvas {
+            width: 100%;
+            height: 100px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid rgba(136, 204, 255, 0.25);
+        }
+
+        .scope-readout-text {
+            font-size: 11px;
+            color: #8bc7ff;
+            text-align: right;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+
+        /* Analysis panel toggle strip */
+        .wire-analysis-toggle-strip {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 91;
+        }
+
+        .wire-analysis-toggle-btn {
+            background: #00ff88;
+            border: 3px solid #fff;
+            color: #000;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,255,136,0.35);
+            transition: transform 0.2s;
+        }
+
+        .wire-analysis-toggle-btn:hover { transform: scale(1.08); }
     </style>
 </head>
 <body>
@@ -3632,6 +3793,210 @@
         </div>
     </div>
     
+    <!-- ═══ W.I.R.E. Analysis Panel ════════════════════════════════════ -->
+    <div id="wire-analysis" class="wire-analysis-fixed collapsed" role="complementary" aria-label="W.I.R.E. Analysis Panel">
+
+        <!-- Tab bar -->
+        <div class="analysis-tabs" role="tablist">
+            <button id="tab-worksheet" class="analysis-tab active" role="tab" aria-selected="true"  aria-controls="content-worksheet" onclick="switchAnalysisTab('worksheet')">Worksheet</button>
+            <button id="tab-eir"       class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-eir"       onclick="switchAnalysisTab('eir')">EIR</button>
+            <button id="tab-power"     class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-power"     onclick="switchAnalysisTab('power')">Power</button>
+            <button id="tab-problem"   class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-problem"   onclick="switchAnalysisTab('problem')">Problem</button>
+            <button id="tab-practice"  class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-practice"  onclick="switchAnalysisTab('practice')">Practice</button>
+            <button id="tab-meter"     class="analysis-tab"        role="tab" aria-selected="false" aria-controls="content-meter"     onclick="switchAnalysisTab('meter')">⚡ Meter</button>
+        </div>
+
+        <!-- ── Worksheet tab ─────────────────────────────────────────────── -->
+        <div id="content-worksheet" class="analysis-content" role="tabpanel">
+            <div class="worksheet-panel">
+                <div class="worksheet-title">⚡ W.I.R.E. Analysis</div>
+                <div id="component-list" class="component-list"></div>
+                <div class="calculations-section">
+                    <div class="calculation-step step-voltage">
+                        <span class="step-label">Voltage (E)</span>
+                        <span class="step-formula" id="voltage-formula">V_total = ?</span>
+                        <span class="step-value" id="calc-voltage">0.0V</span>
+                    </div>
+                    <div class="calculation-step step-current">
+                        <span class="step-label">Current (I)</span>
+                        <span class="step-formula">I = E ÷ R</span>
+                        <span class="step-value" id="calc-current">0.000A</span>
+                    </div>
+                    <div class="calculation-step step-resistance">
+                        <span class="step-label">Resistance (R)</span>
+                        <span class="step-formula" id="resistance-formula">R_total = ?</span>
+                        <span class="step-value" id="calc-resistance">∞</span>
+                    </div>
+                    <div class="calculation-step step-power">
+                        <span class="step-label">Power (W)</span>
+                        <span class="step-formula">W = I × E</span>
+                        <span class="step-value" id="calc-power">0.00W</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── EIR triangle tab ───────────────────────────────────────────── -->
+        <div id="content-eir" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="vir-triangle">
+                <div class="triangle-container">
+                    <div class="triangle-shape"></div>
+                    <div class="triangle-sections">
+                        <div class="triangle-v" onclick="explainOhmsLaw('E')">E</div>
+                        <div class="triangle-i" onclick="explainOhmsLaw('I')">I</div>
+                        <div class="triangle-r" onclick="explainOhmsLaw('R')">R</div>
+                    </div>
+                </div>
+                <div class="triangle-formula" id="eir-formula">Tap E, I, or R to learn Ohm's Law</div>
+            </div>
+            <div class="circuit-diagram">
+                <div class="diagram-title">Circuit Schematic</div>
+                <div id="circuit-schematic" class="circuit-schematic">
+                    <div class="schematic-line">Add components to see</div>
+                    <div class="schematic-line">the circuit diagram</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Power triangle tab ─────────────────────────────────────────── -->
+        <div id="content-power" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="vir-triangle">
+                <div class="triangle-container">
+                    <div class="triangle-shape"></div>
+                    <div class="triangle-sections">
+                        <div class="triangle-v" onclick="explainPowerLaw('W')">W</div>
+                        <div class="triangle-i" onclick="explainPowerLaw('I')">I</div>
+                        <div class="triangle-r" onclick="explainPowerLaw('E')">E</div>
+                    </div>
+                </div>
+                <div class="triangle-formula" id="power-formula">Tap W, I, or E to learn Power Law</div>
+            </div>
+        </div>
+
+        <!-- ── Problem mode tab ───────────────────────────────────────────── -->
+        <div id="content-problem" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="problem-mode">
+                <div class="problem-title">🎯 Problem Mode</div>
+                <div class="unknown-input">
+                    <label for="student-voltage">Voltage (V):</label>
+                    <input id="student-voltage" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <div class="unknown-input">
+                    <label for="student-current">Current (A):</label>
+                    <input id="student-current" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <div class="unknown-input">
+                    <label for="student-resistance">Resistance (Ω):</label>
+                    <input id="student-resistance" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <div class="unknown-input">
+                    <label for="student-power">Power (W):</label>
+                    <input id="student-power" type="number" class="wire-input" placeholder="?" step="any">
+                </div>
+                <button class="check-answer-btn" onclick="checkStudentAnswers()">Check Answers</button>
+                <div id="answer-feedback" class="result-feedback"></div>
+            </div>
+        </div>
+
+        <!-- ── Practice tab ───────────────────────────────────────────────── -->
+        <div id="content-practice" class="analysis-content" style="display:none" role="tabpanel">
+            <div class="practice-buttons">
+                <button id="btn-series"      class="practice-btn" onclick="loadPresetCircuit('series_basic')">Series</button>
+                <button id="btn-parallel"    class="practice-btn" onclick="loadPresetCircuit('parallel_basic')">Parallel</button>
+                <button id="btn-mixed"       class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed</button>
+                <button id="btn-combination" class="practice-btn" onclick="loadPresetCircuit('combination_advanced')">Advanced</button>
+            </div>
+            <div id="practice-problem-card" class="practice-problem-card" style="display:none">
+                <div id="practice-question"    class="problem-question"></div>
+                <div id="practice-description" class="problem-description"></div>
+                <ul  id="objectives-list"      style="color:#ccc;font-size:12px;padding-left:18px;margin-bottom:8px;"></ul>
+            </div>
+            <div id="practice-help-text" class="wire-instructions">
+                Select a circuit above to begin a guided W.I.R.E. practice problem.
+            </div>
+            <div id="wire-table-wrapper" class="wire-table-wrapper" style="display:none">
+                <div class="wire-table-header">
+                    W.I.R.E. Worksheet
+                    <span id="wire-table-scenario"></span>
+                </div>
+                <p id="wire-table-guide" class="wire-table-guide"></p>
+                <table class="wire-table">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Voltage (V)</th>
+                            <th>Current (A)</th>
+                            <th>Resistance (Ω)</th>
+                            <th>Power (W)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wire-table-body"></tbody>
+                </table>
+                <p id="wire-table-note" class="wire-table-note"></p>
+                <div class="wire-table-actions">
+                    <button id="wire-table-toggle-solutions" class="practice-btn secondary" style="padding:6px 12px;font-size:11px;" onclick="toggleWireTableSolutions()">Show Solutions</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                <button onclick="previousPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">◀ Prev</button>
+                <span style="font-size:11px;color:#888;white-space:nowrap;">
+                    <span id="problem-counter">0</span> / <span id="total-problems">0</span>
+                </span>
+                <button onclick="nextPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">Next ▶</button>
+            </div>
+        </div>
+
+        <!-- ── Meter tab ──────────────────────────────────────────────────── -->
+        <div id="content-meter" class="analysis-content" style="display:none" role="tabpanel">
+
+            <!-- Mode selector buttons -->
+            <div class="meter-mode-buttons">
+                <button id="meter-mode-voltage"    class="meter-mode-btn"           onclick="setMeterMode('voltage')">V</button>
+                <button id="meter-mode-current"    class="meter-mode-btn secondary" onclick="setMeterMode('current')">A</button>
+                <button id="meter-mode-resistance" class="meter-mode-btn secondary" onclick="setMeterMode('resistance')">Ω</button>
+                <button id="meter-mode-scope"      class="meter-mode-btn secondary" onclick="setMeterMode('scope')">〜 Scope</button>
+            </div>
+
+            <!-- Probe display -->
+            <div class="meter-probe-row">
+                <span class="meter-probe-label probe-a">🔴 A:</span>
+                <span id="meter-probe-a" class="meter-probe-value">—</span>
+            </div>
+            <div class="meter-probe-row">
+                <span class="meter-probe-label probe-b">⚫ B:</span>
+                <span id="meter-probe-b" class="meter-probe-value">—</span>
+            </div>
+
+            <!-- Main reading -->
+            <div class="meter-reading-box">
+                <div id="meter-reading" class="meter-reading-value">—</div>
+                <div id="meter-subreading" class="meter-subreading"></div>
+            </div>
+
+            <!-- Instructions -->
+            <div id="meter-instructions" class="meter-instructions-text">Enable probes to begin measuring.</div>
+
+            <!-- Oscilloscope panel (shown only in scope mode) -->
+            <div id="scope-panel" class="scope-panel-inner" style="display:none">
+                <canvas id="scope-canvas" width="440" height="100"></canvas>
+                <div id="scope-readout" class="scope-readout-text"></div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="meter-action-row">
+                <button id="meter-toggle-armed" class="meter-action-btn" onclick="toggleMeterArmed()">Enable probes</button>
+                <button class="meter-action-btn" onclick="clearMeterSelection()">Clear</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toggle button for the analysis panel (shown in non-embedded standalone mode) -->
+    <div class="wire-analysis-toggle-strip" id="analysis-toggle-strip">
+        <button class="wire-analysis-toggle-btn analysis-toggle" onclick="toggleAnalysis()" title="Toggle W.I.R.E. Analysis Panel" aria-label="Toggle W.I.R.E. Analysis Panel">⚡</button>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
     <script src="vendor/three.min.js"></script>
     <script>
         if (typeof window.THREE === "undefined") {
@@ -3975,6 +4340,13 @@ body.android-optimized .zoom-btn {
                     } else {
                         exportArenaSession({ openWindow: false });
                     }
+                    break;
+                }
+                case 'builder:ping': {
+                    // Parent is polling to confirm the iframe is ready
+                    // (handles the race where legacy:ready was sent before
+                    // the React listener was registered).
+                    notifyParentReady();
                     break;
                 }
                 case 'builder:request-mode-state': {
@@ -4966,10 +5338,12 @@ body.android-optimized .zoom-btn {
                 
                 // Main purple sphere
                 const bodyGeometry = new THREE.SphereGeometry(0.25, isMobile ? 12 : 16, isMobile ? 8 : 12);
-                const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                const bodyMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0x8844ff,
                     emissive: 0x221188,
-                    shininess: 100
+                    emissiveIntensity: 0.4,
+                    metalness: 0.2,
+                    roughness: 0.35
                 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 group.add(body);
@@ -4996,10 +5370,12 @@ body.android-optimized .zoom-btn {
 
             createConnectionPoint() {
                 const pointGeometry = new THREE.SphereGeometry(0.14, isMobile ? 12 : 16, isMobile ? 8 : 12);
-                const pointMaterial = new THREE.MeshPhongMaterial({ 
+                const pointMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x007777,
-                    shininess: 200
+                    emissiveIntensity: 0.5,
+                    metalness: 0.3,
+                    roughness: 0.3
                 });
                 
                 const connectionPoint = new THREE.Mesh(pointGeometry, pointMaterial);
@@ -5062,8 +5438,8 @@ body.android-optimized .zoom-btn {
 
             if (canvas) {
                 const rect = canvas.getBoundingClientRect();
-                width = rect.width;
-                height = rect.height;
+                width   = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+                height  = rect.height || window.innerHeight || document.documentElement.clientHeight;
                 offsetX = rect.left;
                 offsetY = rect.top;
             } else {
@@ -5620,9 +5996,9 @@ body.android-optimized .zoom-btn {
 
             createBatteryMesh(group) {
                 // Battery body
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.2, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
@@ -5630,7 +6006,7 @@ body.android-optimized .zoom-btn {
                 // Positive terminal — extended to x=1.0 so it overlaps the connection sphere
                 // (sphere center at x=1.2, inner edge at x=0.9), eliminating the visual gap.
                 const posGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.4, segments);
-                const posMaterial = new THREE.MeshPhongMaterial({ color: 0xb87333 });
+                const posMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.9, roughness: 0.2 });
                 const pos = new THREE.Mesh(posGeometry, posMaterial);
                 pos.rotation.z = Math.PI / 2;
                 pos.position.x = 0.8;
@@ -5639,7 +6015,7 @@ body.android-optimized .zoom-btn {
                 // Negative terminal — previously ended at x=-0.775 leaving a 0.125-unit gap
                 // before the connection sphere (inner edge at x=-0.9). Now extended to x=-1.0.
                 const negGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments);
-                const negMaterial = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+                const negMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.1, roughness: 0.8 });
                 const neg = new THREE.Mesh(negGeometry, negMaterial);
                 neg.rotation.z = Math.PI / 2;
                 neg.position.x = -0.8;
@@ -5651,10 +6027,10 @@ body.android-optimized .zoom-btn {
             }
 
             createResistorMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Resistor body
                 const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xccaa66 });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xccaa66, metalness: 0.0, roughness: 0.85 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
@@ -5663,7 +6039,7 @@ body.android-optimized .zoom-btn {
                 for(let i = 0; i < 4; i++) {
                     const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
                     const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffd700];
-                    const bandMaterial = new THREE.MeshLambertMaterial({ color: colors[i] });
+                    const bandMaterial = new THREE.MeshStandardMaterial({ color: colors[i], metalness: 0.0, roughness: 0.7 });
                     const band = new THREE.Mesh(bandGeometry, bandMaterial);
                     band.rotation.z = Math.PI / 2;
                     band.position.x = -0.3 + i * 0.2;
@@ -5674,11 +6050,13 @@ body.android-optimized .zoom-btn {
             }
 
             createLEDMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // LED dome
                 const domeGeometry = new THREE.SphereGeometry(0.25, segments, segments/2, 0, Math.PI * 2, 0, Math.PI / 2);
-                const domeMaterial = new THREE.MeshLambertMaterial({ 
-                    color: 0xff4444, 
+                const domeMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0xff4444,
+                    metalness: 0.1,
+                    roughness: 0.08,
                     transparent: true, 
                     opacity: 0.8 
                 });
@@ -5688,7 +6066,7 @@ body.android-optimized .zoom-btn {
 
                 // LED base
                 const baseGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.2, segments);
-                const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.1, roughness: 0.75 });
                 const base = new THREE.Mesh(baseGeometry, baseMaterial);
                 base.position.y = -0.1;
                 group.add(base);
@@ -5699,14 +6077,16 @@ body.android-optimized .zoom-btn {
             createSwitchMesh(group) {
                 // Switch base
                 const baseGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.4);
-                const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+                const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.3, roughness: 0.65 });
                 const base = new THREE.Mesh(baseGeometry, baseMaterial);
                 group.add(base);
 
                 // Switch lever
                 const leverGeometry = new THREE.BoxGeometry(0.1, 0.4, 0.1);
-                const leverMaterial = new THREE.MeshLambertMaterial({ 
-                    color: this.properties.isOn ? 0x00ff00 : 0xff0000 
+                const leverMaterial = new THREE.MeshStandardMaterial({ 
+                    color: this.properties.isOn ? 0x00ff00 : 0xff0000,
+                    metalness: 0.1,
+                    roughness: 0.6
                 });
                 const lever = new THREE.Mesh(leverGeometry, leverMaterial);
                 lever.position.y = 0.3;
@@ -5718,11 +6098,11 @@ body.android-optimized .zoom-btn {
             }
 
             addLeads(group) {
-                const segments = isMobile ? 4 : 6;
+                const segments = isMobile ? 6 : 8;
                 // Leads extend from ±0.2 (inside component body) to ±1.2 (connection sphere center)
                 // so there is no gap between the lead tip and the wire endpoint.
                 const leadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.0, segments);
-                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
                 
                 const leftLead = new THREE.Mesh(leadGeometry, leadMaterial);
                 leftLead.rotation.z = Math.PI / 2;
@@ -5738,7 +6118,7 @@ body.android-optimized .zoom-btn {
             addText(group, text, position, color) {
                 if (text === '+') {
                     const hBarGeometry = new THREE.BoxGeometry(0.2, 0.04, 0.04);
-                    const hBarMaterial = new THREE.MeshLambertMaterial({ color: color });
+                    const hBarMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.0, roughness: 0.8 });
                     const hBar = new THREE.Mesh(hBarGeometry, hBarMaterial);
                     hBar.position.copy(position);
                     group.add(hBar);
@@ -5749,7 +6129,7 @@ body.android-optimized .zoom-btn {
                     group.add(vBar);
                 } else if (text === '-') {
                     const barGeometry = new THREE.BoxGeometry(0.2, 0.04, 0.04);
-                    const barMaterial = new THREE.MeshLambertMaterial({ color: color });
+                    const barMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.0, roughness: 0.8 });
                     const bar = new THREE.Mesh(barGeometry, barMaterial);
                     bar.position.copy(position);
                     group.add(bar);
@@ -5757,17 +6137,17 @@ body.android-optimized .zoom-btn {
             }
 
             createCapacitorMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Capacitor body (cylinder)
                 const bodyGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.7, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4488ff });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x4488ff, metalness: 0.05, roughness: 0.7 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
 
                 // Stripe (polarity indicator)
                 const stripeGeometry = new THREE.CylinderGeometry(0.26, 0.26, 0.08, segments);
-                const stripeMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.05, roughness: 0.8 });
                 const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
                 stripe.rotation.z = Math.PI / 2;
                 stripe.position.x = 0.3;
@@ -5777,11 +6157,11 @@ body.android-optimized .zoom-btn {
             }
 
             createInductorMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Inductor coil (multiple rings)
                 for (let i = 0; i < 4; i++) {
                     const coilGeometry = new THREE.TorusGeometry(0.15, 0.08, segments, segments);
-                    const coilMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                    const coilMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513, metalness: 0.65, roughness: 0.35 });
                     const coil = new THREE.Mesh(coilGeometry, coilMaterial);
                     coil.rotation.y = Math.PI / 2;
                     coil.position.x = -0.25 + i * 0.15;
@@ -5792,17 +6172,17 @@ body.android-optimized .zoom-btn {
             }
 
             createDiodeMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Diode body
                 const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
 
                 // Cathode band (silver stripe)
                 const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
-                const bandMaterial = new THREE.MeshLambertMaterial({ color: 0xc0c0c0 });
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
                 const band = new THREE.Mesh(bandGeometry, bandMaterial);
                 band.rotation.z = Math.PI / 2;
                 band.position.x = 0.3;
@@ -5812,10 +6192,10 @@ body.android-optimized .zoom-btn {
             }
 
             createBJTMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // BJT body (TO-92 package)
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.x = Math.PI / 2;
                 body.position.y = 0.2;
@@ -5823,7 +6203,7 @@ body.android-optimized .zoom-btn {
 
                 // Three leads (Collector, Base, Emitter)
                 const leadGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4);
-                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 for (let i = 0; i < 3; i++) {
                     const lead = new THREE.Mesh(leadGeometry, leadMaterial);
@@ -5835,21 +6215,21 @@ body.android-optimized .zoom-btn {
             createMOSFETMesh(group) {
                 // MOSFET body (TO-220 package)
                 const bodyGeometry = new THREE.BoxGeometry(0.6, 0.5, 0.2);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.position.y = 0.3;
                 group.add(body);
 
                 // Heat sink tab
                 const tabGeometry = new THREE.BoxGeometry(0.65, 0.2, 0.02);
-                const tabMaterial = new THREE.MeshLambertMaterial({ color: 0x8c8c8c });
+                const tabMaterial = new THREE.MeshStandardMaterial({ color: 0x8c8c8c, metalness: 0.8, roughness: 0.25 });
                 const tab = new THREE.Mesh(tabGeometry, tabMaterial);
                 tab.position.set(0, 0.6, 0.11);
                 group.add(tab);
 
                 // Three leads (Gate, Drain, Source)
                 const leadGeometry = new THREE.BoxGeometry(0.05, 0.5, 0.05);
-                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 for (let i = 0; i < 3; i++) {
                     const lead = new THREE.Mesh(leadGeometry, leadMaterial);
@@ -5859,11 +6239,13 @@ body.android-optimized .zoom-btn {
             }
 
             createFuseMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Fuse glass body
                 const bodyGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.8, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({
+                const bodyMaterial = new THREE.MeshStandardMaterial({
                     color: 0xcccccc,
+                    metalness: 0.1,
+                    roughness: 0.08,
                     transparent: true,
                     opacity: 0.6
                 });
@@ -5873,7 +6255,7 @@ body.android-optimized .zoom-btn {
 
                 // End caps
                 const capGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.1, segments);
-                const capMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const capMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 const leftCap = new THREE.Mesh(capGeometry, capMaterial);
                 leftCap.rotation.z = Math.PI / 2;
@@ -5889,23 +6271,23 @@ body.android-optimized .zoom-btn {
             }
 
             createPotentiometerMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Potentiometer body
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4444aa });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x4444aa, metalness: 0.05, roughness: 0.7 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 group.add(body);
 
                 // Adjustment knob
                 const knobGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.15, segments);
-                const knobMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+                const knobMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.05, roughness: 0.8 });
                 const knob = new THREE.Mesh(knobGeometry, knobMaterial);
                 knob.position.y = 0.25;
                 group.add(knob);
 
                 // Three terminals
                 const terminalGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.4, 4);
-                const terminalMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const terminalMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 for (let i = 0; i < 3; i++) {
                     const terminal = new THREE.Mesh(terminalGeometry, terminalMaterial);
@@ -5918,8 +6300,10 @@ body.android-optimized .zoom-btn {
                 const segments = isMobile ? 8 : 12;
                 // Lamp bulb (sphere)
                 const bulbGeometry = new THREE.SphereGeometry(0.3, segments, segments);
-                const bulbMaterial = new THREE.MeshLambertMaterial({
+                const bulbMaterial = new THREE.MeshStandardMaterial({
                     color: 0xffdd44,
+                    metalness: 0.0,
+                    roughness: 0.05,
                     transparent: true,
                     opacity: 0.7
                 });
@@ -5929,7 +6313,7 @@ body.android-optimized .zoom-btn {
 
                 // Lamp base
                 const baseGeometry = new THREE.CylinderGeometry(0.2, 0.15, 0.3, segments);
-                const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
                 const base = new THREE.Mesh(baseGeometry, baseMaterial);
                 base.position.y = -0.15;
                 group.add(base);
@@ -5939,7 +6323,7 @@ body.android-optimized .zoom-btn {
 
             createGroundMesh(group) {
                 // Ground symbol - three horizontal lines
-                const lineMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+                const lineMaterial = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.3, roughness: 0.65 });
 
                 // Top line (longest)
                 const line1Geometry = new THREE.BoxGeometry(0.6, 0.05, 0.05);
@@ -5972,7 +6356,7 @@ body.android-optimized .zoom-btn {
 
                 // Outer circle (source symbol)
                 const ringGeometry = new THREE.TorusGeometry(0.4, 0.05, 8, segments);
-                const ringMaterial = new THREE.MeshLambertMaterial({ color: 0xff8844 });
+                const ringMaterial = new THREE.MeshStandardMaterial({ color: 0xff8844, metalness: 0.1, roughness: 0.65 });
                 const ring = new THREE.Mesh(ringGeometry, ringMaterial);
                 ring.rotation.x = Math.PI / 2;
                 group.add(ring);
@@ -5987,7 +6371,7 @@ body.android-optimized .zoom-btn {
                 }
                 const sineCurve = new THREE.CatmullRomCurve3(sinePoints);
                 const sineGeometry = new THREE.TubeGeometry(sineCurve, 20, 0.02, 6, false);
-                const sineMaterial = new THREE.MeshLambertMaterial({ color: 0xffaa00 });
+                const sineMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.1, roughness: 0.65 });
                 const sineWave = new THREE.Mesh(sineGeometry, sineMaterial);
                 group.add(sineWave);
 
@@ -6000,14 +6384,14 @@ body.android-optimized .zoom-btn {
 
                 // Motor body (cylinder)
                 const bodyGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.6, segments);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x4466aa });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x4466aa, metalness: 0.1, roughness: 0.7 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
 
                 // Motor end cap
                 const capGeometry = new THREE.CylinderGeometry(0.36, 0.36, 0.05, segments);
-                const capMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const capMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.2, roughness: 0.7 });
                 const cap = new THREE.Mesh(capGeometry, capMaterial);
                 cap.rotation.z = Math.PI / 2;
                 cap.position.x = 0.32;
@@ -6015,7 +6399,7 @@ body.android-optimized .zoom-btn {
 
                 // Motor shaft
                 const shaftGeometry = new THREE.CylinderGeometry(0.06, 0.06, 0.4, segments);
-                const shaftMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const shaftMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
                 const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
                 shaft.rotation.z = Math.PI / 2;
                 shaft.position.x = 0.5;
@@ -6023,7 +6407,7 @@ body.android-optimized .zoom-btn {
 
                 // "M" label on body
                 const labelGeometry = new THREE.BoxGeometry(0.15, 0.02, 0.2);
-                const labelMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const labelMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.0, roughness: 0.8 });
                 const label = new THREE.Mesh(labelGeometry, labelMaterial);
                 label.position.y = 0.36;
                 group.add(label);
@@ -6037,8 +6421,10 @@ body.android-optimized .zoom-btn {
 
                 // Speaker cone (truncated cone)
                 const coneGeometry = new THREE.CylinderGeometry(0.15, 0.4, 0.3, segments, 1, true);
-                const coneMaterial = new THREE.MeshLambertMaterial({
+                const coneMaterial = new THREE.MeshStandardMaterial({
                     color: 0x666666,
+                    metalness: 0.3,
+                    roughness: 0.65,
                     side: THREE.DoubleSide
                 });
                 const cone = new THREE.Mesh(coneGeometry, coneMaterial);
@@ -6047,14 +6433,14 @@ body.android-optimized .zoom-btn {
 
                 // Magnet base
                 const magnetGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.15, segments);
-                const magnetMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const magnetMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7, roughness: 0.3 });
                 const magnet = new THREE.Mesh(magnetGeometry, magnetMaterial);
                 magnet.position.y = -0.08;
                 group.add(magnet);
 
                 // Dust cap (center dome)
                 const capGeometry = new THREE.SphereGeometry(0.08, segments, segments, 0, Math.PI * 2, 0, Math.PI / 2);
-                const capMaterial = new THREE.MeshLambertMaterial({ color: 0x444444 });
+                const capMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.1, roughness: 0.75 });
                 const cap = new THREE.Mesh(capGeometry, capMaterial);
                 cap.position.y = 0.3;
                 group.add(cap);
@@ -6073,14 +6459,14 @@ body.android-optimized .zoom-btn {
 
                 const extrudeSettings = { depth: 0.15, bevelEnabled: false };
                 const triangleGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-                const triangleMaterial = new THREE.MeshLambertMaterial({ color: 0x44aa44 });
+                const triangleMaterial = new THREE.MeshStandardMaterial({ color: 0x44aa44, metalness: 0.05, roughness: 0.7 });
                 const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
                 triangle.position.z = -0.075;
                 group.add(triangle);
 
                 // + input marker (inverting input at top)
                 const plusHGeometry = new THREE.BoxGeometry(0.1, 0.02, 0.02);
-                const plusMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const plusMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.0, roughness: 0.8 });
                 const plusH = new THREE.Mesh(plusHGeometry, plusMaterial);
                 plusH.position.set(-0.3, 0.15, 0.08);
                 group.add(plusH);
@@ -6096,17 +6482,17 @@ body.android-optimized .zoom-btn {
 
             // Transformer - two coils with core
             createTransformerMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
 
                 // Core (E-shaped laminations represented as box)
                 const coreGeometry = new THREE.BoxGeometry(0.15, 0.8, 0.3);
-                const coreMaterial = new THREE.MeshLambertMaterial({ color: 0x444444 });
+                const coreMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.6, roughness: 0.5 });
                 const core = new THREE.Mesh(coreGeometry, coreMaterial);
                 group.add(core);
 
                 // Primary coil (left side)
                 const coilGeometry = new THREE.TorusGeometry(0.2, 0.06, 8, segments);
-                const primaryMaterial = new THREE.MeshLambertMaterial({ color: 0xcc6622 });
+                const primaryMaterial = new THREE.MeshStandardMaterial({ color: 0xcc6622, metalness: 0.8, roughness: 0.3 });
 
                 for (let i = 0; i < 3; i++) {
                     const coil = new THREE.Mesh(coilGeometry, primaryMaterial);
@@ -6115,7 +6501,7 @@ body.android-optimized .zoom-btn {
                 }
 
                 // Secondary coil (right side)
-                const secondaryMaterial = new THREE.MeshLambertMaterial({ color: 0x22cc66 });
+                const secondaryMaterial = new THREE.MeshStandardMaterial({ color: 0x22cc66, metalness: 0.05, roughness: 0.65 });
 
                 for (let i = 0; i < 3; i++) {
                     const coil = new THREE.Mesh(coilGeometry, secondaryMaterial);
@@ -6128,10 +6514,10 @@ body.android-optimized .zoom-btn {
 
             // BJT NPN - TO-92 package with NPN marking
             createBJTNPNMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // BJT body (TO-92 package)
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.x = Math.PI / 2;
                 body.position.y = 0.2;
@@ -6139,14 +6525,14 @@ body.android-optimized .zoom-btn {
 
                 // NPN indicator stripe
                 const stripeGeometry = new THREE.BoxGeometry(0.32, 0.05, 0.02);
-                const stripeMaterial = new THREE.MeshLambertMaterial({ color: 0xff4444 });
+                const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0xff4444, metalness: 0.0, roughness: 0.7 });
                 const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
                 stripe.position.set(0, 0.35, 0.15);
                 group.add(stripe);
 
                 // Three leads (Collector, Base, Emitter)
                 const leadGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4);
-                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 for (let i = 0; i < 3; i++) {
                     const lead = new THREE.Mesh(leadGeometry, leadMaterial);
@@ -6157,10 +6543,10 @@ body.android-optimized .zoom-btn {
 
             // BJT PNP - TO-92 package with PNP marking
             createBJTPNPMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // BJT body (TO-92 package)
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.x = Math.PI / 2;
                 body.position.y = 0.2;
@@ -6168,14 +6554,14 @@ body.android-optimized .zoom-btn {
 
                 // PNP indicator stripe (blue)
                 const stripeGeometry = new THREE.BoxGeometry(0.32, 0.05, 0.02);
-                const stripeMaterial = new THREE.MeshLambertMaterial({ color: 0x4444ff });
+                const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0x4444ff, metalness: 0.0, roughness: 0.7 });
                 const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
                 stripe.position.set(0, 0.35, 0.15);
                 group.add(stripe);
 
                 // Three leads (Emitter, Base, Collector)
                 const leadGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4);
-                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 for (let i = 0; i < 3; i++) {
                     const lead = new THREE.Mesh(leadGeometry, leadMaterial);
@@ -6186,39 +6572,39 @@ body.android-optimized .zoom-btn {
 
             // Darlington Pair - larger package with two transistors
             createDarlingtonMesh(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
 
                 // Larger TO-220 style package
                 const bodyGeometry = new THREE.BoxGeometry(0.7, 0.5, 0.25);
-                const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.position.y = 0.3;
                 group.add(body);
 
                 // Heat sink tab
                 const tabGeometry = new THREE.BoxGeometry(0.75, 0.25, 0.03);
-                const tabMaterial = new THREE.MeshLambertMaterial({ color: 0x8c8c8c });
+                const tabMaterial = new THREE.MeshStandardMaterial({ color: 0x8c8c8c, metalness: 0.8, roughness: 0.25 });
                 const tab = new THREE.Mesh(tabGeometry, tabMaterial);
                 tab.position.set(0, 0.6, 0.14);
                 group.add(tab);
 
                 // Mounting hole in tab
                 const holeGeometry = new THREE.TorusGeometry(0.06, 0.02, 6, segments);
-                const holeMaterial = new THREE.MeshLambertMaterial({ color: 0x666666 });
+                const holeMaterial = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.3, roughness: 0.65 });
                 const hole = new THREE.Mesh(holeGeometry, holeMaterial);
                 hole.position.set(0, 0.6, 0.16);
                 group.add(hole);
 
                 // DRL label indicator
                 const labelGeometry = new THREE.BoxGeometry(0.25, 0.08, 0.02);
-                const labelMaterial = new THREE.MeshLambertMaterial({ color: 0xcc44cc });
+                const labelMaterial = new THREE.MeshStandardMaterial({ color: 0xcc44cc, metalness: 0.0, roughness: 0.7 });
                 const label = new THREE.Mesh(labelGeometry, labelMaterial);
                 label.position.set(0, 0.35, 0.14);
                 group.add(label);
 
                 // Three leads
                 const leadGeometry = new THREE.BoxGeometry(0.05, 0.5, 0.05);
-                const leadMaterial = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
 
                 for (let i = 0; i < 3; i++) {
                     const lead = new THREE.Mesh(leadGeometry, leadMaterial);
@@ -6237,10 +6623,12 @@ body.android-optimized .zoom-btn {
 
                 if (this.type === 'battery') {
                     // Red positive terminal
-                    const positiveMaterial = new THREE.MeshPhongMaterial({
+                    const positiveMaterial = new THREE.MeshStandardMaterial({
                         color: 0xff0000,
                         emissive: 0x330000,
-                        shininess: 200
+                        emissiveIntensity: 0.4,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
@@ -6254,10 +6642,12 @@ body.android-optimized .zoom-btn {
                     this.connectionPoints.push(positivePoint);
 
                     // Gray negative terminal
-                    const negativeMaterial = new THREE.MeshPhongMaterial({
+                    const negativeMaterial = new THREE.MeshStandardMaterial({
                         color: 0x4488ff,
                         emissive: 0x112244,
-                        shininess: 200
+                        emissiveIntensity: 0.4,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
@@ -6272,10 +6662,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'bjt') {
                     // BJT has 3 terminals: Collector (left), Base (center), Emitter (right)
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     // Collector (left, -0.2 x offset matching lead positions)
@@ -6316,10 +6708,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'mosfet') {
                     // MOSFET has 3 terminals: Gate (left), Drain (center), Source (right)
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     // Gate (left)
@@ -6360,10 +6754,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'potentiometer') {
                     // Potentiometer has 3 terminals: Terminal 1 (left), Wiper (center), Terminal 2 (right)
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     // Terminal 1 (left)
@@ -6404,10 +6800,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'ground') {
                     // Ground has only 1 connection point at the top
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     const groundPoint = new THREE.Mesh(pointGeometry, neutralMaterial);
@@ -6423,10 +6821,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'bjt-npn' || this.type === 'bjt-pnp') {
                     // NPN/PNP BJTs have 3 terminals like regular BJT
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     // Collector (left)
@@ -6467,10 +6867,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'darlington') {
                     // Darlington has 3 terminals like BJT/MOSFET
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     // Collector (left)
@@ -6511,10 +6913,12 @@ body.android-optimized .zoom-btn {
 
                 } else if (this.type === 'ac_source') {
                     // AC Source has + and - terminals like battery
-                    const positiveMaterial = new THREE.MeshPhongMaterial({
+                    const positiveMaterial = new THREE.MeshStandardMaterial({
                         color: 0xff8844,
                         emissive: 0x331100,
-                        shininess: 200
+                        emissiveIntensity: 0.4,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
@@ -6527,10 +6931,12 @@ body.android-optimized .zoom-btn {
                     this.mesh.add(positivePoint);
                     this.connectionPoints.push(positivePoint);
 
-                    const negativeMaterial = new THREE.MeshPhongMaterial({
+                    const negativeMaterial = new THREE.MeshStandardMaterial({
                         color: 0x4488ff,
                         emissive: 0x112244,
-                        shininess: 200
+                        emissiveIntensity: 0.4,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
@@ -6545,10 +6951,12 @@ body.android-optimized .zoom-btn {
 
                 } else {
                     // White neutral terminals for 2-terminal components
-                    const neutralMaterial = new THREE.MeshPhongMaterial({
+                    const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        shininess: 200
+                        emissiveIntensity: 0.5,
+                        metalness: 0.3,
+                        roughness: 0.3
                     });
 
                     const leftPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
@@ -6762,9 +7170,10 @@ body.android-optimized .zoom-btn {
                 this.wireGroup = new THREE.Group();
                 this.segments = [];
 
-                const wireMaterial = new THREE.MeshPhongMaterial({
+                const wireMaterial = new THREE.MeshStandardMaterial({
                     color: 0xd2691e,
-                    shininess: 150,
+                    metalness: 0.75,
+                    roughness: 0.35,
                     transparent: true,
                     opacity: 0.9
                 });
@@ -6992,40 +7401,67 @@ body.android-optimized .zoom-btn {
         // Initialize the scene
         function init() {
             try {
+                // On Android WebView, window.innerWidth/innerHeight may not yet reflect
+                // the final layout dimensions when the script runs synchronously.  Fall
+                // back to documentElement client dimensions and use safe minimums so we
+                // never create a 0×0 renderer context.
+                const initWidth  = (window.innerWidth  || document.documentElement.clientWidth  || 360);
+                const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
+
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color(0x0a0a1a);
                 
-                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                // Use safe non-zero viewport dimensions.  On Android/Capacitor
+                // the local-bundle iframe can execute before the browser layout
+                // engine has committed final sizes, leaving window.innerWidth /
+                // window.innerHeight at 0.  Falling back to clientWidth and a
+                // sensible minimum prevents a 0×0 WebGL framebuffer.
+                const canvas = document.getElementById('canvas');
+                const _vw = Math.max(1, window.innerWidth  || (canvas && canvas.clientWidth)  || 360);
+                const _vh = Math.max(1, window.innerHeight || (canvas && canvas.clientHeight) || 640);
+
+                camera = new THREE.PerspectiveCamera(75, _vw / _vh, 0.1, 1000);
                 updateCameraPosition();
                 
-                const canvas = document.getElementById('canvas');
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
-                    powerPreference: isMobile ? "low-power" : "high-performance"
+                    powerPreference: isMobile ? "low-power" : "high-performance",
+                    // Allow degraded GL contexts on Android WebView so we never get a
+                    // silent null renderer when the GPU driver reports perf caveats.
+                    failIfMajorPerformanceCaveat: false
                 });
-                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setSize(_vw, _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setClearColor(0x0a0a1a, 1);
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.1;
+                renderer.outputColorSpace = THREE.SRGBColorSpace;
                 
                 raycaster = new THREE.Raycaster();
                 raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;
                 raycaster.params.Line.threshold = isMobile ? 0.5 : 0.3;
                 mouse = new THREE.Vector2();
                 
-                // Lighting - reduced for mobile performance
-                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.2);
+                // Lighting - key + fill + hemisphere for richer PBR shading
+                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.4);
                 directionalLight.position.set(10, 10, 5);
                 scene.add(directionalLight);
-                
+
+                // Cool-blue fill light from the opposite side to soften harsh shadows
+                const fillLight = new THREE.DirectionalLight(0x8ab4f8, isMobile ? 0.3 : 0.5);
+                fillLight.position.set(-8, 4, -6);
+                scene.add(fillLight);
+
                 if (!isMobile) {
                     const pointLight = new THREE.PointLight(0xffa500, 0.8, 50);
                     pointLight.position.set(5, 8, 5);
                     scene.add(pointLight);
                 }
-                
-                const ambientLight = new THREE.AmbientLight(0x404040, isMobile ? 0.6 : 0.4);
-                scene.add(ambientLight);
+
+                // HemisphereLight replaces plain AmbientLight for sky/ground gradient illumination
+                const hemisphereLight = new THREE.HemisphereLight(0x4488bb, 0x1a0a2a, isMobile ? 0.6 : 0.5);
+                scene.add(hemisphereLight);
                 
                 // Enhanced grid system
                 createEnhancedGrid();
@@ -7036,6 +7472,11 @@ body.android-optimized .zoom-btn {
                 // Old UI layer removed — canvas is managed by the React host via embedded mode
 
                 requestAnimationFrame(animate);
+
+                // Schedule a corrective resize a frame after init so that any
+                // remaining layout shift on Android (e.g. the soft keyboard
+                // or system bars settling) is accounted for.
+                requestAnimationFrame(function() { onResize(); });
 
                 updateCircuitInfo();
 
@@ -7055,7 +7496,6 @@ body.android-optimized .zoom-btn {
                     lastTouchEnd = now;
                 }, false);
 
-                notifyParentReady();
                 notifyParentAnalysisState();
                 notifyParentToolState('select');
                 applyRoutingMode(getRouterMode(), {
@@ -7068,6 +7508,11 @@ body.android-optimized .zoom-btn {
             } catch (error) {
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
+            } finally {
+                // Always notify the parent frame so the React UI never stays
+                // stuck in its "loading / disabled" state, even when init()
+                // encounters a non-fatal error.
+                notifyParentReady();
             }
         }
 
@@ -7933,26 +8378,109 @@ body.android-optimized .zoom-btn {
         }
 
         function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            const w = window.innerWidth  || document.documentElement.clientWidth;
+            const h = window.innerHeight || document.documentElement.clientHeight;
+            if (w > 0 && h > 0) {
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
         }
 
         // Grid and snapping functions
+
+        // Build a tiling canvas texture for the grid.  We draw one grid cell
+        // as a 64×64 sprite with lines on all four edges; THREE.js RepeatWrapping
+        // tiles it across the full plane without any additional geometry.  This
+        // approach uses ordinary triangles rather than GL_LINES and therefore
+        // renders correctly on every Android GPU driver.
+        function _buildGridTileTexture(mainHex, subHex) {
+            const SIZE = 64;
+            const tileCanvas = document.createElement('canvas');
+            tileCanvas.width  = SIZE;
+            tileCanvas.height = SIZE;
+            const ctx = tileCanvas.getContext('2d');
+
+            // Transparent background
+            ctx.clearRect(0, 0, SIZE, SIZE);
+
+            // Sub-grid tone (thin lines on all edges)
+            const sr = (subHex >> 16) & 0xff;
+            const sg = (subHex >>  8) & 0xff;
+            const sb =  subHex        & 0xff;
+            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.7)`;
+            ctx.lineWidth   = 1;
+            ctx.strokeRect(0.5, 0.5, SIZE - 1, SIZE - 1);
+
+            // Main grid tone (slightly thicker / brighter)
+            const mr = (mainHex >> 16) & 0xff;
+            const mg = (mainHex >>  8) & 0xff;
+            const mb =  mainHex        & 0xff;
+            ctx.strokeStyle = `rgba(${mr},${mg},${mb},0.9)`;
+            ctx.lineWidth   = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(SIZE, 0);   // top
+            ctx.moveTo(0, 0); ctx.lineTo(0, SIZE);   // left
+            ctx.stroke();
+
+            const tex = new THREE.CanvasTexture(tileCanvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        // Create a flat plane mesh whose texture tiles to look like a grid.
+        // Used on Android WebView where GL_LINES (THREE.GridHelper) is
+        // unreliable across GPU drivers.
+        function _createCanvasGridMesh(size, divisions, mainHex, subHex) {
+            const tex = _buildGridTileTexture(mainHex, subHex);
+            tex.repeat.set(divisions, divisions);
+
+            const geo = new THREE.PlaneGeometry(size, size);
+            const mat = new THREE.MeshBasicMaterial({
+                map: tex,
+                transparent: true,
+                opacity: 1.0,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.rotation.x = -Math.PI / 2; // lay flat on the XZ plane
+            return mesh;
+        }
+
         function createEnhancedGrid() {
             // Main grid - reduced complexity for mobile
-            const gridSize = isMobile ? 20 : 40;
+            const gridSize      = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
-            
-            gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x4444aa, 0x222244);
-            scene.add(gridHelper);
-            
-            // Fine grid overlay - only on desktop
-            if (!isMobile) {
-                const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222244, 0x0a0a1a);
-                fineGrid.position.y = 0.01; // Slightly above main grid
-                scene.add(fineGrid);
+
+            // Use the brightest colours for the native Capacitor (Android) build so
+            // the grid lines remain visible against the very dark scene background
+            // (0x0a0a1a) even on displays with narrower contrast ranges or when
+            // Android WebView renders colours slightly differently from Chrome.
+            const isNative = (typeof window.Capacitor !== 'undefined' &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform());
+            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x4444aa);
+            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x222244);
+
+            if (isAndroidDevice) {
+                // Android WebView has known GL_LINES rendering issues across GPU
+                // drivers (Adreno, Mali, PowerVR). Use a canvas-texture plane so
+                // the grid always appears regardless of the WebGL implementation.
+                gridHelper = _createCanvasGridMesh(gridSize, gridDivisions, mainGridColor, subGridColor);
+            } else {
+                gridHelper = new THREE.GridHelper(gridSize, gridDivisions, mainGridColor, subGridColor);
+
+                // Fine grid overlay - only on desktop
+                if (!isMobile) {
+                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222244, 0x0a0a1a);
+                    fineGrid.position.y = 0.01; // Slightly above main grid
+                    scene.add(fineGrid);
+                }
             }
+
+            scene.add(gridHelper);
         }
 
         function createSnapIndicator() {
@@ -9229,8 +9757,10 @@ body.android-optimized .zoom-btn {
                 return;
             }
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
             
@@ -9518,8 +10048,10 @@ body.android-optimized .zoom-btn {
             }
 
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
 
             const wireMeshes = [];
@@ -9867,8 +10399,13 @@ body.android-optimized .zoom-btn {
             }
             
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            // Guard against a 0×0 bounding rect (can happen on Android WebView
+            // before the first layout paint).  Fall back to the window dimensions
+            // so that raycasting always produces valid NDC coordinates.
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
             
@@ -10399,8 +10936,10 @@ body.android-optimized .zoom-btn {
 
         function screenToWorld(clientX, clientY) {
             const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
+            mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
+            mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
             
@@ -10744,9 +11283,47 @@ body.android-optimized .zoom-btn {
         if (typeof window.Capacitor !== 'undefined' &&
                 typeof window.Capacitor.isNativePlatform === 'function' &&
                 window.Capacitor.isNativePlatform()) {
-            window.Capacitor.Plugins.Billing.initialize().catch(() => {
-                // Billing unavailable; purchase will retry on demand
-            });
+            // Note: the tier-mapping logic below mirrors src/utils/playStoreBilling.ts.
+            // legacy.html runs inside a sandboxed iframe and cannot import TypeScript
+            // modules directly, so the mapping is kept inline here.
+            window.Capacitor.Plugins.Billing.initialize()
+                .then(() => {
+                    // After successful initialization, restore any active
+                    // subscriptions so the stored tier reflects the user's
+                    // current Play Store entitlement on every app launch
+                    // (handles fresh installs and app re-installs where
+                    // localStorage has been cleared).
+                    return window.Capacitor.Plugins.Billing.restorePurchases();
+                })
+                .then((result) => {
+                    // restorePurchases returns { purchases: [{products: [...], ...}] }
+                    const purchaseList = result && Array.isArray(result.purchases)
+                        ? result.purchases
+                        : [];
+                    const PRODUCT_TIER_MAP = {
+                        circuitry3d_student_monthly: 'student',
+                        circuitry3d_student_annual: 'student',
+                        circuitry3d_educator_monthly: 'educator',
+                        circuitry3d_educator_annual: 'educator',
+                    };
+                    const TIER_ORDER = ['free', 'student', 'educator', 'institutional'];
+                    let best = 'free';
+                    for (const purchase of purchaseList) {
+                        const pids = Array.isArray(purchase.products) ? purchase.products : [];
+                        for (const pid of pids) {
+                            const t = PRODUCT_TIER_MAP[pid];
+                            if (t && TIER_ORDER.indexOf(t) > TIER_ORDER.indexOf(best)) {
+                                best = t;
+                            }
+                        }
+                    }
+                    try {
+                        localStorage.setItem('circuitry3d_subscription_tier', best);
+                    } catch (_) {}
+                })
+                .catch(() => {
+                    // Billing unavailable; purchase will retry on demand
+                });
 
             // Store the tier when a purchase completes (handles both new
             // purchases and any pending purchase that completes on launch).
@@ -15380,13 +15957,15 @@ Made with ? for visual learners everywhere!
             document.querySelectorAll('.analysis-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeTab) activeTab.classList.add('active');
+
             // Show/hide content panels
             document.querySelectorAll('.analysis-content').forEach(content => {
                 content.style.display = 'none';
             });
-            document.getElementById(`content-${tabName}`).style.display = 'block';
+            const activeContent = document.getElementById(`content-${tabName}`);
+            if (activeContent) activeContent.style.display = 'block';
             
             currentAnalysisTab = tabName;
             
@@ -16027,6 +16606,30 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'J_BR', side: 'center' }, to: { ref: 'R2', side: 'right' } },
                     { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BL', side: 'center' } },
                     { from: { ref: 'J_BL', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                ]
+            },
+            overload_demo: {
+                name: "Overload Demo: Resistor Thermal Failure",
+                description: "A 24 V source pushing extreme current through a 1 Ω resistor — watch the FUSE engine trigger thermal runaway and component failure.",
+                objectives: [
+                    "Observe current flow immediately after simulation starts.",
+                    "Watch the FUSE thermal model accumulate heat in the resistor.",
+                    "See the component failure animation as the resistor reaches critical temperature.",
+                    "Understand why protective devices like fuses are essential in real circuits."
+                ],
+                components: [
+                    { id: 'B1', type: 'battery', position: [-8, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
+                    { id: 'R1', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 1 } }
+                ],
+                junctions: [
+                    { id: 'J_TOP', position: [0, 0, 6] },
+                    { id: 'J_BOT', position: [0, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_TOP', side: 'center' } },
+                    { from: { ref: 'J_TOP', side: 'center' }, to: { ref: 'R1', side: 'right' } },
+                    { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BOT', side: 'center' } },
+                    { from: { ref: 'J_BOT', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
                 ]
             }
         };
@@ -17246,8 +17849,34 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         }
         // ─────────────────────────────────────────────────────────────────────
 
-        // Start the application
-        init();
+        // Ensure the canvas is visible before Three.js initialises the WebGL
+        // renderer.  Some Android WebViews refuse to create a context on a
+        // hidden canvas (display:none), which would silently fail and leave
+        // the workspace blank.  launchApplication() still runs on the load
+        // event for any remaining layout bookkeeping, but the canvas must be
+        // visible first.
+        const _preInitCanvas = document.getElementById('canvas');
+        if (_preInitCanvas) _preInitCanvas.style.display = 'block';
+
+        // Defer init() via requestAnimationFrame so the Android WebView has had
+        // at least one layout/paint cycle before we try to create the WebGL
+        // context and read window.innerWidth / innerHeight.  Without this
+        // deferral, the iframe's layout dimensions can be 0 on the first sync
+        // execution tick, producing a 0×0 renderer that leaves the scene blank
+        // and makes raycasting return ±Infinity coordinates (so nothing is
+        // selectable).  The ping-pong bridge (builder:ping → legacy:ready)
+        // already handles the readiness race with the React host, so this
+        // extra frame delay does not break the handshake.
+        (function scheduleInit() {
+            var w = window.innerWidth  || document.documentElement.clientWidth;
+            var h = window.innerHeight || document.documentElement.clientHeight;
+            if (w > 0 && h > 0) {
+                init();
+            } else {
+                // Dimensions not ready yet — try again next frame.
+                requestAnimationFrame(scheduleInit);
+            }
+        })();
     </script>
 </body>
 </html>

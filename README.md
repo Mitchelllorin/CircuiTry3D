@@ -5,7 +5,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
 
-[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://circuitry3d.app)
+[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://circuitry3d.app)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -65,7 +65,7 @@ You don't need an engineering background to use CircuiTry3D.
 
 | Platform | Details |
 |---|---|
-| **Web App** | React 19 + Vite 7, deployed on Vercel |
+| **Web App** | React 19 + Vite 7, deployed on GitHub Pages |
 | **Android App** | Native app via Capacitor, available on Google Play Store |
 
 ---
@@ -79,8 +79,8 @@ You don't need an engineering background to use CircuiTry3D.
 | 3D Rendering | Three.js |
 | Mobile | Capacitor 7 |
 | Routing | React Router DOM 7 |
-| Backend/API | Vercel Serverless Functions + Vercel KV |
-| Deployment | Vercel (web), Google Play Store (Android) |
+| Backend/API | GitHub Actions + Upstash Redis |
+| Deployment | GitHub Pages (web), Google Play Store (Android) |
 | Testing | Vitest + Playwright |
 
 ---
@@ -102,13 +102,11 @@ CircuiTry3D/
 │   ├── landing.html      # Landing page
 │   ├── legacy.html       # Circuit builder canvas (legacy)
 │   └── arena.html        # Component testing arena
-├── api/                  # Vercel serverless functions (e.g. /api/classroom)
 ├── android/              # Capacitor Android project
 ├── play-store-assets/    # Google Play Store graphics & metadata
 ├── tests/                # Vitest unit & integration tests
 ├── docs/                 # Electrical theory & circuit reference docs
 ├── vite.config.ts
-├── vercel.json
 └── package.json
 ```
 
@@ -150,20 +148,19 @@ npm run test:watch
 
 ## 🔐 Environment Variables
 
-All secrets are set in **Vercel → Project → Settings → Environment Variables** as plain (non-shared) variables.
+All secrets are set as **GitHub repository secrets** (Settings → Secrets and variables → Actions).
 
 ### Unlocking the full version (owner preview)
 
 The web build runs in **demo mode** by default (limited component library). To preview your full changes:
 
-1. Go to **Vercel → your project → Settings → Environment Variables**
-2. Click **Add New**
+1. Go to **GitHub → your repository → Settings → Secrets and variables → Actions**
+2. Click **New repository secret**
 3. Enter:
    - **Name:** `OWNER_SECRET`
    - **Value:** any password you choose (e.g. `MySecret123`)
-   - **Environment:** Production, Preview, and Development
-4. Click **Save**
-5. Trigger a new deployment (push a commit, or use **Redeploy**)
+4. Click **Add secret**
+5. Trigger a new deployment (push a commit)
 6. Open the deployed site — tap the 🔑 icon in the demo banner and enter your password
 
 > The password is never exposed in the client bundle — it lives only on the server.
@@ -294,7 +291,7 @@ Every worksheet completion awards XP, streak bonuses, and badges via **Gamificat
 **Arcade games (`/arcade`):** RetroCircuitMaze, OhmsRacer, VoltFighter — XP-based progression unlocks new components and difficulty tiers.
 
 ### 🎓 Classroom Mode (`/classroom`)
-Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to an Upstash-compatible KV store via `/api/classroom`. Set `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` in Vercel to enable cloud persistence; the app falls back to local storage without them.
+Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to an Upstash-compatible KV store via `/api/classroom`. Set `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` as GitHub repository secrets to enable cloud persistence; the app falls back to local storage without them.
 
 Supports grade levels: Grade 8, Grades 9–10, Grades 11–12, Higher Education, and CTE programs.
 
@@ -390,7 +387,7 @@ The integrated textbook (`/textbook`) covers everything from "what is an electro
 2. Share the **join code** with your students
 3. Assign problems from the **W.I.R.E. problem library**, which maps to specific chapters in the in-app textbook
 4. Monitor real-time completion, accuracy, and concept-gap data from the teacher dashboard
-5. Enable **cloud sync** by setting `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` in Vercel to persist rosters and progress across devices
+5. Enable **cloud sync** by setting `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` as GitHub repository secrets to persist rosters and progress across devices
 
 ### Educator License Highlights
 

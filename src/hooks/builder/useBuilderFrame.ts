@@ -176,6 +176,41 @@ export function useBuilderFrame({
     };
   }, [appBasePath, onModeStateChange, onToolChange, onSimulationPulse]);
 
+  // On Android/Capacitor the iframe is served from the local bundle and can
+  // fire its "legacy:ready" message before React's useEffect has registered
+  // the window message listener (race condition).  To recover, we poll the
+  // iframe with a lightweight "builder:ping" message every 800 ms until it
+  // replies with "legacy:ready".  The interval is cleared as soon as the
+  // frame signals readiness.
+  useEffect(() => {
+    if (isFrameReady) return;
+
+    const PING_INTERVAL_MS = 800;
+    const PING_TIMEOUT_MS = 15_000; // give up after 15 seconds and unlock the UI
+
+    const intervalId = window.setInterval(() => {
+      const frameWindow = iframeRef.current?.contentWindow;
+      if (!frameWindow) return;
+      try {
+        frameWindow.postMessage({ type: "builder:ping" }, "*");
+      } catch {
+        // iframe not yet accessible — retry on next tick
+      }
+    }, PING_INTERVAL_MS);
+
+    // Safety-net: if the iframe never responds, unlock the UI anyway so the
+    // app doesn't remain permanently disabled.
+    const timeoutId = window.setTimeout(() => {
+      window.clearInterval(intervalId);
+      setFrameReady(true);
+    }, PING_TIMEOUT_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [isFrameReady]);
+
   useEffect(() => {
     return () => {
       if (simulationPulseTimer.current !== null) {
