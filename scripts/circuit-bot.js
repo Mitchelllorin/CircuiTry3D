@@ -6,11 +6,14 @@
  * recording cinematic footage suitable for a promo video.
  *
  * Scenes recorded:
- *   scene-01-series.webm    — Series circuit: current flows successfully
- *   scene-02-parallel.webm  — Parallel circuit: multiple electron paths
- *   scene-03-overload.webm  — Overloaded resistor: thermal failure (FUSE engine)
- *   scene-04-mixed.webm     — Mixed series-parallel: advanced mastery
- *   scene-05-promo.webm     — Cinematic promo page sweep (public/promo6.html)
+ *   scene-01-series.webm       — Series circuit: current flows successfully
+ *   scene-02-parallel.webm     — Parallel circuit: multiple electron paths
+ *   scene-03-overload.webm     — Overloaded resistor: thermal failure (FUSE engine)
+ *   scene-04-mixed.webm        — Mixed series-parallel: advanced mastery
+ *   scene-05-promo.webm        — Cinematic promo page sweep (public/promo8.html)
+ *   scene-06-fuse-showcase.webm — FUSE™ at work: fuse component blown by overcurrent
+ *   scene-07-arena.webm        — Component Arena: live FUSE™ analysis showcase
+ *   scene-08-practice.webm     — Practice mode: W.I.R.E. methodology walkthrough
  *
  * Usage:
  *   npm run circuit-bot                   # production site (circuitry3d.app)
@@ -51,6 +54,7 @@ for (let i = 0; i < ARGS.length; i++) {
 
 const OUTPUT_DIR = join(ROOT, 'promo-footage');
 const VIEWPORT   = { width: 1920, height: 1080 };
+const PROMO_PAGE = 'promo8.html';  // FUSE-focused promo page used by scene-05
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -254,31 +258,161 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-05-promo',
-    title: 'Scene 05 — Cinematic Promo Page',
+    title: 'Scene 05 — Cinematic Promo Page (promo8)',
     async record(page) {
-      // Navigate to the dedicated promo page for the brand reveal
-      const promoUrl = `${BASE_URL}/promo6.html`;
+      // Navigate to the FUSE-focused promo page for the brand reveal
+      const promoUrl = `${BASE_URL}/${PROMO_PAGE}`;
       await page.goto(promoUrl, { waitUntil: 'networkidle', timeout: 30_000 });
       await page.waitForTimeout(1500);
 
-      // Let the CSS animations play through all sections
-      await page.evaluate(() => window.scrollTo({ top: 0 }));
+      // Let the intro scene (scene 0) animate in
       await page.waitForTimeout(3000);
 
-      // Scroll slowly through the page for a cinematic sweep
-      const totalHeight = await page.evaluate(() => document.body.scrollHeight);
-      const steps = 20;
-      for (let i = 1; i <= steps; i++) {
-        await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'smooth' }), Math.round((totalHeight * i) / steps));
-        await page.waitForTimeout(600);
+      // Step through each of the 6 scenes by clicking the next-scene button,
+      // pausing long enough for each scene's content to fully fade in and read.
+      const PROMO_SCENE_DWELL_MS = 4500; // ms to linger on each promo page scene
+      for (let i = 0; i < 5; i++) {
+        await page.click('#btn-next');
+        await page.waitForTimeout(PROMO_SCENE_DWELL_MS);
       }
 
-      // Pause at the bottom
+      // Pause on the final CTA scene
       await page.waitForTimeout(2000);
 
-      // Scroll back to the top
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      // Return to scene 0 for a clean loop
+      await page.click('#btn-prev');
+      await page.waitForTimeout(1500);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-06-fuse-showcase',
+    title: 'Scene 06 — FUSE™ at Work: Fuse Blown by Overcurrent',
+    async record(page) {
+      await openBuilder(page);
+
+      // Load the overload circuit — 24 V source through a 1 Ω resistor,
+      // deliberately designed to trigger the FUSE™ thermal failure engine.
+      await sendAction(page, 'load-preset', { preset: 'overload_demo' });
+      await page.waitForTimeout(1400);
+
+      // Fit to viewport and pause so the viewer can read the circuit layout.
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(1200);
+
+      // Toggle labels on so component values are visible during the zoom-in.
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Slow cinematic push toward the resistor before things go wrong.
+      await smoothZoomIn(page, 9, 200);
+      await page.waitForTimeout(800);
+
+      // Start simulation — surge current begins, FUSE thermal model activates.
+      await sendAction(page, 'run-simulation');
+      await page.waitForTimeout(1800);
+
+      // Continue zooming in as the resistor heats up.
+      await smoothZoomIn(page, 7, 210);
+      await page.waitForTimeout(3000);
+
+      // Dive to the atomic level — watch electrons slam through the overloaded element.
+      await smoothZoomIn(page, 9, 155);
+      await page.waitForTimeout(4000);
+
+      // Pull back to reveal the failure state on the full circuit.
+      await smoothZoomOut(page, 18, 160);
+      await page.waitForTimeout(2200);
+
+      // Turn labels back off for a clean outro.
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(800);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-07-arena',
+    title: 'Scene 07 — Component Arena: Live FUSE™ Analysis',
+    async record(page) {
+      // Navigate directly to the arena page — standalone layout, no React shell.
+      // The arena uses WebGL and loads additional assets, so allow extra time.
+      const arenaUrl = `${BASE_URL}/arena.html`;
+      await page.goto(arenaUrl, { waitUntil: 'networkidle', timeout: 45_000 });
+      await page.waitForTimeout(2500);
+
+      // Let the arena load and settle — give the WebGL scene time to initialise.
       await page.waitForTimeout(2000);
+
+      // Pan the arena viewport slightly to show the 3-D canvas is live.
+      await page.mouse.move(960, 540);
+      await page.waitForTimeout(400);
+      await page.mouse.move(1100, 480);
+      await page.waitForTimeout(500);
+      await page.mouse.move(820, 580);
+      await page.waitForTimeout(500);
+      await page.mouse.move(960, 540);
+      await page.waitForTimeout(800);
+
+      // Linger so the viewer can read the FUSE status badges and component cards.
+      await page.waitForTimeout(5000);
+
+      // Scroll down gently if the arena has a scrollable component list.
+      await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+      await page.waitForTimeout(2000);
+
+      // Scroll back up.
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      await page.waitForTimeout(1500);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-08-practice',
+    title: 'Scene 08 — Practice Mode: W.I.R.E. Methodology',
+    async record(page) {
+      await openBuilder(page);
+
+      // Fit the empty workspace and orient the camera before generating a problem.
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(800);
+
+      // Load a clean series circuit as the base for the practice demonstration.
+      await sendAction(page, 'load-preset', { preset: 'series_basic' });
+      await page.waitForTimeout(1400);
+
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(900);
+
+      // Enable component labels so the viewer can read values during the walkthrough.
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(700);
+
+      // Gentle zoom in to the workspace so the circuit fills the screen nicely.
+      await smoothZoomIn(page, 6, 190);
+      await page.waitForTimeout(1000);
+
+      // Generate a fresh practice problem — triggers the W.I.R.E. practice overlay.
+      await sendAction(page, 'generate-practice');
+      await page.waitForTimeout(2500);
+
+      // Simulate the circuit to show FUSE™ validating the student's wiring.
+      await sendAction(page, 'run-simulation');
+      await page.waitForTimeout(2500);
+
+      // Zoom further in to show the current flowing through the practice circuit.
+      await smoothZoomIn(page, 8, 160);
+      await page.waitForTimeout(3000);
+
+      // Pull back to the full overview so all components and labels are visible.
+      await smoothZoomOut(page, 10, 170);
+      await page.waitForTimeout(2000);
+
+      // Turn labels off for the outro frame.
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(800);
     },
   },
 ];
@@ -385,11 +519,14 @@ async function main() {
     }
 
     console.log('\n  Combine clips with ffmpeg:');
-    console.log('    # 1. Create a concat list:');
+    console.log('    # 1. Create a concat list (FUSE-focused reel = scenes 05–08):');
+    console.log('    ls promo-footage/scene-0{5,6,7,8}-*.webm | sed "s/^/file \'/" | sed "s/$/' \\\\"/" > /tmp/fuse-clips.txt');
+    console.log('    # 2. Merge into the FUSE promo reel:');
+    console.log("    ffmpeg -f concat -safe 0 -i /tmp/fuse-clips.txt -c copy promo-footage/fuse-promo-reel.webm");
+    console.log('    # 3. Or merge ALL scenes into a full reel:');
     console.log('    ls promo-footage/scene-*.webm | sed "s/^/file \'/" | sed "s/$/' \\\\"/" > /tmp/clips.txt');
-    console.log('    # 2. Merge into one file:');
     console.log("    ffmpeg -f concat -safe 0 -i /tmp/clips.txt -c copy promo-footage/promo-reel.webm\n");
-    console.log('  Or import the individual .webm files into your video editor (Premiere, DaVinci, CapCut, etc.)');
+    console.log('  Import the individual .webm files into your video editor (Premiere, DaVinci, CapCut, etc.)');
     console.log('  and add title cards, music, and colour grading for the final promo reel.\n');
   } else {
     console.warn('  ⚠  No clips were saved — check the warnings above.\n');
