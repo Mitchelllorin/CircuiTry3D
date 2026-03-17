@@ -5342,6 +5342,18 @@ body.android-optimized .zoom-btn {
         // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
         const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
         const PROB_CLOUD_OPACITY      = 0.06;   // base opacity of probability haze
+        // p-orbital dumbbell lobes rendered at each lattice site in deep-atomic zoom
+        const PROB_LOBE_RADIUS        = 0.15;   // radius of each ellipsoidal p-orbital lobe
+        const PROB_LOBE_ELONGATION    = 1.8;    // stretch factor along lobe axis
+        const PROB_LOBE_OFFSET        = 0.16;   // offset of lobe centre from wire axis
+        const PROB_LOBE_OPACITY       = 0.11;   // opacity of lobe (slightly higher than haze)
+        const PROB_LOBE_SPACING       = 0.38;   // one lobe pair per lattice spacing
+        const PROB_LOBE_SEG_W         = isMobile ? 5 : 7;  // widthSegments for lobe sphere
+        const PROB_LOBE_SEG_H         = isMobile ? 3 : 5;  // heightSegments for lobe sphere
+
+        // Layer-visibility update throttle thresholds
+        const LAYER_VISIB_DIST_THRESHOLD  = 0.04;  // min camera-distance change to trigger mesh traversal
+        const LAYER_OPACITY_CHANGE_THRESHOLD = 0.008; // min opacity delta to trigger material update
 
         // Animation micro-constants
         const TANGENT_SAMPLE_DELTA    = 0.01;   // progress offset used to approximate wire tangent
@@ -7637,7 +7649,7 @@ body.android-optimized .zoom-btn {
         // probability clouds remain visible — giving the "anatomy app" layer effect.
         function _updateLayerVisibility() {
             // Only recalculate when the camera distance has changed meaningfully
-            if (Math.abs(cameraDistance - _layerVisibDist) < 0.04) return;
+            if (Math.abs(cameraDistance - _layerVisibDist) < LAYER_VISIB_DIST_THRESHOLD) return;
             _layerVisibDist = cameraDistance;
 
             // Map distance → [0, 1] macro-object opacity
@@ -7659,7 +7671,7 @@ body.android-optimized .zoom-btn {
             }
 
             // Skip if opacity hasn't changed enough to justify mesh traversal
-            if (Math.abs(targetOpacity - _lastLayerOpacity) < 0.008) return;
+            if (Math.abs(targetOpacity - _lastLayerOpacity) < LAYER_OPACITY_CHANGE_THRESHOLD) return;
             _lastLayerOpacity = targetOpacity;
 
             const fullyVisible   = targetOpacity >= 0.999;
@@ -16066,13 +16078,22 @@ Made with ? for visual learners everywhere!
          * Spawn a semi-transparent probability-cloud haze around a wire for deep-atomic zoom.
          * Represents the delocalised electron wavefunction that fills the conductor.
          * Uses additive blending so the cloud brightens naturally on top of the wire colour.
+         * Also spawns p-orbital dumbbell lobes at periodic lattice sites to give a
+         * scientifically-inspired shape to the electron orbital visualisation.
          */
         function _spawnProbabilityCloud(wire, flowColor) {
             if (!wire.segments) return;
+
+            // Shared lobe geometry (unit sphere; scaled per instance)
+            const lobeGeom = new THREE.SphereGeometry(PROB_LOBE_RADIUS,
+                PROB_LOBE_SEG_W, PROB_LOBE_SEG_H);
+
             wire.segments.forEach(seg => {
                 try {
                     const segLen = seg.start.distanceTo(seg.end);
                     if (segLen < 0.05) return;
+
+                    // ── tube haze ────────────────────────────────────────────────
                     const cloudGeom = new THREE.CylinderGeometry(
                         PROB_CLOUD_RADIUS, PROB_CLOUD_RADIUS, segLen, 10);
                     const cloudMat  = new THREE.MeshBasicMaterial({
@@ -16088,6 +16109,64 @@ Made with ? for visual learners everywhere!
                     cloudMesh.rotation.copy(seg.mesh.rotation);
                     scene.add(cloudMesh);
                     currentProbabilityClouds.push(cloudMesh);
+
+                    // ── p-orbital lobes along the segment ────────────────────────
+                    // Direction along the wire segment (the bond axis)
+                    const wireDir = new THREE.Vector3()
+                        .subVectors(seg.end, seg.start).normalize();
+
+                    // Build two perpendicular vectors (radial axes for the lobes)
+                    const perp1 = new THREE.Vector3();
+                    const perp2 = new THREE.Vector3();
+                    if (Math.abs(wireDir.y) < 0.9) {
+                        perp1.crossVectors(wireDir, new THREE.Vector3(0, 1, 0)).normalize();
+                    } else {
+                        perp1.crossVectors(wireDir, new THREE.Vector3(1, 0, 0)).normalize();
+                    }
+                    perp2.crossVectors(wireDir, perp1).normalize();
+
+                    const lobeMat = new THREE.MeshBasicMaterial({
+                        color:       flowColor.hex,
+                        transparent: true,
+                        opacity:     PROB_LOBE_OPACITY,
+                        blending:    THREE.AdditiveBlending,
+                        depthWrite:  false
+                    });
+
+                    // Number of lobe pairs to place along this segment
+                    const pairCount = Math.max(1,
+                        Math.round(segLen / PROB_LOBE_SPACING));
+
+                    for (let p = 0; p < pairCount; p++) {
+                        const tAlong = (p + 0.5) / pairCount;
+                        // Base position along the segment
+                        const base = new THREE.Vector3().lerpVectors(
+                            seg.start, seg.end, tAlong);
+
+                        // Alternate between perp1 (p_x) and perp2 (p_y) lobes per site
+                        // for visual variety — like the two orthogonal p orbitals
+                        const axis = (p % 2 === 0) ? perp1 : perp2;
+
+                        // Place positive and negative lobe of the dumbbell
+                        for (const sign of [1, -1]) {
+                            const lobeMesh = new THREE.Mesh(lobeGeom, lobeMat);
+                            // Copy base position then offset along lobe axis by ±PROB_LOBE_OFFSET
+                            lobeMesh.position.copy(base);
+                            lobeMesh.position.addScaledVector(axis, sign * PROB_LOBE_OFFSET);
+                            // Stretch the sphere into an ellipsoid along the lobe axis
+                            lobeMesh.scale.copy(new THREE.Vector3(1, 1, 1));
+                            const lobeAxisLocal = axis.clone()
+                                .applyEuler(new THREE.Euler(
+                                    -seg.mesh.rotation.x,
+                                    -seg.mesh.rotation.y,
+                                    -seg.mesh.rotation.z, 'XYZ'));
+                            lobeMesh.scale.addScaledVector(
+                                lobeAxisLocal,
+                                PROB_LOBE_ELONGATION - 1);
+                            scene.add(lobeMesh);
+                            currentProbabilityClouds.push(lobeMesh);
+                        }
+                    }
                 } catch (e) { /* skip */ }
             });
         }
