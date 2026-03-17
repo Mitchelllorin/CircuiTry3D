@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>CircuiTry3D — Illuminate Electricity</title>
+  <title>CircuiTry3D — The World's Most Advanced Electrical Simulation Platform</title>
   <meta name="description" content="3D, Interactive, Electric Circuit Builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level — Illuminating Electricity." />
   <meta name="theme-color" content="#050b1f" />
   <link rel="manifest" href="/manifest.json" />
@@ -580,6 +580,111 @@
       .logo-mark { width: 100px; }
       .wordmark { font-size: clamp(28px, 7vw, 52px); }
     }
+
+    /* ═══════════════════════════════════════════════════════════════
+       HERO AWARD BADGE
+    ═══════════════════════════════════════════════════════════════ */
+    .hero-award {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      border: 1px solid rgba(255, 215, 0, 0.35);
+      background: rgba(255, 215, 0, 0.07);
+      font-size: clamp(0.58rem, 1.5vw, 0.7rem);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 220, 60, 0.9);
+      text-shadow: 0 0 14px rgba(255, 200, 0, 0.45);
+      white-space: nowrap;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TAGLINE MARQUEE STRIP
+    ═══════════════════════════════════════════════════════════════ */
+    .tagline-strip {
+      width: 100%;
+      overflow: hidden;
+      background: rgba(8, 15, 38, 0.85);
+      border-top: 1px solid rgba(136, 204, 255, 0.1);
+      border-bottom: 1px solid rgba(136, 204, 255, 0.1);
+      padding: 13px 0;
+      position: relative;
+    }
+    .tagline-strip::before,
+    .tagline-strip::after {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 72px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .tagline-strip::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(8,15,38,0.95), transparent);
+    }
+    .tagline-strip::after {
+      right: 0;
+      background: linear-gradient(-90deg, rgba(8,15,38,0.95), transparent);
+    }
+    .tagline-track {
+      display: flex;
+      animation: tagline-scroll 44s linear infinite;
+      white-space: nowrap;
+      will-change: transform;
+    }
+    .tagline-track:hover { animation-play-state: paused; }
+    .tagline-item {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .tagline-text {
+      font-size: clamp(0.7rem, 1.7vw, 0.84rem);
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      padding: 0 clamp(14px, 2.5vw, 26px);
+      white-space: nowrap;
+    }
+    .tagline-sep {
+      color: rgba(136, 204, 255, 0.22);
+      font-size: 0.7rem;
+    }
+    @keyframes tagline-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FREE ACCESS CALLOUT (in CTA section)
+    ═══════════════════════════════════════════════════════════════ */
+    .free-callout {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 255, 136, 0.22);
+      background: rgba(0, 255, 136, 0.05);
+      font-size: clamp(0.78rem, 1.9vw, 0.9rem);
+      color: var(--muted);
+      margin-top: 20px;
+    }
+    .free-callout-badge {
+      font-size: clamp(0.62rem, 1.4vw, 0.72rem);
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: rgba(0, 255, 136, 0.12);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 6px;
+      padding: 2px 9px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -590,6 +695,9 @@
   ═══════════════════════════════════════════════════════════════ -->
   <section class="hero" aria-label="Hero">
     <div class="hero-content">
+      <div class="hero-award" aria-label="Award">
+        🏆 World's Most Advanced Electrical Simulation Platform
+      </div>
       <div class="wordmark" aria-label="CircuiTry3D">
         <span class="brand-blue">Circui</span><span class="brand-orange">Try</span><span class="brand-green">3D</span>
       </div>
@@ -635,6 +743,36 @@
       Scroll to explore
     </div>
   </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAGLINE MARQUEE
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="tagline-strip" aria-hidden="true">
+    <div class="tagline-track">
+      <!-- first copy -->
+      <span class="tagline-item"><span class="tagline-text c-green">Build. Fail. Learn.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-blue">See Electricity at Every Scale</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-orange">FUSE™ — Where Failure Becomes Understanding</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-purple">From Wire to Wave Function</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-green">Physics-Accurate. Classroom-Ready.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-blue">30+ Failure Modes. Zero Real Hardware.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-orange">Free to Start. Built for Everyone.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-purple">Powered by Proprietary FUSE™ Technology</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-green">Illuminate Electricity</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-blue">The Arena. The FUSE™. The Future.</span><span class="tagline-sep">⚡</span></span>
+      <!-- duplicate for seamless loop -->
+      <span class="tagline-item"><span class="tagline-text c-green">Build. Fail. Learn.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-blue">See Electricity at Every Scale</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-orange">FUSE™ — Where Failure Becomes Understanding</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-purple">From Wire to Wave Function</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-green">Physics-Accurate. Classroom-Ready.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-blue">30+ Failure Modes. Zero Real Hardware.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-orange">Free to Start. Built for Everyone.</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-purple">Powered by Proprietary FUSE™ Technology</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-green">Illuminate Electricity</span><span class="tagline-sep">⚡</span></span>
+      <span class="tagline-item"><span class="tagline-text c-blue">The Arena. The FUSE™. The Future.</span><span class="tagline-sep">⚡</span></span>
+    </div>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
        FEATURES
@@ -870,12 +1008,22 @@
         and <span class="c-orange">illuminated</span>.
       </h2>
       <p class="section-subtitle">
-        Start building circuits in 3D for free — no account required.
+        The world's most advanced electrical simulation platform — available to everyone,
+        starting completely free. No account required.
       </p>
       <div class="cta-wrap">
         <a class="btn-primary" href="/app" id="cta-launch-btn">
           ⚡ Launch Builder
         </a>
+        <a class="btn-secondary" href="/pricing" id="pricing-btn">
+          💳 View Pricing
+        </a>
+      </div>
+      <div style="display:flex;justify-content:center;">
+        <div class="free-callout">
+          <span class="free-callout-badge">Free Sandbox</span>
+          No credit card · No account · Start building instantly
+        </div>
       </div>
     </div>
   </section>
@@ -938,7 +1086,7 @@
 
       // Intercept all internal nav links
       document.querySelectorAll(
-        "#launch-btn, #cta-launch-btn, .landing-footer-link"
+        "#launch-btn, #cta-launch-btn, #pricing-btn, .landing-footer-link"
       ).forEach(interceptLink);
     })();
   </script>
