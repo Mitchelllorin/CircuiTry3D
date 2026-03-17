@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — 3D Gameplay Reel</title>
+  <meta name="theme-color" content="#050b1f" />
+  <meta name="description" content="CircuiTry3D in action — actual 3D circuit building, atomic zoom, FUSE failure engine, and the Component Arena. Real gameplay. Real 3D." />
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --blue:   #88ccff;
+      --orange: #ff8844;
+      --green:  #00ff88;
+      --purple: #c084fc;
+      --red:    #ff4455;
+      --yellow: #ffd060;
+      --bg:     #050b1f;
+      --card:   rgba(13, 25, 60, 0.85);
+      --text:   #f9fafc;
+      --muted:  #9db8ff;
+    }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Canvas layer ──────────────────────────────────────────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Stage container ───────────────────────────────────────── */
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ── Scene base ────────────────────────────────────────────── */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px 64px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.75s ease;
+    }
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── Full-screen video background per scene ────────────────── */
+    .scene-video {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 1.2s ease 0.3s;
+    }
+    .scene.active .scene-video { opacity: 1; }
+
+    /* Dark cinematic overlay above video */
+    .scene-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(to top,    rgba(5,11,31,0.92) 0%,  rgba(5,11,31,0.35) 40%, transparent 70%),
+        linear-gradient(to bottom, rgba(5,11,31,0.75) 0%,  transparent 30%),
+        linear-gradient(to right,  rgba(5,11,31,0.55) 0%,  transparent 50%);
+    }
+
+    /* Fallback: shown when video fails or hasn't loaded */
+    .scene-fallback {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      display: none;
+    }
+
+    /* Scene content (text + UI) sits above overlay */
+    .scene-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+      width: 100%;
+      padding: 0 clamp(16px, 5vw, 80px) clamp(80px, 10vh, 120px);
+      pointer-events: none;
+    }
+    /* For scenes with centered content (title, CTA) */
+    .scene-content.centered {
+      justify-content: center;
+      padding-bottom: 0;
+    }
+
+    /* ── Typography helpers ────────────────────────────────────── */
+    .eyebrow {
+      font-size: clamp(0.62rem, 1.8vw, 0.82rem);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 0.4s, transform 0.55s ease 0.4s;
+    }
+    .scene.active .eyebrow { opacity: 1; transform: translateY(0); }
+
+    .headline {
+      font-size: clamp(2.2rem, 7vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      line-height: 1.04;
+      text-align: left;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.6s ease 0.6s, transform 0.6s ease 0.6s;
+      max-width: 900px;
+      text-shadow: 0 2px 24px rgba(5,11,31,0.9);
+    }
+    .scene.active .headline { opacity: 1; transform: translateY(0); }
+
+    .tagline {
+      font-size: clamp(0.88rem, 2.2vw, 1.15rem);
+      color: rgba(249,250,252,0.75);
+      font-weight: 400;
+      text-align: left;
+      max-width: 620px;
+      margin-top: 14px;
+      line-height: 1.65;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease 0.85s, transform 0.6s ease 0.85s;
+      text-shadow: 0 1px 12px rgba(5,11,31,0.8);
+    }
+    .scene.active .tagline { opacity: 1; transform: translateY(0); }
+
+    /* ── Brand colour helpers ──────────────────────────────────── */
+    .c-blue   { color: var(--blue);   text-shadow: 0 0 28px rgba(136,204,255,.7); }
+    .c-orange { color: var(--orange); text-shadow: 0 0 26px rgba(255,136,68,.65); }
+    .c-green  { color: var(--green);  text-shadow: 0 0 28px rgba(0,255,136,.7);  }
+    .c-purple { color: var(--purple); text-shadow: 0 0 24px rgba(192,132,252,.65);}
+    .c-red    { color: var(--red);    text-shadow: 0 0 26px rgba(255,68,85,.65); }
+    .c-yellow { color: var(--yellow); text-shadow: 0 0 22px rgba(255,208,96,.6); }
+
+    /* ── REC badge ─────────────────────────────────────────────── */
+    .rec-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      background: rgba(255,68,85,0.18);
+      border: 1.5px solid rgba(255,68,85,0.5);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 14px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
+    }
+    .scene.active .rec-badge { opacity: 1; transform: translateY(0); }
+    .rec-dot {
+      width: 7px; height: 7px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: rec-blink 1s ease-in-out infinite;
+      box-shadow: 0 0 6px var(--red);
+    }
+    @keyframes rec-blink { 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+
+    /* ── Circuit-type badge (bottom-right) ─────────────────────── */
+    .scene-meta {
+      position: absolute;
+      bottom: clamp(64px,9vh,96px);
+      right: clamp(16px,4vw,60px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      z-index: 2;
+      opacity: 0;
+      transform: translateX(14px);
+      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
+    }
+    .scene.active .scene-meta { opacity: 1; transform: translateX(0); }
+    .meta-chip {
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1.5px solid;
+      backdrop-filter: blur(6px);
+    }
+    .mc-blue   { color:var(--blue);   border-color:rgba(136,204,255,.5); background:rgba(136,204,255,.12); }
+    .mc-green  { color:var(--green);  border-color:rgba(0,255,136,.4);   background:rgba(0,255,136,.1);   }
+    .mc-orange { color:var(--orange); border-color:rgba(255,136,68,.45); background:rgba(255,136,68,.1);  }
+    .mc-red    { color:var(--red);    border-color:rgba(255,68,85,.5);   background:rgba(255,68,85,.12);  }
+    .mc-purple { color:var(--purple); border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.1); }
+    .mc-yellow { color:var(--yellow); border-color:rgba(255,208,96,.4);  background:rgba(255,208,96,.09); }
+    .meta-timecode {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: rgba(157,184,255,0.5);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Logo wordmark ─────────────────────────────────────────── */
+    .wordmark {
+      font-size: clamp(3.5rem, 12vw, 8rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      display: flex;
+      gap: 0;
+      filter: drop-shadow(0 0 40px rgba(40,255,190,.4));
+      opacity: 0;
+      transform: scale(0.82);
+      transition: opacity 0.75s ease 0.2s, transform 0.75s cubic-bezier(.34,1.56,.64,1) 0.2s;
+      line-height: 1;
+    }
+    .scene.active .wordmark { opacity: 1; transform: scale(1); }
+
+    /* ── 3D badge (title scene) ────────────────────────────────── */
+    .intro-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(136,204,255,.4);
+      background: rgba(136,204,255,.08);
+      font-size: clamp(0.68rem, 1.8vw, 0.84rem);
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 22px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+    }
+    .scene.active .intro-badge { opacity: 1; transform: translateY(0); }
+
+    /* ── Feature chips ─────────────────────────────────────────── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 26px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
+    }
+    .scene.active .chips { opacity: 1; transform: translateY(0); }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: clamp(0.68rem, 1.8vw, 0.84rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: 1.5px solid;
+    }
+    .chip-blue   { border-color:rgba(136,204,255,.5); color:var(--blue);   background:rgba(136,204,255,.08); }
+    .chip-green  { border-color:rgba(0,255,136,.4);   color:var(--green);  background:rgba(0,255,136,.07);  }
+    .chip-orange { border-color:rgba(255,136,68,.45); color:var(--orange); background:rgba(255,136,68,.07); }
+    .chip-red    { border-color:rgba(255,68,85,.45);  color:var(--red);    background:rgba(255,68,85,.07);  }
+    .chip-purple { border-color:rgba(192,132,252,.45);color:var(--purple); background:rgba(192,132,252,.07);}
+    .chip-yellow { border-color:rgba(255,208,96,.4);  color:var(--yellow); background:rgba(255,208,96,.07); }
+
+    /* ── CTA buttons ────────────────────────────────────────────── */
+    .cta-wrap {
+      margin-top: 34px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 1.15s, transform 0.55s ease 1.15s;
+    }
+    .scene.active .cta-wrap { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .btn-primary {
+      display: inline-block;
+      padding: 14px 36px;
+      border-radius: 100px;
+      font-weight: 800;
+      font-size: clamp(0.85rem, 2.2vw, 1rem);
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--green) 100%);
+      color: #050b1f;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 32px rgba(0,255,136,.3), 0 4px 18px rgba(0,0,0,.45);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 44px rgba(0,255,136,.42), 0 6px 24px rgba(0,0,0,.55); }
+    .btn-secondary {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: clamp(0.82rem, 2vw, 0.95rem);
+      letter-spacing: 0.03em;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid rgba(136,204,255,.38);
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease;
+    }
+    .btn-secondary:hover { border-color: rgba(136,204,255,.8); color: var(--blue); }
+
+    /* ── Scene number display ───────────────────────────────────── */
+    #scene-counter {
+      position: fixed;
+      top: 20px;
+      left: 68px;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: rgba(157,184,255,.45);
+      letter-spacing: 0.1em;
+      z-index: 100;
+    }
+
+    /* ── Progress bar ───────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      z-index: 100;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 10px rgba(0,255,136,.65);
+    }
+
+    /* ── Scene dots ─────────────────────────────────────────────── */
+    #scene-dots {
+      position: fixed;
+      bottom: 22px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 9px;
+      z-index: 100;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(136,204,255,.22);
+      transition: background 0.3s ease, transform 0.3s ease, width 0.3s ease;
+      cursor: pointer;
+    }
+    .dot.active { background: var(--green); transform: scale(1.35); width: 20px; border-radius: 4px; }
+
+    /* ── Controls ───────────────────────────────────────────────── */
+    #controls {
+      position: fixed;
+      top: 16px; right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+    .ctrl-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(13,25,60,.72);
+      border: 1.5px solid rgba(136,204,255,.3);
+      color: var(--blue);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ctrl-btn:hover { background: rgba(20,42,95,.88); border-color: rgba(136,204,255,.65); }
+
+    /* ── Back link ──────────────────────────────────────────────── */
+    #back-link {
+      position: fixed;
+      top: 18px; left: 16px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: rgba(136,204,255,.5);
+      text-decoration: none;
+      z-index: 100;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.15s ease;
+    }
+    #back-link:hover { color: var(--blue); }
+
+    /* ── Scanlines ─────────────────────────────────────────────── */
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px
+      );
+      opacity: 0.6;
+    }
+
+    /* ── Flare (scene transition) ──────────────────────────────── */
+    #flare {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #flare.flash { opacity: 1; transition: none; }
+
+    /* ══════════════════════════════════════════════════════════════
+       SCENE-SPECIFIC FALLBACK ANIMATIONS
+       Shown when .webm files aren't available yet.
+       These use perspective transforms to evoke 3D depth so the
+       fallback never looks like a flat 2-D schematic.
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── Falling particles for title ───────────────────────────── */
+    .title-particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-10px) scale(0.8); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.8; }
+      100% { transform: translateY(110vh) scale(1.2); opacity: 0; }
+    }
+    .falling-particle {
+      position: absolute;
+      top: 0;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      animation: fall var(--fall-dur, 5s) linear var(--fall-delay, 0s) infinite;
+      filter: blur(0.5px);
+    }
+
+    /* ── Shared canvas animation keyframes ─────────────────────── */
+    @keyframes heat-flicker { 0%,100%{filter:brightness(1) saturate(1)} 25%{filter:brightness(1.6) saturate(1.8)} 75%{filter:brightness(0.8) saturate(0.7)} }
+    @keyframes pulse-glow   { 0%,100%{opacity:0.6} 50%{opacity:1} }
+    @keyframes orbit-spin   { from{transform:rotateY(0deg)} to{transform:rotateY(360deg)} }
+
+    /* ── CTA scene radial glow ─────────────────────────────────── */
+    .cta-bg-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(ellipse 75% 55% at 50% 50%, rgba(0,255,136,0.07) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 30% 70%, rgba(136,204,255,0.05) 0%, transparent 60%);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="scanlines"></div>
+<div id="flare"></div>
+
+<a id="back-link" href="/#/" target="_top">← CircuiTry3D</a>
+
+<div id="scene-counter">01 / 08</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev" title="Previous scene">&#8592;</button>
+  <button class="ctrl-btn" id="btn-play" title="Pause / Play">&#10074;&#10074;</button>
+  <button class="ctrl-btn" id="btn-next" title="Next scene">&#8594;</button>
+</div>
+
+<div id="progress-bar" style="width:0%"></div>
+<div id="scene-dots"></div>
+
+<!-- ═════════════════════════════════════════════════════════════
+     SCENES
+     All video backgrounds are actual 3-D gameplay recordings
+     captured by the CircuiTry3D circuit bot from the live app.
+═════════════════════════════════════════════════════════════ -->
+<div id="stage">
+
+  <!-- ─── SCENE 0 · Title / Hook ─────────────────────────────── -->
+  <div class="scene" id="scene-0">
+
+    <!-- Particle depth-field background -->
+    <div class="title-particles" id="title-particles" aria-hidden="true"></div>
+
+    <div class="scene-content centered">
+      <div class="intro-badge">&#9654;&nbsp; Actual 3D Gameplay &middot; Live Recording &middot; 1920&times;1080</div>
+      <div class="wordmark">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="text-align:center; max-width:600px; margin-top:18px; color:rgba(249,250,252,0.65); font-size:clamp(1rem,2.8vw,1.3rem); font-weight:300;">
+        The&nbsp;<strong style="color:var(--green);font-weight:700;">3D Interactive</strong>&nbsp;Circuit Simulator.<br>
+        <span style="color:rgba(157,184,255,.45); font-size:0.8em;">Build in three dimensions &middot; simulate real physics &middot; down to the atomic level.</span>
+      </p>
+      <div class="chips">
+        <span class="chip chip-blue">3D Circuit Builder</span>
+        <span class="chip chip-green">Atomic Zoom</span>
+        <span class="chip chip-red">FUSE™ Failure Engine</span>
+        <span class="chip chip-purple">Component Arena</span>
+        <span class="chip chip-yellow">5 Zoom Tiers</span>
+        <span class="chip chip-orange">Real Physics</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 1 · Series Circuit ───────────────────────────── -->
+  <div class="scene" id="scene-1">
+
+    <video class="scene-video" src="./promo-footage/scene-01-series.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay"></div>
+
+    <div class="scene-fallback" id="fb-series" style="background:linear-gradient(135deg,#030812,#091525);">
+      <canvas id="canvas-series" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 01 &middot; 3D Builder</div>
+      <h1 class="headline"><span class="c-green">Current</span> Flows<br>at Every Scale</h1>
+      <p class="tagline">Three resistors in series. A 24&thinsp;V battery drives electrons
+        from the 3D macro overview all the way down to the FCC atomic lattice —
+        in the live app, in real time.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-green">&#x2705; Series Circuit &middot; 3D</div>
+      <div class="meta-chip mc-blue">24 V &middot; 40 mA &middot; 600 &Omega;</div>
+      <div class="meta-timecode">SCENE-01 &middot; 1920&times;1080 &middot; WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 2 · Parallel Circuit ─────────────────────────── -->
+  <div class="scene" id="scene-2">
+
+    <video class="scene-video" src="./promo-footage/scene-02-parallel.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay"></div>
+
+    <div class="scene-fallback" id="fb-parallel" style="background:linear-gradient(135deg,#030d1a,#050f22);">
+      <canvas id="canvas-parallel" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 02 &middot; 3D Builder</div>
+      <h1 class="headline"><span class="c-blue">Electrons</span> Take<br>Every Path</h1>
+      <p class="tagline">Three parallel branches share the same voltage rail.
+        Independent 3D electron streams split and rejoin at the nodes —
+        each visualised inside the live circuit builder.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-blue">&#x26A1; Parallel Circuit &middot; 3D</div>
+      <div class="meta-chip mc-green">Three Independent Paths</div>
+      <div class="meta-timecode">SCENE-02 &middot; 1920&times;1080 &middot; WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 3 · FUSE Thermal Failure ──────────────────────── -->
+  <div class="scene" id="scene-3">
+
+    <video class="scene-video" src="./promo-footage/scene-03-overload.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <!-- Warmer, red-tinted overlay for the failure scene -->
+    <div class="scene-overlay" style="background:
+      linear-gradient(to top,    rgba(30,5,5,0.95) 0%, rgba(20,4,4,0.4) 40%, transparent 70%),
+      linear-gradient(to bottom, rgba(20,4,4,0.8) 0%, transparent 35%),
+      linear-gradient(to right,  rgba(20,4,4,0.55) 0%, transparent 55%);">
+    </div>
+
+    <div class="scene-fallback" id="fb-overload" style="background:linear-gradient(135deg,#1a0306,#1e0505);">
+      <canvas id="canvas-overload" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 03 &middot; FUSE&#x2122; Engine</div>
+      <h1 class="headline"><span class="c-red">FUSE&#x2122; Detects</span><br>What You Can&rsquo;t See</h1>
+      <p class="tagline">A 1&thinsp;&Omega; resistor on 24&thinsp;V dissipates 576&thinsp;W.
+        The FUSE&#x2122; Failure Understanding Simulation Engine accumulates heat in 3D
+        and triggers arc flash &mdash; all inside the real app.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-red">&#x1F525; FUSE&#x2122; Thermal Failure</div>
+      <div class="meta-chip mc-orange">576 W &middot; &tau; = 5 s</div>
+      <div class="meta-timecode">SCENE-03 &middot; 1920&times;1080 &middot; WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 4 · Mixed Circuit ─────────────────────────────── -->
+  <div class="scene" id="scene-4">
+
+    <video class="scene-video" src="./promo-footage/scene-04-mixed.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay"></div>
+
+    <div class="scene-fallback" id="fb-mixed" style="background:linear-gradient(135deg,#050b1a,#080e20);">
+      <canvas id="canvas-mixed" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 04 &middot; 3D Builder</div>
+      <h1 class="headline"><span class="c-purple">Advanced.</span><br>Mastered in 3D.</h1>
+      <p class="tagline">Seven components &mdash; series trunk, parallel branch box, LED return path.
+        Labels on. Simulation running. The full W.I.R.E. methodology
+        applied to a live 3D circuit.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-purple">&#x1F52C; Series-Parallel &middot; 3D</div>
+      <div class="meta-chip mc-blue">7 Components &middot; KVL / KCL</div>
+      <div class="meta-timecode">SCENE-04 &middot; 1920&times;1080 &middot; WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 5 · 3D Builder Fly-Through ────────────────────── -->
+  <div class="scene" id="scene-5">
+
+    <video class="scene-video" src="./promo-footage/scene-05-3d-build.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay" style="background:
+      linear-gradient(to top,    rgba(5,11,31,0.90) 0%, rgba(5,11,31,0.30) 40%, transparent 70%),
+      linear-gradient(to bottom, rgba(5,11,31,0.70) 0%, transparent 35%),
+      linear-gradient(to left,   rgba(5,11,31,0.50) 0%, transparent 55%);">
+    </div>
+
+    <div class="scene-fallback" id="fb-3dbuild" style="background:linear-gradient(135deg,#050b1f,#071428);">
+      <canvas id="canvas-3dbuild" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 05 &middot; 3D Fly-Through</div>
+      <h1 class="headline">Five <span class="c-yellow">Zoom Tiers</span>,<br>One 3D Circuit</h1>
+      <p class="tagline">Macro &rarr; Component &rarr; Atomic &rarr; Deep-Atomic &rarr; Quantum.
+        The camera dives through five layers of physics in the live 3D builder,
+        revealing electron clouds at each tier.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-yellow">&#x1F3A5; 3D Fly-Through</div>
+      <div class="meta-chip mc-blue">Macro &rarr; Quantum &middot; 5 Tiers</div>
+      <div class="meta-timecode">SCENE-05 &middot; 1920&times;1080 &middot; WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 6 · Component Arena ───────────────────────────── -->
+  <div class="scene" id="scene-6">
+
+    <video class="scene-video" src="./promo-footage/scene-06-arena.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay" style="background:
+      linear-gradient(to top,    rgba(10,5,30,0.92) 0%, rgba(10,5,25,0.35) 40%, transparent 70%),
+      linear-gradient(to bottom, rgba(10,5,25,0.75) 0%, transparent 30%),
+      linear-gradient(to right,  rgba(10,5,25,0.55) 0%, transparent 50%);">
+    </div>
+
+    <div class="scene-fallback" id="fb-arena" style="background:linear-gradient(135deg,#050310,#080520);">
+      <canvas id="canvas-arena" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC &middot; Scene 06 &middot; Component Arena</div>
+      <h1 class="headline">The <span class="c-purple">Arena</span>:<br>Components Battle</h1>
+      <p class="tagline">Load any two real components onto the 3D stage.
+        The FUSE&#x2122; engine runs head-to-head failure analysis &mdash;
+        impedance, thermal limits, and lifetime predictions, live.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-purple">&#x2694; Component Arena &middot; 3D</div>
+      <div class="meta-chip mc-orange">FUSE&#x2122; Failure Analysis</div>
+      <div class="meta-timecode">SCENE-06 &middot; 1920&times;1080 &middot; WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 7 · CTA ────────────────────────────────────────── -->
+  <div class="scene" id="scene-7">
+    <div class="cta-bg-glow" aria-hidden="true"></div>
+
+    <div class="scene-content centered">
+      <div class="intro-badge" style="border-color:rgba(0,255,136,.45); background:rgba(0,255,136,.07); color:var(--green);">
+        &#9889;&nbsp; No account required
+      </div>
+      <div class="wordmark" style="font-size:clamp(2.5rem,9vw,6rem);">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="text-align:center; max-width:520px; color:rgba(249,250,252,0.6); font-size:clamp(0.9rem,2.2vw,1.1rem);">
+        Build your first 3D circuit in seconds.<br>
+        Watch electricity illuminate &mdash; from macro to quantum.
+      </p>
+      <div class="cta-wrap">
+        <a href="/#/app" class="btn-primary">&#x26A1; Start Building in 3D</a>
+        <a href="/#/practice" class="btn-secondary">&#x1F393; Try Practice Mode</a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #stage -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   SCENE ENGINE
+══════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var SCENE_COUNT = 8;
+  var SCENE_MS    = 8000;   /* ms per scene */
+  var TRANSIT_MS  = 750;
+
+  /* ── State ────────────────────────────────────────────────── */
+  var currentScene = 0;
+  var playing      = true;
+  var timerId      = null;
+  var sceneStart   = performance.now();
+
+  /* ── DOM ──────────────────────────────────────────────────── */
+  var stages   = Array.from(document.querySelectorAll('.scene'));
+  var dotsEl   = document.getElementById('scene-dots');
+  var progBar  = document.getElementById('progress-bar');
+  var btnPlay  = document.getElementById('btn-play');
+  var flare    = document.getElementById('flare');
+  var counter  = document.getElementById('scene-counter');
+
+  /* ── Build dots ───────────────────────────────────────────── */
+  for (var i = 0; i < SCENE_COUNT; i++) {
+    (function (idx) {
+      var d = document.createElement('div');
+      d.className = 'dot' + (idx === 0 ? ' active' : '');
+      d.addEventListener('click', function () { goTo(idx, true); });
+      dotsEl.appendChild(d);
+    }(i));
+  }
+  function getDots() { return Array.from(dotsEl.querySelectorAll('.dot')); }
+
+  /* ── Flare flash ──────────────────────────────────────────── */
+  function triggerFlare() {
+    flare.classList.add('flash');
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { flare.classList.remove('flash'); });
+    });
+  }
+
+  /* ── Update counter ───────────────────────────────────────── */
+  function updateCounter(idx) {
+    counter.textContent = String(idx + 1).padStart(2, '0') + ' / 0' + SCENE_COUNT;
+  }
+
+  /* ── Go to scene ──────────────────────────────────────────── */
+  function goTo(idx, resetTimer) {
+    resetTimer = resetTimer || false;
+    var prev = currentScene;
+    currentScene = (idx + SCENE_COUNT) % SCENE_COUNT;
+    stages[prev].classList.remove('active');
+    stages[currentScene].classList.add('active');
+    getDots().forEach(function (d, i) { d.classList.toggle('active', i === currentScene); });
+    updateCounter(currentScene);
+    triggerFlare();
+    renderMode = currentScene;
+    /* sync videos: pause old scene's video, play new one from start */
+    var oldVid = stages[prev].querySelector('video');
+    var newVid = stages[currentScene].querySelector('video');
+    if (oldVid) oldVid.pause();
+    if (newVid) { newVid.currentTime = 0; newVid.play().catch(function(){}); }
+    if (resetTimer) {
+      clearTimeout(timerId);
+      sceneStart = performance.now();
+      if (playing) scheduleNext();
+    }
+  }
+
+  function advance() {
+    goTo(currentScene + 1);
+    sceneStart = performance.now();
+    if (playing) scheduleNext();
+  }
+  function scheduleNext() {
+    clearTimeout(timerId);
+    timerId = setTimeout(advance, SCENE_MS);
+  }
+
+  /* ── Progress bar tick ────────────────────────────────────── */
+  function tickProgress() {
+    if (playing) {
+      var elapsed = performance.now() - sceneStart;
+      var pct = Math.min(100, (elapsed / SCENE_MS) * 100);
+      progBar.style.width = pct + '%';
+    }
+    requestAnimationFrame(tickProgress);
+  }
+
+  /* ── Play / Pause ─────────────────────────────────────────── */
+  function togglePlay() {
+    playing = !playing;
+    btnPlay.innerHTML = playing ? '&#10074;&#10074;' : '&#9654;';
+    if (playing) {
+      sceneStart = performance.now() - (parseFloat(progBar.style.width) / 100) * SCENE_MS;
+      scheduleNext();
+    } else {
+      clearTimeout(timerId);
+    }
+  }
+
+  /* ── Controls ─────────────────────────────────────────────── */
+  document.getElementById('btn-prev').addEventListener('click', function () { goTo(currentScene - 1, true); });
+  document.getElementById('btn-next').addEventListener('click', function () { goTo(currentScene + 1, true); });
+  btnPlay.addEventListener('click', togglePlay);
+
+  /* ── Keyboard nav ─────────────────────────────────────────── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(currentScene + 1, true);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(currentScene - 1, true);
+    if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
+  });
+
+  /* ── Fallback detection: show canvas when video missing ───── */
+  document.querySelectorAll('.scene-video').forEach(function (vid) {
+    var fb = vid.parentElement.querySelector('.scene-fallback');
+    if (!fb) return;
+    vid.addEventListener('error', function () {
+      vid.style.display = 'none';
+      fb.style.display  = 'block';
+    });
+    /* Also show fallback if video stalls for 3.5 s */
+    setTimeout(function () {
+      if (vid.readyState === 0) {
+        vid.style.display = 'none';
+        fb.style.display  = 'block';
+      }
+    }, 3500);
+  });
+
+  /* ── Boot ─────────────────────────────────────────────────── */
+  stages[0].classList.add('active');
+  updateCounter(0);
+  scheduleNext();
+  tickProgress();
+
+  /* ══════════════════════════════════════════════════════════
+     TITLE PARTICLE RAIN
+  ══════════════════════════════════════════════════════════ */
+  (function () {
+    var container = document.getElementById('title-particles');
+    var COLORS = ['#88ccff','#00ff88','#c084fc','#ffd060','#ff8844'];
+    for (var j = 0; j < 60; j++) {
+      var p = document.createElement('div');
+      p.className = 'falling-particle';
+      p.style.left       = Math.random() * 100 + '%';
+      p.style.setProperty('--fall-dur',   (4 + Math.random() * 8) + 's');
+      p.style.setProperty('--fall-delay', (Math.random() * 8) + 's');
+      p.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+      p.style.opacity    = (0.3 + Math.random() * 0.5).toFixed(2);
+      p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+      container.appendChild(p);
+    }
+  }());
+
+  /* ══════════════════════════════════════════════════════════
+     BACKGROUND NETWORK CANVAS (title + text-only scenes)
+  ══════════════════════════════════════════════════════════ */
+  var renderMode = 0;
+  (function () {
+    var canvas = document.getElementById('bg-canvas');
+    var ctx    = canvas.getContext('2d');
+    var nodes  = [];
+    var TAU    = Math.PI * 2;
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* Generate a sparse node network */
+    for (var n = 0; n < 55; n++) {
+      nodes.push({
+        x: Math.random(), y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.00025,
+        vy: (Math.random() - 0.5) * 0.00025,
+        r: 2 + Math.random() * 2.5,
+        phase: Math.random() * TAU,
+        col: ['#88ccff','#00ff88','#c084fc'][Math.floor(Math.random() * 3)]
+      });
+    }
+
+    function bgLoop() {
+      var W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      /* Only render background on text-only or title scenes */
+      if (renderMode !== 0 && renderMode !== 7) {
+        requestAnimationFrame(bgLoop);
+        return;
+      }
+
+      var t = performance.now() * 0.001;
+
+      nodes.forEach(function (nd) {
+        nd.x = (nd.x + nd.vx + 1) % 1;
+        nd.y = (nd.y + nd.vy + 1) % 1;
+      });
+
+      /* draw edges */
+      for (var a = 0; a < nodes.length; a++) {
+        for (var b = a + 1; b < nodes.length; b++) {
+          var dx = (nodes[a].x - nodes[b].x) * W;
+          var dy = (nodes[a].y - nodes[b].y) * H;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 180) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(136,204,255,' + (0.055 * (1 - dist / 180)) + ')';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(nodes[a].x * W, nodes[a].y * H);
+            ctx.lineTo(nodes[b].x * W, nodes[b].y * H);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
+      /* draw nodes */
+      nodes.forEach(function (nd) {
+        var pulse = 0.5 + 0.5 * Math.sin(t * 1.4 + nd.phase);
+        ctx.save();
+        ctx.shadowColor = nd.col;
+        ctx.shadowBlur  = 8 + pulse * 10;
+        ctx.beginPath();
+        ctx.arc(nd.x * W, nd.y * H, nd.r * (0.7 + 0.3 * pulse), 0, TAU);
+        ctx.fillStyle = nd.col.replace(')', ', ' + (0.35 + pulse * 0.3) + ')').replace('rgb(','rgba(');
+        ctx.fill();
+        ctx.restore();
+      });
+
+      requestAnimationFrame(bgLoop);
+    }
+    bgLoop();
+  }());
+
+  /* ══════════════════════════════════════════════════════════
+     CINEMATIC FALLBACK CANVAS ANIMATIONS
+     Used when .webm footage files aren't yet available.
+     All fallbacks use perspective / depth cues so they never
+     look like a flat 2-D schematic drawing.
+  ══════════════════════════════════════════════════════════ */
+  (function () {
+    'use strict';
+    var TAU = Math.PI * 2;
+
+    /* ── Canvas helper ──────────────────────────────────────── */
+    function makeCanvas(id) {
+      var el = document.getElementById(id);
+      if (!el) return null;
+      var ctx = el.getContext('2d');
+      function resize() {
+        var p = el.parentElement;
+        el.width  = p ? (p.offsetWidth  || window.innerWidth)  : window.innerWidth;
+        el.height = p ? (p.offsetHeight || window.innerHeight) : window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      return { el: el, ctx: ctx, resize: resize,
+               get W() { return el.width; }, get H() { return el.height; } };
+    }
+
+    /* ── Drawing helpers ────────────────────────────────────── */
+    function glowLine(ctx, x1, y1, x2, y2, color, lw, blur) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = blur || 14;
+      ctx.strokeStyle = color; ctx.lineWidth = lw || 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.restore();
+    }
+
+    function glowDot(ctx, x, y, r, color, alpha) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = color.replace(')', ',' + (alpha || 1) + ')').replace('rgb(', 'rgba(');
+      ctx.fill(); ctx.restore();
+    }
+
+    function drawResistor(ctx, cx, cy, rw, rh, color, label, heat) {
+      heat = heat || 0;
+      var r = parseInt('00', 16), g = parseInt('c8', 16), b = parseInt('ff', 16);
+      if (heat > 0) {
+        r = Math.round(r + (255 - r) * heat);
+        g = Math.round(g * (1 - heat * 0.85));
+        b = Math.round(b * (1 - heat));
+        color = 'rgb(' + r + ',' + g + ',' + b + ')';
+      }
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = 16 + heat * 20;
+      ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+      ctx.strokeRect(cx - rw / 2, cy - rh / 2, rw, rh);
+      ctx.beginPath();
+      var steps = 6, sx = rw / steps;
+      ctx.moveTo(cx - rw / 2, cy);
+      for (var i = 1; i <= steps; i++) {
+        ctx.lineTo(cx - rw / 2 + i * sx, cy + (i % 2 === 0 ? -rh * 0.28 : rh * 0.28));
+      }
+      ctx.stroke();
+      if (label) {
+        ctx.fillStyle = color; ctx.font = 'bold 11px "Courier New",monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, cx, cy + rh / 2 + 15);
+      }
+      ctx.restore();
+    }
+
+    function drawBattery(ctx, cx, cy, bw, bh, color) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = 12;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(cx - bw * 0.12, cy - bh * 0.38); ctx.lineTo(cx - bw * 0.12, cy + bh * 0.38); ctx.stroke();
+      ctx.lineWidth = 4.5;
+      ctx.beginPath(); ctx.moveTo(cx + bw * 0.12, cy - bh * 0.22); ctx.lineTo(cx + bw * 0.12, cy + bh * 0.22); ctx.stroke();
+      ctx.fillStyle = color; ctx.font = 'bold 12px "Courier New",monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('24V', cx, cy + bh / 2 + 18);
+      ctx.restore();
+    }
+
+    function hud(ctx, W, H, msg, color) {
+      ctx.save();
+      ctx.font = '700 12px "Courier New",monospace';
+      ctx.fillStyle = color || 'rgba(0,200,255,0.45)';
+      ctx.textAlign = 'center';
+      ctx.fillText(msg, W / 2, H - 22);
+      ctx.restore();
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 1 — SERIES CIRCUIT (perspective tilt)
+    ══════════════════════════════════════════════════════ */
+    var s1 = makeCanvas('canvas-series');
+    if (s1) {
+      var t1 = 0;
+      var electrons1 = [0, 0.17, 0.34, 0.51, 0.68, 0.85];
+
+      (function loop1() {
+        s1.resize();
+        var ctx = s1.ctx, W = s1.W, H = s1.H;
+        ctx.clearRect(0, 0, W, H);
+
+        var vg = ctx.createRadialGradient(W/2, H/2, H*0.1, W/2, H/2, H*0.75);
+        vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(2,8,20,0.85)');
+        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+        /* depth perspective: gentle tilt via scale + skew */
+        var zoom = 1.15 + 0.18 * Math.sin(t1 * 0.1);
+        var panX = 18 * Math.sin(t1 * 0.07);
+        ctx.save();
+        ctx.translate(W / 2 + panX, H / 2);
+        ctx.scale(zoom, zoom);
+        ctx.transform(1, -0.04 * Math.sin(t1 * 0.05), 0, 1, 0, 0);
+        ctx.translate(-W / 2, -H / 2);
+
+        var lw = W * 0.72, lh = H * 0.36;
+        var L = W/2 - lw/2, R = W/2 + lw/2, T = H/2 - lh/2, B = H/2 + lh/2;
+
+        glowLine(ctx, L, T, R, T, '#00c8ff', 2, 16);
+        glowLine(ctx, R, T, R, B, '#00c8ff', 2, 16);
+        glowLine(ctx, R, B, L, B, '#00c8ff', 2, 14);
+        glowLine(ctx, L, B, L, T, '#00c8ff', 2, 14);
+
+        drawBattery(ctx, L, H/2, 28, 72, '#00ff88');
+
+        var rw = lw * 0.16, rh = 26;
+        var offsets = [-0.28, 0, 0.28];
+        var labels  = ['R1  150\u03A9', 'R2  200\u03A9', 'R3  250\u03A9'];
+        offsets.forEach(function(o, i) {
+          drawResistor(ctx, W/2 + o * lw, T, rw, rh, '#00c8ff', labels[i], 0);
+        });
+
+        var perim = 2 * (lw + lh);
+        electrons1 = electrons1.map(function(pos) { return (pos + 0.0025) % 1; });
+        electrons1.forEach(function(pos) {
+          var d = pos * perim, px, py;
+          if (d < lw)              { px = L + d;             py = T; }
+          else if (d < lw + lh)   { px = R;                  py = T + (d - lw); }
+          else if (d < 2*lw + lh) { px = R - (d - lw - lh); py = B; }
+          else                    { px = L;                  py = B - (d - 2*lw - lh); }
+          glowDot(ctx, px, py, 4.5, 'rgb(0,200,255)');
+          glowDot(ctx, px, py, 2.5, 'rgb(136,220,255)', 0.4);
+        });
+
+        ctx.restore();
+        hud(ctx, W, H, 'SERIES  \u00B7  24 V  \u00B7  40 mA  \u00B7  600 \u03A9', 'rgba(0,200,255,0.45)');
+        t1 += 0.016;
+        requestAnimationFrame(loop1);
+      }());
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 2 — PARALLEL CIRCUIT (gentle sway)
+    ══════════════════════════════════════════════════════ */
+    var s2 = makeCanvas('canvas-parallel');
+    if (s2) {
+      var t2 = 0;
+      var BRANCH_COLORS  = ['#88ccff', '#00ff88', '#c084fc'];
+      var BRANCH_SPEEDS  = [0.0022, 0.0016, 0.0019];
+      var BRANCH_LABELS  = ['R1  300\u03A9', 'R2  450\u03A9', 'R3  600\u03A9'];
+      var BRANCH_TAGS    = ['75mA', '50mA', '38mA'];
+      var ePar = [[0, 0.4, 0.8], [0.1, 0.55, 0.9], [0.25, 0.6, 0.95]];
+
+      (function loop2() {
+        s2.resize();
+        var ctx = s2.ctx, W = s2.W, H = s2.H;
+        ctx.clearRect(0, 0, W, H);
+
+        var vg = ctx.createRadialGradient(W/2, H/2, H*0.1, W/2, H/2, H*0.75);
+        vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(3,8,22,0.88)');
+        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+        var zoom = 1.12 + 0.1 * Math.sin(t2 * 0.09);
+        var panX = 22 * Math.sin(t2 * 0.06);
+        ctx.save();
+        ctx.translate(W / 2 + panX, H / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-W / 2, -H / 2);
+
+        var railL = W * 0.14, railR = W * 0.86;
+        var branchYs = [H * 0.28, H * 0.5, H * 0.72];
+        var bLen = railR - railL;
+
+        glowLine(ctx, railL, branchYs[0], railL, branchYs[2], '#88ccff', 2.5, 18);
+        glowLine(ctx, railR, branchYs[0], railR, branchYs[2], '#88ccff', 2.5, 18);
+
+        drawBattery(ctx, railL, H / 2, 26, 68, '#00ff88');
+
+        BRANCH_COLORS.forEach(function(col, bi) {
+          var by = branchYs[bi];
+          glowLine(ctx, railL, by, railR, by, col, 2, 14);
+          var rcx = W / 2, rw = bLen * 0.18, rh = 24;
+          drawResistor(ctx, rcx, by, rw, rh, col, BRANCH_LABELS[bi], 0);
+
+          ctx.save();
+          ctx.fillStyle = col; ctx.globalAlpha = 0.55;
+          ctx.font = '700 11px "Courier New",monospace'; ctx.textAlign = 'right';
+          ctx.fillText(BRANCH_TAGS[bi], railR - 12, by - 14);
+          ctx.restore();
+
+          ePar[bi] = ePar[bi].map(function(p) { return (p + BRANCH_SPEEDS[bi]) % 1; });
+          ePar[bi].forEach(function(p) {
+            var ex = railL + p * bLen;
+            glowDot(ctx, ex, by, 4, col);
+            glowDot(ctx, ex, by, 2, col, 0.4);
+          });
+        });
+
+        [branchYs[0], branchYs[2]].forEach(function(by) {
+          glowDot(ctx, railL, by, 5, '#88ccff', 0.7);
+          glowDot(ctx, railR, by, 5, '#88ccff', 0.7);
+        });
+
+        ctx.restore();
+        hud(ctx, W, H, 'PARALLEL  \u00B7  24 V  \u00B7  3 BRANCHES  \u00B7  163 mA TOTAL', 'rgba(136,204,255,0.45)');
+        t2 += 0.016;
+        requestAnimationFrame(loop2);
+      }());
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 3 — FUSE THERMAL FAILURE (heat build-up)
+    ══════════════════════════════════════════════════════ */
+    var s3 = makeCanvas('canvas-overload');
+    if (s3) {
+      var t3 = 0;
+      var CYCLE = 7.0;
+      var sparks3 = [];
+
+      function spawnSpark(cx, cy) {
+        var angle = Math.random() * TAU;
+        var speed = 1.2 + Math.random() * 3.5;
+        sparks3.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 1.5,
+          life: 1, decay: 0.015 + Math.random() * 0.025,
+          r: 2 + Math.random() * 2.5,
+          col: Math.random() < 0.5 ? '#ff8844' : '#ffdd00'
+        });
+      }
+
+      (function loop3() {
+        s3.resize();
+        var ctx = s3.ctx, W = s3.W, H = s3.H;
+        ctx.clearRect(0, 0, W, H);
+
+        var phase = (t3 % CYCLE) / CYCLE;
+        var heat  = phase < 0.35 ? 0 : Math.min(1, (phase - 0.35) / 0.45);
+        var flash = phase > 0.92 ? (1 - phase) / 0.08 : 0;
+
+        ctx.fillStyle = 'rgba(20,3,3,' + (0.35 + heat * 0.55) + ')';
+        ctx.fillRect(0, 0, W, H);
+        if (heat > 0.15) {
+          var vg3 = ctx.createRadialGradient(W/2, H/2, H*0.08, W/2, H/2, H*0.7);
+          vg3.addColorStop(0, 'transparent');
+          vg3.addColorStop(0.7, 'rgba(200,30,0,' + heat * 0.28 + ')');
+          vg3.addColorStop(1,   'rgba(120,10,0,' + heat * 0.65 + ')');
+          ctx.fillStyle = vg3; ctx.fillRect(0, 0, W, H);
+        }
+
+        var zoom3 = 1.1 + heat * 0.35;
+        var shake = heat > 0.7 ? (Math.random() - 0.5) * 6 * heat : 0;
+        ctx.save();
+        ctx.translate(W/2 + shake, H/2 + shake * 0.5);
+        ctx.scale(zoom3, zoom3);
+        ctx.translate(-W/2, -H/2);
+
+        var lw3 = W * 0.62, lh3 = H * 0.32;
+        var L3 = W/2 - lw3/2, R3 = W/2 + lw3/2, T3 = H/2 - lh3/2, B3 = H/2 + lh3/2;
+        var wireCol3 = heat > 0.5 ? 'rgb(' + 255 + ',' + Math.round(80 * (1-heat)) + ',0)' : '#ff4455';
+
+        glowLine(ctx, L3, T3, R3, T3, wireCol3, 2.5, 16 + heat * 14);
+        glowLine(ctx, R3, T3, R3, B3, wireCol3, 2.5, 14 + heat * 10);
+        glowLine(ctx, R3, B3, L3, B3, wireCol3, 2.5, 14 + heat * 10);
+        glowLine(ctx, L3, B3, L3, T3, wireCol3, 2.5, 12);
+        drawBattery(ctx, L3, H/2, 30, 80, '#ff8844');
+
+        var rcx3 = W/2 + lw3 * 0.1, rcy3 = T3, rw3 = lw3 * 0.28, rh3 = 32;
+        drawResistor(ctx, rcx3, rcy3, rw3, rh3, '#ff4455', '1 \u03A9  \u26A0', heat);
+
+        if (heat > 0.4 && Math.random() < heat * 0.35) {
+          for (var n = 0; n < 3; n++) spawnSpark(rcx3 + (Math.random() - 0.5) * rw3, rcy3);
+        }
+
+        var eSpeed3 = 0.003 + heat * 0.012;
+        if (!loop3._epos) loop3._epos = [0, 0.33, 0.66];
+        var perim3 = 2 * (lw3 + lh3);
+        loop3._epos = loop3._epos.map(function(p) { return (p + eSpeed3) % 1; });
+        loop3._epos.forEach(function(pos) {
+          var d3 = pos * perim3, px3, py3;
+          if (d3 < lw3)                { px3 = L3 + d3;               py3 = T3; }
+          else if (d3 < lw3 + lh3)    { px3 = R3;                     py3 = T3 + (d3 - lw3); }
+          else if (d3 < 2*lw3 + lh3)  { px3 = R3 - (d3 - lw3 - lh3); py3 = B3; }
+          else                         { px3 = L3;                     py3 = B3 - (d3 - 2*lw3 - lh3); }
+          var ec3 = heat > 0.5 ? 'rgb(255,' + Math.round(80 * (1-heat)) + ',0)' : 'rgb(255,68,85)';
+          glowDot(ctx, px3, py3, 4 + heat * 2, ec3);
+        });
+
+        ctx.restore();
+
+        for (var si = sparks3.length - 1; si >= 0; si--) {
+          var sp = sparks3[si];
+          sp.x += sp.vx; sp.y += sp.vy; sp.vy += 0.12; sp.life -= sp.decay;
+          if (sp.life <= 0) { sparks3.splice(si, 1); continue; }
+          glowDot(ctx, sp.x, sp.y, sp.r * sp.life, sp.col, sp.life);
+        }
+
+        if (flash > 0) {
+          ctx.fillStyle = 'rgba(255,200,100,' + flash * 0.6 + ')';
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        var statusMsg3 = heat < 0.3 ? 'NOMINAL' : heat < 0.65 ? 'STRESSED' : heat < 0.9 ? '\u26A0 WARNING' : '\uD83D\uDCA5 FAILED';
+        var statusCol3 = heat < 0.3 ? 'rgba(0,255,136,0.5)' : heat < 0.65 ? 'rgba(255,208,96,0.6)' : 'rgba(255,68,85,0.75)';
+        hud(ctx, W, H, 'FUSE\u2122  \u00B7  576 W  \u00B7  \u03C4 = 5 s  \u00B7  STATUS: ' + statusMsg3, statusCol3);
+
+        t3 += 0.016;
+        requestAnimationFrame(loop3);
+      }());
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 4 — MIXED CIRCUIT (7 components, orbit pan)
+    ══════════════════════════════════════════════════════ */
+    var s4 = makeCanvas('canvas-mixed');
+    if (s4) {
+      var t4 = 0;
+      var eM = { top: [0, 0.5], brA: [0.2, 0.7], brB: [0.35, 0.85], bot: [0, 0.5] };
+
+      (function loop4() {
+        s4.resize();
+        var ctx = s4.ctx, W = s4.W, H = s4.H;
+        ctx.clearRect(0, 0, W, H);
+
+        var vg4 = ctx.createRadialGradient(W/2, H/2, H*0.08, W/2, H/2, H*0.72);
+        vg4.addColorStop(0, 'transparent'); vg4.addColorStop(1, 'rgba(5,8,20,0.9)');
+        ctx.fillStyle = vg4; ctx.fillRect(0, 0, W, H);
+
+        var zoom4 = 1.1 + 0.14 * Math.sin(t4 * 0.08);
+        var panX4 = 26 * Math.sin(t4 * 0.055);
+        var panY4 = 8  * Math.cos(t4 * 0.075);
+        ctx.save();
+        ctx.translate(W/2 + panX4, H/2 + panY4);
+        ctx.scale(zoom4, zoom4);
+        ctx.translate(-W/2, -H/2);
+
+        /* trunk */
+        var tL = W*0.11, tR = W*0.89, midY = H*0.5, bTop = H*0.3, bBot = H*0.7;
+        var tCx = W*0.5, bLx = W*0.38, bRx = W*0.62;
+        glowLine(ctx, tL, midY, bLx, midY, '#88ccff', 2, 14);
+        glowLine(ctx, bRx, midY, tR, midY, '#88ccff', 2, 14);
+        glowLine(ctx, bLx, midY, bLx, bTop, '#88ccff', 1.5, 10);
+        glowLine(ctx, bLx, midY, bLx, bBot, '#88ccff', 1.5, 10);
+        glowLine(ctx, bRx, midY, bRx, bTop, '#88ccff', 1.5, 10);
+        glowLine(ctx, bRx, midY, bRx, bBot, '#88ccff', 1.5, 10);
+        glowLine(ctx, bLx, bTop, bRx, bTop, '#c084fc', 2, 14);
+        glowLine(ctx, bLx, bBot, bRx, bBot, '#c084fc', 2, 14);
+        drawBattery(ctx, tL, midY, 26, 68, '#00ff88');
+        drawResistor(ctx, tCx, midY, W*0.12, 22, '#88ccff', 'R1', 0);
+        drawResistor(ctx, (bLx+bRx)/2, bTop, W*0.12, 20, '#c084fc', 'R2', 0);
+        drawResistor(ctx, (bLx+bRx)/2, bBot, W*0.12, 20, '#c084fc', 'R3', 0);
+        drawResistor(ctx, tR, midY, 18, 18, '#ffd060', 'LED', 0);
+
+        var advance4 = function(arr, spd) { return arr.map(function(p){ return (p+spd)%1; }); };
+        eM.top  = advance4(eM.top,  0.003);
+        eM.brA  = advance4(eM.brA,  0.0025);
+        eM.brB  = advance4(eM.brB,  0.002);
+
+        var drawFlowH = function(arr, y1, x1, x2, col) {
+          arr.forEach(function(p) {
+            var ex = x1 + p * (x2 - x1);
+            glowDot(ctx, ex, y1, 3.5, col);
+          });
+        };
+        drawFlowH(eM.top,  midY, tL+30, tR-30, '#88ccff');
+        drawFlowH(eM.brA,  bTop, bLx, bRx, '#c084fc');
+        drawFlowH(eM.brB,  bBot, bLx, bRx, '#c084fc');
+
+        ctx.restore();
+        hud(ctx, W, H, 'MIXED  \u00B7  7 COMPONENTS  \u00B7  KVL / KCL VERIFIED', 'rgba(136,204,255,0.45)');
+        t4 += 0.016;
+        requestAnimationFrame(loop4);
+      }());
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 5 — 3D BUILDER FLY-THROUGH
+       Simulated perspective: rotating wire-frame cube
+       suggests the 3D space of the real app.
+    ══════════════════════════════════════════════════════ */
+    var s5 = makeCanvas('canvas-3dbuild');
+    if (s5) {
+      var t5 = 0;
+      var eFlux5 = [0, 0.2, 0.4, 0.6, 0.8];
+
+      /* Unit cube vertices */
+      var CUBE_V = [
+        [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+        [-1,-1, 1],[1,-1, 1],[1,1, 1],[-1,1, 1]
+      ];
+      var CUBE_E = [
+        [0,1],[1,2],[2,3],[3,0],
+        [4,5],[5,6],[6,7],[7,4],
+        [0,4],[1,5],[2,6],[3,7]
+      ];
+
+      function project(v, W, H, rx, ry) {
+        /* rotate Y then X */
+        var cosY = Math.cos(ry), sinY = Math.sin(ry);
+        var x1 = v[0]*cosY - v[2]*sinY;
+        var z1 = v[0]*sinY + v[2]*cosY;
+        var cosX = Math.cos(rx), sinX = Math.sin(rx);
+        var y2 = v[1]*cosX - z1*sinX;
+        var z2 = v[1]*sinX + z1*cosX;
+        var fov = 3.5 / (3.5 + z2);
+        return [W/2 + x1 * fov * W * 0.22, H/2 + y2 * fov * H * 0.38];
+      }
+
+      (function loop5() {
+        s5.resize();
+        var ctx = s5.ctx, W = s5.W, H = s5.H;
+        ctx.clearRect(0, 0, W, H);
+
+        /* depth-faded background */
+        var vg5 = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, H*0.72);
+        vg5.addColorStop(0, 'rgba(8,16,50,0.6)'); vg5.addColorStop(1, 'rgba(2,5,18,0.98)');
+        ctx.fillStyle = vg5; ctx.fillRect(0, 0, W, H);
+
+        var ry5 = t5 * 0.35;
+        var rx5 = 0.28 + 0.12 * Math.sin(t5 * 0.22);
+
+        /* draw cube edges */
+        CUBE_E.forEach(function(edge) {
+          var p0 = project(CUBE_V[edge[0]], W, H, rx5, ry5);
+          var p1 = project(CUBE_V[edge[1]], W, H, rx5, ry5);
+          glowLine(ctx, p0[0], p0[1], p1[0], p1[1], '#00c8ff', 1.4, 10);
+        });
+
+        /* draw cube vertices as component nodes */
+        CUBE_V.forEach(function(v, vi) {
+          var p = project(v, W, H, rx5, ry5);
+          var col = ['#00ff88','#88ccff','#c084fc','#ffd060','#ff8844','#ff4455','#88ccff','#00ff88'][vi % 8];
+          glowDot(ctx, p[0], p[1], 5.5, col, 0.9);
+        });
+
+        /* electron flow around cube surface */
+        eFlux5 = eFlux5.map(function(p) { return (p + 0.004) % 1; });
+        eFlux5.forEach(function(pos) {
+          /* travel along edges sequentially */
+          var totalEdges = CUBE_E.length;
+          var edgeIdx = Math.floor(pos * totalEdges);
+          var edgeFrac = (pos * totalEdges) % 1;
+          var e = CUBE_E[edgeIdx];
+          var p0 = project(CUBE_V[e[0]], W, H, rx5, ry5);
+          var p1 = project(CUBE_V[e[1]], W, H, rx5, ry5);
+          var ex5 = p0[0] + (p1[0] - p0[0]) * edgeFrac;
+          var ey5 = p0[1] + (p1[1] - p0[1]) * edgeFrac;
+          glowDot(ctx, ex5, ey5, 4, '#00ffcc', 0.9);
+          glowDot(ctx, ex5, ey5, 2, '#ffffff', 0.5);
+        });
+
+        /* zoom level indicator */
+        ctx.save();
+        ctx.font = '700 11px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(136,204,255,0.5)';
+        ctx.textAlign = 'right';
+        var tiers = ['MACRO','COMPONENT','ATOMIC','DEEP-ATOMIC','QUANTUM'];
+        var tierIdx = Math.floor((t5 * 0.08) % tiers.length);
+        ctx.fillText('ZOOM TIER: ' + tiers[tierIdx], W - 24, 40);
+        ctx.restore();
+
+        hud(ctx, W, H, '3D FLY-THROUGH  \u00B7  5 ZOOM TIERS  \u00B7  ELECTRON FLOW ACTIVE', 'rgba(0,255,200,0.45)');
+        t5 += 0.016;
+        requestAnimationFrame(loop5);
+      }());
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 6 — COMPONENT ARENA (orbiting spheres)
+       Two glowing spheres orbit a central platform,
+       evoking the 3D Arena stage.
+    ══════════════════════════════════════════════════════ */
+    var s6 = makeCanvas('canvas-arena');
+    if (s6) {
+      var t6 = 0;
+
+      (function loop6() {
+        s6.resize();
+        var ctx = s6.ctx, W = s6.W, H = s6.H;
+        ctx.clearRect(0, 0, W, H);
+
+        /* dark stage background */
+        var vg6 = ctx.createRadialGradient(W/2, H*0.52, H*0.06, W/2, H*0.52, H*0.7);
+        vg6.addColorStop(0, 'rgba(18,12,50,0.7)'); vg6.addColorStop(1, 'rgba(3,2,12,0.98)');
+        ctx.fillStyle = vg6; ctx.fillRect(0, 0, W, H);
+
+        /* platform ellipse */
+        var pCy = H * 0.58;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(W/2, pCy, W*0.22, H*0.06, 0, 0, TAU);
+        ctx.strokeStyle = 'rgba(56,189,248,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(29,78,216,0.15)';
+        ctx.fill();
+        ctx.restore();
+
+        /* grid lines on platform */
+        for (var gi = -3; gi <= 3; gi++) {
+          var gx = W/2 + gi * W * 0.065;
+          ctx.save();
+          ctx.beginPath();
+          ctx.ellipse(W/2, pCy, Math.abs(gi * W * 0.065), H * 0.015, 0, 0, TAU);
+          ctx.strokeStyle = 'rgba(20,184,166,0.15)';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        /* component A — blue sphere orbit */
+        var orbitR = W * 0.18;
+        var aAngle = t6 * 0.7;
+        var ax = W/2 + Math.cos(aAngle) * orbitR;
+        var az = Math.sin(aAngle) * 0.38;
+        var ay = pCy - H * 0.18 - az * H * 0.06;
+        var aScale = 0.82 + az * 0.18;
+
+        ctx.save();
+        ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 28 + 10 * Math.sin(t6 * 1.5);
+        var gradA = ctx.createRadialGradient(ax - 8*aScale, ay - 8*aScale, 2, ax, ay, 28*aScale);
+        gradA.addColorStop(0, 'rgba(186,230,255,0.95)');
+        gradA.addColorStop(0.4, 'rgba(56,189,248,0.8)');
+        gradA.addColorStop(1, 'rgba(30,64,175,0.3)');
+        ctx.beginPath();
+        ctx.arc(ax, ay, 28*aScale, 0, TAU);
+        ctx.fillStyle = gradA;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = 'bold 10px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(186,230,255,0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('COMP A', ax, ay + 38*aScale);
+        ctx.restore();
+
+        /* component B — purple sphere orbit (opposite phase) */
+        var bAngle = aAngle + Math.PI;
+        var bx = W/2 + Math.cos(bAngle) * orbitR;
+        var bz = Math.sin(bAngle) * 0.38;
+        var by = pCy - H * 0.18 - bz * H * 0.06;
+        var bScale = 0.82 + bz * 0.18;
+
+        ctx.save();
+        ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 28 + 10 * Math.cos(t6 * 1.5);
+        var gradB = ctx.createRadialGradient(bx - 8*bScale, by - 8*bScale, 2, bx, by, 28*bScale);
+        gradB.addColorStop(0, 'rgba(233,213,255,0.95)');
+        gradB.addColorStop(0.4, 'rgba(168,85,247,0.8)');
+        gradB.addColorStop(1, 'rgba(88,28,135,0.3)');
+        ctx.beginPath();
+        ctx.arc(bx, by, 28*bScale, 0, TAU);
+        ctx.fillStyle = gradB;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = 'bold 10px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(233,213,255,0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('COMP B', bx, by + 38*bScale);
+        ctx.restore();
+
+        /* energy arcs between components */
+        var arcCount = 4;
+        for (var ai = 0; ai < arcCount; ai++) {
+          var arcFrac = (t6 * 1.4 + ai / arcCount) % 1;
+          var arcX = ax + (bx - ax) * arcFrac;
+          var arcY = ay + (by - ay) * arcFrac - Math.sin(arcFrac * Math.PI) * H * 0.08;
+          var arcAlpha = Math.sin(arcFrac * Math.PI) * 0.7;
+          glowDot(ctx, arcX, arcY, 3, '#ffd060', arcAlpha);
+        }
+
+        /* FUSE status bar */
+        var fProgress = (Math.sin(t6 * 0.4) + 1) / 2;
+        var barW = W * 0.3, barH = 7;
+        var barX = W/2 - barW/2, barY = H * 0.82;
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, 4); ctx.fill();
+        var barCol = fProgress < 0.6 ? '#00ff88' : fProgress < 0.85 ? '#ffd060' : '#ff4455';
+        ctx.fillStyle = barCol;
+        ctx.shadowColor = barCol; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.roundRect(barX, barY, barW * fProgress, barH, 4); ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = '700 11px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(157,184,255,0.55)';
+        ctx.textAlign = 'center';
+        ctx.fillText('FUSE\u2122 ANALYSIS  \u00B7  \u0394 IMPEDANCE  \u00B7  FAILURE THRESHOLD', W/2, H * 0.88);
+        ctx.restore();
+
+        hud(ctx, W, H, 'COMPONENT ARENA  \u00B7  3D BATTLE STAGE  \u00B7  REAL SPECS', 'rgba(168,85,247,0.45)');
+        t6 += 0.016;
+        requestAnimationFrame(loop6);
+      }());
+    }
+
+  }()); /* end fallback animations */
+
+}()); /* end scene engine */
+</script>
+</body>
+</html>

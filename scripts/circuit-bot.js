@@ -10,7 +10,8 @@
  *   scene-02-parallel.webm  — Parallel circuit: multiple electron paths
  *   scene-03-overload.webm  — Overloaded resistor: thermal failure (FUSE engine)
  *   scene-04-mixed.webm     — Mixed series-parallel: advanced mastery
- *   scene-05-promo.webm     — Cinematic promo page sweep (public/promo6.html)
+ *   scene-05-3d-build.webm  — 3D cinematic builder tour: atomic zoom + fly-through
+ *   scene-06-arena.webm     — Arena: 3D component battle & FUSE failure analysis
  *
  * Usage:
  *   npm run circuit-bot                   # production site (circuitry3d.app)
@@ -253,32 +254,106 @@ const SCENES = [
 
   // ──────────────────────────────────────────────────────────────────────────
   {
-    id: 'scene-05-promo',
-    title: 'Scene 05 — Cinematic Promo Page',
+    id: 'scene-05-3d-build',
+    title: 'Scene 05 — 3D Builder: Cinematic Fly-Through',
     async record(page) {
-      // Navigate to the dedicated promo page for the brand reveal
-      const promoUrl = `${BASE_URL}/promo6.html`;
-      await page.goto(promoUrl, { waitUntil: 'networkidle', timeout: 30_000 });
+      await openBuilder(page);
+
+      // Start with the advanced combination circuit to maximise visual density
+      await sendAction(page, 'load-preset', { preset: 'combination_advanced' });
+      await page.waitForTimeout(1500);
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(1200);
+
+      // Labels on — show all component values in 3D space
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(800);
+
+      // Wide cinematic pull-back to reveal the full 3D layout
+      await smoothZoomOut(page, 4, 220);
+      await page.waitForTimeout(1000);
+
+      // Run simulation — all electron streams light up simultaneously
+      await sendAction(page, 'run-simulation');
+      await page.waitForTimeout(2500);
+
+      // Slow push-in: macro → component view
+      await smoothZoomIn(page, 8, 200);
       await page.waitForTimeout(1500);
 
-      // Let the CSS animations play through all sections
-      await page.evaluate(() => window.scrollTo({ top: 0 }));
+      // Continue into atomic tier to show 3D electron clouds
+      await smoothZoomIn(page, 10, 150);
       await page.waitForTimeout(3000);
 
-      // Scroll slowly through the page for a cinematic sweep
-      const totalHeight = await page.evaluate(() => document.body.scrollHeight);
-      const steps = 20;
-      for (let i = 1; i <= steps; i++) {
-        await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'smooth' }), Math.round((totalHeight * i) / steps));
-        await page.waitForTimeout(600);
+      // Deep-atomic zoom — electrons spiral through the conductor lattice
+      await smoothZoomIn(page, 6, 180);
+      await page.waitForTimeout(3500);
+
+      // Toggle conventional/electron current for a second visual burst
+      await sendAction(page, 'toggle-current-flow');
+      await page.waitForTimeout(2000);
+
+      // Pull all the way back to full overview — labels still on
+      await smoothZoomOut(page, 20, 130);
+      await page.waitForTimeout(2000);
+
+      // Labels off for a clean close
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(1000);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-06-arena',
+    title: 'Scene 06 — Arena: 3D Component Battle',
+    async record(page) {
+      // Navigate directly to the Arena page (standalone 3D scene)
+      const arenaUrl = `${BASE_URL}/arena.html`;
+      await page.goto(arenaUrl, { waitUntil: 'networkidle', timeout: 45_000 });
+
+      // Wait for THREE.js scene and component meshes to initialise
+      await page.waitForSelector('canvas#arena', { timeout: 20_000 });
+      await page.waitForTimeout(3500);
+
+      // Let the idle arena animation play — camera orbits around the platform
+      await page.waitForTimeout(4000);
+
+      // Click the first featured component to load it into slot A
+      const compA = await page.$('.component-card');
+      if (compA) {
+        await compA.click();
+        await page.waitForTimeout(1500);
       }
 
-      // Pause at the bottom
-      await page.waitForTimeout(2000);
+      // Click a second component to populate slot B for the battle comparison
+      const cards = await page.$$('.component-card');
+      if (cards.length >= 2) {
+        await cards[1].click();
+        await page.waitForTimeout(1500);
+      }
 
-      // Scroll back to the top
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-      await page.waitForTimeout(2000);
+      // Trigger the analysis / run-test action if the button is present
+      const runBtn = await page.$('#run-test, .run-test-btn, [data-action="run-test"]');
+      if (runBtn) {
+        await runBtn.click();
+        await page.waitForTimeout(2000);
+      }
+
+      // Let the 3D failure animation finish
+      await page.waitForTimeout(5000);
+
+      // Scroll the metrics panel to show delta results
+      const metricsPanel = await page.$('#metrics-panel, .metrics-panel, .results-panel');
+      if (metricsPanel) {
+        await metricsPanel.evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }));
+        await page.waitForTimeout(2000);
+        await metricsPanel.evaluate((el) => el.scrollTo({ top: 0, behavior: 'smooth' }));
+        await page.waitForTimeout(1500);
+      }
+
+      // Final orbit shot — camera slowly circles the 3D components
+      await page.waitForTimeout(4000);
     },
   },
 ];
