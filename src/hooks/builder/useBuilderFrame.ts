@@ -185,7 +185,7 @@ export function useBuilderFrame({
   useEffect(() => {
     if (isFrameReady) return;
 
-    const PING_INTERVAL_MS = 800;
+    const PING_INTERVAL_MS = 400;
     const PING_TIMEOUT_MS = 15_000; // give up after 15 seconds and unlock the UI
 
     const intervalId = window.setInterval(() => {
