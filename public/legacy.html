@@ -8461,8 +8461,8 @@ body.android-optimized .zoom-btn {
             const isNative = (typeof window.Capacitor !== 'undefined' &&
                 typeof window.Capacitor.isNativePlatform === 'function' &&
                 window.Capacitor.isNativePlatform());
-            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x4444aa);
-            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x222244);
+            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x6666cc);
+            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x3333aa);
 
             if (isAndroidDevice) {
                 // Android WebView has known GL_LINES rendering issues across GPU
@@ -8474,7 +8474,7 @@ body.android-optimized .zoom-btn {
 
                 // Fine grid overlay - only on desktop
                 if (!isMobile) {
-                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222244, 0x0a0a1a);
+                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222266, 0x11113a);
                     fineGrid.position.y = 0.01; // Slightly above main grid
                     scene.add(fineGrid);
                 }
