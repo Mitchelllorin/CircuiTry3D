@@ -60,12 +60,12 @@ const NODE_STYLE: Record<Node['type'], NodeVisualStyle> = {
     glow: "rgba(46, 255, 190, 0.78)",
   },
   junction: {
-    radius: 4.5,
-    center: "#fffde0",
-    mid: "#ffcc00",
-    edge: "#ff8c00",
-    stroke: "#ffe566",
-    glow: "rgba(255, 180, 0, 0.92)",
+    radius: 5.5,
+    center: "#ffffff",
+    mid: "#ffe500",
+    edge: "#ff8800",
+    stroke: "#fff200",
+    glow: "rgba(255, 220, 0, 1.0)",
   },
   wireAnchor: {
     radius: 5.1,
@@ -1164,14 +1164,14 @@ export const WireDrawer: React.FC<WireDrawerProps> = ({
       const isActive = isHovered || isSnap;
       const radius = style.radius + (isActive ? 0.4 : 0);
 
-      // Junction nodes shift to yellow when hovered or snapped (wiring mode indicator)
-      const centerColor = isActive && node.type === 'junction' ? '#fffff0' : style.center;
-      const midColor = isActive && node.type === 'junction' ? '#ffe84d' : style.mid;
-      const edgeColor = isActive && node.type === 'junction' ? '#ffd700' : style.edge;
+      // Junction nodes shift to bright white-yellow when hovered or snapped (wiring mode indicator)
+      const centerColor = isActive && node.type === 'junction' ? '#ffffff' : style.center;
+      const midColor = isActive && node.type === 'junction' ? '#ffee00' : style.mid;
+      const edgeColor = isActive && node.type === 'junction' ? '#ffaa00' : style.edge;
 
       ctx.save();
       ctx.shadowColor = style.glow;
-      ctx.shadowBlur = isActive ? 22 : 14;
+      ctx.shadowBlur = isActive ? 28 : (node.type === 'junction' ? 20 : 14);
       const gradient = ctx.createRadialGradient(
         node.pos.x - radius * 0.35,
         node.pos.y - radius * 0.35,

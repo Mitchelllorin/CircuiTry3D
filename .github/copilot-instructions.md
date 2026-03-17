@@ -7,7 +7,7 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 - **Frontend Framework**: React 19 with TypeScript
 - **Build Tool**: Vite 7
 - **Routing**: React Router DOM
-- **Deployment**: Vercel
+- **Deployment**: GitHub Pages
 - **Node Version**: >= 18
 
 ## Project Structure
@@ -77,8 +77,9 @@ CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's l
 - Update this document if you make significant architectural changes
 
 ### Deployment
-- The project is deployed on Vercel
-- Configuration is in `vercel.json`
+- The project is deployed on GitHub Pages
+- Deployment is triggered automatically on push to `main` via `.github/workflows/deploy.yml`
+- PR previews are deployed to `gh-pages/pr-preview/pr-<number>/` via `.github/workflows/pr-preview.yml`
 - Build command: `npm run build`
 - Publish directory: `dist`
 
