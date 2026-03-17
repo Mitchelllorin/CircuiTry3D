@@ -4027,6 +4027,10 @@
         // Global variables
         const ARENA_STORAGE_KEY = 'circuiTry3d.arena.import';
         let scene, camera, renderer, raycaster, mouse;
+        // Set to true once init() has fully completed (or failed with a caught error).
+        // Guards the builder:ping handler so we never tell the React host we are
+        // "ready" before the Three.js scene actually exists.
+        let _builderReady = false;
         let components = [], wires = [], junctions = [];
         let isWireMode = false, isRotateMode = false, wireStart = null;
         let isMeasureMode = false;
@@ -4346,7 +4350,13 @@ body.android-optimized .zoom-btn {
                     // Parent is polling to confirm the iframe is ready
                     // (handles the race where legacy:ready was sent before
                     // the React listener was registered).
-                    notifyParentReady();
+                    // Only respond once init() has completed so the React host
+                    // doesn't enable the component panel before the Three.js
+                    // scene exists (which would cause silent failures when
+                    // addComponent() tries to call scene.add()).
+                    if (_builderReady) {
+                        notifyParentReady();
+                    }
                     break;
                 }
                 case 'builder:request-mode-state': {
@@ -7437,6 +7447,24 @@ body.android-optimized .zoom-btn {
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.1;
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+                // Handle WebGL context loss / restoration (common on Android when
+                // the app is backgrounded or the OS reclaims GPU memory).
+                // preventDefault() on contextlost tells the browser to attempt
+                // restoration; Three.js handles re-uploading GPU resources
+                // automatically once the context is available again.
+                canvas.addEventListener('webglcontextlost', function(e) {
+                    e.preventDefault();
+                    console.warn('WebGL context lost — rendering paused until restored.');
+                }, false);
+                canvas.addEventListener('webglcontextrestored', function() {
+                    console.info('WebGL context restored — renderer will resume automatically.');
+                    // Three.js r128 re-uploads all geometry/materials on the next
+                    // render call after context restore; just trigger a fresh frame.
+                    if (renderer) {
+                        try { renderer.render(scene, camera); } catch (e) { /* ignore */ }
+                    }
+                }, false);
                 
                 raycaster = new THREE.Raycaster();
                 raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;
@@ -7509,6 +7537,12 @@ body.android-optimized .zoom-btn {
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
             } finally {
+                // Mark the builder as ready regardless of whether init() succeeded
+                // or encountered a non-fatal error.  The flag must be set here —
+                // before notifyParentReady() — so that any queued builder:ping
+                // that fires between now and when the React host processes the
+                // legacy:ready message also responds correctly.
+                _builderReady = true;
                 // Always notify the parent frame so the React UI never stays
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
@@ -8404,11 +8438,12 @@ body.android-optimized .zoom-btn {
             // Transparent background
             ctx.clearRect(0, 0, SIZE, SIZE);
 
-            // Sub-grid tone (thin lines on all edges)
+            // Sub-grid tone (thin lines on all edges) — fully opaque for maximum
+            // visibility against the dark scene background on every platform.
             const sr = (subHex >> 16) & 0xff;
             const sg = (subHex >>  8) & 0xff;
             const sb =  subHex        & 0xff;
-            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.7)`;
+            ctx.strokeStyle = `rgba(${sr},${sg},${sb},1.0)`;
             ctx.lineWidth   = 1;
             ctx.strokeRect(0.5, 0.5, SIZE - 1, SIZE - 1);
 
@@ -8416,7 +8451,7 @@ body.android-optimized .zoom-btn {
             const mr = (mainHex >> 16) & 0xff;
             const mg = (mainHex >>  8) & 0xff;
             const mb =  mainHex        & 0xff;
-            ctx.strokeStyle = `rgba(${mr},${mg},${mb},0.9)`;
+            ctx.strokeStyle = `rgba(${mr},${mg},${mb},1.0)`;
             ctx.lineWidth   = 1.5;
             ctx.beginPath();
             ctx.moveTo(0, 0); ctx.lineTo(SIZE, 0);   // top
@@ -8454,15 +8489,17 @@ body.android-optimized .zoom-btn {
             const gridSize      = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
 
-            // Use the brightest colours for the native Capacitor (Android) build so
-            // the grid lines remain visible against the very dark scene background
-            // (0x0a0a1a) even on displays with narrower contrast ranges or when
-            // Android WebView renders colours slightly differently from Chrome.
+            // Use bright, high-contrast colours for maximum grid visibility
+            // against the very dark scene background (0x0a0a1a) on every platform.
+            // Native Capacitor (Android app) gets the brightest values because
+            // Android displays can render WebGL colours slightly differently from
+            // Chrome; web builds (desktop + mobile browser) use the same bright
+            // palette so the grid is equally visible on the Vercel/web preview.
             const isNative = (typeof window.Capacitor !== 'undefined' &&
                 typeof window.Capacitor.isNativePlatform === 'function' &&
                 window.Capacitor.isNativePlatform());
-            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x4444aa);
-            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x222244);
+            const mainGridColor = isNative ? 0xccccff : 0xaaaaee;
+            const subGridColor  = isNative ? 0x9999dd : 0x8888cc;
 
             if (isAndroidDevice) {
                 // Android WebView has known GL_LINES rendering issues across GPU
@@ -17865,18 +17902,24 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // execution tick, producing a 0×0 renderer that leaves the scene blank
         // and makes raycasting return ±Infinity coordinates (so nothing is
         // selectable).  The ping-pong bridge (builder:ping → legacy:ready)
-        // already handles the readiness race with the React host, so this
-        // extra frame delay does not break the handshake.
-        (function scheduleInit() {
+        // guards readiness with the _builderReady flag, so this deferral does
+        // not cause the React host to unlock the UI before the scene is ready.
+        (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
             var h = window.innerHeight || document.documentElement.clientHeight;
             if (w > 0 && h > 0) {
                 init();
-            } else {
+            } else if (retries > 0) {
                 // Dimensions not ready yet — try again next frame.
-                requestAnimationFrame(scheduleInit);
+                requestAnimationFrame(function() { scheduleInit(retries - 1); });
+            } else {
+                // Safety-net: after ~1 s of retries the dimensions are still 0.
+                // init() falls back to safe minimum dimensions (360×640) so the
+                // renderer is never created with a 0×0 framebuffer.
+                console.warn('scheduleInit: viewport dimensions still 0 after max retries — forcing init()');
+                init();
             }
-        })();
+        })(60); // allow up to ~60 frames (~1 s) before forcing init
     </script>
 </body>
 </html>
