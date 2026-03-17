@@ -33,6 +33,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Build with the same base path used in production so CI validates
+          # the exact configuration that gets deployed to GitHub Pages.
+          PAGES_BASE_PATH: /CircuiTry3D/
 
       - name: Run tests
         run: npm test

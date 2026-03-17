@@ -138,8 +138,12 @@ export function registerServiceWorker(): void {
     // Only register service worker for web, not native app
     window.addEventListener('load', async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/'
+        // Derive the SW URL and scope from the Vite base path so the
+        // registration works correctly at any sub-path (e.g. /CircuiTry3D/).
+        const base = import.meta.env.BASE_URL;
+        const swUrl = base + 'sw.js';
+        const registration = await navigator.serviceWorker.register(swUrl, {
+          scope: base
         });
         console.log('[SW] Service worker registered:', registration.scope);
 

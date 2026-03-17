@@ -1,27 +1,29 @@
 // CircuiTry3D Service Worker
 // Provides offline capability and caching for the PWA
 
-const CACHE_NAME = 'circuitry3d-v3';
-const STATIC_CACHE = 'circuitry3d-static-v3';
-const DYNAMIC_CACHE = 'circuitry3d-dynamic-v3';
-
-// Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+const CACHE_NAME = 'circuitry3d-v4';
+const STATIC_CACHE = 'circuitry3d-static-v4';
+const DYNAMIC_CACHE = 'circuitry3d-dynamic-v4';
 
 // Install event - cache static assets
+// Asset paths are computed from self.registration.scope so this worker
+// functions correctly at any deployment sub-path (e.g. /CircuiTry3D/).
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
+  // Derive the base URL from the registration scope (e.g. 'https://host/CircuiTry3D/').
+  const scopeUrl = self.registration.scope;
+  const staticAssets = [
+    scopeUrl,
+    scopeUrl + 'index.html',
+    scopeUrl + 'manifest.json',
+    scopeUrl + 'icons/icon-192.png',
+    scopeUrl + 'icons/icon-512.png'
+  ];
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        return cache.addAll(staticAssets);
       })
       .then(() => {
         console.log('[SW] Static assets cached');
@@ -106,7 +108,7 @@ self.addEventListener('fetch', (event) => {
                 return cachedResponse;
               }
               // Return cached index.html for SPA routing
-              return caches.match('/index.html');
+              return caches.match(self.registration.scope + 'index.html');
             });
         })
     );
