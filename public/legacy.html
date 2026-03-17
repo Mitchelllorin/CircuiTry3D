@@ -8395,7 +8395,9 @@ body.android-optimized .zoom-btn {
         // approach uses ordinary triangles rather than GL_LINES and therefore
         // renders correctly on every Android GPU driver.
         function _buildGridTileTexture(mainHex, subHex) {
-            const SIZE = 64;
+            // Use a 128×128 tile so lines are thick enough relative to tile size
+            // to survive mipmap reduction when viewed from far away.
+            const SIZE = 128;
             const tileCanvas = document.createElement('canvas');
             tileCanvas.width  = SIZE;
             tileCanvas.height = SIZE;
@@ -8404,20 +8406,20 @@ body.android-optimized .zoom-btn {
             // Transparent background
             ctx.clearRect(0, 0, SIZE, SIZE);
 
-            // Sub-grid tone (thin lines on all edges)
+            // Sub-grid tone (border lines on all edges) – 3 px so visible at distance
             const sr = (subHex >> 16) & 0xff;
             const sg = (subHex >>  8) & 0xff;
             const sb =  subHex        & 0xff;
-            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.7)`;
-            ctx.lineWidth   = 1;
-            ctx.strokeRect(0.5, 0.5, SIZE - 1, SIZE - 1);
+            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.85)`;
+            ctx.lineWidth   = 3;
+            ctx.strokeRect(1.5, 1.5, SIZE - 3, SIZE - 3);
 
-            // Main grid tone (slightly thicker / brighter)
+            // Main grid tone (slightly thicker / brighter) – 4 px
             const mr = (mainHex >> 16) & 0xff;
             const mg = (mainHex >>  8) & 0xff;
             const mb =  mainHex        & 0xff;
-            ctx.strokeStyle = `rgba(${mr},${mg},${mb},0.9)`;
-            ctx.lineWidth   = 1.5;
+            ctx.strokeStyle = `rgba(${mr},${mg},${mb},1.0)`;
+            ctx.lineWidth   = 4;
             ctx.beginPath();
             ctx.moveTo(0, 0); ctx.lineTo(SIZE, 0);   // top
             ctx.moveTo(0, 0); ctx.lineTo(0, SIZE);   // left
@@ -8426,6 +8428,16 @@ body.android-optimized .zoom-btn {
             const tex = new THREE.CanvasTexture(tileCanvas);
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.RepeatWrapping;
+            // Generate mipmaps and use trilinear filtering so lines remain
+            // visible when the texture is minified (zoomed-out view).
+            tex.generateMipmaps = true;
+            tex.minFilter = THREE.LinearMipmapLinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            // Anisotropic filtering keeps lines sharp when the grid is viewed
+            // at an angle (perspective camera looking down at the plane).
+            if (renderer && renderer.capabilities) {
+                tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            }
             return tex;
         }
 
@@ -8454,15 +8466,13 @@ body.android-optimized .zoom-btn {
             const gridSize      = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
 
-            // Use the brightest colours for the native Capacitor (Android) build so
-            // the grid lines remain visible against the very dark scene background
-            // (0x0a0a1a) even on displays with narrower contrast ranges or when
-            // Android WebView renders colours slightly differently from Chrome.
-            const isNative = (typeof window.Capacitor !== 'undefined' &&
-                typeof window.Capacitor.isNativePlatform === 'function' &&
-                window.Capacitor.isNativePlatform());
-            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x4444aa);
-            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x222244);
+            // Use the brightest colours for any Android device (browser or native)
+            // so grid lines remain visible against the dark scene background on
+            // every GPU driver (Adreno, Mali, PowerVR) and contrast range.
+            // isAndroidDevice already covers both Android WebView and Capacitor
+            // native Android, so no separate isNative check is needed here.
+            const mainGridColor = isAndroidDevice ? 0x9999dd : (isMobile ? 0x8888cc : 0x6666cc);
+            const subGridColor  = isAndroidDevice ? 0x7777bb : (isMobile ? 0x6666aa : 0x3333aa);
 
             if (isAndroidDevice) {
                 // Android WebView has known GL_LINES rendering issues across GPU
@@ -8474,7 +8484,7 @@ body.android-optimized .zoom-btn {
 
                 // Fine grid overlay - only on desktop
                 if (!isMobile) {
-                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222244, 0x0a0a1a);
+                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222266, 0x11113a);
                     fineGrid.position.y = 0.01; // Slightly above main grid
                     scene.add(fineGrid);
                 }
