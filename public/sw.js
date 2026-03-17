@@ -11,7 +11,10 @@ const DYNAMIC_CACHE = 'circuitry3d-dynamic-v4';
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   // Derive the base URL from the registration scope (e.g. 'https://host/CircuiTry3D/').
-  const scopeUrl = self.registration.scope;
+  // The spec guarantees scope ends with '/', but we normalise defensively.
+  const scopeUrl = self.registration.scope.endsWith('/')
+    ? self.registration.scope
+    : self.registration.scope + '/';
   const staticAssets = [
     scopeUrl,
     scopeUrl + 'index.html',
@@ -108,7 +111,10 @@ self.addEventListener('fetch', (event) => {
                 return cachedResponse;
               }
               // Return cached index.html for SPA routing
-              return caches.match(self.registration.scope + 'index.html');
+              const scope = self.registration.scope.endsWith('/')
+                ? self.registration.scope
+                : self.registration.scope + '/';
+              return caches.match(scope + 'index.html');
             });
         })
     );
