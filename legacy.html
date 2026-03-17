@@ -5443,8 +5443,8 @@ body.android-optimized .zoom-btn {
                 offsetX = rect.left;
                 offsetY = rect.top;
             } else {
-                width = window.innerWidth;
-                height = window.innerHeight;
+                width = window.innerWidth  || 1;
+                height = window.innerHeight || 1;
                 offsetX = 0;
                 offsetY = 0;
             }
@@ -7436,7 +7436,26 @@ body.android-optimized .zoom-btn {
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.1;
-                renderer.outputColorSpace = THREE.SRGBColorSpace;
+                // THREE.SRGBColorSpace was added in r152; the vendored build is r128
+                // which exposes the same intent as THREE.sRGBEncoding.  Prefer the
+                // modern constant when present, fall back gracefully for older builds.
+                if (THREE.SRGBColorSpace !== undefined) {
+                    renderer.outputColorSpace = THREE.SRGBColorSpace;
+                } else if (THREE.sRGBEncoding !== undefined) {
+                    renderer.outputEncoding = THREE.sRGBEncoding;
+                }
+
+                // Recover gracefully when the browser discards the WebGL context
+                // (common on mobile when the tab is backgrounded or memory pressure
+                // occurs).  Without these handlers the canvas stays blank forever.
+                canvas.addEventListener('webglcontextlost', function (event) {
+                    event.preventDefault();
+                    console.warn('[Canvas] WebGL context lost — will restore on resume');
+                }, false);
+                canvas.addEventListener('webglcontextrestored', function () {
+                    console.log('[Canvas] WebGL context restored — restarting animation loop');
+                    requestAnimationFrame(animate);
+                }, false);
                 
                 raycaster = new THREE.Raycaster();
                 raycaster.params.Points.threshold = isMobile ? 0.8 : 0.5;
