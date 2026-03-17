@@ -1307,7 +1307,13 @@ body.builder-body {
   bottom: calc(24px + var(--builder-safe-area-bottom));
   flex-direction: column;
   width: var(--builder-menu-toggle-width);
-  height: var(--builder-menu-toggle-width);
+  /* Use toggle-HEIGHT (the long dimension = 64px desktop / 48px mobile) not
+     toggle-WIDTH (the thin dimension = 24px).  toggle-width was the wrong
+     variable: the bottom tab is a horizontal bar whose height == toggle-height.
+     Using the wrong variable made the stage 20-24px tall while the button
+     rendered at min-height:48px, causing the button to overflow 12px below
+     the viewport on portrait phones. */
+  height: var(--builder-menu-toggle-height);
 }
 
 .builder-menu-stage-bottom.open {
@@ -4063,7 +4069,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     left: calc(env(safe-area-inset-left, 0px) + 8px);
     right: calc(env(safe-area-inset-right, 0px) + 8px);
     width: auto;
-    bottom: calc(16px + var(--builder-safe-area-bottom));
+    /* Match zoom controls (bottom:8px) so both rows of bottom-right
+       elements sit on the same baseline. */
+    bottom: calc(8px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
