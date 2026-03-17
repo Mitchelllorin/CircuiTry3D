@@ -400,15 +400,16 @@
     right: calc(
       var(--builder-menu-toggle-hit-width, 36px) + 12px
     );
-    /* Raised above the Insights (bottom-drawer) toggle, which sits at bottom: 24px
-       and is 24px tall — its top edge is at bottom: 48px.  A 56px offset keeps
-       the FAB clear with an 8px gap. */
-    bottom: calc(56px + var(--builder-safe-area-bottom, 0px));
+    /* Raised above the Insights (bottom-drawer) toggle.
+       The Insights stage sits at bottom:8px with height:auto → the 48px toggle
+       button's top edge lands at bottom:56px.  A 64px offset keeps the FAB
+       clear with an 8px gap above the toggle. */
+    bottom: calc(64px + var(--builder-safe-area-bottom, 0px));
   }
 
   .ai-helper-panel {
     right: 8px;
-    bottom: calc(110px + var(--builder-safe-area-bottom, 0px));
+    bottom: calc(118px + var(--builder-safe-area-bottom, 0px));
     width: calc(100vw - 16px);
     max-height: calc(100svh - 130px);
     border-radius: 14px;

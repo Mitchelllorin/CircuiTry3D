@@ -831,17 +831,21 @@ body.builder-body {
 }
 
 /* Zoom controls overlay
-   Positioned in the bottom-right corner so they are never obscured by the
-   centered quick-add bar (which lives at the top).  They sit below the
-   workspace-edge-actions because edge-actions use bottom ≥ 96 px while
-   zoom controls use bottom: 8 px — so there is always ≥ 52 px of clearance
-   regardless of viewport height.  Right offset clears the right menu toggle
-   tab (--builder-menu-toggle-hit-width). */
+   Positioned in the bottom-right corner.  Right offset must clear BOTH
+   the right-sidebar CONTROLS toggle (--builder-menu-toggle-hit-width) AND
+   the bottom INSIGHTS toggle (min-width: --builder-menu-toggle-height so it
+   can sit flush against the right edge of the stage).  Without both offsets
+   the zoom buttons overlap the Insights tab at the bottom-right corner. */
 .circuit-zoom-controls {
   position: fixed;
   top: auto;
   bottom: calc(8px + var(--builder-safe-area-bottom));
-  right: calc(var(--builder-menu-toggle-hit-width) + 12px + var(--builder-safe-area-right));
+  right: calc(
+    var(--builder-menu-toggle-hit-width) +
+    var(--builder-menu-toggle-height) +
+    12px +
+    var(--builder-safe-area-right)
+  );
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
@@ -901,10 +905,13 @@ body.builder-body {
    This is where Battery, Resistor, LED, Junction and Wire-mode shortcuts
    belong — NOT inside legacy.html whose #quick-actions element is hidden
    by `body.embedded #quick-actions { display:none }` when embedded.
+   Top is anchored to the bottom edge of the ticker strip (--builder-ticker-top
+   + --builder-ticker-height) with a 12px gap so the two bars never overlap or
+   appear visually stacked with no breathing room.
    ─────────────────────────────────────────────────────────────────────── */
 .quick-add-bar {
   position: fixed;
-  top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 56px + var(--builder-safe-area-top));
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-builder-floats);
@@ -976,27 +983,26 @@ body.builder-body {
   color: #fff;
 }
 
-/* SVG schematic symbol / 3D thumbnail container inside each button */
+/* SVG schematic symbol / 3D thumbnail container inside each button.
+   Square container (36×36) ensures the 3D thumbnail renders without
+   distortion — the previous 32×28 non-square box caused the rendered
+   component image to be letterboxed or appear stretched. */
 .quick-add-btn-symbol {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
-  background: radial-gradient(
-    circle at 50% 40%,
-    rgba(136, 204, 255, 0.2),
-    rgba(8, 18, 40, 0.6)
-  );
-  border: 1px solid rgba(136, 204, 255, 0.22);
+  background: rgba(8, 18, 40, 0.75);
+  border: 1px solid rgba(136, 204, 255, 0.18);
 }
 
 .quick-add-btn-symbol-svg {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   overflow: visible;
 }
 
@@ -1014,23 +1020,21 @@ body.builder-body {
   filter: brightness(0.9);
 }
 
-/* 3D thumbnail image — slight boost to compensate for the dark radial background */
+/* 3D thumbnail image — natural rendering, no heavy post-processing */
 .quick-add-btn-thumbnail {
   width: 100%;
   height: 100%;
   object-fit: contain;
   image-rendering: auto;
-  filter: brightness(1.1) saturate(1.15);
 }
 
-/* Inline 3D thumbnail inside a quick-add button symbol container — scale to fit */
+/* Inline 3D thumbnail inside a quick-add button symbol container — scale to fill */
 .quick-add-btn-thumb-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
   image-rendering: auto;
-  filter: brightness(1.1) saturate(1.15);
 }
 
 .quick-add-btn-label {
@@ -1050,11 +1054,6 @@ body.builder-body {
   .quick-add-btn {
     min-width: 36px;
     padding: 4px 6px;
-  }
-
-  .quick-add-btn-symbol {
-    width: 36px;
-    height: 36px;
   }
 
   .quick-add-btn-label {
@@ -1308,7 +1307,13 @@ body.builder-body {
   bottom: calc(24px + var(--builder-safe-area-bottom));
   flex-direction: column;
   width: var(--builder-menu-toggle-width);
-  height: var(--builder-menu-toggle-width);
+  /* Use toggle-HEIGHT (the long dimension = 64px desktop / 48px mobile) not
+     toggle-WIDTH (the thin dimension = 24px).  toggle-width was the wrong
+     variable: the bottom tab is a horizontal bar whose height == toggle-height.
+     Using the wrong variable made the stage 20-24px tall while the button
+     rendered at min-height:48px, causing the button to overflow 12px below
+     the viewport on portrait phones. */
+  height: var(--builder-menu-toggle-height);
 }
 
 .builder-menu-stage-bottom.open {
@@ -2875,11 +2880,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: var(--builder-ticker-height, 28px);
   }
 
-  /* Position quick-add-bar below the actual mode bar + ticker */
-  .quick-add-bar {
-    top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 52px + var(--builder-safe-area-top));
-  }
-
   .ticker-content {
     font-size: 10px;
     gap: 12px;
@@ -2891,11 +2891,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .builder-ticker-feed {
     top: calc(64px + var(--builder-safe-area-top));
     height: var(--builder-ticker-height, 26px);
-  }
-
-  /* Position quick-add-bar below the actual mode bar + ticker */
-  .quick-add-bar {
-    top: calc(max(var(--app-mode-bar-height, 0px), 46px) + 48px + var(--builder-safe-area-top));
   }
 
   .ticker-content {
@@ -4074,7 +4069,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     left: calc(env(safe-area-inset-left, 0px) + 8px);
     right: calc(env(safe-area-inset-right, 0px) + 8px);
     width: auto;
-    bottom: calc(16px + var(--builder-safe-area-bottom));
+    /* Match zoom controls (bottom:8px) so both rows of bottom-right
+       elements sit on the same baseline. */
+    bottom: calc(8px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
@@ -4540,8 +4537,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 .builder-intro-dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4, 9, 26, 0.48);
-  backdrop-filter: blur(3px);
+  background: rgba(4, 9, 26, 0.72);
+  backdrop-filter: blur(8px);
   z-index: var(--z-full-overlay);
   display: flex;
   align-items: center;
@@ -4552,6 +4549,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 .builder-intro-dialog-card {
   position: relative;
   width: min(400px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   background: rgba(10, 24, 48, 0.82);
   border: 1px solid rgba(136, 204, 255, 0.32);
   border-radius: 16px;
