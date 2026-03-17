@@ -905,6 +905,38 @@ export const COMPONENT_3D_LIBRARY: Component3DGeometry[] = [
       ],
     },
   },
+  {
+    type: 'circuit-breaker',
+    label: 'Circuit Breaker',
+    description: 'Molded-case circuit breaker with toggle actuator',
+    geometry: {
+      shapes: [
+        {
+          type: 'box',
+          position: [0, 0.35, 0],
+          scale: [0.7, 0.55, 0.4],
+          color: '#1A1A2E',
+        },
+        {
+          type: 'box',
+          position: [0, 0.72, 0],
+          scale: [0.24, 0.22, 0.2],
+          color: '#E0E0E0',
+        },
+        {
+          type: 'cylinder',
+          position: [0.2, 0.67, 0],
+          rotation: [Math.PI / 2, 0, 0],
+          scale: [0.06, 0.04, 0.06],
+          color: '#FF4444',
+        },
+      ],
+      leads: [
+        { position: [-0.2, -0.05, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
+        { position: [0.2, -0.05, 0], length: 0.3, radius: 0.025, color: '#C0C0C0' },
+      ],
+    },
+  },
 ];
 
 export function getComponent3D(type: string): Component3DGeometry | undefined {

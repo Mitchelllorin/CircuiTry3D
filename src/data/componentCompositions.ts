@@ -695,6 +695,28 @@ export const COMPONENT_COMPOSITIONS: ComponentComposition[] = [
     ],
   },
 
+  // ─── Circuit Breaker (MCB / MCCB) ────────────────────────────────────────
+  {
+    componentType: 'circuit_breaker',
+    aliases: ['circuit-breaker', 'breaker', 'mcb', 'mccb'],
+    constructionNote: 'Molded-case circuit breaker; bimetallic strip for thermal overload trip; electromagnetic solenoid for instantaneous short-circuit trip; silver-alloy contacts; thermoplastic housing with arc-quenching chamber',
+    subComponents: [
+      { name: 'Thermoplastic Housing',          materialKey: 'polycarbonate',   role: 'Structural enclosure',               massFraction: 0.45 },
+      { name: 'Bimetallic Strip',               materialKey: 'steel',           role: 'Thermal trip element',               massFraction: 0.08, isCritical: true, operatingLimitC: 150 },
+      { name: 'Electromagnetic Solenoid Core',  materialKey: 'steel',           role: 'Magnetic short-circuit trip',        massFraction: 0.10 },
+      { name: 'Copper Coil',                    materialKey: 'copper',          role: 'Solenoid winding',                   massFraction: 0.08 },
+      { name: 'Silver-Alloy Contacts',          materialKey: 'ag_cdo',          role: 'Switched electrical contacts',       massFraction: 0.07 },
+      { name: 'Copper Bus Bars',                materialKey: 'copper',          role: 'Current-carrying conductors',        massFraction: 0.12 },
+      { name: 'Arc Quenching Chamber',            materialKey: 'steel',           role: 'Arc extinction plates',              massFraction: 0.10 },
+    ],
+    internalLayers: [
+      { materialKey: 'polycarbonate',  label: 'Housing',           type: 'box',      position: [0,  0,    0], scale: [1.00, 0.80, 0.65], color: '#1A1A2E', opacity: 0.18 },
+      { materialKey: 'steel',          label: 'Bimetallic Strip',  type: 'box',      position: [0, -0.10, 0], scale: [0.10, 0.45, 0.05], color: '#888888', opacity: 0.85 },
+      { materialKey: 'copper',         label: 'Bus Bar',           type: 'box',      position: [-0.15, -0.08, 0], scale: [0.08, 0.40, 0.06], color: '#B87333', opacity: 0.80 },
+      { materialKey: 'ag_cdo',         label: 'Contacts',          type: 'cylinder', position: [0.12,  0.05, 0], scale: [0.07, 0.05, 0.07], color: '#E0E0A0', opacity: 0.95 },
+    ],
+  },
+
   // ─── Inductor (axial / radial) ───────────────────────────────────────────
   {
     componentType: 'inductor',
