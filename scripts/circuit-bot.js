@@ -50,7 +50,7 @@ for (let i = 0; i < ARGS.length; i++) {
 }
 
 const OUTPUT_DIR = join(ROOT, 'promo-footage');
-const VIEWPORT   = { width: 1920, height: 1080 };
+const VIEWPORT   = { width: 412, height: 915 };   // portrait phone (Android primary target)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,16 @@
 # CircuiTry3D - GitHub Copilot Instructions
 
+## ⚠️ Portrait-First Design Rule (MANDATORY)
+
+CircuiTry3D was **designed and built in portrait orientation**. The owner reviews and merges pull requests on a portrait-mode device. **Every pull request must target portrait as the primary viewport.**
+
+- **Canonical review viewport**: mobile portrait **412 × 915 px** (Android phone)
+- All UI layout changes must be designed and validated for portrait orientation first
+- CSS media queries should use portrait as the base case; landscape adjustments are secondary
+- Do **not** design UI primarily for landscape — landscape adaptations (handled via `orientation: landscape` media queries in `builder-ui.css`) are supplemental for Android users
+- When reporting on or demonstrating UI changes, always reference how the change looks in portrait mode
+- The PR preview workflow captures portrait screenshots (412 × 915 px) as artifacts — these are the screenshots the owner uses to evaluate changes
+
 ## Project Overview
 CircuiTry3D is a 3D, interactive, electric circuit builder that utilizes Ohm's law and visualizes current flow and behavior in an electric circuit down to the atomic level. The project creates a new way to understand abstract electrical concepts by "illuminating electricity."
 
