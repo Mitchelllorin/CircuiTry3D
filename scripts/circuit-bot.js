@@ -54,6 +54,7 @@ for (let i = 0; i < ARGS.length; i++) {
 
 const OUTPUT_DIR = join(ROOT, 'promo-footage');
 const VIEWPORT   = { width: 1920, height: 1080 };
+const PROMO_PAGE = 'promo8.html';  // FUSE-focused promo page used by scene-05
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -260,7 +261,7 @@ const SCENES = [
     title: 'Scene 05 — Cinematic Promo Page (promo8)',
     async record(page) {
       // Navigate to the FUSE-focused promo page for the brand reveal
-      const promoUrl = `${BASE_URL}/promo8.html`;
+      const promoUrl = `${BASE_URL}/${PROMO_PAGE}`;
       await page.goto(promoUrl, { waitUntil: 'networkidle', timeout: 30_000 });
       await page.waitForTimeout(1500);
 
@@ -269,10 +270,10 @@ const SCENES = [
 
       // Step through each of the 6 scenes by clicking the next-scene button,
       // pausing long enough for each scene's content to fully fade in and read.
-      const SCENE_DWELL = 4500; // ms to linger on each scene
+      const PROMO_SCENE_DWELL_MS = 4500; // ms to linger on each promo page scene
       for (let i = 0; i < 5; i++) {
         await page.click('#btn-next');
-        await page.waitForTimeout(SCENE_DWELL);
+        await page.waitForTimeout(PROMO_SCENE_DWELL_MS);
       }
 
       // Pause on the final CTA scene
@@ -336,8 +337,9 @@ const SCENES = [
     title: 'Scene 07 — Component Arena: Live FUSE™ Analysis',
     async record(page) {
       // Navigate directly to the arena page — standalone layout, no React shell.
+      // The arena uses WebGL and loads additional assets, so allow extra time.
       const arenaUrl = `${BASE_URL}/arena.html`;
-      await page.goto(arenaUrl, { waitUntil: 'networkidle', timeout: 35_000 });
+      await page.goto(arenaUrl, { waitUntil: 'networkidle', timeout: 45_000 });
       await page.waitForTimeout(2500);
 
       // Let the arena load and settle — give the WebGL scene time to initialise.
