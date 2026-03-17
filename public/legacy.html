@@ -8435,8 +8435,17 @@ body.android-optimized .zoom-btn {
             tileCanvas.height = SIZE;
             const ctx = tileCanvas.getContext('2d');
 
-            // Transparent background
-            ctx.clearRect(0, 0, SIZE, SIZE);
+            // Fill with the scene background colour (#0a0a1a) so every pixel
+            // is fully opaque.  A transparent canvas combined with
+            // transparent:true on the material relies on alpha-compositing in
+            // the WebGL transparent pass, which is unreliable across Android
+            // WebView GPU drivers (Adreno, Mali, PowerVR) and can produce an
+            // entirely invisible grid.  Using an opaque background eliminates
+            // all alpha-blending from the grid render path while keeping the
+            // visual result identical (the non-line areas look the same as the
+            // dark scene background).
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, SIZE, SIZE);
 
             // Sub-grid tone (thin lines on all edges) — fully opaque for maximum
             // visibility against the dark scene background on every platform.
@@ -8472,15 +8481,22 @@ body.android-optimized .zoom-btn {
             tex.repeat.set(divisions, divisions);
 
             const geo = new THREE.PlaneGeometry(size, size);
+            // Use transparent:false (opaque) so the grid is rendered in the
+            // opaque pass — no alpha compositing, no transparent-sort ordering.
+            // depthWrite:false lets scene objects written earlier (or later, after
+            // natural front-to-back sorting) pass the depth test and draw on top.
             const mat = new THREE.MeshBasicMaterial({
                 map: tex,
-                transparent: true,
-                opacity: 1.0,
+                transparent: false,
                 side: THREE.DoubleSide,
                 depthWrite: false,
             });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.rotation.x = -Math.PI / 2; // lay flat on the XZ plane
+            // Render before other opaque objects so that components drawn later
+            // (which are closer to the camera and win the depth test) always
+            // appear in front of the grid floor.
+            mesh.renderOrder = -1;
             return mesh;
         }
 
