@@ -138,15 +138,8 @@ export function registerServiceWorker(): void {
     // Only register service worker for web, not native app
     window.addEventListener('load', async () => {
       try {
-        // Use the Vite base URL so the path is correct on both the root domain
-        // (Vercel / local dev: '/') and GitHub Pages sub-paths
-        // (e.g. '/CircuiTry3D/').  A hard-coded '/sw.js' would 404 on GitHub
-        // Pages and inadvertently try to register a SW from a different project
-        // that happens to live at the root of the same GitHub Pages domain.
-        const base = import.meta.env.BASE_URL ?? '/';
-        const swPath = new URL('sw.js', base).href;
-        const registration = await navigator.serviceWorker.register(swPath, {
-          scope: base
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/'
         });
         console.log('[SW] Service worker registered:', registration.scope);
 
