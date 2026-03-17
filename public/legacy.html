@@ -9090,16 +9090,19 @@ body.android-optimized .zoom-btn {
                 return compressPath([A, Astub, Bstub, B]);
             }
             
-            // Create L-shaped path with intelligent corner selection
-            // Prefer corners that create cleaner textbook-style layouts
+            // Create L-shaped path with intelligent corner selection.
+            // Pick the corner that keeps the wire moving in the stub's outward
+            // direction — avoids backward/U-turn paths for any component layout
+            // or rotation.
             const corner1 = snapToGrid(new THREE.Vector3(Bstub.x, 0, Astub.z));
             const corner2 = snapToGrid(new THREE.Vector3(Astub.x, 0, Bstub.z));
-            
-            // Choose corner based on circuit topology for cleaner routing
-            // Prefer horizontal-then-vertical for typical series circuits
-            const useCorner1 = shouldUseHorizontalFirst(A, B, startSide, endSide);
-            const corner = useCorner1 ? corner1 : corner2;
-            
+
+            // corner1 is outward in X if it is at least as far from A in X as
+            // Astub already is.  corner2 is outward in Z by the same reasoning.
+            const moveXOut = Math.abs(corner1.x - A.x) >= Math.abs(Astub.x - A.x);
+            const moveZOut = Math.abs(corner2.z - A.z) >= Math.abs(Astub.z - A.z);
+            const corner = moveXOut ? corner1 : (moveZOut ? corner2 : corner1);
+
             return compressPath([A, Astub, corner, Bstub, B]);
         }
         
@@ -9275,11 +9278,14 @@ body.android-optimized .zoom-btn {
         function createRightAngledWirePath(startPos, endPos, startSide, endSide) {
             const mode = getRouterMode();
 
-            // ALWAYS use exact terminal positions for wire endpoints to prevent gaps.
-            // Only intermediate waypoints are snapped for visual alignment.
-            // This ensures wires connect precisely to component terminals in all routing modes.
-            const A = startPos.clone();
-            const B = endPos.clone();
+            // Project endpoints onto the Y=0 ground plane for routing.  All
+            // intermediate waypoints are already computed at Y=0; projecting the
+            // endpoints here ensures wires stay flat even when a terminal lives
+            // at a non-zero Y offset (e.g. BJT leads at Y=-0.6, ground symbol
+            // at Y=0.45).  The tiny visual gap between the wire cap and the
+            // terminal sphere is imperceptible from the typical top-down view.
+            const A = new THREE.Vector3(startPos.x, 0, startPos.z);
+            const B = new THREE.Vector3(endPos.x, 0, endPos.z);
             
             // Support free-form routing
             if (mode === 'freeform') {
@@ -10478,6 +10484,32 @@ body.android-optimized .zoom-btn {
                     } else {
                         handleConnectionPointClick(hitPoint.userData);
                         return true;
+                    }
+                }
+            }
+
+            // In wire mode, also check the larger junction selection spheres so
+            // users can click anywhere on a junction (not just the tiny cyan
+            // connection-point sphere) to start or complete a wire.
+            if (isWireMode && connectionHits.length === 0) {
+                const junctionSpheres = [];
+                junctions.forEach(junction => {
+                    if (junction?.selectionSphere) {
+                        junctionSpheres.push(junction.selectionSphere);
+                    }
+                });
+                if (junctionSpheres.length > 0) {
+                    const junctionHits = raycaster.intersectObjects(junctionSpheres, false);
+                    if (junctionHits.length > 0) {
+                        const hitSphere = junctionHits[0].object;
+                        if (hitSphere.userData?.junction) {
+                            const junc = hitSphere.userData.junction;
+                            const pointData = junc.connectionPoint?.userData || getWireBranchStartPointData(junc);
+                            if (pointData) {
+                                handleConnectionPointClick(pointData);
+                                return true;
+                            }
+                        }
                     }
                 }
             }
