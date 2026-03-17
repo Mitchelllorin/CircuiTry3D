@@ -406,6 +406,64 @@ export const MATERIAL_LIBRARY: Record<string, Material> = {
     electricalResistivity: 1e14,
     thermalExpansion: 50,
   },
+
+  // ── Wire insulation jacket materials ──────────────────────────────────────
+  // meltingPoint = continuous thermal degradation onset temperature (not true melt).
+  // Values reflect UL/IEC insulation class ratings used in NEC Table 310.16.
+  pvc_jacket_80: {
+    name: 'PVC Insulation Jacket (80 °C class)',
+    density: 1.35,
+    thermalConductivity: 0.17,
+    specificHeat: 1050,
+    meltingPoint: 80,
+    electricalResistivity: 1e14,
+    thermalExpansion: 80,
+  },
+  xlpe_jacket_125: {
+    name: 'XLPE Insulation Jacket (125 °C class — THHN/THWN)',
+    density: 0.95,
+    thermalConductivity: 0.25,
+    specificHeat: 1900,
+    meltingPoint: 125,
+    electricalResistivity: 1e15,
+    thermalExpansion: 150,
+  },
+  silicone_jacket_200: {
+    name: 'Silicone Rubber Jacket (200 °C class)',
+    density: 1.20,
+    thermalConductivity: 0.25,
+    specificHeat: 1460,
+    meltingPoint: 200,
+    electricalResistivity: 1e14,
+    thermalExpansion: 300,
+  },
+  ptfe_jacket_260: {
+    name: 'PTFE Jacket (260 °C class — thin-wall fluoropolymer)',
+    density: 2.20,
+    thermalConductivity: 0.25,
+    specificHeat: 1000,
+    meltingPoint: 260,
+    electricalResistivity: 1e18,
+    thermalExpansion: 135,
+  },
+  epdm_jacket_150: {
+    name: 'EPDM Rubber Jacket (150 °C class — welding cable)',
+    density: 0.86,
+    thermalConductivity: 0.25,
+    specificHeat: 2000,
+    meltingPoint: 150,
+    electricalResistivity: 1e14,
+    thermalExpansion: 200,
+  },
+  neoprene_jacket_90: {
+    name: 'Neoprene Jacket (90 °C class — industrial portable cord)',
+    density: 1.25,
+    thermalConductivity: 0.19,
+    specificHeat: 2090,
+    meltingPoint: 90,
+    electricalResistivity: 1e13,
+    thermalExpansion: 190,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -709,6 +767,27 @@ export const COMPONENT_COMPOSITIONS: ComponentComposition[] = [
     internalLayers: [
       { materialKey: 'ferrite', label: 'Ferrite Core',  type: 'cylinder', position: [0, 0, 0], scale: [0.18, 0.80, 0.18], color: '#444455', opacity: 0.85 },
       { materialKey: 'copper',  label: 'Cu Winding',    type: 'torus',    position: [0, 0, 0], scale: [0.32, 0.32, 0.32], color: '#B87333', opacity: 0.75 },
+    ],
+  },
+
+  // ─── Wire (hook-up / power conductor) ────────────────────────────────────
+  // Represents a generic stranded copper conductor with PVC insulation jacket
+  // (80 °C class, NEC 14 AWG chassis wire default).  The insulation class is the
+  // critical limiting element — FUSE™ triggers when jacket temperature exceeds
+  // operatingLimitC.  Switch to xlpe_jacket_125, silicone_jacket_200, etc. for
+  // higher-temperature wire specs from the Wire Guide.
+  {
+    componentType: 'wire',
+    aliases: ['conductor', 'hook-up-wire'],
+    constructionNote: 'Stranded annealed-copper conductor with PVC insulation jacket (80 °C class); rated per NEC Table 310.16 ampacity. Select a wire spec from the Wire Guide to apply accurate insulation-class thresholds and gauge-accurate 3D dimensions.',
+    subComponents: [
+      { name: 'Stranded Copper Conductor', materialKey: 'copper',          role: 'Electrical current carrier',                    massFraction: 0.60 },
+      { name: 'PVC Insulation Jacket',     materialKey: 'pvc_jacket_80',   role: 'Electrical isolation / mechanical protection',  massFraction: 0.40,
+        isCritical: true, operatingLimitC: 80 },
+    ],
+    internalLayers: [
+      { materialKey: 'copper',        label: 'Cu Conductor', type: 'cylinder', position: [0, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [0.07, 1.00, 0.07], color: '#B87333', opacity: 0.95 },
+      { materialKey: 'pvc_jacket_80', label: 'PVC Jacket',   type: 'cylinder', position: [0, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [0.14, 1.00, 0.14], color: '#888800', opacity: 0.40 },
     ],
   },
 ];

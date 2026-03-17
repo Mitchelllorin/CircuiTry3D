@@ -112,6 +112,12 @@ const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
     gaugeLabel: wireProfile.gaugeLabel,
     materialLabel: wireProfile.materialLabel,
     insulationLabel: wireProfile.insulationLabel,
+    // Conductor bare diameter (mm) — drives 3D tube radius scaling
+    diameterMm: wireProfile.diameterMm,
+    // Insulation class ID (e.g. "pvc80", "xlpe125") — drives jacket color, thickness, FUSE thermal limit
+    insulationClass: wireProfile.insulationClass,
+    // Max continuous operating temperature from the insulation class (°C)
+    insulationMaxTempC: wireProfile.maxTemperatureC,
     maxTemperatureC: wireProfile.maxTemperatureC,
     resistanceOhmPerMeter: wireProfile.resistanceOhmPerMeter,
     ampacityBundleA: wireProfile.ampacityBundleA,

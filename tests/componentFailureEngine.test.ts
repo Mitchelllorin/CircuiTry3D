@@ -411,3 +411,153 @@ describe("registerFailureProfile — merge modes", () => {
     expect(() => registerFailureProfile(null as any, {})).not.toThrow();
   });
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Wire failure detection
+// FUSE™ wire overcurrent and insulation burnthrough modes
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("COMPONENT_PROFILES — wire family", () => {
+  it("wire profile has expected default properties", () => {
+    const profile = COMPONENT_PROFILES["wire"];
+    expect(profile).toBeDefined();
+    const p = profile.defaultProperties;
+    expect(typeof p.ampacityA).toBe("number");
+    expect(typeof p.insulationMaxTempC).toBe("number");
+    expect(typeof p.thermalResistance).toBe("number");
+    expect(p.ampacityA).toBeGreaterThan(0);
+    expect(p.insulationMaxTempC).toBeGreaterThan(0);
+  });
+});
+
+describe("resolveComponentFamily — wire aliases", () => {
+  it("resolves 'wire' → wire", () => {
+    expect(resolveComponentFamily("wire")).toBe("wire");
+  });
+
+  it("resolves 'conductor' → wire", () => {
+    expect(resolveComponentFamily("conductor")).toBe("wire");
+  });
+
+  it("resolves 'cable' → wire", () => {
+    expect(resolveComponentFamily("cable")).toBe("wire");
+  });
+
+  it("resolves via ampacityA property → wire", () => {
+    expect(resolveComponentFamily("unknown-conductor", { ampacityA: 15 })).toBe("wire");
+  });
+
+  it("resolves via insulationMaxTempC property → wire", () => {
+    expect(resolveComponentFamily("mystery-line", { insulationMaxTempC: 80 })).toBe("wire");
+  });
+});
+
+describe("detectFailure — wire overcurrent", () => {
+  it("returns failed=false when current is below rated ampacity", () => {
+    const wire = { id: "w1", type: "wire", properties: { ampacityA: 15, insulationMaxTempC: 80, thermalResistance: 12 } };
+    const result = detectFailure(wire, safeMetrics({ currentRms: 10 }));
+    expect(result.failed).toBe(false);
+    expect(result.severity).toBe(0);
+  });
+
+  it("detects overcurrent when current just exceeds rated ampacity", () => {
+    const wire = { id: "w1", type: "wire", properties: { ampacityA: 15, insulationMaxTempC: 80, thermalResistance: 12 } };
+    // At 16A (107% of 15A), severity = (16/15 - 1) * 3 ≈ 0.2 — stressed but not failed.
+    const stressed = detectFailure(wire, safeMetrics({ currentRms: 16 }));
+    expect(stressed.severity).toBeGreaterThan(0);
+    expect(stressed.name).toMatch(/overcurrent/i);
+    expect(stressed.family).toBe("wire");
+    // At 25A (167% of 15A), severity = (25/15 - 1)*3 = 2.0 — failed.
+    const failed = detectFailure(wire, safeMetrics({ currentRms: 25 }));
+    expect(failed.severity).toBeGreaterThanOrEqual(2);
+    expect(failed.failed).toBe(true);
+  });
+
+  it("severity scales with overcurrent ratio", () => {
+    const wire = { id: "w1", type: "wire", properties: { ampacityA: 10 } };
+    const at110pct = detectFailure(wire, safeMetrics({ currentRms: 11 }));
+    const at150pct = detectFailure(wire, safeMetrics({ currentRms: 15 }));
+    const at200pct = detectFailure(wire, safeMetrics({ currentRms: 20 }));
+    expect(at110pct.severity).toBeGreaterThan(0);
+    expect(at150pct.severity).toBeGreaterThan(at110pct.severity);
+    expect(at200pct.severity).toBeGreaterThan(at150pct.severity);
+  });
+
+  it("severity is capped at 3 for extreme overcurrent", () => {
+    const wire = { id: "w1", type: "wire", properties: { ampacityA: 5 } };
+    const result = detectFailure(wire, safeMetrics({ currentRms: 100 }));
+    expect(result.severity).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("detectFailure — insulation burnthrough", () => {
+  it("detects insulation burnthrough when thermalRise exceeds insulation class limit", () => {
+    // PVC 80°C: trigger fires when 25 + thermalRise > 80, i.e. thermalRise > 55.
+    // For failed=true we need severity>=2: (temp - limitC)/60 >= 2 → temp >= 200 → thermalRise >= 175.
+    const wire = { id: "w2", type: "wire", properties: { ampacityA: 15, insulationMaxTempC: 80, thermalResistance: 12 } };
+    // thermalRise=70 → temp=95°C → severity=(95-80)/60≈0.25 → stressed not failed.
+    const stressed = detectFailure(wire, safeMetrics({ thermalRise: 70 }));
+    expect(stressed.severity).toBeGreaterThan(0);
+    expect(stressed.name).toMatch(/insulation/i);
+    expect(stressed.visual).toBe("arc");
+    // thermalRise=175 → temp=200°C → severity=(200-80)/60=2.0 → failed=true.
+    const failed = detectFailure(wire, safeMetrics({ thermalRise: 175 }));
+    expect(failed.failed).toBe(true);
+    expect(failed.severity).toBeGreaterThanOrEqual(2);
+  });
+
+  it("does NOT trigger burnthrough for XLPE 125°C wire at same thermalRise", () => {
+    // XLPE rated 125°C — at thermalRise=70 conductor temp = 95°C, still below 125°C
+    const wire = { id: "w3", type: "wire", properties: { ampacityA: 20, insulationMaxTempC: 125, thermalResistance: 12 } };
+    const result = detectFailure(wire, safeMetrics({ thermalRise: 70 }));
+    // 25 + 70 = 95°C < 125°C — should not trigger
+    expect(result.severity).toBe(0);
+    expect(result.failed).toBe(false);
+  });
+
+  it("detects burnthrough for XLPE wire when conductor temp exceeds 125°C", () => {
+    const wire = { id: "w4", type: "wire", properties: { ampacityA: 20, insulationMaxTempC: 125, thermalResistance: 12 } };
+    // thermalRise=110 → temp=135°C — above 125°C limit → severity=(135-125)/60≈0.17 → stressed
+    const stressed = detectFailure(wire, safeMetrics({ thermalRise: 110 }));
+    expect(stressed.severity).toBeGreaterThan(0);
+    expect(stressed.name).toMatch(/insulation/i);
+    // thermalRise=220 → temp=245°C → severity=(245-125)/60=2.0 → failed=true
+    const failed = detectFailure(wire, safeMetrics({ thermalRise: 220 }));
+    expect(failed.failed).toBe(true);
+    expect(failed.severity).toBeGreaterThanOrEqual(2);
+  });
+
+  it("higher-temp insulation class (silicone 200°C) survives higher thermalRise", () => {
+    const wire = { id: "w5", type: "wire", properties: { ampacityA: 5, insulationMaxTempC: 200, thermalResistance: 12 } };
+    // thermalRise = 150 → conductor temp = 175°C — below 200°C silicone limit
+    const result = detectFailure(wire, safeMetrics({ thermalRise: 150 }));
+    expect(result.failed).toBe(false);
+  });
+
+  it("bare wire (bare1200 / no jacket) has no insulation burnthrough risk", () => {
+    // Set insulationMaxTempC to 1200 simulating bare resistance wire
+    const wire = { id: "w6", type: "wire", properties: { ampacityA: 6, insulationMaxTempC: 1200, thermalResistance: 0 } };
+    // Very high thermalRise — conductor is hot but there's no insulation to burn
+    const result = detectFailure(wire, safeMetrics({ thermalRise: 800 }));
+    // 25+800=825°C < 1200°C — burnthrough should not fire
+    expect(result.severity).toBe(0);
+  });
+});
+
+describe("detectFailure — wire family resolution for unlabelled type strings", () => {
+  it("resolves 'hook-up-wire' and detects overcurrent", () => {
+    const wire = { id: "w7", type: "hook-up-wire", properties: { ampacityA: 3, insulationMaxTempC: 80 } };
+    const result = detectFailure(wire, safeMetrics({ currentRms: 6 }));
+    expect(result.family).toBe("wire");
+    expect(result.severity).toBeGreaterThan(0);
+  });
+
+  it("detects wire overcurrent using default ampacityA fallback when no properties given", () => {
+    // With empty properties FUSE falls back to wire defaults (ampacityA: 15)
+    const wire = { id: "w8", type: "wire", properties: {} };
+    const result = detectFailure(wire, safeMetrics({ currentRms: 20 }));
+    expect(result.family).toBe("wire");
+    expect(result.severity).toBeGreaterThan(0);
+    expect(result.name).toMatch(/overcurrent/i);
+  });
+});
