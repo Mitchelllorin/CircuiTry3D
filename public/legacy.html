@@ -5504,7 +5504,7 @@ body.android-optimized .zoom-btn {
                     case 'bjt-pnp': return { gain: 100, polarity: 'PNP' };
                     case 'darlington': return { gain: 10000 };
                     case 'mosfet': return { threshold: 2.5 };
-                    case 'fuse': return { current: 1 }; // A
+                    case 'fuse': return { ratedCurrentA: 1 }; // A
                     case 'potentiometer': return { resistance: 10, position: 50 }; // kΩ, %
                     case 'lamp': return { resistance: 10 };
                     case 'ground': return {};
@@ -5667,7 +5667,10 @@ body.android-optimized .zoom-btn {
                         };
                     case 'fuse':
                         return {
-                            text: `${this.properties.current}A`,
+                            // ratedCurrentA is the canonical property name used by the failure engine.
+                            // The 'current' fallback provides backward compatibility with circuits saved
+                            // before this property was renamed.
+                            text: `${this.properties.ratedCurrentA ?? this.properties.current ?? 1}A`,
                             color: '#ffff44' // Yellow
                         };
                     case 'potentiometer':
@@ -10363,7 +10366,16 @@ body.android-optimized .zoom-btn {
                         </div>
                     `;
                     break;
-                    
+
+                case 'fuse':
+                    formHTML = `
+                        <div class="edit-row">
+                            <label>⚡ Rated Current (A)</label>
+                            <input type="number" id="edit-fuse-current" value="${component.properties.ratedCurrentA ?? component.properties.current ?? 1}" min="0.1" max="100" step="0.1">
+                        </div>
+                    `;
+                    break;
+
                 default:
                     formHTML = '<div class="edit-row">No editable properties</div>';
             }
@@ -10405,6 +10417,13 @@ body.android-optimized .zoom-btn {
                     }
                     if (switchResistanceInput) {
                         newProperties.resistance = parseFloat(switchResistanceInput.value) || 0.1;
+                    }
+                    break;
+
+                case 'fuse':
+                    const fuseCurrentInput = document.getElementById('edit-fuse-current');
+                    if (fuseCurrentInput) {
+                        newProperties.ratedCurrentA = parseFloat(fuseCurrentInput.value) || 1;
                     }
                     break;
             }
@@ -17743,6 +17762,19 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                                 triggerShortCircuitFlash();
                             }
                         }
+                    }
+                } else if (prev?.failed) {
+                    // Component is permanently failed (e.g. blown fuse, exploded capacitor,
+                    // burnt-out lamp filament) — any component where failure.failed===true means
+                    // a physical, irreversible change.  Keep failure state and visuals so the
+                    // open-circuit condition persists until clearAllWorkspaceFailures() is called
+                    // (e.g. user presses Reset).  Without this guard, once the fuse opens the
+                    // circuit, current drops to 0, detectFailure returns severity 0, and the
+                    // failure visuals are immediately cleared — causing the fuse to self-heal.
+                    applyWorkspaceFailureVisuals(component, prev);
+                    const noParticles = !workspaceFailureParticles.some(p => p.componentId === component.id);
+                    if (noParticles) {
+                        createWorkspaceParticles(component, prev.visual);
                     }
                 } else {
                     // Failure cleared — restore visuals
