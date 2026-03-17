@@ -1,35 +1,47 @@
 // CircuiTry3D Service Worker
 // Provides offline capability and caching for the PWA
 
-const CACHE_NAME = 'circuitry3d-v3';
-const STATIC_CACHE = 'circuitry3d-static-v3';
-const DYNAMIC_CACHE = 'circuitry3d-dynamic-v3';
+const CACHE_NAME = 'circuitry3d-v4';
+const STATIC_CACHE = 'circuitry3d-static-v4';
+const DYNAMIC_CACHE = 'circuitry3d-dynamic-v4';
 
-// Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
-
-// Install event - cache static assets
+// Install event - cache core assets relative to this SW's scope.
+// Using self.registration.scope makes the paths work on both the root domain
+// (e.g. '/') and GitHub Pages sub-paths (e.g. '/CircuiTry3D/') without
+// hard-coding the base URL into the SW file.
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
+    (async () => {
+      const scope = self.registration.scope; // e.g. 'https://host/CircuiTry3D/'
+      const scopePath = new URL(scope).pathname; // e.g. '/CircuiTry3D/'
+
+      const staticAssets = [
+        scope,                              // root (serves index.html)
+        `${scopePath}index.html`,
+        `${scopePath}manifest.json`,
+        `${scopePath}icons/icon-192.png`,
+        `${scopePath}icons/icon-512.png`,
+      ];
+
+      try {
+        const cache = await caches.open(STATIC_CACHE);
         console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => {
+        // addAll rejects if any asset 404s; use individual puts so a missing
+        // optional asset (e.g. icon) does not abort the whole install.
+        await Promise.allSettled(
+          staticAssets.map((url) =>
+            fetch(url).then((res) => {
+              if (res.ok) return cache.put(url, res);
+            })
+          )
+        );
         console.log('[SW] Static assets cached');
-        return self.skipWaiting();
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('[SW] Failed to cache static assets:', err);
-      })
+      }
+      await self.skipWaiting();
+    })()
   );
 });
 
@@ -106,7 +118,11 @@ self.addEventListener('fetch', (event) => {
                 return cachedResponse;
               }
               // Return cached index.html for SPA routing
-              return caches.match('/index.html');
+              // Use the SW scope to build the correct path (works on both
+              // '/' and GitHub Pages sub-paths like '/CircuiTry3D/').
+              const scopePath = new URL(self.registration.scope).pathname;
+              return caches.match(`${scopePath}index.html`) ||
+                     caches.match(self.registration.scope);
             });
         })
     );
