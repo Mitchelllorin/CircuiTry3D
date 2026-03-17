@@ -5438,8 +5438,8 @@ body.android-optimized .zoom-btn {
 
             if (canvas) {
                 const rect = canvas.getBoundingClientRect();
-                width  = rect.width  || window.innerWidth  || 1;
-                height = rect.height || window.innerHeight || 1;
+                width   = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+                height  = rect.height || window.innerHeight || document.documentElement.clientHeight;
                 offsetX = rect.left;
                 offsetY = rect.top;
             } else {
@@ -7401,6 +7401,13 @@ body.android-optimized .zoom-btn {
         // Initialize the scene
         function init() {
             try {
+                // On Android WebView, window.innerWidth/innerHeight may not yet reflect
+                // the final layout dimensions when the script runs synchronously.  Fall
+                // back to documentElement client dimensions and use safe minimums so we
+                // never create a 0×0 renderer context.
+                const initWidth  = (window.innerWidth  || document.documentElement.clientWidth  || 360);
+                const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
+
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color(0x0a0a1a);
                 
@@ -7420,10 +7427,8 @@ body.android-optimized .zoom-btn {
                     canvas: canvas,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
                     powerPreference: isMobile ? "low-power" : "high-performance",
-                    // Never bail out due to performance caveats — some mobile GPUs
-                    // (especially Android WebView) report caveats even for perfectly
-                    // functional WebGL contexts.  Without this the renderer silently
-                    // returns null and the workspace stays blank.
+                    // Allow degraded GL contexts on Android WebView so we never get a
+                    // silent null renderer when the GPU driver reports perf caveats.
                     failIfMajorPerformanceCaveat: false
                 });
                 renderer.setSize(_vw, _vh);
@@ -7486,6 +7491,11 @@ body.android-optimized .zoom-btn {
                 // Old UI layer removed — canvas is managed by the React host via embedded mode
 
                 requestAnimationFrame(animate);
+
+                // Schedule a corrective resize a frame after init so that any
+                // remaining layout shift on Android (e.g. the soft keyboard
+                // or system bars settling) is accounted for.
+                requestAnimationFrame(function() { onResize(); });
 
                 updateCircuitInfo();
 
@@ -8387,9 +8397,13 @@ body.android-optimized .zoom-btn {
         }
 
         function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            const w = window.innerWidth  || document.documentElement.clientWidth;
+            const h = window.innerHeight || document.documentElement.clientHeight;
+            if (w > 0 && h > 0) {
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
         }
 
         // Grid and snapping functions
@@ -8459,10 +8473,15 @@ body.android-optimized .zoom-btn {
             const gridSize      = isMobile ? 20 : 40;
             const gridDivisions = isMobile ? 20 : 40;
 
-            // Use brighter grid colours on mobile / Android so the grid remains
-            // visible against the very dark scene background (0x0a0a1a).
-            const mainGridColor = isMobile ? 0x6666bb : 0x4444aa;
-            const subGridColor  = isMobile ? 0x444499 : 0x222244;
+            // Use the brightest colours for the native Capacitor (Android) build so
+            // the grid lines remain visible against the very dark scene background
+            // (0x0a0a1a) even on displays with narrower contrast ranges or when
+            // Android WebView renders colours slightly differently from Chrome.
+            const isNative = (typeof window.Capacitor !== 'undefined' &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform());
+            const mainGridColor = isNative ? 0x9999dd : (isMobile ? 0x6666bb : 0x4444aa);
+            const subGridColor  = isNative ? 0x7777bb : (isMobile ? 0x444499 : 0x222244);
 
             if (isAndroidDevice) {
                 // Android WebView has known GL_LINES rendering issues across GPU
@@ -9757,8 +9776,8 @@ body.android-optimized .zoom-btn {
                 return;
             }
             const rect = renderer.domElement.getBoundingClientRect();
-            const rectWidth  = rect.width  || window.innerWidth  || 1;
-            const rectHeight = rect.height || window.innerHeight || 1;
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
             mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
             mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
@@ -10048,8 +10067,8 @@ body.android-optimized .zoom-btn {
             }
 
             const rect = renderer.domElement.getBoundingClientRect();
-            const rectWidth  = rect.width  || window.innerWidth  || 1;
-            const rectHeight = rect.height || window.innerHeight || 1;
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
             mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
             mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
@@ -10399,8 +10418,11 @@ body.android-optimized .zoom-btn {
             }
             
             const rect = renderer.domElement.getBoundingClientRect();
-            const rectWidth  = rect.width  || window.innerWidth  || 1;
-            const rectHeight = rect.height || window.innerHeight || 1;
+            // Guard against a 0×0 bounding rect (can happen on Android WebView
+            // before the first layout paint).  Fall back to the window dimensions
+            // so that raycasting always produces valid NDC coordinates.
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
             mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
             mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
@@ -10933,8 +10955,8 @@ body.android-optimized .zoom-btn {
 
         function screenToWorld(clientX, clientY) {
             const rect = renderer.domElement.getBoundingClientRect();
-            const rectWidth  = rect.width  || window.innerWidth  || 1;
-            const rectHeight = rect.height || window.innerHeight || 1;
+            const rectWidth  = rect.width  || window.innerWidth  || document.documentElement.clientWidth;
+            const rectHeight = rect.height || window.innerHeight || document.documentElement.clientHeight;
             mouse.x = ((clientX - rect.left) / rectWidth)  * 2 - 1;
             mouse.y = -((clientY - rect.top)  / rectHeight) * 2 + 1;
             
@@ -17855,26 +17877,25 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         const _preInitCanvas = document.getElementById('canvas');
         if (_preInitCanvas) _preInitCanvas.style.display = 'block';
 
-        // Start the application only once the iframe has non-zero viewport
-        // dimensions.  On Android/Capacitor (and some mobile browsers) the
-        // first layout tick can report 0×0; calling init() at that point
-        // causes THREE.WebGLRenderer to create a 1×1 context that never
-        // resizes, leaving the workspace blank.  Poll at 50 ms intervals for
-        // up to ~2 s, then fall through unconditionally so we never block.
-        (function _scheduleInit(attempts) {
-            const viewportWidth  = window.innerWidth  ||
-                      (document.documentElement && document.documentElement.clientWidth)  || 0;
-            const viewportHeight = window.innerHeight ||
-                      (document.documentElement && document.documentElement.clientHeight) || 0;
-            if (viewportWidth > 0 && viewportHeight > 0) {
+        // Defer init() via requestAnimationFrame so the Android WebView has had
+        // at least one layout/paint cycle before we try to create the WebGL
+        // context and read window.innerWidth / innerHeight.  Without this
+        // deferral, the iframe's layout dimensions can be 0 on the first sync
+        // execution tick, producing a 0×0 renderer that leaves the scene blank
+        // and makes raycasting return ±Infinity coordinates (so nothing is
+        // selectable).  The ping-pong bridge (builder:ping → legacy:ready)
+        // already handles the readiness race with the React host, so this
+        // extra frame delay does not break the handshake.
+        (function scheduleInit() {
+            var w = window.innerWidth  || document.documentElement.clientWidth;
+            var h = window.innerHeight || document.documentElement.clientHeight;
+            if (w > 0 && h > 0) {
                 init();
-            } else if (attempts < 40) {
-                setTimeout(function () { _scheduleInit(attempts + 1); }, 50);
             } else {
-                // Dimension never resolved — initialise anyway with CSS fallbacks
-                init();
+                // Dimensions not ready yet — try again next frame.
+                requestAnimationFrame(scheduleInit);
             }
-        })(0);
+        })();
     </script>
 </body>
 </html>
