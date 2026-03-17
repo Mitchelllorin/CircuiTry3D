@@ -663,8 +663,9 @@ body.builder-body {
   }
 
   /* On very small screens, the bottom Insights drawer and edge actions fight for space.
-     Hide edge actions while the drawer is open to avoid button/menu overlaps. */
-  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions {
+     Hide edge actions and zoom controls while the drawer is open to avoid button/menu overlaps. */
+  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions,
+  .builder-shell[data-bottom-menu-open="true"] .circuit-zoom-controls {
     display: none;
   }
 }
