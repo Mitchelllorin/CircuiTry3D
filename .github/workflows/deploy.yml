@@ -1,18 +1,4 @@
-# How GitHub Pages deployment works:
-# 1. This workflow builds the React/Vite app on every push to `main`.
-# 2. The built files are pushed to the `gh-pages` branch (root directory).
-# 3. GitHub Pages serves those files at:
-#      https://mitchelllorin.github.io/CircuiTry3D/
-# 4. `keep_files: true` preserves the `pr-preview/` subdirectory that is
-#    managed by the PR preview workflow, so previews survive production deploys.
-#
-# One-time GitHub repository setup required:
-#   • Go to Settings → Pages
-#   • Source: Deploy from a branch
-#   • Branch: gh-pages  /  (root)
-#   • Save
-
-name: Deploy to GitHub Pages
+name: Deploy to Vercel
 
 on:
   push:
@@ -21,11 +7,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 # Only one production deployment at a time; don't cancel an in-progress run.
 concurrency:
-  group: pages-production
+  group: vercel-production
   cancel-in-progress: false
 
 jobs:
@@ -51,16 +37,9 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # Sets the Vite base path so all assets are rooted at the
-          # GitHub Pages sub-path for this repository.
-          PAGES_BASE_PATH: /CircuiTry3D/
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          # Preserve the pr-preview/ umbrella directory so open PR previews
-          # are not wiped out each time production is re-deployed.
-          keep_files: true
+      - name: Deploy to Vercel (Production)
+        run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
