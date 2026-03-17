@@ -78,6 +78,9 @@
     transformer: "transformer", xfmr: "transformer",
     crystal: "crystal", xtal: "crystal", oscillator: "crystal",
     potentiometer: "resistor",
+    // Wires / Conductors
+    wire: "wire", conductor: "wire", "hook-up-wire": "wire",
+    "wire-awg": "wire", "hookup": "wire", cable: "wire",
   };
 
   // ---------------------------------------------------------------------------
@@ -268,6 +271,21 @@
         frequencyHz: 16e6,
         seriesResistance: 10,
         thermalResistance: 200,
+      },
+    },
+    wire: {
+      defaultProperties: {
+        // Rated continuous current capacity (A) — default matches 14 AWG THHN chassis ampacity
+        ampacityA: 15,
+        // Insulation class maximum continuous operating temperature (°C) — default PVC 80 °C
+        insulationMaxTempC: 80,
+        // Thermal resistance of the insulation jacket (°C/W) — governs how quickly
+        // conductor heat conducts outward to the jacket surface
+        thermalResistance: 12,
+        // DC resistance per metre of conductor (Ω/m) — 14 AWG annealed copper
+        resistanceOhmPerMeter: 0.0082,
+        // Maximum rated voltage (V) — 600 V for THHN
+        maxVoltageV: 600,
       },
     },
     generic: {
@@ -698,6 +716,41 @@
         },
       },
     },
+    wire: {
+      modes: {
+        overcurrent: {
+          name: "Wire Overcurrent / Conductor Heating",
+          visual: "smoke",
+          physicalDescription:
+            "Current exceeds the wire's rated ampacity. I²R heating in the conductor raises its temperature above the design limit. Thermal energy conducts outward through the insulation jacket — the jacket surface becomes hot to the touch, then begins to soften and deform. If overcurrent is sustained, the insulation chars, splits, or melts away.",
+          // Trigger whenever current exceeds the wire's rated continuous ampacity.
+          // Real cables begin to heat above ambient as soon as current flows, but
+          // the rated ampacity (NEC Table 310.16) already includes a safety margin.
+          trigger: (metrics, props) => metrics.currentRms > (props.ampacityA ?? 15),
+          // Severity scales from 0 (at rated ampacity) to 3 (at 2.33× ampacity).
+          severity: (metrics, props) =>
+            Math.min(((metrics.currentRms / (props.ampacityA ?? 15)) - 1) * 3, 3),
+        },
+        insulation_burnthrough: {
+          name: "Insulation Burnthrough — Short-Circuit Risk",
+          visual: "arc",
+          physicalDescription:
+            "Wire temperature has risen above the insulation class rating. PVC at 80 °C, XLPE at 125 °C, silicone at 200 °C — once this thermal limit is crossed, the polymer matrix breaks down: it softens, flows, then chars. The exposed bare conductor can contact adjacent conductors or a grounded chassis, creating a dead short. Sustained arcing erodes both conductors and can ignite surrounding materials.",
+          // Trigger when the conductor has heated the insulation past its class limit.
+          // thermalRise encodes the temperature increase above 25 °C ambient via
+          // I²R × thermalResistance, so 25 + thermalRise gives the jacket surface temp.
+          trigger: (metrics, props) => (25 + metrics.thermalRise) > (props.insulationMaxTempC ?? 80),
+          // Severity ramps from 0 at the insulation limit up to 3 at limit+60 °C —
+          // matching the narrow window between first degradation (charring, cracking)
+          // and total burnthrough / arcing.
+          severity: (metrics, props) => {
+            const limitC = props.insulationMaxTempC ?? 80;
+            const temp = 25 + metrics.thermalRise;
+            return Math.min((temp - limitC) / 60, 3);
+          },
+        },
+      },
+    },
     generic: {
       modes: {
         overtemp: {
@@ -770,6 +823,7 @@
       if (typeof props.ratedCurrentA === "number" && typeof props.meltingI2t === "number") return "fuse";
       if (typeof props.internalResistance === "number" || typeof props.capacityMah === "number") return "battery";
       if (typeof props.turnsRatio === "number") return "transformer";
+      if (typeof props.ampacityA === "number" || typeof props.insulationMaxTempC === "number") return "wire";
       if (typeof props.resistance === "number") return "resistor";
     }
 
