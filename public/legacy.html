@@ -367,7 +367,7 @@
             border-radius: 16px 16px 0 0;
             border: 2px solid rgba(0,255,136,0.4);
             border-bottom: none;
-            z-index: 90;
+            z-index: 105;
             transition: transform 0.3s ease;
             max-height: 60vh;
             overflow-y: auto;
@@ -1453,7 +1453,7 @@
             border-radius: 16px 16px 0 0;
             border: 2px solid rgba(0,255,136,0.4);
             border-bottom: none;
-            z-index: 90;
+            z-index: 105;
             transition: transform 0.3s ease;
             max-height: 60vh;
             overflow-y: auto;
@@ -2529,6 +2529,12 @@
                 width: 320px;
                 max-width: none;
             }
+
+            /* In landscape the panel-top-bar moves to the top-right, so the
+               toggle strip can sit at the original bottom-right position. */
+            .wire-analysis-toggle-strip {
+                bottom: 20px;
+            }
         }
 
         /* Stack menu across the top on narrow screens */
@@ -2655,6 +2661,11 @@
             /* 70px = panel-top-bar bottom(10px) + height(60px) = panel's own bottom offset */
             .wire-analysis-fixed.collapsed {
                 transform: translateY(calc(100% + 70px));
+            }
+
+            /* Toggle strip: clear panel-top-bar (bottom:10px + height:60px + 10px gap = 80px) */
+            .wire-analysis-toggle-strip {
+                bottom: 80px;
             }
         }
 
@@ -3538,9 +3549,9 @@
         /* Analysis panel toggle strip */
         .wire-analysis-toggle-strip {
             position: fixed;
-            bottom: 20px;
+            bottom: 90px;
             right: 20px;
-            z-index: 91;
+            z-index: 106;
         }
 
         .wire-analysis-toggle-btn {
