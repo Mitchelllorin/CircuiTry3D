@@ -183,14 +183,14 @@ body.builder-body {
 .mode-tab {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex: 0 0 auto;
-  padding: 10px 16px;
+  padding: 8px 13px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--builder-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.22s ease;
@@ -211,7 +211,7 @@ body.builder-body {
 }
 
 .mode-icon {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
@@ -4045,13 +4045,13 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 @media (max-width: 720px) {
   :root {
     /* Mobile - slim but tappable toggles */
-    --builder-menu-left-width: 148px;
-    --builder-menu-right-width: 144px;
+    --builder-menu-left-width: 140px;
+    --builder-menu-right-width: 136px;
     --builder-menu-bottom-width: calc(100vw - 24px);
-    --builder-menu-bottom-height: 196px;
+    --builder-menu-bottom-height: 188px;
     --builder-menu-toggle-width: 20px;
     --builder-menu-toggle-height: 48px;
-    --builder-ticker-height: 26px;
+    --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
     /* Ticker starts at 64px on mobile */
@@ -4060,8 +4060,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    /* ticker-top(64) + ticker-height(26) + gap(4) = 94px */
-    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 26px) + 4px + var(--builder-safe-area-top));
+    /* ticker-top(64) + ticker-height(24) + gap(4) = 92px */
+    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 4px + var(--builder-safe-area-top));
     bottom: calc(184px + var(--builder-safe-area-bottom));
   }
 
@@ -4075,7 +4075,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .builder-menu-bottom {
-    padding: 14px;
+    padding: 12px;
   }
 
   .builder-menu-bottom .menu-track-metrics {
@@ -4083,7 +4083,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .builder-menu-bottom .menu-track-chips {
-    max-height: 160px;
+    max-height: 152px;
   }
 
   .builder-status-bar {
@@ -4104,6 +4104,28 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .toggle-icon svg {
     width: 10px;
     height: 10px;
+  }
+
+  /* Compact sidebar panel content for portrait viewport */
+  .builder-menu-scroll {
+    gap: 10px;
+  }
+
+  .slider-section {
+    gap: 8px;
+  }
+
+  .slider-stack {
+    gap: 6px;
+  }
+
+  .slider-btn {
+    padding: 6px 8px;
+    gap: 3px;
+  }
+
+  .slider-heading {
+    font-size: 9px;
   }
 }
 
