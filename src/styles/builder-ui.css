@@ -4165,6 +4165,27 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
       0 -4px 16px var(--builder-shadow),
       0 -4px 20px rgba(136, 204, 255, 0.3);
   }
+
+  /* On touch devices the toggle min-width (36px) exceeds --builder-menu-toggle-width
+     (20px mobile). Widen the stage to match so the closed translateX keeps the
+     toggle flush against the right viewport edge instead of partially off-screen. */
+  .builder-menu-stage-left {
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-hit-width));
+    transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+  }
+
+  .builder-menu-stage-left.open {
+    transform: translateX(0);
+  }
+
+  .builder-menu-stage-right {
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-hit-width));
+    transform: translateX(var(--builder-menu-right-width));
+  }
+
+  .builder-menu-stage-right.open {
+    transform: translateX(0);
+  }
 }
 
 /* ============================================

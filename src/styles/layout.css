@@ -87,8 +87,8 @@
   --z-builder-toolbar: 920;
   --z-builder-floats: 930;
   --z-builder-toolbar-top: 940;
-  /* Tutorial overlay */
-  --z-tutorial: 980;
+  /* Tutorial overlay — must clear collapsed compact panel headers (z 1190–1250) */
+  --z-tutorial: 1260;
   /* Compact / mobile panels */
   --z-compact-worksheet: 860;
   --z-builder-widget: 1185;
