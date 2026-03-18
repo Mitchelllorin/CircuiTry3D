@@ -35,8 +35,13 @@ const OUTPUT_FILE = process.env.OUTPUT_FILE || join(ROOT, 'dist', 'pr-portrait.p
 const VIEWPORT = { width: 412, height: 915 };
 
 async function main() {
-  const url = `${BASE_URL}${BASE_PATH}`;
-  console.log(`📸  Capturing PR portrait screenshot from ${url}`);
+  // Navigate directly to legacy.html (the 3-D circuit builder) so the WebGL
+  // canvas renders fully in the headless Chromium process without the extra
+  // React → Builder.tsx → iframe indirection that produces a blank canvas.
+  // BASE_PATH ends with '/', so strip a leading '/' from 'legacy.html' to
+  // avoid a double-slash.
+  const builderUrl = `${BASE_URL}${BASE_PATH}legacy.html`;
+  console.log(`📸  Capturing PR portrait screenshot from ${builderUrl}`);
 
   await mkdir(dirname(OUTPUT_FILE), { recursive: true });
 
@@ -60,9 +65,10 @@ async function main() {
   await page.setViewportSize(VIEWPORT);
 
   try {
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
-    // Allow time for iframe content and any CSS animations to settle
-    await page.waitForTimeout(3000);
+    await page.goto(builderUrl, { waitUntil: 'networkidle', timeout: 30_000 });
+    // Allow extra time for WebGL / Three.js to fully initialise and render the
+    // 3-D circuit grid — builder pages need more settle time than static pages.
+    await page.waitForTimeout(8000);
   } catch (err) {
     console.warn(`⚠  Navigation timed out or failed: ${err.message}`);
     console.warn('   Proceeding with whatever has rendered so far.');
