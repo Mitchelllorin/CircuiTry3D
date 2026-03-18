@@ -2807,20 +2807,6 @@ export default function Builder() {
                 title={component.description || component.label}
               />
             ))}
-            <button
-              type="button"
-              className={`quick-add-btn${modeState.isWireMode ? " quick-add-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-wire-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isWireMode}
-              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
-            >
-              <span className="quick-add-btn-symbol" aria-hidden="true">
-                <img src={wireStrippersIcon} alt="" className="quick-add-btn-wire-img" aria-hidden="true" />
-              </span>
-              <span className="quick-add-btn-label">Wire</span>
-            </button>
           </div>
         </Fragment>
       )}
@@ -3082,7 +3068,7 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Components Library</span>
+              <span className="slider-heading">Components</span>
               <div className="slider-stack">
                 {(IS_DEMO_MODE
                   ? COMPONENT_ACTIONS.filter((c) =>
@@ -3143,54 +3129,7 @@ export default function Builder() {
               )}
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Quick Actions</span>
-              <div className="slider-stack">
-                {QUICK_ACTIONS.map((action) => {
-                  const isActive =
-                    action.kind === "tool" && action.tool === activeQuickTool;
-                  const isSimulation = action.id === "simulate";
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => handleQuickAction(action)}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      aria-pressed={
-                        action.kind === "tool" ? isActive : undefined
-                      }
-                      data-active={
-                        action.kind === "tool" && isActive ? "true" : undefined
-                      }
-                      data-pulse={
-                        isSimulation && isSimulatePulsing ? "true" : undefined
-                      }
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-tutorial-id={
-                        action.id === "simulate"
-                          ? "tutorial-run-simulation"
-                          : undefined
-                      }
-                    >
-                      <span className="slider-quick-icon-row">
-                        {getQuickActionIcon(action.id, "slider-quick-icon")}
-                        <span className="slider-label">{action.label}</span>
-                      </span>
-                      <span className="slider-description">
-                        {action.description}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Wire Modes</span>
+              <span className="slider-heading">Wiring Tools</span>
               <div className="slider-stack">
                 {WIRE_TOOL_ACTIONS.map((action) => {
                   const isWireToggle = action.action === "toggle-wire-mode";
@@ -3285,7 +3224,7 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Modes</span>
+              <span className="slider-heading">Visualization</span>
               <div className="slider-stack">
                 {CURRENT_MODE_ACTIONS.map((action) => {
                   const isFlowToggle = action.action === "toggle-current-flow";
@@ -3457,7 +3396,7 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Environmental Conditions</span>
+              <span className="slider-heading">Environment</span>
               <div className="menu-track menu-track-chips">
                 <div
                   role="status"
