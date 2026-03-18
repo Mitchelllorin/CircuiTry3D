@@ -34,6 +34,18 @@ export type BuilderInvokeAction =
   | "zoom-in"
   | "zoom-out";
 
+export type MeterMode = "voltage" | "current" | "resistance" | "scope";
+
+export type LegacyMeterState = {
+  mode: MeterMode;
+  armed: boolean;
+  reading: string;
+  subreading: string;
+  instructions: string;
+  probeA: string;
+  probeB: string;
+};
+
 export type BuilderMessage =
   | { type: "builder:add-component"; payload: { componentType: string } }
   | { type: "builder:add-junction" }
@@ -51,7 +63,10 @@ export type BuilderMessage =
         sessionName?: string;
         testVariables?: Record<string, unknown>;
       };
-    };
+    }
+  | { type: "builder:set-meter-mode"; payload: { mode: MeterMode } }
+  | { type: "builder:toggle-meter-armed" }
+  | { type: "builder:clear-meter" };
 
 export type LegacyCircuitState = {
   /**

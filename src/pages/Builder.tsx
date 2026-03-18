@@ -1354,6 +1354,7 @@ export default function Builder() {
     circuitState,
     lastSimulationAt,
     lastSimulation,
+    meterState,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
@@ -3527,6 +3528,78 @@ export default function Builder() {
           </div>
         </nav>
       </div>
+
+
+      {/* ── Measurement tools nav bar ─────────────────────────── */}
+      {isActiveCircuitBuildMode && (
+        <div className="builder-measure-bar" role="toolbar" aria-label="Measurement tools">
+          <span className="measure-bar-label" aria-hidden="true">🔬 Meters</span>
+          <div className="measure-bar-modes" role="group" aria-label="Meter mode">
+            {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
+              const labels: Record<string, { short: string; title: string }> = {
+                voltage:    { short: "V",  title: "Voltmeter – measure voltage between two terminals" },
+                current:    { short: "A",  title: "Ammeter – measure current through a component" },
+                resistance: { short: "Ω",  title: "Ohmmeter – measure equivalent resistance between two terminals" },
+                scope:      { short: "~",  title: "Oscilloscope – plot voltage over time" },
+              };
+              const isActive = meterState.mode === mode && meterState.armed;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`measure-mode-btn${isActive ? " active" : ""}`}
+                  aria-pressed={isActive}
+                  title={labels[mode].title}
+                  disabled={!isFrameReady}
+                  onClick={() => {
+                    postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
+                  }}
+                >
+                  {labels[mode].short}
+                </button>
+              );
+            })}
+          </div>
+          <div className="measure-bar-divider" aria-hidden="true" />
+          <button
+            type="button"
+            className={`measure-probe-btn${meterState.armed ? " armed" : ""}`}
+            aria-pressed={meterState.armed}
+            title={meterState.armed ? "Probes enabled – click terminals to measure" : "Enable probes to start measuring"}
+            disabled={!isFrameReady}
+            onClick={() => {
+              postToBuilder({ type: "builder:toggle-meter-armed" });
+            }}
+          >
+            {meterState.armed ? "⦿ Probes On" : "○ Probes Off"}
+          </button>
+          {meterState.armed && (
+            <span
+              className={`measure-reading${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
+              aria-live="polite"
+              title={meterState.instructions}
+            >
+              {meterState.reading}
+            </span>
+          )}
+          {!meterState.armed && (
+            <span className="measure-hint" title={meterState.instructions}>
+              {meterState.instructions}
+            </span>
+          )}
+          <button
+            type="button"
+            className="measure-clear-btn"
+            title="Clear probe selections"
+            disabled={!isFrameReady}
+            onClick={() => {
+              postToBuilder({ type: "builder:clear-meter" });
+            }}
+          >
+            ✕ Clear
+          </button>
+        </div>
+      )}
 
       <div className="builder-ticker-feed" role="status" aria-live="polite">
         <div className="ticker-wire-fixed" role="group" aria-label="W.I.R.E. live metrics">
