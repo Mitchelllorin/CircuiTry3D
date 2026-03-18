@@ -559,9 +559,8 @@
            onerror="this.style.display='none'"></video>
     <div class="scene-overlay"></div>
 
-    <!-- Fallback animated preview (shown when video unavailable) -->
     <div class="scene-fallback" id="fb-series">
-      <img src="./screenshots/phone-screenshot-3.png" alt="" aria-hidden="true">
+      <img src="./screenshots/tablet-screenshot-1.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -586,7 +585,7 @@
     <div class="scene-overlay"></div>
 
     <div class="scene-fallback" id="fb-parallel">
-      <img src="./screenshots/phone-screenshot-4.png" alt="" aria-hidden="true">
+      <img src="./screenshots/tablet-screenshot-2.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -669,8 +668,8 @@
       linear-gradient(to right,  rgba(5,11,31,0.5)  0%, transparent 55%);">
     </div>
 
-    <div class="scene-fallback" id="fb-promo">
-      <img src="./screenshots/phone-screenshot-3.png" alt="" aria-hidden="true">
+    <div class="scene-fallback" id="fb-promo" style="background:linear-gradient(135deg,#040c1e,#071020);">
+      <canvas id="canvas-promo" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
     </div>
 
     <div class="scene-content">
@@ -871,7 +870,168 @@
   scheduleNext();
   tickProgress();
 
-  /* Fallback images (actual 3D app screenshots) are displayed via CSS/HTML img elements. */
+  /* Fallback canvas animations are added below. */
+
+  /* ══════════════════════════════════════════════════════════════
+     SCENE 5 FALLBACK CANVAS ANIMATION — PROMO PAGE SWEEP
+     Shown when scene-05-promo.webm hasn't been recorded yet.
+  ══════════════════════════════════════════════════════════════ */
+  (function () {
+    'use strict';
+    var TAU = Math.PI * 2;
+
+    function makeCanvas(id) {
+      var el = document.getElementById(id);
+      if (!el) return null;
+      var ctx = el.getContext('2d');
+      function resize() {
+        var p = el.parentElement;
+        el.width  = p ? (p.offsetWidth  || window.innerWidth)  : window.innerWidth;
+        el.height = p ? (p.offsetHeight || window.innerHeight) : window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      return { el: el, ctx: ctx, resize: resize,
+               get W() { return el.width; }, get H() { return el.height; } };
+    }
+
+    function glowDot(ctx, x, y, r, color, alpha) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = (alpha !== undefined ? alpha : 1);
+      ctx.fill(); ctx.restore();
+    }
+
+    function hud(ctx, W, H, msg, color) {
+      ctx.save();
+      ctx.font = '700 12px "Courier New",monospace';
+      ctx.fillStyle = color || 'rgba(0,200,255,0.45)';
+      ctx.textAlign = 'center';
+      ctx.fillText(msg, W / 2, H - 22);
+      ctx.restore();
+    }
+
+    var s5 = makeCanvas('canvas-promo');
+    if (s5) {
+      var t5 = 0;
+      var FEATURES = ['\u26A1 3D Circuit Builder', '\uD83D\uDD2C 5-Tier Zoom', '\uD83D\uDCA5 FUSE\u2122 Failure', '\uD83D\uDCD0 Schematic Mode', '\uD83C\uDF93 Classroom Tools', '\uD83D\uDD79\uFE0F Practice Arcade'];
+      var orbs5 = [];
+      for (var oi = 0; oi < 60; oi++) {
+        orbs5.push({
+          x: Math.random(), y: Math.random(),
+          vx: (Math.random() - 0.5) * 0.0003,
+          vy: (Math.random() - 0.5) * 0.0003,
+          r: 1 + Math.random() * 3,
+          col: ['#88ccff','#00ff88','#c084fc','#ffd060','#ff8844'][Math.floor(Math.random()*5)],
+          phase: Math.random() * TAU
+        });
+      }
+
+      (function loop5() {
+        s5.resize();
+        var ctx = s5.ctx, W = s5.W, H = s5.H;
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.fillStyle = 'rgba(4,13,26,1)'; ctx.fillRect(0, 0, W, H);
+
+        orbs5.forEach(function(o) {
+          o.x = ((o.x + o.vx) % 1 + 1) % 1;
+          o.y = ((o.y + o.vy) % 1 + 1) % 1;
+          var a = 0.25 + 0.15 * Math.sin(t5 * 1.2 + o.phase);
+          glowDot(ctx, o.x * W, o.y * H, o.r, o.col, a);
+        });
+
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        for (var ai = 0; ai < orbs5.length; ai++) {
+          for (var aj = ai+1; aj < orbs5.length; aj++) {
+            var dx = (orbs5[aj].x - orbs5[ai].x) * W;
+            var dy = (orbs5[aj].y - orbs5[ai].y) * H;
+            var dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < W * 0.18) {
+              ctx.strokeStyle = '#88ccff'; ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              ctx.moveTo(orbs5[ai].x*W, orbs5[ai].y*H);
+              ctx.lineTo(orbs5[aj].x*W, orbs5[aj].y*H);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.restore();
+
+        var wScale = 1 + 0.04 * Math.sin(t5 * 0.8);
+        ctx.save();
+        ctx.translate(W/2, H * 0.38);
+        ctx.scale(wScale, wScale);
+        var wFontSize = Math.max(32, Math.min(W * 0.075, 72));
+        ctx.font = '900 ' + wFontSize + 'px "Segoe UI",Arial,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 24;
+        ctx.shadowColor = '#88ccff';
+        ctx.fillStyle = '#88ccff'; ctx.fillText('Circui', -W*0.14, 0);
+        ctx.shadowColor = '#ff8844';
+        ctx.fillStyle = '#ff8844'; ctx.fillText('Try', W*0.04, 0);
+        ctx.shadowColor = '#00ff88';
+        ctx.fillStyle = '#00ff88'; ctx.fillText('3D', W*0.165, 0);
+        ctx.restore();
+
+        ctx.save();
+        var tagA = 0.5 + 0.25 * Math.sin(t5 * 0.7 + 1);
+        ctx.globalAlpha = tagA;
+        ctx.font = '600 ' + Math.max(12, W * 0.018) + 'px "Courier New",monospace';
+        ctx.fillStyle = '#9db8ff'; ctx.textAlign = 'center';
+        ctx.fillText('BUILD  \u00B7  SIMULATE  \u00B7  MASTER', W/2, H * 0.5);
+        ctx.restore();
+
+        var chipOrbitR = Math.min(W, H) * 0.28;
+        FEATURES.forEach(function(feat, fi) {
+          var angle = (fi / FEATURES.length) * TAU + t5 * 0.18;
+          var cx = W/2 + Math.cos(angle) * chipOrbitR;
+          var cy = H * 0.62 + Math.sin(angle) * chipOrbitR * 0.45;
+          var chipA = 0.5 + 0.35 * Math.sin(t5 * 1.5 + fi * 1.1);
+          ctx.save();
+          ctx.globalAlpha = chipA;
+          ctx.font = '700 ' + Math.max(10, W * 0.013) + 'px "Segoe UI",Arial,sans-serif';
+          ctx.textAlign = 'center';
+          var tw = ctx.measureText(feat).width;
+          var ph = Math.max(8, W*0.012);
+          ctx.fillStyle = 'rgba(136,204,255,0.1)';
+          ctx.shadowColor = '#88ccff'; ctx.shadowBlur = 10;
+          var rx2 = cx - tw/2 - ph*1.8, ry2 = cy - ph - 2, rw2 = tw + ph*3.6, rh2 = ph*2 + 4;
+          ctx.beginPath();
+          if (ctx.roundRect) { ctx.roundRect(rx2, ry2, rw2, rh2, rh2/2); } else { ctx.rect(rx2, ry2, rw2, rh2); }
+          ctx.fill();
+          ctx.fillStyle = '#cce8ff';
+          ctx.fillText(feat, cx, cy + ph * 0.4);
+          ctx.restore();
+        });
+
+        var btnA = 0.7 + 0.3 * Math.sin(t5 * 1.1);
+        ctx.save();
+        ctx.globalAlpha = btnA;
+        ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 20;
+        var btnW = Math.min(W*0.3, 200), btnH = Math.max(32, H*0.055);
+        var btnX = W/2 - btnW/2, btnY = H*0.84;
+        var grd = ctx.createLinearGradient(btnX, btnY, btnX+btnW, btnY+btnH);
+        grd.addColorStop(0, 'rgba(0,255,136,0.85)'); grd.addColorStop(1, 'rgba(0,180,255,0.75)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        if (ctx.roundRect) { ctx.roundRect(btnX, btnY, btnW, btnH, btnH/2); } else { ctx.rect(btnX, btnY, btnW, btnH); }
+        ctx.fill();
+        ctx.font = '800 ' + Math.max(12, btnH*0.38) + 'px "Segoe UI",Arial,sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = '#050b1f'; ctx.shadowBlur = 0;
+        ctx.fillText('\u26A1 Launch Builder', W/2, btnY + btnH*0.65);
+        ctx.restore();
+
+        hud(ctx, W, H, 'CIRCUITRY3D  \u00B7  ILLUMINATE ELECTRICITY', 'rgba(157,184,255,0.4)');
+        t5 += 0.016;
+        requestAnimationFrame(loop5);
+      }());
+    }
+
+  }()); /* end scene 5 fallback canvas animation */
 
   /* ══════════════════════════════════════════════════════════
      BACKGROUND CANVAS — circuit network animation

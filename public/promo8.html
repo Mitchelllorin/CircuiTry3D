@@ -565,7 +565,7 @@
     <div class="scene-overlay"></div>
 
     <div class="scene-fallback" id="fb-series">
-      <img src="./screenshots/phone-screenshot-3.png" alt="" aria-hidden="true">
+      <img src="./screenshots/tablet-screenshot-1.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -591,7 +591,7 @@
     <div class="scene-overlay"></div>
 
     <div class="scene-fallback" id="fb-parallel">
-      <img src="./screenshots/phone-screenshot-4.png" alt="" aria-hidden="true">
+      <img src="./screenshots/tablet-screenshot-2.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -677,8 +677,8 @@
       linear-gradient(to left,   rgba(5,11,31,0.50) 0%, transparent 55%);">
     </div>
 
-    <div class="scene-fallback" id="fb-3dbuild">
-      <img src="./screenshots/phone-screenshot-3.png" alt="" aria-hidden="true">
+    <div class="scene-fallback" id="fb-3dbuild" style="background:linear-gradient(135deg,#050b1f,#071428);">
+      <canvas id="canvas-3dbuild" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
     </div>
 
     <div class="scene-content">
@@ -707,8 +707,8 @@
       linear-gradient(to right,  rgba(10,5,25,0.55) 0%, transparent 50%);">
     </div>
 
-    <div class="scene-fallback" id="fb-arena">
-      <img src="./screenshots/phone-screenshot-4.png" alt="" aria-hidden="true">
+    <div class="scene-fallback" id="fb-arena" style="background:linear-gradient(135deg,#050310,#080520);">
+      <canvas id="canvas-arena" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
     </div>
 
     <div class="scene-content">
@@ -990,7 +990,270 @@
     bgLoop();
   }());
 
-  /* Fallback images (actual 3D app screenshots) are displayed via CSS/HTML img elements. */
+  /* ══════════════════════════════════════════════════════════════
+     SCENE-SPECIFIC FALLBACK CANVAS ANIMATIONS
+     Scenes 5 and 6 use canvas-based 3D visualisations shown when
+     the .webm files haven't been recorded yet.
+  ══════════════════════════════════════════════════════════════ */
+  (function () {
+    'use strict';
+    var TAU = Math.PI * 2;
+
+    function makeCanvas(id) {
+      var el = document.getElementById(id);
+      if (!el) return null;
+      var ctx = el.getContext('2d');
+      function resize() {
+        var p = el.parentElement;
+        el.width  = p ? (p.offsetWidth  || window.innerWidth)  : window.innerWidth;
+        el.height = p ? (p.offsetHeight || window.innerHeight) : window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      return { el: el, ctx: ctx, resize: resize,
+               get W() { return el.width; }, get H() { return el.height; } };
+    }
+
+    function glowLine(ctx, x1, y1, x2, y2, color, lw, blur) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = blur || 14;
+      ctx.strokeStyle = color; ctx.lineWidth = lw || 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.restore();
+    }
+
+    function glowDot(ctx, x, y, r, color, alpha) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = color.replace(')', ',' + (alpha || 1) + ')').replace('rgb(', 'rgba(');
+      ctx.fill(); ctx.restore();
+    }
+
+    function hud(ctx, W, H, msg, color) {
+      ctx.save();
+      ctx.font = '700 12px "Courier New",monospace';
+      ctx.fillStyle = color || 'rgba(0,200,255,0.45)';
+      ctx.textAlign = 'center';
+      ctx.fillText(msg, W / 2, H - 22);
+      ctx.restore();
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 5 — 3D BUILDER FLY-THROUGH
+       Simulated perspective: rotating wire-frame cube
+       suggests the 3D space of the real app.
+    ══════════════════════════════════════════════════════ */
+    var s5 = makeCanvas('canvas-3dbuild');
+    if (s5) {
+      var t5 = 0;
+      var eFlux5 = [0, 0.2, 0.4, 0.6, 0.8];
+
+      /* Unit cube vertices */
+      var CUBE_V = [
+        [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],
+        [-1,-1, 1],[1,-1, 1],[1,1, 1],[-1,1, 1]
+      ];
+      var CUBE_E = [
+        [0,1],[1,2],[2,3],[3,0],
+        [4,5],[5,6],[6,7],[7,4],
+        [0,4],[1,5],[2,6],[3,7]
+      ];
+
+      function project(v, W, H, rx, ry) {
+        var cosY = Math.cos(ry), sinY = Math.sin(ry);
+        var x1 = v[0]*cosY - v[2]*sinY;
+        var z1 = v[0]*sinY + v[2]*cosY;
+        var cosX = Math.cos(rx), sinX = Math.sin(rx);
+        var y2 = v[1]*cosX - z1*sinX;
+        var z2 = v[1]*sinX + z1*cosX;
+        var fov = 3.5 / (3.5 + z2);
+        return [W/2 + x1 * fov * W * 0.22, H/2 + y2 * fov * H * 0.38];
+      }
+
+      (function loop5() {
+        s5.resize();
+        var ctx = s5.ctx, W = s5.W, H = s5.H;
+        ctx.clearRect(0, 0, W, H);
+
+        var vg5 = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, H*0.72);
+        vg5.addColorStop(0, 'rgba(8,16,50,0.6)'); vg5.addColorStop(1, 'rgba(2,5,18,0.98)');
+        ctx.fillStyle = vg5; ctx.fillRect(0, 0, W, H);
+
+        var ry5 = t5 * 0.35;
+        var rx5 = 0.28 + 0.12 * Math.sin(t5 * 0.22);
+
+        CUBE_E.forEach(function(edge) {
+          var p0 = project(CUBE_V[edge[0]], W, H, rx5, ry5);
+          var p1 = project(CUBE_V[edge[1]], W, H, rx5, ry5);
+          glowLine(ctx, p0[0], p0[1], p1[0], p1[1], '#00c8ff', 1.4, 10);
+        });
+
+        CUBE_V.forEach(function(v, vi) {
+          var p = project(v, W, H, rx5, ry5);
+          var col = ['#00ff88','#88ccff','#c084fc','#ffd060','#ff8844','#ff4455','#88ccff','#00ff88'][vi % 8];
+          glowDot(ctx, p[0], p[1], 5.5, col, 0.9);
+        });
+
+        eFlux5 = eFlux5.map(function(p) { return (p + 0.004) % 1; });
+        eFlux5.forEach(function(pos) {
+          var totalEdges = CUBE_E.length;
+          var edgeIdx = Math.floor(pos * totalEdges);
+          var edgeFrac = (pos * totalEdges) % 1;
+          var e = CUBE_E[edgeIdx];
+          var p0 = project(CUBE_V[e[0]], W, H, rx5, ry5);
+          var p1 = project(CUBE_V[e[1]], W, H, rx5, ry5);
+          var ex5 = p0[0] + (p1[0] - p0[0]) * edgeFrac;
+          var ey5 = p0[1] + (p1[1] - p0[1]) * edgeFrac;
+          glowDot(ctx, ex5, ey5, 4, '#00ffcc', 0.9);
+          glowDot(ctx, ex5, ey5, 2, '#ffffff', 0.5);
+        });
+
+        ctx.save();
+        ctx.font = '700 11px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(136,204,255,0.5)';
+        ctx.textAlign = 'right';
+        var tiers = ['MACRO','COMPONENT','ATOMIC','DEEP-ATOMIC','QUANTUM'];
+        var tierIdx = Math.floor((t5 * 0.08) % tiers.length);
+        ctx.fillText('ZOOM TIER: ' + tiers[tierIdx], W - 24, 40);
+        ctx.restore();
+
+        hud(ctx, W, H, '3D FLY-THROUGH  \u00B7  5 ZOOM TIERS  \u00B7  ELECTRON FLOW ACTIVE', 'rgba(0,255,200,0.45)');
+        t5 += 0.016;
+        requestAnimationFrame(loop5);
+      }());
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SCENE 6 — COMPONENT ARENA (orbiting spheres)
+       Two glowing spheres orbit a central platform,
+       evoking the 3D Arena stage.
+    ══════════════════════════════════════════════════════ */
+    var s6 = makeCanvas('canvas-arena');
+    if (s6) {
+      var t6 = 0;
+
+      (function loop6() {
+        s6.resize();
+        var ctx = s6.ctx, W = s6.W, H = s6.H;
+        ctx.clearRect(0, 0, W, H);
+
+        var vg6 = ctx.createRadialGradient(W/2, H*0.52, H*0.06, W/2, H*0.52, H*0.7);
+        vg6.addColorStop(0, 'rgba(18,12,50,0.7)'); vg6.addColorStop(1, 'rgba(3,2,12,0.98)');
+        ctx.fillStyle = vg6; ctx.fillRect(0, 0, W, H);
+
+        var pCy = H * 0.58;
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(W/2, pCy, W*0.22, H*0.06, 0, 0, TAU);
+        ctx.strokeStyle = 'rgba(56,189,248,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(29,78,216,0.15)';
+        ctx.fill();
+        ctx.restore();
+
+        for (var gi = -3; gi <= 3; gi++) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.ellipse(W/2, pCy, Math.abs(gi * W * 0.065), H * 0.015, 0, 0, TAU);
+          ctx.strokeStyle = 'rgba(20,184,166,0.15)';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        var orbitR = W * 0.18;
+        var aAngle = t6 * 0.7;
+        var ax = W/2 + Math.cos(aAngle) * orbitR;
+        var az = Math.sin(aAngle) * 0.38;
+        var ay = pCy - H * 0.18 - az * H * 0.06;
+        var aScale = 0.82 + az * 0.18;
+
+        ctx.save();
+        ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 28 + 10 * Math.sin(t6 * 1.5);
+        var gradA = ctx.createRadialGradient(ax - 8*aScale, ay - 8*aScale, 2, ax, ay, 28*aScale);
+        gradA.addColorStop(0, 'rgba(186,230,255,0.95)');
+        gradA.addColorStop(0.4, 'rgba(56,189,248,0.8)');
+        gradA.addColorStop(1, 'rgba(30,64,175,0.3)');
+        ctx.beginPath();
+        ctx.arc(ax, ay, 28*aScale, 0, TAU);
+        ctx.fillStyle = gradA;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = 'bold 10px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(186,230,255,0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('COMP A', ax, ay + 38*aScale);
+        ctx.restore();
+
+        var bAngle = aAngle + Math.PI;
+        var bx = W/2 + Math.cos(bAngle) * orbitR;
+        var bz = Math.sin(bAngle) * 0.38;
+        var by = pCy - H * 0.18 - bz * H * 0.06;
+        var bScale = 0.82 + bz * 0.18;
+
+        ctx.save();
+        ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 28 + 10 * Math.cos(t6 * 1.5);
+        var gradB = ctx.createRadialGradient(bx - 8*bScale, by - 8*bScale, 2, bx, by, 28*bScale);
+        gradB.addColorStop(0, 'rgba(233,213,255,0.95)');
+        gradB.addColorStop(0.4, 'rgba(168,85,247,0.8)');
+        gradB.addColorStop(1, 'rgba(88,28,135,0.3)');
+        ctx.beginPath();
+        ctx.arc(bx, by, 28*bScale, 0, TAU);
+        ctx.fillStyle = gradB;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = 'bold 10px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(233,213,255,0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('COMP B', bx, by + 38*bScale);
+        ctx.restore();
+
+        var arcCount = 4;
+        for (var ai = 0; ai < arcCount; ai++) {
+          var arcFrac = (t6 * 1.4 + ai / arcCount) % 1;
+          var arcX = ax + (bx - ax) * arcFrac;
+          var arcY = ay + (by - ay) * arcFrac - Math.sin(arcFrac * Math.PI) * H * 0.08;
+          var arcAlpha = Math.sin(arcFrac * Math.PI) * 0.7;
+          glowDot(ctx, arcX, arcY, 3, '#ffd060', arcAlpha);
+        }
+
+        var fProgress = (Math.sin(t6 * 0.4) + 1) / 2;
+        var barW = W * 0.3, barH = 7;
+        var barX = W/2 - barW/2, barY = H * 0.82;
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.beginPath();
+        if (ctx.roundRect) { ctx.roundRect(barX, barY, barW, barH, 4); } else { ctx.rect(barX, barY, barW, barH); }
+        ctx.fill();
+        var barCol = fProgress < 0.6 ? '#00ff88' : fProgress < 0.85 ? '#ffd060' : '#ff4455';
+        ctx.fillStyle = barCol;
+        ctx.shadowColor = barCol; ctx.shadowBlur = 8;
+        ctx.beginPath();
+        if (ctx.roundRect) { ctx.roundRect(barX, barY, barW * fProgress, barH, 4); } else { ctx.rect(barX, barY, barW * fProgress, barH); }
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = '700 11px "Courier New",monospace';
+        ctx.fillStyle = 'rgba(157,184,255,0.55)';
+        ctx.textAlign = 'center';
+        ctx.fillText('FUSE\u2122 ANALYSIS  \u00B7  \u0394 IMPEDANCE  \u00B7  FAILURE THRESHOLD', W/2, H * 0.88);
+        ctx.restore();
+
+        hud(ctx, W, H, 'COMPONENT ARENA  \u00B7  3D BATTLE STAGE  \u00B7  REAL SPECS', 'rgba(168,85,247,0.45)');
+        t6 += 0.016;
+        requestAnimationFrame(loop6);
+      }());
+    }
+
+  }()); /* end fallback canvas animations */
 
 }()); /* end scene engine */
 </script>
