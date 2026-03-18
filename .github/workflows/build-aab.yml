@@ -20,6 +20,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Screenshot-regeneration commits (tagged [skip screenshots]) only update
+    # image assets; there is no code change that warrants a new AAB.
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip screenshots]')
     env:
       JAVA_VERSION: '21'
       NODE_VERSION: '20.19.0'
