@@ -334,8 +334,7 @@ body.builder-body {
   min-width: 12px;
 }
 
-/* ── Mode-bar "More" dropdown ────────────────────────────────────────────── */
-.mode-bar-spacer {
+/* ── Edge-positioned workspace action buttons (Undo, Redo, Open, Save, Simulate, Clear) ── */
 .workspace-edge-actions {
   position: fixed;
   top: auto;
