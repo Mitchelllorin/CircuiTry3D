@@ -4030,42 +4030,42 @@
         <div id="content-meter" class="analysis-content" style="display:none" role="tabpanel">
 
             <!-- Mode selector buttons -->
-            <div class="meter-mode-buttons">
-                <button id="meter-mode-voltage"    class="meter-mode-btn"           onclick="setMeterMode('voltage')">V</button>
-                <button id="meter-mode-current"    class="meter-mode-btn secondary" onclick="setMeterMode('current')">A</button>
-                <button id="meter-mode-resistance" class="meter-mode-btn secondary" onclick="setMeterMode('resistance')">Ω</button>
-                <button id="meter-mode-scope"      class="meter-mode-btn secondary" onclick="setMeterMode('scope')">〜 Scope</button>
+            <div class="meter-mode-buttons" role="group" aria-label="Meter mode">
+                <button id="meter-mode-voltage"    class="meter-mode-btn"           title="Voltmeter – click two terminals to measure voltage difference"   onclick="setMeterMode('voltage')">V — Voltage</button>
+                <button id="meter-mode-current"    class="meter-mode-btn secondary" title="Ammeter – click a component to read its DC current"              onclick="setMeterMode('current')">A — Current</button>
+                <button id="meter-mode-resistance" class="meter-mode-btn secondary" title="Ohmmeter – click two terminals to measure equivalent resistance"  onclick="setMeterMode('resistance')">Ω — Resistance</button>
+                <button id="meter-mode-scope"      class="meter-mode-btn secondary" title="Oscilloscope – plot voltage at a terminal over time"              onclick="setMeterMode('scope')">〜 Scope</button>
             </div>
 
             <!-- Probe display -->
             <div class="meter-probe-row">
-                <span class="meter-probe-label probe-a">🔴 A:</span>
+                <span class="meter-probe-label probe-a" title="Red probe (positive / reference terminal A)">🔴 Probe A:</span>
                 <span id="meter-probe-a" class="meter-probe-value">—</span>
             </div>
             <div class="meter-probe-row">
-                <span class="meter-probe-label probe-b">⚫ B:</span>
+                <span class="meter-probe-label probe-b" title="Black probe (negative / reference terminal B)">⚫ Probe B:</span>
                 <span id="meter-probe-b" class="meter-probe-value">—</span>
             </div>
 
             <!-- Main reading -->
-            <div class="meter-reading-box">
-                <div id="meter-reading" class="meter-reading-value">—</div>
+            <div class="meter-reading-box" aria-live="polite">
+                <div id="meter-reading" class="meter-reading-value" aria-label="Meter reading">—</div>
                 <div id="meter-subreading" class="meter-subreading"></div>
             </div>
 
             <!-- Instructions -->
-            <div id="meter-instructions" class="meter-instructions-text">Enable probes to begin measuring.</div>
+            <div id="meter-instructions" class="meter-instructions-text" aria-live="polite">Enable probes to begin measuring.</div>
 
             <!-- Oscilloscope panel (shown only in scope mode) -->
-            <div id="scope-panel" class="scope-panel-inner" style="display:none">
-                <canvas id="scope-canvas" width="440" height="100"></canvas>
-                <div id="scope-readout" class="scope-readout-text"></div>
+            <div id="scope-panel" class="scope-panel-inner" style="display:none" aria-label="Oscilloscope display">
+                <canvas id="scope-canvas" width="440" height="100" aria-label="Oscilloscope waveform"></canvas>
+                <div id="scope-readout" class="scope-readout-text" aria-live="polite"></div>
             </div>
 
             <!-- Action buttons -->
             <div class="meter-action-row">
                 <button id="meter-toggle-armed" class="meter-action-btn" onclick="toggleMeterArmed()">Enable probes</button>
-                <button class="meter-action-btn" onclick="clearMeterSelection()">Clear</button>
+                <button class="meter-action-btn" onclick="clearMeterSelection()" title="Clear all probe selections and reset the reading">✕ Clear</button>
             </div>
         </div>
 
@@ -4562,6 +4562,21 @@ body.android-optimized .zoom-btn {
                     } catch (error) {
                         console.warn('Builder bridge: invoke action failed', action, error);
                     }
+                    break;
+                }
+                case 'builder:set-meter-mode': {
+                    if (payload && typeof payload === 'object' && typeof payload.mode === 'string') {
+                        if (typeof setMeterMode === 'function') setMeterMode(payload.mode);
+                        if (typeof openMeasurementTools === 'function') openMeasurementTools();
+                    }
+                    break;
+                }
+                case 'builder:toggle-meter-armed': {
+                    if (typeof toggleMeterArmed === 'function') toggleMeterArmed();
+                    break;
+                }
+                case 'builder:clear-meter': {
+                    if (typeof clearMeterSelection === 'function') clearMeterSelection();
                     break;
                 }
                 default:
@@ -11898,6 +11913,27 @@ body.android-optimized .zoom-btn {
             setStatus('⚡ Measurement tools ready - click terminals to probe');
         }
 
+        function notifyParentMeterState() {
+            if (!window.parent || window.parent === window) return;
+            const readingEl = document.getElementById('meter-reading');
+            const subEl = document.getElementById('meter-subreading');
+            const instrEl = document.getElementById('meter-instructions');
+            try {
+                window.parent.postMessage({
+                    type: 'legacy:meter-reading',
+                    payload: {
+                        mode: meterMode,
+                        armed: meterArmed,
+                        reading: (readingEl && readingEl.textContent) || '—',
+                        subreading: (subEl && subEl.textContent) || '',
+                        instructions: (instrEl && instrEl.textContent) || '',
+                        probeA: describeTerminal(meterProbeA),
+                        probeB: describeTerminal(meterProbeB),
+                    }
+                }, '*');
+            } catch (e) { /* ignore bridge errors */ }
+        }
+
         function setMeterMode(nextMode) {
             const mode = String(nextMode || '').toLowerCase();
             if (mode !== 'voltage' && mode !== 'current' && mode !== 'resistance' && mode !== 'scope') {
@@ -12186,6 +12222,7 @@ body.android-optimized .zoom-btn {
 
             if (!meterArmed) {
                 stopScope();
+                notifyParentMeterState();
                 return;
             }
 
@@ -12199,11 +12236,13 @@ body.android-optimized .zoom-btn {
             if (meterMode === 'current') {
                 if (!meterCurrentTarget) {
                     if (readingEl) readingEl.textContent = 'Click a component…';
+                    notifyParentMeterState();
                     return;
                 }
                 const amps = getComponentCurrentFromSolution(meterCurrentTarget, lastDCSolution);
                 if (readingEl) readingEl.textContent = Number.isFinite(amps) ? `${amps.toFixed(6)} A` : '—';
                 if (subEl) subEl.textContent = meterCurrentTarget?.id ? `Target: ${meterCurrentTarget.type}:${meterCurrentTarget.id}` : '';
+                notifyParentMeterState();
                 return;
             }
 
@@ -12211,6 +12250,7 @@ body.android-optimized .zoom-btn {
                 if (!meterProbeA) {
                     if (readingEl) readingEl.textContent = 'Pick a terminal…';
                     stopScope();
+                    notifyParentMeterState();
                     return;
                 }
                 startScope();
@@ -12218,11 +12258,13 @@ body.android-optimized .zoom-btn {
                     const latest = scopeBuffer.length ? scopeBuffer[scopeBuffer.length - 1] : null;
                     readingEl.textContent = Number.isFinite(latest) ? `${latest.toFixed(3)} V` : '—';
                 }
+                notifyParentMeterState();
                 return;
             }
 
             if (!meterProbeA || !meterProbeB) {
                 if (readingEl) readingEl.textContent = 'Pick two terminals…';
+                notifyParentMeterState();
                 return;
             }
 
@@ -12232,6 +12274,7 @@ body.android-optimized .zoom-btn {
                 if (subEl && lastDCSolution?.status && lastDCSolution.status !== 'solved') {
                     subEl.textContent = `Solver: ${lastDCSolution.status}${lastDCSolution.reason ? ' — ' + lastDCSolution.reason : ''}`;
                 }
+                notifyParentMeterState();
                 return;
             }
 
@@ -12241,8 +12284,9 @@ body.android-optimized .zoom-btn {
                     if (ohms === Infinity) readingEl.textContent = '∞ Ω';
                     else readingEl.textContent = Number.isFinite(ohms) ? `${ohms.toFixed(2)} Ω` : '—';
                 }
-                return;
             }
+
+            notifyParentMeterState();
         }
 
         // State management functions
