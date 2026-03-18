@@ -1486,9 +1486,9 @@
         
         .wire-analysis-fixed {
             position: fixed;
-            bottom: 80px;
-            left: 20px;
-            right: 20px;
+            bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+            left: calc(20px + env(safe-area-inset-left, 0px));
+            right: calc(20px + env(safe-area-inset-right, 0px));
             background: rgba(0,0,0,0.95);
             backdrop-filter: blur(15px);
             padding: 20px;
@@ -1503,7 +1503,7 @@
         }
         
         .wire-analysis-fixed.collapsed {
-            transform: translateY(calc(100% + 80px));
+            transform: translateY(calc(100% + 80px + env(safe-area-inset-bottom, 0px)));
         }
 
         .analysis-tabs {
@@ -2001,8 +2001,8 @@
 
         .zoom-controls {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: calc(20px + env(safe-area-inset-top, 0px));
+            right: calc(20px + env(safe-area-inset-right, 0px));
             display: flex;
             flex-direction: row;
             gap: 8px;
@@ -2011,9 +2011,9 @@
 
         .panel-top-bar {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            left: calc(20px + env(safe-area-inset-left, 0px));
+            right: calc(20px + env(safe-area-inset-right, 0px));
             height: 60px;
             display: flex;
             flex-direction: row;
@@ -4223,8 +4223,8 @@ body.android-optimized .submenu {
 }
 
 body.android-optimized .menu-toggle {
-  top: 16px;
-  left: 16px;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
   width: 56px;
   height: 56px;
   border-radius: 16px;
@@ -4236,8 +4236,8 @@ body.android-optimized .menu-toggle.open {
 }
 
 body.android-optimized .quick-actions {
-  top: calc(16px + 56px + 10px);
-  left: 16px;
+  top: calc(16px + 56px + 10px + env(safe-area-inset-top, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
   transition: transform 0.3s ease;
 }
 
@@ -4260,8 +4260,8 @@ body.android-optimized.menu-visible #canvas {
 body.android-optimized.menu-visible .wire-analysis-fixed,
 body.android-optimized.menu-visible .panel-top-bar,
 body.android-optimized.menu-visible .status {
-  left: calc(var(--legacy-menu-width) + 24px);
-  right: 24px;
+  left: calc(var(--legacy-menu-width) + 24px + env(safe-area-inset-left, 0px));
+  right: calc(24px + env(safe-area-inset-right, 0px));
 }
 
 body.android-optimized .zoom-btn {
@@ -8959,7 +8959,14 @@ body.android-optimized .zoom-btn {
             const mainGridColor = isNative ? 0xccccff : 0xaaaaee;
             const subGridColor  = isNative ? 0x9999dd : 0x8888cc;
 
-            if (isAndroidDevice) {
+            // Re-evaluate whether we're on Android at grid-creation time.
+            // isAndroidDevice is detected once at script-load, but on Capacitor
+            // the window.Capacitor bridge may not be injected yet that early.
+            // Re-checking here guarantees the canvas-texture fallback is used
+            // on every Android WebView, regardless of injection timing.
+            const _useCanvasGrid = isAndroidDevice || isNative;
+
+            if (_useCanvasGrid) {
                 // Android WebView has known GL_LINES rendering issues across GPU
                 // drivers (Adreno, Mali, PowerVR). Use a canvas-texture plane so
                 // the grid always appears regardless of the WebGL implementation.
@@ -13242,6 +13249,13 @@ Made with ? for visual learners everywhere!
 
         // UI Functions
         function addComponent(type) {
+            // Guard: scene must be initialised before any Three.js operations.
+            // On slow Android WebViews init() can take longer than expected;
+            // addComponent() may be called via postMessage before the scene is ready.
+            if (!scene || !renderer) {
+                console.warn('[Builder] addComponent: scene not ready — skipping');
+                return;
+            }
             saveState(); // Save for undo
 
             if (isDragging || selectedComponent) {
@@ -13284,6 +13298,11 @@ Made with ? for visual learners everywhere!
         }
 
         function addJunction() {
+            // Guard: scene must exist before Three.js operations.
+            if (!scene || !renderer) {
+                console.warn('[Builder] addJunction: scene not ready — skipping');
+                return;
+            }
             saveState(); // Save for undo
 
             if (isDragging || selectedComponent) {
@@ -18584,7 +18603,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 console.warn('scheduleInit: viewport dimensions still 0 after max retries — forcing init()');
                 init();
             }
-        })(60); // allow up to ~60 frames (~1 s) before forcing init
+        })(120); // allow up to ~120 frames (~2 s) before forcing init
     </script>
 </body>
 </html>
