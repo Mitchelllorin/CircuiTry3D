@@ -1360,7 +1360,7 @@ export default function Builder() {
   } = useBuilderFrame({
     appBasePath,
     onModeStateChange: handleModeStateChange,
-    onToolChange: setActiveQuickTool,
+    onToolChange: () => {},
     onSimulationPulse: handleSimulationPulse,
   });
 
@@ -1865,20 +1865,6 @@ export default function Builder() {
     [postToBuilder],
   );
 
-  const handleQuickAction = useCallback(
-    (quickAction: QuickAction) => {
-      triggerBuilderAction(quickAction.action, quickAction.data);
-
-      if (quickAction.kind === "tool" && quickAction.tool) {
-        setActiveQuickTool(quickAction.tool);
-      }
-
-      if (quickAction.id === "simulate") {
-        triggerSimulationPulse();
-      }
-    },
-    [triggerBuilderAction, triggerSimulationPulse],
-  );
 
   const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
     const currentId =
