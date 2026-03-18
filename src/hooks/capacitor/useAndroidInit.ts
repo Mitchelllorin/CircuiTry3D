@@ -38,11 +38,15 @@ export async function initializeAndroid(options?: {
   try {
     // Configure status bar for Android
     if (isAndroid()) {
-      // Ensure the OS reserves space for the status bar (prevents UI rendering underneath it)
-      await StatusBar.setOverlaysWebView({ overlay: false });
+      // Edge-to-edge: the WebView draws behind the system status bar so the
+      // app fills the full screen. CSS env(safe-area-inset-top) pushes
+      // interactive content below the bar — matching the web production build.
+      // This is consistent with overlaysWebView:true in capacitor.config.json
+      // and WindowCompat.setDecorFitsSystemWindows(false) in MainActivity.
+      await StatusBar.setOverlaysWebView({ overlay: true });
       await StatusBar.show();
-      await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#0f172a' });
+      // Style.Light → white/light icons visible on the app's dark background.
+      await StatusBar.setStyle({ style: Style.Light });
       console.log('[Android] Status bar configured');
     }
   } catch (error) {
