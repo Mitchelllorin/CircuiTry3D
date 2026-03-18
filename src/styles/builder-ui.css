@@ -334,43 +334,7 @@ body.builder-body {
 }
 
 /* ── Mode-bar "More" dropdown ────────────────────────────────────────────── */
-.mode-tab--more {
-  position: relative;
-}
-
-.mode-more-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  min-width: 180px;
-  background: rgba(10, 24, 48, 0.97);
-  border: 1px solid var(--builder-border);
-  border-radius: 14px;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  z-index: var(--z-builder-top);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 12px 32px rgba(3, 12, 32, 0.7);
-  animation: mode-dropdown-in 0.18s ease;
-  pointer-events: auto;
-}
-
-@keyframes mode-dropdown-in {
-  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.mode-more-dropdown .mode-tab {
-  width: 100%;
-  justify-content: flex-start;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 12px;
-}
-
-/* Edge-positioned workspace action buttons (Undo, Redo, Open, Save, Simulate, Clear) */
+.mode-bar-spacer {
 .workspace-edge-actions {
   position: fixed;
   top: auto;
