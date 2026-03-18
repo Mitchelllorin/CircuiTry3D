@@ -93,6 +93,24 @@
       inset: 0;
       z-index: 0;
       display: none;
+      overflow: hidden;
+    }
+
+    /* Screenshot fallback — actual 3D app workspace imagery */
+    @keyframes screenshot-pan {
+      0%   { transform: scale(1.08) translate(0%,    0%   ); }
+      33%  { transform: scale(1.08) translate(-1.5%, -0.8%); }
+      66%  { transform: scale(1.08) translate( 1.2%,  0.6%); }
+      100% { transform: scale(1.08) translate( 0%,    0%   ); }
+    }
+    .scene-fallback img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      animation: screenshot-pan 24s ease-in-out infinite;
     }
 
     /* Scene content (text + UI) sits above overlay */
@@ -542,8 +560,8 @@
     <div class="scene-overlay"></div>
 
     <!-- Fallback animated preview (shown when video unavailable) -->
-    <div class="scene-fallback" id="fb-series" style="background:linear-gradient(135deg,#030812,#091525);">
-      <canvas id="canvas-series" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div class="scene-fallback" id="fb-series">
+      <img src="./screenshots/phone-screenshot-3.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -567,8 +585,8 @@
            onerror="this.style.display='none'"></video>
     <div class="scene-overlay"></div>
 
-    <div class="scene-fallback" id="fb-parallel" style="background:linear-gradient(135deg,#030d1a,#050f22);">
-      <canvas id="canvas-parallel" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div class="scene-fallback" id="fb-parallel">
+      <img src="./screenshots/phone-screenshot-4.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -597,8 +615,8 @@
       linear-gradient(to right,  rgba(20,4,4,0.55) 0%, transparent 55%);">
     </div>
 
-    <div class="scene-fallback" id="fb-overload" style="background:linear-gradient(135deg,#1a0306,#1e0505);">
-      <canvas id="canvas-overload" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div class="scene-fallback" id="fb-overload">
+      <img src="./screenshots/tablet-screenshot-1.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -622,8 +640,8 @@
            onerror="this.style.display='none'"></video>
     <div class="scene-overlay"></div>
 
-    <div class="scene-fallback" id="fb-mixed" style="background:linear-gradient(135deg,#050b1a,#080e20);">
-      <canvas id="canvas-mixed" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div class="scene-fallback" id="fb-mixed">
+      <img src="./screenshots/tablet-screenshot-2.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -651,8 +669,8 @@
       linear-gradient(to right,  rgba(5,11,31,0.5)  0%, transparent 55%);">
     </div>
 
-    <div class="scene-fallback" id="fb-promo" style="background:linear-gradient(135deg,#040c1e,#071020);">
-      <canvas id="canvas-promo" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    <div class="scene-fallback" id="fb-promo">
+      <img src="./screenshots/phone-screenshot-3.png" alt="" aria-hidden="true">
     </div>
 
     <div class="scene-content">
@@ -853,610 +871,7 @@
   scheduleNext();
   tickProgress();
 
-  /* ══════════════════════════════════════════════════════════
-     TITLE PARTICLE RAIN
-  ══════════════════════════════════════════════════════════ */
-  (function () {
-    var container = document.getElementById('title-particles');
-    var COLORS = ['#88ccff','#00ff88','#c084fc','#ffd060','#ff8844'];
-    for (var i = 0; i < 60; i++) {
-      var p = document.createElement('div');
-      p.className = 'falling-particle';
-      p.style.left       = Math.random() * 100 + '%';
-      p.style.setProperty('--fall-dur',   (4 + Math.random() * 8) + 's');
-      p.style.setProperty('--fall-delay', (Math.random() * 8) + 's');
-      p.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
-      p.style.opacity    = (0.3 + Math.random() * 0.5).toFixed(2);
-      p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
-      container.appendChild(p);
-    }
-  }());
-
-  /* ══════════════════════════════════════════════════════════
-     CINEMATIC SCENE CANVAS ANIMATIONS
-     Full-canvas action shots replacing static HTML previews
-  ══════════════════════════════════════════════════════════ */
-  (function () {
-    'use strict';
-    var TAU = Math.PI * 2;
-
-    /* ── Canvas helper ──────────────────────────────────────── */
-    function makeCanvas(id) {
-      var el = document.getElementById(id);
-      if (!el) return null;
-      var ctx = el.getContext('2d');
-      function resize() {
-        var p = el.parentElement;
-        el.width  = p ? (p.offsetWidth  || window.innerWidth)  : window.innerWidth;
-        el.height = p ? (p.offsetHeight || window.innerHeight) : window.innerHeight;
-      }
-      resize();
-      window.addEventListener('resize', resize);
-      return { el: el, ctx: ctx, resize: resize,
-               get W() { return el.width; }, get H() { return el.height; } };
-    }
-
-    /* ── Drawing helpers ────────────────────────────────────── */
-    function glowLine(ctx, x1, y1, x2, y2, color, lw, blur) {
-      ctx.save();
-      ctx.shadowColor = color; ctx.shadowBlur = blur || 14;
-      ctx.strokeStyle = color; ctx.lineWidth = lw || 2;
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      ctx.restore();
-    }
-
-    function glowDot(ctx, x, y, r, color, alpha) {
-      ctx.save();
-      ctx.shadowColor = color; ctx.shadowBlur = 18;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
-      ctx.fillStyle = color.replace(')', ',' + (alpha || 1) + ')').replace('rgb(', 'rgba(');
-      ctx.fill(); ctx.restore();
-    }
-
-    function drawResistor(ctx, cx, cy, rw, rh, color, label, heat) {
-      heat = heat || 0;
-      var r = parseInt('00', 16), g = parseInt('c8', 16), b = parseInt('ff', 16);
-      if (heat > 0) {
-        r = Math.round(r + (255 - r) * heat);
-        g = Math.round(g * (1 - heat * 0.85));
-        b = Math.round(b * (1 - heat));
-        color = 'rgb(' + r + ',' + g + ',' + b + ')';
-      }
-      ctx.save();
-      ctx.shadowColor = color; ctx.shadowBlur = 16 + heat * 20;
-      ctx.strokeStyle = color; ctx.lineWidth = 1.8;
-      ctx.strokeRect(cx - rw / 2, cy - rh / 2, rw, rh);
-      /* zigzag */
-      ctx.beginPath();
-      var steps = 6, sx = rw / steps;
-      ctx.moveTo(cx - rw / 2, cy);
-      for (var i = 1; i <= steps; i++) {
-        ctx.lineTo(cx - rw / 2 + i * sx, cy + (i % 2 === 0 ? -rh * 0.28 : rh * 0.28));
-      }
-      ctx.stroke();
-      if (label) {
-        ctx.fillStyle = color; ctx.font = 'bold 11px "Courier New",monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, cx, cy + rh / 2 + 15);
-      }
-      ctx.restore();
-    }
-
-    function drawBattery(ctx, cx, cy, bw, bh, color) {
-      ctx.save();
-      ctx.shadowColor = color; ctx.shadowBlur = 12;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(cx - bw * 0.12, cy - bh * 0.38); ctx.lineTo(cx - bw * 0.12, cy + bh * 0.38); ctx.stroke();
-      ctx.lineWidth = 4.5;
-      ctx.beginPath(); ctx.moveTo(cx + bw * 0.12, cy - bh * 0.22); ctx.lineTo(cx + bw * 0.12, cy + bh * 0.22); ctx.stroke();
-      ctx.fillStyle = color; ctx.font = 'bold 12px "Courier New",monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('24V', cx, cy + bh / 2 + 18);
-      ctx.restore();
-    }
-
-    function hud(ctx, W, H, msg, color) {
-      ctx.save();
-      ctx.font = '700 12px "Courier New",monospace';
-      ctx.fillStyle = color || 'rgba(0,200,255,0.45)';
-      ctx.textAlign = 'center';
-      ctx.fillText(msg, W / 2, H - 22);
-      ctx.restore();
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 1 — SERIES CIRCUIT
-       Camera slowly zooms into centre resistor, electrons
-       flow continuously through the loop.
-    ══════════════════════════════════════════════════════ */
-    var s1 = makeCanvas('canvas-series');
-    if (s1) {
-      var t1 = 0;
-      var electrons1 = [0, 0.17, 0.34, 0.51, 0.68, 0.85];
-
-      (function loop1() {
-        s1.resize();
-        var ctx = s1.ctx, W = s1.W, H = s1.H;
-        ctx.clearRect(0, 0, W, H);
-
-        /* subtle vignette */
-        var vg = ctx.createRadialGradient(W/2, H/2, H*0.1, W/2, H/2, H*0.75);
-        vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(2,8,20,0.85)');
-        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-
-        /* slow zoom + pan */
-        var zoom = 1.15 + 0.18 * Math.sin(t1 * 0.1);
-        var panX = 18 * Math.sin(t1 * 0.07);
-        ctx.save();
-        ctx.translate(W / 2 + panX, H / 2);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-W / 2, -H / 2);
-
-        var lw = W * 0.72, lh = H * 0.36;
-        var L = W/2 - lw/2, R = W/2 + lw/2, T = H/2 - lh/2, B = H/2 + lh/2;
-
-        /* wires */
-        glowLine(ctx, L, T, R, T, '#00c8ff', 2, 16);
-        glowLine(ctx, R, T, R, B, '#00c8ff', 2, 16);
-        glowLine(ctx, R, B, L, B, '#00c8ff', 2, 14);
-        glowLine(ctx, L, B, L, T, '#00c8ff', 2, 14);
-
-        /* battery */
-        drawBattery(ctx, L, H/2, 28, 72, '#00ff88');
-
-        /* resistors */
-        var rw = lw * 0.16, rh = 26;
-        var offsets = [-0.28, 0, 0.28];
-        var labels  = ['R1  150Ω', 'R2  200Ω', 'R3  250Ω'];
-        offsets.forEach(function(o, i) {
-          drawResistor(ctx, W/2 + o * lw, T, rw, rh, '#00c8ff', labels[i], 0);
-        });
-
-        /* electrons flowing */
-        var perim = 2 * (lw + lh);
-        electrons1 = electrons1.map(function(pos) { return (pos + 0.0025) % 1; });
-        electrons1.forEach(function(pos) {
-          var d = pos * perim, px, py;
-          if (d < lw)              { px = L + d;             py = T; }
-          else if (d < lw + lh)   { px = R;                  py = T + (d - lw); }
-          else if (d < 2*lw + lh) { px = R - (d - lw - lh); py = B; }
-          else                    { px = L;                  py = B - (d - 2*lw - lh); }
-          glowDot(ctx, px, py, 4.5, 'rgb(0,200,255)');
-          /* small trail */
-          glowDot(ctx, px, py, 2.5, 'rgb(136,220,255)', 0.4);
-        });
-
-        ctx.restore();
-        hud(ctx, W, H, 'SERIES  ·  24 V  ·  40 mA  ·  600 Ω', 'rgba(0,200,255,0.45)');
-        t1 += 0.016;
-        requestAnimationFrame(loop1);
-      }());
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 2 — PARALLEL CIRCUIT
-       Three coloured electron streams split from a shared
-       bus; camera sways gently left-right.
-    ══════════════════════════════════════════════════════ */
-    var s2 = makeCanvas('canvas-parallel');
-    if (s2) {
-      var t2 = 0;
-      var BRANCH_COLORS  = ['#88ccff', '#00ff88', '#c084fc'];
-      var BRANCH_SPEEDS  = [0.0022, 0.0016, 0.0019];
-      var BRANCH_LABELS  = ['R1  300Ω', 'R2  450Ω', 'R3  600Ω'];
-      var BRANCH_TAGS    = ['75mA', '50mA', '38mA'];
-      var ePar = [[0, 0.4, 0.8], [0.1, 0.55, 0.9], [0.25, 0.6, 0.95]];
-
-      (function loop2() {
-        s2.resize();
-        var ctx = s2.ctx, W = s2.W, H = s2.H;
-        ctx.clearRect(0, 0, W, H);
-
-        var vg = ctx.createRadialGradient(W/2, H/2, H*0.1, W/2, H/2, H*0.75);
-        vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(3,8,22,0.88)');
-        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-
-        var zoom = 1.12 + 0.1 * Math.sin(t2 * 0.09);
-        var panX = 22 * Math.sin(t2 * 0.06);
-        ctx.save();
-        ctx.translate(W / 2 + panX, H / 2);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-W / 2, -H / 2);
-
-        var railL = W * 0.14, railR = W * 0.86;
-        var branchYs = [H * 0.28, H * 0.5, H * 0.72];
-        var bLen = railR - railL;
-
-        /* left/right bus rails */
-        glowLine(ctx, railL, branchYs[0], railL, branchYs[2], '#88ccff', 2.5, 18);
-        glowLine(ctx, railR, branchYs[0], railR, branchYs[2], '#88ccff', 2.5, 18);
-
-        /* battery on the left bus */
-        drawBattery(ctx, railL, H / 2, 26, 68, '#00ff88');
-
-        /* branches */
-        BRANCH_COLORS.forEach(function(col, bi) {
-          var by = branchYs[bi];
-          glowLine(ctx, railL, by, railR, by, col, 2, 14);
-          var rcx = W / 2, rw = bLen * 0.18, rh = 24;
-          drawResistor(ctx, rcx, by, rw, rh, col, BRANCH_LABELS[bi], 0);
-
-          /* current label */
-          ctx.save();
-          ctx.fillStyle = col; ctx.globalAlpha = 0.55;
-          ctx.font = '700 11px "Courier New",monospace'; ctx.textAlign = 'right';
-          ctx.fillText(BRANCH_TAGS[bi], railR - 12, by - 14);
-          ctx.restore();
-
-          /* flowing electrons */
-          ePar[bi] = ePar[bi].map(function(p) { return (p + BRANCH_SPEEDS[bi]) % 1; });
-          ePar[bi].forEach(function(p) {
-            var ex = railL + p * bLen;
-            glowDot(ctx, ex, by, 4, col);
-            glowDot(ctx, ex, by, 2, col, 0.4);
-          });
-        });
-
-        /* node dots at junctions */
-        [branchYs[0], branchYs[2]].forEach(function(by) {
-          glowDot(ctx, railL, by, 5, '#88ccff', 0.7);
-          glowDot(ctx, railR, by, 5, '#88ccff', 0.7);
-        });
-
-        ctx.restore();
-        hud(ctx, W, H, 'PARALLEL  ·  24 V  ·  3 BRANCHES  ·  163 mA TOTAL', 'rgba(136,204,255,0.45)');
-        t2 += 0.016;
-        requestAnimationFrame(loop2);
-      }());
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 3 — OVERLOAD / THERMAL FAILURE
-       Resistor heats up (blue→red), sparks burst outward,
-       screen turns red, then resets — on a 7-second loop.
-    ══════════════════════════════════════════════════════ */
-    var s3 = makeCanvas('canvas-overload');
-    if (s3) {
-      var t3 = 0;
-      var CYCLE = 7.0;
-      var sparks3 = [];
-
-      function spawnSpark(cx, cy) {
-        var angle = Math.random() * TAU;
-        var speed = 1.2 + Math.random() * 3.5;
-        sparks3.push({
-          x: cx, y: cy,
-          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 1.5,
-          life: 1, decay: 0.015 + Math.random() * 0.025,
-          r: 2 + Math.random() * 2.5,
-          col: Math.random() < 0.5 ? '#ff8844' : '#ffdd00'
-        });
-      }
-
-      (function loop3() {
-        s3.resize();
-        var ctx = s3.ctx, W = s3.W, H = s3.H;
-        ctx.clearRect(0, 0, W, H);
-
-        var phase = (t3 % CYCLE) / CYCLE;   /* 0..1 each cycle */
-        var heat  = phase < 0.35 ? 0 : Math.min(1, (phase - 0.35) / 0.45);
-        var flash = phase > 0.92 ? (1 - phase) / 0.08 : 0;
-
-        /* bg with heat vignette */
-        ctx.fillStyle = 'rgba(20,3,3,' + (0.35 + heat * 0.55) + ')';
-        ctx.fillRect(0, 0, W, H);
-        if (heat > 0.15) {
-          var vg = ctx.createRadialGradient(W/2, H/2, H*0.08, W/2, H/2, H*0.7);
-          vg.addColorStop(0, 'transparent');
-          vg.addColorStop(0.7, 'rgba(200,30,0,' + heat * 0.28 + ')');
-          vg.addColorStop(1,   'rgba(120,10,0,' + heat * 0.65 + ')');
-          ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-        }
-
-        /* zoom-in on resistor as it heats */
-        var zoom = 1.1 + heat * 0.35;
-        var shake = heat > 0.7 ? (Math.random() - 0.5) * 6 * heat : 0;
-        ctx.save();
-        ctx.translate(W/2 + shake, H/2 + shake * 0.5);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-W/2, -H/2);
-
-        var lw = W * 0.62, lh = H * 0.32;
-        var L = W/2 - lw/2, R = W/2 + lw/2, T = H/2 - lh/2, B = H/2 + lh/2;
-        var wireCol = heat > 0.5 ? 'rgb(' + Math.round(255) + ',' + Math.round(80 * (1-heat)) + ',0)' : '#ff4455';
-
-        glowLine(ctx, L, T, R, T, wireCol, 2.5, 16 + heat * 14);
-        glowLine(ctx, R, T, R, B, wireCol, 2.5, 14 + heat * 10);
-        glowLine(ctx, R, B, L, B, wireCol, 2.5, 14 + heat * 10);
-        glowLine(ctx, L, B, L, T, wireCol, 2.5, 12);
-
-        drawBattery(ctx, L, H/2, 30, 80, '#ff8844');
-
-        /* oversized resistor in centre */
-        var rcx = W/2 + lw * 0.1, rcy = T, rw = lw * 0.28, rh = 32;
-        drawResistor(ctx, rcx, rcy, rw, rh, '#ff4455', '1 Ω  ⚠', heat);
-
-        /* spawn sparks when hot */
-        if (heat > 0.4 && Math.random() < heat * 0.35) {
-          for (var n = 0; n < 3; n++) spawnSpark(rcx + (Math.random() - 0.5) * rw, rcy);
-        }
-
-        /* electrons — speed up as heat rises */
-        var eSpeed = 0.003 + heat * 0.012;
-        if (!loop3._epos) loop3._epos = [0, 0.33, 0.66];
-        var perim3 = 2 * (lw + lh);
-        loop3._epos = loop3._epos.map(function(p) { return (p + eSpeed) % 1; });
-        loop3._epos.forEach(function(pos) {
-          var d = pos * perim3, px, py;
-          if (d < lw)              { px = L + d;             py = T; }
-          else if (d < lw + lh)   { px = R;                  py = T + (d - lw); }
-          else if (d < 2*lw + lh) { px = R - (d - lw - lh); py = B; }
-          else                    { px = L;                  py = B - (d - 2*lw - lh); }
-          var ec = heat > 0.5 ? 'rgb(255,' + Math.round(80 * (1-heat)) + ',0)' : 'rgb(255,68,85)';
-          glowDot(ctx, px, py, 4 + heat * 2, ec);
-        });
-
-        ctx.restore();
-
-        /* render & decay sparks (outside transform) */
-        for (var si = sparks3.length - 1; si >= 0; si--) {
-          var sp = sparks3[si];
-          sp.x += sp.vx; sp.y += sp.vy; sp.vy += 0.12; sp.life -= sp.decay;
-          if (sp.life <= 0) { sparks3.splice(si, 1); continue; }
-          glowDot(ctx, sp.x, sp.y, sp.r * sp.life, sp.col, sp.life);
-        }
-
-        /* flash overlay */
-        if (flash > 0) {
-          ctx.fillStyle = 'rgba(255,200,100,' + flash * 0.6 + ')';
-          ctx.fillRect(0, 0, W, H);
-        }
-
-        /* FUSE status text */
-        var statusMsg = heat < 0.3 ? 'NOMINAL' : heat < 0.65 ? 'STRESSED' : heat < 0.9 ? '⚠ WARNING' : '💥 FAILED';
-        var statusCol = heat < 0.3 ? 'rgba(0,255,136,0.5)' : heat < 0.65 ? 'rgba(255,208,96,0.6)' : 'rgba(255,68,85,0.75)';
-        hud(ctx, W, H, 'FUSE™  ·  576 W  ·  τ = 5 s  ·  STATUS: ' + statusMsg, statusCol);
-
-        t3 += 0.016;
-        requestAnimationFrame(loop3);
-      }());
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 4 — MIXED SERIES-PARALLEL
-       7-component topology; multi-colour current paths;
-       slow camera orbit.
-    ══════════════════════════════════════════════════════ */
-    var s4 = makeCanvas('canvas-mixed');
-    if (s4) {
-      var t4 = 0;
-      var eM = { top: [0, 0.5], brA: [0.2, 0.7], brB: [0.35, 0.85], bot: [0, 0.5] };
-
-      (function loop4() {
-        s4.resize();
-        var ctx = s4.ctx, W = s4.W, H = s4.H;
-        ctx.clearRect(0, 0, W, H);
-
-        var vg = ctx.createRadialGradient(W/2, H/2, H*0.08, W/2, H/2, H*0.72);
-        vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(5,8,20,0.9)');
-        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-
-        var zoom = 1.1 + 0.14 * Math.sin(t4 * 0.08);
-        var panX = 26 * Math.sin(t4 * 0.055);
-        var panY = 8  * Math.cos(t4 * 0.075);
-        ctx.save();
-        ctx.translate(W/2 + panX, H/2 + panY);
-        ctx.scale(zoom, zoom);
-        ctx.translate(-W/2, -H/2);
-
-        /* layout geometry */
-        var LX = W * 0.08, RX = W * 0.92;
-        var CY = H * 0.5;
-        var TY = CY - H * 0.18, BY = CY + H * 0.18;
-        var splitX = W * 0.38, joinX = W * 0.68;
-
-        /* series trunk wires */
-        glowLine(ctx, LX, CY, splitX, CY, '#c084fc', 2, 14);
-        glowLine(ctx, joinX, CY, RX, CY, '#c084fc', 2, 14);
-        /* parallel box wires */
-        glowLine(ctx, splitX, CY, splitX, TY, '#00ff88', 1.5, 10);
-        glowLine(ctx, splitX, CY, splitX, BY, '#ffd060', 1.5, 10);
-        glowLine(ctx, splitX, TY, joinX, TY, '#00ff88', 1.5, 10);
-        glowLine(ctx, splitX, BY, joinX, BY, '#ffd060', 1.5, 10);
-        glowLine(ctx, joinX, TY, joinX, CY, '#00ff88', 1.5, 10);
-        glowLine(ctx, joinX, BY, joinX, CY, '#ffd060', 1.5, 10);
-        /* return bus */
-        glowLine(ctx, LX, CY, LX, CY + H*0.27, '#c084fc', 1.5, 10);
-        glowLine(ctx, RX, CY, RX, CY + H*0.27, '#c084fc', 1.5, 10);
-        glowLine(ctx, LX, CY + H*0.27, RX, CY + H*0.27, '#c084fc', 1.5, 10);
-
-        /* battery */
-        drawBattery(ctx, LX, CY, 24, 64, '#c084fc');
-
-        /* components */
-        drawResistor(ctx, W*0.24, CY,  W*0.12, 24, '#c084fc', 'R1',  0);
-        drawResistor(ctx, (splitX+joinX)/2, TY, W*0.14, 22, '#00ff88', 'R2', 0);
-        drawResistor(ctx, (splitX+joinX)/2, BY, W*0.14, 22, '#ffd060', 'R3', 0);
-        drawResistor(ctx, W*0.78, CY,  W*0.1,  22, '#c084fc', 'R4',  0);
-        /* LED */
-        var ledX = RX - W*0.04;
-        ctx.save();
-        ctx.shadowColor = '#ff8844'; ctx.shadowBlur = 18;
-        ctx.strokeStyle = '#ff8844'; ctx.lineWidth = 1.8;
-        ctx.beginPath(); ctx.moveTo(ledX - 12, CY - 12); ctx.lineTo(ledX + 12, CY); ctx.lineTo(ledX - 12, CY + 12); ctx.closePath(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(ledX + 12, CY - 14); ctx.lineTo(ledX + 12, CY + 14); ctx.stroke();
-        ctx.font = 'bold 10px monospace'; ctx.fillStyle = '#ff8844'; ctx.textAlign = 'center';
-        ctx.fillText('LED', ledX, CY + 28);
-        ctx.restore();
-
-        /* electrons on each segment */
-        var spd = 0.0020;
-        eM.top = eM.top.map(function(p) { return (p + spd) % 1; });
-        eM.top.forEach(function(p) { glowDot(ctx, LX + p*(splitX-LX), CY, 4, '#c084fc'); });
-        eM.brA = eM.brA.map(function(p) { return (p + spd * 0.9) % 1; });
-        eM.brA.forEach(function(p) { glowDot(ctx, splitX + p*(joinX-splitX), TY, 3.5, '#00ff88'); });
-        eM.brB = eM.brB.map(function(p) { return (p + spd * 1.1) % 1; });
-        eM.brB.forEach(function(p) { glowDot(ctx, splitX + p*(joinX-splitX), BY, 3.5, '#ffd060'); });
-        eM.bot = eM.bot.map(function(p) { return (p + spd) % 1; });
-        eM.bot.forEach(function(p) { glowDot(ctx, joinX + p*(RX-joinX), CY, 4, '#c084fc'); });
-
-        ctx.restore();
-        hud(ctx, W, H, 'MIXED  ·  9 V  ·  7 COMPONENTS  ·  KVL / KCL', 'rgba(192,132,252,0.45)');
-        t4 += 0.016;
-        requestAnimationFrame(loop4);
-      }());
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SCENE 5 — PROMO PAGE SWEEP
-       Animated wordmark + orbiting feature chips +
-       scrolling panel simulation.
-    ══════════════════════════════════════════════════════ */
-    var s5 = makeCanvas('canvas-promo');
-    if (s5) {
-      var t5 = 0;
-      var FEATURES = ['⚡ 3D Circuit Builder', '🔬 5-Tier Zoom', '💥 FUSE™ Failure', '📐 Schematic Mode', '🎓 Classroom Tools', '🕹️ Practice Arcade'];
-      var orbs5 = [];
-      for (var oi = 0; oi < 60; oi++) {
-        orbs5.push({
-          x: Math.random(), y: Math.random(),
-          vx: (Math.random() - 0.5) * 0.0003,
-          vy: (Math.random() - 0.5) * 0.0003,
-          r: 1 + Math.random() * 3,
-          col: ['#88ccff','#00ff88','#c084fc','#ffd060','#ff8844'][Math.floor(Math.random()*5)],
-          phase: Math.random() * TAU
-        });
-      }
-
-      (function loop5() {
-        s5.resize();
-        var ctx = s5.ctx, W = s5.W, H = s5.H;
-        ctx.clearRect(0, 0, W, H);
-
-        /* dark bg */
-        ctx.fillStyle = 'rgba(4,13,26,1)'; ctx.fillRect(0, 0, W, H);
-
-        /* floating orbs background */
-        orbs5.forEach(function(o) {
-          o.x = ((o.x + o.vx) % 1 + 1) % 1;
-          o.y = ((o.y + o.vy) % 1 + 1) % 1;
-          var a = 0.25 + 0.15 * Math.sin(t5 * 1.2 + o.phase);
-          ctx.save();
-          ctx.shadowColor = o.col; ctx.shadowBlur = 8;
-          ctx.beginPath(); ctx.arc(o.x * W, o.y * H, o.r, 0, TAU);
-          ctx.fillStyle = o.col.replace(')', ', ' + a + ')').replace('#', 'rgba(').replace('rgba(', 'rgba(');
-          /* simpler approach: just use globalAlpha */
-          ctx.globalAlpha = a;
-          ctx.fillStyle = o.col;
-          ctx.fill();
-          ctx.restore();
-        });
-
-        /* connect nearby orbs */
-        ctx.save();
-        ctx.globalAlpha = 0.08;
-        for (var ai = 0; ai < orbs5.length; ai++) {
-          for (var aj = ai+1; aj < orbs5.length; aj++) {
-            var dx = (orbs5[aj].x - orbs5[ai].x) * W;
-            var dy = (orbs5[aj].y - orbs5[ai].y) * H;
-            var dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < W * 0.18) {
-              ctx.strokeStyle = '#88ccff'; ctx.lineWidth = 0.8;
-              ctx.beginPath();
-              ctx.moveTo(orbs5[ai].x*W, orbs5[ai].y*H);
-              ctx.lineTo(orbs5[aj].x*W, orbs5[aj].y*H);
-              ctx.stroke();
-            }
-          }
-        }
-        ctx.restore();
-
-        /* CircuiTry3D wordmark — center, with breathing scale */
-        var wScale = 1 + 0.04 * Math.sin(t5 * 0.8);
-        ctx.save();
-        ctx.translate(W/2, H * 0.38);
-        ctx.scale(wScale, wScale);
-        var wFontSize = Math.max(32, Math.min(W * 0.075, 72));
-        ctx.font = '900 ' + wFontSize + 'px "Segoe UI",Arial,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.shadowBlur = 24;
-        ctx.shadowColor = '#88ccff';
-        ctx.fillStyle = '#88ccff'; ctx.fillText('Circui', -W*0.14, 0);
-        ctx.shadowColor = '#ff8844';
-        ctx.fillStyle = '#ff8844'; ctx.fillText('Try', W*0.04, 0);
-        ctx.shadowColor = '#00ff88';
-        ctx.fillStyle = '#00ff88'; ctx.fillText('3D', W*0.165, 0);
-        ctx.restore();
-
-        /* tagline */
-        ctx.save();
-        var tagA = 0.5 + 0.25 * Math.sin(t5 * 0.7 + 1);
-        ctx.globalAlpha = tagA;
-        ctx.font = '600 ' + Math.max(12, W * 0.018) + 'px "Courier New",monospace';
-        ctx.fillStyle = '#9db8ff'; ctx.textAlign = 'center';
-        ctx.letterSpacing = '0.14em';
-        ctx.fillText('BUILD  ·  SIMULATE  ·  MASTER', W/2, H * 0.5);
-        ctx.restore();
-
-        /* orbiting feature chips */
-        var chipOrbitR = Math.min(W, H) * 0.28;
-        FEATURES.forEach(function(feat, fi) {
-          var angle = (fi / FEATURES.length) * TAU + t5 * 0.18;
-          var cx = W/2 + Math.cos(angle) * chipOrbitR;
-          var cy = H * 0.62 + Math.sin(angle) * chipOrbitR * 0.45;
-          var chipA = 0.5 + 0.35 * Math.sin(t5 * 1.5 + fi * 1.1);
-          ctx.save();
-          ctx.globalAlpha = chipA;
-          ctx.font = '700 ' + Math.max(10, W * 0.013) + 'px "Segoe UI",Arial,sans-serif';
-          ctx.textAlign = 'center';
-          var tw = ctx.measureText(feat).width;
-          var ph = Math.max(8, W*0.012), pw = ph * 1.8;
-          /* pill bg */
-          ctx.fillStyle = 'rgba(136,204,255,0.1)';
-          ctx.shadowColor = '#88ccff'; ctx.shadowBlur = 10;
-          var rx2 = cx - tw/2 - pw, ry2 = cy - ph - 2, rw2 = tw + pw*2, rh2 = ph*2 + 4;
-          ctx.beginPath();
-          ctx.roundRect ? ctx.roundRect(rx2, ry2, rw2, rh2, rh2/2) : ctx.rect(rx2, ry2, rw2, rh2);
-          ctx.fill();
-          /* text */
-          ctx.fillStyle = '#cce8ff';
-          ctx.fillText(feat, cx, cy + ph * 0.4);
-          ctx.restore();
-        });
-
-        /* CTA button */
-        var btnA = 0.7 + 0.3 * Math.sin(t5 * 1.1);
-        ctx.save();
-        ctx.globalAlpha = btnA;
-        ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 20;
-        var btnW = Math.min(W*0.3, 200), btnH = Math.max(32, H*0.055);
-        var btnX = W/2 - btnW/2, btnY = H*0.84;
-        var grd = ctx.createLinearGradient(btnX, btnY, btnX+btnW, btnY+btnH);
-        grd.addColorStop(0, 'rgba(0,255,136,0.85)'); grd.addColorStop(1, 'rgba(0,180,255,0.75)');
-        ctx.fillStyle = grd;
-        ctx.beginPath();
-        ctx.roundRect ? ctx.roundRect(btnX, btnY, btnW, btnH, btnH/2) : ctx.rect(btnX, btnY, btnW, btnH);
-        ctx.fill();
-        ctx.font = '800 ' + Math.max(12, btnH*0.38) + 'px "Segoe UI",Arial,sans-serif';
-        ctx.textAlign = 'center'; ctx.fillStyle = '#050b1f'; ctx.shadowBlur = 0;
-        ctx.fillText('⚡ Launch Builder', W/2, btnY + btnH*0.65);
-        ctx.restore();
-
-        hud(ctx, W, H, 'CIRCUITRY3D  ·  ILLUMINATE ELECTRICITY', 'rgba(157,184,255,0.4)');
-        t5 += 0.016;
-        requestAnimationFrame(loop5);
-      }());
-    }
-
-    /* ── placeholder so the old variable names don't throw ─ */
-    /* (series/parallel/overload/mixed/promo-preview divs
-       no longer exist — canvases replaced them) */
-
-  }());
-
-  var __CINEMATIC_FALLBACKS_LOADED = true; /* sentinel (unused) */
+  /* Fallback images (actual 3D app screenshots) are displayed via CSS/HTML img elements. */
 
   /* ══════════════════════════════════════════════════════════
      BACKGROUND CANVAS — circuit network animation
