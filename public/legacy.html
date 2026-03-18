@@ -378,6 +378,44 @@
             transform: translateY(calc(100% + 80px));
         }
 
+
+        .analysis-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .analysis-panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #00ff88;
+            letter-spacing: 0.05em;
+        }
+
+        .analysis-close-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #ccc;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .analysis-close-btn:hover {
+            background: rgba(255,80,80,0.3);
+            border-color: rgba(255,80,80,0.5);
+            color: #fff;
+        }
         .analysis-tabs {
             display: flex;
             margin-bottom: 16px;
@@ -3820,6 +3858,12 @@
     
     <!-- ═══ W.I.R.E. Analysis Panel ════════════════════════════════════ -->
     <div id="wire-analysis" class="wire-analysis-fixed collapsed" role="complementary" aria-label="W.I.R.E. Analysis Panel">
+
+        <!-- Panel header with close button -->
+        <div class="analysis-panel-header">
+            <span class="analysis-panel-title">⚡ W.I.R.E. Analysis</span>
+            <button class="analysis-close-btn" onclick="toggleAnalysis()" title="Close panel" aria-label="Close W.I.R.E. Analysis panel">✕</button>
+        </div>
 
         <!-- Tab bar -->
         <div class="analysis-tabs" role="tablist">
