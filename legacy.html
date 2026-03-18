@@ -5129,6 +5129,106 @@ body.android-optimized .zoom-btn {
             voltageCriticalRatio: 1.35
         };
 
+        // ---------------------------------------------------------------------------
+        // Wire insulation physical specifications
+        // Maps WireInsulationId → jacket appearance and thermal limit.
+        // jacketRatio: outer/conductor radius ratio (1.0 = bare conductor, no jacket)
+        // color: THREE.js hex colour for the insulation jacket
+        // opacity: jacket transparency (lower = more see-through)
+        // thermalLimitC: max continuous insulation temperature before degradation
+        // ---------------------------------------------------------------------------
+        const WIRE_INSULATION_SPECS = {
+            pvc80:         { jacketRatio: 1.55, color: 0x1a1a1a, opacity: 0.58, thermalLimitC: 80  },  // black PVC
+            pvc105:        { jacketRatio: 1.65, color: 0x111111, opacity: 0.60, thermalLimitC: 105 },  // black PVC (thicker)
+            xlpe125:       { jacketRatio: 1.60, color: 0xeeeeee, opacity: 0.50, thermalLimitC: 125 },  // THHN/THWN white
+            silicone200:   { jacketRatio: 1.70, color: 0xcc2200, opacity: 0.45, thermalLimitC: 200 },  // red silicone
+            ptfe260:       { jacketRatio: 1.20, color: 0xf5f5f5, opacity: 0.38, thermalLimitC: 260 },  // white PTFE thin-wall
+            bare1200:      { jacketRatio: 1.00, color: 0xb87333, opacity: 0.00, thermalLimitC: 1200},  // no jacket — conductor only
+            epdm150:       { jacketRatio: 2.10, color: 0x0d0d0d, opacity: 0.62, thermalLimitC: 150 },  // black EPDM heavy-rubber
+            tpe105:        { jacketRatio: 1.60, color: 0x333333, opacity: 0.55, thermalLimitC: 105 },  // dark gray TPE
+            fiberglass482: { jacketRatio: 1.50, color: 0xd4c070, opacity: 0.52, thermalLimitC: 482 },  // tan braided glass
+            kapton400:     { jacketRatio: 1.18, color: 0xc87020, opacity: 0.48, thermalLimitC: 400 },  // amber polyimide
+            neoprene90:    { jacketRatio: 1.90, color: 0x1a1a1a, opacity: 0.62, thermalLimitC: 90  },  // black neoprene
+        };
+
+        // Conversion factor: conductor radius in mm → scene units.
+        // Reference: 14 AWG conductor dia 1.628 mm ⟹ conductor radius target 0.032 scene units.
+        // 0.032 / (1.628/2) ≈ 0.039 units/mm.
+        const WIRE_SCENE_SCALE    = 0.039;   // scene units per mm of conductor radius
+        const WIRE_CONDUCTOR_MIN  = 0.018;   // minimum visible conductor radius (≈30 AWG)
+        const WIRE_CONDUCTOR_MAX  = 0.110;   // maximum conductor radius (≈4/0 AWG)
+        const WIRE_DEFAULT_COND_R = 0.032;   // 14 AWG default conductor radius
+        const WIRE_DEFAULT_JACK_R = 0.050;   // 14 AWG PVC jacket default radius
+
+        // ── Insulation thermal event thresholds (°C above class limit) ─────────
+        // These match the onset/burnthrough window observed in accelerated-age tests
+        // on PVC and XLPE insulation (IEC 60811 series).
+        const WIRE_INSUL_CRITICAL_DELTA_C = 20;  // °C above limit → "critical" burnthrough
+        const WIRE_INSUL_STRESS_RANGE_C   = 40;  // °C range over which visual stress ramps 0→3
+
+        // Jacket thermal resistance coefficients (°C·m/W).
+        // Intercept (thin jacket base) + slope per unit jacketRatio above 1.
+        // Derived from cylindrical shell formula R = ln(r_out/r_in)/(2π·k·L)
+        // calibrated to XLPE (k≈0.25 W/m·K, 1.6 ratio) and EPDM (k≈0.25, 2.1 ratio).
+        const WIRE_JACKET_THERMAL_BASE    = 4;   // °C·m/W intercept at jacketRatio=1
+        const WIRE_JACKET_THERMAL_SLOPE   = 12;  // additional °C·m/W per unit of (jacketRatio-1)
+
+        // Char colour target for refreshJacketStress() thermal-blend endpoint.
+        // Represents fully carbonised/charred PVC/XLPE after sustained overtemp.
+        const WIRE_CHAR_COLOR_HEX         = 0x1a0a00;
+        const WIRE_CHAR_R = (WIRE_CHAR_COLOR_HEX >> 16) & 0xff;
+        const WIRE_CHAR_G = (WIRE_CHAR_COLOR_HEX >>  8) & 0xff;
+        const WIRE_CHAR_B =  WIRE_CHAR_COLOR_HEX        & 0xff;
+
+        // Shared conductor material (singleton) — all wire instances use the same
+        // copper-tone material so THREE.js only creates one GPU draw call per batch.
+        let _sharedConductorMaterial = null;
+        function getSharedConductorMaterial() {
+            if (!_sharedConductorMaterial) {
+                _sharedConductorMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xb87333,   // annealed copper
+                    metalness: 0.80,
+                    roughness: 0.30,
+                    transparent: false,
+                    opacity: 1.0,
+                });
+            }
+            return _sharedConductorMaterial;
+        }
+
+        /**
+         * Compute physically-accurate wire conductor and jacket 3D radii from the
+         * active wire profile (or fall-back defaults for unspecified wires).
+         *
+         * @param {object|null} profile  activeWireProfile — may be null for default wire
+         * @returns {{ conductorRadius, jacketRadius, jacketColor, jacketOpacity, hasJacket, thermalLimitC }}
+         */
+        function getWireRadii(profile) {
+            const insulClass = (profile && typeof profile.insulationClass === 'string')
+                ? profile.insulationClass
+                : 'pvc80';
+            const insulSpec = WIRE_INSULATION_SPECS[insulClass] || WIRE_INSULATION_SPECS.pvc80;
+
+            const diameterMm = Number(profile?.diameterMm);
+            const conductorRadius = (Number.isFinite(diameterMm) && diameterMm > 0)
+                ? Math.max(WIRE_CONDUCTOR_MIN, Math.min(WIRE_CONDUCTOR_MAX, (diameterMm / 2) * WIRE_SCENE_SCALE))
+                : WIRE_DEFAULT_COND_R;
+
+            const hasJacket = insulSpec.jacketRatio > 1.0;
+            const jacketRadius = hasJacket
+                ? conductorRadius * insulSpec.jacketRatio
+                : conductorRadius;
+
+            return {
+                conductorRadius,
+                jacketRadius,
+                jacketColor: insulSpec.color,
+                jacketOpacity: insulSpec.opacity,
+                hasJacket,
+                thermalLimitC: insulSpec.thermalLimitC,
+            };
+        }
+
         let currentFlowState = null;
         let activeWireProfile = null;
 
@@ -5139,18 +5239,25 @@ body.android-optimized .zoom-btn {
 
             if (hasValidResistance) {
                 FLOW_CONSTANTS.wireResistance = resistanceCandidate;
-                const ampacityBundleA = Number(profile?.ampacityBundleA);
-                const ampacityChassisA = Number(profile?.ampacityChassisA);
-                const maxVoltageV = Number(profile?.maxVoltageV);
-                const maxTemperatureC = Number(profile?.maxTemperatureC);
+                const ampacityBundleA   = Number(profile?.ampacityBundleA);
+                const ampacityChassisA  = Number(profile?.ampacityChassisA);
+                const maxVoltageV       = Number(profile?.maxVoltageV);
+                const maxTemperatureC   = Number(profile?.maxTemperatureC);
+                const diameterMm        = Number(profile?.diameterMm);
+                const insulationMaxTempC = Number(profile?.insulationMaxTempC ?? profile?.maxTemperatureC);
                 activeWireProfile = {
-                    id: typeof profile?.id === 'string' ? profile.id : null,
-                    gaugeLabel: typeof profile?.gaugeLabel === 'string' ? profile.gaugeLabel : 'Custom wire',
+                    id:                  typeof profile?.id === 'string' ? profile.id : null,
+                    gaugeLabel:          typeof profile?.gaugeLabel === 'string' ? profile.gaugeLabel : 'Custom wire',
+                    materialLabel:       typeof profile?.materialLabel === 'string' ? profile.materialLabel : null,
+                    insulationLabel:     typeof profile?.insulationLabel === 'string' ? profile.insulationLabel : null,
+                    insulationClass:     typeof profile?.insulationClass === 'string' ? profile.insulationClass : 'pvc80',
+                    diameterMm:          Number.isFinite(diameterMm) && diameterMm > 0 ? diameterMm : null,
+                    insulationMaxTempC:  Number.isFinite(insulationMaxTempC) && insulationMaxTempC > 0 ? insulationMaxTempC : 80,
                     resistanceOhmPerMeter: resistanceCandidate,
-                    ampacityBundleA: Number.isFinite(ampacityBundleA) && ampacityBundleA > 0 ? ampacityBundleA : null,
-                    ampacityChassisA: Number.isFinite(ampacityChassisA) && ampacityChassisA > 0 ? ampacityChassisA : null,
-                    maxVoltageV: Number.isFinite(maxVoltageV) && maxVoltageV > 0 ? maxVoltageV : null,
-                    maxTemperatureC: Number.isFinite(maxTemperatureC) && maxTemperatureC > 0 ? maxTemperatureC : null
+                    ampacityBundleA:     Number.isFinite(ampacityBundleA) && ampacityBundleA > 0 ? ampacityBundleA : null,
+                    ampacityChassisA:    Number.isFinite(ampacityChassisA) && ampacityChassisA > 0 ? ampacityChassisA : null,
+                    maxVoltageV:         Number.isFinite(maxVoltageV) && maxVoltageV > 0 ? maxVoltageV : null,
+                    maxTemperatureC:     Number.isFinite(maxTemperatureC) && maxTemperatureC > 0 ? maxTemperatureC : null,
                 };
                 const label = activeWireProfile.gaugeLabel || 'Custom wire';
                 setStatus(`⚡ Wire profile active: ${label} (${resistanceCandidate.toFixed(4)} Ω/m)`);
@@ -5158,6 +5265,15 @@ body.android-optimized .zoom-btn {
                 FLOW_CONSTANTS.wireResistance = DEFAULT_WIRE_SEGMENT_RESISTANCE;
                 activeWireProfile = null;
                 setStatus(`⚡ Default wire model active (${DEFAULT_WIRE_SEGMENT_RESISTANCE.toFixed(3)} Ω/m, route-length normalized)`);
+            }
+
+            // Rebuild all existing wire meshes to reflect new gauge / insulation visuals.
+            if (typeof wires !== 'undefined' && Array.isArray(wires)) {
+                wires.forEach(wire => {
+                    if (wire && typeof wire.updatePath === 'function') {
+                        try { wire.updatePath(); } catch (_e) { /* ignore individual wire errors */ }
+                    }
+                });
             }
 
             if (typeof analyzeCircuit === 'function') {
@@ -5171,13 +5287,16 @@ body.android-optimized .zoom-btn {
             notifyParentModeState({
                 wireProfile: activeWireProfile
                     ? {
-                        id: activeWireProfile.id,
-                        gaugeLabel: activeWireProfile.gaugeLabel,
+                        id:                   activeWireProfile.id,
+                        gaugeLabel:           activeWireProfile.gaugeLabel,
+                        insulationClass:      activeWireProfile.insulationClass,
+                        diameterMm:           activeWireProfile.diameterMm,
+                        insulationMaxTempC:   activeWireProfile.insulationMaxTempC,
                         resistanceOhmPerMeter: activeWireProfile.resistanceOhmPerMeter,
-                        ampacityBundleA: activeWireProfile.ampacityBundleA,
-                        ampacityChassisA: activeWireProfile.ampacityChassisA,
-                        maxVoltageV: activeWireProfile.maxVoltageV,
-                        maxTemperatureC: activeWireProfile.maxTemperatureC
+                        ampacityBundleA:      activeWireProfile.ampacityBundleA,
+                        ampacityChassisA:     activeWireProfile.ampacityChassisA,
+                        maxVoltageV:          activeWireProfile.maxVoltageV,
+                        maxTemperatureC:      activeWireProfile.maxTemperatureC,
                     }
                     : null,
                 wireResistance: FLOW_CONSTANTS.wireResistance
@@ -7180,55 +7299,112 @@ body.android-optimized .zoom-btn {
                 this.wireGroup = new THREE.Group();
                 this.segments = [];
 
-                const wireMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xd2691e,
-                    metalness: 0.75,
-                    roughness: 0.35,
+                // Compute physically-scaled radii from active wire profile.
+                const radii = getWireRadii(activeWireProfile);
+                const condR   = radii.conductorRadius;
+                const jackR   = radii.jacketRadius;
+                const hasJack = radii.hasJacket;
+
+                // Conductor material — shared singleton so all wires share one GPU material.
+                const conductorMaterial = getSharedConductorMaterial();
+
+                // Insulation jacket material — semi-transparent with insulation-class colour.
+                // Stored on the instance so we can mutate it during thermal stress events.
+                this._jacketMaterial = hasJack ? new THREE.MeshStandardMaterial({
+                    color: radii.jacketColor,
+                    metalness: 0.02,
+                    roughness: 0.75,
                     transparent: true,
-                    opacity: 0.9
-                });
-                
+                    opacity: radii.jacketOpacity,
+                    side: THREE.FrontSide,
+                }) : null;
+
+                // Store the nominal jacket appearance so we can restore it after stress clears.
+                this._jacketBaseColor   = radii.jacketColor;
+                this._jacketBaseOpacity = radii.jacketOpacity;
+
+                const cylSegs = isMobile ? 7 : 10;
+
                 for (let i = 0; i < path.length - 1; i++) {
-                    const segmentStart = path[i];
-                    const segmentEnd = path[i + 1];
-                    const distance = segmentStart.distanceTo(segmentEnd);
-                    
-                    if (distance > 0.1) {
-                        const wireGeometry = new THREE.CylinderGeometry(0.08, 0.08, distance, isMobile ? 8 : 12);
-                        
-                        const segment = new THREE.Mesh(wireGeometry, wireMaterial);
-                        
-                        // Position segment at midpoint
-                        const midPoint = new THREE.Vector3().addVectors(segmentStart, segmentEnd).multiplyScalar(0.5);
-                        segment.position.copy(midPoint);
-                        
-                        // Rotate segment to connect the points
-                        const direction = new THREE.Vector3().subVectors(segmentEnd, segmentStart).normalize();
-                        const up = new THREE.Vector3(0, 1, 0);
-                        const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
-                        segment.setRotationFromQuaternion(quaternion);
-                        
-                        this.wireGroup.add(segment);
-                        this.segments.push({
-                            mesh: segment,
-                            start: segmentStart.clone(),
-                            end: segmentEnd.clone()
-                        });
+                    const segStart = path[i];
+                    const segEnd   = path[i + 1];
+                    const dist     = segStart.distanceTo(segEnd);
+                    if (dist <= 0.1) continue;
+
+                    const midPoint  = new THREE.Vector3().addVectors(segStart, segEnd).multiplyScalar(0.5);
+                    const direction = new THREE.Vector3().subVectors(segEnd, segStart).normalize();
+                    const up        = new THREE.Vector3(0, 1, 0);
+                    const quat      = new THREE.Quaternion().setFromUnitVectors(up, direction);
+
+                    // ── Conductor core ───────────────────────────────────────────
+                    const condGeom    = new THREE.CylinderGeometry(condR, condR, dist, cylSegs);
+                    const condSegment = new THREE.Mesh(condGeom, conductorMaterial);
+                    condSegment.position.copy(midPoint);
+                    condSegment.setRotationFromQuaternion(quat);
+                    this.wireGroup.add(condSegment);
+
+                    // ── Insulation jacket (skipped for bare / resistance wire) ──
+                    if (hasJack) {
+                        const jackGeom    = new THREE.CylinderGeometry(jackR, jackR, dist, cylSegs);
+                        const jackSegment = new THREE.Mesh(jackGeom, this._jacketMaterial);
+                        jackSegment.position.copy(midPoint);
+                        jackSegment.setRotationFromQuaternion(quat);
+                        this.wireGroup.add(jackSegment);
+                    }
+
+                    this.segments.push({
+                        mesh: condSegment,
+                        start: segStart.clone(),
+                        end: segEnd.clone(),
+                    });
+                }
+
+                // Spherical joints at each bend / endpoint to fill gaps.
+                const jointSegs = isMobile ? 6 : 8;
+                for (let i = 0; i < path.length; i++) {
+                    // Conductor ball
+                    const condJointGeom = new THREE.SphereGeometry(condR, jointSegs, isMobile ? 4 : 6);
+                    const condJoint = new THREE.Mesh(condJointGeom, conductorMaterial);
+                    condJoint.position.copy(path[i]);
+                    this.wireGroup.add(condJoint);
+
+                    // Jacket ball
+                    if (hasJack) {
+                        const jackJointGeom = new THREE.SphereGeometry(jackR, jointSegs, isMobile ? 4 : 6);
+                        const jackJoint = new THREE.Mesh(jackJointGeom, this._jacketMaterial);
+                        jackJoint.position.copy(path[i]);
+                        this.wireGroup.add(jackJoint);
                     }
                 }
 
-                // Add small spheres at all path points (corners and endpoints) to fill
-                // gaps between segments and to seal the wire ends at component terminals.
-                for (let i = 0; i < path.length; i++) {
-                    const jointGeometry = new THREE.SphereGeometry(0.08, isMobile ? 6 : 8, isMobile ? 4 : 6);
-                    const joint = new THREE.Mesh(jointGeometry, wireMaterial);
-                    joint.position.copy(path[i]);
-                    this.wireGroup.add(joint);
-                }
-                
                 this.wireGroup.userData = { wire: this };
                 this.mesh = this.wireGroup;
                 scene.add(this.wireGroup);
+            }
+
+            /**
+             * Apply a thermal-stress tint to the insulation jacket to visually signal
+             * overcurrent heating.  severity 0 = nominal, 1 = warm, 2 = hot/discolouring,
+             * 3 = charring/burning.  Pass severity=0 to restore nominal appearance.
+             */
+            refreshJacketStress(severity) {
+                if (!this._jacketMaterial) return;
+                if (severity <= 0) {
+                    this._jacketMaterial.color.setHex(this._jacketBaseColor);
+                    this._jacketMaterial.opacity = this._jacketBaseOpacity;
+                    return;
+                }
+                // Blend jacket colour toward WIRE_CHAR_COLOR_HEX as severity increases 0→3.
+                const t = Math.min(1, severity / 3);
+                const baseR = (this._jacketBaseColor >> 16) & 0xff;
+                const baseG = (this._jacketBaseColor >>  8) & 0xff;
+                const baseB =  this._jacketBaseColor        & 0xff;
+                const r = Math.round(baseR + (WIRE_CHAR_R - baseR) * t);
+                const g = Math.round(baseG + (WIRE_CHAR_G - baseG) * t);
+                const b = Math.round(baseB + (WIRE_CHAR_B - baseB) * t);
+                this._jacketMaterial.color.setHex((r << 16) | (g << 8) | b);
+                // Jacket becomes more opaque as it chars (carbonised PVC goes solid black).
+                this._jacketMaterial.opacity = Math.min(1, this._jacketBaseOpacity + t * 0.30);
             }
 
             getStartPosition() {
@@ -13478,6 +13654,14 @@ Made with ? for visual learners everywhere!
                 setStatus(`⚠ Wire ampacity overloaded by ${overloadPct.toFixed(0)}% - current flow is derating due to heating.`);
             } else if (flowMeta.warning === 'ampacity-critical') {
                 setStatus('⚠ CRITICAL wire overload - thermal runaway conditions. Use a higher-ampacity wire immediately.');
+            } else if (flowMeta.warning === 'insulation') {
+                const insulClass = activeWireProfile?.insulationLabel || activeWireProfile?.insulationClass || 'PVC 80 °C';
+                const condTemp = Number.isFinite(flowMeta?.conductorTempC) ? flowMeta.conductorTempC.toFixed(0) : '?';
+                setStatus(`🔥 Wire insulation overheating (${condTemp} °C) — ${insulClass} jacket is beginning to soften and degrade. Switch to a higher-rated wire.`);
+            } else if (flowMeta.warning === 'insulation-critical') {
+                const insulClass = activeWireProfile?.insulationLabel || activeWireProfile?.insulationClass || 'insulation';
+                triggerShortCircuitFlash();
+                setStatus(`🔥 CRITICAL: ${insulClass} has burned through! Bare conductor exposed — SHORT CIRCUIT risk. Reduce current or upgrade wire immediately.`);
             } else if (flowMeta.warning === 'voltage') {
                 setStatus('⚠ Wire insulation voltage rating exceeded - leakage/breakdown risk is elevated.');
             } else if (flowMeta.warning === 'voltage-critical') {
@@ -13536,6 +13720,15 @@ Made with ? for visual learners everywhere!
                         : null,
                     wireVoltageUtilization: Number.isFinite(flowMeta?.voltageUtilization)
                         ? flowMeta.voltageUtilization
+                        : null,
+                    wireInsulationMaxTempC: Number.isFinite(flowMeta?.insulationMaxTempC)
+                        ? flowMeta.insulationMaxTempC
+                        : null,
+                    wireConductorTempC: Number.isFinite(flowMeta?.conductorTempC)
+                        ? flowMeta.conductorTempC
+                        : null,
+                    wireInsulationUtilization: Number.isFinite(flowMeta?.insulationUtilization)
+                        ? flowMeta.insulationUtilization
                         : null,
                     wireWarning: flowMeta?.warning || null,
                     isComplete: Boolean(flowMeta?.hasFlow),
@@ -13733,8 +13926,10 @@ Made with ? for visual learners everywhere!
                 null: 0,
                 'voltage': 1,
                 'ampacity': 2,
-                'voltage-critical': 3,
-                'ampacity-critical': 4
+                'insulation': 3,        // jacket temperature at/above insulation class limit
+                'voltage-critical': 4,
+                'ampacity-critical': 5,
+                'insulation-critical': 6, // jacket charring / burnthrough — dead short risk
             };
             const currentScore = severity[currentWarning || null] || 0;
             const nextScore = severity[nextWarning || null] || 0;
@@ -13775,6 +13970,62 @@ Made with ? for visual learners everywhere!
                 );
             }
 
+            // ── Insulation temperature check ──────────────────────────────────────
+            // Estimate conductor surface temperature from I²R dissipation and the
+            // jacket's thermal resistance.  thermalMultiplier already bakes in
+            // ampacity-derating; we compute a physical temp to compare against the
+            // insulation class operating limit.
+            //
+            // T_conductor ≈ 25°C (ambient) + I² × R_path × R_thermal_jacket
+            // We use a normalised R_thermal value (°C/W per metre) derived from the
+            // insulation class; in the absence of per-profile data we use 12 °C/W as
+            // the default (approximate for PVC on 14 AWG at chassis ampacity).
+            const insulationMaxTempC = Number(profile?.insulationMaxTempC ?? profile?.maxTemperatureC) || 80;
+            const radii = getWireRadii(profile);
+            // Approximate thermal resistance of jacket from known insulation specs.
+            // Derived from cylindrical shell formula: R = ln(r_outer/r_inner)/(2π·k·L),
+            // normalised to 1 m length for comparison.  We bake it into a single constant
+            // per insulation class; for default (no profile) fall back to 12 °C·m/W.
+            const INSUL_SPEC = (profile && profile.insulationClass)
+                ? (WIRE_INSULATION_SPECS[profile.insulationClass] || WIRE_INSULATION_SPECS.pvc80)
+                : WIRE_INSULATION_SPECS.pvc80;
+            // Simple thermal model: conductor temp = ambient + I² × wireResistance × jacketThermalR
+            // wirePathResistance is the total path resistance; scale to per-metre for the model.
+            const wireResOhmPerMetre = Number.isFinite(profile?.resistanceOhmPerMeter) && profile.resistanceOhmPerMeter > 0
+                ? profile.resistanceOhmPerMeter
+                : (FLOW_CONSTANTS.wireResistance || 0.01);
+            // jacketThermalR (°C/W per metre): use jacket thickness ratio as a proxy.
+            // Thicker jackets (EPDM ratio 2.1) have higher thermal resistance than thin PTFE (1.2).
+            const jacketThermalRPerMetre = WIRE_JACKET_THERMAL_BASE + (INSUL_SPEC.jacketRatio - 1.0) * WIRE_JACKET_THERMAL_SLOPE;
+            const conductorTempC = 25 + current * current * wireResOhmPerMetre * jacketThermalRPerMetre;
+            const insulationUtilization = conductorTempC / insulationMaxTempC;
+
+            if (conductorTempC > insulationMaxTempC) {
+                // WIRE_INSUL_CRITICAL_DELTA_C above class limit = critical burnthrough risk
+                const isCritical = conductorTempC > insulationMaxTempC + WIRE_INSUL_CRITICAL_DELTA_C;
+                warning = pickMoreSevereWarning(
+                    warning,
+                    isCritical ? 'insulation-critical' : 'insulation'
+                );
+                // Boost thermal multiplier to reflect reduced heat-path efficiency.
+                if (isCritical) {
+                    thermalMultiplier = Math.max(thermalMultiplier, thermalMultiplier + 0.5);
+                }
+            }
+
+            // Apply insulation stress visuals to all wires in the scene.
+            // Severity ramps from 0→3 over WIRE_INSUL_STRESS_RANGE_C above the class limit.
+            const fuseInsulSeverity = conductorTempC > insulationMaxTempC
+                ? Math.min(3, (conductorTempC - insulationMaxTempC) / WIRE_INSUL_STRESS_RANGE_C)
+                : 0;
+            if (typeof wires !== 'undefined' && Array.isArray(wires)) {
+                wires.forEach(wire => {
+                    if (wire && typeof wire.refreshJacketStress === 'function') {
+                        wire.refreshJacketStress(fuseInsulSeverity);
+                    }
+                });
+            }
+
             return {
                 warning,
                 thermalMultiplier: Math.max(1, thermalMultiplier),
@@ -13782,6 +14033,9 @@ Made with ? for visual learners everywhere!
                 ampacityUtilization,
                 voltageLimitV,
                 voltageUtilization,
+                insulationMaxTempC,
+                insulationUtilization,
+                conductorTempC,
                 adjustedWireResistance: Math.max(safeResistance, safeResistance * Math.max(1, thermalMultiplier))
             };
         }
