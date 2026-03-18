@@ -1,10 +1,14 @@
 # How PR preview deployments work:
 # 1. On every PR push (opened / synchronize / reopened):
 #    a. The app is built with a unique base path for this PR's preview URL.
-#    b. `rossjrw/pr-preview-action` pushes the build to the `gh-pages`
+#    b. A portrait (412×915) screenshot is captured from the local preview
+#       server and saved to dist/pr-portrait.png so it is deployed alongside
+#       the preview.
+#    c. `rossjrw/pr-preview-action` pushes the build to the `gh-pages`
 #       branch under `pr-preview/pr-<number>/`.
-#    c. The action posts a comment on the PR with the live preview URL:
-#         https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-<number>/
+#    d. A PR comment is posted (or updated) with:
+#         • An embedded portrait screenshot of the current UI
+#         • A link to the full live preview URL
 # 2. On PR close / merge the action automatically removes the subdirectory
 #    so stale previews don't accumulate on the gh-pages branch.
 #
@@ -59,8 +63,47 @@ jobs:
           # at the preview subdirectory URL.
           PAGES_BASE_PATH: /CircuiTry3D/pr-preview/pr-${{ github.event.pull_request.number }}/
 
-      # Deploys the build to gh-pages/pr-preview/pr-<number>/ and posts a
-      # comment on the PR.  On `closed` events it removes the directory instead.
+      # ── Portrait screenshot capture ──────────────────────────────────────
+      # Install Chromium, serve the freshly-built dist at the PR base path,
+      # and capture a 412×915 portrait screenshot.  The PNG is saved into
+      # dist/ so it gets deployed alongside the preview, making it reachable
+      # at the stable GitHub Pages URL used in the PR comment.
+
+      - name: Install Playwright (Chromium)
+        if: github.event.action != 'closed'
+        run: npx playwright install chromium --with-deps
+
+      - name: Start preview server for screenshot
+        if: github.event.action != 'closed'
+        run: npm run preview &
+        env:
+          PAGES_BASE_PATH: /CircuiTry3D/pr-preview/pr-${{ github.event.pull_request.number }}/
+
+      - name: Wait for preview server
+        if: github.event.action != 'closed'
+        run: |
+          BASE_PATH="/CircuiTry3D/pr-preview/pr-${{ github.event.pull_request.number }}/"
+          echo "Waiting for preview server at localhost:4173${BASE_PATH} …"
+          for i in $(seq 1 30); do
+            if curl -sf "http://localhost:4173${BASE_PATH}" >/dev/null 2>&1; then
+              echo "Server ready (attempt ${i})."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::warning::Preview server did not respond in time; screenshot may be blank."
+
+      - name: Capture portrait screenshot
+        if: github.event.action != 'closed'
+        run: node scripts/capture-pr-portrait.js
+        env:
+          BASE_URL: http://localhost:4173
+          BASE_PATH: /CircuiTry3D/pr-preview/pr-${{ github.event.pull_request.number }}/
+          OUTPUT_FILE: dist/pr-portrait.png
+
+      # Deploys the build (including pr-portrait.png) to
+      # gh-pages/pr-preview/pr-<number>/ and posts a comment on the PR.
+      # On `closed` events it removes the directory instead.
       - name: Deploy PR preview
         uses: rossjrw/pr-preview-action@v1
         with:
@@ -69,3 +112,50 @@ jobs:
           umbrella-dir: pr-preview
           action: auto
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Post (or update) a PR comment that embeds the portrait screenshot.
+      # The image is served from the gh-pages branch via GitHub Pages so it
+      # renders inline in the GitHub PR review UI.
+      - name: Post screenshot comment
+        if: github.event.action != 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl  = `https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-${prNumber}/`;
+            // Cache-bust the image URL on every push so GitHub doesn't
+            // serve a stale screenshot from a previous commit.
+            const imageUrl = `${previewUrl}pr-portrait.png?sha=${{ github.event.pull_request.head.sha }}`;
+
+            const marker = '<!-- pr-portrait-screenshot -->';
+            const body   = `${marker}
+            ## 📱 PR Preview Screenshot
+
+            ![Portrait preview (412 × 915)](${imageUrl})
+
+            > **Portrait (412 × 915)** snapshot captured from the PR preview build.
+            > [Open full preview ↗](${previewUrl})
+            > *(The image may take up to a minute to appear while GitHub Pages deploys.)*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }

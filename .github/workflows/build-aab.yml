@@ -11,6 +11,12 @@ on:
         required: false
         default: ''
 
+# Only one AAB build at a time; if a new push lands while a build is running
+# cancel the old run so the Play Store always receives the most current commit.
+concurrency:
+  group: build-aab
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,6 +59,28 @@ jobs:
 
       - name: Sync Capacitor Android
         run: npx cap sync android
+
+      - name: Verify web assets were synced
+        # Fail fast if the web assets directory is missing or empty — this would
+        # produce an AAB without any app content.
+        shell: bash
+        run: |
+          set -euo pipefail
+          ASSETS_DIR="android/app/src/main/assets/public"
+          if [ ! -d "${ASSETS_DIR}" ]; then
+            echo "::error::Web assets directory '${ASSETS_DIR}' is missing after cap sync."
+            exit 1
+          fi
+          FILE_COUNT=$(find "${ASSETS_DIR}" -type f | wc -l)
+          # A minimal Vite build produces at least: index.html, manifest.webmanifest,
+          # favicon, sw.js, and one JS chunk — so fewer than 5 files means the sync
+          # produced an incomplete or empty web bundle.
+          if [ "${FILE_COUNT}" -lt 5 ]; then
+            echo "::error::Web assets appear incomplete: only ${FILE_COUNT} file(s) in '${ASSETS_DIR}'."
+            exit 1
+          fi
+          echo "✔ Web assets synced — ${FILE_COUNT} files in ${ASSETS_DIR}"
+          echo "  Commit: ${GITHUB_SHA}"
 
       - name: Guard Capacitor generated Gradle include
         shell: bash
@@ -137,7 +165,7 @@ jobs:
       - name: Build Android Release
         run: |
           cd android
-          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache
+          ./gradlew clean bundleRelease -PversionCode="${{ env.VERSION_CODE }}" -PversionName="${{ env.VERSION_NAME }}" --stacktrace --no-build-cache --no-configuration-cache
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4

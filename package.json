@@ -14,6 +14,7 @@
     "generate-feature-graphic": "node scripts/generate-feature-graphic.js",
     "generate-screenshots": "node scripts/generate-screenshots.js",
     "generate-screenshots:local": "node scripts/generate-screenshots.js --local",
+    "capture-pr-portrait": "node scripts/capture-pr-portrait.js",
     "circuit-bot": "node scripts/circuit-bot.js",
     "circuit-bot:local": "node scripts/circuit-bot.js --local"
   },

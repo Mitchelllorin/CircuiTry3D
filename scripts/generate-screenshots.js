@@ -103,7 +103,22 @@ async function main() {
   await mkdir(SCREENSHOTS_ASSET_DIR,  { recursive: true });
   await mkdir(SCREENSHOTS_PUBLIC_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true }).catch((err) => {
+  const browser = await chromium.launch({
+    headless: true,
+    // Software-rendered WebGL so the 3-D canvas renders in headless CI runners
+    // that have no physical GPU.
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--enable-webgl',
+      '--use-gl=swiftshader',
+      '--enable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu-sandbox',
+    ],
+  }).catch((err) => {
     console.error('❌  Could not launch Chromium.\n   1. Ensure devDependencies are installed: npm install\n   2. Then install the browser:            npx playwright install chromium');
     throw err;
   });
@@ -126,8 +141,10 @@ async function main() {
           waitUntil: 'networkidle',
           timeout: 30_000,
         });
-        // Extra settle time for 3D/WebGL canvas content
-        await page.waitForTimeout(1200);
+        // Allow extra time for 3-D/WebGL canvas to finish rendering.
+        // Builder pages (/#/app, /#/arena) need more time than static pages.
+        const isBuilderPage = appPath.includes('/app') || appPath.includes('/arena');
+        await page.waitForTimeout(isBuilderPage ? 4000 : 1500);
         navigated = true;
       } catch (err) {
         console.warn(`     ⚠  Could not load ${BASE_URL}${appPath}: ${err.message}`);
