@@ -56,7 +56,6 @@ import type {
   WorkspaceMode,
   GuideWorkflowId,
   LegacyModeState,
-  QuickAction,
   HelpSection,
   HelpModalView,
   SettingsItem,
@@ -65,7 +64,6 @@ import type {
 } from "../components/builder/types";
 import {
   COMPONENT_ACTIONS,
-  QUICK_ACTIONS,
   QUICK_ADD_COMPONENTS,
   WIRE_TOOL_ACTIONS,
   CURRENT_MODE_ACTIONS,
@@ -936,16 +934,6 @@ const IconRuler = ({ className }: IconProps) => (
   </svg>
 );
 
-function getQuickActionIcon(actionId: string, className: string) {
-  switch (actionId) {
-    case "select":   return <IconCursor className={className} />;
-    case "measure":  return <IconRuler className={className} />;
-    case "clear":    return <IconTrash className={className} />;
-    case "simulate": return <IconPlay className={className} />;
-    default:         return null;
-  }
-}
-
 /**
  * Hook to detect when an element is visible in the viewport
  * Used to lazy-load expensive 3D thumbnails only when needed
@@ -1195,8 +1183,6 @@ export default function Builder() {
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   }, []);
 
-  const [activeQuickTool, setActiveQuickTool] =
-    useState<BuilderToolId>("select");
   const [modeState, setModeState] = useState<LegacyModeState>({
     isWireMode: false,
     isRotateMode: false,
