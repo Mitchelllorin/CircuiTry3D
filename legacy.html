@@ -5504,20 +5504,33 @@ body.android-optimized .zoom-btn {
             createMesh() {
                 const group = new THREE.Group();
                 
-                // Main purple sphere
-                const bodyGeometry = new THREE.SphereGeometry(0.25, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                // Main bright-yellow junction sphere — highly visible on dark background
+                const bodyGeometry = new THREE.SphereGeometry(0.28, isMobile ? 12 : 16, isMobile ? 8 : 12);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ 
-                    color: 0x8844ff,
-                    emissive: 0x221188,
-                    emissiveIntensity: 0.4,
-                    metalness: 0.2,
-                    roughness: 0.35
+                    color: 0xffdd00,
+                    emissive: 0xcc8800,
+                    emissiveIntensity: 0.7,
+                    metalness: 0.15,
+                    roughness: 0.25
                 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 group.add(body);
+
+                // Outer ring — makes junctions unmistakable on any wire run
+                const ringGeometry = new THREE.TorusGeometry(0.42, 0.055, 8, 28);
+                const ringMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xff8800,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.6,
+                    metalness: 0.1,
+                    roughness: 0.3
+                });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.x = Math.PI / 2; // lay flat in the XZ plane
+                group.add(ring);
                 
                 // Selection sphere
-                const selectionGeometry = new THREE.SphereGeometry(isMobile ? 1.2 : 0.8, 8, 6);
+                const selectionGeometry = new THREE.SphereGeometry(isMobile ? 1.2 : 0.9, 8, 6);
                 const selectionMaterial = new THREE.MeshBasicMaterial({ 
                     transparent: true,
                     opacity: 0.0
@@ -5531,13 +5544,15 @@ body.android-optimized .zoom-btn {
                 
                 this.mesh = group;
                 this.selectionSphere = selectionSphere;
+                this.bodyMaterial = bodyMaterial;
+                this.ringMaterial = ringMaterial;
                 scene.add(group);
                 
                 this.createConnectionPoint();
             }
 
             createConnectionPoint() {
-                const pointGeometry = new THREE.SphereGeometry(0.14, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const pointGeometry = new THREE.SphereGeometry(0.18, isMobile ? 12 : 16, isMobile ? 8 : 12);
                 const pointMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x007777,
@@ -5590,6 +5605,15 @@ body.android-optimized .zoom-btn {
                 const index = junctions.indexOf(this);
                 if (index > -1) {
                     junctions.splice(index, 1);
+                }
+            }
+
+            updateGlow(pulseFactor) {
+                if (this.bodyMaterial) {
+                    this.bodyMaterial.emissiveIntensity = 0.5 + pulseFactor * 0.6;
+                }
+                if (this.ringMaterial) {
+                    this.ringMaterial.emissiveIntensity = 0.4 + pulseFactor * 0.5;
                 }
             }
         }
@@ -7787,6 +7811,7 @@ body.android-optimized .zoom-btn {
             globalFlowTime++;
             updateFlowParticles(currentTime);
             updateWireGlows(currentTime);
+            updateJunctionGlows(currentTime);
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
             _updateLayerVisibility();  // Fade components/wires based on zoom level
@@ -8111,6 +8136,18 @@ body.android-optimized .zoom-btn {
                     : 0;
                 g.mesh.material.opacity = Math.max(0.01, Math.min(0.55,
                     g.baseOpacity + sinVal * WIRE_GLOW_PULSE_AMP + proximityBoost));
+            }
+        }
+
+        function updateJunctionGlows(currentTime) {
+            if (!junctions || junctions.length === 0) return;
+            // Smooth 0→1→0 pulse at ~1 Hz
+            const pulseFactor = 0.5 + 0.5 * Math.sin(currentTime * 0.002 * Math.PI);
+            for (let i = 0; i < junctions.length; i++) {
+                const junction = junctions[i];
+                if (junction && typeof junction.updateGlow === 'function') {
+                    junction.updateGlow(pulseFactor);
+                }
             }
         }
 
@@ -10382,7 +10419,7 @@ body.android-optimized .zoom-btn {
                     if (connectionPoint?.data) {
                         handleConnectionPointClick(connectionPoint.data);
                     } else {
-                        setStatus('⚡ WIRE MODE! Touch terminals to connect, or tap any wire run to drop a junction branch.');
+                        setStatus('⚡ WIRE MODE! Touch terminals to connect — or tap any wire run to drop a ● junction and branch from it.');
                     }
                     break;
                 default:
@@ -10629,7 +10666,7 @@ body.android-optimized .zoom-btn {
             handleConnectionPointClick(pointData);
 
             if (!hadWireStart && wireStart) {
-                setStatus('⚡ Junction added on wire. Click another terminal or junction to finish the branch.');
+                setStatus('⚡ Junction added on wire — click any terminal or junction to complete the branch!');
             }
         }
         
@@ -10876,7 +10913,7 @@ body.android-optimized .zoom-btn {
                         if (pointData) {
                             handleConnectionPointClick(pointData);
                             if (!hadWireStart && wireStart) {
-                                setStatus('⚡ Junction dropped on wire. Click another terminal or junction to complete the branch.');
+                                setStatus('⚡ Junction dropped on wire — now click any terminal or junction to complete the branch!');
                             }
                             return true;
                         }
@@ -13201,7 +13238,7 @@ Made with ? for visual learners everywhere!
                 const existingJunction = findNearestJunctionByPosition(splitPoint);
                 if (existingJunction) {
                     if (!suppressStatus) {
-                        setStatus('⚡ Existing junction selected - continue wiring to branch from this node.');
+                        setStatus('⚡ Existing ● junction selected — click any terminal or junction to branch from this node!');
                     }
                     return existingJunction;
                 }
@@ -13298,7 +13335,7 @@ Made with ? for visual learners everywhere!
             const { silent = false } = options;
             if (isWireMode) {
                 if (!silent) {
-                    setStatus('⚡ WIRE MODE! Touch terminals to connect, or tap any wire run to drop a junction branch.');
+                    setStatus('⚡ WIRE MODE — tap a terminal or junction to start a wire; tap any wire run to drop a ● junction.');
                 }
                 notifyParentToolState('wire');
                 notifyParentModeState();
@@ -13319,7 +13356,7 @@ Made with ? for visual learners everywhere!
             closeAllSubmenus();
 
             if (!silent) {
-                setStatus('⚡ WIRE MODE! Touch terminals to connect, or tap any wire run to drop a junction branch.');
+                setStatus('⚡ WIRE MODE — tap a terminal or junction to start a wire; tap any wire run to drop a ● junction.');
             }
 
             notifyParentToolState('wire');
