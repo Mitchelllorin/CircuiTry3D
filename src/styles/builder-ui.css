@@ -502,10 +502,7 @@ body.builder-body {
 
 /* Right edge positioning (default - Undo, Redo, Load, Save) */
 .workspace-edge-actions--right {
-  right: calc(
-    var(--builder-menu-toggle-hit-width) +
-    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
-  );
+  right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
   left: auto;
   /* Position above the Insights toggle to avoid overlap */
   bottom: calc(
@@ -555,10 +552,7 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: calc(
-      var(--builder-menu-toggle-hit-width) +
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
-    );
+    right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
     /* Position above the Insights toggle to avoid overlap */
     bottom: calc(
       var(--builder-menu-toggle-height) +
@@ -604,10 +598,7 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: calc(
-      var(--builder-menu-toggle-hit-width) +
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
-    );
+    right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
     left: auto;
     transform: none;
     /* Position above the Insights toggle to avoid overlap */
@@ -4451,11 +4442,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .workspace-edge-actions--right {
-    /* Position above the Insights toggle to avoid overlap, and clear of the sidebar toggle */
-    right: calc(
-      var(--builder-menu-toggle-hit-width) +
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-right, 0px)
-    );
+    /* Position above the Insights toggle to avoid overlap */
+    right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
     bottom: calc(
       var(--builder-menu-toggle-height) +
       20px +
