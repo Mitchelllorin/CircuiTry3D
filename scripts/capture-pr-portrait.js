@@ -61,6 +61,8 @@ async function main() {
 
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
+    // Wait for web fonts to finish loading so text renders correctly in the screenshot
+    await page.evaluate(() => document.fonts.ready).catch(() => {});
     // Allow time for iframe content and any CSS animations to settle
     await page.waitForTimeout(3000);
   } catch (err) {
