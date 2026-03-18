@@ -7,20 +7,23 @@ type PromoMessage = {
 };
 
 /**
- * Component Arena Reel promo page (Part IX).
+ * 3D Gameplay Showcase promo page (Part IX).
  *
  * A cinematic, full-viewport scene-based slideshow built around
- * real in-app captures (steel shots) from the CircuiTry3D Component Arena.
- * Each scene uses an actual screenshot as a full-screen background with
- * animated text overlays, scanlines, and the shared circuit-network canvas.
+ * real in-app still shots from the CircuiTry3D 3D Builder and
+ * Component Arena. Each scene uses an actual screenshot as a
+ * full-screen background with animated text overlays, scanlines,
+ * and the shared circuit-network canvas.
  *
  * Scenes:
  *   0 — Title / Hook
- *   1 — Two Contenders, One 3D Stage   (arena-shot-1)
- *   2 — LIVE: FUSE™ Scores Every Round  (arena-shot-3)
- *   3 — Champion Crowned in 3D         (arena-shot-2)
- *   4 — The Results Speak for Themselves (arena-shot-4)
- *   5 — CTA
+ *   1 — 3D Builder: Build Any Circuit in Three Dimensions
+ *   2 — 3D Builder: 31 Components, One 3D Stage
+ *   3 — 3D Builder: Voltage, Current, Power — All Live
+ *   4 — FUSE™ Engine: FUSE™ Catches What You Miss
+ *   5 — Atomic Zoom: Zoom to the Atomic Level
+ *   6 — Component Arena: The Arena — Components Battle
+ *   7 — CTA
  *
  * Same iframe pattern as the other Promo pages. The iframe can post
  * a `promo:navigate` message to trigger client-side navigation in
@@ -51,7 +54,7 @@ export default function Promo9() {
     <div className="promo-page-wrapper" style={{ width: "100%", height: "100%" }}>
       <iframe
         ref={iframeRef}
-        title="CircuiTry3D — Component Arena Reel"
+        title="CircuiTry3D — 3D Gameplay Showcase"
         src="promo9.html"
         style={{ width: "100%", height: "100%", border: 0 }}
         sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
