@@ -99,6 +99,7 @@ const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
   "circuitry3d:onboarding:current-flow-payoff:v1";
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
+const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
@@ -1088,7 +1089,7 @@ function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonP
   return (
     <button
       type="button"
-      className="quick-add-btn"
+      className={`quick-add-btn${component.id === "junction" ? " quick-add-btn--junction" : ""}`}
       onClick={onClick}
       disabled={disabled}
       aria-disabled={disabled}
@@ -1266,6 +1267,9 @@ export default function Builder() {
     useState(false);
   const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
   const [introDialogStep, setIntroDialogStep] = useState(0);
+  const [isJunctionTipVisible, setJunctionTipVisible] = useState(
+    () => window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1",
+  );
 
   // Global workspace mode context - sync with local state
   const globalModeContext = useWorkspaceMode();
@@ -2086,6 +2090,15 @@ export default function Builder() {
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [runCurrentFlowPayoffSequence]);
 
+  const handleDismissJunctionTip = useCallback(() => {
+    setJunctionTipVisible(false);
+    try {
+      window.localStorage.setItem(JUNCTION_TIP_STORAGE_KEY, "1");
+    } catch {
+      // ignore storage write failures
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       clearCurrentFlowPayoffTimers();
@@ -2784,6 +2797,34 @@ export default function Builder() {
               />
             ))}
           </div>
+
+          {/* Junction info tip — shown until dismissed, explains the role
+              of junctions and how to use them so they are never missed */}
+          {isJunctionTipVisible && (
+            <div className="junction-info-tip" role="note" aria-label="Junction nodes tip">
+              <span className="junction-info-tip-icon" aria-hidden="true">─●─</span>
+              <div className="junction-info-tip-body">
+                <p className="junction-info-tip-title">Junction Nodes — critical for complex circuits</p>
+                <p className="junction-info-tip-text">
+                  Drop a <strong>Junction ─●─</strong> anywhere on a wire to instantly branch it.
+                  Essential for parallel circuits and combination topologies.
+                </p>
+                <ul className="junction-info-tip-bullets">
+                  <li>Press <kbd>J</kbd> or tap the pulsing <strong>Junction</strong> button in the component bar above</li>
+                  <li>In Wire mode, click any wire to split it and branch from that point</li>
+                  <li aria-label="KCL applies at every junction: sum of currents in equals sum of currents out">KCL applies at every junction: Σ I<sub>in</sub> = Σ I<sub>out</sub></li>
+                </ul>
+              </div>
+              <button
+                type="button"
+                className="junction-info-tip-close"
+                aria-label="Dismiss junction tip"
+                onClick={handleDismissJunctionTip}
+              >
+                ×
+              </button>
+            </div>
+          )}
         </Fragment>
       )}
 
