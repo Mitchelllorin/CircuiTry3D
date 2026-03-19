@@ -734,7 +734,7 @@
       </div>
 
       <div class="hero-cta">
-        <a class="btn-primary" href="/app" id="launch-btn">
+        <a class="btn-primary" href="https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-632/" id="launch-btn">
           ⚡ Launch Builder
         </a>
       </div>
@@ -1016,7 +1016,7 @@
         starting completely free. No account required.
       </p>
       <div class="cta-wrap">
-        <a class="btn-primary" href="/app" id="cta-launch-btn">
+        <a class="btn-primary" href="https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-632/" id="cta-launch-btn">
           ⚡ Launch Builder
         </a>
       </div>
@@ -1055,6 +1055,12 @@
         if (!href || typeof href !== "string") return "/";
         try {
           var url = new URL(href, window.location.origin);
+          // Return the full URL for external (cross-origin) links so the
+          // caller can navigate window.top directly instead of routing
+          // through React Router.
+          if (url.origin !== window.location.origin) {
+            return url.href;
+          }
           return (url.pathname + url.search + url.hash) || "/";
         } catch (_) {
           return href.charAt(0) === "/" ? href : "/" + href;
@@ -1063,6 +1069,17 @@
 
       var sendNavigationMessage = function (pathTarget) {
         if (!pathTarget) return false;
+        // External URL — navigate the top frame directly so the user leaves
+        // the current site and lands on the target (e.g. a PR preview).
+        if (/^https?:\/\//.test(pathTarget)) {
+          try {
+            (window.top || window).location.href = pathTarget;
+            return true;
+          } catch (_) {
+            // Cross-origin top-frame access blocked; fall through to native
+          }
+          return false;
+        }
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: "landing:navigate", path: pathTarget }, "*");
