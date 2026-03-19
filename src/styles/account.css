@@ -273,3 +273,66 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Lifetime / Founding-Tester styles ─────────────────────────────────────── */
+
+.lifetime-hint {
+  font-size: 0.8rem;
+  color: #fde68a;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.lifetime-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(161, 98, 7, 0.12));
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: 16px;
+  padding: 18px 20px;
+  color: #fde68a;
+  box-shadow: 0 0 32px -8px rgba(234, 179, 8, 0.2);
+}
+
+.lifetime-banner-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.lifetime-banner strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.lifetime-banner p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(253, 230, 138, 0.8);
+  line-height: 1.5;
+}
+
+.lifetime-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0b1120;
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-left: 10px;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px -2px rgba(234, 179, 8, 0.5);
+}
