@@ -65,10 +65,11 @@ async function main() {
   await page.setViewportSize(VIEWPORT);
 
   try {
-    await page.goto(builderUrl, { waitUntil: 'networkidle', timeout: 30_000 });
-    // Allow extra time for WebGL / Three.js to fully initialise and render the
-    // 3-D circuit grid — builder pages need more settle time than static pages.
-    await page.waitForTimeout(8000);
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
+    // Wait for web fonts to finish loading so text renders correctly in the screenshot
+    await page.evaluate(() => document.fonts.ready).catch(() => {});
+    // Allow time for iframe content and any CSS animations to settle
+    await page.waitForTimeout(3000);
   } catch (err) {
     console.warn(`⚠  Navigation timed out or failed: ${err.message}`);
     console.warn('   Proceeding with whatever has rendered so far.');

@@ -3,6 +3,7 @@ import type {
   BuilderInvokeAction,
   BuilderMessage,
   LegacyModeState,
+  LegacyMeterState,
   BuilderToolId,
   ArenaExportStatus,
   ArenaExportSummary,
@@ -14,6 +15,16 @@ export type LegacySimulationPayload = {
   success: boolean;
   result?: unknown;
   error?: string;
+};
+
+const DEFAULT_METER_STATE: LegacyMeterState = {
+  mode: "voltage",
+  armed: false,
+  reading: "—",
+  subreading: "",
+  instructions: "Enable probes to begin measuring.",
+  probeA: "—",
+  probeB: "—",
 };
 
 interface UseBuilderFrameOptions {
@@ -48,6 +59,8 @@ export function useBuilderFrame({
     null,
   );
   const [lastSimulationAt, setLastSimulationAt] = useState<string | null>(null);
+  const [meterState, setMeterState] =
+    useState<LegacyMeterState>(DEFAULT_METER_STATE);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -119,6 +132,27 @@ export function useBuilderFrame({
           return;
         }
         setCircuitState(payload as LegacyCircuitState);
+        return;
+      }
+
+      if (type === "legacy:meter-reading") {
+        if (!payload || typeof payload !== "object") {
+          return;
+        }
+        const p = payload as Partial<LegacyMeterState>;
+        setMeterState((prev) => ({
+          mode: (p.mode as LegacyMeterState["mode"]) ?? prev.mode,
+          armed: typeof p.armed === "boolean" ? p.armed : prev.armed,
+          reading: typeof p.reading === "string" ? p.reading : prev.reading,
+          subreading:
+            typeof p.subreading === "string" ? p.subreading : prev.subreading,
+          instructions:
+            typeof p.instructions === "string"
+              ? p.instructions
+              : prev.instructions,
+          probeA: typeof p.probeA === "string" ? p.probeA : prev.probeA,
+          probeB: typeof p.probeB === "string" ? p.probeB : prev.probeB,
+        }));
         return;
       }
 
@@ -312,6 +346,7 @@ export function useBuilderFrame({
     circuitState,
     lastSimulationAt,
     lastSimulation,
+    meterState,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,

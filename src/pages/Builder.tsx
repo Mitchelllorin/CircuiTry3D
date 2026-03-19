@@ -56,7 +56,6 @@ import type {
   WorkspaceMode,
   GuideWorkflowId,
   LegacyModeState,
-  QuickAction,
   HelpSection,
   HelpModalView,
   SettingsItem,
@@ -65,7 +64,6 @@ import type {
 } from "../components/builder/types";
 import {
   COMPONENT_ACTIONS,
-  QUICK_ACTIONS,
   QUICK_ADD_COMPONENTS,
   WIRE_TOOL_ACTIONS,
   CURRENT_MODE_ACTIONS,
@@ -936,16 +934,6 @@ const IconRuler = ({ className }: IconProps) => (
   </svg>
 );
 
-function getQuickActionIcon(actionId: string, className: string) {
-  switch (actionId) {
-    case "select":   return <IconCursor className={className} />;
-    case "measure":  return <IconRuler className={className} />;
-    case "clear":    return <IconTrash className={className} />;
-    case "simulate": return <IconPlay className={className} />;
-    default:         return null;
-  }
-}
-
 /**
  * Hook to detect when an element is visible in the viewport
  * Used to lazy-load expensive 3D thumbnails only when needed
@@ -1195,8 +1183,6 @@ export default function Builder() {
     return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   }, []);
 
-  const [activeQuickTool, setActiveQuickTool] =
-    useState<BuilderToolId>("select");
   const [modeState, setModeState] = useState<LegacyModeState>({
     isWireMode: false,
     isRotateMode: false,
@@ -1368,13 +1354,14 @@ export default function Builder() {
     circuitState,
     lastSimulationAt,
     lastSimulation,
+    meterState,
     postToBuilder,
     triggerBuilderAction,
     handleArenaSync,
   } = useBuilderFrame({
     appBasePath,
     onModeStateChange: handleModeStateChange,
-    onToolChange: setActiveQuickTool,
+    onToolChange: () => {},
     onSimulationPulse: handleSimulationPulse,
   });
 
@@ -1879,20 +1866,6 @@ export default function Builder() {
     [postToBuilder],
   );
 
-  const handleQuickAction = useCallback(
-    (quickAction: QuickAction) => {
-      triggerBuilderAction(quickAction.action, quickAction.data);
-
-      if (quickAction.kind === "tool" && quickAction.tool) {
-        setActiveQuickTool(quickAction.tool);
-      }
-
-      if (quickAction.id === "simulate") {
-        triggerSimulationPulse();
-      }
-    },
-    [triggerBuilderAction, triggerSimulationPulse],
-  );
 
   const handleAdvancePracticeProblem = useCallback((currentProblemId?: string) => {
     const currentId =
@@ -2807,20 +2780,6 @@ export default function Builder() {
                 title={component.description || component.label}
               />
             ))}
-            <button
-              type="button"
-              className={`quick-add-btn${modeState.isWireMode ? " quick-add-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-wire-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isWireMode}
-              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
-            >
-              <span className="quick-add-btn-symbol" aria-hidden="true">
-                <img src={wireStrippersIcon} alt="" className="quick-add-btn-wire-img" aria-hidden="true" />
-              </span>
-              <span className="quick-add-btn-label">Wire</span>
-            </button>
           </div>
         </Fragment>
       )}
@@ -3082,7 +3041,7 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Components Library</span>
+              <span className="slider-heading">Components</span>
               <div className="slider-stack">
                 {(IS_DEMO_MODE
                   ? COMPONENT_ACTIONS.filter((c) =>
@@ -3143,54 +3102,7 @@ export default function Builder() {
               )}
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Quick Actions</span>
-              <div className="slider-stack">
-                {QUICK_ACTIONS.map((action) => {
-                  const isActive =
-                    action.kind === "tool" && action.tool === activeQuickTool;
-                  const isSimulation = action.id === "simulate";
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() => handleQuickAction(action)}
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      aria-pressed={
-                        action.kind === "tool" ? isActive : undefined
-                      }
-                      data-active={
-                        action.kind === "tool" && isActive ? "true" : undefined
-                      }
-                      data-pulse={
-                        isSimulation && isSimulatePulsing ? "true" : undefined
-                      }
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-tutorial-id={
-                        action.id === "simulate"
-                          ? "tutorial-run-simulation"
-                          : undefined
-                      }
-                    >
-                      <span className="slider-quick-icon-row">
-                        {getQuickActionIcon(action.id, "slider-quick-icon")}
-                        <span className="slider-label">{action.label}</span>
-                      </span>
-                      <span className="slider-description">
-                        {action.description}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="slider-section">
-              <span className="slider-heading">Wire Modes</span>
+              <span className="slider-heading">Wiring Tools</span>
               <div className="slider-stack">
                 {WIRE_TOOL_ACTIONS.map((action) => {
                   const isWireToggle = action.action === "toggle-wire-mode";
@@ -3285,7 +3197,7 @@ export default function Builder() {
         >
           <div className="builder-menu-scroll">
             <div className="slider-section">
-              <span className="slider-heading">Modes</span>
+              <span className="slider-heading">Visualization</span>
               <div className="slider-stack">
                 {CURRENT_MODE_ACTIONS.map((action) => {
                   const isFlowToggle = action.action === "toggle-current-flow";
@@ -3457,7 +3369,7 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Environmental Conditions</span>
+              <span className="slider-heading">Environment</span>
               <div className="menu-track menu-track-chips">
                 <div
                   role="status"
@@ -3616,6 +3528,78 @@ export default function Builder() {
           </div>
         </nav>
       </div>
+
+
+      {/* ── Measurement tools nav bar ─────────────────────────── */}
+      {isActiveCircuitBuildMode && (
+        <div className="builder-measure-bar" role="toolbar" aria-label="Measurement tools">
+          <span className="measure-bar-label" aria-hidden="true">🔬 Meters</span>
+          <div className="measure-bar-modes" role="group" aria-label="Meter mode">
+            {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
+              const labels: Record<string, { short: string; title: string }> = {
+                voltage:    { short: "V",  title: "Voltmeter – measure voltage between two terminals" },
+                current:    { short: "A",  title: "Ammeter – measure current through a component" },
+                resistance: { short: "Ω",  title: "Ohmmeter – measure equivalent resistance between two terminals" },
+                scope:      { short: "~",  title: "Oscilloscope – plot voltage over time" },
+              };
+              const isActive = meterState.mode === mode && meterState.armed;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`measure-mode-btn${isActive ? " active" : ""}`}
+                  aria-pressed={isActive}
+                  title={labels[mode].title}
+                  disabled={!isFrameReady}
+                  onClick={() => {
+                    postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
+                  }}
+                >
+                  {labels[mode].short}
+                </button>
+              );
+            })}
+          </div>
+          <div className="measure-bar-divider" aria-hidden="true" />
+          <button
+            type="button"
+            className={`measure-probe-btn${meterState.armed ? " armed" : ""}`}
+            aria-pressed={meterState.armed}
+            title={meterState.armed ? "Probes enabled – click terminals to measure" : "Enable probes to start measuring"}
+            disabled={!isFrameReady}
+            onClick={() => {
+              postToBuilder({ type: "builder:toggle-meter-armed" });
+            }}
+          >
+            {meterState.armed ? "⦿ Probes On" : "○ Probes Off"}
+          </button>
+          {meterState.armed && (
+            <span
+              className={`measure-reading${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
+              aria-live="polite"
+              title={meterState.instructions}
+            >
+              {meterState.reading}
+            </span>
+          )}
+          {!meterState.armed && (
+            <span className="measure-hint" title={meterState.instructions}>
+              {meterState.instructions}
+            </span>
+          )}
+          <button
+            type="button"
+            className="measure-clear-btn"
+            title="Clear probe selections"
+            disabled={!isFrameReady}
+            onClick={() => {
+              postToBuilder({ type: "builder:clear-meter" });
+            }}
+          >
+            ✕ Clear
+          </button>
+        </div>
+      )}
 
       <div className="builder-ticker-feed" role="status" aria-live="polite">
         <div className="ticker-wire-fixed" role="group" aria-label="W.I.R.E. live metrics">

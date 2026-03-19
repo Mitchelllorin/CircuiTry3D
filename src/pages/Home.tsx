@@ -41,7 +41,7 @@ export default function Home() {
         ref={iframeRef}
         title="CircuiTry3D Landing"
         src="landing.html"
-        style={{ width: "100%", height: "100%", border: 0 }}
+        style={{ width: "100%", height: "100dvh", border: 0 }}
         sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
       />
     </div>
