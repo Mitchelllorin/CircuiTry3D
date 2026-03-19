@@ -571,14 +571,14 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     id: "wire-mode",
     label: "Wire Mode",
     description:
-      "Switch into wiring mode to pick freeform, Manhattan (90-deg), square outside, offset, arc, simple, perimeter, or A* auto-routing paths.",
+      "Switch into wiring mode to pick freeform, Manhattan (90-deg), square outside, offset, arc, simple, perimeter, A* auto-routing, diagonal (45°), stepped (staircase), or S-Curve paths.",
     action: "toggle-wire-mode",
   },
   {
     id: "cycle-routing",
     label: "Cycle Wire Routing",
     description:
-      "Switch between freeform, Manhattan 90-deg, square outside, offset, arc, simple, perimeter, and A* routing modes.",
+      "Switch between freeform, Manhattan 90-deg, square outside, offset, arc, simple, perimeter, A*, diagonal, stepped, and S-Curve routing modes.",
     action: "cycle-wire-routing",
   },
   {

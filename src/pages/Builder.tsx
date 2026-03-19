@@ -2382,6 +2382,9 @@ export default function Builder() {
     simple: "Simple",
     perimeter: "Perimeter",
     astar: "A* Auto",
+    diagonal: "Diagonal (45°)",
+    stepped: "Stepped",
+    scurve: "S-Curve",
   };
   const normalizedLayoutKey =
     typeof modeState.layoutMode === "string"
