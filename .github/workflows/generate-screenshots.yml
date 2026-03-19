@@ -9,6 +9,9 @@ on:
 jobs:
   screenshots:
     runs-on: ubuntu-latest
+    # Skip this job when the push was itself a screenshots-regeneration commit to
+    # avoid an infinite loop.  Manual workflow_dispatch runs always proceed.
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip screenshots]')
     permissions:
       contents: write
 
@@ -69,6 +72,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No screenshot changes to commit."
           else
-            git commit -m "chore: regenerate Play Store screenshots [skip ci]"
+            git commit -m "chore: regenerate Play Store screenshots [skip screenshots]"
             git push
           fi
