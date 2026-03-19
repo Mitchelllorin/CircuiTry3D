@@ -2,6 +2,10 @@
 
 This is the short version. You downloaded the AAB. Here's exactly what happens next.
 
+> **Already published once and just want to push an update?**  
+> The long setup steps below are one-time only. For recurring updates, see the short checklist in  
+> **[UPDATING_THE_APP.md](UPDATING_THE_APP.md)** — it's just 3 steps.
+
 ---
 
 ## Step 0 — Did you already upload it?

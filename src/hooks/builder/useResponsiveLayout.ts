@@ -37,7 +37,7 @@ export function useResponsiveLayout() {
     const largeScreenQuery = window.matchMedia("(min-width: 1024px)");
     const compactScreenQuery = window.matchMedia("(max-width: 900px)");
     const phoneLandscapeQuery = window.matchMedia(
-      "(orientation: landscape) and (max-height: 480px)",
+      "(orientation: landscape) and (max-height: 600px)",
     );
 
     const handleLargeScreen = (event: MediaQueryListEvent) => {
