@@ -993,11 +993,11 @@ body.builder-body {
   max-width: 390px;
   width: calc(100vw - 32px);
   padding: 10px 14px;
-  background: rgba(40, 26, 0, 0.92);
-  border: 1px solid rgba(255, 200, 0, 0.5);
+  background: rgba(10, 24, 48, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.35);
   border-radius: 14px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 180, 0, 0.18);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(136, 204, 255, 0.12);
   animation: junction-tip-in 0.25s ease;
   pointer-events: auto;
 }
@@ -1022,7 +1022,7 @@ body.builder-body {
 .junction-info-tip-title {
   font-size: 12px;
   font-weight: 700;
-  color: #ffe566;
+  color: rgba(136, 204, 255, 0.9);
   letter-spacing: 0.04em;
   margin: 0 0 4px;
   text-transform: uppercase;
@@ -1031,7 +1031,7 @@ body.builder-body {
 .junction-info-tip-text {
   font-size: 11px;
   line-height: 1.5;
-  color: rgba(255, 240, 190, 0.88);
+  color: rgba(210, 230, 255, 0.85);
   margin: 0 0 6px;
 }
 
@@ -1046,7 +1046,7 @@ body.builder-body {
 
 .junction-info-tip-bullets li {
   font-size: 10px;
-  color: rgba(255, 230, 160, 0.8);
+  color: rgba(200, 220, 255, 0.75);
   padding-left: 14px;
   position: relative;
   line-height: 1.4;
@@ -1056,7 +1056,7 @@ body.builder-body {
   content: "●";
   position: absolute;
   left: 0;
-  color: #ffcc00;
+  color: rgba(0, 255, 136, 0.8);
   font-size: 7px;
   top: 3px;
 }
@@ -1067,7 +1067,7 @@ body.builder-body {
   right: 9px;
   background: none;
   border: none;
-  color: rgba(255, 220, 100, 0.7);
+  color: rgba(136, 204, 255, 0.7);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -1077,7 +1077,7 @@ body.builder-body {
 }
 
 .junction-info-tip-close:hover {
-  color: #fff;
+  color: rgba(232, 246, 255, 0.95);
 }
 
 @media (max-width: 480px) {
