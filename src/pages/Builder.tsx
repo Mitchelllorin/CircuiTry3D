@@ -3369,6 +3369,115 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
+              <span className="slider-heading">Meters</span>
+              <div className="dmm-panel" role="region" aria-label="Digital multimeter">
+                {/* LCD display */}
+                <div className="dmm-display" aria-live="polite">
+                  <span className="dmm-mode-label">
+                    {meterState.mode === "voltage"
+                      ? "VOLTMETER"
+                      : meterState.mode === "current"
+                        ? "AMMETER"
+                        : meterState.mode === "resistance"
+                          ? "OHMMETER"
+                          : "OSCILLOSCOPE"}
+                  </span>
+                  <span
+                    className={`dmm-reading-main${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
+                    aria-label={`Reading: ${meterState.reading}`}
+                  >
+                    {meterState.reading !== "—" && meterState.reading !== ""
+                      ? meterState.reading
+                      : "- - - -"}
+                  </span>
+                  {meterState.subreading ? (
+                    <span className="dmm-subreading">{meterState.subreading}</span>
+                  ) : null}
+                </div>
+                {/* Mode selector */}
+                <div className="dmm-mode-row" role="group" aria-label="Meter mode">
+                  {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
+                    const modeLabels: Record<string, { symbol: string; name: string }> = {
+                      voltage:    { symbol: "V",  name: "Voltage" },
+                      current:    { symbol: "A",  name: "Current" },
+                      resistance: { symbol: "Ω",  name: "Resistance" },
+                      scope:      { symbol: "~",  name: "Oscilloscope" },
+                    };
+                    const isActive = meterState.mode === mode && meterState.armed;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        className={`dmm-mode-btn${isActive ? " active" : ""}`}
+                        aria-pressed={isActive}
+                        title={modeLabels[mode].name}
+                        disabled={!isFrameReady}
+                        onClick={() => {
+                          postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
+                        }}
+                      >
+                        <span className="dmm-mode-symbol">{modeLabels[mode].symbol}</span>
+                        <span className="dmm-mode-name">{modeLabels[mode].name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Probe terminals */}
+                <div className="dmm-probes" aria-label="Probe terminals">
+                  <div className={`dmm-probe dmm-probe-red${meterState.probeA !== "—" ? " placed" : ""}`}>
+                    <span className="dmm-probe-dot" aria-hidden="true">●</span>
+                    <div className="dmm-probe-info">
+                      <span className="dmm-probe-port">VΩmA</span>
+                      <span className="dmm-probe-node" aria-label={`Red probe: ${meterState.probeA}`}>
+                        {meterState.probeA !== "—" ? meterState.probeA : "open"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`dmm-probe dmm-probe-black${meterState.probeB !== "—" ? " placed" : ""}`}>
+                    <span className="dmm-probe-dot" aria-hidden="true">●</span>
+                    <div className="dmm-probe-info">
+                      <span className="dmm-probe-port">COM</span>
+                      <span className="dmm-probe-node" aria-label={`Black probe: ${meterState.probeB}`}>
+                        {meterState.probeB !== "—" ? meterState.probeB : "open"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Arm / clear */}
+                <div className="dmm-actions">
+                  <button
+                    type="button"
+                    className={`dmm-arm-btn${meterState.armed ? " armed" : ""}`}
+                    aria-pressed={meterState.armed}
+                    title={meterState.armed ? "Probes active — click circuit terminals to measure" : "Activate probes then tap two terminals on the circuit"}
+                    disabled={!isFrameReady}
+                    onClick={() => {
+                      postToBuilder({ type: "builder:toggle-meter-armed" });
+                    }}
+                  >
+                    {meterState.armed ? "⦿ Probes Active" : "○ Place Probes"}
+                  </button>
+                  <button
+                    type="button"
+                    className="dmm-clear-btn"
+                    title="Reset probe positions and clear reading"
+                    disabled={!isFrameReady}
+                    onClick={() => {
+                      postToBuilder({ type: "builder:clear-meter" });
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                {/* Contextual hint */}
+                {meterState.instructions && (
+                  <p className="dmm-instructions" aria-live="polite">
+                    {meterState.instructions}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="slider-section">
               <span className="slider-heading">Environment</span>
               <div className="menu-track menu-track-chips">
                 <div
@@ -3529,77 +3638,6 @@ export default function Builder() {
         </nav>
       </div>
 
-
-      {/* ── Measurement tools nav bar ─────────────────────────── */}
-      {isActiveCircuitBuildMode && (
-        <div className="builder-measure-bar" role="toolbar" aria-label="Measurement tools">
-          <span className="measure-bar-label" aria-hidden="true">🔬 Meters</span>
-          <div className="measure-bar-modes" role="group" aria-label="Meter mode">
-            {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
-              const labels: Record<string, { short: string; title: string }> = {
-                voltage:    { short: "V",  title: "Voltmeter – measure voltage between two terminals" },
-                current:    { short: "A",  title: "Ammeter – measure current through a component" },
-                resistance: { short: "Ω",  title: "Ohmmeter – measure equivalent resistance between two terminals" },
-                scope:      { short: "~",  title: "Oscilloscope – plot voltage over time" },
-              };
-              const isActive = meterState.mode === mode && meterState.armed;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  className={`measure-mode-btn${isActive ? " active" : ""}`}
-                  aria-pressed={isActive}
-                  title={labels[mode].title}
-                  disabled={!isFrameReady}
-                  onClick={() => {
-                    postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
-                  }}
-                >
-                  {labels[mode].short}
-                </button>
-              );
-            })}
-          </div>
-          <div className="measure-bar-divider" aria-hidden="true" />
-          <button
-            type="button"
-            className={`measure-probe-btn${meterState.armed ? " armed" : ""}`}
-            aria-pressed={meterState.armed}
-            title={meterState.armed ? "Probes enabled – click terminals to measure" : "Enable probes to start measuring"}
-            disabled={!isFrameReady}
-            onClick={() => {
-              postToBuilder({ type: "builder:toggle-meter-armed" });
-            }}
-          >
-            {meterState.armed ? "⦿ Probes On" : "○ Probes Off"}
-          </button>
-          {meterState.armed && (
-            <span
-              className={`measure-reading${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
-              aria-live="polite"
-              title={meterState.instructions}
-            >
-              {meterState.reading}
-            </span>
-          )}
-          {!meterState.armed && (
-            <span className="measure-hint" title={meterState.instructions}>
-              {meterState.instructions}
-            </span>
-          )}
-          <button
-            type="button"
-            className="measure-clear-btn"
-            title="Clear probe selections"
-            disabled={!isFrameReady}
-            onClick={() => {
-              postToBuilder({ type: "builder:clear-meter" });
-            }}
-          >
-            ✕ Clear
-          </button>
-        </div>
-      )}
 
       <div className="builder-ticker-feed" role="status" aria-live="polite">
         <div className="ticker-wire-fixed" role="group" aria-label="W.I.R.E. live metrics">

@@ -32,11 +32,10 @@
   --builder-safe-area-right: env(safe-area-inset-right, 0px);
   --builder-ticker-height: 32px;
   --builder-ticker-gap: 8px;
-  --builder-measure-bar-height: 40px;
-  /* Top of the ticker strip (below the mode bar, measure bar, and gap).
+  /* Top of the ticker strip (below the mode bar and gap).
      Side menus, quick-add-bar and zoom controls all key off this value so that nothing
      overlaps the ticker band. */
-  --builder-ticker-top: calc(72px + var(--builder-measure-bar-height));
+  --builder-ticker-top: 72px;
   --builder-floating-action-offset: 140px;
   --builder-floating-button-size: 46px;
   --builder-edge-actions-gap: 12px;
@@ -2716,222 +2715,280 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 
-/* ── Measurement Tools Navigation Bar ────────────────────────────────────── */
-.builder-measure-bar {
-  position: fixed;
-  top: calc(72px + var(--builder-safe-area-top));
-  left: 0;
-  right: 0;
-  height: var(--builder-measure-bar-height, 40px);
-  background: rgba(8, 18, 38, 0.94);
-  border-bottom: 1px solid rgba(0, 255, 136, 0.3);
-  backdrop-filter: blur(14px);
-  z-index: var(--z-builder-side-panel);
+/* ── Digital Multimeter Panel (Meters section in bottom nav) ─────────────── */
+.dmm-panel {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(4, 10, 24, 0.85);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  border-radius: 12px;
+}
+
+/* LCD-style reading display */
+.dmm-display {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  overflow: hidden;
+  gap: 2px;
+  background: #040f1a;
+  border: 1px solid rgba(0, 200, 100, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px 8px;
+  min-height: 68px;
+  justify-content: center;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 200, 100, 0.08);
 }
 
-.measure-bar-label {
-  font-size: 10px;
+.dmm-mode-label {
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(0, 255, 136, 0.8);
-  white-space: nowrap;
-  flex-shrink: 0;
+  color: rgba(0, 200, 100, 0.55);
+  align-self: flex-start;
 }
 
-.measure-bar-modes {
-  display: flex;
-  gap: 3px;
-  flex-shrink: 0;
+.dmm-reading-main {
+  font-size: 26px;
+  font-weight: 900;
+  font-family: "Consolas", "Courier New", monospace;
+  color: rgba(0, 220, 110, 0.45);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
 }
 
-.measure-mode-btn {
-  height: 26px;
-  min-width: 28px;
-  padding: 0 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 5px;
-  color: rgba(200, 220, 255, 0.75);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
-  white-space: nowrap;
+.dmm-reading-main.has-value {
+  color: #00e87a;
+  text-shadow: 0 0 12px rgba(0, 232, 122, 0.65), 0 0 24px rgba(0, 200, 100, 0.3);
 }
 
-.measure-mode-btn:hover:not(:disabled) {
-  background: rgba(0, 255, 136, 0.12);
-  border-color: rgba(0, 255, 136, 0.45);
-  color: #00ff88;
-}
-
-.measure-mode-btn.active {
-  background: rgba(0, 255, 136, 0.2);
-  border-color: #00ff88;
-  color: #00ff88;
-  box-shadow: 0 0 6px rgba(0, 255, 136, 0.35);
-}
-
-.measure-mode-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.measure-bar-divider {
-  width: 1px;
-  height: 20px;
-  background: rgba(136, 204, 255, 0.2);
-  flex-shrink: 0;
-  margin: 0 2px;
-}
-
-.measure-probe-btn {
-  height: 26px;
-  padding: 0 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 5px;
-  color: rgba(200, 220, 255, 0.75);
+.dmm-subreading {
   font-size: 10px;
-  font-weight: 600;
+  font-family: "Consolas", "Courier New", monospace;
+  color: rgba(0, 200, 100, 0.5);
+  letter-spacing: 0.06em;
+}
+
+/* Mode selector row (V / A / Ω / ~) */
+.dmm-mode-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.dmm-mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: rgba(200, 220, 255, 0.65);
   cursor: pointer;
-  transition: all 0.18s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.measure-probe-btn:hover:not(:disabled) {
-  background: rgba(136, 204, 255, 0.12);
-  border-color: rgba(136, 204, 255, 0.45);
-  color: #88ccff;
+.dmm-mode-btn:hover:not(:disabled) {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #00ff88;
 }
 
-.measure-probe-btn.armed {
+.dmm-mode-btn.active {
   background: rgba(0, 255, 136, 0.18);
   border-color: #00ff88;
   color: #00ff88;
   box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
 }
 
-.measure-probe-btn:disabled {
-  opacity: 0.35;
+.dmm-mode-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-.measure-reading {
-  font-size: 13px;
+.dmm-mode-symbol {
+  font-size: 15px;
   font-weight: 800;
-  font-family: "Consolas", "Monaco", monospace;
-  color: rgba(200, 220, 255, 0.7);
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  flex-shrink: 0;
-  min-width: 60px;
-  transition: color 0.2s ease;
+  font-family: "Consolas", "Courier New", monospace;
+  line-height: 1;
 }
 
-.measure-reading.has-value {
-  color: #00ff88;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
-}
-
-.measure-hint {
-  font-size: 10px;
-  color: rgba(136, 204, 255, 0.6);
+.dmm-mode-name {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1 1 auto;
-  min-width: 0;
-  letter-spacing: 0.02em;
+  max-width: 100%;
 }
 
-.measure-clear-btn {
-  height: 26px;
-  padding: 0 8px;
-  background: rgba(255, 80, 80, 0.08);
-  border: 1px solid rgba(255, 80, 80, 0.25);
-  border-radius: 5px;
-  color: rgba(255, 140, 140, 0.75);
+/* Probe terminals */
+.dmm-probes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.dmm-probe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.dmm-probe-red .dmm-probe-dot {
+  color: #cc2222;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+.dmm-probe-black .dmm-probe-dot {
+  color: #666;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.dmm-probe-red.placed {
+  border-color: rgba(200, 40, 40, 0.5);
+  background: rgba(180, 20, 20, 0.1);
+}
+.dmm-probe-red.placed .dmm-probe-dot {
+  color: #ff4444;
+  text-shadow: 0 0 8px rgba(255, 60, 60, 0.7);
+}
+.dmm-probe-black.placed {
+  border-color: rgba(136, 136, 136, 0.5);
+  background: rgba(80, 80, 80, 0.12);
+}
+.dmm-probe-black.placed .dmm-probe-dot {
+  color: #aaa;
+  text-shadow: 0 0 6px rgba(170, 170, 170, 0.5);
+}
+
+.dmm-probe-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dmm-probe-port {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(200, 220, 255, 0.45);
+  white-space: nowrap;
+}
+
+.dmm-probe-node {
   font-size: 10px;
+  font-weight: 600;
+  font-family: "Consolas", "Courier New", monospace;
+  color: rgba(180, 200, 240, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.dmm-probe-red.placed .dmm-probe-node {
+  color: rgba(255, 160, 160, 0.9);
+}
+.dmm-probe-black.placed .dmm-probe-node {
+  color: rgba(180, 180, 200, 0.9);
+}
+
+/* Arm / clear action row */
+.dmm-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dmm-arm-btn {
+  flex: 1 1 auto;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: rgba(200, 220, 255, 0.75);
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s ease;
+  text-align: center;
   white-space: nowrap;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
-.measure-clear-btn:hover:not(:disabled) {
-  background: rgba(255, 80, 80, 0.18);
-  border-color: rgba(255, 80, 80, 0.5);
-  color: #ff8888;
+.dmm-arm-btn:hover:not(:disabled) {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #00ff88;
 }
 
-.measure-clear-btn:disabled {
-  opacity: 0.35;
+.dmm-arm-btn.armed {
+  background: rgba(0, 255, 136, 0.16);
+  border-color: #00ff88;
+  color: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.25);
+}
+
+.dmm-arm-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-/* Responsive: reduce spacing and text on narrower screens */
-@media (max-width: 960px) {
-  .builder-measure-bar {
-    top: calc(68px + var(--builder-safe-area-top));
-    height: var(--builder-measure-bar-height, 36px);
-    gap: 4px;
-    padding: 0 8px;
-  }
-
-  .measure-bar-label {
-    display: none;
-  }
+.dmm-clear-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 60, 60, 0.07);
+  border: 1px solid rgba(255, 60, 60, 0.22);
+  border-radius: 8px;
+  color: rgba(255, 130, 130, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
-@media (max-width: 720px) {
-  .builder-measure-bar {
-    top: calc(64px + var(--builder-safe-area-top));
-    height: var(--builder-measure-bar-height, 34px);
-    gap: 3px;
-    padding: 0 6px;
-  }
-
-  .measure-mode-btn {
-    min-width: 24px;
-    padding: 0 5px;
-    font-size: 10px;
-  }
-
-  .measure-probe-btn {
-    padding: 0 6px;
-    font-size: 9px;
-  }
-
-  .measure-reading {
-    font-size: 11px;
-    min-width: 48px;
-  }
-
-  .measure-hint {
-    display: none;
-  }
-
-  .measure-clear-btn {
-    padding: 0 6px;
-    font-size: 9px;
-  }
+.dmm-clear-btn:hover:not(:disabled) {
+  background: rgba(255, 60, 60, 0.18);
+  border-color: rgba(255, 60, 60, 0.5);
+  color: #ff8888;
 }
 
-/* In landscape orientation, hide the measure bar to reclaim vertical space */
-@media (orientation: landscape) and (max-height: 500px) {
-  .builder-measure-bar {
-    display: none;
-  }
+.dmm-clear-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Contextual hint text */
+.dmm-instructions {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(136, 204, 255, 0.55);
+  line-height: 1.4;
+  text-align: center;
+  letter-spacing: 0.02em;
 }
 
 .builder-ticker-feed {
