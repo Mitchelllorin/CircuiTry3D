@@ -1267,9 +1267,13 @@ export default function Builder() {
     useState(false);
   const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
   const [introDialogStep, setIntroDialogStep] = useState(0);
-  const [isJunctionTipVisible, setJunctionTipVisible] = useState(
-    () => window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1",
-  );
+  // Junction tip starts hidden — it is shown the first time the user
+  // explicitly uses the Junction button, not automatically on page load,
+  // so that it never blocks the 3D canvas or grid on first visit.
+  const [isJunctionTipVisible, setJunctionTipVisible] = useState(false);
+  // Session-level guard: once the tip has been triggered (or suppressed) this
+  // session, never trigger it again regardless of localStorage availability.
+  const junctionTipTriggeredRef = useRef(false);
 
   // Global workspace mode context - sync with local state
   const globalModeContext = useWorkspaceMode();
@@ -1854,6 +1858,20 @@ export default function Builder() {
 
       if (component.action === "junction") {
         postToBuilder({ type: "builder:add-junction" });
+        // Show the junction info tip the first time the user places a junction.
+        // The ref guards against re-showing within the same session even if
+        // localStorage is unavailable, while the storage key prevents it on
+        // subsequent visits.
+        if (!junctionTipTriggeredRef.current) {
+          junctionTipTriggeredRef.current = true;
+          try {
+            if (window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1") {
+              setJunctionTipVisible(true);
+            }
+          } catch {
+            // ignore storage read failures — ref prevents repeat triggers
+          }
+        }
         return;
       }
 
