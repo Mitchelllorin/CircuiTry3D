@@ -42,7 +42,7 @@ export default function Home() {
         title="CircuiTry3D Landing"
         src="landing.html"
         style={{ width: "100%", height: "100dvh", border: 0 }}
-        sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+        sandbox="allow-scripts allow-same-origin allow-popups"
       />
     </div>
   );
