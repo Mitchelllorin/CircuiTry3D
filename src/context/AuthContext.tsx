@@ -1,5 +1,7 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
+import { getStoredTier, setStoredTier } from "../utils/playStoreBilling";
 
 type AuthStorageSchema = {
   users: StoredUser[];
@@ -151,6 +153,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Grant lifetime tier retroactively for any signed-in founding tester.
+  useEffect(() => {
+    if (currentUser && isLifetimeTester(currentUser.email) && getStoredTier() !== "lifetime") {
+      setStoredTier("lifetime");
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (!initialisedRef.current) {
       return;
@@ -203,6 +212,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUserId: nextUser.id,
     }));
 
+    if (isLifetimeTester(email)) {
+      setStoredTier("lifetime");
+    }
+
     return { ok: true, user: buildAuthUser(nextUser)! };
   }, []);
 
@@ -220,6 +233,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...previous,
       currentUserId: match.id,
     }));
+
+    if (isLifetimeTester(email)) {
+      setStoredTier("lifetime");
+    }
 
     return { ok: true, user: buildAuthUser(match)! };
   }, []);
