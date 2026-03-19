@@ -7851,7 +7851,10 @@ body.android-optimized .zoom-btn {
             'arc',
             'simple',
             'perimeter',
-            'astar'
+            'astar',
+            'diagonal',
+            'stepped',
+            'scurve'
         ]);
         const ROUTING_MODE_NAMES = Object.freeze({
             freeform: 'Free-form',
@@ -7861,7 +7864,10 @@ body.android-optimized .zoom-btn {
             arc: 'Arc',
             simple: 'Simple',
             perimeter: 'Perimeter',
-            astar: 'A*'
+            astar: 'A*',
+            diagonal: 'Diagonal',
+            stepped: 'Stepped',
+            scurve: 'S-Curve'
         });
         const ROUTING_MODE_ALIASES = Object.freeze({
             'free': 'freeform',
@@ -7873,7 +7879,12 @@ body.android-optimized .zoom-btn {
             'a*': 'astar',
             'a-star': 'astar',
             'auto': 'astar',
-            'auto-routing': 'astar'
+            'auto-routing': 'astar',
+            '45deg': 'diagonal',
+            '45-degree': 'diagonal',
+            'staircase': 'stepped',
+            's-curve': 'scurve',
+            'serpentine': 'scurve'
         });
 
         function normalizeRouterMode(rawMode, fallback = 'freeform') {
@@ -8014,14 +8025,19 @@ body.android-optimized .zoom-btn {
             const offset = Math.min(Math.max(distance * 0.25, GRID * 2), GRID * 6);
 
             if (horizontal) {
-                const direction = Math.sign(dz || 1);
+                // Perpendicular offset in Z.  Use sign of dz when endpoints differ
+                // in Z so the detour runs on the same side as the target; fall back
+                // to the side that keeps the path moving outward from the scene
+                // center (consistent positive-Z preference when dz === 0).
+                const direction = dz !== 0 ? Math.sign(dz) : (A.z <= 0 ? 1 : -1);
                 const midZ = (A.z + B.z) / 2 + direction * offset;
                 const p1 = snapToGrid(new THREE.Vector3(A.x, 0, midZ));
                 const p2 = snapToGrid(new THREE.Vector3(B.x, 0, midZ));
                 return compressPath([A, p1, p2, B]);
             }
 
-            const direction = Math.sign(dx || 1);
+            // Vertical dominant: offset in X
+            const direction = dx !== 0 ? Math.sign(dx) : (A.x <= 0 ? 1 : -1);
             const midX = (A.x + B.x) / 2 + direction * offset;
             const p1 = snapToGrid(new THREE.Vector3(midX, 0, A.z));
             const p2 = snapToGrid(new THREE.Vector3(midX, 0, B.z));
@@ -8057,28 +8073,17 @@ body.android-optimized .zoom-btn {
         }
 
         function routeSimple(A, B, startSide, endSide) {
-            const GRID = GRID_SIZE;
-            const STUB = GRID * 2;
-            function stub(point, side, toward) {
-                const dx = toward.x - point.x, dz = toward.z - point.z;
-                if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
-                if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
-                return Math.abs(dx) >= Math.abs(dz)
-                    ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx||1)*STUB, 0, point.z))
-                    : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz||1)*STUB));
+            // Pure L-shape: single elbow, no stubs — the most minimal routing.
+            // Vertical-first when the start terminal exits in the Z direction
+            // (top/bottom sides); horizontal-first otherwise.
+            const verticalStart = (startSide === 'top' || startSide === 'bottom');
+            const verticalEnd   = (endSide   === 'top' || endSide   === 'bottom');
+            if (verticalStart || verticalEnd) {
+                const corner = snapToGrid(new THREE.Vector3(A.x, 0, B.z));
+                return compressPath([A, corner, B]);
             }
-            const Astub = stub(A, startSide, B);
-            const Bstub = stub(B, endSide, A);
-            if (Math.abs(Astub.x - Bstub.x) < 0.001 || Math.abs(Astub.z - Bstub.z) < 0.001) {
-                return compressPath([A, Astub, Bstub, B]);
-            }
-            // Choose corner that increases distance from A along the first segment (outward)
-            const c1 = new THREE.Vector3(Bstub.x, 0, Astub.z);
-            const c2 = new THREE.Vector3(Astub.x, 0, Bstub.z);
-            const moveXOut = Math.abs(c1.x - A.x) >= Math.abs(Astub.x - A.x);
-            const moveZOut = Math.abs(c2.z - A.z) >= Math.abs(Astub.z - A.z);
-            const C = moveXOut ? c1 : (moveZOut ? c2 : c1);
-            return compressPath([A, Astub, snapToGrid(C), Bstub, B]);
+            const corner = snapToGrid(new THREE.Vector3(B.x, 0, A.z));
+            return compressPath([A, corner, B]);
         }
 
         function routePerimeter(A, B, startSide, endSide) {
@@ -8253,7 +8258,114 @@ body.android-optimized .zoom-btn {
             return compressPath([A, new THREE.Vector3(Bstub.x,0,Astub.z), B]);
         }
 
-        // Enhanced Manhattan routing with intelligent wire splitting
+        // Diagonal routing — 45° elbow: one axis-aligned segment + one 45° segment
+        function routeDiagonal(A, B, startSide, endSide) {
+            const dx = B.x - A.x;
+            const dz = B.z - A.z;
+            const absDx = Math.abs(dx);
+            const absDz = Math.abs(dz);
+
+            if (absDx < 0.1 && absDz < 0.1) return [A, B];
+
+            // The diagonal covers min(|dx|,|dz|) in both axes; the remainder is
+            // a straight axis-aligned run to B.
+            if (absDx >= absDz) {
+                // Long horizontal — diagonal first, then horizontal
+                const diagX = snapToGrid(new THREE.Vector3(
+                    A.x + Math.sign(dx) * absDz, 0, B.z));
+                return compressPath([A, diagX, B]);
+            } else {
+                // Long vertical — diagonal first, then vertical
+                const diagZ = snapToGrid(new THREE.Vector3(
+                    B.x, 0, A.z + Math.sign(dz) * absDx));
+                return compressPath([A, diagZ, B]);
+            }
+        }
+
+        // Stepped routing — staircase of equal horizontal + vertical steps
+        function routeStepped(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const dx = B.x - A.x;
+            const dz = B.z - A.z;
+            const absDx = Math.abs(dx);
+            const absDz = Math.abs(dz);
+
+            if (absDx < 0.1 || absDz < 0.1) {
+                // Already axis-aligned — straight shot
+                return [A, B];
+            }
+
+            // Use 3 equal steps so the staircase looks intentional
+            const steps = 3;
+            const points = [A];
+            for (let i = 1; i <= steps; i++) {
+                const prevPt = points[points.length - 1];
+                // Horizontal segment
+                const hCorner = snapToGrid(new THREE.Vector3(
+                    A.x + dx * (i / steps), 0, prevPt.z));
+                points.push(hCorner);
+                if (i < steps) {
+                    // Vertical segment
+                    const vCorner = snapToGrid(new THREE.Vector3(
+                        hCorner.x, 0, A.z + dz * (i / steps)));
+                    points.push(vCorner);
+                }
+            }
+            points.push(B);
+            return compressPath(points);
+        }
+
+        // S-Curve routing — two opposing quadratic Bézier arcs
+        function routeSCurve(A, B, startSide, endSide) {
+            const GRID = GRID_SIZE;
+            const dx = B.x - A.x;
+            const dz = B.z - A.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            if (distance < 0.1) return [A, B];
+
+            // Midpoint of AB
+            const midX = (A.x + B.x) / 2;
+            const midZ = (A.z + B.z) / 2;
+            const mid = new THREE.Vector3(midX, 0, midZ);
+
+            // Perpendicular unit vector
+            const normX = -dz / distance;
+            const normZ =  dx / distance;
+            const bend = Math.min(Math.max(distance * 0.3, GRID * 2), GRID * 7);
+
+            // First arc control: bend to the left of travel
+            const ctrl1 = new THREE.Vector3(
+                (A.x + midX) / 2 + normX * bend, 0,
+                (A.z + midZ) / 2 + normZ * bend);
+            // Second arc control: bend to the right (opposite) of travel
+            const ctrl2 = new THREE.Vector3(
+                (midX + B.x) / 2 - normX * bend, 0,
+                (midZ + B.z) / 2 - normZ * bend);
+
+            const totalSeg = Math.max(8, Math.min(20, Math.round(distance / GRID) + 4));
+            const halfSeg  = Math.floor(totalSeg / 2);
+            const pts = [];
+
+            // First Bézier: A → mid
+            for (let i = 0; i <= halfSeg; i++) {
+                const t = i / halfSeg, inv = 1 - t;
+                pts.push(new THREE.Vector3(
+                    inv * inv * A.x + 2 * inv * t * ctrl1.x + t * t * midX,
+                    0,
+                    inv * inv * A.z + 2 * inv * t * ctrl1.z + t * t * midZ));
+            }
+            // Second Bézier: mid → B (skip duplicate midpoint)
+            for (let i = 1; i <= halfSeg; i++) {
+                const t = i / halfSeg, inv = 1 - t;
+                pts.push(new THREE.Vector3(
+                    inv * inv * midX + 2 * inv * t * ctrl2.x + t * t * B.x,
+                    0,
+                    inv * inv * midZ + 2 * inv * t * ctrl2.z + t * t * B.z));
+            }
+            return pts;
+        }
+
+
         function routeManhattan(A, B, startSide, endSide) {
             const GRID = GRID_SIZE;
             const STUB = GRID * 2;
@@ -8270,8 +8382,16 @@ body.android-optimized .zoom-btn {
                 if (side === 'right' || side === 'positive') {
                     return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
                 }
+                // Top terminal exits upward (–Z in the XZ routing plane)
+                if (side === 'top') {
+                    return snapToGrid(new THREE.Vector3(point.x, 0, point.z - STUB));
+                }
+                // Bottom terminal exits downward (+Z)
+                if (side === 'bottom') {
+                    return snapToGrid(new THREE.Vector3(point.x, 0, point.z + STUB));
+                }
                 
-                // For center/junction connections, choose direction based on target
+                // For center/junction/transistor connections, choose direction based on target
                 return Math.abs(dx) >= Math.abs(dz)
                     ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx || 1) * STUB, 0, point.z))
                     : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz || 1) * STUB));
@@ -8506,6 +8626,9 @@ body.android-optimized .zoom-btn {
             if (mode === 'simple') return routeSimple(A, B, startSide, endSide);
             if (mode === 'perimeter') return routePerimeter(A, B, startSide, endSide);
             if (mode === 'astar') return routeAStar(A, B, startSide, endSide);
+            if (mode === 'diagonal') return routeDiagonal(A, B, startSide, endSide);
+            if (mode === 'stepped') return routeStepped(A, B, startSide, endSide);
+            if (mode === 'scurve') return routeSCurve(A, B, startSide, endSide);
             
             // Default to Manhattan routing
             return routeManhattan(A, B, startSide, endSide);
