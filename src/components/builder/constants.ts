@@ -504,7 +504,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
     icon: "─●─",
     label: "Junction",
     action: "junction",
-    description: "Junction - branch wires for parallel paths",
+    description: "Junction ─●─ — Drop anywhere on a wire to branch it. Essential for parallel circuits. Press J to add. (KCL: ΣI_in = ΣI_out)",
     metadata: {
       schematicSymbol: SCHEMATIC_SYMBOLS.JUNCTION,
       symbolText: "─●─",
@@ -590,7 +590,7 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
   {
     id: "junction",
     label: "Add Junction",
-    description: "Drop a junction node for branching or merging wires.",
+    description: "Junction ─●─ — Drop anywhere on a wire to branch it. Essential for parallel circuits. Press J to add. (KCL: ΣI_in = ΣI_out)",
     action: "add-junction",
   },
   {
