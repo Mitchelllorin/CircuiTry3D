@@ -4395,8 +4395,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-toggle-width: 22px;
     --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 28px;
-    /* Ticker starts at 68px + measure bar on tablets */
-    --builder-ticker-top: calc(68px + var(--builder-measure-bar-height));
+    --builder-ticker-top: 68px;
   }
 
   .builder-menu-stage-left,
@@ -4436,8 +4435,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
-    /* Ticker starts at 64px + measure bar on mobile */
-    --builder-ticker-top: calc(64px + var(--builder-measure-bar-height));
+    --builder-ticker-top: 64px;
   }
 
   .builder-menu-stage-left,
