@@ -3117,27 +3117,6 @@ export default function Builder() {
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
       >
-        <button
-          type="button"
-          className="builder-menu-toggle builder-menu-toggle-left"
-          onClick={() => setLeftMenuOpen((open) => !open)}
-          aria-expanded={isLeftMenuOpen}
-          aria-label={
-            isLeftMenuOpen
-              ? "Collapse component library"
-              : "Expand component library"
-          }
-          title={
-            isLeftMenuOpen
-              ? "Collapse component library"
-              : "Expand component library"
-          }
-        >
-          <span className="toggle-icon" aria-hidden="true">
-            <IconChevron direction={isLeftMenuOpen ? "left" : "right"} />
-          </span>
-          <span className="toggle-text">Library</span>
-        </button>
         <nav
           className="builder-menu builder-menu-left"
           role="navigation"
@@ -3268,6 +3247,27 @@ export default function Builder() {
             </div>
           </div>
         </nav>
+        <button
+          type="button"
+          className="builder-menu-toggle builder-menu-toggle-left"
+          onClick={() => setLeftMenuOpen((open) => !open)}
+          aria-expanded={isLeftMenuOpen}
+          aria-label={
+            isLeftMenuOpen
+              ? "Collapse component library"
+              : "Expand component library"
+          }
+          title={
+            isLeftMenuOpen
+              ? "Collapse component library"
+              : "Expand component library"
+          }
+        >
+          <span className="toggle-icon" aria-hidden="true">
+            <IconChevron direction={isLeftMenuOpen ? "left" : "right"} />
+          </span>
+          <span className="toggle-text">Library</span>
+        </button>
       </div>
 
       <div
@@ -4184,8 +4184,7 @@ export default function Builder() {
         </span>
       </button>
 
-      {/* Measurement Tools FAB — green button above the Library panel.
-          Opens the Insights drawer so the DMM is always one tap away. */}
+      {/* Measurement Tools FAB — fixed at top-left edge above the Library panel toggle */}
       <button
         type="button"
         className={`measure-fab${meterState.armed ? " measure-fab--active" : ""}`}

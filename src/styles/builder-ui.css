@@ -1377,24 +1377,30 @@ body.builder-body {
   will-change: transform, opacity;
 }
 
-/* Left menu — bottom-corner layout: top-right corner rounded only */
+/* Left menu — side-panel layout: full height, right corners rounded */
 .builder-menu-left {
   width: var(--builder-menu-left-width);
-  height: var(--builder-menu-left-height);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   flex-shrink: 0;
-  border-radius: 0 12px 0 0;
+  border-radius: 0 12px 12px 0;
   border-left: none;
   border-bottom: none;
+  order: 0;
 }
 
-/* Right menu — bottom-corner layout: top-left corner rounded only */
+/* Right menu — side-panel layout: full height, left corners rounded */
 .builder-menu-right {
   width: var(--builder-menu-right-width);
-  height: var(--builder-menu-right-height);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   flex-shrink: 0;
-  border-radius: 12px 0 0 0;
+  border-radius: 12px 0 0 12px;
   border-right: none;
   border-bottom: none;
+  order: 1;
 }
 
 .builder-menu-bottom {
@@ -1425,40 +1431,40 @@ body.builder-body {
   align-items: flex-end;
 }
 
-/* Bottom-corner left panel — Library slides up from the bottom-left */
+/* Left-edge side panel — Library slides in from the left */
 .builder-menu-stage-left {
   left: 0;
+  top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
   bottom: 0;
-  top: auto;
-  flex-direction: column;
-  width: var(--builder-menu-left-width);
-  height: calc(var(--builder-menu-left-height) + var(--builder-menu-toggle-height));
-  align-items: stretch;
+  flex-direction: row;
+  width: calc(var(--builder-menu-left-width) + 46px);
+  height: auto;
+  align-items: flex-start;
   transition: transform 0.32s ease;
-  /* Closed: push panel below viewport, keeping toggle visible at the bottom */
-  transform: translateY(var(--builder-menu-left-height));
+  /* Closed: push panel off-screen left, 46px edge column stays visible */
+  transform: translateX(calc(-1 * var(--builder-menu-left-width)));
 }
 
 .builder-menu-stage-left.open {
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
-/* Bottom-corner right panel — Controls slides up from the bottom-right */
+/* Right-edge side panel — Controls slides in from the right */
 .builder-menu-stage-right {
   right: 0;
+  top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
   bottom: 0;
-  top: auto;
-  flex-direction: column;
-  width: var(--builder-menu-right-width);
-  height: calc(var(--builder-menu-right-height) + var(--builder-menu-toggle-height));
-  align-items: stretch;
+  flex-direction: row;
+  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+  height: auto;
+  align-items: flex-start;
   transition: transform 0.32s ease;
-  /* Closed: push panel below viewport, keeping toggle visible at the bottom */
-  transform: translateY(var(--builder-menu-right-height));
+  /* Closed: push panel off-screen right, toggle-width strip stays visible */
+  transform: translateX(var(--builder-menu-right-width));
 }
 
 .builder-menu-stage-right.open {
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
 /* Insights panel — centered at the bottom, clear of both corner panels */
@@ -1814,26 +1820,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   text-orientation: mixed;
 }
 
-/* Left toggle tab — now on top of the panel (horizontal) */
-.builder-menu-toggle-left {
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
-  border-left: 1px solid var(--builder-border-strong);
-  box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(136, 204, 255, 0.2);
-}
-
-/* Right toggle tab — now on top of the panel (horizontal) */
-.builder-menu-toggle-right {
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
-  border-right: 1px solid var(--builder-border-strong);
-  box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(136, 204, 255, 0.2);
-}
-
 .builder-menu-toggle:hover,
 .builder-menu-toggle:focus-visible {
   border-color: var(--builder-border-strong);
@@ -1845,33 +1831,45 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.35);
 }
 
-/* Bottom-corner panel toggles: horizontal, full-width, on top of each panel */
+/* Side-panel toggles: vertical strip on the inner edge of each panel */
 .builder-menu-toggle-left,
 .builder-menu-toggle-right {
   flex-shrink: 0;
-  width: 100%;
-  min-height: 0;
+  width: var(--builder-menu-toggle-width);
+  min-width: var(--builder-menu-toggle-width);
   height: var(--builder-menu-toggle-height);
-  padding: 6px 12px;
+  padding: 8px 4px;
   margin: 0;
-  align-self: stretch;
+  align-self: flex-start;
   position: relative;
   z-index: var(--z-raised);
-  writing-mode: horizontal-tb;
+  writing-mode: vertical-rl;
   text-orientation: mixed;
-  flex-direction: row;
-  order: 0;
+  flex-direction: column;
 }
 
-/* Left toggle: first in DOM order → top of column */
+/* Left toggle — right edge of the left stage (panel content is left/order:0) */
 .builder-menu-stage-left .builder-menu-toggle-left {
-  order: 0;
+  order: 1;
+  border-radius: 0 8px 8px 0;
+  border-left: none;
+  box-shadow:
+    2px 0 12px var(--builder-shadow),
+    2px 0 16px rgba(136, 204, 255, 0.2);
+  /* Offset below the Measure FAB */
+  margin-top: calc(var(--builder-floating-button-size) + 4px);
 }
 
-/* Right toggle: first in DOM order → top of column */
+/* Right toggle — left edge of the right stage (panel content is right/order:1) */
 .builder-menu-stage-right .builder-menu-toggle-right {
   order: 0;
-  margin-left: 0;
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+  box-shadow:
+    -2px 0 12px var(--builder-shadow),
+    -2px 0 16px rgba(136, 204, 255, 0.2);
+  /* Offset below the AI FAB */
+  margin-top: calc(var(--builder-floating-button-size) + 4px);
 }
 
 .builder-menu-toggle-bottom {
