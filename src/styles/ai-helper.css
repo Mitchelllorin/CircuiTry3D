@@ -7,17 +7,13 @@
 
 .ai-helper-fab {
   position: fixed;
-  /* Sits above the Controls panel (toggle + panel content) with a small gap */
-  bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    12px +
-    var(--builder-safe-area-bottom, 0px)
-  );
-  /* Centered horizontally over the Controls panel */
-  right: calc(
-    (var(--builder-menu-right-width, 172px) - 46px) / 2 +
-    var(--builder-safe-area-right, 0px)
+  /* Left edge — above the Library panel toggle strip */
+  left: calc(var(--builder-safe-area-left, 0px));
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
   );
   z-index: var(--z-ai-helper);
   width: 46px;
@@ -104,14 +100,16 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Positioned above the FAB (FAB is 46px + 8px gap = 54px above panels) */
-  bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    70px +
-    var(--builder-safe-area-bottom, 0px)
+  /* Opens below and to the right of the AI FAB (left edge) */
+  left: calc(var(--builder-safe-area-left, 0px) + 50px);
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
   );
-  right: calc(var(--builder-safe-area-right, 0px) + 8px);
+  bottom: auto;
+  right: auto;
   z-index: var(--z-ai-helper);
   width: clamp(300px, 38vw, 420px);
   max-height: calc(100svh - 140px);
@@ -129,14 +127,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: bottom right;
+  transform-origin: top left;
   animation: aiPanelReveal 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes aiPanelReveal {
   from {
     opacity: 0;
-    transform: scale(0.88) translateY(12px);
+    transform: scale(0.88) translateY(-12px);
   }
   to {
     opacity: 1;

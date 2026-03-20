@@ -785,31 +785,23 @@ body.builder-body {
   }
 }
 
-/* Zoom controls — bottom-center area, clear of both corner panels and
-   the centered Insights toggle. */
+/* Zoom controls — top-center area, just below the ticker bar. */
 .circuit-zoom-controls {
   position: fixed;
-  top: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
-  right: calc(
-    var(--builder-menu-right-width) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-safe-area-right)
+  top: calc(
+    var(--builder-ticker-top) +
+    var(--builder-ticker-height) +
+    var(--builder-safe-area-top) +
+    2px
   );
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
   gap: 4px;
-}
-
-/* When the right side menu is open the panel slides upward; zoom controls
-   stay in the same horizontal position (panel is no longer side-panel). */
-.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  right: calc(
-    var(--builder-menu-right-width) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-safe-area-right)
-  );
 }
 
 .circuit-zoom-btn {
@@ -849,17 +841,17 @@ body.builder-body {
 }
 
 /* ── Measurement Tools FAB ──────────────────────────────────────────────────
-   Standalone floating button (green) positioned above the Library panel on
-   the left side.  Opens the Insights/Meters panel for quick DMM access.
+   Standalone floating button (green) positioned at the right edge, just below
+   the ticker bar — above the Controls panel toggle strip.
    ─────────────────────────────────────────────────────────────────────────── */
 .measure-fab {
   position: fixed;
-  left: calc(var(--builder-safe-area-left, 0px) + 8px);
-  bottom: calc(
-    var(--builder-menu-left-height, 280px) +
-    var(--builder-menu-toggle-height, 64px) +
-    12px +
-    var(--builder-safe-area-bottom, 0px)
+  right: calc(var(--builder-safe-area-right, 0px));
+  top: calc(
+    var(--builder-ticker-top) +
+    var(--builder-ticker-height) +
+    var(--builder-safe-area-top) +
+    2px
   );
   z-index: var(--z-builder-floats);
   width: 46px;
@@ -1856,7 +1848,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     2px 0 12px var(--builder-shadow),
     2px 0 16px rgba(136, 204, 255, 0.2);
-  /* Offset below the Measure FAB */
+  /* Offset below the AI FAB */
   margin-top: calc(var(--builder-floating-button-size) + 4px);
 }
 
@@ -1868,7 +1860,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     -2px 0 12px var(--builder-shadow),
     -2px 0 16px rgba(136, 204, 255, 0.2);
-  /* Offset below the AI FAB */
+  /* Offset below the Measure FAB */
   margin-top: calc(var(--builder-floating-button-size) + 4px);
 }
 
