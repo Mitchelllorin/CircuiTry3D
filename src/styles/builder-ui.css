@@ -4659,7 +4659,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
    ============================================ */
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
   :root {
-  :root {
     /* Reduce bottom drawer footprint on short screens. */
     --builder-menu-bottom-height: 160px;
     --builder-menu-toggle-height: 44px;
