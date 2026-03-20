@@ -4785,29 +4785,30 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     padding: 6px 9px;
   }
 
-  /* In landscape, side panels anchor to bottom edges */
+  /* In landscape, side panels anchor to bottom edges and still use side-slide
+     so toggle tabs remain visible at the screen edges */
   .builder-menu-stage-left {
     top: auto;
     bottom: 0;
     left: var(--builder-safe-area-left);
-    width: var(--builder-menu-left-width);
-    transform: translateY(var(--builder-menu-left-height));
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateX(calc(-1 * var(--builder-menu-left-width)));
   }
 
   .builder-menu-stage-left.open {
-    transform: translateY(0);
+    transform: translateX(0);
   }
 
   .builder-menu-stage-right {
     top: auto;
     bottom: 0;
     right: var(--builder-safe-area-right);
-    width: var(--builder-menu-right-width);
-    transform: translateY(var(--builder-menu-right-height));
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateX(var(--builder-menu-right-width));
   }
 
   .builder-menu-stage-right.open {
-    transform: translateY(0);
+    transform: translateX(0);
   }
 
   .builder-menu-stage-bottom {

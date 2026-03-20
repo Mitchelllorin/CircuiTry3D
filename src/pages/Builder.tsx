@@ -2783,7 +2783,7 @@ export default function Builder() {
                 title="Edit / Select (E)"
               >
                 <IconPencil className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Select</span>
+                <span className="edge-action-label" aria-hidden="true">Edit</span>
               </button>
               <span className="action-bar-divider" aria-hidden="true" />
               <button
