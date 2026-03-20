@@ -381,10 +381,13 @@ body.builder-body {
 
 .edge-action-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   width: var(--builder-edge-action-button-size);
-  height: var(--builder-edge-action-button-size);
+  min-height: var(--builder-edge-action-button-size);
+  padding: 6px 4px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -392,6 +395,17 @@ body.builder-body {
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+}
+
+.edge-action-label {
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: inherit;
+  user-select: none;
+  pointer-events: none;
 }
 
 .edge-action-btn:hover:not(:disabled) {
