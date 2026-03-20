@@ -2728,6 +2728,7 @@ export default function Builder() {
               title="Run the current circuit simulation"
             >
               <IconPlay className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Run</span>
             </button>
             <button
               type="button"
@@ -2739,6 +2740,7 @@ export default function Builder() {
               title="Undo (Ctrl+Z)"
             >
               <IconUndo className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Undo</span>
             </button>
             <button
               type="button"
@@ -2750,6 +2752,7 @@ export default function Builder() {
               title="Redo (Ctrl+Shift+Z)"
             >
               <IconRedo className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Redo</span>
             </button>
             <button
               type="button"
@@ -2759,6 +2762,7 @@ export default function Builder() {
               title="Open saved circuit (Ctrl+O)"
             >
               <IconFolder className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Open</span>
             </button>
             <button
               type="button"
@@ -2771,6 +2775,7 @@ export default function Builder() {
               {circuitStorage.hasUnsavedChanges && (
                 <span className="unsaved-dot" aria-label="Unsaved changes" />
               )}
+              <span className="edge-action-label" aria-hidden="true">Save</span>
             </button>
           </div>
 
@@ -2786,6 +2791,7 @@ export default function Builder() {
               title="Clear all components, wires, and analysis data"
             >
               <IconTrash className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Clear</span>
             </button>
             <button
               type="button"
@@ -2798,6 +2804,7 @@ export default function Builder() {
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
               <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+              <span className="edge-action-label" aria-hidden="true">Wire</span>
             </button>
             <button
               type="button"
@@ -2810,6 +2817,7 @@ export default function Builder() {
               title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
             >
               <IconRotate className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Rotate</span>
             </button>
             <button
               type="button"
@@ -2821,6 +2829,7 @@ export default function Builder() {
               title="Edit / Select (E)"
             >
               <IconPencil className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Select</span>
             </button>
           </div>
 
@@ -3854,7 +3863,8 @@ export default function Builder() {
             aria-label="Zoom in"
             title="Zoom in"
           >
-            +
+            <span className="circuit-zoom-icon" aria-hidden="true">+</span>
+            <span className="circuit-zoom-label" aria-hidden="true">In</span>
           </button>
           <button
             type="button"
@@ -3864,7 +3874,8 @@ export default function Builder() {
             aria-label="Fit circuit to screen"
             title="Fit to screen"
           >
-            ⊡
+            <span className="circuit-zoom-icon" aria-hidden="true">⊡</span>
+            <span className="circuit-zoom-label" aria-hidden="true">Fit</span>
           </button>
           <button
             type="button"
@@ -3874,7 +3885,8 @@ export default function Builder() {
             aria-label="Zoom out"
             title="Zoom out"
           >
-            −
+            <span className="circuit-zoom-icon" aria-hidden="true">−</span>
+            <span className="circuit-zoom-label" aria-hidden="true">Out</span>
           </button>
         </div>
       )}
@@ -4182,9 +4194,12 @@ export default function Builder() {
         <span className="ai-helper-fab__icon" aria-hidden="true">
           {isAIHelperOpen ? "✕" : "⚡"}
         </span>
+        <span className="ai-helper-fab__label" aria-hidden="true">
+          {isAIHelperOpen ? "Close" : "AI"}
+        </span>
       </button>
 
-      {/* Measurement Tools FAB — fixed at top-left edge above the Library panel toggle */}
+      {/* Measurement Tools FAB — fixed at right edge above the Controls panel toggle */}
       <button
         type="button"
         className={`measure-fab${meterState.armed ? " measure-fab--active" : ""}`}
@@ -4192,7 +4207,8 @@ export default function Builder() {
         aria-label="Open measurement tools"
         title="Measurement Tools — Digital Multimeter"
       >
-        <span aria-hidden="true">📐</span>
+        <span className="measure-fab__icon" aria-hidden="true">📐</span>
+        <span className="measure-fab__label" aria-hidden="true">Meter</span>
       </button>
     </div>
   );

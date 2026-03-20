@@ -17,19 +17,21 @@
   );
   z-index: var(--z-ai-helper);
   width: 46px;
-  height: 46px;
-  border-radius: 50%;
+  border-radius: 0 0 10px 10px;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
+  border-top: none;
   background: linear-gradient(
     145deg,
     rgba(20, 40, 80, 0.92) 0%,
     rgba(10, 26, 52, 0.95) 100%
   );
   color: #88ccff;
-  font-size: 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
   cursor: pointer;
   box-shadow:
     0 4px 18px rgba(2, 8, 20, 0.55),
@@ -73,9 +75,22 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
+  font-size: 20px;
   /* prevent layout shift when icon chars differ */
   width: 1.2em;
   height: 1.2em;
+}
+
+/* Plain-text label beneath the AI FAB icon */
+.ai-helper-fab__label {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #88ccff;
+  pointer-events: none;
 }
 
 /* Unread badge dot */
