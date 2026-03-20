@@ -16,19 +16,19 @@
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  /* Toggle tabs - slimmer for minimal footprint */
-  --builder-menu-toggle-width: 24px;
+  /* Toggle tabs — slim vertical tabs for side-panel layout */
+  --builder-menu-toggle-width: 28px;
   --builder-menu-toggle-height: 64px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
-  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
-  /* Slimmer sidebar widths */
+  --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 44px);
+  /* Side-panel widths — narrow for max workspace area */
   --builder-menu-left-width: 180px;
   --builder-menu-right-width: 172px;
-  --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
+  --builder-menu-bottom-width: min(500px, calc(100vw - 80px));
   --builder-menu-bottom-height: 248px;
-  /* Bottom-corner panel heights (content area only, excludes toggle) */
-  --builder-menu-left-height: 280px;
-  --builder-menu-right-height: 260px;
+  /* Side-panel heights — tall panels that leave room for mode bar + bottom bar */
+  --builder-menu-left-height: min(calc(100dvh - 200px), 560px);
+  --builder-menu-right-height: min(calc(100dvh - 200px), 560px);
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-safe-area-left: env(safe-area-inset-left, 0px);
