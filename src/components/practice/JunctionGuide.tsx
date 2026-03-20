@@ -48,7 +48,7 @@ export default function JunctionGuide() {
         Junctions are the most versatile building block in circuit construction.
         Drop one anywhere on a wire run to instantly branch a new path — in any
         direction, at any point. They are essential for parallel circuits,
-        combination networks, and any layout that isn&apos;t a simple series loop.
+        combination networks, and any layout that isn&apos;t a simple series circuit.
       </p>
 
       <div className="junction-guide-how-to">

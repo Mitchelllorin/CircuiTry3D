@@ -724,7 +724,7 @@ export function shouldEnableCurrentFlow(elements: SchematicElement[]): {
     return {
       shouldAnimate: false,
       reason: validation.circuitStatus === 'incomplete'
-        ? 'Circuit is incomplete - ensure all components are connected in a closed loop'
+        ? 'Circuit is incomplete - ensure all components are connected in a closed circuit'
         : 'Circuit is invalid',
       currentAmps: 0
     };

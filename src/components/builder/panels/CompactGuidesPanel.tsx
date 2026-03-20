@@ -91,16 +91,16 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
           "Launch the interactive walkthrough to get live highlights and step-by-step validation.",
       },
       {
-        id: "tutorial-build-loop",
-        title: "Build and close a loop",
+        id: "tutorial-build-circuit",
+        title: "Build and complete the circuit",
         detail:
-          "Add the required parts and close the loop so the simulator reports a complete circuit.",
+          "Add the required parts and complete the circuit so the simulator reports a complete circuit.",
       },
       {
         id: "tutorial-simulate",
         title: "Run simulation checkpoint",
         detail:
-          "Run simulation from the tutorial flow to confirm current can travel through the loop.",
+          "Run simulation from the tutorial flow to confirm current can travel through the circuit.",
       },
       {
         id: "tutorial-junctions",
@@ -115,7 +115,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
     description:
       "W.I.R.E. = Watts (blue) · Current/Amps (yellow-orange) · Resistance/Ohms (green) · Voltage (red). These colors label the quantities in the UI panels. The animated particles in the 3D workspace use a separate color system showing current speed — those colors are unrelated. Use this checklist to solve one circuit at a time: identify the type, collapse any parallel groups to a simple series circuit, fill the W.I.R.E. table with known values, solve unknowns with formulas, then trace back through branches.",
     completionSummary:
-      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the collapse → fill table → solve → verify loop on new circuits.",
+      "W.I.R.E. guide complete. Open Practice Worksheets and repeat the collapse → fill table → solve → verify on new circuits.",
     workspaceSyncCopy:
       "These steps use the same W.I.R.E. values shown in the Insights bar and worksheet totals row.",
     steps: [
@@ -147,7 +147,7 @@ const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
         id: "wire-verify-totals",
         title: "Verify with KVL and KCL",
         detail:
-          "KVL check: all voltage drops around any complete loop must sum to E_T. KCL check: branch currents leaving any junction must sum to the current entering. If totals do not match, recheck the collapse step and R_T calculation.",
+          "KVL check: all voltage drops around any complete circuit path must sum to E_T. KCL check: branch currents leaving any junction must sum to the current entering. If totals do not match, recheck the collapse step and R_T calculation.",
       },
       {
         id: "wire-open-practice",

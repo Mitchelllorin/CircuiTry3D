@@ -80,13 +80,13 @@ export function BuilderInteractiveTutorial(props: {
         id: "wire-mode",
         title: "Step 3 — Enable Wire Mode",
         body:
-          "Turn on Wire Mode so you can connect terminals. You’ll make a loop: battery → resistor → back to battery.",
+          "Turn on Wire Mode so you can connect terminals. You’ll make a circuit: battery → resistor → back to battery.",
         targetId: "tutorial-enable-wire",
         isComplete: ({ mode }) => Boolean(mode.isWireMode),
       },
       {
-        id: "close-loop",
-        title: "Step 4 — Close the loop so current can flow",
+        id: "close-circuit",
+        title: "Step 4 — Complete the circuit so current can flow",
         body:
           "Draw wires between the battery terminals and the resistor terminals until the simulator reports a **complete circuit** (current can flow).",
         canSkipRequirement: false,
@@ -96,7 +96,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "simulate",
         title: "Step 5 — Run the simulation",
         body:
-          "Run a simulation to confirm values and visualize flow. (Tip: if current is 0, you likely have an open loop.)",
+          "Run a simulation to confirm values and visualize flow. (Tip: if current is 0, you likely have an open circuit.)",
         targetId: "tutorial-run-simulation",
         isComplete: ({ lastSimulationAt, tutorialOpenedAt }) => {
           if (!lastSimulationAt) return false;
@@ -141,7 +141,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "done",
         title: "Done — you're ready for complex circuits",
         body:
-          "You've mastered the full approach: place components, close the loop, read W.I.R.E. metrics, add junctions for parallel paths, collapse parallel groups to R_eq, then fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets to work through series, parallel, and combination problems using this exact method.",
+          "You've mastered the full approach: place components, complete the circuit, read W.I.R.E. metrics, add junctions for parallel paths, collapse parallel groups to R_eq, then fill the W.I.R.E. table from Totals inward. Head to Practice Worksheets to work through series, parallel, and combination problems using this exact method.",
         canSkipRequirement: true,
         isComplete: () => true,
       },
@@ -286,7 +286,7 @@ export function BuilderInteractiveTutorial(props: {
               Junctions: <strong>{junctionCount}</strong>
             </span>
             <span className="builder-tutorial-status-item">
-              Loop: <strong>{isComplete ? "Closed" : "Open"}</strong>
+              Circuit: <strong>{isComplete ? "Closed" : "Open"}</strong>
             </span>
           </div>
 

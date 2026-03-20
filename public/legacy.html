@@ -2815,7 +2815,7 @@
                 <ul class="tutorial-steps">
                     <li><span class="ts-icon">🔋</span><span>Add a <strong>Battery</strong> (<kbd>B</kbd>) as your power source</span></li>
                     <li><span class="ts-icon">⚡</span><span>Add <strong>Resistors</strong> (<kbd>R</kbd>), <strong>LEDs</strong> (<kbd>L</kbd>), and other components from the Components menu</span></li>
-                    <li><span class="ts-icon">〰️</span><span>Press <kbd>W</kbd> for <strong>Wire Mode</strong> — tap terminals to connect components and complete the circuit loop</span></li>
+                    <li><span class="ts-icon">〰️</span><span>Press <kbd>W</kbd> for <strong>Wire Mode</strong> — tap terminals to connect components and complete the circuit</span></li>
                     <li><span class="ts-icon">📊</span><span>Watch the <strong>W.I.R.E. panel</strong> on the right for live Voltage, Current &amp; Power readings</span></li>
                 </ul>
             </div>
@@ -3823,20 +3823,20 @@ body.android-optimized .zoom-btn {
                 question: "Series-parallel combo: collapse the ladder and solve for I_T.",
                 expectedAnswer: "current",
                 description: [
-                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before finishing the loop.",
+                    "<strong>Plan</strong>: Reduce the series resistor first, then the parallel pair, before completing the circuit.",
                     "<strong>W.I.R.E.</strong>: Track resistors R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm with the 18 V supply.",
                     "<strong>Formulas</strong>: Use the 12 Ohm's Law identities (E=I*R, I=E/R, R=E/I, W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Kirchhoff</strong>: Verify KVL around the outer loop and KCL at the branch node."
+                    "<strong>Kirchhoff</strong>: Verify KVL around the outer circuit path and KCL at the branch node."
                 ].join("<br>")
             },
             combination_advanced: {
-                question: "Multi-loop combo: determine drops, currents, and power everywhere.",
+                question: "Multi-branch combo: determine drops, currents, and power everywhere.",
                 expectedAnswer: "power",
                 description: [
                     "<strong>Strategy</strong>: Work outward-in, simplifying parallel legs before folding the bridge back into series.",
                     "<strong>W.I.R.E.</strong>: Log each known resistor value and the 24 V supply; mark the unknowns for W, I, R, and E.",
                     "<strong>Formulas</strong>: Cycle through the Ohm's Law family plus power triangle (W=I*E, W=I^2*R, W=E^2/R).",
-                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent loop.",
+                    "<strong>Checks</strong>: Apply KCL at every junction and KVL for each independent circuit path.",
                     "Present the answer set as a W.I.R.E. table." 
                 ].join("<br>")
             }
@@ -3859,7 +3859,7 @@ body.android-optimized .zoom-btn {
 
         const PRACTICE_WORKSHEET_HINTS = {
             series_basic: {
-                guide: "Series loop: the same current flows through every component. Sum R_T, solve I_T = E / R_T, then log W = I * E before checking totals.",
+                guide: "Series circuit: the same current flows through every component. Sum R_T, solve I_T = E / R_T, then log W = I * E before checking totals.",
                 note: "Use Reveal totals once your W.I.R.E. entries are complete to confirm the drops add back to 24 V."
             },
             parallel_basic: {
@@ -3872,7 +3872,7 @@ body.android-optimized .zoom-btn {
             },
             combination_advanced: {
                 guide: "Work branch-by-branch: simplify parallel legs, fold them into series paths, and repeat while logging each equivalent in W.I.R.E.",
-                note: "Reveal totals when you want to verify each loop against Kirchhoff's laws."
+                note: "Reveal totals when you want to verify each circuit path against Kirchhoff's laws."
             },
             random: {
                 guide: "Identify which elements share current or voltage before selecting the right Ohm's Law identity, then fill the blanks methodically.",
@@ -16532,7 +16532,7 @@ Made with ? for visual learners everywhere!
         // Preset Circuit Library
         const PRESET_CIRCUITS = {
             series_basic: {
-                name: "Series Square Loop",
+                name: "Series Square Circuit",
                 description: "24 V source feeding three series resistors arranged as a square.",
                 objectives: [
                     "Map a textbook square schematic into 3D space with battery, top, side, and bottom legs.",
@@ -16662,7 +16662,7 @@ Made with ? for visual learners everywhere!
                     "Interpret a multi-section network arranged as top series, middle parallel box, and bottom return chain.",
                     "Track W.I.R.E. entries for R1=120 ohm, R2=150 ohm, R3=180 ohm, R4=270 ohm, R5=220 ohm, LED=60 ohm, E=24 V.",
                     "Jump between Ohm's Law and power identities (I = E / R, W = I * E, W = I^2 * R, W = E^2 / R).",
-                    "Validate results with Kirchhoff's Voltage Law on each loop and Current Law at every junction."
+                    "Validate results with Kirchhoff's Voltage Law on each circuit path and Current Law at every junction."
                 ],
                 components: [
                     { id: 'B1', type: 'battery', position: [-14, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
@@ -16711,7 +16711,7 @@ Made with ? for visual learners everywhere!
             },
             troubleshoot_switch_off: {
                 name: "Troubleshooting: Open Switch",
-                description: "Standard four-side series loop with an open switch fault on the top leg.",
+                description: "Standard four-side series circuit with an open switch fault on the top leg.",
                 objectives: [
                     "Identify why the circuit has no current flow.",
                     "Fix the fault and restore current flow."
@@ -16741,7 +16741,7 @@ Made with ? for visual learners everywhere!
             },
             troubleshoot_missing_wire: {
                 name: "Troubleshooting: Missing Return Wire",
-                description: "Standard four-side series loop with one missing return connection.",
+                description: "Standard four-side series circuit with one missing return connection.",
                 objectives: [
                     "Find the missing connection that prevents current flow.",
                     "Add the missing wire and restore current flow."
@@ -16770,7 +16770,7 @@ Made with ? for visual learners everywhere!
             },
             troubleshoot_short_circuit: {
                 name: "Troubleshooting: Short Circuit",
-                description: "Standard four-side series loop with an added battery bypass short.",
+                description: "Standard four-side series circuit with an added battery bypass short.",
                 objectives: [
                     "Identify the short circuit path.",
                     "Fix it so current flows without short-circuit warnings."
@@ -16801,7 +16801,7 @@ Made with ? for visual learners everywhere!
             },
             troubleshoot_led_reverse: {
                 name: "Troubleshooting: Reversed LED",
-                description: "Standard four-side series loop with reversed LED polarity on the top leg.",
+                description: "Standard four-side series circuit with reversed LED polarity on the top leg.",
                 objectives: [
                     "Identify the polarity mismatch.",
                     "Reverse the LED wiring/orientation to restore current flow."
