@@ -3076,6 +3076,7 @@
         let scopeBuffer = [];
         const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
+        let _nodeHighlightTimer = null; // Auto-dim timer for lit terminal nodes after wire-placement procedure
         let currentFlowParticles = [];
         let currentWireGlows    = []; // additive-blended glow tubes around active wires
         let currentLatticeAtoms = []; // Cu⁺ lattice ion spheres (atomic zoom)
@@ -4147,6 +4148,7 @@ body.android-optimized .zoom-btn {
         const GRID_SIZE = 2; // Grid spacing
         const WIRE_SPLIT_ENDPOINT_TOLERANCE = 0.18;
         const JUNCTION_REUSE_RADIUS = 0.35;
+        const WIRE_PLACEMENT_SNAP_RADIUS = 1.4; // World units: proximity threshold to trigger wire-placement procedure on drop
         let gridHelper = null;
         let snapIndicator = null;
         
@@ -7971,11 +7973,17 @@ body.android-optimized .zoom-btn {
             );
         }
 
-        function showSnapIndicator(position) {
+        function showSnapIndicator(position, wireSnapMode) {
             if (snapIndicator) {
                 const snappedPos = snapToGrid(position);
                 snapIndicator.position.copy(snappedPos);
                 snapIndicator.visible = true;
+                // Orange ring when the drop target is a wire; green for normal grid snap.
+                if (wireSnapMode === true) {
+                    snapIndicator.material.color.setHex(0xff8800);
+                } else if (wireSnapMode === false) {
+                    snapIndicator.material.color.setHex(0x00ff88);
+                }
             }
         }
 
@@ -9638,6 +9646,33 @@ body.android-optimized .zoom-btn {
             return nearest;
         }
 
+        // Find the nearest wire to a world-space position by checking all wire segments.
+        // Returns { wire, point, distance } or null if no wire is within threshold.
+        function findWireNearWorldPosition(worldPos, threshold) {
+            if (!worldPos || !Array.isArray(wires) || wires.length === 0) return null;
+
+            let nearestWire = null;
+            let nearestPoint = null;
+            let nearestDist = threshold;
+
+            wires.forEach(wire => {
+                if (!wire?.segments?.length) return;
+                wire.segments.forEach(segment => {
+                    if (!segment?.start || !segment?.end) return;
+                    const projected = projectPointOntoWireSegment(worldPos, segment.start, segment.end);
+                    if (!projected) return;
+                    const dist = worldPos.distanceTo(projected);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestWire = wire;
+                        nearestPoint = projected.clone();
+                    }
+                });
+            });
+
+            return nearestWire ? { wire: nearestWire, point: nearestPoint, distance: nearestDist } : null;
+        }
+
         function getWireHitAtScreenPosition(clientX, clientY) {
             if (!renderer?.domElement || !raycaster || !camera) {
                 return null;
@@ -10305,6 +10340,54 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        // Light up all terminal nodes on a component or junction to bright yellow,
+        // signalling they are ready for wiring after being placed near an existing wire.
+        function lightUpConnectionNodes(entity) {
+            if (!entity) return;
+            if (entity instanceof Component && entity.connectionPoints?.length) {
+                entity.connectionPoints.forEach(cp => {
+                    if (!cp?.material) return;
+                    cp.material.color.setRGB(1.0, 1.0, 0.0);
+                    cp.material.emissive.setRGB(0.8, 0.8, 0.0);
+                    cp.scale.setScalar(1.5);
+                });
+            } else if (entity instanceof Junction && entity.connectionPoint?.material) {
+                entity.connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
+                entity.connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
+                entity.connectionPoint.scale.setScalar(1.5);
+            }
+        }
+
+        // Reset all terminal nodes on a component or junction back to their original colors.
+        function dimConnectionNodes(entity) {
+            if (!entity) return;
+            if (entity instanceof Component && entity.connectionPoints?.length) {
+                entity.connectionPoints.forEach(cp => {
+                    if (!cp?.material || !cp?.userData) return;
+                    const polarity = cp.userData.polarity || 'neutral';
+                    cp.material.color.copy(getOriginalColor(polarity));
+                    setOriginalEmissive(cp, polarity);
+                    cp.scale.setScalar(1.0);
+                });
+            } else if (entity instanceof Junction && entity.connectionPoint?.material) {
+                entity.connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
+                entity.connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
+                entity.connectionPoint.scale.setScalar(1.0);
+            }
+        }
+
+        // Schedule an automatic node-dim after delayMs, cancelling any previous timer.
+        function scheduleNodeDim(entity, delayMs) {
+            if (_nodeHighlightTimer) {
+                clearTimeout(_nodeHighlightTimer);
+                _nodeHighlightTimer = null;
+            }
+            _nodeHighlightTimer = setTimeout(() => {
+                dimConnectionNodes(entity);
+                _nodeHighlightTimer = null;
+            }, delayMs);
+        }
+
         function getOriginalColor(polarity) {
             switch (polarity) {
                 case 'positive': return new THREE.Color(1, 0, 0);
@@ -10578,8 +10661,17 @@ body.android-optimized .zoom-btn {
             const worldPos = screenToWorld(clientX, clientY);
             if (worldPos && selectedComponent) {
                 const snappedPos = snapToGrid(worldPos);
-                showSnapIndicator(snappedPos);
-                
+
+                // Show orange snap ring when hovering over an existing wire (no connections yet),
+                // green for a normal grid position.
+                const isUnwired = !selectedComponent.connections || selectedComponent.connections.length === 0;
+                if (isUnwired && Array.isArray(wires) && wires.length > 0) {
+                    const nearbyWire = findWireNearWorldPosition(snappedPos, WIRE_PLACEMENT_SNAP_RADIUS);
+                    showSnapIndicator(snappedPos, nearbyWire !== null);
+                } else {
+                    showSnapIndicator(snappedPos, false);
+                }
+
                 if (selectedComponent.mesh) {
                     selectedComponent.mesh.position.copy(snappedPos);
                     selectedComponent.position.copy(snappedPos);
@@ -10607,9 +10699,112 @@ body.android-optimized .zoom-btn {
                         }
                     });
                 }
+
+                // Wire-placement procedure: auto-wire or light up nodes when dropped near existing wires.
+                handleWirePlacementProcedure(selectedComponent);
             }
             
             selectedComponent = null;
+        }
+
+        // Auto-insert a 2-terminal component in series into an existing wire.
+        // Removes the original wire and creates two new wires connecting through the component.
+        // Returns true on success, false if unable to insert.
+        function tryAutoInsertComponentOnWire(component, wire) {
+            if (!component || !wire) return false;
+            if (!component.connectionPoints || component.connectionPoints.length !== 2) return false;
+
+            const side0 = component.connectionPoints[0]?.userData?.side;
+            const side1 = component.connectionPoints[1]?.userData?.side;
+            if (!side0 || !side1) return false;
+
+            const oldStartObj  = wire.startObj;
+            const oldStartSide = wire.startSide;
+            const oldEndObj    = wire.endObj;
+            const oldEndSide   = wire.endSide;
+
+            try {
+                // Remove original wire (Wire.remove() also removes it from the wires array).
+                wire.remove();
+
+                const wire1 = new Wire(oldStartObj, oldStartSide, component, side0);
+                const wire2 = new Wire(component, side1, oldEndObj, oldEndSide);
+                wires.push(wire1, wire2);
+
+                analyzeCircuit();
+                updateCircuitInfo();
+                return true;
+            } catch (error) {
+                console.error('[Builder] tryAutoInsertComponentOnWire failed:', error);
+                return false;
+            }
+        }
+
+        // Standard wire-placement procedure called whenever an entity is dropped after dragging.
+        //
+        // Rules:
+        //   • Junction  → auto-split the nearest wire; light up the junction node.
+        //   • 2-terminal component → auto-insert in series into nearest wire; light up nodes.
+        //   • 3+-terminal component → light up nodes; prompt user to wire manually.
+        //
+        // Only fires for freshly placed (unwired) entities so that moving an already-connected
+        // component does not accidentally re-trigger the procedure.
+        function handleWirePlacementProcedure(entity) {
+            if (!entity) return;
+
+            // Skip if the entity already has wire connections (i.e. it's being repositioned).
+            const hasConnections = entity.connections && entity.connections.length > 0;
+            if (hasConnections) return;
+
+            if (!Array.isArray(wires) || wires.length === 0) return;
+
+            const pos = entity.position;
+            if (!pos) return;
+
+            const hit = findWireNearWorldPosition(pos, WIRE_PLACEMENT_SNAP_RADIUS);
+            if (!hit) return;
+
+            const { wire, point } = hit;
+
+            if (entity instanceof Junction) {
+                // Pass the freshly-placed junction directly to splitWireWithJunction so it is
+                // re-used as the split point instead of being discarded and immediately recreated.
+                const newJunction = splitWireWithJunction(wire, point, {
+                    saveSnapshot: false,
+                    snapToGridPosition: false,
+                    suppressStatus: true,
+                    reuseNearbyJunction: false,
+                    existingJunction: entity
+                });
+
+                if (newJunction) {
+                    lightUpConnectionNodes(newJunction);
+                    scheduleNodeDim(newJunction, 5000);
+                    setStatus('⚡ Junction placed on wire — wire split! Select the ● node then a terminal to branch');
+                }
+                return;
+            }
+
+            if (!(entity instanceof Component)) return;
+
+            const terminalCount = entity.connectionPoints ? entity.connectionPoints.length : 0;
+            const typeLabel = getComponentFriendlyName(entity);
+
+            if (terminalCount === 2) {
+                const inserted = tryAutoInsertComponentOnWire(entity, wire);
+                lightUpConnectionNodes(entity);
+                if (inserted) {
+                    scheduleNodeDim(entity, 3000);
+                    setStatus(`⚡ ${typeLabel} auto-wired into circuit in series — connections lit!`);
+                } else {
+                    scheduleNodeDim(entity, 6000);
+                    setStatus(`⚡ ${typeLabel} placed near wire — nodes lit! Switch to ⚡ Wire mode to connect manually.`);
+                }
+            } else if (terminalCount >= 3) {
+                lightUpConnectionNodes(entity);
+                scheduleNodeDim(entity, 6000);
+                setStatus(`⚡ ${typeLabel} placed near wire — nodes lit! Switch to ⚡ Wire mode to connect each terminal manually.`);
+            }
         }
 
         // Menu system functions
@@ -12432,7 +12627,8 @@ Made with ? for visual learners everywhere!
                 saveSnapshot = true,
                 snapToGridPosition = false,
                 suppressStatus = false,
-                reuseNearbyJunction = true
+                reuseNearbyJunction = true,
+                existingJunction = null  // Re-use a pre-existing junction instead of creating a new one
             } = options;
 
             const splitPoint = position instanceof THREE.Vector3
@@ -12444,13 +12640,13 @@ Made with ? for visual learners everywhere!
                 );
             splitPoint.y = 0;
 
-            if (reuseNearbyJunction) {
-                const existingJunction = findNearestJunctionByPosition(splitPoint);
-                if (existingJunction) {
+            if (reuseNearbyJunction && !existingJunction) {
+                const nearbyJunction = findNearestJunctionByPosition(splitPoint);
+                if (nearbyJunction) {
                     if (!suppressStatus) {
                         setStatus('⚡ Existing ● junction selected — click any terminal or junction to branch from this node!');
                     }
-                    return existingJunction;
+                    return nearbyJunction;
                 }
             }
 
@@ -12485,8 +12681,12 @@ Made with ? for visual learners everywhere!
                 saveState();
             }
 
-            const junction = new Junction(splitPoint, { snapToGridPosition });
-            junctions.push(junction);
+            // Use the provided junction if given (avoids creating then discarding a junction),
+            // otherwise create a new one at the split point.
+            const junction = existingJunction || new Junction(splitPoint, { snapToGridPosition });
+            if (!existingJunction) {
+                junctions.push(junction);
+            }
 
             const startObj = wire.startObj;
             const startSide = wire.startSide;
@@ -12507,7 +12707,9 @@ Made with ? for visual learners everywhere!
                 if (wire2) {
                     wire2.remove();
                 }
-                junction.remove();
+                if (!existingJunction) {
+                    junction.remove();
+                }
                 if (!suppressStatus) {
                     setStatus('⚠ Unable to split wire at that point. Try tapping farther from terminals.');
                 }
