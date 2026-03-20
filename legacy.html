@@ -216,7 +216,88 @@
             border-color: #8800ff;
             box-shadow: 0 0 20px rgba(136,0,255,0.4);
         }
-        
+
+        .component-context-menu {
+            position: fixed;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 200px;
+            max-width: 320px;
+            padding: 0;
+            border-radius: 12px;
+            background: rgba(10, 22, 44, 0.94);
+            border: 1px solid rgba(136, 204, 255, 0.35);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+            z-index: 10000;
+            backdrop-filter: blur(18px);
+            touch-action: auto;
+        }
+
+        .component-context-menu[data-visible="true"] {
+            display: flex;
+        }
+
+        .component-menu-header {
+            padding: 14px 14px 12px 14px;
+            border-bottom: 1px solid rgba(136, 204, 255, 0.2);
+            background: rgba(20, 40, 80, 0.5);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .component-menu-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(136, 204, 255, 0.95);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .component-menu-description {
+            font-size: 12px;
+            line-height: 1.5;
+            color: rgba(180, 200, 220, 0.85);
+            font-weight: 400;
+        }
+
+        .component-menu-actions {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .component-context-menu button {
+            border: 1px solid rgba(136, 204, 255, 0.18);
+            border-radius: 10px;
+            background: rgba(34, 62, 108, 0.78);
+            color: rgba(228, 240, 255, 0.96);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+        }
+
+        .component-context-menu button:hover,
+        .component-context-menu button:focus {
+            border-color: rgba(136, 204, 255, 0.5);
+            background: rgba(46, 92, 152, 0.92);
+            transform: translateY(-1px);
+        }
+
+        .component-context-menu button[data-action="wire"] {
+            color: #00ffb2;
+        }
+
+        .component-context-menu button[data-action="rotate"] {
+            color: #bf8fff;
+        }
+
         .wire-analysis-fixed {
             position: fixed;
             bottom: calc(80px + env(safe-area-inset-bottom, 0px));
