@@ -952,9 +952,9 @@ body.builder-body {
   gap: 2px;
   min-width: 44px;
   padding: 4px 8px;
-  background: rgba(136, 204, 255, 0.1);
-  border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
-  border-radius: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
   color: var(--builder-text, #e8f6ff);
   cursor: pointer;
   font-family: inherit;
@@ -963,15 +963,13 @@ body.builder-body {
   letter-spacing: 0.03em;
   transition:
     background 0.16s ease,
-    border-color 0.16s ease,
     transform 0.12s ease,
     box-shadow 0.16s ease;
   white-space: nowrap;
 }
 
 .quick-add-btn:hover:not(:disabled) {
-  background: rgba(136, 204, 255, 0.22);
-  border-color: var(--builder-border-strong, rgba(136, 204, 255, 0.45));
+  background: rgba(136, 204, 255, 0.15);
   transform: scale(1.06);
   box-shadow: 0 0 8px rgba(136, 204, 255, 0.2);
 }
@@ -987,15 +985,13 @@ body.builder-body {
 }
 
 .quick-add-btn--active {
-  background: rgba(136, 204, 255, 0.22);
-  border-color: var(--builder-cyan, #88ccff);
+  background: rgba(136, 204, 255, 0.18);
   color: var(--builder-cyan, #88ccff);
   box-shadow: 0 0 10px rgba(136, 204, 255, 0.28);
 }
 
 .quick-add-btn--active:hover:not(:disabled) {
-  background: rgba(136, 204, 255, 0.32);
-  border-color: var(--builder-cyan, #88ccff);
+  background: rgba(136, 204, 255, 0.28);
   color: #fff;
 }
 
@@ -1004,15 +1000,13 @@ body.builder-body {
    a critical circuit-building tool. A keyframe pulse draws the eye to it
    and the bright colour matches the 3D junction sphere in the workspace. */
 .quick-add-btn--junction {
-  border-color: rgba(255, 200, 0, 0.65);
   background: rgba(255, 170, 0, 0.14);
   color: #ffe566;
   animation: junction-btn-glow 2.8s ease-in-out infinite;
 }
 
 .quick-add-btn--junction .quick-add-btn-symbol {
-  border-color: rgba(255, 200, 0, 0.4);
-  background: rgba(255, 160, 0, 0.18);
+  /* symbol inherits transparent style */
 }
 
 .quick-add-btn--junction .quick-add-btn-label {
@@ -1021,7 +1015,6 @@ body.builder-body {
 
 .quick-add-btn--junction:hover:not(:disabled) {
   background: rgba(255, 190, 0, 0.28);
-  border-color: rgba(255, 215, 0, 0.9);
   color: #fff8c0;
   box-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
   animation: none;
@@ -1161,10 +1154,7 @@ body.builder-body {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border-radius: 6px;
   overflow: hidden;
-  background: rgba(8, 18, 40, 0.75);
-  border: 1px solid rgba(136, 204, 255, 0.18);
 }
 
 .quick-add-btn-symbol-svg {
