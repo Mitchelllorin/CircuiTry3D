@@ -1635,6 +1635,7 @@ export default function Builder() {
     setWorkspacePanelOpen(false);
     setCircuitLocked(false);
     setOnboardingLocked(false);
+    setEnvironmentalPanelOpen(false);
     setHelpOpen(false);
   }, [setHelpOpen]);
 
