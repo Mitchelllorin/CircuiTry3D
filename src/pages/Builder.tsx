@@ -4183,6 +4183,18 @@ export default function Builder() {
           {isAIHelperOpen ? "✕" : "⚡"}
         </span>
       </button>
+
+      {/* Measurement Tools FAB — green button above the Library panel.
+          Opens the Insights drawer so the DMM is always one tap away. */}
+      <button
+        type="button"
+        className={`measure-fab${meterState.armed ? " measure-fab--active" : ""}`}
+        onClick={() => setBottomMenuOpen(true)}
+        aria-label="Open measurement tools"
+        title="Measurement Tools — Digital Multimeter"
+      >
+        <span aria-hidden="true">📐</span>
+      </button>
     </div>
   );
 }
