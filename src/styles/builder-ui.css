@@ -16,9 +16,12 @@
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  /* Toggle tabs - slimmer for minimal footprint */
-  --builder-menu-toggle-width: 24px;
-  --builder-menu-toggle-height: 64px;
+  /* Toggle tabs - wide enough to be tappable on touch screens */
+  --builder-menu-toggle-width: 40px;
+  --builder-menu-toggle-height: 72px;
+  /* Height of the stacked top-strip (quick-add + action-bar + zoom + gaps).
+     Used to position elements that must clear the top strip. */
+  --builder-top-strip-height: 148px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
@@ -801,20 +804,9 @@ body.builder-body {
   }
 }
 
-/* Zoom controls — top-center area, just below the ticker bar. */
+/* Zoom controls — inside .builder-top-strip; positioning handled by the strip. */
 .circuit-zoom-controls {
-  position: fixed;
-  top: calc(
-    var(--builder-ticker-top) +
-    var(--builder-ticker-height) +
-    var(--builder-safe-area-top) +
-    2px
-  );
-  bottom: auto;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  z-index: var(--z-builder-toolbar);
+  position: static;
   display: flex;
   flex-direction: row;
   gap: 4px;
@@ -958,22 +950,73 @@ body.builder-body {
   pointer-events: none;
 }
 
-/* ── Centered component quick-add bar ───────────────────────────────────
-   A horizontally centered pill strip shown over the workspace (outside the
-   iframe) so it always appears in the production React app at /#/app.
-   This is where Battery, Resistor, LED, Junction and Wire-mode shortcuts
-   belong — NOT inside legacy.html whose #quick-actions element is hidden
-   by `body.embedded #quick-actions { display:none }` when embedded.
-   Top is anchored to the bottom edge of the ticker strip (--builder-ticker-top
-   + --builder-ticker-height) with a 12px gap so the two bars never overlap or
-   appear visually stacked with no breathing room.
+/* ── Builder top strip ──────────────────────────────────────────────────────
+   Fixed column that stacks the component quick-add bar, the consolidated
+   action bar, and the zoom controls in a neat column just below the ticker.
+   Pointer-events are disabled on the container and re-enabled on children
+   so clicks on the workspace iframe pass through the empty gap area.
    ─────────────────────────────────────────────────────────────────────── */
-.quick-add-bar {
+.builder-top-strip {
   position: fixed;
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
+  top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--z-builder-floats);
+  z-index: var(--z-builder-toolbar);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding-top: 6px;
+  pointer-events: none;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--builder-menu-toggle-width) - 8px);
+}
+
+.builder-top-strip > * {
+  pointer-events: auto;
+}
+
+/* ── Consolidated action bar ────────────────────────────────────────────────
+   Single horizontal bar containing ALL tool-action buttons (Clear, Wire,
+   Rotate, Select, Run, Undo, Redo, Open, Save). Replaces the two separate
+   floating edge-action bars that were on the left and right sides.
+   ─────────────────────────────────────────────────────────────────────── */
+.consolidated-action-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
+  border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
+  border-radius: 28px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
+  overflow-x: auto;
+  max-width: calc(100vw - 2 * var(--builder-menu-toggle-width) - 8px);
+  scrollbar-width: none;
+}
+
+.consolidated-action-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin divider between the two groups of buttons */
+.action-bar-divider {
+  display: inline-block;
+  width: 1px;
+  height: 22px;
+  background: rgba(136, 204, 255, 0.28);
+  flex-shrink: 0;
+  margin: 0 3px;
+  border-radius: 1px;
+}
+
+/* ── Centered component quick-add bar ───────────────────────────────────
+   Sits inside .builder-top-strip; positioning is handled by the strip.
+   ─────────────────────────────────────────────────────────────────────── */
+.quick-add-bar {
+  position: static;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1480,7 +1523,7 @@ body.builder-body {
   top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
   bottom: 0;
   flex-direction: row;
-  width: calc(var(--builder-menu-left-width) + 46px);
+  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
   height: auto;
   align-items: flex-start;
   transition: transform 0.32s ease;
@@ -4487,23 +4530,18 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 @media (max-width: 960px) {
   :root {
-    /* Tablet - slimmer toggles */
+    /* Tablet - wider toggles stay visible */
     --builder-menu-left-width: 160px;
     --builder-menu-right-width: 156px;
     --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
     --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 22px;
-    --builder-menu-toggle-height: 56px;
+    --builder-menu-toggle-width: 38px;
+    --builder-menu-toggle-height: 64px;
     --builder-ticker-height: 28px;
     --builder-ticker-top: 68px;
     --builder-menu-left-height: 260px;
     --builder-menu-right-height: 240px;
-  }
-
-  /* Panels are bottom-anchored; no top/bottom constraints needed */
-  .builder-menu-stage-left,
-  .builder-menu-stage-right {
-    top: auto;
+    --builder-top-strip-height: 142px;
   }
 
   .builder-menu-stage-bottom {
@@ -4525,19 +4563,20 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 @media (max-width: 720px) {
   :root {
-    /* Mobile - slim but tappable toggles */
+    /* Mobile portrait — toggles wide enough to tap with a thumb */
     --builder-menu-left-width: 140px;
     --builder-menu-right-width: 136px;
     --builder-menu-bottom-width: calc(100vw - 24px);
     --builder-menu-bottom-height: 188px;
-    --builder-menu-toggle-width: 20px;
-    --builder-menu-toggle-height: 48px;
+    --builder-menu-toggle-width: 38px;
+    --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
     --builder-ticker-top: 64px;
     --builder-menu-left-height: 240px;
     --builder-menu-right-height: 220px;
+    --builder-top-strip-height: 138px;
   }
 
   /* Panels are bottom-anchored; clear legacy top/bottom overrides */
@@ -4632,9 +4671,31 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 @media (max-width: 900px), (pointer: coarse) {
-  /* Panels are bottom-anchored; no top override needed */
+  /* Side panels: restore side-slide (translateX) so toggle tabs are always
+     visible at the left/right screen edges on touch devices.
+     Explicit top resets the `top: auto` that the 960px breakpoint may set. */
+  .builder-menu-stage-left,
+  .builder-menu-stage-right {
+    top: calc(var(--builder-ticker-top) + var(--builder-ticker-height) + var(--builder-safe-area-top));
+    bottom: 0;
+  }
+
   .builder-menu-stage-left {
-    top: auto;
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+  }
+
+  .builder-menu-stage-left.open {
+    transform: translateX(0);
+  }
+
+  .builder-menu-stage-right {
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateX(var(--builder-menu-right-width));
+  }
+
+  .builder-menu-stage-right.open {
+    transform: translateX(0);
   }
 
   .builder-menu-stage-left .builder-menu {
@@ -4647,50 +4708,31 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     min-height: 48px;
   }
 
-  /* Ensure toggle buttons are always visible on touch devices */
+  /* Ensure toggle buttons are always visible and tappable on touch devices */
   .builder-menu-toggle {
     min-width: 44px;
     min-height: 44px;
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 16px rgba(136, 204, 255, 0.25);
+      2px 0 16px var(--builder-shadow),
+      0 0 16px rgba(136, 204, 255, 0.25);
   }
 
   .builder-menu-toggle-left {
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(136, 204, 255, 0.3);
+      2px 0 16px var(--builder-shadow),
+      2px 0 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-right {
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(136, 204, 255, 0.3);
+      -2px 0 16px var(--builder-shadow),
+      -2px 0 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-bottom {
     box-shadow:
       0 -4px 16px var(--builder-shadow),
       0 -4px 20px rgba(136, 204, 255, 0.3);
-  }
-
-  /* Bottom-corner panels use translateY; keep widths at panel width only */
-  .builder-menu-stage-left {
-    width: var(--builder-menu-left-width);
-    transform: translateY(var(--builder-menu-left-height));
-  }
-
-  .builder-menu-stage-left.open {
-    transform: translateY(0);
-  }
-
-  .builder-menu-stage-right {
-    width: var(--builder-menu-right-width);
-    transform: translateY(var(--builder-menu-right-height));
-  }
-
-  .builder-menu-stage-right.open {
-    transform: translateY(0);
   }
 }
 
@@ -4720,9 +4762,9 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: calc(44px + var(--builder-safe-area-top));
   }
 
-  /* Ticker is hidden; place quick-add-bar just below the nav bar */
-  .quick-add-bar {
-    top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
+  /* Ticker is hidden in landscape; top strip shifts to just below the nav bar */
+  .builder-top-strip {
+    top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 4px + var(--builder-safe-area-top));
   }
 
   .workspace-mode-bar {
@@ -4743,36 +4785,29 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     padding: 6px 9px;
   }
 
-  .workspace-edge-actions {
-    top: auto;
-    bottom: calc(
-      var(--builder-edge-actions-gap) +
-      var(--builder-safe-area-bottom)
-    );
-    padding: 4px;
-    gap: 4px;
-  }
-
-  .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
-  }
-
-  /* Panels are bottom-anchored; clear top/bottom overrides for landscape */
+  /* In landscape, side panels anchor to bottom edges */
   .builder-menu-stage-left {
     top: auto;
     bottom: 0;
     left: var(--builder-safe-area-left);
+    width: var(--builder-menu-left-width);
+    transform: translateY(var(--builder-menu-left-height));
+  }
+
+  .builder-menu-stage-left.open {
+    transform: translateY(0);
   }
 
   .builder-menu-stage-right {
     top: auto;
     bottom: 0;
     right: var(--builder-safe-area-right);
+    width: var(--builder-menu-right-width);
+    transform: translateY(var(--builder-menu-right-height));
+  }
+
+  .builder-menu-stage-right.open {
+    transform: translateY(0);
   }
 
   .builder-menu-stage-bottom {

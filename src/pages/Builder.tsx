@@ -2715,137 +2715,175 @@ export default function Builder() {
 
       {shouldShowEdgeActions && (
         <Fragment>
-          {/* Workspace Quick Action Buttons - History/File actions on right edge */}
-          <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--simulate"
-              onClick={handleRunSimulationClick}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              data-pulse={isSimulatePulsing ? "true" : undefined}
-              aria-label="Run simulation"
-              title="Run the current circuit simulation"
-            >
-              <IconPlay className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Run</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("undo")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Undo last change"
-              title="Undo (Ctrl+Z)"
-            >
-              <IconUndo className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Undo</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("redo")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Redo previous change"
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <IconRedo className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Redo</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => setIsLoadModalOpen(true)}
-              aria-label="Open circuit"
-              title="Open saved circuit (Ctrl+O)"
-            >
-              <IconFolder className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Open</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => setIsSaveModalOpen(true)}
-              aria-label="Save circuit"
-              title="Save circuit (Ctrl+S)"
-            >
-              <IconSave className="edge-action-icon-svg" />
-              {circuitStorage.hasUnsavedChanges && (
-                <span className="unsaved-dot" aria-label="Unsaved changes" />
-              )}
-              <span className="edge-action-label" aria-hidden="true">Save</span>
-            </button>
-          </div>
+          {/* ── Top strip: component bar → action bar → zoom ──────────────
+              Three rows stacked below the ticker in one fixed column.
+              The strip is pointer-events:none so the 3D workspace iframe
+              receives taps/clicks on the empty gap between rows.           */}
+          <div className="builder-top-strip">
+            {/* Row 1 — component quick-add bar */}
+            <div className="quick-add-bar" aria-label="Quick add components">
+              {QUICK_ADD_COMPONENTS.map((component) => (
+                <QuickAddButton
+                  key={component.id}
+                  component={component}
+                  onClick={() => handleComponentAction(component)}
+                  disabled={controlsDisabled}
+                  title={component.description || component.label}
+                />
+              ))}
+            </div>
 
-          {/* Workspace Quick Action Buttons - Tool actions on left edge */}
-          <div className="workspace-edge-actions workspace-edge-actions--left" aria-label="Tool quick actions">
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--clear"
-              onClick={handleClearWorkspace}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Clear workspace"
-              title="Clear all components, wires, and analysis data"
-            >
-              <IconTrash className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Clear</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-wire-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isWireMode}
-              aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
-              title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
-            >
-              <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
-              <span className="edge-action-label" aria-hidden="true">Wire</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
-              onClick={() => triggerBuilderAction("toggle-rotate-mode")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-pressed={modeState.isRotateMode}
-              aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
-              title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
-            >
-              <IconRotate className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Rotate</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Edit selected component"
-              title="Edit / Select (E)"
-            >
-              <IconPencil className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Select</span>
-            </button>
-          </div>
-
-          {/* Centered component quick-add bar — ports the intent of legacy-html
-              PR #467 / #516 (which targeted a hidden element) to the correct
-              React layer so changes are always visible in the production app */}
-          <div className="quick-add-bar" aria-label="Quick add components">
-            {QUICK_ADD_COMPONENTS.map((component) => (
-              <QuickAddButton
-                key={component.id}
-                component={component}
-                onClick={() => handleComponentAction(component)}
+            {/* Row 2 — consolidated tool-action bar (replaces two side bars) */}
+            <div className="consolidated-action-bar" aria-label="Tool actions">
+              <button
+                type="button"
+                className="edge-action-btn edge-action-btn--clear"
+                onClick={handleClearWorkspace}
                 disabled={controlsDisabled}
-                title={component.description || component.label}
-              />
-            ))}
+                aria-disabled={controlsDisabled}
+                aria-label="Clear workspace"
+                title="Clear all components, wires, and analysis data"
+              >
+                <IconTrash className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Clear</span>
+              </button>
+              <button
+                type="button"
+                className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
+                onClick={() => triggerBuilderAction("toggle-wire-mode")}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                aria-pressed={modeState.isWireMode}
+                aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
+                title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+              >
+                <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+                <span className="edge-action-label" aria-hidden="true">Wire</span>
+              </button>
+              <button
+                type="button"
+                className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
+                onClick={() => triggerBuilderAction("toggle-rotate-mode")}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                aria-pressed={modeState.isRotateMode}
+                aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
+                title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
+              >
+                <IconRotate className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Rotate</span>
+              </button>
+              <button
+                type="button"
+                className="edge-action-btn"
+                onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                aria-label="Edit selected component"
+                title="Edit / Select (E)"
+              >
+                <IconPencil className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Select</span>
+              </button>
+              <span className="action-bar-divider" aria-hidden="true" />
+              <button
+                type="button"
+                className="edge-action-btn edge-action-btn--simulate"
+                onClick={handleRunSimulationClick}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                data-pulse={isSimulatePulsing ? "true" : undefined}
+                aria-label="Run simulation"
+                title="Run the current circuit simulation"
+              >
+                <IconPlay className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Run</span>
+              </button>
+              <button
+                type="button"
+                className="edge-action-btn"
+                onClick={() => triggerBuilderAction("undo")}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                aria-label="Undo last change"
+                title="Undo (Ctrl+Z)"
+              >
+                <IconUndo className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Undo</span>
+              </button>
+              <button
+                type="button"
+                className="edge-action-btn"
+                onClick={() => triggerBuilderAction("redo")}
+                disabled={controlsDisabled}
+                aria-disabled={controlsDisabled}
+                aria-label="Redo previous change"
+                title="Redo (Ctrl+Shift+Z)"
+              >
+                <IconRedo className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Redo</span>
+              </button>
+              <button
+                type="button"
+                className="edge-action-btn"
+                onClick={() => setIsLoadModalOpen(true)}
+                aria-label="Open circuit"
+                title="Open saved circuit (Ctrl+O)"
+              >
+                <IconFolder className="edge-action-icon-svg" />
+                <span className="edge-action-label" aria-hidden="true">Open</span>
+              </button>
+              <button
+                type="button"
+                className="edge-action-btn"
+                onClick={() => setIsSaveModalOpen(true)}
+                aria-label="Save circuit"
+                title="Save circuit (Ctrl+S)"
+              >
+                <IconSave className="edge-action-icon-svg" />
+                {circuitStorage.hasUnsavedChanges && (
+                  <span className="unsaved-dot" aria-label="Unsaved changes" />
+                )}
+                <span className="edge-action-label" aria-hidden="true">Save</span>
+              </button>
+            </div>
+
+            {/* Row 3 — zoom controls */}
+            <div className="circuit-zoom-controls" aria-label="Zoom controls">
+              <button
+                type="button"
+                className="circuit-zoom-btn"
+                onClick={() => triggerBuilderAction("zoom-in")}
+                disabled={controlsDisabled}
+                aria-label="Zoom in"
+                title="Zoom in"
+              >
+                <span className="circuit-zoom-icon" aria-hidden="true">+</span>
+                <span className="circuit-zoom-label" aria-hidden="true">In</span>
+              </button>
+              <button
+                type="button"
+                className="circuit-zoom-btn"
+                onClick={() => triggerBuilderAction("fit-screen")}
+                disabled={controlsDisabled}
+                aria-label="Fit circuit to screen"
+                title="Fit to screen"
+              >
+                <span className="circuit-zoom-icon" aria-hidden="true">⊡</span>
+                <span className="circuit-zoom-label" aria-hidden="true">Fit</span>
+              </button>
+              <button
+                type="button"
+                className="circuit-zoom-btn"
+                onClick={() => triggerBuilderAction("zoom-out")}
+                disabled={controlsDisabled}
+                aria-label="Zoom out"
+                title="Zoom out"
+              >
+                <span className="circuit-zoom-icon" aria-hidden="true">−</span>
+                <span className="circuit-zoom-label" aria-hidden="true">Out</span>
+              </button>
+            </div>
           </div>
 
           {/* Junction info tip — shown until dismissed, explains the role
@@ -3852,44 +3890,6 @@ export default function Builder() {
           style={workspaceSkinStyle}
         />
       </div>
-
-      {isActiveCircuitBuildMode && !isOverlayActive && (
-        <div className="circuit-zoom-controls" aria-label="Zoom controls">
-          <button
-            type="button"
-            className="circuit-zoom-btn"
-            onClick={() => triggerBuilderAction("zoom-in")}
-            disabled={controlsDisabled}
-            aria-label="Zoom in"
-            title="Zoom in"
-          >
-            <span className="circuit-zoom-icon" aria-hidden="true">+</span>
-            <span className="circuit-zoom-label" aria-hidden="true">In</span>
-          </button>
-          <button
-            type="button"
-            className="circuit-zoom-btn"
-            onClick={() => triggerBuilderAction("fit-screen")}
-            disabled={controlsDisabled}
-            aria-label="Fit circuit to screen"
-            title="Fit to screen"
-          >
-            <span className="circuit-zoom-icon" aria-hidden="true">⊡</span>
-            <span className="circuit-zoom-label" aria-hidden="true">Fit</span>
-          </button>
-          <button
-            type="button"
-            className="circuit-zoom-btn"
-            onClick={() => triggerBuilderAction("zoom-out")}
-            disabled={controlsDisabled}
-            aria-label="Zoom out"
-            title="Zoom out"
-          >
-            <span className="circuit-zoom-icon" aria-hidden="true">−</span>
-            <span className="circuit-zoom-label" aria-hidden="true">Out</span>
-          </button>
-        </div>
-      )}
 
       <div
         ref={floatingLogoRef}
