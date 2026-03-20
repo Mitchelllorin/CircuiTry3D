@@ -12348,6 +12348,11 @@ body.android-optimized .zoom-btn {
         }
 
         function maybeAutoShowTutorial() {
+            // Skip the built-in tutorial when running inside the React
+            // wrapper's iframe — the React app has its own onboarding flow
+            // and the React UI elements (mode bar, panels) would render on
+            // top of this iframe's tutorial, obscuring its dismiss button.
+            if (window !== window.top) return;
             try {
                 if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
                     showTutorial();

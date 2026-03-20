@@ -2875,8 +2875,9 @@ export default function Builder() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="intro-dialog-title"
+          onClick={handleDismissIntroDialog}
         >
-          <div className="builder-intro-dialog-card">
+          <div className="builder-intro-dialog-card" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="builder-intro-dialog-close"
@@ -2986,6 +2987,16 @@ export default function Builder() {
 
       {shouldShowCurrentFlowPayoffBanner && (
         <section className="current-flow-payoff-banner" role="status" aria-live="polite">
+          <button
+            type="button"
+            className="current-flow-payoff-close"
+            aria-label="Dismiss"
+            onClick={() => {
+              setCurrentFlowPayoffVisible(false);
+            }}
+          >
+            ×
+          </button>
           <div className="current-flow-payoff-kicker">Electricity in motion</div>
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
