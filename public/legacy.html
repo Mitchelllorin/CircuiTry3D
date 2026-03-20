@@ -8582,6 +8582,8 @@ body.android-optimized .zoom-btn {
                 const dx = toward.x - point.x, dz = toward.z - point.z;
                 if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
                 if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                if (side === 'top') return snapToGrid(new THREE.Vector3(point.x, 0, point.z - STUB));
+                if (side === 'bottom') return snapToGrid(new THREE.Vector3(point.x, 0, point.z + STUB));
                 return Math.abs(dx) >= Math.abs(dz)
                     ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx||1)*STUB, 0, point.z))
                     : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz||1)*STUB));
@@ -8613,6 +8615,8 @@ body.android-optimized .zoom-btn {
                 const dz = toward.z - point.z;
                 if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
                 if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
+                if (side === 'top') return snapToGrid(new THREE.Vector3(point.x, 0, point.z - STUB));
+                if (side === 'bottom') return snapToGrid(new THREE.Vector3(point.x, 0, point.z + STUB));
                 return Math.abs(dx) >= Math.abs(dz)
                     ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx || 1) * STUB, 0, point.z))
                     : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz || 1) * STUB));
@@ -8705,8 +8709,17 @@ body.android-optimized .zoom-btn {
             }
             function computeStub(point, side, toward) {
                 const dx = toward.x - point.x; const dz = toward.z - point.z;
-                const useX = Math.abs(dx) >= Math.abs(dz);
-                const dir = useX ? outwardDirForSide(side, dx) : outwardDirForSide(side, dz);
+                // Explicit side directions take priority so the stub always exits
+                // in the correct terminal direction before the A* search begins.
+                let useX, dir;
+                if (side === 'left' || side === 'negative')  { useX = true;  dir = -1; }
+                else if (side === 'right' || side === 'positive') { useX = true;  dir =  1; }
+                else if (side === 'top')                          { useX = false; dir = -1; }
+                else if (side === 'bottom')                       { useX = false; dir =  1; }
+                else {
+                    useX = Math.abs(dx) >= Math.abs(dz);
+                    dir  = useX ? outwardDirForSide(side, dx) : outwardDirForSide(side, dz);
+                }
                 for (let len = 1; len <= 3; len++) {
                     const nx = point.x + (useX ? dir * len * GRID : 0);
                     const nz = point.z + (!useX ? dir * len * GRID : 0);
@@ -8784,20 +8797,37 @@ body.android-optimized .zoom-btn {
                 return [A, B];
             }
 
-            // Use 3 equal steps so the staircase looks intentional
+            // Use 3 equal steps so the staircase looks intentional.
+            // Start with the axis that matches the terminal's exit direction:
+            // top/bottom exits move vertically first; left/right (and default)
+            // move horizontally first.
             const steps = 3;
+            const verticalFirst = (startSide === 'top' || startSide === 'bottom');
             const points = [A];
             for (let i = 1; i <= steps; i++) {
                 const prevPt = points[points.length - 1];
-                // Horizontal segment
-                const hCorner = snapToGrid(new THREE.Vector3(
-                    A.x + dx * (i / steps), 0, prevPt.z));
-                points.push(hCorner);
-                if (i < steps) {
-                    // Vertical segment
+                if (verticalFirst) {
+                    // Vertical segment first
                     const vCorner = snapToGrid(new THREE.Vector3(
-                        hCorner.x, 0, A.z + dz * (i / steps)));
+                        prevPt.x, 0, A.z + dz * (i / steps)));
                     points.push(vCorner);
+                    if (i < steps) {
+                        // Horizontal segment
+                        const hCorner = snapToGrid(new THREE.Vector3(
+                            A.x + dx * (i / steps), 0, vCorner.z));
+                        points.push(hCorner);
+                    }
+                } else {
+                    // Horizontal segment first
+                    const hCorner = snapToGrid(new THREE.Vector3(
+                        A.x + dx * (i / steps), 0, prevPt.z));
+                    points.push(hCorner);
+                    if (i < steps) {
+                        // Vertical segment
+                        const vCorner = snapToGrid(new THREE.Vector3(
+                            hCorner.x, 0, A.z + dz * (i / steps)));
+                        points.push(vCorner);
+                    }
                 }
             }
             points.push(B);
@@ -8897,18 +8927,31 @@ body.android-optimized .zoom-btn {
                 return compressPath([A, Astub, Bstub, B]);
             }
             
-            // Create L-shaped path with intelligent corner selection.
-            // Pick the corner that keeps the wire moving in the stub's outward
-            // direction — avoids backward/U-turn paths for any component layout
-            // or rotation.
+            // Create L-shaped path with side-aware corner selection.
+            // After the stub exits A in its side direction, the wire must turn
+            // 90° toward B without doubling back through A:
+            //   - Horizontal exits (left/right): stub moves in X, so turn in Z
+            //     next → corner2 keeps the same X as Astub and steps in Z.
+            //   - Vertical exits (top/bottom): stub moves in Z, so turn in X
+            //     next → corner1 keeps the same Z as Astub and steps in X.
+            //   - Unknown/default sides: fall back to the heuristic that picks
+            //     whichever corner is farther from A than the stub endpoint.
             const corner1 = snapToGrid(new THREE.Vector3(Bstub.x, 0, Astub.z));
             const corner2 = snapToGrid(new THREE.Vector3(Astub.x, 0, Bstub.z));
 
-            // corner1 is outward in X if it is at least as far from A in X as
-            // Astub already is.  corner2 is outward in Z by the same reasoning.
-            const moveXOut = Math.abs(corner1.x - A.x) >= Math.abs(Astub.x - A.x);
-            const moveZOut = Math.abs(corner2.z - A.z) >= Math.abs(Astub.z - A.z);
-            const corner = moveXOut ? corner1 : (moveZOut ? corner2 : corner1);
+            let corner;
+            if (startSide === 'left' || startSide === 'negative' ||
+                startSide === 'right' || startSide === 'positive') {
+                // Stub exits horizontally → turn vertically at stub tip.
+                corner = corner2;
+            } else if (startSide === 'top' || startSide === 'bottom') {
+                // Stub exits vertically → turn horizontally at stub tip.
+                corner = corner1;
+            } else {
+                const moveXOut = Math.abs(corner1.x - A.x) >= Math.abs(Astub.x - A.x);
+                const moveZOut = Math.abs(corner2.z - A.z) >= Math.abs(Astub.z - A.z);
+                corner = moveXOut ? corner1 : (moveZOut ? corner2 : corner1);
+            }
 
             return compressPath([A, Astub, corner, Bstub, B]);
         }
