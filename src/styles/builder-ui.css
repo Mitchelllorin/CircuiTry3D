@@ -1204,6 +1204,52 @@ body.builder-body {
   }
 }
 
+/* Onboarding "tap to edit" chip — shown after the payoff banner is dismissed
+   so the circuit stays view-only until the user explicitly taps to start
+   editing. Positioned at the bottom-center, above the bottom-menu toggle. */
+.onboarding-edit-chip-wrap {
+  position: fixed;
+  bottom: calc(var(--builder-floating-action-offset) + var(--builder-safe-area-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-builder-floats);
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+}
+
+.onboarding-edit-chip {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #041225;
+  background: linear-gradient(135deg, rgba(136, 204, 255, 1), rgba(0, 255, 176, 0.85));
+  box-shadow:
+    0 8px 20px rgba(0, 255, 176, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-edit-chip:hover,
+.onboarding-edit-chip:focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 28px rgba(0, 255, 176, 0.38),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  outline: none;
+}
+
+.onboarding-edit-chip:active {
+  transform: translateY(0);
+}
+
 .mode-bar-actions {
   display: flex;
   gap: 4px;

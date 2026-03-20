@@ -1246,6 +1246,10 @@ export default function Builder() {
   const [activeGuideWorkflow, setActiveGuideWorkflow] =
     useState<GuideWorkflowId>("help");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
+  // Tracks whether the circuit is locked specifically for the onboarding payoff
+  // sequence. Used to distinguish onboarding lock from practice/troubleshoot lock
+  // and to show a "tap to edit" chip after the payoff banner is dismissed.
+  const [isOnboardingLocked, setOnboardingLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
     getDefaultScenario()
@@ -1630,7 +1634,7 @@ export default function Builder() {
     setActiveWorkspacePanelMode(null);
     setWorkspacePanelOpen(false);
     setCircuitLocked(false);
-    setEnvironmentalPanelOpen(false);
+    setOnboardingLocked(false);
     setHelpOpen(false);
   }, [setHelpOpen]);
 
@@ -2104,7 +2108,10 @@ export default function Builder() {
       // ignore storage write failures
     }
 
-    // Launch the current-flow payoff demo immediately after closing the intro
+    // Launch the current-flow payoff demo immediately after closing the intro.
+    // Lock the circuit as onboarding-locked so the preset circuit stays
+    // view-only until the user explicitly taps "Edit Circuit".
+    setOnboardingLocked(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [runCurrentFlowPayoffSequence]);
 
@@ -2189,6 +2196,7 @@ export default function Builder() {
 
     // Lock circuit during first-visit payoff sequence so the user watches before editing
     setCircuitLocked(true);
+    setOnboardingLocked(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
@@ -2198,9 +2206,11 @@ export default function Builder() {
     }
 
     const timer = window.setTimeout(() => {
-      // Auto-unlock circuit when payoff banner expires so user can edit freely
+      // Hide the payoff banner when it expires. The circuit stays locked
+      // (isOnboardingLocked) so the user can't accidentally move components;
+      // a "tap to edit" chip appears instead, requiring an explicit tap to
+      // begin editing.
       setCurrentFlowPayoffVisible(false);
-      setCircuitLocked(false);
     }, 14000);
 
     return () => {
@@ -2291,9 +2301,11 @@ export default function Builder() {
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
     ? "Workspace is still loading"
-    : isCircuitLocked
-      ? "Complete the active challenge to unlock editing"
-      : undefined;
+    : isOnboardingLocked
+      ? "Tap '✏️ Start Editing' to begin editing the circuit"
+      : isCircuitLocked
+        ? "Complete the active challenge to unlock editing"
+        : undefined;
 
   const activeTroubleshootProblem = useMemo(() => {
     if (!activeTroubleshootId) return null;
@@ -2539,6 +2551,16 @@ export default function Builder() {
     isCurrentFlowPayoffVisible &&
     shouldShowEdgeActions &&
     !isInteractiveTutorialOpen;
+  // Show the "tap to edit" chip when the circuit is still onboarding-locked
+  // but the payoff banner has been dismissed/auto-hidden. This gives the user
+  // a clear, explicit action to start editing rather than accidentally
+  // dragging components.
+  const shouldShowOnboardingLockChip =
+    isOnboardingLocked &&
+    !isCurrentFlowPayoffVisible &&
+    !isIntroDialogVisible &&
+    shouldShowEdgeActions &&
+    isFrameReady;
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -3032,6 +3054,7 @@ export default function Builder() {
               className="current-flow-payoff-btn current-flow-payoff-btn--primary"
               onClick={() => {
                 setCurrentFlowPayoffVisible(false);
+                setOnboardingLocked(false);
                 setCircuitLocked(false);
               }}
             >
@@ -3051,6 +3074,7 @@ export default function Builder() {
               className="current-flow-payoff-btn"
               onClick={() => {
                 setCurrentFlowPayoffVisible(false);
+                setOnboardingLocked(false);
                 setCircuitLocked(false);
                 openGuidesWorkspace("tutorial");
                 setInteractiveTutorialOpen(true);
@@ -3062,14 +3086,31 @@ export default function Builder() {
               type="button"
               className="current-flow-payoff-btn current-flow-payoff-btn--ghost"
               onClick={() => {
+                // Dismiss hides the banner but keeps the circuit locked so the
+                // user can't accidentally move components. A "tap to edit" chip
+                // will appear to let them explicitly start editing.
                 setCurrentFlowPayoffVisible(false);
-                setCircuitLocked(false);
               }}
             >
               Dismiss
             </button>
           </div>
         </section>
+      )}
+
+      {shouldShowOnboardingLockChip && (
+        <div className="onboarding-edit-chip-wrap" role="status">
+          <button
+            type="button"
+            className="onboarding-edit-chip"
+            onClick={() => {
+              setOnboardingLocked(false);
+              setCircuitLocked(false);
+            }}
+          >
+            ✏️ Start Editing
+          </button>
+        </div>
       )}
 
       <div
