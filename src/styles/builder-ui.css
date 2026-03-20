@@ -16,17 +16,19 @@
   --builder-text: #e8f6ff;
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
-  /* Toggle tabs — slim vertical tabs for side-panel layout */
+  /* Toggle tabs — slim vertical strips at each edge */
   --builder-menu-toggle-width: 28px;
   --builder-menu-toggle-height: 64px;
+  /* Bottom perimeter bar height (zoom + Insights + AI) */
+  --builder-perimeter-bar-height: 52px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 44px);
-  /* Side-panel widths — narrow for max workspace area */
-  --builder-menu-left-width: 180px;
-  --builder-menu-right-width: 172px;
+  /* Side-panel content widths */
+  --builder-menu-left-width: 200px;
+  --builder-menu-right-width: 190px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 80px));
   --builder-menu-bottom-height: 248px;
-  /* Side-panel heights — tall panels that leave room for mode bar + bottom bar */
+  /* Legacy height variables kept for backward-compat; side panels now use top/bottom anchors */
   --builder-menu-left-height: min(calc(100dvh - 200px), 560px);
   --builder-menu-right-height: min(calc(100dvh - 200px), 560px);
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
@@ -336,40 +338,28 @@ body.builder-body {
   min-width: 12px;
 }
 
-/* ── Edge-positioned workspace action buttons (Undo, Redo, Open, Save, Simulate, Clear) ── */
+/* ── Edge-positioned workspace action buttons (Undo, Redo, Open, Save, Simulate, Clear) ──
+   Buttons live in slim columns flush to the left/right screen edges, just above the
+   bottom perimeter bar so every button is a thumb-stretch away. They auto-hide when
+   their adjacent panel is open (panel content takes over that screen region).
+   ─────────────────────────────────────────────────────────────────────────────────────── */
 .workspace-edge-actions {
   position: fixed;
   top: auto;
-  bottom: calc(
-    var(--builder-edge-actions-gap) +
-    var(--builder-safe-area-bottom)
-  );
+  bottom: calc(var(--builder-perimeter-bar-height, 52px) + 6px + var(--builder-safe-area-bottom));
   right: auto;
   left: auto;
   z-index: var(--z-builder-toolbar-top);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px;
-  background: rgba(10, 24, 48, 0.75);
-  border: 1px solid rgba(136, 204, 255, 0.2);
+  gap: 4px;
+  padding: 4px;
+  background: rgba(10, 24, 48, 0.82);
+  border: 1px solid rgba(136, 204, 255, 0.18);
   border-radius: 12px;
   backdrop-filter: blur(12px);
   box-shadow: 0 4px 16px rgba(3, 12, 32, 0.45);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
-}
-
-.workspace-edge-actions:hover {
-  opacity: 1;
-  background: rgba(10, 24, 48, 0.88);
-  transform: translateY(0);
-}
-
-.workspace-edge-actions:focus-within {
-  opacity: 1;
-  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
 @media (hover: none) {
@@ -383,8 +373,8 @@ body.builder-body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--builder-edge-action-button-size);
-  height: var(--builder-edge-action-button-size);
+  width: 40px;
+  height: 40px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -446,7 +436,7 @@ body.builder-body {
   color: #fff;
 }
 
-/* Simulate button styling (play icon in right toolbar) */
+/* Simulate button styling */
 .edge-action-btn--simulate {
   background: linear-gradient(
     135deg,
@@ -473,7 +463,7 @@ body.builder-body {
   animation: builderQuickPulse 1.1s ease-out;
 }
 
-/* Clear button styling (trash icon in left toolbar) */
+/* Clear button styling */
 .edge-action-btn--clear {
   background: linear-gradient(
     135deg,
@@ -496,120 +486,39 @@ body.builder-body {
   box-shadow: 0 6px 18px rgba(255, 86, 86, 0.35);
 }
 
-/* SVG icon styling for edge action buttons */
+/* SVG icon styling */
 .edge-action-icon-svg {
   display: block;
   object-fit: contain;
 }
 
-/* Right edge positioning (default - Undo, Redo, Load, Save)
-   Sits to the left of the right panel so it stays visible. */
+/* ── Right edge: Simulate, Undo, Redo, Load, Save ──
+   Positioned flush against the right screen edge, just above the perimeter bar.
+   Slides under the Controls panel when it opens.                               */
 .workspace-edge-actions--right {
-  right: calc(var(--builder-menu-right-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px));
+  right: calc(var(--builder-menu-toggle-width) + 4px + var(--builder-safe-area-right));
   left: auto;
-  bottom: calc(
-    var(--builder-menu-toggle-height) +
-    8px +
-    var(--builder-safe-area-bottom)
-  );
 }
 
-/* Left edge positioning (Wire, Rotate, Edit tools) */
+/* ── Left edge: Clear, Wire, Rotate, Edit tools ──
+   Positioned flush against the left screen edge, just above the perimeter bar. */
 .workspace-edge-actions--left {
-  left: calc(
-    var(--builder-menu-left-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
-  );
+  left: calc(var(--builder-menu-toggle-width) + 4px + var(--builder-safe-area-left));
   right: auto;
 }
 
-/* Panel open adjustments — panels slide vertically now; no horizontal shift needed */
+/* Fade out left actions when Library panel is open (panel covers that region) */
 .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-  left: calc(
-    var(--builder-menu-left-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
-  );
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-6px);
 }
 
+/* Fade out right actions when Controls panel is open */
 .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-  right: calc(
-    var(--builder-menu-right-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px)
-  );
-}
-
-@media (max-width: 720px) {
-  .workspace-edge-actions {
-    top: auto;
-    bottom: calc(
-      var(--builder-edge-actions-gap) +
-      var(--builder-safe-area-bottom)
-    );
-    padding: 4px;
-    gap: 4px;
-  }
-
-  .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px));
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
-  }
-
-  .workspace-edge-actions--left {
-    left: calc(
-      var(--builder-menu-left-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
-    );
-  }
-
-  .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-    left: calc(
-      var(--builder-menu-left-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
-    );
-  }
-
-  .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-    right: calc(
-      var(--builder-menu-right-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px)
-    );
-  }
-
-}
-
-@media (max-width: 480px) {
-  .workspace-edge-actions {
-    top: auto;
-    bottom: calc(
-      var(--builder-edge-actions-gap) +
-      var(--builder-safe-area-bottom)
-    );
-    flex-direction: column;
-  }
-
-  .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
-    left: auto;
-    transform: none;
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
-  }
-
-  .workspace-edge-actions--left {
-    left: calc(
-      var(--builder-menu-left-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
-    );
-    right: auto;
-    transform: none;
-  }
-
-  /* On very small screens, the bottom Insights drawer and edge actions fight for space.
-     Hide edge actions and zoom controls while the drawer is open to avoid button/menu overlaps. */
-  .builder-shell[data-bottom-menu-open="true"] .workspace-edge-actions,
-  .builder-shell[data-bottom-menu-open="true"] .circuit-zoom-controls {
-    display: none;
-  }
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(6px);
 }
 
 .current-flow-payoff-banner {
@@ -785,31 +694,39 @@ body.builder-body {
   }
 }
 
-/* Zoom controls — bottom-center area, clear of both corner panels and
-   the centered Insights toggle. */
+/* ── Bottom perimeter bar background ─────────────────────────────────────
+   Visual base for the unified bottom navigation strip that holds:
+   zoom controls (left) · Insights toggle (centre) · AI button (right).
+   The Library and Controls toggle tabs sit at the screen edges above this bar.
+   ─────────────────────────────────────────────────────────────────────────── */
+.builder-perimeter-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--builder-perimeter-bar-height, 52px) + var(--builder-safe-area-bottom));
+  padding-bottom: var(--builder-safe-area-bottom);
+  background: rgba(8, 18, 38, 0.92);
+  border-top: 1px solid rgba(136, 204, 255, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: calc(var(--z-builder-side-menu) - 2);
+  pointer-events: none; /* pass-through; child elements re-enable pointer-events */
+}
+
+/* Zoom controls — left section of the bottom perimeter bar */
 .circuit-zoom-controls {
   position: fixed;
   top: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
-  right: calc(
-    var(--builder-menu-right-width) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-safe-area-right)
+  bottom: calc(
+    (var(--builder-perimeter-bar-height, 52px) - 36px) / 2 +
+    var(--builder-safe-area-bottom)
   );
+  left: calc(var(--builder-menu-toggle-width, 28px) + 8px + var(--builder-safe-area-left));
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
   gap: 4px;
-}
-
-/* When the right side menu is open the panel slides upward; zoom controls
-   stay in the same horizontal position (panel is no longer side-panel). */
-.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  right: calc(
-    var(--builder-menu-right-width) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-safe-area-right)
-  );
 }
 
 .circuit-zoom-btn {
@@ -848,71 +765,9 @@ body.builder-body {
   cursor: not-allowed;
 }
 
-/* ── Measurement Tools FAB ──────────────────────────────────────────────────
-   Standalone floating button (green) positioned above the Library panel on
-   the left side.  Opens the Insights/Meters panel for quick DMM access.
-   ─────────────────────────────────────────────────────────────────────────── */
+/* measure-fab is removed — Insights toggle in the bottom perimeter bar serves that purpose */
 .measure-fab {
-  position: fixed;
-  left: calc(var(--builder-safe-area-left, 0px) + 8px);
-  bottom: calc(
-    var(--builder-menu-left-height, 280px) +
-    var(--builder-menu-toggle-height, 64px) +
-    12px +
-    var(--builder-safe-area-bottom, 0px)
-  );
-  z-index: var(--z-builder-floats);
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(0, 255, 136, 0.45);
-  background: linear-gradient(
-    145deg,
-    rgba(4, 20, 14, 0.92) 0%,
-    rgba(2, 12, 8, 0.95) 100%
-  );
-  color: #00ff88;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  touch-action: manipulation;
-  box-shadow:
-    0 4px 18px rgba(2, 8, 20, 0.55),
-    0 0 0 2px rgba(0, 255, 136, 0.08);
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.measure-fab:hover {
-  transform: scale(1.08);
-  border-color: rgba(0, 255, 136, 0.72);
-  box-shadow:
-    0 6px 24px rgba(2, 8, 20, 0.65),
-    0 0 12px rgba(0, 255, 136, 0.25);
-}
-
-.measure-fab:focus-visible {
-  outline: 2px solid #00ff88;
-  outline-offset: 3px;
-}
-
-.measure-fab--active {
-  background: linear-gradient(
-    145deg,
-    rgba(0, 60, 30, 0.94) 0%,
-    rgba(0, 40, 20, 0.96) 100%
-  );
-  border-color: rgba(0, 255, 136, 0.8);
-  box-shadow:
-    0 6px 24px rgba(2, 8, 20, 0.65),
-    0 0 16px rgba(0, 255, 136, 0.35);
+  display: none;
 }
 
 /* ── Centered component quick-add bar ───────────────────────────────────
@@ -1377,24 +1232,28 @@ body.builder-body {
   will-change: transform, opacity;
 }
 
-/* Left menu — bottom-corner layout: top-right corner rounded only */
+/* Left menu — side panel, fills height between ticker and bottom bar */
 .builder-menu-left {
   width: var(--builder-menu-left-width);
-  height: var(--builder-menu-left-height);
+  height: 100%; /* stage controls the height via top/bottom anchors */
   flex-shrink: 0;
-  border-radius: 0 12px 0 0;
+  border-radius: 0 12px 12px 0;
   border-left: none;
+  border-top: none;
   border-bottom: none;
+  overflow-y: auto;
 }
 
-/* Right menu — bottom-corner layout: top-left corner rounded only */
+/* Right menu — side panel, fills height between ticker and bottom bar */
 .builder-menu-right {
   width: var(--builder-menu-right-width);
-  height: var(--builder-menu-right-height);
+  height: 100%;
   flex-shrink: 0;
-  border-radius: 12px 0 0 0;
+  border-radius: 12px 0 0 12px;
   border-right: none;
+  border-top: none;
   border-bottom: none;
+  overflow-y: auto;
 }
 
 .builder-menu-bottom {
@@ -1413,95 +1272,98 @@ body.builder-body {
   display: flex;
   gap: 0;
   align-items: stretch;
-  overflow: visible;
   z-index: var(--z-builder-side-menu);
-  transition:
-    width 0.32s ease,
-    height 0.32s ease;
-  will-change: width, height;
 }
 
-.builder-menu-stage-bottom {
-  align-items: flex-end;
-}
-
-/* Bottom-corner left panel — Library slides up from the bottom-left */
+/* ── Library (left) side panel ────────────────────────────────────────────
+   Toggle tab is always visible as a 28 px strip at x=0.
+   Panel slides in horizontally from the left edge when opened.
+   flex-direction:row → DOM order [toggle][panel] = visual left-to-right.
+   overflow:hidden + width transition creates the slide-in effect.
+   ─────────────────────────────────────────────────────────────────────── */
 .builder-menu-stage-left {
   left: 0;
-  bottom: 0;
-  top: auto;
-  flex-direction: column;
-  width: var(--builder-menu-left-width);
-  height: calc(var(--builder-menu-left-height) + var(--builder-menu-toggle-height));
+  right: auto;
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + var(--builder-safe-area-top));
+  bottom: calc(var(--builder-perimeter-bar-height, 52px) + var(--builder-safe-area-bottom));
+  height: auto; /* fills between top and bottom anchors */
+  flex-direction: row;
   align-items: stretch;
-  transition: transform 0.32s ease;
-  /* Closed: push panel below viewport, keeping toggle visible at the bottom */
-  transform: translateY(var(--builder-menu-left-height));
+  width: var(--builder-menu-toggle-width); /* collapsed: only toggle tab visible */
+  overflow: hidden;
+  transition: width 0.32s ease;
+  will-change: width;
 }
 
 .builder-menu-stage-left.open {
-  transform: translateY(0);
+  width: calc(var(--builder-menu-toggle-width) + var(--builder-menu-left-width));
 }
 
-/* Bottom-corner right panel — Controls slides up from the bottom-right */
+/* ── Controls (right) side panel ─────────────────────────────────────────
+   flex-direction:row-reverse → DOM [toggle][panel] = visual [panel][toggle]
+   so the toggle tab sits at the rightmost edge.
+   ─────────────────────────────────────────────────────────────────────── */
 .builder-menu-stage-right {
   right: 0;
-  bottom: 0;
-  top: auto;
-  flex-direction: column;
-  width: var(--builder-menu-right-width);
-  height: calc(var(--builder-menu-right-height) + var(--builder-menu-toggle-height));
+  left: auto;
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + var(--builder-safe-area-top));
+  bottom: calc(var(--builder-perimeter-bar-height, 52px) + var(--builder-safe-area-bottom));
+  height: auto;
+  flex-direction: row-reverse;
   align-items: stretch;
-  transition: transform 0.32s ease;
-  /* Closed: push panel below viewport, keeping toggle visible at the bottom */
-  transform: translateY(var(--builder-menu-right-height));
+  width: var(--builder-menu-toggle-width);
+  overflow: hidden;
+  transition: width 0.32s ease;
+  will-change: width;
 }
 
 .builder-menu-stage-right.open {
-  transform: translateY(0);
+  width: calc(var(--builder-menu-toggle-width) + var(--builder-menu-right-width));
 }
 
-/* Insights panel — centered at the bottom, clear of both corner panels */
+/* ── Insights panel — centred within the bottom perimeter bar ────────────
+   Toggle tab sits in the bar; panel slides up out of it when opened.
+   ─────────────────────────────────────────────────────────────────────── */
 .builder-menu-stage-bottom {
   left: 50%;
   right: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
+  bottom: 0;
+  top: auto;
   flex-direction: column;
+  align-items: flex-end;
   width: var(--builder-menu-toggle-width);
-  height: var(--builder-menu-toggle-height);
+  height: auto;
   transform: translateX(-50%);
+  overflow: visible;
+  transition: width 0.32s ease;
 }
 
 .builder-menu-stage-bottom.open {
   width: calc(var(--builder-menu-bottom-width) + var(--builder-menu-toggle-width));
-  height: calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width));
   transform: translateX(-50%);
 }
 
-.builder-menu-stage-left .builder-menu,
-.builder-menu-stage-right .builder-menu {
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.25s ease;
-}
-
-.builder-menu-stage-bottom .builder-menu {
+/* Panel content pointer-events: disabled when collapsed, enabled when open */
+.builder-menu-stage-left .builder-menu-left {
   pointer-events: none;
 }
-
-/* Left sidebar - show/hide on slide */
-.builder-menu-stage-left.open .builder-menu {
+.builder-menu-stage-left.open .builder-menu-left {
   pointer-events: auto;
 }
-
-/* Right sidebar - show/hide on slide */
-.builder-menu-stage-right.open .builder-menu {
+.builder-menu-stage-right .builder-menu-right {
+  pointer-events: none;
+}
+.builder-menu-stage-right.open .builder-menu-right {
   pointer-events: auto;
 }
 
 .builder-menu-stage-bottom .builder-menu {
+  pointer-events: none;
   transform: translateY(100%);
   opacity: 0;
+  transition:
+    transform 0.32s ease,
+    opacity 0.24s ease;
 }
 
 .builder-menu-stage-bottom.open .builder-menu {
@@ -1787,6 +1649,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   flex: 1 1 auto;
 }
 
+/* ── Panel toggle tabs ───────────────────────────────────────────────────── */
+
 .builder-menu-toggle {
   border: 1px solid var(--builder-border-strong);
   background: rgba(12, 26, 52, 0.95);
@@ -1796,9 +1660,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: var(--builder-menu-toggle-width);
-  min-height: var(--builder-menu-toggle-height);
-  border-radius: 0;
   box-sizing: border-box;
   cursor: pointer;
   touch-action: manipulation;
@@ -1810,34 +1671,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     0 4px 12px var(--builder-shadow),
     0 0 12px rgba(136, 204, 255, 0.15);
   backdrop-filter: blur(14px);
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-/* Left toggle tab — now on top of the panel (horizontal) */
-.builder-menu-toggle-left {
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
-  border-left: 1px solid var(--builder-border-strong);
-  box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(136, 204, 255, 0.2);
-}
-
-/* Right toggle tab — now on top of the panel (horizontal) */
-.builder-menu-toggle-right {
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
-  border-right: 1px solid var(--builder-border-strong);
-  box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(136, 204, 255, 0.2);
 }
 
 .builder-menu-toggle:hover,
 .builder-menu-toggle:focus-visible {
   border-color: var(--builder-border-strong);
-  background: rgba(18, 34, 64, 0.95);
+  background: rgba(18, 34, 64, 0.97);
   outline: none;
 }
 
@@ -1845,47 +1684,63 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.35);
 }
 
-/* Bottom-corner panel toggles: horizontal, full-width, on top of each panel */
-.builder-menu-toggle-left,
+/* ── Library (left) toggle tab ──
+   Always-visible 28 px wide strip at x=0.
+   Text rotates 90° via writing-mode so it reads bottom→top.
+   Rounded on the right (workspace) side only.               */
+.builder-menu-toggle-left {
+  flex-shrink: 0;
+  width: var(--builder-menu-toggle-width);
+  /* Fill the full height of the stage (top/bottom anchors determine height) */
+  height: 100%;
+  min-height: 44px;
+  min-width: 44px; /* touch target */
+  padding: 12px 4px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  border-radius: 0 12px 12px 0; /* round workspace-facing side */
+  border-left: none;
+  border-top: none;
+  border-bottom: none;
+  order: 0; /* leftmost in flex-direction:row */
+  box-shadow:
+    2px 0 12px var(--builder-shadow),
+    2px 0 16px rgba(136, 204, 255, 0.2);
+}
+
+/* ── Controls (right) toggle tab ── */
 .builder-menu-toggle-right {
   flex-shrink: 0;
-  width: 100%;
-  min-height: 0;
-  height: var(--builder-menu-toggle-height);
-  padding: 6px 12px;
-  margin: 0;
-  align-self: stretch;
-  position: relative;
-  z-index: var(--z-raised);
-  writing-mode: horizontal-tb;
+  width: var(--builder-menu-toggle-width);
+  height: 100%;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 12px 4px;
+  writing-mode: vertical-rl;
   text-orientation: mixed;
-  flex-direction: row;
-  order: 0;
+  border-radius: 12px 0 0 12px; /* round workspace-facing side */
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  order: 0; /* with row-reverse: rightmost position */
+  box-shadow:
+    -2px 0 12px var(--builder-shadow),
+    -2px 0 16px rgba(136, 204, 255, 0.2);
 }
 
-/* Left toggle: first in DOM order → top of column */
-.builder-menu-stage-left .builder-menu-toggle-left {
-  order: 0;
-}
-
-/* Right toggle: first in DOM order → top of column */
-.builder-menu-stage-right .builder-menu-toggle-right {
-  order: 0;
-  margin-left: 0;
-}
-
+/* ── Insights (bottom) toggle tab ──
+   Horizontal pill centred inside the bottom perimeter bar.   */
 .builder-menu-toggle-bottom {
   width: auto;
-  min-width: var(--builder-menu-toggle-height);
-  height: var(--builder-menu-toggle-width);
-  padding: 2px 10px;
-  margin-left: auto;
-  margin-top: auto;
-  align-self: flex-end;
+  min-width: 80px;
+  height: var(--builder-perimeter-bar-height, 52px);
+  padding: 6px 14px;
   writing-mode: horizontal-tb;
   text-orientation: mixed;
   flex-direction: row;
-  border-radius: 10px 10px 0 0;
+  align-self: flex-end;
+  margin-left: auto;
+  border-radius: 12px 12px 0 0;
   border-bottom: none;
   box-shadow:
     0 -2px 12px var(--builder-shadow),
@@ -1909,7 +1764,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   filter: drop-shadow(0 0 4px rgba(136, 204, 255, 0.4));
 }
 
-/* Show vertical text on edge-attached toggle tabs */
+/* Toggle text — visible in both writing-modes */
 .toggle-text {
   display: block;
   font-size: 8px;
@@ -4446,27 +4301,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 @media (max-width: 960px) {
   :root {
-    /* Tablet - slimmer toggles */
-    --builder-menu-left-width: 160px;
-    --builder-menu-right-width: 156px;
+    /* Tablet — side panel widths */
+    --builder-menu-left-width: 180px;
+    --builder-menu-right-width: 172px;
     --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
     --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 22px;
-    --builder-menu-toggle-height: 56px;
+    --builder-menu-toggle-width: 26px;
     --builder-ticker-height: 28px;
     --builder-ticker-top: 68px;
-    --builder-menu-left-height: 260px;
-    --builder-menu-right-height: 240px;
-  }
-
-  /* Panels are bottom-anchored; no top/bottom constraints needed */
-  .builder-menu-stage-left,
-  .builder-menu-stage-right {
-    top: auto;
-  }
-
-  .builder-menu-stage-bottom {
-    bottom: calc(8px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
@@ -4484,33 +4326,24 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 @media (max-width: 720px) {
   :root {
-    /* Mobile - slim but tappable toggles */
-    --builder-menu-left-width: 140px;
-    --builder-menu-right-width: 136px;
+    /* Mobile portrait — side panels still used */
+    --builder-menu-left-width: 190px;
+    --builder-menu-right-width: 178px;
     --builder-menu-bottom-width: calc(100vw - 24px);
-    --builder-menu-bottom-height: 188px;
-    --builder-menu-toggle-width: 20px;
-    --builder-menu-toggle-height: 48px;
+    --builder-menu-bottom-height: 240px;
+    --builder-menu-toggle-width: 28px;
     --builder-ticker-height: 24px;
+    --builder-ticker-top: 64px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
-    --builder-ticker-top: 64px;
-    --builder-menu-left-height: 240px;
-    --builder-menu-right-height: 220px;
+    --builder-perimeter-bar-height: 52px;
   }
 
-  /* Panels are bottom-anchored; clear legacy top/bottom overrides */
-  .builder-menu-stage-left,
-  .builder-menu-stage-right {
-    top: auto;
-  }
-
-  /* Center the Insights panel; allow it to span the inner viewport */
+  /* Center the Insights panel */
   .builder-menu-stage-bottom {
     left: 50%;
     right: auto;
-    width: var(--builder-menu-toggle-width);
-    bottom: calc(8px + var(--builder-safe-area-bottom));
+    bottom: 0;
     transform: translateX(-50%);
   }
 
@@ -4535,7 +4368,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     top: calc(64px + var(--builder-safe-area-top));
   }
 
-  /* Keep toggle text visible but smaller on mobile */
+  /* Keep toggle text visible */
   .toggle-text {
     display: block;
     font-size: 7px;
@@ -4551,7 +4384,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: 10px;
   }
 
-  /* Compact sidebar panel content for portrait viewport */
+  /* Compact panel content for portrait */
   .builder-menu-scroll {
     gap: 10px;
   }
@@ -4590,15 +4423,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 }
 
-@media (max-width: 900px), (pointer: coarse) {
-  /* Panels are bottom-anchored; no top override needed */
-  .builder-menu-stage-left {
-    top: auto;
-  }
-
-  .builder-menu-stage-left .builder-menu {
-    height: var(--builder-menu-left-height);
-    overflow-y: auto;
+/* Touch / coarse-pointer: ensure minimum tap targets on side tabs */
+@media (pointer: coarse) {
+  .builder-menu-toggle {
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .slider-btn,
@@ -4606,50 +4435,17 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     min-height: 48px;
   }
 
-  /* Ensure toggle buttons are always visible on touch devices */
-  .builder-menu-toggle {
-    min-width: 44px;
-    min-height: 44px;
-    box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 16px rgba(136, 204, 255, 0.25);
-  }
-
-  .builder-menu-toggle-left {
-    box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(136, 204, 255, 0.3);
-  }
-
+  .builder-menu-toggle-left,
   .builder-menu-toggle-right {
     box-shadow:
-      0 -4px 16px var(--builder-shadow),
-      0 -4px 20px rgba(136, 204, 255, 0.3);
+      2px 0 16px var(--builder-shadow),
+      2px 0 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-bottom {
     box-shadow:
       0 -4px 16px var(--builder-shadow),
       0 -4px 20px rgba(136, 204, 255, 0.3);
-  }
-
-  /* Bottom-corner panels use translateY; keep widths at panel width only */
-  .builder-menu-stage-left {
-    width: var(--builder-menu-left-width);
-    transform: translateY(var(--builder-menu-left-height));
-  }
-
-  .builder-menu-stage-left.open {
-    transform: translateY(0);
-  }
-
-  .builder-menu-stage-right {
-    width: var(--builder-menu-right-width);
-    transform: translateY(var(--builder-menu-right-height));
-  }
-
-  .builder-menu-stage-right.open {
-    transform: translateY(0);
   }
 }
 
@@ -4659,18 +4455,17 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
    ============================================ */
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
   :root {
-    /* Reduce bottom drawer footprint on short screens. */
     --builder-menu-bottom-height: 160px;
-    --builder-menu-toggle-height: 44px;
     --builder-ticker-height: 0px;
     --builder-ticker-gap: 0px;
-    /* Ticker is hidden; side menus position just below the mode bar */
     --builder-ticker-top: 0px;
-    --builder-menu-left-height: 200px;
-    --builder-menu-right-height: 180px;
+    --builder-perimeter-bar-height: 48px;
+    /* Narrower panels in landscape to preserve workspace width */
+    --builder-menu-left-width: 160px;
+    --builder-menu-right-width: 150px;
   }
 
-  /* Hide the decorative ticker to free vertical space. */
+  /* Hide decorative ticker to free vertical space */
   .builder-ticker-feed {
     display: none;
   }
@@ -4679,7 +4474,13 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     height: calc(44px + var(--builder-safe-area-top));
   }
 
-  /* Ticker is hidden; place quick-add-bar just below the nav bar */
+  /* Ticker is hidden; side panels start just below the nav bar */
+  .builder-menu-stage-left,
+  .builder-menu-stage-right {
+    top: calc(44px + var(--builder-safe-area-top));
+  }
+
+  /* Reposition quick-add bar */
   .quick-add-bar {
     top: calc(max(var(--app-mode-bar-height, 0px), 38px) + 18px + var(--builder-safe-area-top));
   }
@@ -4702,42 +4503,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     padding: 6px 9px;
   }
 
-  .workspace-edge-actions {
-    top: auto;
-    bottom: calc(
-      var(--builder-edge-actions-gap) +
-      var(--builder-safe-area-bottom)
-    );
-    padding: 4px;
-    gap: 4px;
-  }
-
-  .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
-  }
-
-  /* Panels are bottom-anchored; clear top/bottom overrides for landscape */
-  .builder-menu-stage-left {
-    top: auto;
-    bottom: 0;
-    left: var(--builder-safe-area-left);
-  }
-
-  .builder-menu-stage-right {
-    top: auto;
-    bottom: 0;
-    right: var(--builder-safe-area-right);
-  }
-
-  .builder-menu-stage-bottom {
-    bottom: calc(12px + var(--builder-safe-area-bottom));
-  }
-
   .builder-status-bar {
     top: calc(52px + var(--builder-safe-area-top));
     padding: 6px 12px;
@@ -4745,12 +4510,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     gap: 8px;
   }
 
-  /* Tighten quick-add bar to sit just below the reduced 44px header. */
   .quick-add-bar {
     top: calc(52px + var(--builder-safe-area-top));
   }
 
-  /* Prevent panel modals from filling the entire landscape viewport. */
+  /* Prevent panel modals from filling the entire landscape viewport */
   .builder-panel-shell,
   .builder-panel {
     max-height: 75vh;

@@ -1,27 +1,27 @@
 /* ── AI Helper FAB & Chat Panel ─────────────────────────────────────────────
  * Floating action button (FAB) + sliding chat panel for the in-app
- * Circuit AI assistant. Positioned on the right side above the Controls panel.
+ * Circuit AI assistant.
+ * The FAB sits in the right section of the bottom perimeter bar, flush to
+ * the right edge (just left of the Controls toggle tab).
  * ─────────────────────────────────────────────────────────────────────────── */
 
 /* ── FAB ─────────────────────────────────────────────────────────────────── */
 
 .ai-helper-fab {
   position: fixed;
-  /* Sits above the Controls panel (toggle + panel content) with a small gap */
+  /* Vertically centred inside the bottom perimeter bar */
   bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    12px +
+    (var(--builder-perimeter-bar-height, 52px) - 40px) / 2 +
     var(--builder-safe-area-bottom, 0px)
   );
-  /* Centered horizontally over the Controls panel */
+  /* Sits just to the left of the Controls toggle tab */
   right: calc(
-    (var(--builder-menu-right-width, 172px) - 46px) / 2 +
+    var(--builder-menu-toggle-width, 28px) + 6px +
     var(--builder-safe-area-right, 0px)
   );
   z-index: var(--z-ai-helper);
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
   background: linear-gradient(
@@ -30,7 +30,7 @@
     rgba(10, 26, 52, 0.95) 100%
   );
   color: #88ccff;
-  font-size: 20px;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,6 +45,7 @@
     background 0.18s ease;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .ai-helper-fab:hover {
@@ -104,11 +105,10 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Positioned above the FAB (FAB is 46px + 8px gap = 54px above panels) */
+  /* Open above the FAB (40px button + 12px gap = 52px above perimeter bar) */
   bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    70px +
+    var(--builder-perimeter-bar-height, 52px) +
+    52px +
     var(--builder-safe-area-bottom, 0px)
   );
   right: calc(var(--builder-safe-area-right, 0px) + 8px);
@@ -404,15 +404,13 @@
 
 @media (max-width: 640px) {
   .ai-helper-fab {
-    /* On small phones: stay above the Controls panel toggle */
+    /* On small phones: stay in bottom perimeter bar, same position */
     right: calc(
-      (var(--builder-menu-right-width, 136px) - 46px) / 2 +
+      var(--builder-menu-toggle-width, 28px) + 6px +
       var(--builder-safe-area-right, 0px)
     );
     bottom: calc(
-      var(--builder-menu-right-height, 220px) +
-      var(--builder-menu-toggle-height, 48px) +
-      10px +
+      (var(--builder-perimeter-bar-height, 52px) - 40px) / 2 +
       var(--builder-safe-area-bottom, 0px)
     );
   }
@@ -420,9 +418,8 @@
   .ai-helper-panel {
     right: 8px;
     bottom: calc(
-      var(--builder-menu-right-height, 220px) +
-      var(--builder-menu-toggle-height, 48px) +
-      64px +
+      var(--builder-perimeter-bar-height, 52px) +
+      48px +
       var(--builder-safe-area-bottom, 0px)
     );
     width: calc(100vw - 16px);
