@@ -2171,6 +2171,190 @@
             }
         }
         
+        /* ── Tutorial Modal ─────────────────────────────────────────── */
+        .tutorial-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            background: rgba(4, 12, 24, 0.82);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .tutorial-backdrop.visible {
+            display: flex;
+        }
+        .tutorial-modal {
+            position: relative;
+            width: min(520px, calc(100vw - 32px));
+            max-height: calc(100vh - 48px);
+            background: linear-gradient(160deg, rgba(6, 18, 38, 0.98) 0%, rgba(2, 10, 24, 0.98) 100%);
+            border: 1.5px solid rgba(0, 255, 136, 0.35);
+            border-radius: 24px;
+            padding: 28px 24px 24px;
+            box-shadow: 0 0 0 1px rgba(0,255,136,0.08), 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0,255,136,0.08);
+            color: #e8f6ff;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        .tutorial-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tutorial-logo {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .tutorial-logo .tl-circui { color: #00ff88; }
+        .tutorial-logo .tl-try    { color: #ff8800; }
+        .tutorial-logo .tl-3d     { color: #00ff88; }
+        .tutorial-kicker {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: rgba(0, 255, 136, 0.75);
+            margin-bottom: 10px;
+        }
+        .tutorial-title {
+            font-size: clamp(18px, 5vw, 22px);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin: 0;
+        }
+        .tutorial-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,136,0.4), transparent);
+            margin: 16px 0;
+        }
+        .tutorial-section {
+            margin-bottom: 16px;
+        }
+        .tutorial-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #00ff88;
+            margin-bottom: 8px;
+        }
+        .tutorial-steps {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .tutorial-steps li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: rgba(220, 234, 255, 0.88);
+            background: rgba(0, 255, 136, 0.04);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+        .tutorial-steps li .ts-icon {
+            flex-shrink: 0;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        .tutorial-color-legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .tutorial-color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: rgba(220, 234, 255, 0.85);
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .tutorial-color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .tutorial-footer {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .tutorial-dismiss-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #071a10;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(0,255,136,0.35);
+        }
+        .tutorial-dismiss-btn:hover, .tutorial-dismiss-btn:active {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0,255,136,0.5);
+        }
+        .tutorial-suppress-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: rgba(180, 200, 230, 0.6);
+            cursor: pointer;
+            user-select: none;
+        }
+        .tutorial-suppress-label input[type="checkbox"] {
+            accent-color: #00ff88;
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+        .tutorial-close-x {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            background: rgba(0, 255, 136, 0.08);
+            color: #e8f6ff;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .tutorial-close-x:hover {
+            background: rgba(0, 255, 136, 0.18);
+            box-shadow: 0 0 12px rgba(0,255,136,0.3);
+        }
+
         /* Improved circuit centering and alignment */
         .circuit-container {
             display: flex;
@@ -2400,6 +2584,63 @@
     </div>
     
     <canvas id="canvas" style="display: none;"></canvas>
+
+    <!-- ── Tutorial Modal ──────────────────────────────────────────────── -->
+    <div class="tutorial-backdrop" id="tutorial-backdrop" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" onclick="if(event.target===this)dismissTutorial()">
+        <div class="tutorial-modal" id="tutorial-modal">
+            <button class="tutorial-close-x" type="button" aria-label="Close tutorial" onclick="dismissTutorial()">&times;</button>
+            <div class="tutorial-header">
+                <div class="tutorial-logo">
+                    <span class="tl-circui">Circui</span><span class="tl-try">Try</span><span class="tl-3d">3D</span>
+                </div>
+                <div class="tutorial-kicker">Quick Start Guide</div>
+                <h2 class="tutorial-title" id="tutorial-title">Welcome to CircuiTry3D ⚡</h2>
+            </div>
+            <div class="tutorial-divider"></div>
+
+            <div class="tutorial-section">
+                <div class="tutorial-section-title">🚀 Getting Started</div>
+                <ul class="tutorial-steps">
+                    <li><span class="ts-icon">🔋</span><span>Add a <strong>Battery</strong> (<kbd>B</kbd>) as your power source</span></li>
+                    <li><span class="ts-icon">⚡</span><span>Add <strong>Resistors</strong> (<kbd>R</kbd>), <strong>LEDs</strong> (<kbd>L</kbd>), and other components from the Components menu</span></li>
+                    <li><span class="ts-icon">〰️</span><span>Press <kbd>W</kbd> for <strong>Wire Mode</strong> — tap terminals to connect components and complete the circuit loop</span></li>
+                    <li><span class="ts-icon">📊</span><span>Watch the <strong>W.I.R.E. panel</strong> on the right for live Voltage, Current &amp; Power readings</span></li>
+                </ul>
+            </div>
+
+            <div class="tutorial-section">
+                <div class="tutorial-section-title">🎨 Color-Coded Values</div>
+                <div class="tutorial-color-legend">
+                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#ff4444;"></div>Voltage (Volts)</div>
+                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#ff8800;"></div>Current (Amps)</div>
+                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#00cc55;"></div>Resistance (Ω)</div>
+                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#4499ff;"></div>Power (Watts)</div>
+                </div>
+            </div>
+
+            <div class="tutorial-section">
+                <div class="tutorial-section-title">🕹️ Controls</div>
+                <ul class="tutorial-steps">
+                    <li><span class="ts-icon">✋</span><span><strong>Drag</strong> to move components · <strong>Long-press / right-click</strong> to edit values</span></li>
+                    <li><span class="ts-icon">🔍</span><span><strong>Pinch / scroll wheel</strong> to zoom · <strong>Two-finger drag / middle-drag</strong> to pan</span></li>
+                    <li><span class="ts-icon">⌨️</span><span><kbd>B</kbd> Battery &nbsp;·&nbsp; <kbd>R</kbd> Resistor &nbsp;·&nbsp; <kbd>L</kbd> LED &nbsp;·&nbsp; <kbd>S</kbd> Switch &nbsp;·&nbsp; <kbd>W</kbd> Wire</span></li>
+                </ul>
+            </div>
+
+            <div class="tutorial-divider"></div>
+
+            <div class="tutorial-footer">
+                <button class="tutorial-dismiss-btn" type="button" onclick="dismissTutorial()">
+                    ⚡ Let's Build!
+                </button>
+                <label class="tutorial-suppress-label">
+                    <input type="checkbox" id="tutorial-suppress-checkbox">
+                    Don't show this again
+                </label>
+            </div>
+        </div>
+    </div>
+    <!-- ── End Tutorial Modal ──────────────────────────────────────────── -->
 
     <div class="subscription-overlay-backdrop" id="subscription-pricing-backdrop"></div>
 
@@ -6604,6 +6845,14 @@ body.android-optimized .zoom-btn {
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
                 notifyParentReady();
+                // Auto-show the tutorial for first-time / new users.
+                // Uses a short delay so the 3D scene has painted before the
+                // modal appears.
+                setTimeout(function() {
+                    if (typeof maybeAutoShowTutorial === 'function') {
+                        maybeAutoShowTutorial();
+                    }
+                }, 800);
             }
         }
 
@@ -11668,120 +11917,36 @@ body.android-optimized .zoom-btn {
         }
 
         // Help functions
+        const TUTORIAL_SEEN_KEY = 'circuitry3d_tutorial_seen';
+
         function showTutorial() {
-            const tutorial = `
-?? CIRCUITRY3D QUICK START GUIDE
+            const backdrop = document.getElementById('tutorial-backdrop');
+            if (backdrop) {
+                backdrop.classList.add('visible');
+                // Reset suppress checkbox each time the modal is opened via menu
+                const cb = document.getElementById('tutorial-suppress-checkbox');
+                if (cb) cb.checked = false;
+            }
+        }
 
-???????????????????????????????????????
+        function dismissTutorial() {
+            const backdrop = document.getElementById('tutorial-backdrop');
+            if (backdrop) backdrop.classList.remove('visible');
+            const cb = document.getElementById('tutorial-suppress-checkbox');
+            if (cb && cb.checked) {
+                try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(e) {}
+            }
+        }
 
-?? GETTING STARTED:
-
-1?? ADD COMPONENTS (?? Components menu):
-   ? Battery (B key) - Power source
-   ? Resistor (R key) - Limit current
-   ? LED (L key) - Light indicator
-   ? Switch (S key) - Control flow
-   ? All components show real-time values
-
-2?? CONNECT WITH WIRES (??? Tools menu):
-   ? Click "?? Wire" button (or W key)
-   ? Touch component terminals to connect
-   ? Tap any existing wire run to drop a junction and start a branch
-   ? Complete the circuit loop for current flow
-
-3?? VIEW CALCULATIONS (panels on right):
-   ? ?? W.I.R.E. - Main electrical values
-   ? ?? EIR ? - Ohm's Law triangle
-   ? ? Power ? - Power calculations
-   ? ?? Worksheet - Step-by-step formulas
-   ? ? Solve - Check your answers
-
-???????????????????????????????????????
-
-?? VISUAL LEARNING:
-
-??? COLOR-CODED VALUES:
-   ?? Blue = Power (Watts)
-   ?? Orange = Current (Amps)
-   ?? Green = Resistance (Ohms)
-   ?? Red = Voltage (Volts)
-
-?? FLOW VISUALIZATION (View menu):
-   ? Electron Flow: Shows actual electron movement
-     (negative ? positive, semi-transparent particles)
-   ? Current Flow: Shows conventional direction
-     (positive ? negative, solid particles)
-   ? Toggle: View ? ?? Flow
-
-? POLARITY INDICATORS:
-   ? Red (+) and Blue (-) terminals
-   ? Prevents incorrect connections
-   ? Toggle: View ? ? Polarity
-
-???????????????????????????????????????
-
-?? ADVANCED FEATURES:
-
-?? ROUTING MODES (??? Tools menu):
-   ? Free-form: Natural connections
-   ? Manhattan: Textbook right-angles
-   ? Offset: Parallel detours
-   ? Arc: Smooth sweeps
-   ? Toggle: Tools ? ?? Route
-
-? JUNCTIONS (critical for parallel + series-parallel circuits):
-   ? In Wire Mode, tap/click any wire run to split it and drop a junction
-   ? The new junction becomes a live terminal so you can branch immediately
-   ? Use junction branches to apply KCL on every current split/recombine node
-
-?? AUTO-ARRANGE:
-   ? Tools ? ?? Auto-Arrange
-   ? Automatically creates textbook layouts
-   ? Perfect for practice problems
-
-?? LAYOUT MODES (View menu):
-   ? Free: Place anywhere
-   ? Square: Textbook style
-   ? Linear: Vertical tree
-   ? Toggle: View ? ?? Layout
-
-???????????????????????????????????????
-
-?? CONTROLS:
-
-MOUSE/TOUCH:
-   ? Drag: Move components
-   ? Long-press: Edit values/properties
-   ? Two-finger pinch: Zoom
-   ? Two-finger drag: Pan workspace
-
-KEYBOARD SHORTCUTS:
-   ? B = Battery, R = Resistor
-   ? L = LED, S = Switch, J = Junction
-   ? W = Wire Mode, T = Rotate Mode
-   ? Space = Toggle Menu
-
-VIEW CONTROLS (??? View menu):
-   ? Reset View: Center camera
-   ? Fit Screen: Auto-zoom to circuit
-   ? Toggle Grid: Show/hide snap grid
-   ? Labels: Show/hide component names
-
-???????????????????????????????????????
-
-?? TIPS:
-? Complete the circuit loop for current to flow
-? Open switches stop current flow
-? Use junctions for every parallel branch; that is where current splits/recombines
-? Long-press wires to add a branch junction, delete, or reroute
-? Try different routing modes for cleaner layouts
-
-Need more help? Check:
-? ?? W.I.R.E. Guide - Electrical concepts
-? ?? Shortcuts - Full keyboard reference
-? ?? About - Version info & features
-            `;
-            alert(tutorial);
+        function maybeAutoShowTutorial() {
+            try {
+                if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
+                    showTutorial();
+                }
+            } catch(e) {
+                // localStorage unavailable — show anyway for new sessions
+                showTutorial();
+            }
         }
 
         function showWireGuide() {
