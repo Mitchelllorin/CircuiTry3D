@@ -2728,6 +2728,7 @@ export default function Builder() {
               title="Run the current circuit simulation"
             >
               <IconPlay className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Run</span>
             </button>
             <button
               type="button"
@@ -2739,6 +2740,7 @@ export default function Builder() {
               title="Undo (Ctrl+Z)"
             >
               <IconUndo className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Undo</span>
             </button>
             <button
               type="button"
@@ -2750,6 +2752,7 @@ export default function Builder() {
               title="Redo (Ctrl+Shift+Z)"
             >
               <IconRedo className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Redo</span>
             </button>
             <button
               type="button"
@@ -2759,6 +2762,7 @@ export default function Builder() {
               title="Open saved circuit (Ctrl+O)"
             >
               <IconFolder className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Load</span>
             </button>
             <button
               type="button"
@@ -2768,6 +2772,7 @@ export default function Builder() {
               title="Save circuit (Ctrl+S)"
             >
               <IconSave className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Save</span>
               {circuitStorage.hasUnsavedChanges && (
                 <span className="unsaved-dot" aria-label="Unsaved changes" />
               )}
@@ -2786,6 +2791,7 @@ export default function Builder() {
               title="Clear all components, wires, and analysis data"
             >
               <IconTrash className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Clear</span>
             </button>
             <button
               type="button"
@@ -2798,6 +2804,7 @@ export default function Builder() {
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
               <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+              <span className="edge-action-label" aria-hidden="true">Wire</span>
             </button>
             <button
               type="button"
@@ -2810,6 +2817,7 @@ export default function Builder() {
               title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
             >
               <IconRotate className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Rotate</span>
             </button>
             <button
               type="button"
@@ -2821,6 +2829,7 @@ export default function Builder() {
               title="Edit / Select (E)"
             >
               <IconPencil className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Edit</span>
             </button>
           </div>
 
