@@ -7,19 +7,16 @@
 
 .ai-helper-fab {
   position: fixed;
-  /* Left edge — above the Library panel toggle strip */
-  left: calc(var(--builder-safe-area-left, 0px));
-  top: calc(
-    var(--builder-ticker-top, 72px) +
-    var(--builder-ticker-height, 32px) +
-    var(--builder-safe-area-top, 0px) +
-    2px
-  );
+  /* Right edge — vertically centered in the workspace */
+  right: calc(var(--builder-safe-area-right, 0px));
+  top: 50%;
+  transform: translateY(-50%);
   z-index: var(--z-ai-helper);
-  width: 46px;
-  border-radius: 0 0 10px 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50% 0 0 50%;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
-  border-top: none;
+  border-right: none;
   background: linear-gradient(
     145deg,
     rgba(20, 40, 80, 0.92) 0%,
@@ -30,11 +27,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 8px 4px;
+  gap: 2px;
+  padding: 4px 6px 4px 2px;
   cursor: pointer;
   box-shadow:
-    0 4px 18px rgba(2, 8, 20, 0.55),
+    -4px 0 18px rgba(2, 8, 20, 0.55),
     0 0 0 2px rgba(136, 204, 255, 0.08);
   transition:
     transform 0.18s ease,
@@ -46,10 +43,14 @@
 }
 
 .ai-helper-fab:hover {
-  transform: scale(1.08);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.ai-helper-fab:hover {
+  transform: translateY(-50%) scale(1.08);
   border-color: rgba(136, 204, 255, 0.72);
   box-shadow:
-    0 6px 24px rgba(2, 8, 20, 0.65),
+    -6px 0 24px rgba(2, 8, 20, 0.65),
     0 0 12px rgba(136, 204, 255, 0.22);
 }
 
@@ -115,19 +116,16 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Opens below and to the right of the AI FAB (left edge) */
-  left: calc(var(--builder-safe-area-left, 0px) + 50px);
-  top: calc(
-    var(--builder-ticker-top, 72px) +
-    var(--builder-ticker-height, 32px) +
-    var(--builder-safe-area-top, 0px) +
-    2px
-  );
+  /* Opens to the left of the AI FAB (right edge) */
+  right: calc(var(--builder-safe-area-right, 0px) + 48px);
+  top: auto;
   bottom: auto;
-  right: auto;
+  left: auto;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: var(--z-ai-helper);
-  width: clamp(300px, 38vw, 420px);
-  max-height: calc(100svh - 140px);
+  width: clamp(260px, calc(100vw - 100px), 380px);
+  max-height: calc(100svh - 100px);
   border-radius: 16px;
   border: 1px solid rgba(136, 204, 255, 0.32);
   background: linear-gradient(
@@ -142,18 +140,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: top left;
+  transform-origin: right center;
   animation: aiPanelReveal 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes aiPanelReveal {
   from {
     opacity: 0;
-    transform: scale(0.88) translateY(-12px);
+    transform: translateY(-50%) scale(0.88) translateX(12px);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(-50%) scale(1) translateX(0);
   }
 }
 

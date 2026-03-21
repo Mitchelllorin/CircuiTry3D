@@ -871,18 +871,16 @@ body.builder-body {
    ─────────────────────────────────────────────────────────────────────────── */
 .measure-fab {
   position: fixed;
-  right: calc(var(--builder-safe-area-right, 0px));
-  top: calc(
-    var(--builder-ticker-top) +
-    var(--builder-ticker-height) +
-    var(--builder-safe-area-top) +
-    2px
-  );
+  /* Left edge — vertically centered in the workspace, opposite to AI FAB */
+  left: calc(var(--builder-safe-area-left, 0px));
+  top: 50%;
+  transform: translateY(-50%);
   z-index: var(--z-builder-floats);
-  width: 46px;
-  border-radius: 0 0 10px 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 0 50% 50% 0;
   border: 1.5px solid rgba(0, 255, 136, 0.45);
-  border-top: none;
+  border-left: none;
   background: linear-gradient(
     145deg,
     rgba(4, 20, 14, 0.92) 0%,
@@ -893,12 +891,12 @@ body.builder-body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 8px 4px;
+  gap: 2px;
+  padding: 4px 2px 4px 6px;
   cursor: pointer;
   touch-action: manipulation;
   box-shadow:
-    0 4px 18px rgba(2, 8, 20, 0.55),
+    4px 0 18px rgba(2, 8, 20, 0.55),
     0 0 0 2px rgba(0, 255, 136, 0.08);
   transition:
     transform 0.18s ease,
@@ -910,10 +908,10 @@ body.builder-body {
 }
 
 .measure-fab:hover {
-  transform: scale(1.08);
+  transform: translateY(-50%) scale(1.08);
   border-color: rgba(0, 255, 136, 0.72);
   box-shadow:
-    0 6px 24px rgba(2, 8, 20, 0.65),
+    6px 0 24px rgba(2, 8, 20, 0.65),
     0 0 12px rgba(0, 255, 136, 0.25);
 }
 
@@ -930,7 +928,7 @@ body.builder-body {
   );
   border-color: rgba(0, 255, 136, 0.8);
   box-shadow:
-    0 6px 24px rgba(2, 8, 20, 0.65),
+    6px 0 24px rgba(2, 8, 20, 0.65),
     0 0 16px rgba(0, 255, 136, 0.35);
 }
 
@@ -976,12 +974,20 @@ body.builder-body {
   pointer-events: auto;
 }
 
-/* ── Consolidated action bar ────────────────────────────────────────────────
-   Single horizontal bar containing ALL tool-action buttons (Clear, Wire,
-   Rotate, Select, Run, Undo, Redo, Open, Save). Replaces the two separate
-   floating edge-action bars that were on the left and right sides.
+/* ── Consolidated action bar — two rows ──────────────────────────────────────
+   Row A: tool actions  (Clear, Wire, Rotate, Edit)
+   Row B: sim+file actions (Run, Undo, Redo, Open, Save)
+   Each row is its own pill so they always fit within the toggle-bound width
+   on a 412px phone without requiring horizontal scrolling.
    ─────────────────────────────────────────────────────────────────────── */
 .consolidated-action-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-row {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -992,13 +998,6 @@ body.builder-body {
   border-radius: 28px;
   backdrop-filter: blur(14px);
   box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
-  overflow-x: auto;
-  max-width: calc(100vw - 2 * var(--builder-menu-toggle-width) - 8px);
-  scrollbar-width: none;
-}
-
-.consolidated-action-bar::-webkit-scrollbar {
-  display: none;
 }
 
 /* Thin divider between the two groups of buttons */
@@ -1557,7 +1556,7 @@ body.builder-body {
 .builder-menu-stage-bottom {
   left: 50%;
   right: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
+  bottom: calc(4px + var(--builder-safe-area-bottom));
   flex-direction: column;
   width: var(--builder-menu-toggle-width);
   height: var(--builder-menu-toggle-height);
@@ -1942,8 +1941,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     2px 0 12px var(--builder-shadow),
     2px 0 16px rgba(136, 204, 255, 0.2);
-  /* Offset below the AI FAB */
-  margin-top: calc(var(--builder-floating-button-size) + 4px);
+  /* No margin-top offset — FABs are now mid-screen circles, not top-hangers */
+  margin-top: 0;
 }
 
 /* Right toggle — left edge of the right stage (panel content is right/order:1) */
@@ -1954,8 +1953,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     -2px 0 12px var(--builder-shadow),
     -2px 0 16px rgba(136, 204, 255, 0.2);
-  /* Offset below the Measure FAB */
-  margin-top: calc(var(--builder-floating-button-size) + 4px);
+  /* No margin-top offset — FABs are now mid-screen circles, not top-hangers */
+  margin-top: 0;
 }
 
 .builder-menu-toggle-bottom {

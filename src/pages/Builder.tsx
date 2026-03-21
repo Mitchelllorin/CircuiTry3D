@@ -2733,119 +2733,124 @@ export default function Builder() {
               ))}
             </div>
 
-            {/* Row 2 — consolidated tool-action bar (replaces two side bars) */}
+            {/* Row 2 — two-row action bar: tools (top) + sim/file (bottom) */}
             <div className="consolidated-action-bar" aria-label="Tool actions">
-              <button
-                type="button"
-                className="edge-action-btn edge-action-btn--clear"
-                onClick={handleClearWorkspace}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                aria-label="Clear workspace"
-                title="Clear all components, wires, and analysis data"
-              >
-                <IconTrash className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Clear</span>
-              </button>
-              <button
-                type="button"
-                className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
-                onClick={() => triggerBuilderAction("toggle-wire-mode")}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                aria-pressed={modeState.isWireMode}
-                aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
-                title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
-              >
-                <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
-                <span className="edge-action-label" aria-hidden="true">Wire</span>
-              </button>
-              <button
-                type="button"
-                className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
-                onClick={() => triggerBuilderAction("toggle-rotate-mode")}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                aria-pressed={modeState.isRotateMode}
-                aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
-                title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
-              >
-                <IconRotate className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Rotate</span>
-              </button>
-              <button
-                type="button"
-                className="edge-action-btn"
-                onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                aria-label="Edit selected component"
-                title="Edit / Select (E)"
-              >
-                <IconPencil className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Edit</span>
-              </button>
-              <span className="action-bar-divider" aria-hidden="true" />
-              <button
-                type="button"
-                className="edge-action-btn edge-action-btn--simulate"
-                onClick={handleRunSimulationClick}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                data-pulse={isSimulatePulsing ? "true" : undefined}
-                aria-label="Run simulation"
-                title="Run the current circuit simulation"
-              >
-                <IconPlay className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Run</span>
-              </button>
-              <button
-                type="button"
-                className="edge-action-btn"
-                onClick={() => triggerBuilderAction("undo")}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                aria-label="Undo last change"
-                title="Undo (Ctrl+Z)"
-              >
-                <IconUndo className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Undo</span>
-              </button>
-              <button
-                type="button"
-                className="edge-action-btn"
-                onClick={() => triggerBuilderAction("redo")}
-                disabled={controlsDisabled}
-                aria-disabled={controlsDisabled}
-                aria-label="Redo previous change"
-                title="Redo (Ctrl+Shift+Z)"
-              >
-                <IconRedo className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Redo</span>
-              </button>
-              <button
-                type="button"
-                className="edge-action-btn"
-                onClick={() => setIsLoadModalOpen(true)}
-                aria-label="Open circuit"
-                title="Open saved circuit (Ctrl+O)"
-              >
-                <IconFolder className="edge-action-icon-svg" />
-                <span className="edge-action-label" aria-hidden="true">Open</span>
-              </button>
-              <button
-                type="button"
-                className="edge-action-btn"
-                onClick={() => setIsSaveModalOpen(true)}
-                aria-label="Save circuit"
-                title="Save circuit (Ctrl+S)"
-              >
-                <IconSave className="edge-action-icon-svg" />
-                {circuitStorage.hasUnsavedChanges && (
-                  <span className="unsaved-dot" aria-label="Unsaved changes" />
-                )}
-                <span className="edge-action-label" aria-hidden="true">Save</span>
-              </button>
+              {/* Tool actions row */}
+              <div className="action-row">
+                <button
+                  type="button"
+                  className="edge-action-btn edge-action-btn--clear"
+                  onClick={handleClearWorkspace}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  aria-label="Clear workspace"
+                  title="Clear all components, wires, and analysis data"
+                >
+                  <IconTrash className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Clear</span>
+                </button>
+                <button
+                  type="button"
+                  className={`edge-action-btn${modeState.isWireMode ? " edge-action-btn--active" : ""}`}
+                  onClick={() => triggerBuilderAction("toggle-wire-mode")}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  aria-pressed={modeState.isWireMode}
+                  aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
+                  title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+                >
+                  <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
+                  <span className="edge-action-label" aria-hidden="true">Wire</span>
+                </button>
+                <button
+                  type="button"
+                  className={`edge-action-btn${modeState.isRotateMode ? " edge-action-btn--active" : ""}`}
+                  onClick={() => triggerBuilderAction("toggle-rotate-mode")}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  aria-pressed={modeState.isRotateMode}
+                  aria-label={modeState.isRotateMode ? "Exit rotate mode" : "Enter rotate mode"}
+                  title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
+                >
+                  <IconRotate className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Rotate</span>
+                </button>
+                <button
+                  type="button"
+                  className="edge-action-btn"
+                  onClick={() => triggerBuilderAction("set-tool", { tool: "select" })}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  aria-label="Edit selected component"
+                  title="Edit / Select (E)"
+                >
+                  <IconPencil className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Edit</span>
+                </button>
+              </div>
+              {/* Simulation + file actions row */}
+              <div className="action-row">
+                <button
+                  type="button"
+                  className="edge-action-btn edge-action-btn--simulate"
+                  onClick={handleRunSimulationClick}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  data-pulse={isSimulatePulsing ? "true" : undefined}
+                  aria-label="Run simulation"
+                  title="Run the current circuit simulation"
+                >
+                  <IconPlay className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Run</span>
+                </button>
+                <button
+                  type="button"
+                  className="edge-action-btn"
+                  onClick={() => triggerBuilderAction("undo")}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  aria-label="Undo last change"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <IconUndo className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Undo</span>
+                </button>
+                <button
+                  type="button"
+                  className="edge-action-btn"
+                  onClick={() => triggerBuilderAction("redo")}
+                  disabled={controlsDisabled}
+                  aria-disabled={controlsDisabled}
+                  aria-label="Redo previous change"
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  <IconRedo className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Redo</span>
+                </button>
+                <button
+                  type="button"
+                  className="edge-action-btn"
+                  onClick={() => setIsLoadModalOpen(true)}
+                  aria-label="Open circuit"
+                  title="Open saved circuit (Ctrl+O)"
+                >
+                  <IconFolder className="edge-action-icon-svg" />
+                  <span className="edge-action-label" aria-hidden="true">Open</span>
+                </button>
+                <button
+                  type="button"
+                  className="edge-action-btn"
+                  onClick={() => setIsSaveModalOpen(true)}
+                  aria-label="Save circuit"
+                  title="Save circuit (Ctrl+S)"
+                >
+                  <IconSave className="edge-action-icon-svg" />
+                  {circuitStorage.hasUnsavedChanges && (
+                    <span className="unsaved-dot" aria-label="Unsaved changes" />
+                  )}
+                  <span className="edge-action-label" aria-hidden="true">Save</span>
+                </button>
+              </div>
             </div>
 
             {/* Row 3 — zoom controls */}
