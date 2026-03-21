@@ -1,6 +1,8 @@
-# FUSE™ — Failure Understanding Simulation Engine
+# FUSE™ — Failure Understanding Simulation Engine  v2.0
 
 > **FUSE™ is a proprietary, zero-dependency component failure detection and visualization engine built exclusively for CircuiTry3D.**
+>
+> Copyright © 2025 Mitchell Lorin / CircuiTry3D.  All Rights Reserved.  FUSE™ is a trademark of CircuiTry3D.
 >
 > No other circuit simulator on the market does what FUSE™ does.
 
@@ -21,6 +23,24 @@ FUSE™ is shared across both platforms in CircuiTry3D:
 |---|---|
 | **3D Circuit Builder** (`/app`) | Runs on every sim tick; renders failure badges + multi-layer particle effects directly on the 3D component |
 | **Component Arena** (`/arena`) | Runs stress tests and renders a full failure analysis card with the failure name, description, severity, and particle animations |
+
+---
+
+## Proprietary Technology Status
+
+FUSE™ is CircuiTry3D's core intellectual property.  Its key protectable elements include:
+
+1. **Component failure-profile system** — the per-family trigger/severity/visual architecture
+2. **Insulation-class thermal cascade model** — real-time burnthrough detection across 11 insulation classes
+3. **Gauge-accurate wire stress detection** — AWG-resolved ampacity and resistance physics
+4. **Composition-aware material thresholds** — integration of material melting points and thermal mass from `ComponentCompositions`
+
+### Licensing
+
+Commercial licensing, OEM embedding, and developer API partnerships are available:
+- **Contact:** licensing@circuitry3d.com
+- **npm package:** `@circuitry3d/fuse-engine` *(future)*
+- **SaaS API:** `POST /api/fuse/detect` *(future)*
 
 ---
 
@@ -57,12 +77,12 @@ FUSE™ maps each failure mode to a renderer visual key.  The 3D Builder and Are
 |---|---|---|
 | `char` | Orange fire flicker, rising smoke particles | Thermal overload, bearing seizure, phosphor degradation |
 | `melt` | Molten orange-red drips falling under gravity | Drain current burnout, thermal runaway, BJT / MOSFET failure |
-| `arc` | Blue-white electrical discharge, rapid flicker | Avalanche breakdown, contact arcing, ESD punch-through |
+| `arc` | Blue-white electrical discharge, rapid flicker | Avalanche breakdown, contact arcing, ESD punch-through, insulation burnthrough |
 | `burst` | Explosion debris cloud + fire layer + smoke layer | Capacitor dielectric breakdown, electrolyte boilover |
 | `blowout` | White-hot flash → fade to black | LED junction burnout, fuse element melting, filament burnout |
 | `vent` | Warm amber gas rising under buoyancy | Battery thermal venting, electrolyte decomposition |
 | `glow` | Deep red thermal glow, slow pulse | Heatsink saturation, thermistor self-heating |
-| `smoke` | Grey drift particles rising slowly | Winding burnout, coil failure, insulation carbonization |
+| `smoke` | Grey drift particles rising slowly | Winding burnout, coil failure, insulation carbonization, wire overcurrent |
 
 Additional effects exclusive to the **Component Arena**:
 
@@ -78,7 +98,7 @@ Additional effects exclusive to the **Component Arena**:
 
 ## Supported Component Families
 
-FUSE™ ships with physics-accurate failure profiles for **18 component families** covering more than 30 named failure modes:
+FUSE™ ships with physics-accurate failure profiles for **21 component families** covering more than 35 named failure modes:
 
 | Family | Named Failure Modes |
 |---|---|
@@ -103,7 +123,61 @@ FUSE™ ships with physics-accurate failure profiles for **18 component families
 | **Thermistor** | Self-Heating Deviation |
 | **Transformer** | Winding Insulation Breakdown |
 | **Crystal Oscillator** | Crystal Drive Overdrive |
+| **Wire** | Overcurrent / Conductor Heating, Insulation Burnthrough, Dielectric Overstress *(new in v2.0)* |
 | **Generic** | Thermal Overload, Power Dissipation Limit |
+
+---
+
+## Physical Specification Tables  *(new in FUSE™ v2.0)*
+
+FUSE™ v2.0 ships three canonical physical spec tables that make it the **single source of truth** for all component and wire physics across the entire application.
+
+### `WIRE_INSULATION_SPECS`
+
+Maps the 11 supported insulation classes to their full physical, visual, and electrical specifications.  This table is now loaded by `legacy.html` directly from `window.FailureEngine.WIRE_INSULATION_SPECS` — eliminating duplication between the FUSE engine and the 3D renderer.
+
+| Class | Temp Limit | Max Voltage | Dielectric Strength | Description |
+|---|---|---|---|---|
+| `pvc80` | 80 °C | 600 V | 15 kV/mm | Standard PVC building / hook-up wire |
+| `pvc105` | 105 °C | 600 V | 15 kV/mm | Thick PVC for control and battery leads |
+| `xlpe125` | 125 °C | 600 V | 25 kV/mm | THHN / THWN-2 cross-linked polyethylene |
+| `silicone200` | 200 °C | 600 V | 20 kV/mm | High-flex silicone for robotics / test leads |
+| `ptfe260` | 260 °C | 600 V | 60 kV/mm | Thin-wall PTFE for aerospace and vacuum |
+| `bare1200` | 1200 °C | 0 V | 0 kV/mm | No jacket — bare resistance wire |
+| `epdm150` | 150 °C | 600 V | 30 kV/mm | EPDM rubber welding cable |
+| `tpe105` | 105 °C | 300 V | 18 kV/mm | TPE for appliance cords |
+| `fiberglass482` | 482 °C | 600 V | 5 kV/mm | Braided glass for kilns and furnaces |
+| `kapton400` | 400 °C | 1000 V | 300 kV/mm | Polyimide for aerospace and cryogenics |
+| `neoprene90` | 90 °C | 300 V | 10 kV/mm | Neoprene for marine / industrial cords |
+
+Each entry also carries `densityKgPerM3`, `thermalConductivityWPerMK`, `necType`, and `description`.
+
+### `WIRE_GAUGE_TABLE`
+
+Physics-accurate per-gauge conductor data for all standard AWG sizes (30 AWG to 4/0 AWG).  All resistance values assume annealed copper at 20 °C per IEC 60228 / ASTM B3.  Ampacity values are NEC Table 310.16 (75 °C column).
+
+```js
+// Example entry — 14 AWG
+{ awg: 14, conductorDiameterMm: 1.628, areaMm2: 2.082,
+  resistanceOhmPerMeter: 0.00829, ampacityChassisA: 5.9, ampacityBundleA: 15 }
+```
+
+Wire failure detection in FUSE™ v2.0 automatically looks up `ampacityChassisA` from this table when `props.awg` is set, removing the dependency on the external `wireLibrary.ts` for physics calculations.
+
+### `COMPONENT_PHYSICAL_SPECS`
+
+Real-world physical and thermal reference data for all 23 component families (including `generic`).  Drives 3D rendering dimension hints, absolute maximum temperature thresholds, and the "what is physically happening" narrative in FUSE™ failure descriptions.
+
+```js
+// Example entry — resistor
+{
+  commonPackages: ['axial-0204', 'axial-0207', 'smd-0402', ...],
+  typicalBodyMm:  { length: 3.5, diameter: 1.5 },
+  junctionLimitC: 155,
+  absoluteMaxTempC: 175,
+  description: "Carbon film or metal film resistor on alumina ceramic substrate..."
+}
+```
 
 ---
 
@@ -126,6 +200,10 @@ Simulation tick
             ├─ resolveComponentFamily(component.type)
             ├─ look up COMPONENT_FAILURE_PROFILES[family]
             ├─ evaluate each mode's trigger(metrics, props)
+            │     ├─ wire modes: auto-lookup WIRE_INSULATION_SPECS[props.insulationClass]
+            │     └─ wire modes: auto-lookup WIRE_GAUGE_TABLE by props.awg
+            ├─ enrich with COMPONENT_PHYSICAL_SPECS[family]
+            ├─ enrich with ComponentCompositions material thresholds
             └─ return worst-case { failed, severity, name, visual, description, family }
                     │
                     ▼
@@ -215,13 +293,24 @@ This turns a feature into a product line.
 
 ---
 
+## Version History
+
+| Version | Changes |
+|---|---|
+| **2.0.0** | Added `WIRE_INSULATION_SPECS`, `WIRE_GAUGE_TABLE`, and `COMPONENT_PHYSICAL_SPECS` physical spec tables. Added `voltage_overstress` wire failure mode. Wire overcurrent now auto-looks-up AWG ampacity. `legacy.html` now sources `WIRE_INSULATION_SPECS` from FUSE engine (single source of truth). Added proprietary copyright/trademark header. |
+| **1.0.0** | Initial release: 18 component families, composition-aware detection, `registerComponentType` / `registerFailureProfile` runtime API. |
+
+---
+
 ## Source Files
 
 | File | Role |
 |---|---|
-| `public/js/component-failure-engine.js` | Core FUSE™ engine — component families, failure profiles, `detectFailure()` |
+| `public/js/component-failure-engine.js` | Core FUSE™ engine — physical spec tables, component families, failure profiles, `detectFailure()` |
+| `public/js/component-compositions.js` | Material library and sub-component compositions — integrated via `loadCompositions()` |
 | `public/legacy.html` | 3D Builder integration — `buildFailureMetrics()`, `applyAllWorkspaceFailures()`, `createWorkspaceParticles()` |
 | `public/arena.html` | Component Arena integration — stress test runner, failure cards, Arena particle effects |
+| `src/data/wireLibrary.ts` | React-side wire catalogue (gauges, manufacturers, presets) — UI layer above FUSE gauge physics |
 
 ---
 

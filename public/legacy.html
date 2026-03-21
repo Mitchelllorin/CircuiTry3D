@@ -4420,25 +4420,12 @@ body.android-optimized .zoom-btn {
 
         // ---------------------------------------------------------------------------
         // Wire insulation physical specifications
-        // Maps WireInsulationId → jacket appearance and thermal limit.
-        // jacketRatio: outer/conductor radius ratio (1.0 = bare conductor, no jacket)
-        // color: THREE.js hex colour for the insulation jacket
-        // opacity: jacket transparency (lower = more see-through)
-        // thermalLimitC: max continuous insulation temperature before degradation
+        // Single source of truth: sourced from FUSE™ engine (window.FailureEngine).
+        // Each entry carries: jacketRatio (3D visual), color (THREE.js hex), opacity,
+        // thermalLimitC (physics), plus extended physical fields (maxVoltageV,
+        // densityKgPerM3, thermalConductivityWPerMK, dielectricStrengthKVPerMm, etc.).
         // ---------------------------------------------------------------------------
-        const WIRE_INSULATION_SPECS = {
-            pvc80:         { jacketRatio: 1.55, color: 0x1a1a1a, opacity: 0.58, thermalLimitC: 80  },  // black PVC
-            pvc105:        { jacketRatio: 1.65, color: 0x111111, opacity: 0.60, thermalLimitC: 105 },  // black PVC (thicker)
-            xlpe125:       { jacketRatio: 1.60, color: 0xeeeeee, opacity: 0.50, thermalLimitC: 125 },  // THHN/THWN white
-            silicone200:   { jacketRatio: 1.70, color: 0xcc2200, opacity: 0.45, thermalLimitC: 200 },  // red silicone
-            ptfe260:       { jacketRatio: 1.20, color: 0xf5f5f5, opacity: 0.38, thermalLimitC: 260 },  // white PTFE thin-wall
-            bare1200:      { jacketRatio: 1.00, color: 0xb87333, opacity: 0.00, thermalLimitC: 1200},  // no jacket — conductor only
-            epdm150:       { jacketRatio: 2.10, color: 0x0d0d0d, opacity: 0.62, thermalLimitC: 150 },  // black EPDM heavy-rubber
-            tpe105:        { jacketRatio: 1.60, color: 0x333333, opacity: 0.55, thermalLimitC: 105 },  // dark gray TPE
-            fiberglass482: { jacketRatio: 1.50, color: 0xd4c070, opacity: 0.52, thermalLimitC: 482 },  // tan braided glass
-            kapton400:     { jacketRatio: 1.18, color: 0xc87020, opacity: 0.48, thermalLimitC: 400 },  // amber polyimide
-            neoprene90:    { jacketRatio: 1.90, color: 0x1a1a1a, opacity: 0.62, thermalLimitC: 90  },  // black neoprene
-        };
+        const WIRE_INSULATION_SPECS = window.FailureEngine.WIRE_INSULATION_SPECS;
 
         // Conversion factor: conductor radius in mm → scene units.
         // Reference: 14 AWG conductor dia 1.628 mm ⟹ conductor radius target 0.032 scene units.
