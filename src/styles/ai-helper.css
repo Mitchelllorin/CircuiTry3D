@@ -7,15 +7,21 @@
 
 .ai-helper-fab {
   position: fixed;
-  /* Right edge — vertically centered in the workspace */
+  /* Right edge — top of workspace, just below the top strip */
   right: calc(var(--builder-safe-area-right, 0px));
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
+  );
+  transform: none;
   z-index: var(--z-ai-helper);
   width: 44px;
   height: 44px;
-  border-radius: 50% 0 0 50%;
+  border-radius: 0 0 0 10px;
   border: 1.5px solid rgba(136, 204, 255, 0.45);
+  border-top: none;
   border-right: none;
   background: linear-gradient(
     145deg,
@@ -28,10 +34,10 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 4px 6px 4px 2px;
+  padding: 4px;
   cursor: pointer;
   box-shadow:
-    -4px 0 18px rgba(2, 8, 20, 0.55),
+    0 4px 18px rgba(2, 8, 20, 0.55),
     0 0 0 2px rgba(136, 204, 255, 0.08);
   transition:
     transform 0.18s ease,
@@ -43,14 +49,10 @@
 }
 
 .ai-helper-fab:hover {
-  transform: translateY(-50%) scale(1.08);
-}
-
-.ai-helper-fab:hover {
-  transform: translateY(-50%) scale(1.08);
+  transform: scale(1.08);
   border-color: rgba(136, 204, 255, 0.72);
   box-shadow:
-    -6px 0 24px rgba(2, 8, 20, 0.65),
+    0 6px 24px rgba(2, 8, 20, 0.65),
     0 0 12px rgba(136, 204, 255, 0.22);
 }
 
@@ -116,16 +118,19 @@
 
 .ai-helper-panel {
   position: fixed;
-  /* Opens to the left of the AI FAB (right edge) */
+  /* Opens below and to the left of the AI FAB (top-right corner) */
   right: calc(var(--builder-safe-area-right, 0px) + 48px);
-  top: auto;
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
+  );
   bottom: auto;
   left: auto;
-  top: 50%;
-  transform: translateY(-50%);
   z-index: var(--z-ai-helper);
   width: clamp(260px, calc(100vw - 100px), 380px);
-  max-height: calc(100svh - 100px);
+  max-height: calc(100svh - 160px);
   border-radius: 16px;
   border: 1px solid rgba(136, 204, 255, 0.32);
   background: linear-gradient(
@@ -140,18 +145,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: right center;
+  transform-origin: top right;
   animation: aiPanelReveal 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes aiPanelReveal {
   from {
     opacity: 0;
-    transform: translateY(-50%) scale(0.88) translateX(12px);
+    transform: scale(0.88) translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateY(-50%) scale(1) translateX(0);
+    transform: scale(1) translateY(0);
   }
 }
 

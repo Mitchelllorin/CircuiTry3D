@@ -2788,6 +2788,8 @@ export default function Builder() {
                   <span className="edge-action-label" aria-hidden="true">Edit</span>
                 </button>
               </div>
+              {/* Divider between tool actions and sim/file actions */}
+              <span className="action-bar-divider" aria-hidden="true" />
               {/* Simulation + file actions row */}
               <div className="action-row">
                 <button

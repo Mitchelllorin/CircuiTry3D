@@ -387,9 +387,9 @@ body.builder-body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  min-width: var(--builder-edge-action-button-size);
-  padding: 5px 6px;
+  gap: 2px;
+  min-width: 32px;
+  padding: 5px 5px;
   height: auto;
   background: transparent;
   border: 1px solid transparent;
@@ -511,7 +511,7 @@ body.builder-body {
 /* Plain-text label beneath each edge action button icon */
 .edge-action-label {
   display: block;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -519,6 +519,17 @@ body.builder-body {
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* Hide text labels on narrow phones — icon-only to maximise workspace */
+@media (max-width: 480px) {
+  .edge-action-label {
+    display: none;
+  }
+  .edge-action-btn {
+    min-width: 28px;
+    padding: 5px 4px;
+  }
 }
 
 /* Right edge positioning (default - Undo, Redo, Load, Save)
@@ -871,15 +882,21 @@ body.builder-body {
    ─────────────────────────────────────────────────────────────────────────── */
 .measure-fab {
   position: fixed;
-  /* Left edge — vertically centered in the workspace, opposite to AI FAB */
+  /* Left edge — top of workspace, just below the top strip */
   left: calc(var(--builder-safe-area-left, 0px));
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    var(--builder-safe-area-top, 0px) +
+    2px
+  );
+  transform: none;
   z-index: var(--z-builder-floats);
   width: 44px;
   height: 44px;
-  border-radius: 0 50% 50% 0;
+  border-radius: 0 0 10px 0;
   border: 1.5px solid rgba(0, 255, 136, 0.45);
+  border-top: none;
   border-left: none;
   background: linear-gradient(
     145deg,
@@ -892,11 +909,11 @@ body.builder-body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 4px 2px 4px 6px;
+  padding: 4px;
   cursor: pointer;
   touch-action: manipulation;
   box-shadow:
-    4px 0 18px rgba(2, 8, 20, 0.55),
+    0 4px 18px rgba(2, 8, 20, 0.55),
     0 0 0 2px rgba(0, 255, 136, 0.08);
   transition:
     transform 0.18s ease,
@@ -908,10 +925,10 @@ body.builder-body {
 }
 
 .measure-fab:hover {
-  transform: translateY(-50%) scale(1.08);
+  transform: scale(1.08);
   border-color: rgba(0, 255, 136, 0.72);
   box-shadow:
-    6px 0 24px rgba(2, 8, 20, 0.65),
+    0 6px 24px rgba(2, 8, 20, 0.65),
     0 0 12px rgba(0, 255, 136, 0.25);
 }
 
@@ -974,25 +991,16 @@ body.builder-body {
   pointer-events: auto;
 }
 
-/* ── Consolidated action bar — two rows ──────────────────────────────────────
-   Row A: tool actions  (Clear, Wire, Rotate, Edit)
-   Row B: sim+file actions (Run, Undo, Redo, Open, Save)
-   Each row is its own pill so they always fit within the toggle-bound width
-   on a 412px phone without requiring horizontal scrolling.
+/* ── Consolidated action bar — single slim pill ───────────────────────────
+   All 9 action buttons in one horizontal pill. Labels are hidden on narrow
+   viewports (≤480px) so icon-only buttons fit comfortably on a 412px phone.
    ─────────────────────────────────────────────────────────────────────── */
 .consolidated-action-bar {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.action-row {
-  display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 3px;
-  padding: 4px 8px;
+  gap: 2px;
+  padding: 3px 6px;
   background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
   border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
   border-radius: 28px;
@@ -1000,15 +1008,20 @@ body.builder-body {
   box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
 }
 
-/* Thin divider between the two groups of buttons */
+/* Thin divider between button groups */
 .action-bar-divider {
   display: inline-block;
   width: 1px;
-  height: 22px;
+  height: 18px;
   background: rgba(136, 204, 255, 0.28);
   flex-shrink: 0;
-  margin: 0 3px;
+  margin: 0 2px;
   border-radius: 1px;
+}
+
+/* Wrapper used by two-row split in Builder.tsx — collapse to no-op */
+.action-row {
+  display: contents;
 }
 
 /* ── Centered component quick-add bar ───────────────────────────────────
@@ -1941,8 +1954,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     2px 0 12px var(--builder-shadow),
     2px 0 16px rgba(136, 204, 255, 0.2);
-  /* No margin-top offset — FABs are now mid-screen circles, not top-hangers */
-  margin-top: 0;
+  /* Start below the Measure FAB */
+  margin-top: calc(var(--builder-floating-button-size) + 2px);
 }
 
 /* Right toggle — left edge of the right stage (panel content is right/order:1) */
@@ -1953,8 +1966,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow:
     -2px 0 12px var(--builder-shadow),
     -2px 0 16px rgba(136, 204, 255, 0.2);
-  /* No margin-top offset — FABs are now mid-screen circles, not top-hangers */
-  margin-top: 0;
+  /* Start below the AI FAB */
+  margin-top: calc(var(--builder-floating-button-size) + 2px);
 }
 
 .builder-menu-toggle-bottom {
