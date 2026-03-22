@@ -150,7 +150,7 @@ const textbook: TextbookData = {
           title: "Current",
           body: [
             "Current (symbol I) is the rate of flow of electric charge past a point in a circuit. It is measured in amperes (A). One ampere equals one coulomb of charge passing per second.",
-            "Current can only flow in a complete (closed) circuit. An open circuit (a break anywhere in the loop) stops current flow entirely.",
+            "Current can only flow in a complete (closed) circuit. An open circuit (a break anywhere in the circuit) stops current flow entirely.",
             "The ammeter is used to measure current and must always be connected in series with the load so that all current passes through it.",
           ],
           formulas: [
@@ -244,7 +244,7 @@ const textbook: TextbookData = {
       year: 1,
       title: "Series Circuits",
       overview:
-        "In a series circuit all components are connected end-to-end in a single loop. Current has only one path. Understanding the voltage divider rule and total resistance is essential.",
+        "In a series circuit all components are connected end-to-end in a single path. Current has only one path. Understanding the voltage divider rule and total resistance is essential.",
       sections: [
         {
           id: "series-rules",
@@ -380,7 +380,7 @@ const textbook: TextbookData = {
       year: 1,
       title: "Combination (Series-Parallel) Circuits",
       overview:
-        "Most practical circuits combine series and parallel connections. The W.I.R.E. solving method requires you to first collapse every parallel group into a single equivalent resistor, reducing the network to a simple series loop. Only then do you fill the W.I.R.E. table and trace back through the original branches to find individual component values.",
+        "Most practical circuits combine series and parallel connections. The W.I.R.E. solving method requires you to first collapse every parallel group into a single equivalent resistor, reducing the network to a simple series path. Only then do you fill the W.I.R.E. table and trace back through the original branches to find individual component values.",
       sections: [
         {
           id: "combination-rules",
@@ -448,7 +448,7 @@ const textbook: TextbookData = {
           id: "series-solve",
           title: "Step 2 — Solve the Simplified Series Circuit",
           body: [
-            "After collapsing all parallel groups the circuit is a simple series loop. Apply series rules: R_T equals the sum of all series resistances (including every R_eq). Then use Ohm's Law to find I_T. This single current flows through every element in the series path, including each equivalent resistor.",
+            "After collapsing all parallel groups the circuit is a simple series path. Apply series rules: R_T equals the sum of all series resistances (including every R_eq). Then use Ohm's Law to find I_T. This single current flows through every element in the series path, including each equivalent resistor.",
           ],
           formulas: [
             {
@@ -479,7 +479,7 @@ const textbook: TextbookData = {
           body: [
             "I_T flows through every series element. Multiply I_T by each series resistance (or R_eq) to get the voltage drop across that section. The voltage across a parallel group equals I_T × R_eq for that group.",
             "Inside each original parallel group, every branch has the same voltage (the group voltage found above). Divide that branch voltage by each branch resistance to find the individual branch currents.",
-            "Verify with KCL: branch currents must sum to I_T at every junction. Verify with KVL: all voltage drops around any complete loop must sum to E_T.",
+            "Verify with KCL: branch currents must sum to I_T at every junction. Verify with KVL: all voltage drops around any complete circuit path must sum to E_T.",
           ],
           formulas: [
             {
@@ -508,7 +508,7 @@ const textbook: TextbookData = {
             "Voltage across a parallel group = I_T × R_eq for that group",
             "Use that group voltage with each branch's R to find each branch current (I = E / R)",
             "KCL check: branch currents into any junction must equal branch currents out",
-            "KVL check: all voltage drops around any loop must sum to the source voltage",
+            "KVL check: all voltage drops around any circuit path must sum to the source voltage",
           ],
         },
         {
@@ -646,7 +646,7 @@ const textbook: TextbookData = {
       year: 1,
       title: "Kirchhoff's Laws",
       overview:
-        "Kirchhoff's Laws extend Ohm's Law to complex multi-loop circuits. KCL governs current at nodes; KVL governs voltage around loops. Together they allow any DC circuit to be solved systematically.",
+        "Kirchhoff's Laws extend Ohm's Law to complex multi-branch circuits. KCL governs current at nodes; KVL governs voltage around circuit paths. Together they allow any DC circuit to be solved systematically.",
       sections: [
         {
           id: "kcl",
@@ -676,17 +676,17 @@ const textbook: TextbookData = {
           id: "kvl",
           title: "Kirchhoff's Voltage Law (KVL)",
           body: [
-            "KVL states: The algebraic sum of all voltages around any closed loop equals zero. This means the sum of voltage rises (sources) equals the sum of voltage drops (loads) around any loop.",
+            "KVL states: The algebraic sum of all voltages around any closed path equals zero. This means the sum of voltage rises (sources) equals the sum of voltage drops (loads) around any circuit path.",
             "This is a consequence of conservation of energy — energy gained from sources must equal energy dissipated by loads.",
           ],
           formulas: [
             {
               name: "Kirchhoff's Voltage Law",
-              expression: "ΣV = 0   (around any closed loop)",
+              expression: "ΣV = 0   (around any closed path)",
               variables: {
-                ΣV: "Algebraic sum of all voltages in the loop (V)",
+                ΣV: "Algebraic sum of all voltages in the path (V)",
               },
-              example: "Loop: +24V source, −8V drop, −10V drop, −6V drop → 24−8−10−6 = 0 ✓",
+              example: "Path: +24V source, −8V drop, −10V drop, −6V drop → 24−8−10−6 = 0 ✓",
             },
           ],
           realWorldExamples: [

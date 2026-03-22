@@ -208,7 +208,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Add components from the Components menu, then place them directly into the 3D workspace.",
-      "Use the Wire tool to connect terminals and close the circuit loop so current can flow.",
+      "Use the Wire tool to connect terminals and close the circuit so current can flow.",
       "Open the analysis panels on the right to watch live calculations while you build.",
     ],
     bullets: [
@@ -272,7 +272,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     bullets: [
       "Reset View recentres the camera; Fit to Screen frames the active circuit.",
       "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
-      "Complete the circuit loop, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
+      "Complete the circuit, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
     ],
   },
 ];
@@ -282,7 +282,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
     title: "W.I.R.E. Overview",
     paragraphs: [
       "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits. Each value has a dedicated color so you can spot it instantly in any panel or worksheet.",
-      "Use this solve loop: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
+      "Use this solve cycle: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
       "W - Watts (Power) — color: Blue",
@@ -442,7 +442,7 @@ const TABLE_METHOD_SECTIONS: HelpSection[] = [
       "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
       "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
       "4. Record the newly solved value in the table, then update the totals row when complete.",
-      "5. Check your work with Kirchhoff: sum voltages around each loop and verify currents at junctions.",
+      "5. Check your work with Kirchhoff: sum voltages around each closed path and verify currents at junctions.",
     ],
   },
   {
@@ -1130,9 +1130,9 @@ const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
   {
     icon: "⚡",
     title: "What is an Electric Circuit?",
-    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken loop.",
+    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken circuit.",
     analogy:
-      "🔄 Think of it like a water loop: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
+      "🔄 Think of it like a water circuit: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
   },
   {
     icon: "🔋",
@@ -3000,7 +3000,7 @@ export default function Builder() {
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
               ? "Current is flowing in 3D right now."
-              : "Load a closed loop to watch current flow instantly."}
+              : "Load a closed circuit to watch current flow instantly."}
           </h2>
           <p className="current-flow-payoff-text">
             This is the core experience: virtual electricity moving through a
@@ -3016,13 +3016,13 @@ export default function Builder() {
                 Flow of electric charge through the circuit.{" "}
                 {currentFlowPayoffAmps > 0
                   ? `${currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A flowing now.`
-                  : "Close the loop to start flow."}
+                  : "Close the circuit to start flow."}
               </span>
             </div>
             <div className="payoff-explainer-item">
               <span className="payoff-explainer-label">🔋 Voltage (E)</span>
               <span className="payoff-explainer-value">
-                Electrical pressure pushing charge around the loop.{" "}
+                Electrical pressure pushing charge around the circuit.{" "}
                 {currentFlowPayoffVolts > 0
                   ? `${currentFlowPayoffVolts.toFixed(1)} V supplied by the battery.`
                   : "Add a battery to supply voltage."}

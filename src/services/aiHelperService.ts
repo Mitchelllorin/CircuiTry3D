@@ -39,8 +39,8 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     id: "kvl",
     keywords: ["kvl", "kirchhoff voltage", "voltage law", "loop voltage", "mesh"],
     answer:
-      "Kirchhoff's Voltage Law (KVL): the sum of all voltage drops around any closed loop equals zero. This underpins mesh analysis — a systematic way to solve multi-loop circuits.",
-    followUp: "Open the W.I.R.E. Worksheet in Practice mode to step through KVL loops.",
+      "Kirchhoff's Voltage Law (KVL): the sum of all voltage drops around any closed path equals zero. This underpins mesh analysis — a systematic way to solve multi-branch circuits.",
+    followUp: "Open the W.I.R.E. Worksheet in Practice mode to step through KVL problems.",
   },
   // Series circuits
   {
@@ -441,7 +441,7 @@ export function buildGreeting(circuitState: LegacyCircuitState | null): string {
     if (reason === "no-wires") {
       return `You have ${counts.components} component(s) but no wires. Press W to enter Wire Mode and connect the terminals!`;
     }
-    return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to close the loop.`;
+    return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to close the circuit.`;
   }
 
   // Wire warning takes priority in the greeting
