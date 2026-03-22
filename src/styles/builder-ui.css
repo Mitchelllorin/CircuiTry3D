@@ -1573,58 +1573,65 @@ body.builder-body {
   align-items: flex-end;
 }
 
-/* Left panel — Library slides in from the left edge, toggle tab halfway up */
+/* Left panel — Library: stage clips to toggle-width when closed, expands on open */
 .builder-menu-stage-left {
   left: 0;
   top: 50%;
   bottom: auto;
-  flex-direction: row-reverse; /* visually: [nav][toggle] — toggle is rightmost = left-edge tab */
-  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+  flex-direction: row-reverse; /* in row-reverse at left:0 — toggle fills the stage width when closed */
+  width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
   height: var(--builder-menu-left-height);
   align-items: stretch;
-  transition: transform 0.32s ease;
-  /* Closed: slide panel off-screen left, toggle tab remains visible at left edge */
-  transform: translateY(-50%) translateX(calc(-1 * var(--builder-menu-left-width)));
+  overflow: clip; /* clips nav without cutting box-shadow */
+  overflow-clip-margin: 4px;
+  transition: width 0.32s ease;
+  transform: translateY(-50%);
 }
 
 .builder-menu-stage-left.open {
-  transform: translateY(-50%) translateX(0);
+  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+  transform: translateY(-50%);
 }
 
-/* Right panel — Controls slides in from the right edge, toggle tab halfway up */
+/* Right panel — Controls: same clip approach, mirrored */
 .builder-menu-stage-right {
   right: 0;
   left: auto;
   top: 50%;
   bottom: auto;
-  flex-direction: row; /* visually: [toggle][nav] — toggle is leftmost = right-edge tab */
-  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+  flex-direction: row; /* in row at right:0 — toggle fills the stage width when closed */
+  width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
   height: var(--builder-menu-right-height);
   align-items: stretch;
-  transition: transform 0.32s ease;
-  /* Closed: slide panel off-screen right, toggle tab remains visible at right edge */
-  transform: translateY(-50%) translateX(var(--builder-menu-right-width));
+  overflow: clip;
+  overflow-clip-margin: 4px;
+  transition: width 0.32s ease;
+  transform: translateY(-50%);
 }
 
 .builder-menu-stage-right.open {
-  transform: translateY(-50%) translateX(0);
+  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+  transform: translateY(-50%);
 }
 
-/* Insights panel — centered at the bottom, full width always, height transitions open/close */
+/* Insights panel — small pill at bottom center when closed;
+   opens full-width, overlapping side panels */
 .builder-menu-stage-bottom {
   left: 50%;
   right: auto;
   bottom: calc(8px + var(--builder-safe-area-bottom));
   flex-direction: column-reverse; /* toggle at bottom (DOM-first = bottom in reverse), menu above */
-  width: var(--builder-menu-bottom-width);
+  width: var(--builder-menu-bottom-width); /* closed: slim pill */
   height: var(--builder-menu-toggle-width); /* closed = just toggle tab */
-  overflow: hidden; /* clip menu content when closed */
+  overflow: clip; /* clips nav without cutting toggle box-shadow */
+  overflow-clip-margin: 4px;
   transform: translateX(-50%);
-  transition: height 0.32s ease;
+  transition: height 0.32s ease, width 0.32s ease;
 }
 
 .builder-menu-stage-bottom.open {
   height: calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width));
+  width: calc(100vw - 16px); /* full-width: overlaps side panels */
   transform: translateX(-50%);
 }
 
@@ -4732,6 +4739,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   .builder-menu-stage-bottom.open {
     transform: translateX(-50%);
+    width: calc(100vw - 16px);
   }
 }
 
@@ -4775,26 +4783,27 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
       0 -4px 20px rgba(136, 204, 255, 0.3);
   }
 
-  /* Side panels on touch devices: use same translateX approach as desktop
-     so toggles stay visible at the left/right edges */
+  /* Side panels on touch devices: use same overflow+width approach as desktop */
   .builder-menu-stage-left {
     top: 50%;
-    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
-    transform: translateY(-50%) translateX(calc(-1 * var(--builder-menu-left-width)));
+    width: var(--builder-menu-toggle-width);
+    transform: translateY(-50%);
   }
 
   .builder-menu-stage-left.open {
-    transform: translateY(-50%) translateX(0);
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateY(-50%);
   }
 
   .builder-menu-stage-right {
     top: 50%;
-    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
-    transform: translateY(-50%) translateX(var(--builder-menu-right-width));
+    width: var(--builder-menu-toggle-width);
+    transform: translateY(-50%);
   }
 
   .builder-menu-stage-right.open {
-    transform: translateY(-50%) translateX(0);
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateY(-50%);
   }
 }
 
