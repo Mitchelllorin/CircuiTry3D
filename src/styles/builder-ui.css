@@ -1624,9 +1624,8 @@ body.builder-body {
 }
 
 /* Left sidebar - show/hide on slide */
-.builder-menu-stage-left.open .builder-menu {
-  pointer-events: auto;
-}
+
+
 
 /* Right sidebar - show/hide on slide */
 .builder-menu-stage-right.open .builder-menu {
