@@ -789,81 +789,68 @@ body.builder-body {
   }
 }
 
-/* Zoom controls — positioned below the unified action bar, horizontally
-   centered to match the bar above. */
+/* Zoom controls — bottom-right perimeter corner, stacked vertically.
+   No container box — just the three bare symbol buttons. */
 .circuit-zoom-controls {
   position: fixed;
-  top: calc(
-    var(--builder-ticker-top, 72px) +
-    var(--builder-ticker-height, 32px) +
-    12px +
-    var(--builder-safe-area-top) +
-    52px
-  );
-  bottom: auto;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
+  bottom: calc(48px + var(--builder-safe-area-bottom, 0px));
+  right: calc(8px + env(safe-area-inset-right, 0px));
+  top: auto;
+  left: auto;
+  transform: none;
   z-index: var(--z-builder-toolbar);
   display: flex;
-  flex-direction: row;
-  gap: 4px;
+  flex-direction: column;
+  gap: 3px;
+  /* No background, no border, no shadow on the container */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
-/* When the right side menu is open, zoom controls stay centred. */
+.circuit-zoom-controls > * {
+  pointer-events: all;
+}
+
+/* Panel open states don't need to shift zoom — it's in the corner */
 .builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-}
-
-/* On narrow / portrait screens the unified bar wraps, so push zoom
-   controls further down to avoid overlap. */
-@media (max-width: 480px) {
-  .circuit-zoom-controls {
-    top: calc(
-      var(--builder-ticker-top, 72px) +
-      var(--builder-ticker-height, 32px) +
-      12px +
-      var(--builder-safe-area-top) +
-      90px
-    );
-  }
+  right: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width) + 8px + env(safe-area-inset-right, 0px));
 }
 
 .circuit-zoom-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(10, 18, 38, 0.82);
-  color: rgba(200, 224, 255, 0.9);
-  font-size: 20px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  background: rgba(8, 16, 36, 0.52);
+  color: rgba(180, 215, 255, 0.88);
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  box-shadow: none;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.14s ease;
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .circuit-zoom-btn:hover:not(:disabled) {
-  background: rgba(16, 30, 60, 0.92);
-  border-color: rgba(136, 204, 255, 0.55);
-  transform: scale(1.08);
+  background: rgba(16, 30, 60, 0.78);
+  border-color: rgba(136, 204, 255, 0.42);
+  transform: scale(1.1);
 }
 
 .circuit-zoom-btn:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.94);
 }
 
 .circuit-zoom-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
