@@ -17,18 +17,18 @@
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
   /* Toggle tabs - slimmer for minimal footprint */
-  --builder-menu-toggle-width: 24px;
-  --builder-menu-toggle-height: 64px;
+  --builder-menu-toggle-width: 32px;
+  --builder-menu-toggle-height: 72px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
   --builder-menu-left-width: 180px;
   --builder-menu-right-width: 172px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
-  --builder-menu-bottom-height: 248px;
-  /* Bottom-corner panel heights (content area only, excludes toggle) */
-  --builder-menu-left-height: 280px;
-  --builder-menu-right-height: 260px;
+  --builder-menu-bottom-height: clamp(260px, 42vh, 380px);
+  /* Side panel heights — tall enough to scroll through content */
+  --builder-menu-left-height: clamp(320px, 65vh, 600px);
+  --builder-menu-right-height: clamp(300px, 65vh, 580px);
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-safe-area-left: env(safe-area-inset-left, 0px);
@@ -1046,6 +1046,32 @@ body.builder-body {
   background: rgba(136, 204, 255, 0.18);
 }
 
+/* Give tool buttons (Wire, Rotate, etc.) same icon-box treatment as 3D component thumbnails */
+.unified-action-bar .edge-action-icon-svg {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  background: rgba(8, 18, 40, 0.78);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 6px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Wire strippers is an <img>, style separately */
+.unified-action-bar .edge-action-btn img.edge-action-icon-svg {
+  padding: 4px;
+  object-fit: contain;
+}
+
+/* Consistent button size for all action bar buttons */
+.unified-action-bar .edge-action-btn,
+.unified-action-bar .quick-add-btn {
+  width: 52px;
+  min-width: 52px;
+  min-height: 52px;
+}
+
 /* On narrow phones: tighten gap so 2 rows fit neatly */
 @media (max-width: 480px) {
   .unified-action-bar {
@@ -1499,31 +1525,31 @@ body.builder-body {
   will-change: transform, opacity;
 }
 
-/* Left menu — bottom-corner layout: top-right corner rounded only */
+/* Left menu — side-edge drawer layout */
 .builder-menu-left {
   width: var(--builder-menu-left-width);
   height: var(--builder-menu-left-height);
   flex-shrink: 0;
-  border-radius: 0 12px 0 0;
+  overflow: hidden;
+  border-radius: 0 12px 12px 0;
   border-left: none;
-  border-bottom: none;
 }
 
-/* Right menu — bottom-corner layout: top-left corner rounded only */
+/* Right menu — side-edge drawer layout */
 .builder-menu-right {
   width: var(--builder-menu-right-width);
   height: var(--builder-menu-right-height);
   flex-shrink: 0;
-  border-radius: 12px 0 0 0;
+  overflow: hidden;
+  border-radius: 12px 0 0 12px;
   border-right: none;
-  border-bottom: none;
 }
 
 .builder-menu-bottom {
   width: 100%;
   height: var(--builder-menu-bottom-height);
   max-height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   gap: 12px;
   padding: 18px;
   display: flex;
@@ -1584,19 +1610,20 @@ body.builder-body {
   transform: translateY(-50%) translateX(0);
 }
 
-/* Insights panel — centered at the bottom, clear of both corner panels */
+/* Insights panel — centered at the bottom, full width always, height transitions open/close */
 .builder-menu-stage-bottom {
   left: 50%;
   right: auto;
   bottom: calc(8px + var(--builder-safe-area-bottom));
-  flex-direction: column;
-  width: var(--builder-menu-toggle-width);
-  height: var(--builder-menu-toggle-height);
+  flex-direction: column-reverse; /* toggle at bottom (DOM-first = bottom in reverse), menu above */
+  width: var(--builder-menu-bottom-width);
+  height: var(--builder-menu-toggle-width); /* closed = just toggle tab */
+  overflow: hidden; /* clip menu content when closed */
   transform: translateX(-50%);
+  transition: height 0.32s ease;
 }
 
 .builder-menu-stage-bottom.open {
-  width: calc(var(--builder-menu-bottom-width) + var(--builder-menu-toggle-width));
   height: calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width));
   transform: translateX(-50%);
 }
@@ -1623,12 +1650,11 @@ body.builder-body {
 }
 
 .builder-menu-stage-bottom .builder-menu {
-  transform: translateY(100%);
   opacity: 0;
+  transition: opacity 0.24s ease;
 }
 
 .builder-menu-stage-bottom.open .builder-menu {
-  transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
 }
@@ -1998,13 +2024,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .builder-menu-toggle-bottom {
-  width: auto;
-  min-width: var(--builder-menu-toggle-height);
+  width: 100%;
+  min-width: 0;
   height: var(--builder-menu-toggle-width);
-  padding: 2px 10px;
-  margin-left: auto;
-  margin-top: auto;
-  align-self: flex-end;
+  min-height: var(--builder-menu-toggle-width);
+  flex-shrink: 0;
+  padding: 2px 16px;
+  margin: 0;
+  align-self: stretch;
   writing-mode: horizontal-tb;
   text-orientation: mixed;
   flex-direction: row;
@@ -4574,12 +4601,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-right-width: 156px;
     --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
     --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 22px;
-    --builder-menu-toggle-height: 56px;
+    --builder-menu-toggle-width: 28px;
+    --builder-menu-toggle-height: 64px;
     --builder-ticker-height: 28px;
     --builder-ticker-top: 68px;
-    --builder-menu-left-height: 260px;
-    --builder-menu-right-height: 240px;
+    --builder-menu-left-height: clamp(280px, 60vh, 540px);
+    --builder-menu-right-height: clamp(260px, 60vh, 520px);
   }
 
   /* Panels are bottom-anchored; no top/bottom constraints needed */
@@ -4612,14 +4639,14 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-right-width: 136px;
     --builder-menu-bottom-width: calc(100vw - 24px);
     --builder-menu-bottom-height: 188px;
-    --builder-menu-toggle-width: 20px;
-    --builder-menu-toggle-height: 48px;
+    --builder-menu-toggle-width: 26px;
+    --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
     --builder-ticker-top: 64px;
-    --builder-menu-left-height: 240px;
-    --builder-menu-right-height: 220px;
+    --builder-menu-left-height: clamp(260px, 60vh, 500px);
+    --builder-menu-right-height: clamp(240px, 58vh, 480px);
   }
 
   /* Panels are bottom-anchored; clear legacy top/bottom overrides */
@@ -4628,17 +4655,11 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     top: auto;
   }
 
-  /* Center the Insights panel; allow it to span the inner viewport */
+  /* Insights panel: inherit full-width from base styles, only update position */
   .builder-menu-stage-bottom {
     left: 50%;
     right: auto;
-    width: var(--builder-menu-toggle-width);
     bottom: calc(8px + var(--builder-safe-area-bottom));
-    transform: translateX(-50%);
-  }
-
-  .builder-menu-stage-bottom.open {
-    width: calc(var(--builder-menu-bottom-width) + var(--builder-menu-toggle-width));
     transform: translateX(-50%);
   }
 
@@ -4714,10 +4735,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 @media (max-width: 900px), (pointer: coarse) {
-  /* Panels are bottom-anchored; no top override needed */
-  .builder-menu-stage-left {
-    top: auto;
-  }
+  /* Side panels are centered vertically — do NOT override top: 50% */
 
   .builder-menu-stage-left .builder-menu {
     height: var(--builder-menu-left-height);
@@ -4756,23 +4774,26 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
       0 -4px 20px rgba(136, 204, 255, 0.3);
   }
 
-  /* Bottom-corner panels use translateY; keep widths at panel width only */
+  /* Side panels on touch devices: use same translateX approach as desktop
+     so toggles stay visible at the left/right edges */
   .builder-menu-stage-left {
-    width: var(--builder-menu-left-width);
-    transform: translateY(var(--builder-menu-left-height));
+    top: 50%;
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateY(-50%) translateX(calc(-1 * var(--builder-menu-left-width)));
   }
 
   .builder-menu-stage-left.open {
-    transform: translateY(0);
+    transform: translateY(-50%) translateX(0);
   }
 
   .builder-menu-stage-right {
-    width: var(--builder-menu-right-width);
-    transform: translateY(var(--builder-menu-right-height));
+    top: 50%;
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateY(-50%) translateX(var(--builder-menu-right-width));
   }
 
   .builder-menu-stage-right.open {
-    transform: translateY(0);
+    transform: translateY(-50%) translateX(0);
   }
 }
 
