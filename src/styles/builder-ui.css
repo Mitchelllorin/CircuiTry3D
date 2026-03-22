@@ -516,36 +516,34 @@ body.builder-body {
   object-fit: contain;
 }
 
-/* Right edge positioning (default - Undo, Redo, Load, Save)
-   Sits to the left of the right panel so it stays visible. */
+/* Right edge positioning — default: only toggle (24px) visible, so minimal offset */
 .workspace-edge-actions--right {
-  right: calc(var(--builder-menu-right-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px));
+  right: calc(var(--builder-menu-toggle-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px));
   left: auto;
   bottom: calc(
-    var(--builder-menu-toggle-height) +
-    8px +
+    var(--builder-edge-actions-gap) +
     var(--builder-safe-area-bottom)
   );
 }
 
-/* Left edge positioning (Wire, Rotate, Edit tools) */
+/* Left edge positioning — default: only toggle (24px) visible */
 .workspace-edge-actions--left {
   left: calc(
-    var(--builder-menu-left-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+    var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
   );
   right: auto;
 }
 
-/* Panel open adjustments — panels slide vertically now; no horizontal shift needed */
+/* Panel open: shift edge actions clear of the open panel */
 .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
   left: calc(
-    var(--builder-menu-left-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+    var(--builder-menu-left-width) + var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
   );
 }
 
 .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
   right: calc(
-    var(--builder-menu-right-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px)
+    var(--builder-menu-right-width) + var(--builder-menu-toggle-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px)
   );
 }
 
@@ -561,29 +559,25 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px));
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
+    right: calc(var(--builder-menu-toggle-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--builder-edge-actions-gap) + var(--builder-safe-area-bottom));
   }
 
   .workspace-edge-actions--left {
     left: calc(
-      var(--builder-menu-left-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
+      var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
     );
   }
 
   .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
     left: calc(
-      var(--builder-menu-left-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
+      var(--builder-menu-left-width) + var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
     );
   }
 
   .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
     right: calc(
-      var(--builder-menu-right-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px)
+      var(--builder-menu-right-width) + var(--builder-menu-toggle-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px)
     );
   }
 
@@ -600,19 +594,15 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: calc(var(--builder-menu-right-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
+    right: calc(var(--builder-menu-toggle-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
     left: auto;
     transform: none;
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      8px +
-      var(--builder-safe-area-bottom)
-    );
+    bottom: calc(var(--builder-edge-actions-gap) + var(--builder-safe-area-bottom));
   }
 
   .workspace-edge-actions--left {
     left: calc(
-      var(--builder-menu-left-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
+      var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
     );
     right: auto;
     transform: none;
@@ -1570,40 +1560,41 @@ body.builder-body {
   align-items: flex-end;
 }
 
-/* Bottom-corner left panel — Library slides up from the bottom-left */
+/* Left panel — Library slides in from the left edge, toggle tab halfway up */
 .builder-menu-stage-left {
   left: 0;
-  bottom: 0;
-  top: auto;
-  flex-direction: column;
-  width: var(--builder-menu-left-width);
-  height: calc(var(--builder-menu-left-height) + var(--builder-menu-toggle-height));
+  top: 50%;
+  bottom: auto;
+  flex-direction: row-reverse; /* visually: [nav][toggle] — toggle is rightmost = left-edge tab */
+  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+  height: var(--builder-menu-left-height);
   align-items: stretch;
   transition: transform 0.32s ease;
-  /* Closed: push panel below viewport, keeping toggle visible at the bottom */
-  transform: translateY(var(--builder-menu-left-height));
+  /* Closed: slide panel off-screen left, toggle tab remains visible at left edge */
+  transform: translateY(-50%) translateX(calc(-1 * var(--builder-menu-left-width)));
 }
 
 .builder-menu-stage-left.open {
-  transform: translateY(0);
+  transform: translateY(-50%) translateX(0);
 }
 
-/* Bottom-corner right panel — Controls slides up from the bottom-right */
+/* Right panel — Controls slides in from the right edge, toggle tab halfway up */
 .builder-menu-stage-right {
   right: 0;
-  bottom: 0;
-  top: auto;
-  flex-direction: column;
-  width: var(--builder-menu-right-width);
-  height: calc(var(--builder-menu-right-height) + var(--builder-menu-toggle-height));
+  left: auto;
+  top: 50%;
+  bottom: auto;
+  flex-direction: row; /* visually: [toggle][nav] — toggle is leftmost = right-edge tab */
+  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+  height: var(--builder-menu-right-height);
   align-items: stretch;
   transition: transform 0.32s ease;
-  /* Closed: push panel below viewport, keeping toggle visible at the bottom */
-  transform: translateY(var(--builder-menu-right-height));
+  /* Closed: slide panel off-screen right, toggle tab remains visible at right edge */
+  transform: translateY(-50%) translateX(var(--builder-menu-right-width));
 }
 
 .builder-menu-stage-right.open {
-  transform: translateY(0);
+  transform: translateY(-50%) translateX(0);
 }
 
 /* Insights panel — centered at the bottom, clear of both corner panels */
@@ -1959,24 +1950,24 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   text-orientation: mixed;
 }
 
-/* Left toggle tab — now on top of the panel (horizontal) */
+/* Left toggle tab — slim vertical handle at the left edge, rounded right side */
 .builder-menu-toggle-left {
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
-  border-left: 1px solid var(--builder-border-strong);
-  box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(136, 204, 255, 0.2);
-}
-
-/* Right toggle tab — now on top of the panel (horizontal) */
-.builder-menu-toggle-right {
-  border-radius: 10px 10px 0 0;
-  border-bottom: none;
+  border-radius: 0 10px 10px 0;
+  border-left: none;
   border-right: 1px solid var(--builder-border-strong);
   box-shadow:
-    0 -2px 12px var(--builder-shadow),
-    0 -2px 16px rgba(136, 204, 255, 0.2);
+    2px 0 12px var(--builder-shadow),
+    2px 0 16px rgba(136, 204, 255, 0.18);
+}
+
+/* Right toggle tab — slim vertical handle at the right edge, rounded left side */
+.builder-menu-toggle-right {
+  border-radius: 10px 0 0 10px;
+  border-right: none;
+  border-left: 1px solid var(--builder-border-strong);
+  box-shadow:
+    -2px 0 12px var(--builder-shadow),
+    -2px 0 16px rgba(136, 204, 255, 0.18);
 }
 
 .builder-menu-toggle:hover,
@@ -1990,30 +1981,30 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.35);
 }
 
-/* Bottom-corner panel toggles: horizontal, full-width, on top of each panel */
+/* Side panel toggle tabs: slim vertical handles, centered on the panel height */
 .builder-menu-toggle-left,
 .builder-menu-toggle-right {
   flex-shrink: 0;
-  width: 100%;
+  width: var(--builder-menu-toggle-width);
+  min-width: var(--builder-menu-toggle-width);
+  height: 88px;
   min-height: 0;
-  height: var(--builder-menu-toggle-height);
-  padding: 6px 12px;
-  margin: 0;
-  align-self: stretch;
+  padding: 8px 3px;
+  margin: auto 0; /* vertically center within the stage */
+  align-self: center;
   position: relative;
   z-index: var(--z-raised);
-  writing-mode: horizontal-tb;
+  writing-mode: vertical-rl;
   text-orientation: mixed;
-  flex-direction: row;
-  order: 0;
+  flex-direction: column;
 }
 
-/* Left toggle: first in DOM order → top of column */
+/* Left toggle sits as the last flex item in row-reverse (rightmost visually = left edge) */
 .builder-menu-stage-left .builder-menu-toggle-left {
-  order: 0;
+  order: 1;
 }
 
-/* Right toggle: first in DOM order → top of column */
+/* Right toggle sits as the first flex item in row (leftmost visually = right edge tab) */
 .builder-menu-stage-right .builder-menu-toggle-right {
   order: 0;
   margin-left: 0;
