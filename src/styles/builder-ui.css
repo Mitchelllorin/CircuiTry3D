@@ -964,81 +964,128 @@ body.builder-body {
   white-space: nowrap;
 }
 
-/* ── Unified action bar ────────────────────────────────────────────────
-   Replaces the three separate bars (workspace-edge-actions left/right and
-   quick-add-bar) with a single horizontal strip anchored below the ticker.
+/* ── Perimeter action strip ─────────────────────────────────────────────
+   No floating box. 13 icon-only buttons in up to 2 tight rows pinned to
+   the top edge of the workspace. Zero background/border on the container
+   so the canvas shows through between buttons.
    ─────────────────────────────────────────────────────────────────────── */
 .unified-action-bar {
   position: fixed;
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 2px + var(--builder-safe-area-top));
+  left: 0;
+  right: 0;
+  transform: none;
   z-index: var(--z-builder-floats);
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  max-width: calc(100vw - 16px);
-  background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
-  border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
-  border-radius: 18px;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
+  gap: 3px;
+  padding: 2px 4px;
+  max-width: 100vw;
+  /* ↓ No container — transparent strip only */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  box-shadow: none;
+  pointer-events: none; /* pass-through on gaps between buttons */
 }
 
-/* Divider between logical groups in the unified bar */
+/* Re-enable pointer events for the actual buttons */
+.unified-action-bar > * {
+  pointer-events: all;
+}
+
+/* Dividers removed — no container to divide inside */
 .unified-action-divider {
+  display: none;
+}
+
+/* Show compact text labels under each icon */
+.unified-action-bar .edge-action-label {
   display: block;
-  width: 1px;
-  height: 28px;
-  margin: 0 4px;
-  background: var(--builder-border, rgba(136, 204, 255, 0.28));
-  flex-shrink: 0;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(186, 220, 255, 0.75);
+  line-height: 1;
+  margin-top: 2px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.unified-action-bar .quick-add-btn-label {
+  display: block;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(186, 220, 255, 0.75);
+  line-height: 1;
+  margin-top: 2px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
 }
 
-/* Edge-action buttons inside the unified bar keep their column layout */
+/* Compact icon+label buttons — individual pill style instead of one big box */
 .unified-action-bar .edge-action-btn {
+  width: 48px;
+  min-height: 46px;
+  padding: 5px 3px 4px;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 22, 48, 0.78);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-@media (max-width: 720px) {
-  .unified-action-bar {
-    gap: 2px;
-    padding: 3px 6px;
-  }
-  .unified-action-divider {
-    margin: 0 2px;
-    height: 24px;
-  }
+.unified-action-bar .edge-action-btn:active {
+  background: rgba(136, 204, 255, 0.18);
 }
 
+.unified-action-bar .quick-add-btn {
+  min-width: 48px;
+  min-height: 46px;
+  padding: 5px 3px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 22, 48, 0.78);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.unified-action-bar .quick-add-btn:active {
+  background: rgba(136, 204, 255, 0.18);
+}
+
+/* On narrow phones: tighten gap so 2 rows fit neatly */
 @media (max-width: 480px) {
   .unified-action-bar {
     gap: 2px;
-    padding: 4px 6px;
-    border-radius: 14px;
-    max-width: calc(100vw - 12px);
+    padding: 2px 3px;
   }
-  .unified-action-bar .edge-action-label {
-    display: none;
-  }
-  .unified-action-bar .edge-action-btn {
-    width: 32px;
-    min-height: 32px;
-    padding: 4px 2px;
-  }
+  .unified-action-bar .edge-action-btn,
   .unified-action-bar .quick-add-btn {
-    min-width: 36px;
-    padding: 3px 4px;
+    width: 42px;
+    min-height: 42px;
+    min-width: 42px;
+    padding: 4px 2px 3px;
+    border-radius: 9px;
   }
+  .unified-action-bar .edge-action-label,
   .unified-action-bar .quick-add-btn-label {
-    display: none;
-  }
-  .unified-action-divider {
-    height: 20px;
+    font-size: 6px;
   }
 }
 
