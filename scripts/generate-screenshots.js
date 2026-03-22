@@ -55,7 +55,7 @@ const DEVICE_SPECS = [
     label: 'Phone (Portrait 1080×1920)',
     width: 1080,
     height: 1920,
-    paths: ['/', '/#/app', '/#/practice', '/#/pricing'],
+    paths: ['/', '/legacy.html', '/#/practice', '/#/pricing'],
     playConsoleField: 'Store listing → Phone screenshots',
     requirement: '1080×1920 px · Portrait · 9:16 aspect ratio',
   },
@@ -64,7 +64,7 @@ const DEVICE_SPECS = [
     label: '7-inch Tablet (Portrait 1200×1920)',
     width: 1200,
     height: 1920,
-    paths: ['/', '/#/app'],
+    paths: ['/', '/legacy.html'],
     playConsoleField: 'Store listing → 7-inch tablet screenshots',
     requirement: 'min 1024×600 px · 7-inch tablet',
   },
@@ -73,7 +73,7 @@ const DEVICE_SPECS = [
     label: '10-inch Tablet (Landscape 1920×1200)',
     width: 1920,
     height: 1200,
-    paths: ['/', '/#/app'],
+    paths: ['/', '/legacy.html'],
     playConsoleField: 'Store listing → 10-inch tablet screenshots',
     requirement: 'min 1200×800 px · 10-inch tablet · landscape',
   },
@@ -82,7 +82,7 @@ const DEVICE_SPECS = [
     label: 'Chromebook (Landscape 1920×1080)',
     width: 1920,
     height: 1080,
-    paths: ['/', '/#/app'],
+    paths: ['/', '/legacy.html'],
     playConsoleField: 'Store listing → Chromebook screenshots',
     requirement: 'min 1920×1080 px · landscape only',
   },
@@ -91,7 +91,7 @@ const DEVICE_SPECS = [
     label: 'Android XR (Landscape 1920×1080)',
     width: 1920,
     height: 1080,
-    paths: ['/', '/#/app'],
+    paths: ['/', '/legacy.html'],
     playConsoleField: 'Store listing → Android XR screenshots',
     requirement: 'min 1920×1080 px · landscape only',
   },
@@ -142,9 +142,9 @@ async function main() {
           timeout: 30_000,
         });
         // Allow extra time for 3-D/WebGL canvas to finish rendering.
-        // Builder pages (/#/app, /#/arena) need more time than static pages.
-        const isBuilderPage = appPath.includes('/app') || appPath.includes('/arena');
-        await page.waitForTimeout(isBuilderPage ? 4000 : 1500);
+        // Builder pages (legacy.html, arena) need more time than static pages.
+        const isBuilderPage = appPath.includes('legacy') || appPath.includes('arena');
+        await page.waitForTimeout(isBuilderPage ? 8000 : 1500);
         navigated = true;
       } catch (err) {
         console.warn(`     ⚠  Could not load ${BASE_URL}${appPath}: ${err.message}`);
