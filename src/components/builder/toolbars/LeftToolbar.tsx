@@ -186,9 +186,7 @@ export function LeftToolbar({
   const shouldAnimateThumbnails = isOpen && !isCoarsePointer;
 
   return (
-    <div
-      className={`builder-menu-stage builder-menu-stage-left${isOpen ? " open" : ""}`}
-    >
+    <div className={`library-wrapper ${isOpen ? "open" : ""}`}>
       {/* Toggle is first in DOM so it renders at x=0 (left edge) in flex-direction:row */}
       <button
         type="button"
