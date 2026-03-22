@@ -799,31 +799,32 @@ body.builder-body {
   }
 }
 
-/* Zoom controls — bottom-center area, clear of both corner panels and
-   the centered Insights toggle. */
+/* Zoom controls — positioned below the unified action bar, horizontally
+   centered to match the bar above. */
 .circuit-zoom-controls {
   position: fixed;
-  top: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
-  right: calc(
-    var(--builder-menu-right-width) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-safe-area-right)
+  top: calc(
+    var(--builder-ticker-top, 72px) +
+    var(--builder-ticker-height, 32px) +
+    12px +
+    var(--builder-safe-area-top) +
+    52px
   );
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   z-index: var(--z-builder-toolbar);
   display: flex;
   flex-direction: row;
   gap: 4px;
 }
 
-/* When the right side menu is open the panel slides upward; zoom controls
-   stay in the same horizontal position (panel is no longer side-panel). */
+/* When the right side menu is open, zoom controls stay centred. */
 .builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  right: calc(
-    var(--builder-menu-right-width) +
-    clamp(12px, 3vw, 24px) +
-    var(--builder-safe-area-right)
-  );
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
 }
 
 .circuit-zoom-btn {
@@ -929,16 +930,7 @@ body.builder-body {
     0 0 16px rgba(0, 255, 136, 0.35);
 }
 
-/* ── Centered component quick-add bar ───────────────────────────────────
-   A horizontally centered pill strip shown over the workspace (outside the
-   iframe) so it always appears in the production React app at /#/app.
-   This is where Battery, Resistor, LED, Junction and Wire-mode shortcuts
-   belong — NOT inside legacy.html whose #quick-actions element is hidden
-   by `body.embedded #quick-actions { display:none }` when embedded.
-   Top is anchored to the bottom edge of the ticker strip (--builder-ticker-top
-   + --builder-ticker-height) with a 12px gap so the two bars never overlap or
-   appear visually stacked with no breathing room.
-   ─────────────────────────────────────────────────────────────────────── */
+/* ── Centered component quick-add bar (legacy — kept for sub-element styles) ─ */
 .quick-add-bar {
   position: fixed;
   top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
@@ -956,6 +948,66 @@ body.builder-body {
   backdrop-filter: blur(14px);
   box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
   white-space: nowrap;
+}
+
+/* ── Unified action bar ────────────────────────────────────────────────
+   Replaces the three separate bars (workspace-edge-actions left/right and
+   quick-add-bar) with a single horizontal strip anchored below the ticker.
+   ─────────────────────────────────────────────────────────────────────── */
+.unified-action-bar {
+  position: fixed;
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-builder-floats);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
+  border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
+  border-radius: 28px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
+  white-space: nowrap;
+}
+
+/* Divider between logical groups in the unified bar */
+.unified-action-divider {
+  display: block;
+  width: 1px;
+  height: 28px;
+  margin: 0 4px;
+  background: var(--builder-border, rgba(136, 204, 255, 0.28));
+  flex-shrink: 0;
+}
+
+/* Edge-action buttons inside the unified bar keep their column layout */
+.unified-action-bar .edge-action-btn {
+  flex-direction: column;
+}
+
+@media (max-width: 720px) {
+  .unified-action-bar {
+    gap: 2px;
+    padding: 3px 6px;
+  }
+  .unified-action-divider {
+    margin: 0 2px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .unified-action-bar {
+    gap: 1px;
+    padding: 2px 4px;
+    border-radius: 18px;
+  }
+  .unified-action-bar .edge-action-label {
+    display: none;
+  }
 }
 
 .quick-add-btn {
