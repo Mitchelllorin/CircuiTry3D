@@ -827,6 +827,20 @@ body.builder-body {
   transform: translateX(-50%);
 }
 
+/* On narrow / portrait screens the unified bar wraps, so push zoom
+   controls further down to avoid overlap. */
+@media (max-width: 480px) {
+  .circuit-zoom-controls {
+    top: calc(
+      var(--builder-ticker-top, 72px) +
+      var(--builder-ticker-height, 32px) +
+      12px +
+      var(--builder-safe-area-top) +
+      90px
+    );
+  }
+}
+
 .circuit-zoom-btn {
   width: 36px;
   height: 36px;
@@ -962,15 +976,17 @@ body.builder-body {
   z-index: var(--z-builder-floats);
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
+  max-width: calc(100vw - 16px);
   background: var(--builder-overlay, rgba(10, 22, 48, 0.88));
   border: 1px solid var(--builder-border, rgba(136, 204, 255, 0.28));
-  border-radius: 28px;
+  border-radius: 18px;
   backdrop-filter: blur(14px);
   box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
-  white-space: nowrap;
 }
 
 /* Divider between logical groups in the unified bar */
@@ -1001,12 +1017,28 @@ body.builder-body {
 
 @media (max-width: 480px) {
   .unified-action-bar {
-    gap: 1px;
-    padding: 2px 4px;
-    border-radius: 18px;
+    gap: 2px;
+    padding: 4px 6px;
+    border-radius: 14px;
+    max-width: calc(100vw - 12px);
   }
   .unified-action-bar .edge-action-label {
     display: none;
+  }
+  .unified-action-bar .edge-action-btn {
+    width: 32px;
+    min-height: 32px;
+    padding: 4px 2px;
+  }
+  .unified-action-bar .quick-add-btn {
+    min-width: 36px;
+    padding: 3px 4px;
+  }
+  .unified-action-bar .quick-add-btn-label {
+    display: none;
+  }
+  .unified-action-divider {
+    height: 20px;
   }
 }
 
