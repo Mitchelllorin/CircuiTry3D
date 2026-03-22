@@ -534,18 +534,7 @@ body.builder-body {
   right: auto;
 }
 
-/* Panel open: shift edge actions clear of the open panel */
-.builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-  left: calc(
-    var(--builder-menu-left-width) + var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
-  );
-}
-
-.builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-  right: calc(
-    var(--builder-menu-right-width) + var(--builder-menu-toggle-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px)
-  );
-}
+/* Panels overlap edge actions when open — no shift; panels have z-index:1000 */
 
 @media (max-width: 720px) {
   .workspace-edge-actions {
@@ -569,17 +558,7 @@ body.builder-body {
     );
   }
 
-  .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-    left: calc(
-      var(--builder-menu-left-width) + var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
-    );
-  }
-
-  .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-    right: calc(
-      var(--builder-menu-right-width) + var(--builder-menu-toggle-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px)
-    );
-  }
+  /* panels overlap edge actions — no shift rules needed at this breakpoint */
 
 }
 
@@ -813,10 +792,7 @@ body.builder-body {
   pointer-events: all;
 }
 
-/* Panel open states don't need to shift zoom — it's in the corner */
-.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  right: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width) + 8px + env(safe-area-inset-right, 0px));
-}
+/* Panels overlap the zoom controls — no shift needed, open panel has z-index:1000 */
 
 .circuit-zoom-btn {
   width: 30px;
@@ -855,18 +831,14 @@ body.builder-body {
 }
 
 /* ── Measurement Tools FAB ──────────────────────────────────────────────────
-   Standalone floating button (green) positioned above the Library panel on
-   the left side.  Opens the Insights/Meters panel for quick DMM access.
+   Positioned at top-left corner, just below the action bar.
+   One tap opens the Insights drawer (DMM, analysis).
    ─────────────────────────────────────────────────────────────────────────── */
 .measure-fab {
   position: fixed;
   left: calc(var(--builder-safe-area-left, 0px) + 8px);
-  bottom: calc(
-    var(--builder-menu-left-height, 280px) +
-    var(--builder-menu-toggle-height, 64px) +
-    12px +
-    var(--builder-safe-area-bottom, 0px)
-  );
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
+  bottom: auto;
   z-index: var(--z-builder-floats);
   width: 46px;
   height: 46px;
@@ -1573,12 +1545,17 @@ body.builder-body {
   align-items: flex-end;
 }
 
+/* Open panels float above zoom controls, FABs, and edge-action buttons */
+.builder-menu-stage.open {
+  z-index: 1000;
+}
+
 /* Left panel — Library: stage clips to toggle-width when closed, expands on open */
 .builder-menu-stage-left {
   left: 0;
   top: 50%;
   bottom: auto;
-  flex-direction: row-reverse; /* in row-reverse at left:0 — toggle fills the stage width when closed */
+  flex-direction: row; /* toggle is first in DOM → sits at x=0 (left edge); nav clips behind it */
   width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
   height: var(--builder-menu-left-height);
   align-items: stretch;
@@ -2019,10 +1996,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   flex-direction: column;
 }
 
-/* Left toggle sits as the last flex item in row-reverse (rightmost visually = left edge) */
-.builder-menu-stage-left .builder-menu-toggle-left {
-  order: 1;
-}
+/* Left toggle is first in DOM with flex-direction:row — sits at x=0 (left edge) naturally */
+/* No order override needed */
 
 /* Right toggle sits as the first flex item in row (leftmost visually = right edge tab) */
 .builder-menu-stage-right .builder-menu-toggle-right {
@@ -4617,10 +4592,10 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-right-height: clamp(260px, 60vh, 520px);
   }
 
-  /* Panels are bottom-anchored; no top/bottom constraints needed */
+  /* Side panels remain centered (top:50%) at all widths */
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    top: auto;
+    top: 50%;
   }
 
   .builder-menu-stage-bottom {
@@ -4657,10 +4632,10 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-right-height: clamp(240px, 58vh, 480px);
   }
 
-  /* Panels are bottom-anchored; clear legacy top/bottom overrides */
+  /* Side panels remain centered at all widths */
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    top: auto;
+    top: 50%;
   }
 
   /* Insights panel: inherit full-width from base styles, only update position */

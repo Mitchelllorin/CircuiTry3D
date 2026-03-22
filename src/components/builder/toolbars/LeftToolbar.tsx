@@ -189,6 +189,22 @@ export function LeftToolbar({
     <div
       className={`builder-menu-stage builder-menu-stage-left${isOpen ? " open" : ""}`}
     >
+      {/* Toggle is first in DOM so it renders at x=0 (left edge) in flex-direction:row */}
+      <button
+        type="button"
+        className="builder-menu-toggle builder-menu-toggle-left"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-label={
+          isOpen ? "Collapse component library" : "Expand component library"
+        }
+        title={
+          isOpen ? "Collapse component library" : "Expand component library"
+        }
+      >
+        <span className="toggle-icon">{isOpen ? "◀" : "▶"}</span>
+        <span className="toggle-text">Library</span>
+      </button>
       <nav
         className="builder-menu builder-menu-left"
         role="navigation"
@@ -308,21 +324,6 @@ export function LeftToolbar({
           </div>
         </div>
       </nav>
-      <button
-        type="button"
-        className="builder-menu-toggle builder-menu-toggle-left"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-label={
-          isOpen ? "Collapse component library" : "Expand component library"
-        }
-        title={
-          isOpen ? "Collapse component library" : "Expand component library"
-        }
-      >
-        <span className="toggle-icon">{isOpen ? "◀" : "▶"}</span>
-        <span className="toggle-text">Library</span>
-      </button>
     </div>
   );
 }

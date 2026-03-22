@@ -1,24 +1,16 @@
 /* ── AI Helper FAB & Chat Panel ─────────────────────────────────────────────
  * Floating action button (FAB) + sliding chat panel for the in-app
- * Circuit AI assistant. Positioned on the right side above the Controls panel.
+ * Circuit AI assistant. Pinned to the top-right corner, just below the action bar.
  * ─────────────────────────────────────────────────────────────────────────── */
 
 /* ── FAB ─────────────────────────────────────────────────────────────────── */
 
 .ai-helper-fab {
   position: fixed;
-  /* Sits above the Controls panel (toggle + panel content) with a small gap */
-  bottom: calc(
-    var(--builder-menu-right-height, 260px) +
-    var(--builder-menu-toggle-height, 64px) +
-    12px +
-    var(--builder-safe-area-bottom, 0px)
-  );
-  /* Centered horizontally over the Controls panel */
-  right: calc(
-    (var(--builder-menu-right-width, 172px) - 46px) / 2 +
-    var(--builder-safe-area-right, 0px)
-  );
+  /* Top-right corner, just below the action bar */
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
+  bottom: auto;
+  right: calc(8px + var(--builder-safe-area-right, 0px));
   z-index: var(--z-ai-helper);
   width: 46px;
   height: 46px;
@@ -404,17 +396,10 @@
 
 @media (max-width: 640px) {
   .ai-helper-fab {
-    /* On small phones: stay above the Controls panel toggle */
-    right: calc(
-      (var(--builder-menu-right-width, 136px) - 46px) / 2 +
-      var(--builder-safe-area-right, 0px)
-    );
-    bottom: calc(
-      var(--builder-menu-right-height, 220px) +
-      var(--builder-menu-toggle-height, 48px) +
-      10px +
-      var(--builder-safe-area-bottom, 0px)
-    );
+    /* On small phones: keep top-right corner, just slightly tighter */
+    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 6px + var(--builder-safe-area-top, 0px));
+    right: calc(6px + var(--builder-safe-area-right, 0px));
+    bottom: auto;
   }
 
   .ai-helper-panel {
