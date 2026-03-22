@@ -3215,67 +3215,6 @@ export default function Builder() {
                 </a>
               )}
             </div>
-            <div className="slider-section">
-              <span className="slider-heading">Wiring Tools</span>
-              <div className="slider-stack">
-                {WIRE_TOOL_ACTIONS.map((action) => {
-                  const isWireToggle = action.action === "toggle-wire-mode";
-                  const isRotateToggle = action.action === "toggle-rotate-mode";
-                  const isCycleRouting = action.action === "cycle-wire-routing";
-                  const isActionActive =
-                    (isWireToggle && modeState.isWireMode) ||
-                    (isRotateToggle && modeState.isRotateMode);
-                  const description = (() => {
-                    if (isWireToggle) {
-                      return modeState.isWireMode
-                        ? "Wire tool active"
-                        : "Activate wire mode to sketch connections";
-                    }
-                    if (isRotateToggle) {
-                      return modeState.isRotateMode
-                        ? "Rotate mode active"
-                        : "Rotate the active component";
-                    }
-                    if (isCycleRouting) {
-                      return `Current routing: ${wireRoutingLabel}`;
-                    }
-                    return action.description;
-                  })();
-
-                  return (
-                    <button
-                      key={action.id}
-                      type="button"
-                      className="slider-btn slider-btn-stacked"
-                      onClick={() =>
-                        triggerBuilderAction(action.action, action.data)
-                      }
-                      disabled={controlsDisabled}
-                      aria-disabled={controlsDisabled}
-                      title={
-                        controlsDisabled
-                          ? controlDisabledTitle
-                          : action.description
-                      }
-                      data-active={isActionActive ? "true" : undefined}
-                      aria-pressed={
-                        isWireToggle || isRotateToggle
-                          ? isActionActive
-                          : undefined
-                      }
-                      data-tutorial-id={
-                        action.action === "toggle-wire-mode"
-                          ? "tutorial-enable-wire"
-                          : undefined
-                      }
-                    >
-                      <span className="slider-label">{action.label}</span>
-                      <span className="slider-description">{description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </nav>
       </div>

@@ -25,7 +25,7 @@
   --builder-menu-left-width: 180px;
   --builder-menu-right-width: 172px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
-  --builder-menu-bottom-height: clamp(260px, 42vh, 380px);
+  --builder-menu-bottom-height: clamp(320px, 65vh, 600px);
   /* Side panel heights — tall enough to scroll through content */
   --builder-menu-left-height: clamp(320px, 65vh, 600px);
   --builder-menu-right-height: clamp(300px, 65vh, 580px);
@@ -2024,14 +2024,15 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 .builder-menu-toggle-bottom {
-  width: 100%;
-  min-width: 0;
+  width: auto;
+  min-width: 80px;
+  max-width: 160px;
   height: var(--builder-menu-toggle-width);
   min-height: var(--builder-menu-toggle-width);
   flex-shrink: 0;
-  padding: 2px 16px;
-  margin: 0;
-  align-self: stretch;
+  padding: 2px 20px;
+  margin: 0 auto;
+  align-self: center;
   writing-mode: horizontal-tb;
   text-orientation: mixed;
   flex-direction: row;

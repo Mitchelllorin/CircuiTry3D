@@ -16,13 +16,9 @@ function subscribeToMediaQuery(
 }
 
 export function useResponsiveLayout() {
-  const [isLeftMenuOpen, setLeftMenuOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return window.innerWidth >= 1024;
-  });
-
+  // Always start closed — maximum workspace on every device/screen size.
+  // User opens panels manually via the edge toggle tabs.
+  const [isLeftMenuOpen, setLeftMenuOpen] = useState(false);
   const [isRightMenuOpen, setRightMenuOpen] = useState(false);
   const [isBottomMenuOpen, setBottomMenuOpen] = useState(false);
 
@@ -34,23 +30,9 @@ export function useResponsiveLayout() {
       return;
     }
 
-    const largeScreenQuery = window.matchMedia("(min-width: 1024px)");
-    const compactScreenQuery = window.matchMedia("(max-width: 900px)");
     const phoneLandscapeQuery = window.matchMedia(
       "(orientation: landscape) and (max-height: 600px)",
     );
-
-    const handleLargeScreen = (event: MediaQueryListEvent) => {
-      if (event.matches) {
-        setLeftMenuOpen(true);
-      }
-    };
-
-    const handleCompactScreen = (event: MediaQueryListEvent) => {
-      if (event.matches) {
-        setLeftMenuOpen(false);
-      }
-    };
 
     const handlePhoneLandscape = (event: MediaQueryListEvent) => {
       if (event.matches) {
@@ -64,28 +46,14 @@ export function useResponsiveLayout() {
       setLeftMenuOpen(false);
       setRightMenuOpen(false);
       setBottomMenuOpen(false);
-    } else if (compactScreenQuery.matches) {
-      setLeftMenuOpen(false);
-    } else if (largeScreenQuery.matches) {
-      setLeftMenuOpen(true);
     }
 
-    const detachLargeScreen = subscribeToMediaQuery(
-      largeScreenQuery,
-      handleLargeScreen,
-    );
-    const detachCompactScreen = subscribeToMediaQuery(
-      compactScreenQuery,
-      handleCompactScreen,
-    );
     const detachPhoneLandscape = subscribeToMediaQuery(
       phoneLandscapeQuery,
       handlePhoneLandscape,
     );
 
     return () => {
-      detachLargeScreen();
-      detachCompactScreen();
       detachPhoneLandscape();
     };
   }, []);
