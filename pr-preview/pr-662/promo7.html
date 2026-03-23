@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — Gameplay Reel</title>
+  <meta name="theme-color" content="#050b1f" />
+  <meta name="description" content="CircuiTry3D in action — 3D circuit builder, atomic zoom, FUSE failure engine. Watch the bot-recorded gameplay reel." />
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --blue:   #88ccff;
+      --orange: #ff8844;
+      --green:  #00ff88;
+      --purple: #c084fc;
+      --red:    #ff4455;
+      --yellow: #ffd060;
+      --bg:     #050b1f;
+      --card:   rgba(13, 25, 60, 0.85);
+      --text:   #f9fafc;
+      --muted:  #9db8ff;
+    }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Canvas layer ──────────────────────────────────────────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Stage container ───────────────────────────────────────── */
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ── Scene base ────────────────────────────────────────────── */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px 64px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.75s ease;
+    }
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── Full-screen video background per scene ────────────────── */
+    .scene-video {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 1.2s ease 0.3s;
+    }
+    .scene.active .scene-video { opacity: 1; }
+
+    /* Dark cinematic overlay above video */
+    .scene-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        linear-gradient(to top,    rgba(5,11,31,0.92) 0%,  rgba(5,11,31,0.35) 40%, transparent 70%),
+        linear-gradient(to bottom, rgba(5,11,31,0.75) 0%,  transparent 30%),
+        linear-gradient(to right,  rgba(5,11,31,0.55) 0%,  transparent 50%);
+    }
+
+    /* Fallback: shown when video fails or hasn't loaded */
+    .scene-fallback {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      display: none;
+      overflow: hidden;
+    }
+
+    /* Screenshot fallback — actual 3D app workspace imagery */
+    @keyframes screenshot-pan {
+      0%   { transform: scale(1.08) translate(0%,    0%   ); }
+      33%  { transform: scale(1.08) translate(-1.5%, -0.8%); }
+      66%  { transform: scale(1.08) translate( 1.2%,  0.6%); }
+      100% { transform: scale(1.08) translate( 0%,    0%   ); }
+    }
+    .scene-fallback img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      animation: screenshot-pan 24s ease-in-out infinite;
+    }
+
+    /* Scene content (text + UI) sits above overlay */
+    .scene-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+      width: 100%;
+      padding: 0 clamp(16px, 5vw, 80px) clamp(80px, 10vh, 120px);
+      pointer-events: none;
+    }
+    /* For scenes with centered content (title, CTA) */
+    .scene-content.centered {
+      justify-content: center;
+      padding-bottom: 0;
+    }
+
+    /* ── Typography helpers ────────────────────────────────────── */
+    .eyebrow {
+      font-size: clamp(0.62rem, 1.8vw, 0.82rem);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 0.4s, transform 0.55s ease 0.4s;
+    }
+    .scene.active .eyebrow { opacity: 1; transform: translateY(0); }
+
+    .headline {
+      font-size: clamp(2.2rem, 7vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      line-height: 1.04;
+      text-align: left;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.6s ease 0.6s, transform 0.6s ease 0.6s;
+      max-width: 900px;
+      text-shadow: 0 2px 24px rgba(5,11,31,0.9);
+    }
+    .scene.active .headline { opacity: 1; transform: translateY(0); }
+
+    .tagline {
+      font-size: clamp(0.88rem, 2.2vw, 1.15rem);
+      color: rgba(249,250,252,0.75);
+      font-weight: 400;
+      text-align: left;
+      max-width: 620px;
+      margin-top: 14px;
+      line-height: 1.65;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease 0.85s, transform 0.6s ease 0.85s;
+      text-shadow: 0 1px 12px rgba(5,11,31,0.8);
+    }
+    .scene.active .tagline { opacity: 1; transform: translateY(0); }
+
+    /* ── Brand colour helpers ──────────────────────────────────── */
+    .c-blue   { color: var(--blue);   text-shadow: 0 0 28px rgba(136,204,255,.7); }
+    .c-orange { color: var(--orange); text-shadow: 0 0 26px rgba(255,136,68,.65); }
+    .c-green  { color: var(--green);  text-shadow: 0 0 28px rgba(0,255,136,.7);  }
+    .c-purple { color: var(--purple); text-shadow: 0 0 24px rgba(192,132,252,.65);}
+    .c-red    { color: var(--red);    text-shadow: 0 0 26px rgba(255,68,85,.65); }
+    .c-yellow { color: var(--yellow); text-shadow: 0 0 22px rgba(255,208,96,.6); }
+
+    /* ── REC badge ─────────────────────────────────────────────── */
+    .rec-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      background: rgba(255,68,85,0.18);
+      border: 1.5px solid rgba(255,68,85,0.5);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 14px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
+    }
+    .scene.active .rec-badge { opacity: 1; transform: translateY(0); }
+    .rec-dot {
+      width: 7px; height: 7px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: rec-blink 1s ease-in-out infinite;
+      box-shadow: 0 0 6px var(--red);
+    }
+    @keyframes rec-blink { 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+
+    /* ── Circuit-type badge (bottom-right) ─────────────────────── */
+    .scene-meta {
+      position: absolute;
+      bottom: clamp(64px,9vh,96px);
+      right: clamp(16px,4vw,60px);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      z-index: 2;
+      opacity: 0;
+      transform: translateX(14px);
+      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
+    }
+    .scene.active .scene-meta { opacity: 1; transform: translateX(0); }
+    .meta-chip {
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1.5px solid;
+      backdrop-filter: blur(6px);
+    }
+    .mc-blue   { color:var(--blue);   border-color:rgba(136,204,255,.5); background:rgba(136,204,255,.12); }
+    .mc-green  { color:var(--green);  border-color:rgba(0,255,136,.4);   background:rgba(0,255,136,.1);   }
+    .mc-orange { color:var(--orange); border-color:rgba(255,136,68,.45); background:rgba(255,136,68,.1);  }
+    .mc-red    { color:var(--red);    border-color:rgba(255,68,85,.5);   background:rgba(255,68,85,.12);  }
+    .mc-purple { color:var(--purple); border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.1); }
+    .mc-yellow { color:var(--yellow); border-color:rgba(255,208,96,.4);  background:rgba(255,208,96,.09); }
+    .meta-timecode {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: rgba(157,184,255,0.5);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Logo wordmark (title + CTA scenes) ───────────────────── */
+    .wordmark {
+      font-size: clamp(3.5rem, 12vw, 8rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      display: flex;
+      gap: 0;
+      filter: drop-shadow(0 0 40px rgba(40,255,190,.4));
+      opacity: 0;
+      transform: scale(0.82);
+      transition: opacity 0.75s ease 0.2s, transform 0.75s cubic-bezier(.34,1.56,.64,1) 0.2s;
+      line-height: 1;
+    }
+    .scene.active .wordmark { opacity: 1; transform: scale(1); }
+
+    /* ── Intro badge (title scene) ─────────────────────────────── */
+    .intro-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(136,204,255,.4);
+      background: rgba(136,204,255,.08);
+      font-size: clamp(0.68rem, 1.8vw, 0.84rem);
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 22px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+    }
+    .scene.active .intro-badge { opacity: 1; transform: translateY(0); }
+
+    /* ── Feature chips ─────────────────────────────────────────── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 26px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.55s ease 1.05s, transform 0.55s ease 1.05s;
+    }
+    .scene.active .chips { opacity: 1; transform: translateY(0); }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: clamp(0.68rem, 1.8vw, 0.84rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: 1.5px solid;
+    }
+    .chip-blue   { border-color:rgba(136,204,255,.5); color:var(--blue);   background:rgba(136,204,255,.08); }
+    .chip-green  { border-color:rgba(0,255,136,.4);   color:var(--green);  background:rgba(0,255,136,.07);  }
+    .chip-orange { border-color:rgba(255,136,68,.45); color:var(--orange); background:rgba(255,136,68,.07); }
+    .chip-red    { border-color:rgba(255,68,85,.45);  color:var(--red);    background:rgba(255,68,85,.07);  }
+    .chip-purple { border-color:rgba(192,132,252,.45);color:var(--purple); background:rgba(192,132,252,.07);}
+
+    /* ── CTA buttons ────────────────────────────────────────────── */
+    .cta-wrap {
+      margin-top: 34px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 1.15s, transform 0.55s ease 1.15s;
+    }
+    .scene.active .cta-wrap { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .btn-primary {
+      display: inline-block;
+      padding: 14px 36px;
+      border-radius: 100px;
+      font-weight: 800;
+      font-size: clamp(0.85rem, 2.2vw, 1rem);
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--green) 100%);
+      color: #050b1f;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 32px rgba(0,255,136,.3), 0 4px 18px rgba(0,0,0,.45);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 44px rgba(0,255,136,.42), 0 6px 24px rgba(0,0,0,.55); }
+    .btn-secondary {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: clamp(0.82rem, 2vw, 0.95rem);
+      letter-spacing: 0.03em;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid rgba(136,204,255,.38);
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease;
+    }
+    .btn-secondary:hover { border-color: rgba(136,204,255,.8); color: var(--blue); }
+
+    /* ── Scene number display (top-left) ───────────────────────── */
+    #scene-counter {
+      position: fixed;
+      top: 20px;
+      left: 68px;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: rgba(157,184,255,.45);
+      letter-spacing: 0.1em;
+      z-index: 100;
+    }
+
+    /* ── Progress bar ───────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      z-index: 100;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 10px rgba(0,255,136,.65);
+    }
+
+    /* ── Scene dots ─────────────────────────────────────────────── */
+    #scene-dots {
+      position: fixed;
+      bottom: 22px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 9px;
+      z-index: 100;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(136,204,255,.22);
+      transition: background 0.3s ease, transform 0.3s ease, width 0.3s ease;
+      cursor: pointer;
+    }
+    .dot.active { background: var(--green); transform: scale(1.35); width: 20px; border-radius: 4px; }
+
+    /* ── Controls ───────────────────────────────────────────────── */
+    #controls {
+      position: fixed;
+      top: 16px; right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+    .ctrl-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(13,25,60,.72);
+      border: 1.5px solid rgba(136,204,255,.3);
+      color: var(--blue);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ctrl-btn:hover { background: rgba(20,42,95,.88); border-color: rgba(136,204,255,.65); }
+
+    /* ── Back link ──────────────────────────────────────────────── */
+    #back-link {
+      position: fixed;
+      top: 18px; left: 16px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: rgba(136,204,255,.5);
+      text-decoration: none;
+      z-index: 100;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.15s ease;
+    }
+    #back-link:hover { color: var(--blue); }
+
+    /* ── Scanlines ─────────────────────────────────────────────── */
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px
+      );
+      opacity: 0.6;
+    }
+
+    /* ── Flare (scene transition) ──────────────────────────────── */
+    #flare {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #flare.flash { opacity: 1; transition: none; }
+
+    /* ══════════════════════════════════════════════════════════════
+       SCENE-SPECIFIC FALLBACK ANIMATIONS
+       Shown when .webm files aren't available yet
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── Falling particles for title ───────────────────────────── */
+    .title-particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-10px) scale(0.8); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.8; }
+      100% { transform: translateY(110vh) scale(1.2); opacity: 0; }
+    }
+    .falling-particle {
+      position: absolute;
+      top: 0;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      animation: fall var(--fall-dur, 5s) linear var(--fall-delay, 0s) infinite;
+      filter: blur(0.5px);
+    }
+
+    /* ── Animated circuit diagram (series) ─────────────────────── */
+    @keyframes e-drift { 0%{left:-2%} 100%{left:102%} }
+    @keyframes heat-flicker { 0%,100%{filter:brightness(1) saturate(1)} 25%{filter:brightness(1.6) saturate(1.8)} 75%{filter:brightness(0.8) saturate(0.7)} }
+    @keyframes pulse-glow { 0%,100%{opacity:0.6} 50%{opacity:1} }
+
+    /* ── CTA scene radial glow ─────────────────────────────────── */
+    .cta-bg-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(ellipse 75% 55% at 50% 50%, rgba(0,255,136,0.07) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 30% 70%, rgba(136,204,255,0.05) 0%, transparent 60%);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="scanlines"></div>
+<div id="flare"></div>
+
+<a id="back-link" href="/#/" target="_top">← CircuiTry3D</a>
+
+<div id="scene-counter">01 / 08</div>
+
+<div id="controls">
+  <button class="ctrl-btn" id="btn-prev" title="Previous scene">&#8592;</button>
+  <button class="ctrl-btn" id="btn-play" title="Pause / Play">&#10074;&#10074;</button>
+  <button class="ctrl-btn" id="btn-next" title="Next scene">&#8594;</button>
+</div>
+
+<div id="progress-bar" style="width:0%"></div>
+<div id="scene-dots"></div>
+
+<!-- ═════════════════════════════════════════════════════════════
+     SCENES
+═════════════════════════════════════════════════════════════ -->
+<div id="stage">
+
+  <!-- ─── SCENE 0 · Title / Hook ─────────────────────────────── -->
+  <div class="scene" id="scene-0">
+
+    <!-- Particle rain background -->
+    <div class="title-particles" id="title-particles" aria-hidden="true"></div>
+    <!-- bg-canvas handles the network animation -->
+
+    <div class="scene-content centered">
+      <div class="intro-badge">&#9654;&nbsp; Bot-Recorded · Live Gameplay · 1920×1080</div>
+      <div class="wordmark">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="text-align:center; max-width:580px; margin-top:18px; color:rgba(249,250,252,0.65); font-size:clamp(1rem,2.8vw,1.3rem); font-weight:300;">
+        Build. Simulate. Fail safely.<br>
+        <span style="color:rgba(157,184,255,.45); font-size:0.8em;">Real circuits · real physics · down to the atomic level.</span>
+      </p>
+      <div class="chips">
+        <span class="chip chip-blue">Series Circuits</span>
+        <span class="chip chip-green">Parallel Circuits</span>
+        <span class="chip chip-red">Thermal Failure</span>
+        <span class="chip chip-purple">Mixed Networks</span>
+        <span class="chip chip-orange">5 Zoom Tiers</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 1 · Series Circuit ───────────────────────────── -->
+  <div class="scene" id="scene-1">
+
+    <video class="scene-video" src="./promo-footage/scene-01-series.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay"></div>
+
+    <div class="scene-fallback" id="fb-series">
+      <img src="./screenshots/tablet-screenshot-1.png" alt="" aria-hidden="true">
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC · Scene 01</div>
+      <h1 class="headline"><span class="c-green">Current</span> Flows<br>at Every Scale</h1>
+      <p class="tagline">Three resistors in series. A 24 V battery drives electrons<br>
+        from the macro overview all the way down to the FCC atomic lattice.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-green">✅ Series Circuit</div>
+      <div class="meta-chip mc-blue">24 V · 40 mA · 600 Ω</div>
+      <div class="meta-timecode">SCENE-01 · 1920×1080 · WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 2 · Parallel Circuit ─────────────────────────── -->
+  <div class="scene" id="scene-2">
+
+    <video class="scene-video" src="./promo-footage/scene-02-parallel.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay"></div>
+
+    <div class="scene-fallback" id="fb-parallel">
+      <img src="./screenshots/tablet-screenshot-2.png" alt="" aria-hidden="true">
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC · Scene 02</div>
+      <h1 class="headline"><span class="c-blue">Electrons</span> Take<br>Every Path</h1>
+      <p class="tagline">Three parallel branches share the same voltage rail.<br>
+        Independent electron streams split and rejoin at the nodes.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-blue">⚡ Parallel Circuit</div>
+      <div class="meta-chip mc-green">Three Independent Paths</div>
+      <div class="meta-timecode">SCENE-02 · 1920×1080 · WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 3 · Overload / Failure ────────────────────────── -->
+  <div class="scene" id="scene-3">
+
+    <video class="scene-video" src="./promo-footage/scene-03-overload.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <!-- Warmer, red-tinted overlay for the failure scene -->
+    <div class="scene-overlay" style="background:
+      linear-gradient(to top,    rgba(30,5,5,0.95) 0%, rgba(20,4,4,0.4) 40%, transparent 70%),
+      linear-gradient(to bottom, rgba(20,4,4,0.8) 0%, transparent 35%),
+      linear-gradient(to right,  rgba(20,4,4,0.55) 0%, transparent 55%);">
+    </div>
+
+    <div class="scene-fallback" id="fb-overload">
+      <img src="./screenshots/tablet-screenshot-1.png" alt="" aria-hidden="true">
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC · Scene 03</div>
+      <h1 class="headline"><span class="c-red">When Circuits</span><br>Fail… It's Beautiful</h1>
+      <p class="tagline">A 1 Ω resistor on 24 V dissipates 576 W. The FUSE thermal engine<br>
+        accumulates heat and triggers arc flash — all in real time.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-red">🔥 Thermal Failure</div>
+      <div class="meta-chip mc-orange">576 W · τ = 5 s</div>
+      <div class="meta-timecode">SCENE-03 · 1920×1080 · WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 4 · Mixed Circuit ─────────────────────────────── -->
+  <div class="scene" id="scene-4">
+
+    <video class="scene-video" src="./promo-footage/scene-04-mixed.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay"></div>
+
+    <div class="scene-fallback" id="fb-mixed">
+      <img src="./screenshots/tablet-screenshot-2.png" alt="" aria-hidden="true">
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC · Scene 04</div>
+      <h1 class="headline"><span class="c-purple">Advanced.</span><br>Mastered.</h1>
+      <p class="tagline">Seven components — series trunk, parallel branch box, LED return path.<br>
+        Labels on. Simulation running. The full W.I.R.E. methodology applied.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-purple">🔬 Series-Parallel</div>
+      <div class="meta-chip mc-blue">7 Components · KVL / KCL</div>
+      <div class="meta-timecode">SCENE-04 · 1920×1080 · WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 5 · Promo Page Sweep ──────────────────────────── -->
+  <div class="scene" id="scene-5">
+
+    <video class="scene-video" src="./promo-footage/scene-05-promo.webm"
+           autoplay muted loop playsinline preload="auto"
+           onerror="this.style.display='none'"></video>
+    <div class="scene-overlay" style="background:
+      linear-gradient(to top,    rgba(5,11,31,0.88) 0%, rgba(5,11,31,0.3) 40%, transparent 70%),
+      linear-gradient(to bottom, rgba(5,11,31,0.65) 0%, transparent 35%),
+      linear-gradient(to right,  rgba(5,11,31,0.5)  0%, transparent 55%);">
+    </div>
+
+    <div class="scene-fallback" id="fb-promo" style="background:linear-gradient(135deg,#040c1e,#071020);">
+      <canvas id="canvas-promo" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+    <div class="scene-content">
+      <div class="rec-badge"><div class="rec-dot"></div>REC · Scene 05</div>
+      <h1 class="headline">The <span class="c-yellow">Full Picture</span></h1>
+      <p class="tagline">A cinematic sweep of the CircuiTry3D landing page — from the hero<br>
+        all the way to the call to action. See everything the app has to offer.</p>
+    </div>
+    <div class="scene-meta">
+      <div class="meta-chip mc-yellow">🎬 Promo Sweep</div>
+      <div class="meta-chip mc-blue">Landing Page · Full Scroll</div>
+      <div class="meta-timecode">SCENE-05 · 1920×1080 · WEBM</div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 6 · Zoom Tiers Explainer ──────────────────────── -->
+  <div class="scene" id="scene-6">
+    <!-- Background reuses the circuit network canvas -->
+    <div class="scene-content centered">
+      <p class="eyebrow">Five Zoom Tiers · One Circuit</p>
+      <h1 class="headline" style="text-align:center;">
+        From <span class="c-blue">System</span> to <span class="c-yellow">Quantum</span>
+      </h1>
+      <p class="tagline" style="text-align:center;">
+        Macro → Close → Atomic → Deep-Atomic → Quantum.<br>
+        Every tier reveals a new layer of physics — all from the same circuit.
+      </p>
+      <div class="chips" style="margin-top:28px;">
+        <span class="chip chip-blue">Macro d&nbsp;&gt;&nbsp;8</span>
+        <span class="chip chip-green">Close d&nbsp;&lt;&nbsp;8</span>
+        <span class="chip chip-purple">Atomic d&nbsp;&lt;&nbsp;3</span>
+        <span class="chip chip-orange">Deep d&nbsp;&lt;&nbsp;0.8</span>
+        <span class="chip" style="border-color:rgba(255,208,96,.45);color:var(--yellow);background:rgba(255,208,96,.08);">Quantum d&nbsp;&lt;&nbsp;0.3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SCENE 7 · CTA ────────────────────────────────────────── -->
+  <div class="scene" id="scene-7">
+    <div class="cta-bg-glow" aria-hidden="true"></div>
+
+    <div class="scene-content centered">
+      <div class="intro-badge" style="border-color:rgba(0,255,136,.45); background:rgba(0,255,136,.07); color:var(--green);">
+        &#9889;&nbsp; No account required
+      </div>
+      <div class="wordmark" style="font-size:clamp(2.5rem,9vw,6rem);">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="text-align:center; max-width:520px; color:rgba(249,250,252,0.6); font-size:clamp(0.9rem,2.2vw,1.1rem);">
+        Build your first circuit in seconds.<br>
+        Watch electricity illuminate — from macro to quantum.
+      </p>
+      <div class="cta-wrap">
+        <a href="/#/app" class="btn-primary">⚡ Start Building</a>
+        <a href="/#/practice" class="btn-secondary">🎓 Try Practice Mode</a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #stage -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   SCENE ENGINE
+══════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  const SCENE_COUNT = 8;
+  const SCENE_MS    = 8000;   /* ms per scene */
+  const TRANSIT_MS  = 750;
+
+  /* ── State ────────────────────────────────────────────────── */
+  var currentScene = 0;
+  var playing      = true;
+  var timerId      = null;
+  var sceneStart   = performance.now();
+
+  /* ── DOM ──────────────────────────────────────────────────── */
+  var stages   = Array.from(document.querySelectorAll('.scene'));
+  var dotsEl   = document.getElementById('scene-dots');
+  var progBar  = document.getElementById('progress-bar');
+  var btnPlay  = document.getElementById('btn-play');
+  var flare    = document.getElementById('flare');
+  var counter  = document.getElementById('scene-counter');
+
+  /* ── Build dots ───────────────────────────────────────────── */
+  for (var i = 0; i < SCENE_COUNT; i++) {
+    (function (idx) {
+      var d = document.createElement('div');
+      d.className = 'dot' + (idx === 0 ? ' active' : '');
+      d.addEventListener('click', function () { goTo(idx, true); });
+      dotsEl.appendChild(d);
+    }(i));
+  }
+  function getDots() { return Array.from(dotsEl.querySelectorAll('.dot')); }
+
+  /* ── Flare flash ──────────────────────────────────────────── */
+  function triggerFlare() {
+    flare.classList.add('flash');
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { flare.classList.remove('flash'); });
+    });
+  }
+
+  /* ── Update counter ───────────────────────────────────────── */
+  function updateCounter(idx) {
+    counter.textContent = String(idx + 1).padStart(2, '0') + ' / 0' + SCENE_COUNT;
+  }
+
+  /* ── Go to scene ──────────────────────────────────────────── */
+  function goTo(idx, resetTimer) {
+    resetTimer = resetTimer || false;
+    var prev = currentScene;
+    currentScene = (idx + SCENE_COUNT) % SCENE_COUNT;
+    stages[prev].classList.remove('active');
+    stages[currentScene].classList.add('active');
+    getDots().forEach(function (d, i) { d.classList.toggle('active', i === currentScene); });
+    updateCounter(currentScene);
+    triggerFlare();
+    renderMode = currentScene;
+    /* sync videos: pause the old scene's video and play the new one */
+    var oldVid = stages[prev].querySelector('video');
+    var newVid = stages[currentScene].querySelector('video');
+    if (oldVid) oldVid.pause();
+    if (newVid) { newVid.currentTime = 0; newVid.play().catch(function(){}); }
+    if (resetTimer) {
+      clearTimeout(timerId);
+      sceneStart = performance.now();
+      if (playing) scheduleNext();
+    }
+  }
+
+  function advance() {
+    goTo(currentScene + 1);
+    sceneStart = performance.now();
+    if (playing) scheduleNext();
+  }
+  function scheduleNext() {
+    clearTimeout(timerId);
+    timerId = setTimeout(advance, SCENE_MS);
+  }
+
+  /* ── Progress bar tick ────────────────────────────────────── */
+  function tickProgress() {
+    if (playing) {
+      var elapsed = performance.now() - sceneStart;
+      var pct = Math.min(100, (elapsed / SCENE_MS) * 100);
+      progBar.style.width = pct + '%';
+    }
+    requestAnimationFrame(tickProgress);
+  }
+
+  /* ── Play / Pause ─────────────────────────────────────────── */
+  function togglePlay() {
+    playing = !playing;
+    btnPlay.innerHTML = playing ? '&#10074;&#10074;' : '&#9654;';
+    if (playing) {
+      sceneStart = performance.now() - (parseFloat(progBar.style.width) / 100) * SCENE_MS;
+      scheduleNext();
+    } else {
+      clearTimeout(timerId);
+    }
+  }
+
+  /* ── Controls ─────────────────────────────────────────────── */
+  document.getElementById('btn-prev').addEventListener('click', function () { goTo(currentScene - 1, true); });
+  document.getElementById('btn-next').addEventListener('click', function () { goTo(currentScene + 1, true); });
+  btnPlay.addEventListener('click', togglePlay);
+
+  /* ── Keyboard nav ─────────────────────────────────────────── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(currentScene + 1, true);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(currentScene - 1, true);
+    if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
+  });
+
+  /* ── Fallback detection: show fallback div when video errors ─ */
+  document.querySelectorAll('.scene-video').forEach(function (vid) {
+    var fb = vid.parentElement.querySelector('.scene-fallback');
+    if (!fb) return;
+    vid.addEventListener('error', function () {
+      vid.style.display = 'none';
+      fb.style.display  = 'block';
+    });
+    /* Also show fallback if video stalls on load */
+    setTimeout(function () {
+      if (vid.readyState === 0) {
+        vid.style.display = 'none';
+        fb.style.display  = 'block';
+      }
+    }, 3500);
+  });
+
+  /* ── Boot ─────────────────────────────────────────────────── */
+  stages[0].classList.add('active');
+  updateCounter(0);
+  scheduleNext();
+  tickProgress();
+
+  /* Fallback canvas animations are added below. */
+
+  /* ══════════════════════════════════════════════════════════════
+     SCENE 5 FALLBACK CANVAS ANIMATION — PROMO PAGE SWEEP
+     Shown when scene-05-promo.webm hasn't been recorded yet.
+  ══════════════════════════════════════════════════════════════ */
+  (function () {
+    'use strict';
+    var TAU = Math.PI * 2;
+
+    function makeCanvas(id) {
+      var el = document.getElementById(id);
+      if (!el) return null;
+      var ctx = el.getContext('2d');
+      function resize() {
+        var p = el.parentElement;
+        el.width  = p ? (p.offsetWidth  || window.innerWidth)  : window.innerWidth;
+        el.height = p ? (p.offsetHeight || window.innerHeight) : window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      return { el: el, ctx: ctx, resize: resize,
+               get W() { return el.width; }, get H() { return el.height; } };
+    }
+
+    function glowDot(ctx, x, y, r, color, alpha) {
+      ctx.save();
+      ctx.shadowColor = color; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = (alpha !== undefined ? alpha : 1);
+      ctx.fill(); ctx.restore();
+    }
+
+    function hud(ctx, W, H, msg, color) {
+      ctx.save();
+      ctx.font = '700 12px "Courier New",monospace';
+      ctx.fillStyle = color || 'rgba(0,200,255,0.45)';
+      ctx.textAlign = 'center';
+      ctx.fillText(msg, W / 2, H - 22);
+      ctx.restore();
+    }
+
+    var s5 = makeCanvas('canvas-promo');
+    if (s5) {
+      var t5 = 0;
+      var FEATURES = ['\u26A1 3D Circuit Builder', '\uD83D\uDD2C 5-Tier Zoom', '\uD83D\uDCA5 FUSE\u2122 Failure', '\uD83D\uDCD0 Schematic Mode', '\uD83C\uDF93 Classroom Tools', '\uD83D\uDD79\uFE0F Practice Arcade'];
+      var orbs5 = [];
+      for (var oi = 0; oi < 60; oi++) {
+        orbs5.push({
+          x: Math.random(), y: Math.random(),
+          vx: (Math.random() - 0.5) * 0.0003,
+          vy: (Math.random() - 0.5) * 0.0003,
+          r: 1 + Math.random() * 3,
+          col: ['#88ccff','#00ff88','#c084fc','#ffd060','#ff8844'][Math.floor(Math.random()*5)],
+          phase: Math.random() * TAU
+        });
+      }
+
+      (function loop5() {
+        s5.resize();
+        var ctx = s5.ctx, W = s5.W, H = s5.H;
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.fillStyle = 'rgba(4,13,26,1)'; ctx.fillRect(0, 0, W, H);
+
+        orbs5.forEach(function(o) {
+          o.x = ((o.x + o.vx) % 1 + 1) % 1;
+          o.y = ((o.y + o.vy) % 1 + 1) % 1;
+          var a = 0.25 + 0.15 * Math.sin(t5 * 1.2 + o.phase);
+          glowDot(ctx, o.x * W, o.y * H, o.r, o.col, a);
+        });
+
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        for (var ai = 0; ai < orbs5.length; ai++) {
+          for (var aj = ai+1; aj < orbs5.length; aj++) {
+            var dx = (orbs5[aj].x - orbs5[ai].x) * W;
+            var dy = (orbs5[aj].y - orbs5[ai].y) * H;
+            var dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < W * 0.18) {
+              ctx.strokeStyle = '#88ccff'; ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              ctx.moveTo(orbs5[ai].x*W, orbs5[ai].y*H);
+              ctx.lineTo(orbs5[aj].x*W, orbs5[aj].y*H);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.restore();
+
+        var wScale = 1 + 0.04 * Math.sin(t5 * 0.8);
+        ctx.save();
+        ctx.translate(W/2, H * 0.38);
+        ctx.scale(wScale, wScale);
+        var wFontSize = Math.max(32, Math.min(W * 0.075, 72));
+        ctx.font = '900 ' + wFontSize + 'px "Segoe UI",Arial,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 24;
+        ctx.shadowColor = '#88ccff';
+        ctx.fillStyle = '#88ccff'; ctx.fillText('Circui', -W*0.14, 0);
+        ctx.shadowColor = '#ff8844';
+        ctx.fillStyle = '#ff8844'; ctx.fillText('Try', W*0.04, 0);
+        ctx.shadowColor = '#00ff88';
+        ctx.fillStyle = '#00ff88'; ctx.fillText('3D', W*0.165, 0);
+        ctx.restore();
+
+        ctx.save();
+        var tagA = 0.5 + 0.25 * Math.sin(t5 * 0.7 + 1);
+        ctx.globalAlpha = tagA;
+        ctx.font = '600 ' + Math.max(12, W * 0.018) + 'px "Courier New",monospace';
+        ctx.fillStyle = '#9db8ff'; ctx.textAlign = 'center';
+        ctx.fillText('BUILD  \u00B7  SIMULATE  \u00B7  MASTER', W/2, H * 0.5);
+        ctx.restore();
+
+        var chipOrbitR = Math.min(W, H) * 0.28;
+        FEATURES.forEach(function(feat, fi) {
+          var angle = (fi / FEATURES.length) * TAU + t5 * 0.18;
+          var cx = W/2 + Math.cos(angle) * chipOrbitR;
+          var cy = H * 0.62 + Math.sin(angle) * chipOrbitR * 0.45;
+          var chipA = 0.5 + 0.35 * Math.sin(t5 * 1.5 + fi * 1.1);
+          ctx.save();
+          ctx.globalAlpha = chipA;
+          ctx.font = '700 ' + Math.max(10, W * 0.013) + 'px "Segoe UI",Arial,sans-serif';
+          ctx.textAlign = 'center';
+          var tw = ctx.measureText(feat).width;
+          var ph = Math.max(8, W*0.012);
+          ctx.fillStyle = 'rgba(136,204,255,0.1)';
+          ctx.shadowColor = '#88ccff'; ctx.shadowBlur = 10;
+          var rx2 = cx - tw/2 - ph*1.8, ry2 = cy - ph - 2, rw2 = tw + ph*3.6, rh2 = ph*2 + 4;
+          ctx.beginPath();
+          if (ctx.roundRect) { ctx.roundRect(rx2, ry2, rw2, rh2, rh2/2); } else { ctx.rect(rx2, ry2, rw2, rh2); }
+          ctx.fill();
+          ctx.fillStyle = '#cce8ff';
+          ctx.fillText(feat, cx, cy + ph * 0.4);
+          ctx.restore();
+        });
+
+        var btnA = 0.7 + 0.3 * Math.sin(t5 * 1.1);
+        ctx.save();
+        ctx.globalAlpha = btnA;
+        ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 20;
+        var btnW = Math.min(W*0.3, 200), btnH = Math.max(32, H*0.055);
+        var btnX = W/2 - btnW/2, btnY = H*0.84;
+        var grd = ctx.createLinearGradient(btnX, btnY, btnX+btnW, btnY+btnH);
+        grd.addColorStop(0, 'rgba(0,255,136,0.85)'); grd.addColorStop(1, 'rgba(0,180,255,0.75)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        if (ctx.roundRect) { ctx.roundRect(btnX, btnY, btnW, btnH, btnH/2); } else { ctx.rect(btnX, btnY, btnW, btnH); }
+        ctx.fill();
+        ctx.font = '800 ' + Math.max(12, btnH*0.38) + 'px "Segoe UI",Arial,sans-serif';
+        ctx.textAlign = 'center'; ctx.fillStyle = '#050b1f'; ctx.shadowBlur = 0;
+        ctx.fillText('\u26A1 Launch Builder', W/2, btnY + btnH*0.65);
+        ctx.restore();
+
+        hud(ctx, W, H, 'CIRCUITRY3D  \u00B7  ILLUMINATE ELECTRICITY', 'rgba(157,184,255,0.4)');
+        t5 += 0.016;
+        requestAnimationFrame(loop5);
+      }());
+    }
+
+  }()); /* end scene 5 fallback canvas animation */
+
+  /* ══════════════════════════════════════════════════════════
+     BACKGROUND CANVAS — circuit network animation
+     (scene-adaptive, same engine as promo5)
+  ══════════════════════════════════════════════════════════ */
+  var canvas = document.getElementById('bg-canvas');
+  var ctx    = canvas.getContext('2d');
+
+  var W, H;
+  var globalTime = 0;
+  var renderMode = 0;
+
+  var COLORS = [
+    'rgba(136,204,255,',
+    'rgba(0,255,136,',
+    'rgba(192,132,252,',
+    'rgba(255,208,96,',
+    'rgba(255,136,68,',
+  ];
+  function randColor() { return COLORS[Math.floor(Math.random() * COLORS.length)]; }
+  function rnd(lo, hi) { return lo + Math.random() * (hi - lo); }
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* ── Circuit network nodes & particles ─────────────────── */
+  var MAX_NODES     = 26;
+  var MAX_PARTICLES = 200;
+  var nodes     = [];
+  var particles = [];
+
+  function buildNodes() {
+    nodes.length = 0;
+    for (var i = 0; i < MAX_NODES; i++) {
+      nodes.push({
+        x:     rnd(0.06 * W, 0.94 * W),
+        y:     rnd(0.06 * H, 0.94 * H),
+        vx:    rnd(-0.28, 0.28),
+        vy:    rnd(-0.28, 0.28),
+        r:     rnd(3, 5.5),
+        pulse: rnd(0, Math.PI * 2),
+        color: randColor(),
+      });
+    }
+  }
+
+  function spawnParticle() {
+    if (particles.length >= MAX_PARTICLES) return;
+    var src = nodes[Math.floor(Math.random() * nodes.length)];
+    var dst = nodes[Math.floor(Math.random() * nodes.length)];
+    if (src === dst) return;
+    particles.push({ src: src, dst: dst, t: 0, speed: rnd(0.004, 0.011), color: src.color, trail: [] });
+  }
+
+  function drawCircuitNetwork(alpha) {
+    nodes.forEach(function (n) {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    });
+    for (var i = 0; i < nodes.length; i++) {
+      for (var j = i + 1; j < nodes.length; j++) {
+        var dx = nodes[j].x - nodes[i].x;
+        var dy = nodes[j].y - nodes[i].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > Math.min(W, H) * 0.27) continue;
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.strokeStyle = 'rgba(136,204,255,' + (0.055 * alpha) + ')';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+    nodes.forEach(function (n) {
+      var pulse = 0.75 + 0.25 * Math.sin(globalTime * 1.8 + n.pulse);
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = n.color + (0.5 * alpha) + ')';
+      ctx.fill();
+    });
+    if (Math.random() < 0.14) spawnParticle();
+    for (var k = particles.length - 1; k >= 0; k--) {
+      var p = particles[k];
+      p.t += p.speed;
+      if (p.t >= 1) { particles.splice(k, 1); continue; }
+      var mx = p.dst.x, my = p.src.y;
+      var px, py;
+      if (p.t < 0.5) {
+        px = p.src.x + (mx - p.src.x) * (p.t / 0.5);
+        py = p.src.y;
+      } else {
+        px = mx;
+        py = my + (p.dst.y - my) * ((p.t - 0.5) / 0.5);
+      }
+      p.trail.push({ x: px, y: py });
+      if (p.trail.length > 10) p.trail.shift();
+      p.trail.forEach(function (pt, ti) {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 2 * (ti / p.trail.length), 0, Math.PI * 2);
+        ctx.fillStyle = p.color + ((ti / p.trail.length) * 0.55 * alpha) + ')';
+        ctx.fill();
+      });
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + (0.88 * alpha) + ')';
+      ctx.fill();
+    }
+  }
+
+  /* ── Lattice mode (atomic/overload scenes) ──────────────── */
+  function drawLatticeBg(alpha) {
+    var cols = 14, rows = 8;
+    var spacingX = W / (cols - 1);
+    var spacingY = H / (rows - 1);
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var vibAmp = 3.5;
+        var ox = Math.sin(globalTime * 1.4 + r * 1.1 + c * 0.7) * vibAmp;
+        var oy = Math.cos(globalTime * 1.2 + c * 0.9 + r * 1.3) * vibAmp;
+        var x = c * spacingX + ox;
+        var y = r * spacingY + oy;
+        if (c < cols - 1) {
+          var nx = (c + 1) * spacingX + Math.sin(globalTime * 1.4 + r * 1.1 + (c + 1) * 0.7) * vibAmp;
+          ctx.beginPath();
+          ctx.moveTo(x, y); ctx.lineTo(nx, y);
+          ctx.strokeStyle = 'rgba(136,204,255,' + (0.065 * alpha) + ')';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+        var pulse = 0.8 + 0.2 * Math.sin(globalTime * 2.2 + r * 0.8 + c * 1.1);
+        var grad = ctx.createRadialGradient(x, y, 0, x, y, 6 * pulse);
+        grad.addColorStop(0, 'rgba(136,204,255,' + (0.42 * alpha) + ')');
+        grad.addColorStop(1, 'rgba(136,204,255,0)');
+        ctx.beginPath();
+        ctx.arc(x, y, 6 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+    }
+    var eCount = 12;
+    for (var i = 0; i < eCount; i++) {
+      var drift = ((globalTime * 55 + i * (W / eCount)) % (W + 20)) - 10;
+      var eyFixed = ((i * H / eCount) + globalTime * 8) % H;
+      ctx.beginPath();
+      ctx.arc(drift, eyFixed, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,255,136,' + (0.6 * alpha) + ')';
+      ctx.fill();
+    }
+  }
+
+  /* ── Main render loop ────────────────────────────────────── */
+  function renderBg() {
+    ctx.clearRect(0, 0, W, H);
+    globalTime += 0.016;
+
+    /* For video-background scenes (1-5), dial back the canvas animation
+       so it doesn't compete with the video. For text-only scenes (0,6,7) use full alpha. */
+    var alpha = (renderMode >= 1 && renderMode <= 5) ? 0.25 : 1.0;
+
+    if (renderMode === 3) {
+      /* Overload scene — use the lattice for extra drama */
+      drawLatticeBg(alpha);
+    } else {
+      drawCircuitNetwork(alpha);
+    }
+
+    requestAnimationFrame(renderBg);
+  }
+
+  buildNodes();
+  renderBg();
+
+}());
+</script>
+</body>
+</html>
