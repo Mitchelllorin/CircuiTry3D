@@ -5377,3 +5377,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     transition: none !important;
   }
 }
+.workspace * {
+  outline: 1px solid red !important;
+}
