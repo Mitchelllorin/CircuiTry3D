@@ -1624,8 +1624,9 @@ body.builder-body {
 }
 
 /* Left sidebar - show/hide on slide */
-
-
+.builder-menu-stage-left.open .builder-menu {
+  pointer-events: auto;
+}
 
 /* Right sidebar - show/hide on slide */
 .builder-menu-stage-right.open .builder-menu {
@@ -5376,4 +5377,53 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .builder-intro-dialog-dot {
     transition: none !important;
   }
+}
+
+/* ── Onboarding "Start Editing" chip ─────────────────────────────────────────
+ * Fixed pill at bottom-center, appears after the payoff banner hides to let
+ * the user unlock the circuit for editing.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.onboarding-edit-chip-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: calc(60px + var(--builder-safe-area-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 1100;          /* above panels (1000) */
+  pointer-events: auto;
+}
+
+.onboarding-edit-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: 1.5px solid rgba(0, 255, 136, 0.55);
+  border-radius: 28px;
+  background: rgba(10, 24, 48, 0.92);
+  color: rgba(0, 255, 136, 0.95);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow:
+    0 0 14px rgba(0, 255, 136, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+  animation: chip-pulse 2s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.onboarding-edit-chip:hover,
+.onboarding-edit-chip:focus-visible {
+  border-color: rgba(0, 255, 136, 0.8);
+  background: rgba(10, 24, 48, 0.96);
+  box-shadow:
+    0 0 20px rgba(0, 255, 136, 0.35),
+    0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes chip-pulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(0, 255, 136, 0.25), 0 2px 8px rgba(0, 0, 0, 0.4); }
+  50%      { box-shadow: 0 0 22px rgba(0, 255, 136, 0.4),  0 2px 10px rgba(0, 0, 0, 0.4); }
 }

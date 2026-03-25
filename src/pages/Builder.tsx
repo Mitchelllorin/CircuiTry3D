@@ -1595,7 +1595,7 @@ export default function Builder() {
       setWorkspacePanelOpen(false);
       setActiveWorkspacePanelMode(null);
       setWorkspaceModeWithGlobalSync("build");
-    };setWorkspaceModeWithGlobalSync("build");
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -2218,6 +2218,29 @@ export default function Builder() {
       window.clearTimeout(timer);
     };
   }, [isCurrentFlowPayoffVisible]);
+
+  // Safety net: auto-unlock if the onboarding lock persists for more than 25s
+  // after the payoff banner has been dismissed.  This prevents users from
+  // getting permanently stuck if the "Start Editing" chip is not visible or
+  // tappable for any reason (CSS conflict, z-index overlap, etc.).
+  useEffect(() => {
+    if (
+      !isOnboardingLocked ||
+      isCurrentFlowPayoffVisible ||
+      isIntroDialogVisible
+    ) {
+      return;
+    }
+
+    const safetyTimer = window.setTimeout(() => {
+      setOnboardingLocked(false);
+      setCircuitLocked(false);
+    }, 25000);
+
+    return () => {
+      window.clearTimeout(safetyTimer);
+    };
+  }, [isOnboardingLocked, isCurrentFlowPayoffVisible, isIntroDialogVisible]);
 
   const activeWireProfilePayload = useMemo(
     () => toWireProfileBridgePayload(activeWireProfile),
