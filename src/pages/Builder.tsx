@@ -1595,7 +1595,7 @@ export default function Builder() {
       setWorkspacePanelOpen(false);
       setActiveWorkspacePanelMode(null);
       setWorkspaceModeWithGlobalSync("build");
-    };
+    };setWorkspaceModeWithGlobalSync("build");
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
