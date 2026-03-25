@@ -12723,8 +12723,19 @@ Made with ? for visual learners everywhere!
             // On slow Android WebViews init() can take longer than expected;
             // addComponent() may be called via postMessage before the scene is ready.
             if (!scene || !renderer) {
-                console.warn('[Builder] addComponent: scene not ready — skipping');
-                return;
+                console.error('[Builder] addComponent: scene/renderer is NULL — attempting recovery init()');
+                // Attempt a recovery init if it hasn't been tried yet
+                try {
+                    init();
+                } catch (e) {
+                    console.error('[Builder] Recovery init failed:', e);
+                }
+                // If still null after recovery, give up
+                if (!scene || !renderer) {
+                    console.error('[Builder] addComponent: scene STILL null after recovery — cannot add', type);
+                    return;
+                }
+                console.info('[Builder] Recovery init succeeded — continuing addComponent');
             }
             saveState(); // Save for undo
 
@@ -12770,8 +12781,12 @@ Made with ? for visual learners everywhere!
         function addJunction() {
             // Guard: scene must exist before Three.js operations.
             if (!scene || !renderer) {
-                console.warn('[Builder] addJunction: scene not ready — skipping');
-                return;
+                console.error('[Builder] addJunction: scene/renderer is NULL — attempting recovery init()');
+                try { init(); } catch (e) { console.error('[Builder] Recovery init failed:', e); }
+                if (!scene || !renderer) {
+                    console.error('[Builder] addJunction: scene STILL null after recovery — cannot add junction');
+                    return;
+                }
             }
             saveState(); // Save for undo
 

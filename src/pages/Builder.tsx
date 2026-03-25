@@ -2235,7 +2235,7 @@ export default function Builder() {
     const safetyTimer = window.setTimeout(() => {
       setOnboardingLocked(false);
       setCircuitLocked(false);
-    }, 25000);
+    }, 5000);
 
     return () => {
       window.clearTimeout(safetyTimer);
