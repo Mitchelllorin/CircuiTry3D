@@ -6940,14 +6940,10 @@ body.android-optimized .zoom-btn {
                 // THREE.SRGBColorSpace is undefined in r128 (assigned as undefined,
                 // which has no effect on rendering).
                 renderer.outputColorSpace = THREE.SRGBColorSpace;
-                // r128-compatible API — essential for correct gamma-corrected colours
-                // on Android WebView.  Without this, all PBR materials (MeshStandard-
-                // Material) and the scene as a whole render in LinearEncoding: colours
-                // appear noticeably dimmer and the grid can look almost invisible
-                // against the dark background.  THREE.sRGBEncoding = 3001 in r128.
-                if (typeof THREE.sRGBEncoding !== 'undefined') {
-                    renderer.outputEncoding = THREE.sRGBEncoding;
-                }
+                // Note: r128 outputEncoding = sRGBEncoding was reverted — it was
+                // causing a dim/invisible grid on Android.  The r150+ outputColorSpace
+                // line above is a safe no-op on r128 and will take effect automatically
+                // if THREE is ever upgraded.
 
                 // Handle WebGL context loss / restoration (common on Android when
                 // the app is backgrounded or the OS reclaims GPU memory).
@@ -8109,12 +8105,8 @@ body.android-optimized .zoom-btn {
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.RepeatWrapping;
             // The canvas 2D context draws in sRGB.  Tell THREE.js r128 so it
-            // correctly linearises the texture before lighting and then
-            // re-encodes through the sRGB output pass — prevents the grid
-            // from appearing washed-out or too dark on Android WebView.
-            if (typeof THREE.sRGBEncoding !== 'undefined') {
-                tex.encoding = THREE.sRGBEncoding;
-            }
+            // Note: tex.encoding = sRGBEncoding was reverted along with the
+            // renderer outputEncoding change — see init() comment.
             return tex;
         }
 
