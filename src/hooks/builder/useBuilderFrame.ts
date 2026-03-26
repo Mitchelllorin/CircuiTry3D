@@ -173,6 +173,18 @@ export function useBuilderFrame({
         return;
       }
 
+      if (type === "legacy:component-error") {
+        const errPayload = (payload || {}) as {
+          componentType?: string;
+          reason?: string;
+        };
+        console.error(
+          `[Builder] Component failed to load: ${errPayload.componentType ?? "unknown"} — ${errPayload.reason ?? "unknown reason"}. ` +
+            "The 3D scene may not have initialized. Try reloading the app.",
+        );
+        return;
+      }
+
       if (type === "legacy:arena-export") {
         const summary = (payload || {}) as ArenaExportSummary | undefined;
         if (summary && typeof summary.sessionId === "string") {

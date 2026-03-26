@@ -87,6 +87,9 @@
   --z-builder-toolbar: 920;
   --z-builder-floats: 930;
   --z-builder-toolbar-top: 940;
+  /* Menu-stage toggle tabs (Library / Controls / Insights) — above action bar &
+     zoom so the small toggle buttons are never hidden behind floating elements */
+  --z-builder-menu-stage: 945;
   /* Tutorial overlay — must clear collapsed compact panel headers (z 1190–1250) */
   --z-tutorial: 1260;
   /* Compact / mobile panels */

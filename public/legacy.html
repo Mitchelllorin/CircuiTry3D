@@ -12718,7 +12718,10 @@ Made with ? for visual learners everywhere!
         }
 
         // UI Functions
-        function addComponent(type) {
+        function addComponent(type, _retryCount) {
+            var retries = _retryCount || 0;
+            var MAX_RETRIES = 3;
+
             // Guard: scene must be initialised before any Three.js operations.
             // On slow Android WebViews init() can take longer than expected;
             // addComponent() may be called via postMessage before the scene is ready.
@@ -12730,9 +12733,20 @@ Made with ? for visual learners everywhere!
                 } catch (e) {
                     console.error('[Builder] Recovery init failed:', e);
                 }
-                // If still null after recovery, give up
+                // If still null after recovery, schedule a delayed retry
                 if (!scene || !renderer) {
-                    console.error('[Builder] addComponent: scene STILL null after recovery — cannot add', type);
+                    if (retries < MAX_RETRIES) {
+                        console.warn('[Builder] addComponent: retry ' + (retries + 1) + '/' + MAX_RETRIES + ' in 500ms for', type);
+                        setTimeout(function() { addComponent(type, retries + 1); }, 500);
+                    } else {
+                        console.error('[Builder] addComponent: scene STILL null after ' + MAX_RETRIES + ' retries — cannot add', type);
+                        try {
+                            window.parent.postMessage({
+                                type: 'legacy:component-error',
+                                payload: { componentType: type, reason: 'scene-not-ready' }
+                            }, '*');
+                        } catch(e) { /* ignore */ }
+                    }
                     return;
                 }
                 console.info('[Builder] Recovery init succeeded — continuing addComponent');
