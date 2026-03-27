@@ -13,6 +13,7 @@ import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
+import { isCapacitor } from "../hooks/capacitor/useAndroidInit";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
 import { getSchematicSymbol, type ComponentSymbol } from "../components/circuit/SchematicSymbols";
@@ -2331,6 +2332,13 @@ export default function Builder() {
     isWorksheetVisible,
   ]);
 
+
+  // ─── Diagnostic overlay (temporary — remove after debugging) ──────────
+  const [showDiag, setShowDiag] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setShowDiag(false), 45000);
+    return () => clearTimeout(t);
+  }, []);
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
     ? "Workspace is still loading"
@@ -3837,6 +3845,54 @@ export default function Builder() {
       </div>
 
       <div className="builder-workspace" aria-busy={!isFrameReady}>
+
+      {/* ── Diagnostic overlay (temporary) ─────────────────────────────── */}
+      {showDiag && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 99999,
+            background: "rgba(0,0,0,0.92)",
+            color: "#0f0",
+            fontSize: "11px",
+            padding: "8px 12px",
+            fontFamily: "monospace",
+            lineHeight: 1.6,
+            maxHeight: "40vh",
+            overflow: "auto",
+          }}
+        >
+          <div>BASE_URL: {import.meta.env.BASE_URL}</div>
+          <div>iframe src: {builderFrameSrc}</div>
+          <div>frameReady: {String(isFrameReady)}</div>
+          <div>capacitor: {String(isCapacitor())}</div>
+          <div>
+            UA:{" "}
+            {typeof navigator !== "undefined"
+              ? navigator.userAgent.slice(0, 80)
+              : "n/a"}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDiag(false)}
+            style={{
+              color: "#fff",
+              background: "#333",
+              border: "1px solid #666",
+              borderRadius: 4,
+              padding: "4px 12px",
+              marginTop: 6,
+              cursor: "pointer",
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
         <iframe
           ref={iframeRef}
           className="builder-iframe"
