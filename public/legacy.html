@@ -3618,13 +3618,12 @@ body.android-optimized .zoom-btn {
             // is frequently null even for legitimate parent-to-iframe messages.
             // Accept any message whose type starts with "builder:" to match the
             // same workaround already applied on the React side for "legacy:*".
+            const data = event.data;
             const msgType = (data && typeof data === 'object') ? data.type : undefined;
             const isBuilderProtocol = typeof msgType === 'string' && msgType.startsWith('builder:');
             if (expectedSource && event.source !== expectedSource && !isBuilderProtocol) {
                 return;
             }
-
-            const data = event.data;
             if (!data || typeof data !== 'object') {
                 return;
             }
@@ -3633,7 +3632,7 @@ body.android-optimized .zoom-btn {
 
             switch (type) {
                 case 'builder:add-component':
-              if(window.diagLog)diagLog('MSG:add-component payload='+JSON.stringify(payload)); {
+              {
                     const componentType = payload?.componentType;
                     if (typeof componentType === 'string' && typeof addComponent === 'function') {
                         addComponent(componentType);
