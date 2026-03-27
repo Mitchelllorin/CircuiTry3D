@@ -2745,6 +2745,20 @@
             margin-top: 1px;
         }
     </style>
+
+    <!-- DIAGNOSTIC OVERLAY - REMOVE AFTER DEBUGGING -->
+    <div id="ct3d-diag" style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:6px 10px;z-index:99999;pointer-events:none;max-height:40vh;overflow-y:auto;white-space:pre-wrap;"></div>
+    <script>
+      var _diagLines=[];
+      function diagLog(m){
+        _diagLines.push(new Date().toLocaleTimeString()+' '+m);
+        if(_diagLines.length>25)_diagLines.shift();
+        var e=document.getElementById('ct3d-diag');
+        if(e)e.textContent=_diagLines.join('\n');
+        console.log('[CT3D-DIAG] '+m);
+      }
+      window.diagLog=diagLog;
+    </script>
 </head>
 <body>
     <!-- Demo version banner – visible only in standalone demo mode (not embedded) -->
@@ -3476,7 +3490,8 @@ body.android-optimized .zoom-btn {
         function notifyParentReady() {
             if (window.parent && window.parent !== window) {
                 try {
-                    window.parent.postMessage({ type: 'legacy:ready' }, '*');
+                    window.if(window.diagLog)diagLog('Sending legacy:ready');
+              parent.postMessage({ type: 'legacy:ready' }, '*');
                     notifyParentModeState();
                 } catch (error) {
                     console.warn('Builder bridge: unable to notify parent window', error);
@@ -3573,7 +3588,8 @@ body.android-optimized .zoom-btn {
             const { type, payload } = data;
 
             switch (type) {
-                case 'builder:add-component': {
+                case 'builder:add-component':
+              if(window.diagLog)diagLog('MSG:add-component payload='+JSON.stringify(payload)); {
                     const componentType = payload?.componentType;
                     if (typeof componentType === 'string' && typeof addComponent === 'function') {
                         addComponent(componentType);
