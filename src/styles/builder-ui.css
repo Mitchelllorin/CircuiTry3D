@@ -835,6 +835,7 @@ body.builder-body {
    One tap opens the Insights drawer (DMM, analysis).
    ─────────────────────────────────────────────────────────────────────────── */
 .measure-fab {
+  display: none !important; /* Moved to action bar */
   position: fixed;
   left: calc(var(--builder-safe-area-left, 0px) + 8px);
   top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));

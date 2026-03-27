@@ -870,6 +870,12 @@ const IconSave = ({ className }: IconProps) => (
   </svg>
 );
 
+const IconBolt = ({ className }: IconProps) => (
+  <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <path d="M11.25 1.5L4 11.5h5l-1.25 7L15 8.5h-5l1.25-7Z" />
+  </svg>
+);
+
 const IconRotate = ({ className }: IconProps) => (
   <svg
     className={className}
@@ -2873,6 +2879,31 @@ export default function Builder() {
                 <span className="unsaved-dot" aria-label="Unsaved changes" />
               )}
             </button>
+
+            <span className="unified-action-divider" aria-hidden="true" />
+
+            {/* AI & Measurement tools — integrated into action bar */}
+            <button
+              type="button"
+              className={`edge-action-btn${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
+              onClick={() => setIsAIHelperOpen((prev) => !prev)}
+              aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
+              aria-expanded={isAIHelperOpen}
+              title="Circuit AI — ask anything about circuits or the app"
+            >
+              <IconBolt className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">AI</span>
+            </button>
+            <button
+              type="button"
+              className={`edge-action-btn${meterState.armed ? " edge-action-btn--active" : ""}`}
+              onClick={() => setBottomMenuOpen(true)}
+              aria-label="Open measurement tools"
+              title="Measurement Tools — Digital Multimeter"
+            >
+              <IconRuler className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Measure</span>
+            </button>
           </div>
 
           {/* Junction info tip — shown until dismissed, explains the role
@@ -4146,30 +4177,7 @@ export default function Builder() {
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
       />
-      <button
-        type="button"
-        className={`ai-helper-fab${isAIHelperOpen ? " ai-helper-fab--open" : ""}`}
-        onClick={() => setIsAIHelperOpen((prev) => !prev)}
-        aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
-        aria-expanded={isAIHelperOpen}
-        title="Circuit AI — ask anything about circuits or the app"
-      >
-        <span className="ai-helper-fab__icon" aria-hidden="true">
-          {isAIHelperOpen ? "✕" : "⚡"}
-        </span>
-      </button>
 
-      {/* Measurement Tools FAB — green button above the Library panel.
-          Opens the Insights drawer so the DMM is always one tap away. */}
-      <button
-        type="button"
-        className={`measure-fab${meterState.armed ? " measure-fab--active" : ""}`}
-        onClick={() => setBottomMenuOpen(true)}
-        aria-label="Open measurement tools"
-        title="Measurement Tools — Digital Multimeter"
-      >
-        <span aria-hidden="true">📐</span>
-      </button>
     </div>
   );
 }
