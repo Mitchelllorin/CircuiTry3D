@@ -3,17 +3,16 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Use relative paths only for Capacitor builds (app:// scheme).
-  // For GitHub Pages deployments, PAGES_BASE_PATH sets the sub-path
-  // (e.g. /CircuiTry3D/ for production, /CircuiTry3D/pr-preview/pr-N/ for previews).
-  // Falls back to '/' for local dev and CI builds.
-  base: mode === 'capacitor' ? './' : (process.env.PAGES_BASE_PATH ?? '/'),
+  // Always use '/' — Capacitor's https://localhost origin resolves absolute
+  // paths identically to relative ones, and this matches the Vercel build
+  // that is known to work.  The old './' for capacitor mode is no longer
+  // needed with androidScheme: "https" in capacitor.config.json.
+  // GitHub Pages deployments can still override via PAGES_BASE_PATH.
+  base: process.env.PAGES_BASE_PATH ?? '/',
   plugins: [react()],
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Three.js core is intentionally large for the 3D workspace.
-    // Raise the warning threshold so expected chunk sizes don't trigger noise.
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
