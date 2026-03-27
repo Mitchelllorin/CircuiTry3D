@@ -2746,19 +2746,7 @@
         }
     </style>
 
-    <!-- DIAGNOSTIC OVERLAY - REMOVE AFTER DEBUGGING -->
-    <div id="ct3d-diag" style="position:fixed;top:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;padding:6px 10px;z-index:99999;pointer-events:none;max-height:40vh;overflow-y:auto;white-space:pre-wrap;"></div>
-    <script>
-      var _diagLines=[];
-      function diagLog(m){
-        _diagLines.push(new Date().toLocaleTimeString()+' '+m);
-        if(_diagLines.length>25)_diagLines.shift();
-        var e=document.getElementById('ct3d-diag');
-        if(e)e.textContent=_diagLines.join('\n');
-        console.log('[CT3D-DIAG] '+m);
-      }
-      window.diagLog=diagLog;
-    </script>
+
 </head>
 <body>
     <!-- Demo version banner – visible only in standalone demo mode (not embedded) -->
@@ -2772,6 +2760,53 @@
     <!-- Zoom-mode layer indicator (shows current visualisation tier when zoomed in) -->
     <div id="zoom-mode-hud" aria-live="polite" aria-atomic="true"></div>
     <!-- AC/DC conflict explosion overlay -->
+
+    <!-- Hazard warning panel CSS (was missing — panel was always visible) -->
+    <style>
+        #hazard-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 0, 0, 0.15);
+            z-index: 9998;
+            pointer-events: none;
+        }
+        #hazard-overlay.active { display: block; }
+
+        #hazard-warning {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            background: linear-gradient(135deg, #1a0000, #2a0000);
+            border: 2px solid #ff4444;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 90vw;
+            width: 420px;
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
+        }
+        #hazard-warning.active { display: block; }
+
+        .hazard-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+        .hazard-title { font-size: 18px; font-weight: 800; color: #ff4444; margin-bottom: 12px; }
+        .hazard-body { font-size: 13px; line-height: 1.5; color: rgba(255,200,200,0.9); margin-bottom: 16px; text-align: left; }
+        .hazard-close {
+            background: linear-gradient(135deg, #cc2200, #ff4444);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+
     <div id="hazard-overlay"></div>
     <!-- Short circuit flash overlay -->
     <div id="short-circuit-overlay"></div>
@@ -3490,7 +3525,7 @@ body.android-optimized .zoom-btn {
         function notifyParentReady() {
             if (window.parent && window.parent !== window) {
                 try {
-                    window.if(window.diagLog)diagLog('Sending legacy:ready');
+                    if(window.diagLog)diagLog('Sending legacy:ready');
               parent.postMessage({ type: 'legacy:ready' }, '*');
                     notifyParentModeState();
                 } catch (error) {
@@ -3575,8 +3610,17 @@ body.android-optimized .zoom-btn {
         }
 
         function handleBuilderBridgeMessage(event) {
+            // On Android WebView (Capacitor), event.source can be null for
+            // cross-frame postMessage events.  Accept well-typed builder:*
+            // messages regardless of source to prevent silent message drops.
             const expectedSource = window.parent && window.parent !== window ? window.parent : null;
-            if (expectedSource && event.source !== expectedSource) {
+            // Relaxed source check: on Android WebView / Capacitor, event.source
+            // is frequently null even for legitimate parent-to-iframe messages.
+            // Accept any message whose type starts with "builder:" to match the
+            // same workaround already applied on the React side for "legacy:*".
+            const msgType = (data && typeof data === 'object') ? data.type : undefined;
+            const isBuilderProtocol = typeof msgType === 'string' && msgType.startsWith('builder:');
+            if (expectedSource && event.source !== expectedSource && !isBuilderProtocol) {
                 return;
             }
 

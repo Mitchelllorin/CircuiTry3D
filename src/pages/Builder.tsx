@@ -2743,15 +2743,7 @@ export default function Builder() {
       data-right-menu-open={isRightMenuOpen ? "true" : "false"}
       data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
     >
-      {/* DIAGNOSTIC OVERLAY - REMOVE AFTER DEBUGGING */}
-      <div style={{
-        position:'fixed',bottom:0,left:0,right:0,
-        background:'rgba(0,0,40,0.9)',color:'#ff0',
-        font:'11px/1.4 monospace',padding:'4px 8px',
-        zIndex:99998,pointerEvents:'none'
-      }}>
-        {`REACT: frameReady=${isFrameReady} locked=${isCircuitLocked} disabled=${controlsDisabled}`}
-      </div>
+
       {/* Mode bar is now rendered globally in AppLayout */}
 
       {/* ── Unified top action bar ─────────────────────────────────────────
