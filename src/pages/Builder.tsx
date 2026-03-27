@@ -1857,6 +1857,7 @@ export default function Builder() {
 
   const handleComponentAction = useCallback(
     (component: ComponentAction) => {
+      console.log("[CT3D-REACT] handleComponentAction:", component?.id, component?.builderType, "locked:", isCircuitLocked, "frameReady:", isFrameReady);
       if (!component) {
         return;
       }
@@ -1882,8 +1883,10 @@ export default function Builder() {
 
       if (!component.builderType) {
         console.warn(`Missing builder mapping for component '${component.id}'`);
+        console.log("[CT3D-REACT] BLOCKED: no builderType for", component.id);
         return;
       }
+      console.log("[CT3D-REACT] Sending add-component:", component.builderType);
 
       postToBuilder({
         type: "builder:add-component",

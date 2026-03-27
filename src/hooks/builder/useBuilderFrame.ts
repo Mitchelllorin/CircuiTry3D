@@ -93,6 +93,10 @@ export function useBuilderFrame({
 
       const { type, payload } = data as { type?: string; payload?: unknown };
 
+      if (type === "legacy:diag") {
+        console.log("[CT3D-REACT] Diag from legacy:", event.data);
+      }
+
       if (type === "legacy:ready") {
         setFrameReady(true);
         return;
@@ -296,6 +300,7 @@ export function useBuilderFrame({
       }
 
       try {
+        console.log("[CT3D-REACT] postToBuilder:", message.type, message);
         frameWindow.postMessage(message, "*");
         return true;
       } catch {
