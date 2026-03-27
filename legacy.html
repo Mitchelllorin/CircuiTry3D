@@ -2594,6 +2594,12 @@
             z-index: 106;
         }
 
+        /* Hide the standalone analysis toggle when running inside the React shell */
+        .embedded .wire-analysis-toggle-strip,
+        html.embedded .wire-analysis-toggle-strip {
+            display: none !important;
+        }
+
         .wire-analysis-toggle-btn {
             background: #00ff88;
             border: 3px solid #fff;
@@ -7040,6 +7046,8 @@ body.android-optimized .zoom-btn {
                 // that fires between now and when the React host processes the
                 // legacy:ready message also responds correctly.
                 _builderReady = true;
+            console.log('[CT3D-DIAG] Builder ready! scene:', !!scene, 'renderer:', !!renderer, 'camera:', !!camera);
+            window.parent.postMessage({ type: 'legacy:diag', msg: 'Builder marked ready', detail: { sceneOk: !!scene, rendererOk: !!renderer } }, '*');
                 // Always notify the parent frame so the React UI never stays
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
@@ -12719,6 +12727,8 @@ Made with ? for visual learners everywhere!
 
         // UI Functions
         function addComponent(type, _retryCount) {
+            console.log('[CT3D-DIAG] addComponent called:', { type, _retryCount, sceneExists: !!scene, rendererExists: !!renderer, canvasOk: !!(renderer && renderer.domElement) });
+            try { window.parent.postMessage({ type: 'legacy:diag', msg: 'addComponent', detail: { compType: type, sceneOk: !!scene, rendererOk: !!renderer } }, '*'); } catch(e) {}
             var retries = _retryCount || 0;
             var MAX_RETRIES = 3;
 
