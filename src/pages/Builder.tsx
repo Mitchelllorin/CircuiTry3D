@@ -3846,52 +3846,7 @@ export default function Builder() {
 
       <div className="builder-workspace" aria-busy={!isFrameReady}>
 
-      {/* ── Diagnostic overlay (temporary) ─────────────────────────────── */}
-      {showDiag && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 99999,
-            background: "rgba(0,0,0,0.92)",
-            color: "#0f0",
-            fontSize: "11px",
-            padding: "8px 12px",
-            fontFamily: "monospace",
-            lineHeight: 1.6,
-            maxHeight: "40vh",
-            overflow: "auto",
-          }}
-        >
-          <div>BASE_URL: {import.meta.env.BASE_URL}</div>
-          <div>iframe src: {builderFrameSrc}</div>
-          <div>frameReady: {String(isFrameReady)}</div>
-          <div>capacitor: {String(isCapacitor())}</div>
-          <div>
-            UA:{" "}
-            {typeof navigator !== "undefined"
-              ? navigator.userAgent.slice(0, 80)
-              : "n/a"}
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowDiag(false)}
-            style={{
-              color: "#fff",
-              background: "#333",
-              border: "1px solid #666",
-              borderRadius: 4,
-              padding: "4px 12px",
-              marginTop: 6,
-              cursor: "pointer",
-            }}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+
 
         <iframe
           ref={iframeRef}
@@ -4234,6 +4189,61 @@ export default function Builder() {
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
       />
+
+
+      {/* ── Diagnostic overlay (OUTSIDE workspace stacking context) ──── */}
+      {showDiag && (
+        <div
+          id="circuitry-diag"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 2147483647,
+            background: "rgba(0,0,0,0.95)",
+            color: "#0f0",
+            fontSize: "13px",
+            padding: "12px 16px",
+            fontFamily: "monospace",
+            lineHeight: 1.8,
+            maxHeight: "50vh",
+            overflow: "auto",
+            pointerEvents: "auto",
+          }}
+        >
+          <div style={{ fontWeight: "bold", fontSize: "15px", marginBottom: 4 }}>🔧 CircuiTry3D Diagnostics</div>
+          <div>BASE_URL: {import.meta.env.BASE_URL}</div>
+          <div>iframe src: {builderFrameSrc}</div>
+          <div>frameReady: {String(isFrameReady)}</div>
+          <div>capacitor: {String(isCapacitor())}</div>
+          <div>location: {typeof window !== "undefined" ? window.location.href : "n/a"}</div>
+          <div>screen: {typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "n/a"}</div>
+          <div>
+            UA:{" "}
+            {typeof navigator !== "undefined"
+              ? navigator.userAgent.slice(0, 120)
+              : "n/a"}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDiag(false)}
+            style={{
+              color: "#fff",
+              background: "#c00",
+              border: "none",
+              borderRadius: 6,
+              padding: "8px 20px",
+              marginTop: 8,
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "bold",
+            }}
+          >
+            ✕ DISMISS
+          </button>
+        </div>
+      )}
 
     </div>
   );
