@@ -1,0 +1,1 @@
+import{j as i}from"./index-BiW-4eW0.js";import{P as r,S as t}from"./SubscriptionSection-CqdTXMxK.js";import"./router-BZzXuVii.js";import"./react-vendor-Bzgz95E1.js";function c(){return i.jsxs("main",{children:[i.jsx(r,{}),i.jsx(t,{})]})}export{c as default};
