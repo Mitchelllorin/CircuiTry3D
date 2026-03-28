@@ -1864,7 +1864,6 @@ export default function Builder() {
 
   const handleComponentAction = useCallback(
     (component: ComponentAction) => {
-      console.log("[CT3D-REACT] handleComponentAction:", component?.id, component?.builderType, "locked:", isCircuitLocked, "frameReady:", isFrameReady);
       if (!component) {
         return;
       }
@@ -1890,10 +1889,8 @@ export default function Builder() {
 
       if (!component.builderType) {
         console.warn(`Missing builder mapping for component '${component.id}'`);
-        console.log("[CT3D-REACT] BLOCKED: no builderType for", component.id);
         return;
       }
-      console.log("[CT3D-REACT] Sending add-component:", component.builderType);
 
       postToBuilder({
         type: "builder:add-component",
@@ -2333,43 +2330,6 @@ export default function Builder() {
   ]);
 
 
-  // ─── Diagnostic overlay (temporary — remove after debugging) ──────────
-  const [showDiag, setShowDiag] = useState(true);
-  const [webglInfo, setWebglInfo] = useState<string>("testing...");
-  const [iframeDims, setIframeDims] = useState<string>("checking...");
-  useEffect(() => {
-    const t = setTimeout(() => setShowDiag(false), 120000);
-    // WebGL capability test
-    try {
-      const testCanvas = document.createElement("canvas");
-      testCanvas.width = 1; testCanvas.height = 1;
-      const gl2 = testCanvas.getContext("webgl2");
-      const gl1 = testCanvas.getContext("webgl");
-      const gl = gl2 || gl1;
-      if (gl) {
-        const dbg = gl.getExtension("WEBGL_debug_renderer_info");
-        const renderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "unknown";
-        const vendor = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : "unknown";
-        setWebglInfo(`YES (${gl2 ? "v2" : "v1"}) | ${renderer} | ${vendor}`);
-      } else {
-        setWebglInfo("NO — WebGL NOT available!");
-      }
-    } catch (e: any) {
-      setWebglInfo(`ERROR: ${e.message}`);
-    }
-    // Check iframe dimensions periodically
-    const dimCheck = setInterval(() => {
-      const iframe = document.querySelector("iframe");
-      if (iframe) {
-        const rect = iframe.getBoundingClientRect();
-        const cs = window.getComputedStyle(iframe);
-        setIframeDims(`${Math.round(rect.width)}x${Math.round(rect.height)} vis:${cs.visibility} disp:${cs.display} op:${cs.opacity}`);
-      } else {
-        setIframeDims("NO IFRAME FOUND");
-      }
-    }, 1000);
-    return () => { clearTimeout(t); clearInterval(dimCheck); };
-  }, []);
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
     ? "Workspace is still loading"
@@ -4223,59 +4183,7 @@ export default function Builder() {
 
 
       {/* ── Diagnostic overlay (OUTSIDE workspace stacking context) ──── */}
-      {showDiag && (
-        <div
-          id="circuitry-diag"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 2147483647,
-            background: "rgba(0,0,0,0.95)",
-            color: "#0f0",
-            fontSize: "13px",
-            padding: "12px 16px",
-            fontFamily: "monospace",
-            lineHeight: 1.8,
-            maxHeight: "50vh",
-            overflow: "auto",
-            pointerEvents: "auto",
-          }}
-        >
-          <div style={{ fontWeight: "bold", fontSize: "18px", marginBottom: 8, color: "#ff0" }}>🔧 CircuiTry3D Diagnostics</div>
-          <div style={{ color: webglInfo.startsWith("YES") ? "#0f0" : "#f00", fontWeight: "bold", fontSize: "15px" }}>⚡ WebGL: {webglInfo}</div>
-          <div style={{ fontWeight: "bold", fontSize: "14px" }}>📐 iframe: {iframeDims}</div>
-          <div>frameReady: {String(isFrameReady)}</div>
-          <div>capacitor: {String(isCapacitor())}</div>
-          <div>BASE_URL: {import.meta.env.BASE_URL}</div>
-          <div>location: {typeof window !== "undefined" ? window.location.href : "n/a"}</div>
-          <div>screen: {typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "n/a"}</div>
-          <div style={{ fontSize: "11px" }}>
-            UA:{" "}
-            {typeof navigator !== "undefined"
-              ? navigator.userAgent.slice(0, 160)
-              : "n/a"}
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowDiag(false)}
-            style={{
-              color: "#fff",
-              background: "#c00",
-              border: "none",
-              borderRadius: 6,
-              padding: "8px 20px",
-              marginTop: 8,
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "bold",
-            }}
-          >
-            ✕ DISMISS
-          </button>
-        </div>
-      )}
+      
 
     </div>
   );
