@@ -8,11 +8,6 @@
     "webContentsDebuggingEnabled": true,
     "backgroundColor": "#0f172a"
   },
-  "server": {
-    "androidScheme": "https",
-    "url": "https://circui-try3-i8et19ozx-mitchell-lorin-mcknight-s-projects.vercel.app",
-    "cleartext": true
-  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
