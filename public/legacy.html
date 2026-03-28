@@ -6457,6 +6457,22 @@ body.android-optimized .zoom-btn {
         // Initialize the scene
         function init() {
             try {
+                // DIAGNOSTIC: Check prerequisites
+                var _diag = [];
+                _diag.push('THREE=' + (typeof THREE !== 'undefined' ? 'YES' : 'NO'));
+                _diag.push('canvas=' + (document.getElementById('canvas') ? 'YES' : 'NO'));
+                _diag.push('vw=' + window.innerWidth + ' vh=' + window.innerHeight);
+                _diag.push('loc=' + window.location.href);
+                var _diagEl = document.createElement('div');
+                _diagEl.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:8px;background:rgba(0,0,0,0.9);color:#0f0;font:12px monospace;z-index:999998;';
+                _diagEl.textContent = _diag.join(' | ');
+                document.body.appendChild(_diagEl);
+                setTimeout(function() { _diagEl.remove(); }, 30000);
+
+                if (typeof THREE === 'undefined') {
+                    throw new Error('THREE.js not loaded! vendor/three.min.js failed to load');
+                }
+
                 // On Android WebView, window.innerWidth/innerHeight may not yet reflect
                 // the final layout dimensions when the script runs synchronously.  Fall
                 // back to documentElement client dimensions and use safe minimums so we
@@ -6593,6 +6609,13 @@ body.android-optimized .zoom-btn {
             } catch (error) {
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
+                // DIAGNOSTIC: Show init error on screen since we can't see console
+                try {
+                    var errDiv = document.createElement('div');
+                    errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:12px;background:red;color:white;font:bold 14px monospace;z-index:999999;white-space:pre-wrap;max-height:40vh;overflow:auto;';
+                    errDiv.textContent = 'INIT ERROR: ' + (error && error.stack ? error.stack : String(error));
+                    document.body.appendChild(errDiv);
+                } catch(e2) {}
             } finally {
                 // Mark the builder as ready regardless of whether init() succeeded
                 // or encountered a non-fatal error.  The flag must be set here —
@@ -17465,7 +17488,16 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
             var h = window.innerHeight || document.documentElement.clientHeight;
+            // DIAGNOSTIC: track scheduleInit
+            if (!window._schedDiag) {
+                window._schedDiag = document.createElement('div');
+                window._schedDiag.style.cssText = 'position:fixed;top:40px;left:0;right:0;padding:4px 8px;background:rgba(0,0,80,0.9);color:#ff0;font:11px monospace;z-index:999997;';
+                document.body.appendChild(window._schedDiag);
+                setTimeout(function() { if(window._schedDiag) window._schedDiag.remove(); }, 30000);
+            }
+            window._schedDiag.textContent = 'scheduleInit: w=' + w + ' h=' + h + ' retries=' + retries;
             if (w > 0 && h > 0) {
+                window._schedDiag.textContent += ' → CALLING init()';
                 init();
             } else if (retries > 0) {
                 // Dimensions not ready yet — try again next frame.
