@@ -2741,6 +2741,50 @@
     </style>
 </head>
 <body>
+    <!-- INIT DIAGNOSTIC — remove after debugging -->
+    <div id="ct3d-init-diag" style="
+        position: fixed; top: 0; left: 0; right: 0;
+        background: rgba(0,0,0,0.95); color: #0f0; font: bold 14px monospace;
+        padding: 10px; z-index: 2147483647; pointer-events: auto;
+        max-height: 50vh; overflow-y: auto; white-space: pre-wrap;
+    ">⏳ IFRAME: waiting for init()...</div>
+    <script>
+    (function(){
+        var _diagEl = null;
+        var _diagLines = [];
+        window._ct3dDiag = function(msg) {
+            if (!_diagEl) _diagEl = document.getElementById('ct3d-init-diag');
+            _diagLines.push('[' + (performance.now()|0) + 'ms] ' + msg);
+            if (_diagEl) _diagEl.textContent = _diagLines.join('\n');
+            // Also post to parent for React diagnostic
+            try { window.parent.postMessage({type:'legacy:diag', payload: msg}, '*'); } catch(e){}
+            console.log('[CT3D-INIT] ' + msg);
+        };
+        window._ct3dDiag('iframe loaded, script parsed');
+        
+        // Test WebGL right here
+        try {
+            var tc = document.createElement('canvas');
+            var gl = tc.getContext('webgl2') || tc.getContext('webgl');
+            if (gl) {
+                var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                var gpu = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown';
+                window._ct3dDiag('WebGL: YES (' + (gl instanceof WebGL2RenderingContext ? 'v2' : 'v1') + ') GPU=' + gpu);
+            } else {
+                window._ct3dDiag('WebGL: NO — canvas.getContext returned null!');
+            }
+        } catch(e) {
+            window._ct3dDiag('WebGL test error: ' + e.message);
+        }
+        
+        // Auto-dismiss after 3 minutes
+        setTimeout(function(){
+            var el = document.getElementById('ct3d-init-diag');
+            if (el) el.style.display = 'none';
+        }, 180000);
+    })();
+    </script>
+
 
     <!-- Android WebGL Diagnostic (temporary - remove after debugging) -->
     <div id="webgl-diag" style="position:fixed;top:0;left:0;right:0;z-index:999999;
@@ -7003,6 +7047,7 @@ body.android-optimized .zoom-btn {
 
         // Initialize the scene
         function init() {
+            if(window._ct3dDiag) window._ct3dDiag("init() CALLED");
             try {
                 // On Android WebView, window.innerWidth/innerHeight may not yet reflect
                 // the final layout dimensions when the script runs synchronously.  Fall
@@ -7011,8 +7056,10 @@ body.android-optimized .zoom-btn {
                 const initWidth  = (window.innerWidth  || document.documentElement.clientWidth  || 360);
                 const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
 
+                if(window._ct3dDiag) window._ct3dDiag('creating THREE.Scene...');
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color(0x0a0a1a);
+                if(window._ct3dDiag) window._ct3dDiag('scene created OK');
                 
                 // Use safe non-zero viewport dimensions.  On Android/Capacitor
                 // the local-bundle iframe can execute before the browser layout
@@ -7024,8 +7071,10 @@ body.android-optimized .zoom-btn {
                 const _vh = Math.max(1, window.innerHeight || (canvas && canvas.clientHeight) || 640);
 
                 camera = new THREE.PerspectiveCamera(75, _vw / _vh, 0.1, 1000);
+                if(window._ct3dDiag) window._ct3dDiag('camera created: ' + _vw + 'x' + _vh);
                 updateCameraPosition();
                 
+                if(window._ct3dDiag) window._ct3dDiag('creating WebGLRenderer on canvas: ' + (canvas ? canvas.tagName + ' ' + canvas.clientWidth + 'x' + canvas.clientHeight + ' display=' + getComputedStyle(canvas).display : 'NULL'));
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
@@ -7035,6 +7084,7 @@ body.android-optimized .zoom-btn {
                     failIfMajorPerformanceCaveat: false
                 });
                 renderer.setSize(_vw, _vh);
+                if(window._ct3dDiag) window._ct3dDiag('renderer created OK, size=' + _vw + 'x' + _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -7096,10 +7146,14 @@ body.android-optimized .zoom-btn {
                 scene.add(hemisphereLight);
                 
                 // Enhanced grid system
+                if(window._ct3dDiag) window._ct3dDiag('creating grid...');
                 createEnhancedGrid();
+                if(window._ct3dDiag) window._ct3dDiag('grid created, scene.children=' + (scene ? scene.children.length : 'N/A'));
                 createSnapIndicator();
                 
+                if(window._ct3dDiag) window._ct3dDiag('setting up events...');
                 setupEvents();
+                if(window._ct3dDiag) window._ct3dDiag('events setup complete');
                 
                 // Old UI layer removed — canvas is managed by the React host via embedded mode
 
@@ -7138,6 +7192,7 @@ body.android-optimized .zoom-btn {
                 });
 
             } catch (error) {
+                if(window._ct3dDiag) window._ct3dDiag('⚠️ INIT ERROR: ' + error.message + '\n' + error.stack);
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
             } finally {
@@ -7146,6 +7201,7 @@ body.android-optimized .zoom-btn {
                 // before notifyParentReady() — so that any queued builder:ping
                 // that fires between now and when the React host processes the
                 // legacy:ready message also responds correctly.
+                if(window._ct3dDiag) window._ct3dDiag('✅ finally block — setting _builderReady=true');
                 _builderReady = true;
                 // Always notify the parent frame so the React UI never stays
                 // stuck in its "loading / disabled" state, even when init()
@@ -18221,8 +18277,10 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // selectable).  The ping-pong bridge (builder:ping → legacy:ready)
         // guards readiness with the _builderReady flag, so this deferral does
         // not cause the React host to unlock the UI before the scene is ready.
+        if(window._ct3dDiag) window._ct3dDiag('scheduleInit starting (120 retries)');
         (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
+            if(window._ct3dDiag && retries % 20 === 0) window._ct3dDiag('scheduleInit retry=' + (120-retries) + ' w=' + w + ' h=' + (window.innerHeight || document.documentElement.clientHeight));
             var h = window.innerHeight || document.documentElement.clientHeight;
             if (w > 0 && h > 0) {
                 init();
