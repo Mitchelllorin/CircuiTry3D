@@ -2741,6 +2741,104 @@
     </style>
 </head>
 <body>
+
+    <!-- Android WebGL Diagnostic (temporary - remove after debugging) -->
+    <div id="webgl-diag" style="position:fixed;top:0;left:0;right:0;z-index:999999;
+        background:rgba(0,0,20,0.95);color:#0f0;font-family:monospace;font-size:13px;
+        padding:10px 14px;line-height:1.7;pointer-events:auto;display:block;">
+        <div style="font-weight:bold;font-size:16px;color:#ff0;margin-bottom:4px;">🔧 IFRAME WebGL Diagnostic</div>
+        <div id="diag-webgl">⏳ Testing WebGL...</div>
+        <div id="diag-canvas">⏳ Checking canvas...</div>
+        <div id="diag-dims">⏳ Checking dimensions...</div>
+        <div id="diag-renderer">⏳ Waiting for Three.js renderer...</div>
+        <div id="diag-scene">⏳ Waiting for scene...</div>
+        <button onclick="document.getElementById('webgl-diag').style.display='none'"
+            style="color:#fff;background:#c00;border:none;border-radius:6px;padding:6px 16px;
+            margin-top:6px;cursor:pointer;font-weight:bold;font-size:13px;">✕ DISMISS</button>
+    </div>
+    <script>
+    (function() {
+        var diagEl = document.getElementById('webgl-diag');
+        // Test WebGL
+        try {
+            var tc = document.createElement('canvas');
+            tc.width = 1; tc.height = 1;
+            var gl2 = tc.getContext('webgl2');
+            var gl1 = tc.getContext('webgl');
+            var gl = gl2 || gl1;
+            if (gl) {
+                var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                var rend = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown';
+                var vend = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : 'unknown';
+                document.getElementById('diag-webgl').innerHTML = 
+                    '<span style="color:#0f0;font-weight:bold">✅ WebGL: YES (' + (gl2 ? 'v2' : 'v1') + ')</span><br>' +
+                    'GPU: ' + rend + ' | ' + vend;
+            } else {
+                document.getElementById('diag-webgl').innerHTML = 
+                    '<span style="color:#f00;font-weight:bold;font-size:18px">❌ WebGL: NOT AVAILABLE</span>';
+            }
+        } catch(e) {
+            document.getElementById('diag-webgl').innerHTML = 
+                '<span style="color:#f00;font-weight:bold">❌ WebGL ERROR: ' + e.message + '</span>';
+        }
+        // Check canvas
+        var canvas = document.getElementById('canvas');
+        if (canvas) {
+            var cs = window.getComputedStyle(canvas);
+            document.getElementById('diag-canvas').textContent = 
+                'Canvas: ' + canvas.width + 'x' + canvas.height + 
+                ' display:' + cs.display + ' visibility:' + cs.visibility;
+        } else {
+            document.getElementById('diag-canvas').textContent = 'Canvas: NOT FOUND';
+        }
+        // Check dimensions
+        document.getElementById('diag-dims').textContent = 
+            'Viewport: ' + window.innerWidth + 'x' + window.innerHeight +
+            ' | body: ' + document.body.clientWidth + 'x' + document.body.clientHeight;
+        
+        // Periodic check for renderer and scene
+        var checkCount = 0;
+        var checker = setInterval(function() {
+            checkCount++;
+            // Check renderer
+            if (typeof renderer !== 'undefined' && renderer) {
+                var info = renderer.info;
+                var ctx = renderer.getContext();
+                document.getElementById('diag-renderer').innerHTML = 
+                    '<span style="color:#0f0">✅ Renderer: CREATED</span> | ' +
+                    'size: ' + renderer.domElement.width + 'x' + renderer.domElement.height +
+                    ' | GL context: ' + (ctx ? 'YES' : 'NO');
+            } else {
+                document.getElementById('diag-renderer').textContent = 
+                    '⏳ Renderer: not yet (' + checkCount + 's)';
+            }
+            // Check scene + components
+            if (typeof scene !== 'undefined' && scene) {
+                var compCount = typeof components !== 'undefined' ? components.length : '?';
+                document.getElementById('diag-scene').innerHTML = 
+                    '<span style="color:#0f0">✅ Scene: CREATED</span> | ' +
+                    'children: ' + scene.children.length + ' | components: ' + compCount;
+            } else {
+                document.getElementById('diag-scene').textContent = 
+                    '⏳ Scene: not yet (' + checkCount + 's)';
+            }
+            // Update canvas info
+            if (canvas) {
+                var cs2 = window.getComputedStyle(canvas);
+                document.getElementById('diag-canvas').textContent = 
+                    'Canvas: ' + canvas.width + 'x' + canvas.height + 
+                    ' display:' + cs2.display + ' vis:' + cs2.visibility +
+                    ' rect:' + Math.round(canvas.getBoundingClientRect().width) + 'x' + Math.round(canvas.getBoundingClientRect().height);
+            }
+            if (checkCount > 30) clearInterval(checker);
+        }, 1000);
+        // Auto-hide after 2 minutes
+        setTimeout(function() {
+            if (diagEl) diagEl.style.display = 'none';
+        }, 120000);
+    })();
+    </script>
+
     <!-- Demo version banner – visible only in standalone demo mode (not embedded) -->
     <div id="demo-mode-banner" role="banner" aria-label="Demo version notice">
         <span class="demo-badge">⚡ Demo Version</span>
