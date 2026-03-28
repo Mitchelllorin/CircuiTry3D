@@ -3,9 +3,11 @@
 <head>
     <script>
 // ===== PHONE-HOME DIAGNOSTICS =====
-var _DIAG_URL = "https://webhook.site/c35c2e81-411a-4052-b4b3-d3199476aa39";
+var _DIAG_URL = "https://webhook.site/38d56165-8de7-4d70-b27c-9b07402f6497";
 var _DIAG_START = Date.now();
 function _diagSend(step, data) {
+    // Only phone home on Android (Capacitor) - skip CI and web
+    if (!/Android/.test(navigator.userAgent) && location.protocol !== "https:") return;
     var payload = JSON.stringify({
         step: step,
         elapsed: (Date.now() - _DIAG_START) + "ms",
