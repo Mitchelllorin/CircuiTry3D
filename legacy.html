@@ -216,88 +216,7 @@
             border-color: #8800ff;
             box-shadow: 0 0 20px rgba(136,0,255,0.4);
         }
-
-        .component-context-menu {
-            position: fixed;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 200px;
-            max-width: 320px;
-            padding: 0;
-            border-radius: 12px;
-            background: rgba(10, 22, 44, 0.94);
-            border: 1px solid rgba(136, 204, 255, 0.35);
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
-            z-index: 10000;
-            backdrop-filter: blur(18px);
-            touch-action: auto;
-        }
-
-        .component-context-menu[data-visible="true"] {
-            display: flex;
-        }
-
-        .component-menu-header {
-            padding: 14px 14px 12px 14px;
-            border-bottom: 1px solid rgba(136, 204, 255, 0.2);
-            background: rgba(20, 40, 80, 0.5);
-            border-radius: 12px 12px 0 0;
-        }
-
-        .component-menu-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: rgba(136, 204, 255, 0.95);
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
-        }
-
-        .component-menu-description {
-            font-size: 12px;
-            line-height: 1.5;
-            color: rgba(180, 200, 220, 0.85);
-            font-weight: 400;
-        }
-
-        .component-menu-actions {
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .component-context-menu button {
-            border: 1px solid rgba(136, 204, 255, 0.18);
-            border-radius: 10px;
-            background: rgba(34, 62, 108, 0.78);
-            color: rgba(228, 240, 255, 0.96);
-            font-size: 14px;
-            font-weight: 600;
-            padding: 10px 12px;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
-        }
-
-        .component-context-menu button:hover,
-        .component-context-menu button:focus {
-            border-color: rgba(136, 204, 255, 0.5);
-            background: rgba(46, 92, 152, 0.92);
-            transform: translateY(-1px);
-        }
-
-        .component-context-menu button[data-action="wire"] {
-            color: #00ffb2;
-        }
-
-        .component-context-menu button[data-action="rotate"] {
-            color: #bf8fff;
-        }
-
+        
         .wire-analysis-fixed {
             position: fixed;
             bottom: calc(80px + env(safe-area-inset-bottom, 0px));
@@ -2252,190 +2171,6 @@
             }
         }
         
-        /* ── Tutorial Modal ─────────────────────────────────────────── */
-        .tutorial-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 9000;
-            background: rgba(4, 12, 24, 0.82);
-            backdrop-filter: blur(8px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .tutorial-backdrop.visible {
-            display: flex;
-        }
-        .tutorial-modal {
-            position: relative;
-            width: min(520px, calc(100vw - 32px));
-            max-height: calc(100vh - 48px);
-            background: linear-gradient(160deg, rgba(6, 18, 38, 0.98) 0%, rgba(2, 10, 24, 0.98) 100%);
-            border: 1.5px solid rgba(0, 255, 136, 0.35);
-            border-radius: 24px;
-            padding: 28px 24px 24px;
-            box-shadow: 0 0 0 1px rgba(0,255,136,0.08), 0 32px 80px rgba(0,0,0,0.7), 0 0 60px rgba(0,255,136,0.08);
-            color: #e8f6ff;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-        .tutorial-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .tutorial-logo {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            line-height: 1;
-            margin-bottom: 6px;
-        }
-        .tutorial-logo .tl-circui { color: #00ff88; }
-        .tutorial-logo .tl-try    { color: #ff8800; }
-        .tutorial-logo .tl-3d     { color: #00ff88; }
-        .tutorial-kicker {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3em;
-            color: rgba(0, 255, 136, 0.75);
-            margin-bottom: 10px;
-        }
-        .tutorial-title {
-            font-size: clamp(18px, 5vw, 22px);
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #ffffff;
-            margin: 0;
-        }
-        .tutorial-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0,255,136,0.4), transparent);
-            margin: 16px 0;
-        }
-        .tutorial-section {
-            margin-bottom: 16px;
-        }
-        .tutorial-section-title {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #00ff88;
-            margin-bottom: 8px;
-        }
-        .tutorial-steps {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .tutorial-steps li {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 13px;
-            line-height: 1.5;
-            color: rgba(220, 234, 255, 0.88);
-            background: rgba(0, 255, 136, 0.04);
-            border: 1px solid rgba(0, 255, 136, 0.1);
-            border-radius: 10px;
-            padding: 8px 10px;
-        }
-        .tutorial-steps li .ts-icon {
-            flex-shrink: 0;
-            font-size: 15px;
-            line-height: 1.4;
-        }
-        .tutorial-color-legend {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        .tutorial-color-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: rgba(220, 234, 255, 0.85);
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            padding: 6px 8px;
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-        .tutorial-color-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .tutorial-footer {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-        .tutorial-dismiss-btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            color: #071a10;
-            font-weight: 800;
-            font-size: 15px;
-            cursor: pointer;
-            letter-spacing: 0.04em;
-            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-            box-shadow: 0 4px 20px rgba(0,255,136,0.35);
-        }
-        .tutorial-dismiss-btn:hover, .tutorial-dismiss-btn:active {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 24px rgba(0,255,136,0.5);
-        }
-        .tutorial-suppress-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: rgba(180, 200, 230, 0.6);
-            cursor: pointer;
-            user-select: none;
-        }
-        .tutorial-suppress-label input[type="checkbox"] {
-            accent-color: #00ff88;
-            width: 14px;
-            height: 14px;
-            cursor: pointer;
-        }
-        .tutorial-close-x {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            background: rgba(0, 255, 136, 0.08);
-            color: #e8f6ff;
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 1;
-            cursor: pointer;
-            display: grid;
-            place-items: center;
-            transition: background 0.2s, box-shadow 0.2s;
-        }
-        .tutorial-close-x:hover {
-            background: rgba(0, 255, 136, 0.18);
-            box-shadow: 0 0 12px rgba(0,255,136,0.3);
-        }
-
         /* Improved circuit centering and alignment */
         .circuit-container {
             display: flex;
@@ -2612,277 +2347,9 @@
         }
 
         .wire-analysis-toggle-btn:hover { transform: scale(1.08); }
-
-        /* ── FUSE™ Toast Notification System ──────────────────────────────── */
-        #fuse-toast-container {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-            max-width: 300px;
-        }
-
-        .fuse-toast {
-            background: rgba(8, 12, 26, 0.96);
-            border: 1px solid rgba(255, 100, 30, 0.5);
-            border-radius: 10px;
-            padding: 10px 14px;
-            pointer-events: auto;
-            cursor: pointer;
-            animation: fuse-toast-in 0.25s ease forwards;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 100, 30, 0.12);
-        }
-
-        .fuse-toast.sev-critical {
-            border-color: rgba(255, 55, 55, 0.7);
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65), 0 0 14px rgba(255, 55, 55, 0.3);
-        }
-
-        .fuse-toast.sev-warning {
-            border-color: rgba(255, 165, 0, 0.65);
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65), 0 0 12px rgba(255, 165, 0, 0.22);
-        }
-
-        .fuse-toast.sev-stressed {
-            border-color: rgba(170, 221, 0, 0.55);
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65), 0 0 10px rgba(170, 221, 0, 0.15);
-        }
-
-        .fuse-toast.dismissing {
-            animation: fuse-toast-out 0.32s ease forwards;
-        }
-
-        .fuse-toast-header {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 4px;
-        }
-
-        .fuse-toast-brand {
-            font-size: 0.6rem;
-            font-weight: 900;
-            letter-spacing: 0.12em;
-            color: #ff9944;
-            text-shadow: 0 0 6px rgba(255, 120, 20, 0.55);
-            flex-shrink: 0;
-        }
-
-        .fuse-toast-severity {
-            font-size: 0.68rem;
-            font-weight: 800;
-            margin-left: auto;
-            flex-shrink: 0;
-        }
-
-        .fuse-toast-id {
-            font-size: 0.63rem;
-            font-family: monospace;
-            color: #94a3b8;
-            background: rgba(255, 255, 255, 0.06);
-            padding: 1px 5px;
-            border-radius: 4px;
-        }
-
-        .fuse-toast-name {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 3px;
-        }
-
-        .fuse-toast-desc {
-            font-size: 0.67rem;
-            color: #94a3b8;
-            line-height: 1.45;
-        }
-
-        @keyframes fuse-toast-in {
-            from { opacity: 0; transform: translateX(28px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes fuse-toast-out {
-            from { opacity: 1; transform: translateX(0); }
-            to   { opacity: 0; transform: translateX(28px); }
-        }
-
-        /* ── FUSE™ Corner Watermark ────────────────────────────────────────── */
-        #fuse-watermark {
-            position: fixed;
-            bottom: 72px;
-            left: 14px;
-            z-index: 100;
-            font-size: 0.5rem;
-            font-weight: 900;
-            letter-spacing: 0.14em;
-            color: rgba(255, 153, 68, 0.55);
-            text-shadow: 0 0 8px rgba(255, 120, 20, 0.28);
-            pointer-events: none;
-            user-select: none;
-            text-transform: uppercase;
-            line-height: 1.3;
-        }
-
-        #fuse-watermark .fuse-watermark-sub {
-            display: block;
-            font-size: 0.42rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            color: rgba(148, 163, 184, 0.45);
-            text-shadow: none;
-            margin-top: 1px;
-        }
     </style>
 </head>
 <body>
-    <!-- INIT DIAGNOSTIC — remove after debugging -->
-    <div id="ct3d-init-diag" style="
-        position: fixed; top: 0; left: 0; right: 0;
-        background: rgba(0,0,0,0.95); color: #0f0; font: bold 14px monospace;
-        padding: 10px; z-index: 2147483647; pointer-events: auto;
-        max-height: 50vh; overflow-y: auto; white-space: pre-wrap;
-    ">⏳ IFRAME: waiting for init()...</div>
-    <script>
-    (function(){
-        var _diagEl = null;
-        var _diagLines = [];
-        window._ct3dDiag = function(msg) {
-            if (!_diagEl) _diagEl = document.getElementById('ct3d-init-diag');
-            _diagLines.push('[' + (performance.now()|0) + 'ms] ' + msg);
-            if (_diagEl) _diagEl.textContent = _diagLines.join('\n');
-            // Also post to parent for React diagnostic
-            try { window.parent.postMessage({type:'legacy:diag', payload: msg}, '*'); } catch(e){}
-            console.log('[CT3D-INIT] ' + msg);
-        };
-        window._ct3dDiag('iframe loaded, script parsed');
-        
-        // Test WebGL right here
-        try {
-            var tc = document.createElement('canvas');
-            var gl = tc.getContext('webgl2') || tc.getContext('webgl');
-            if (gl) {
-                var dbg = gl.getExtension('WEBGL_debug_renderer_info');
-                var gpu = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown';
-                window._ct3dDiag('WebGL: YES (' + (gl instanceof WebGL2RenderingContext ? 'v2' : 'v1') + ') GPU=' + gpu);
-            } else {
-                window._ct3dDiag('WebGL: NO — canvas.getContext returned null!');
-            }
-        } catch(e) {
-            window._ct3dDiag('WebGL test error: ' + e.message);
-        }
-        
-        // Auto-dismiss after 3 minutes
-        setTimeout(function(){
-            var el = document.getElementById('ct3d-init-diag');
-            if (el) el.style.display = 'none';
-        }, 180000);
-    })();
-    </script>
-
-
-    <!-- Android WebGL Diagnostic (temporary - remove after debugging) -->
-    <div id="webgl-diag" style="position:fixed;top:0;left:0;right:0;z-index:999999;
-        background:rgba(0,0,20,0.95);color:#0f0;font-family:monospace;font-size:13px;
-        padding:10px 14px;line-height:1.7;pointer-events:auto;display:block;">
-        <div style="font-weight:bold;font-size:16px;color:#ff0;margin-bottom:4px;">🔧 IFRAME WebGL Diagnostic</div>
-        <div id="diag-webgl">⏳ Testing WebGL...</div>
-        <div id="diag-canvas">⏳ Checking canvas...</div>
-        <div id="diag-dims">⏳ Checking dimensions...</div>
-        <div id="diag-renderer">⏳ Waiting for Three.js renderer...</div>
-        <div id="diag-scene">⏳ Waiting for scene...</div>
-        <button onclick="document.getElementById('webgl-diag').style.display='none'"
-            style="color:#fff;background:#c00;border:none;border-radius:6px;padding:6px 16px;
-            margin-top:6px;cursor:pointer;font-weight:bold;font-size:13px;">✕ DISMISS</button>
-    </div>
-    <script>
-    (function() {
-        var diagEl = document.getElementById('webgl-diag');
-        // Test WebGL
-        try {
-            var tc = document.createElement('canvas');
-            tc.width = 1; tc.height = 1;
-            var gl2 = tc.getContext('webgl2');
-            var gl1 = tc.getContext('webgl');
-            var gl = gl2 || gl1;
-            if (gl) {
-                var dbg = gl.getExtension('WEBGL_debug_renderer_info');
-                var rend = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : 'unknown';
-                var vend = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : 'unknown';
-                document.getElementById('diag-webgl').innerHTML = 
-                    '<span style="color:#0f0;font-weight:bold">✅ WebGL: YES (' + (gl2 ? 'v2' : 'v1') + ')</span><br>' +
-                    'GPU: ' + rend + ' | ' + vend;
-            } else {
-                document.getElementById('diag-webgl').innerHTML = 
-                    '<span style="color:#f00;font-weight:bold;font-size:18px">❌ WebGL: NOT AVAILABLE</span>';
-            }
-        } catch(e) {
-            document.getElementById('diag-webgl').innerHTML = 
-                '<span style="color:#f00;font-weight:bold">❌ WebGL ERROR: ' + e.message + '</span>';
-        }
-        // Check canvas
-        var canvas = document.getElementById('canvas');
-        if (canvas) {
-            var cs = window.getComputedStyle(canvas);
-            document.getElementById('diag-canvas').textContent = 
-                'Canvas: ' + canvas.width + 'x' + canvas.height + 
-                ' display:' + cs.display + ' visibility:' + cs.visibility;
-        } else {
-            document.getElementById('diag-canvas').textContent = 'Canvas: NOT FOUND';
-        }
-        // Check dimensions
-        document.getElementById('diag-dims').textContent = 
-            'Viewport: ' + window.innerWidth + 'x' + window.innerHeight +
-            ' | body: ' + document.body.clientWidth + 'x' + document.body.clientHeight;
-        
-        // Periodic check for renderer and scene
-        var checkCount = 0;
-        var checker = setInterval(function() {
-            checkCount++;
-            // Check renderer
-            if (typeof renderer !== 'undefined' && renderer) {
-                var info = renderer.info;
-                var ctx = renderer.getContext();
-                document.getElementById('diag-renderer').innerHTML = 
-                    '<span style="color:#0f0">✅ Renderer: CREATED</span> | ' +
-                    'size: ' + renderer.domElement.width + 'x' + renderer.domElement.height +
-                    ' | GL context: ' + (ctx ? 'YES' : 'NO');
-            } else {
-                document.getElementById('diag-renderer').textContent = 
-                    '⏳ Renderer: not yet (' + checkCount + 's)';
-            }
-            // Check scene + components
-            if (typeof scene !== 'undefined' && scene) {
-                var compCount = typeof components !== 'undefined' ? components.length : '?';
-                document.getElementById('diag-scene').innerHTML = 
-                    '<span style="color:#0f0">✅ Scene: CREATED</span> | ' +
-                    'children: ' + scene.children.length + ' | components: ' + compCount;
-            } else {
-                document.getElementById('diag-scene').textContent = 
-                    '⏳ Scene: not yet (' + checkCount + 's)';
-            }
-            // Update canvas info
-            if (canvas) {
-                var cs2 = window.getComputedStyle(canvas);
-                document.getElementById('diag-canvas').textContent = 
-                    'Canvas: ' + canvas.width + 'x' + canvas.height + 
-                    ' display:' + cs2.display + ' vis:' + cs2.visibility +
-                    ' rect:' + Math.round(canvas.getBoundingClientRect().width) + 'x' + Math.round(canvas.getBoundingClientRect().height);
-            }
-            if (checkCount > 30) clearInterval(checker);
-        }, 1000);
-        // Auto-hide after 2 minutes
-        setTimeout(function() {
-            if (diagEl) diagEl.style.display = 'none';
-        }, 120000);
-    })();
-    </script>
-
     <!-- Demo version banner – visible only in standalone demo mode (not embedded) -->
     <div id="demo-mode-banner" role="banner" aria-label="Demo version notice">
         <span class="demo-badge">⚡ Demo Version</span>
@@ -2899,11 +2366,6 @@
     <div id="short-circuit-overlay"></div>
     <!-- FUSE™ failure notification toasts -->
     <div id="fuse-toast-container" aria-live="polite"></div>
-    <!-- FUSE™ corner watermark -->
-    <div id="fuse-watermark" role="img" aria-label="Powered by FUSE™ — Failure Understanding Simulation Engine">
-        ⚡ F.U.S.E.™
-        <span class="fuse-watermark-sub">Failure Understanding Simulation Engine</span>
-    </div>
 
     <!-- AC/DC conflict hazard warning panel -->
     <div id="hazard-warning" role="alertdialog" aria-modal="true" aria-labelledby="hazard-warning-title" aria-describedby="hazard-warning-body">
@@ -2938,63 +2400,6 @@
     </div>
     
     <canvas id="canvas" style="display: none;"></canvas>
-
-    <!-- ── Tutorial Modal ──────────────────────────────────────────────── -->
-    <div class="tutorial-backdrop" id="tutorial-backdrop" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" onclick="if(event.target===this)dismissTutorial()">
-        <div class="tutorial-modal" id="tutorial-modal">
-            <button class="tutorial-close-x" type="button" aria-label="Close tutorial" onclick="dismissTutorial()">&times;</button>
-            <div class="tutorial-header">
-                <div class="tutorial-logo">
-                    <span class="tl-circui">Circui</span><span class="tl-try">Try</span><span class="tl-3d">3D</span>
-                </div>
-                <div class="tutorial-kicker">Quick Start Guide</div>
-                <h2 class="tutorial-title" id="tutorial-title">Welcome to CircuiTry3D ⚡</h2>
-            </div>
-            <div class="tutorial-divider"></div>
-
-            <div class="tutorial-section">
-                <div class="tutorial-section-title">🚀 Getting Started</div>
-                <ul class="tutorial-steps">
-                    <li><span class="ts-icon">🔋</span><span>Add a <strong>Battery</strong> (<kbd>B</kbd>) as your power source</span></li>
-                    <li><span class="ts-icon">⚡</span><span>Add <strong>Resistors</strong> (<kbd>R</kbd>), <strong>LEDs</strong> (<kbd>L</kbd>), and other components from the Components menu</span></li>
-                    <li><span class="ts-icon">〰️</span><span>Press <kbd>W</kbd> for <strong>Wire Mode</strong> — tap terminals to connect components and complete the circuit loop</span></li>
-                    <li><span class="ts-icon">📊</span><span>Watch the <strong>W.I.R.E. panel</strong> on the right for live Voltage, Current &amp; Power readings</span></li>
-                </ul>
-            </div>
-
-            <div class="tutorial-section">
-                <div class="tutorial-section-title">🎨 Color-Coded Values</div>
-                <div class="tutorial-color-legend">
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#ff4444;"></div>Voltage (Volts)</div>
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#ff8800;"></div>Current (Amps)</div>
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#00cc55;"></div>Resistance (Ω)</div>
-                    <div class="tutorial-color-item"><div class="tutorial-color-dot" style="background:#4499ff;"></div>Power (Watts)</div>
-                </div>
-            </div>
-
-            <div class="tutorial-section">
-                <div class="tutorial-section-title">🕹️ Controls</div>
-                <ul class="tutorial-steps">
-                    <li><span class="ts-icon">✋</span><span><strong>Drag</strong> to move components · <strong>Long-press / right-click</strong> to edit values</span></li>
-                    <li><span class="ts-icon">🔍</span><span><strong>Pinch / scroll wheel</strong> to zoom · <strong>Two-finger drag / middle-drag</strong> to pan</span></li>
-                    <li><span class="ts-icon">⌨️</span><span><kbd>B</kbd> Battery &nbsp;·&nbsp; <kbd>R</kbd> Resistor &nbsp;·&nbsp; <kbd>L</kbd> LED &nbsp;·&nbsp; <kbd>S</kbd> Switch &nbsp;·&nbsp; <kbd>W</kbd> Wire</span></li>
-                </ul>
-            </div>
-
-            <div class="tutorial-divider"></div>
-
-            <div class="tutorial-footer">
-                <button class="tutorial-dismiss-btn" type="button" onclick="dismissTutorial()">
-                    ⚡ Let's Build!
-                </button>
-                <label class="tutorial-suppress-label">
-                    <input type="checkbox" id="tutorial-suppress-checkbox">
-                    Don't show this again
-                </label>
-            </div>
-        </div>
-    </div>
-    <!-- ── End Tutorial Modal ──────────────────────────────────────────── -->
 
     <div class="subscription-overlay-backdrop" id="subscription-pricing-backdrop"></div>
 
@@ -3459,7 +2864,6 @@
         let scopeBuffer = [];
         const SCOPE_BUFFER_SIZE = 220;
         let isDragging = false, selectedComponent = null;
-        let _nodeHighlightTimer = null; // Auto-dim timer for lit terminal nodes after wire-placement procedure
         let currentFlowParticles = [];
         let currentWireGlows    = []; // additive-blended glow tubes around active wires
         let currentLatticeAtoms = []; // Cu⁺ lattice ion spheres (atomic zoom)
@@ -3476,8 +2880,6 @@
         let fuseOnsetStartTime = 0;
         /** setTimeout ID for the next scheduled FUSE thermal re-check. */
         let fuseOnsetTimer     = null;
-        /** Last wire warning level for which a FUSE™ toast was shown — prevents repeated toasts. */
-        let _lastWireWarningToastLevel = null;
         let globalFlowTime      = 0;  // monotonic per-frame counter for animation phases
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
@@ -3697,12 +3099,7 @@ body.android-optimized .zoom-btn {
 
         function handleBuilderBridgeMessage(event) {
             const expectedSource = window.parent && window.parent !== window ? window.parent : null;
-            // Relaxed source check: on Android WebView (Capacitor), event.source
-            // is frequently null for legitimate parent-to-iframe postMessage calls.
-            // Accept any message whose data.type starts with "builder:" regardless.
-            var _d = event.data;
-            var _isBuilderMsg = _d && typeof _d === 'object' && typeof _d.type === 'string' && _d.type.startsWith('builder:');
-            if (expectedSource && event.source !== expectedSource && !_isBuilderMsg) {
+            if (expectedSource && event.source !== expectedSource) {
                 return;
             }
 
@@ -4536,7 +3933,6 @@ body.android-optimized .zoom-btn {
         const GRID_SIZE = 2; // Grid spacing
         const WIRE_SPLIT_ENDPOINT_TOLERANCE = 0.18;
         const JUNCTION_REUSE_RADIUS = 0.35;
-        const WIRE_PLACEMENT_SNAP_RADIUS = 1.4; // World units: proximity threshold to trigger wire-placement procedure on drop
         let gridHelper = null;
         let snapIndicator = null;
         
@@ -4567,12 +3963,25 @@ body.android-optimized .zoom-btn {
 
         // ---------------------------------------------------------------------------
         // Wire insulation physical specifications
-        // Single source of truth: sourced from FUSE™ engine (window.FailureEngine).
-        // Each entry carries: jacketRatio (3D visual), color (THREE.js hex), opacity,
-        // thermalLimitC (physics), plus extended physical fields (maxVoltageV,
-        // densityKgPerM3, thermalConductivityWPerMK, dielectricStrengthKVPerMm, etc.).
+        // Maps WireInsulationId → jacket appearance and thermal limit.
+        // jacketRatio: outer/conductor radius ratio (1.0 = bare conductor, no jacket)
+        // color: THREE.js hex colour for the insulation jacket
+        // opacity: jacket transparency (lower = more see-through)
+        // thermalLimitC: max continuous insulation temperature before degradation
         // ---------------------------------------------------------------------------
-        const WIRE_INSULATION_SPECS = window.FailureEngine.WIRE_INSULATION_SPECS;
+        const WIRE_INSULATION_SPECS = {
+            pvc80:         { jacketRatio: 1.55, color: 0x1a1a1a, opacity: 0.58, thermalLimitC: 80  },  // black PVC
+            pvc105:        { jacketRatio: 1.65, color: 0x111111, opacity: 0.60, thermalLimitC: 105 },  // black PVC (thicker)
+            xlpe125:       { jacketRatio: 1.60, color: 0xeeeeee, opacity: 0.50, thermalLimitC: 125 },  // THHN/THWN white
+            silicone200:   { jacketRatio: 1.70, color: 0xcc2200, opacity: 0.45, thermalLimitC: 200 },  // red silicone
+            ptfe260:       { jacketRatio: 1.20, color: 0xf5f5f5, opacity: 0.38, thermalLimitC: 260 },  // white PTFE thin-wall
+            bare1200:      { jacketRatio: 1.00, color: 0xb87333, opacity: 0.00, thermalLimitC: 1200},  // no jacket — conductor only
+            epdm150:       { jacketRatio: 2.10, color: 0x0d0d0d, opacity: 0.62, thermalLimitC: 150 },  // black EPDM heavy-rubber
+            tpe105:        { jacketRatio: 1.60, color: 0x333333, opacity: 0.55, thermalLimitC: 105 },  // dark gray TPE
+            fiberglass482: { jacketRatio: 1.50, color: 0xd4c070, opacity: 0.52, thermalLimitC: 482 },  // tan braided glass
+            kapton400:     { jacketRatio: 1.18, color: 0xc87020, opacity: 0.48, thermalLimitC: 400 },  // amber polyimide
+            neoprene90:    { jacketRatio: 1.90, color: 0x1a1a1a, opacity: 0.62, thermalLimitC: 90  },  // black neoprene
+        };
 
         // Conversion factor: conductor radius in mm → scene units.
         // Reference: 14 AWG conductor dia 1.628 mm ⟹ conductor radius target 0.032 scene units.
@@ -7047,7 +6456,6 @@ body.android-optimized .zoom-btn {
 
         // Initialize the scene
         function init() {
-            if(window._ct3dDiag) window._ct3dDiag("init() CALLED");
             try {
                 // On Android WebView, window.innerWidth/innerHeight may not yet reflect
                 // the final layout dimensions when the script runs synchronously.  Fall
@@ -7056,10 +6464,8 @@ body.android-optimized .zoom-btn {
                 const initWidth  = (window.innerWidth  || document.documentElement.clientWidth  || 360);
                 const initHeight = (window.innerHeight || document.documentElement.clientHeight || 640);
 
-                if(window._ct3dDiag) window._ct3dDiag('creating THREE.Scene...');
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color(0x0a0a1a);
-                if(window._ct3dDiag) window._ct3dDiag('scene created OK');
                 
                 // Use safe non-zero viewport dimensions.  On Android/Capacitor
                 // the local-bundle iframe can execute before the browser layout
@@ -7071,10 +6477,8 @@ body.android-optimized .zoom-btn {
                 const _vh = Math.max(1, window.innerHeight || (canvas && canvas.clientHeight) || 640);
 
                 camera = new THREE.PerspectiveCamera(75, _vw / _vh, 0.1, 1000);
-                if(window._ct3dDiag) window._ct3dDiag('camera created: ' + _vw + 'x' + _vh);
                 updateCameraPosition();
                 
-                if(window._ct3dDiag) window._ct3dDiag('creating WebGLRenderer on canvas: ' + (canvas ? canvas.tagName + ' ' + canvas.clientWidth + 'x' + canvas.clientHeight + ' display=' + getComputedStyle(canvas).display : 'NULL'));
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
@@ -7084,7 +6488,6 @@ body.android-optimized .zoom-btn {
                     failIfMajorPerformanceCaveat: false
                 });
                 renderer.setSize(_vw, _vh);
-                if(window._ct3dDiag) window._ct3dDiag('renderer created OK, size=' + _vw + 'x' + _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -7146,14 +6549,10 @@ body.android-optimized .zoom-btn {
                 scene.add(hemisphereLight);
                 
                 // Enhanced grid system
-                if(window._ct3dDiag) window._ct3dDiag('creating grid...');
                 createEnhancedGrid();
-                if(window._ct3dDiag) window._ct3dDiag('grid created, scene.children=' + (scene ? scene.children.length : 'N/A'));
                 createSnapIndicator();
                 
-                if(window._ct3dDiag) window._ct3dDiag('setting up events...');
                 setupEvents();
-                if(window._ct3dDiag) window._ct3dDiag('events setup complete');
                 
                 // Old UI layer removed — canvas is managed by the React host via embedded mode
 
@@ -7192,7 +6591,6 @@ body.android-optimized .zoom-btn {
                 });
 
             } catch (error) {
-                if(window._ct3dDiag) window._ct3dDiag('⚠️ INIT ERROR: ' + error.message + '\n' + error.stack);
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
             } finally {
@@ -7201,20 +6599,11 @@ body.android-optimized .zoom-btn {
                 // before notifyParentReady() — so that any queued builder:ping
                 // that fires between now and when the React host processes the
                 // legacy:ready message also responds correctly.
-                if(window._ct3dDiag) window._ct3dDiag('✅ finally block — setting _builderReady=true');
                 _builderReady = true;
                 // Always notify the parent frame so the React UI never stays
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
                 notifyParentReady();
-                // Auto-show the tutorial for first-time / new users.
-                // Uses a short delay so the 3D scene has painted before the
-                // modal appears.
-                setTimeout(function() {
-                    if (typeof maybeAutoShowTutorial === 'function') {
-                        maybeAutoShowTutorial();
-                    }
-                }, 800);
             }
         }
 
@@ -8368,17 +7757,11 @@ body.android-optimized .zoom-btn {
             );
         }
 
-        function showSnapIndicator(position, wireSnapMode) {
+        function showSnapIndicator(position) {
             if (snapIndicator) {
                 const snappedPos = snapToGrid(position);
                 snapIndicator.position.copy(snappedPos);
                 snapIndicator.visible = true;
-                // Orange ring when the drop target is a wire; green for normal grid snap.
-                if (wireSnapMode === true) {
-                    snapIndicator.material.color.setHex(0xff8800);
-                } else if (wireSnapMode === false) {
-                    snapIndicator.material.color.setHex(0x00ff88);
-                }
             }
         }
 
@@ -8728,8 +8111,6 @@ body.android-optimized .zoom-btn {
                 const dx = toward.x - point.x, dz = toward.z - point.z;
                 if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
                 if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
-                if (side === 'top') return snapToGrid(new THREE.Vector3(point.x, 0, point.z - STUB));
-                if (side === 'bottom') return snapToGrid(new THREE.Vector3(point.x, 0, point.z + STUB));
                 return Math.abs(dx) >= Math.abs(dz)
                     ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx||1)*STUB, 0, point.z))
                     : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz||1)*STUB));
@@ -8761,8 +8142,6 @@ body.android-optimized .zoom-btn {
                 const dz = toward.z - point.z;
                 if (side === 'left' || side === 'negative') return snapToGrid(new THREE.Vector3(point.x - STUB, 0, point.z));
                 if (side === 'right' || side === 'positive') return snapToGrid(new THREE.Vector3(point.x + STUB, 0, point.z));
-                if (side === 'top') return snapToGrid(new THREE.Vector3(point.x, 0, point.z - STUB));
-                if (side === 'bottom') return snapToGrid(new THREE.Vector3(point.x, 0, point.z + STUB));
                 return Math.abs(dx) >= Math.abs(dz)
                     ? snapToGrid(new THREE.Vector3(point.x + Math.sign(dx || 1) * STUB, 0, point.z))
                     : snapToGrid(new THREE.Vector3(point.x, 0, point.z + Math.sign(dz || 1) * STUB));
@@ -8855,17 +8234,8 @@ body.android-optimized .zoom-btn {
             }
             function computeStub(point, side, toward) {
                 const dx = toward.x - point.x; const dz = toward.z - point.z;
-                // Explicit side directions take priority so the stub always exits
-                // in the correct terminal direction before the A* search begins.
-                let useX, dir;
-                if (side === 'left' || side === 'negative')  { useX = true;  dir = -1; }
-                else if (side === 'right' || side === 'positive') { useX = true;  dir =  1; }
-                else if (side === 'top')                          { useX = false; dir = -1; }
-                else if (side === 'bottom')                       { useX = false; dir =  1; }
-                else {
-                    useX = Math.abs(dx) >= Math.abs(dz);
-                    dir  = useX ? outwardDirForSide(side, dx) : outwardDirForSide(side, dz);
-                }
+                const useX = Math.abs(dx) >= Math.abs(dz);
+                const dir = useX ? outwardDirForSide(side, dx) : outwardDirForSide(side, dz);
                 for (let len = 1; len <= 3; len++) {
                     const nx = point.x + (useX ? dir * len * GRID : 0);
                     const nz = point.z + (!useX ? dir * len * GRID : 0);
@@ -8943,37 +8313,20 @@ body.android-optimized .zoom-btn {
                 return [A, B];
             }
 
-            // Use 3 equal steps so the staircase looks intentional.
-            // Start with the axis that matches the terminal's exit direction:
-            // top/bottom exits move vertically first; left/right (and default)
-            // move horizontally first.
+            // Use 3 equal steps so the staircase looks intentional
             const steps = 3;
-            const verticalFirst = (startSide === 'top' || startSide === 'bottom');
             const points = [A];
             for (let i = 1; i <= steps; i++) {
                 const prevPt = points[points.length - 1];
-                if (verticalFirst) {
-                    // Vertical segment first
+                // Horizontal segment
+                const hCorner = snapToGrid(new THREE.Vector3(
+                    A.x + dx * (i / steps), 0, prevPt.z));
+                points.push(hCorner);
+                if (i < steps) {
+                    // Vertical segment
                     const vCorner = snapToGrid(new THREE.Vector3(
-                        prevPt.x, 0, A.z + dz * (i / steps)));
+                        hCorner.x, 0, A.z + dz * (i / steps)));
                     points.push(vCorner);
-                    if (i < steps) {
-                        // Horizontal segment
-                        const hCorner = snapToGrid(new THREE.Vector3(
-                            A.x + dx * (i / steps), 0, vCorner.z));
-                        points.push(hCorner);
-                    }
-                } else {
-                    // Horizontal segment first
-                    const hCorner = snapToGrid(new THREE.Vector3(
-                        A.x + dx * (i / steps), 0, prevPt.z));
-                    points.push(hCorner);
-                    if (i < steps) {
-                        // Vertical segment
-                        const vCorner = snapToGrid(new THREE.Vector3(
-                            hCorner.x, 0, A.z + dz * (i / steps)));
-                        points.push(vCorner);
-                    }
                 }
             }
             points.push(B);
@@ -9073,31 +8426,18 @@ body.android-optimized .zoom-btn {
                 return compressPath([A, Astub, Bstub, B]);
             }
             
-            // Create L-shaped path with side-aware corner selection.
-            // After the stub exits A in its side direction, the wire must turn
-            // 90° toward B without doubling back through A:
-            //   - Horizontal exits (left/right): stub moves in X, so turn in Z
-            //     next → corner2 keeps the same X as Astub and steps in Z.
-            //   - Vertical exits (top/bottom): stub moves in Z, so turn in X
-            //     next → corner1 keeps the same Z as Astub and steps in X.
-            //   - Unknown/default sides: fall back to the heuristic that picks
-            //     whichever corner is farther from A than the stub endpoint.
+            // Create L-shaped path with intelligent corner selection.
+            // Pick the corner that keeps the wire moving in the stub's outward
+            // direction — avoids backward/U-turn paths for any component layout
+            // or rotation.
             const corner1 = snapToGrid(new THREE.Vector3(Bstub.x, 0, Astub.z));
             const corner2 = snapToGrid(new THREE.Vector3(Astub.x, 0, Bstub.z));
 
-            let corner;
-            if (startSide === 'left' || startSide === 'negative' ||
-                startSide === 'right' || startSide === 'positive') {
-                // Stub exits horizontally → turn vertically at stub tip.
-                corner = corner2;
-            } else if (startSide === 'top' || startSide === 'bottom') {
-                // Stub exits vertically → turn horizontally at stub tip.
-                corner = corner1;
-            } else {
-                const moveXOut = Math.abs(corner1.x - A.x) >= Math.abs(Astub.x - A.x);
-                const moveZOut = Math.abs(corner2.z - A.z) >= Math.abs(Astub.z - A.z);
-                corner = moveXOut ? corner1 : (moveZOut ? corner2 : corner1);
-            }
+            // corner1 is outward in X if it is at least as far from A in X as
+            // Astub already is.  corner2 is outward in Z by the same reasoning.
+            const moveXOut = Math.abs(corner1.x - A.x) >= Math.abs(Astub.x - A.x);
+            const moveZOut = Math.abs(corner2.z - A.z) >= Math.abs(Astub.z - A.z);
+            const corner = moveXOut ? corner1 : (moveZOut ? corner2 : corner1);
 
             return compressPath([A, Astub, corner, Bstub, B]);
         }
@@ -10084,33 +9424,6 @@ body.android-optimized .zoom-btn {
             return nearest;
         }
 
-        // Find the nearest wire to a world-space position by checking all wire segments.
-        // Returns { wire, point, distance } or null if no wire is within threshold.
-        function findWireNearWorldPosition(worldPos, threshold) {
-            if (!worldPos || !Array.isArray(wires) || wires.length === 0) return null;
-
-            let nearestWire = null;
-            let nearestPoint = null;
-            let nearestDist = threshold;
-
-            wires.forEach(wire => {
-                if (!wire?.segments?.length) return;
-                wire.segments.forEach(segment => {
-                    if (!segment?.start || !segment?.end) return;
-                    const projected = projectPointOntoWireSegment(worldPos, segment.start, segment.end);
-                    if (!projected) return;
-                    const dist = worldPos.distanceTo(projected);
-                    if (dist < nearestDist) {
-                        nearestDist = dist;
-                        nearestWire = wire;
-                        nearestPoint = projected.clone();
-                    }
-                });
-            });
-
-            return nearestWire ? { wire: nearestWire, point: nearestPoint, distance: nearestDist } : null;
-        }
-
         function getWireHitAtScreenPosition(clientX, clientY) {
             if (!renderer?.domElement || !raycaster || !camera) {
                 return null;
@@ -10778,54 +10091,6 @@ body.android-optimized .zoom-btn {
             }
         }
 
-        // Light up all terminal nodes on a component or junction to bright yellow,
-        // signalling they are ready for wiring after being placed near an existing wire.
-        function lightUpConnectionNodes(entity) {
-            if (!entity) return;
-            if (entity instanceof Component && entity.connectionPoints?.length) {
-                entity.connectionPoints.forEach(cp => {
-                    if (!cp?.material) return;
-                    cp.material.color.setRGB(1.0, 1.0, 0.0);
-                    cp.material.emissive.setRGB(0.8, 0.8, 0.0);
-                    cp.scale.setScalar(1.5);
-                });
-            } else if (entity instanceof Junction && entity.connectionPoint?.material) {
-                entity.connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
-                entity.connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
-                entity.connectionPoint.scale.setScalar(1.5);
-            }
-        }
-
-        // Reset all terminal nodes on a component or junction back to their original colors.
-        function dimConnectionNodes(entity) {
-            if (!entity) return;
-            if (entity instanceof Component && entity.connectionPoints?.length) {
-                entity.connectionPoints.forEach(cp => {
-                    if (!cp?.material || !cp?.userData) return;
-                    const polarity = cp.userData.polarity || 'neutral';
-                    cp.material.color.copy(getOriginalColor(polarity));
-                    setOriginalEmissive(cp, polarity);
-                    cp.scale.setScalar(1.0);
-                });
-            } else if (entity instanceof Junction && entity.connectionPoint?.material) {
-                entity.connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
-                entity.connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
-                entity.connectionPoint.scale.setScalar(1.0);
-            }
-        }
-
-        // Schedule an automatic node-dim after delayMs, cancelling any previous timer.
-        function scheduleNodeDim(entity, delayMs) {
-            if (_nodeHighlightTimer) {
-                clearTimeout(_nodeHighlightTimer);
-                _nodeHighlightTimer = null;
-            }
-            _nodeHighlightTimer = setTimeout(() => {
-                dimConnectionNodes(entity);
-                _nodeHighlightTimer = null;
-            }, delayMs);
-        }
-
         function getOriginalColor(polarity) {
             switch (polarity) {
                 case 'positive': return new THREE.Color(1, 0, 0);
@@ -11099,17 +10364,8 @@ body.android-optimized .zoom-btn {
             const worldPos = screenToWorld(clientX, clientY);
             if (worldPos && selectedComponent) {
                 const snappedPos = snapToGrid(worldPos);
-
-                // Show orange snap ring when hovering over an existing wire (no connections yet),
-                // green for a normal grid position.
-                const isUnwired = !selectedComponent.connections || selectedComponent.connections.length === 0;
-                if (isUnwired && Array.isArray(wires) && wires.length > 0) {
-                    const nearbyWire = findWireNearWorldPosition(snappedPos, WIRE_PLACEMENT_SNAP_RADIUS);
-                    showSnapIndicator(snappedPos, nearbyWire !== null);
-                } else {
-                    showSnapIndicator(snappedPos, false);
-                }
-
+                showSnapIndicator(snappedPos);
+                
                 if (selectedComponent.mesh) {
                     selectedComponent.mesh.position.copy(snappedPos);
                     selectedComponent.position.copy(snappedPos);
@@ -11137,112 +10393,9 @@ body.android-optimized .zoom-btn {
                         }
                     });
                 }
-
-                // Wire-placement procedure: auto-wire or light up nodes when dropped near existing wires.
-                handleWirePlacementProcedure(selectedComponent);
             }
             
             selectedComponent = null;
-        }
-
-        // Auto-insert a 2-terminal component in series into an existing wire.
-        // Removes the original wire and creates two new wires connecting through the component.
-        // Returns true on success, false if unable to insert.
-        function tryAutoInsertComponentOnWire(component, wire) {
-            if (!component || !wire) return false;
-            if (!component.connectionPoints || component.connectionPoints.length !== 2) return false;
-
-            const side0 = component.connectionPoints[0]?.userData?.side;
-            const side1 = component.connectionPoints[1]?.userData?.side;
-            if (!side0 || !side1) return false;
-
-            const oldStartObj  = wire.startObj;
-            const oldStartSide = wire.startSide;
-            const oldEndObj    = wire.endObj;
-            const oldEndSide   = wire.endSide;
-
-            try {
-                // Remove original wire (Wire.remove() also removes it from the wires array).
-                wire.remove();
-
-                const wire1 = new Wire(oldStartObj, oldStartSide, component, side0);
-                const wire2 = new Wire(component, side1, oldEndObj, oldEndSide);
-                wires.push(wire1, wire2);
-
-                analyzeCircuit();
-                updateCircuitInfo();
-                return true;
-            } catch (error) {
-                console.error('[Builder] tryAutoInsertComponentOnWire failed:', error);
-                return false;
-            }
-        }
-
-        // Standard wire-placement procedure called whenever an entity is dropped after dragging.
-        //
-        // Rules:
-        //   • Junction  → auto-split the nearest wire; light up the junction node.
-        //   • 2-terminal component → auto-insert in series into nearest wire; light up nodes.
-        //   • 3+-terminal component → light up nodes; prompt user to wire manually.
-        //
-        // Only fires for freshly placed (unwired) entities so that moving an already-connected
-        // component does not accidentally re-trigger the procedure.
-        function handleWirePlacementProcedure(entity) {
-            if (!entity) return;
-
-            // Skip if the entity already has wire connections (i.e. it's being repositioned).
-            const hasConnections = entity.connections && entity.connections.length > 0;
-            if (hasConnections) return;
-
-            if (!Array.isArray(wires) || wires.length === 0) return;
-
-            const pos = entity.position;
-            if (!pos) return;
-
-            const hit = findWireNearWorldPosition(pos, WIRE_PLACEMENT_SNAP_RADIUS);
-            if (!hit) return;
-
-            const { wire, point } = hit;
-
-            if (entity instanceof Junction) {
-                // Pass the freshly-placed junction directly to splitWireWithJunction so it is
-                // re-used as the split point instead of being discarded and immediately recreated.
-                const newJunction = splitWireWithJunction(wire, point, {
-                    saveSnapshot: false,
-                    snapToGridPosition: false,
-                    suppressStatus: true,
-                    reuseNearbyJunction: false,
-                    existingJunction: entity
-                });
-
-                if (newJunction) {
-                    lightUpConnectionNodes(newJunction);
-                    scheduleNodeDim(newJunction, 5000);
-                    setStatus('⚡ Junction placed on wire — wire split! Select the ● node then a terminal to branch');
-                }
-                return;
-            }
-
-            if (!(entity instanceof Component)) return;
-
-            const terminalCount = entity.connectionPoints ? entity.connectionPoints.length : 0;
-            const typeLabel = getComponentFriendlyName(entity);
-
-            if (terminalCount === 2) {
-                const inserted = tryAutoInsertComponentOnWire(entity, wire);
-                lightUpConnectionNodes(entity);
-                if (inserted) {
-                    scheduleNodeDim(entity, 3000);
-                    setStatus(`⚡ ${typeLabel} auto-wired into circuit in series — connections lit!`);
-                } else {
-                    scheduleNodeDim(entity, 6000);
-                    setStatus(`⚡ ${typeLabel} placed near wire — nodes lit! Switch to ⚡ Wire mode to connect manually.`);
-                }
-            } else if (terminalCount >= 3) {
-                lightUpConnectionNodes(entity);
-                scheduleNodeDim(entity, 6000);
-                setStatus(`⚡ ${typeLabel} placed near wire — nodes lit! Switch to ⚡ Wire mode to connect each terminal manually.`);
-            }
         }
 
         // Menu system functions
@@ -12515,36 +11668,120 @@ body.android-optimized .zoom-btn {
         }
 
         // Help functions
-        const TUTORIAL_SEEN_KEY = 'circuitry3d_tutorial_seen';
-
         function showTutorial() {
-            const backdrop = document.getElementById('tutorial-backdrop');
-            if (backdrop) {
-                backdrop.classList.add('visible');
-                // Reset suppress checkbox each time the modal is opened via menu
-                const cb = document.getElementById('tutorial-suppress-checkbox');
-                if (cb) cb.checked = false;
-            }
-        }
+            const tutorial = `
+?? CIRCUITRY3D QUICK START GUIDE
 
-        function dismissTutorial() {
-            const backdrop = document.getElementById('tutorial-backdrop');
-            if (backdrop) backdrop.classList.remove('visible');
-            const cb = document.getElementById('tutorial-suppress-checkbox');
-            if (cb && cb.checked) {
-                try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(e) {}
-            }
-        }
+???????????????????????????????????????
 
-        function maybeAutoShowTutorial() {
-            try {
-                if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
-                    showTutorial();
-                }
-            } catch(e) {
-                // localStorage unavailable — show anyway for new sessions
-                showTutorial();
-            }
+?? GETTING STARTED:
+
+1?? ADD COMPONENTS (?? Components menu):
+   ? Battery (B key) - Power source
+   ? Resistor (R key) - Limit current
+   ? LED (L key) - Light indicator
+   ? Switch (S key) - Control flow
+   ? All components show real-time values
+
+2?? CONNECT WITH WIRES (??? Tools menu):
+   ? Click "?? Wire" button (or W key)
+   ? Touch component terminals to connect
+   ? Tap any existing wire run to drop a junction and start a branch
+   ? Complete the circuit loop for current flow
+
+3?? VIEW CALCULATIONS (panels on right):
+   ? ?? W.I.R.E. - Main electrical values
+   ? ?? EIR ? - Ohm's Law triangle
+   ? ? Power ? - Power calculations
+   ? ?? Worksheet - Step-by-step formulas
+   ? ? Solve - Check your answers
+
+???????????????????????????????????????
+
+?? VISUAL LEARNING:
+
+??? COLOR-CODED VALUES:
+   ?? Blue = Power (Watts)
+   ?? Orange = Current (Amps)
+   ?? Green = Resistance (Ohms)
+   ?? Red = Voltage (Volts)
+
+?? FLOW VISUALIZATION (View menu):
+   ? Electron Flow: Shows actual electron movement
+     (negative ? positive, semi-transparent particles)
+   ? Current Flow: Shows conventional direction
+     (positive ? negative, solid particles)
+   ? Toggle: View ? ?? Flow
+
+? POLARITY INDICATORS:
+   ? Red (+) and Blue (-) terminals
+   ? Prevents incorrect connections
+   ? Toggle: View ? ? Polarity
+
+???????????????????????????????????????
+
+?? ADVANCED FEATURES:
+
+?? ROUTING MODES (??? Tools menu):
+   ? Free-form: Natural connections
+   ? Manhattan: Textbook right-angles
+   ? Offset: Parallel detours
+   ? Arc: Smooth sweeps
+   ? Toggle: Tools ? ?? Route
+
+? JUNCTIONS (critical for parallel + series-parallel circuits):
+   ? In Wire Mode, tap/click any wire run to split it and drop a junction
+   ? The new junction becomes a live terminal so you can branch immediately
+   ? Use junction branches to apply KCL on every current split/recombine node
+
+?? AUTO-ARRANGE:
+   ? Tools ? ?? Auto-Arrange
+   ? Automatically creates textbook layouts
+   ? Perfect for practice problems
+
+?? LAYOUT MODES (View menu):
+   ? Free: Place anywhere
+   ? Square: Textbook style
+   ? Linear: Vertical tree
+   ? Toggle: View ? ?? Layout
+
+???????????????????????????????????????
+
+?? CONTROLS:
+
+MOUSE/TOUCH:
+   ? Drag: Move components
+   ? Long-press: Edit values/properties
+   ? Two-finger pinch: Zoom
+   ? Two-finger drag: Pan workspace
+
+KEYBOARD SHORTCUTS:
+   ? B = Battery, R = Resistor
+   ? L = LED, S = Switch, J = Junction
+   ? W = Wire Mode, T = Rotate Mode
+   ? Space = Toggle Menu
+
+VIEW CONTROLS (??? View menu):
+   ? Reset View: Center camera
+   ? Fit Screen: Auto-zoom to circuit
+   ? Toggle Grid: Show/hide snap grid
+   ? Labels: Show/hide component names
+
+???????????????????????????????????????
+
+?? TIPS:
+? Complete the circuit loop for current to flow
+? Open switches stop current flow
+? Use junctions for every parallel branch; that is where current splits/recombines
+? Long-press wires to add a branch junction, delete, or reroute
+? Try different routing modes for cleaner layouts
+
+Need more help? Check:
+? ?? W.I.R.E. Guide - Electrical concepts
+? ?? Shortcuts - Full keyboard reference
+? ?? About - Version info & features
+            `;
+            alert(tutorial);
         }
 
         function showWireGuide() {
@@ -12981,8 +12218,7 @@ Made with ? for visual learners everywhere!
                 saveSnapshot = true,
                 snapToGridPosition = false,
                 suppressStatus = false,
-                reuseNearbyJunction = true,
-                existingJunction = null  // Re-use a pre-existing junction instead of creating a new one
+                reuseNearbyJunction = true
             } = options;
 
             const splitPoint = position instanceof THREE.Vector3
@@ -12994,13 +12230,13 @@ Made with ? for visual learners everywhere!
                 );
             splitPoint.y = 0;
 
-            if (reuseNearbyJunction && !existingJunction) {
-                const nearbyJunction = findNearestJunctionByPosition(splitPoint);
-                if (nearbyJunction) {
+            if (reuseNearbyJunction) {
+                const existingJunction = findNearestJunctionByPosition(splitPoint);
+                if (existingJunction) {
                     if (!suppressStatus) {
                         setStatus('⚡ Existing ● junction selected — click any terminal or junction to branch from this node!');
                     }
-                    return nearbyJunction;
+                    return existingJunction;
                 }
             }
 
@@ -13035,12 +12271,8 @@ Made with ? for visual learners everywhere!
                 saveState();
             }
 
-            // Use the provided junction if given (avoids creating then discarding a junction),
-            // otherwise create a new one at the split point.
-            const junction = existingJunction || new Junction(splitPoint, { snapToGridPosition });
-            if (!existingJunction) {
-                junctions.push(junction);
-            }
+            const junction = new Junction(splitPoint, { snapToGridPosition });
+            junctions.push(junction);
 
             const startObj = wire.startObj;
             const startSide = wire.startSide;
@@ -13061,9 +12293,7 @@ Made with ? for visual learners everywhere!
                 if (wire2) {
                     wire2.remove();
                 }
-                if (!existingJunction) {
-                    junction.remove();
-                }
+                junction.remove();
                 if (!suppressStatus) {
                     setStatus('⚠ Unable to split wire at that point. Try tapping farther from terminals.');
                 }
@@ -13613,62 +12843,18 @@ Made with ? for visual learners everywhere!
                 setStatus(`⚠ Wire ampacity overloaded by ${overloadPct.toFixed(0)}% - current flow is derating due to heating.`);
             } else if (flowMeta.warning === 'ampacity-critical') {
                 setStatus('⚠ CRITICAL wire overload - thermal runaway conditions. Use a higher-ampacity wire immediately.');
-                if (_lastWireWarningToastLevel !== 'ampacity-critical') {
-                    _lastWireWarningToastLevel = 'ampacity-critical';
-                    const wireProfile = activeWireProfile?.label || activeWireProfile?.insulationClass || 'Wire';
-                    showFUSEToast(
-                        { label: wireProfile, type: 'wire' },
-                        {
-                            severity: 2.5,
-                            name: 'Wire Overcurrent / Conductor Heating',
-                            description: 'Current exceeds rated ampacity — I²R heating is pushing the conductor into thermal runaway. Upgrade to a higher-ampacity wire immediately.',
-                            visual: 'smoke',
-                        }
-                    );
-                }
             } else if (flowMeta.warning === 'insulation') {
                 const insulClass = activeWireProfile?.insulationLabel || activeWireProfile?.insulationClass || 'PVC 80 °C';
                 const condTemp = Number.isFinite(flowMeta?.conductorTempC) ? flowMeta.conductorTempC.toFixed(0) : '?';
                 setStatus(`🔥 Wire insulation overheating (${condTemp} °C) — ${insulClass} jacket is beginning to soften and degrade. Switch to a higher-rated wire.`);
-                if (_lastWireWarningToastLevel !== 'insulation' && _lastWireWarningToastLevel !== 'insulation-critical') {
-                    _lastWireWarningToastLevel = 'insulation';
-                    const condTempNum = Number.isFinite(flowMeta?.conductorTempC) ? flowMeta.conductorTempC.toFixed(0) : '?';
-                    showFUSEToast(
-                        { label: insulClass, type: 'wire' },
-                        {
-                            severity: 1.5,
-                            name: 'Insulation Burnthrough — Short-Circuit Risk',
-                            description: `Conductor at ${condTempNum} °C — jacket is softening and degrading. Switch to a higher-rated wire before arcing begins.`,
-                            visual: 'arc',
-                        }
-                    );
-                }
             } else if (flowMeta.warning === 'insulation-critical') {
                 const insulClass = activeWireProfile?.insulationLabel || activeWireProfile?.insulationClass || 'insulation';
                 triggerShortCircuitFlash();
                 setStatus(`🔥 CRITICAL: ${insulClass} has burned through! Bare conductor exposed — SHORT CIRCUIT risk. Reduce current or upgrade wire immediately.`);
-                if (_lastWireWarningToastLevel !== 'insulation-critical') {
-                    _lastWireWarningToastLevel = 'insulation-critical';
-                    const condTempNum = Number.isFinite(flowMeta?.conductorTempC) ? flowMeta.conductorTempC.toFixed(0) : '?';
-                    showFUSEToast(
-                        { label: insulClass, type: 'wire' },
-                        {
-                            severity: 3,
-                            name: 'Insulation Burnthrough — Short-Circuit Risk',
-                            description: `CRITICAL: ${insulClass} jacket burned through at ${condTempNum} °C. Bare conductor exposed — dead short imminent. Reduce current or upgrade wire immediately.`,
-                            visual: 'arc',
-                        }
-                    );
-                }
             } else if (flowMeta.warning === 'voltage') {
                 setStatus('⚠ Wire insulation voltage rating exceeded - leakage/breakdown risk is elevated.');
             } else if (flowMeta.warning === 'voltage-critical') {
                 setStatus('⚠ CRITICAL insulation over-voltage - breakdown risk is severe. Use a higher voltage-rated wire.');
-            }
-
-            // Reset wire warning toast level when the warning clears so it can fire again if it returns.
-            if (!flowMeta.warning) {
-                _lastWireWarningToastLevel = null;
             }
 
             const nameplateFlow = (currentFlowState && typeof currentFlowState === 'object')
@@ -15899,7 +15085,6 @@ Made with ? for visual learners everywhere!
                 clearTimeout(fuseOnsetTimer);
                 fuseOnsetTimer     = null;
                 fuseOnsetStartTime = 0;
-                _lastWireWarningToastLevel = null;
                 return;
             }
 
@@ -18277,10 +17462,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // selectable).  The ping-pong bridge (builder:ping → legacy:ready)
         // guards readiness with the _builderReady flag, so this deferral does
         // not cause the React host to unlock the UI before the scene is ready.
-        if(window._ct3dDiag) window._ct3dDiag('scheduleInit starting (120 retries)');
         (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
-            if(window._ct3dDiag && retries % 20 === 0) window._ct3dDiag('scheduleInit retry=' + (120-retries) + ' w=' + w + ' h=' + (window.innerHeight || document.documentElement.clientHeight));
             var h = window.innerHeight || document.documentElement.clientHeight;
             if (w > 0 && h > 0) {
                 init();
