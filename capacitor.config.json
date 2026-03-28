@@ -8,6 +8,9 @@
     "webContentsDebuggingEnabled": true,
     "backgroundColor": "#0f172a"
   },
+  "server": {
+    "androidScheme": "https"
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
