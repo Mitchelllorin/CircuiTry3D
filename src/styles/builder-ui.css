@@ -1169,7 +1169,7 @@ body.builder-body {
   top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top) + 64px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: calc(var(--z-builder-floats) - 1);
+  z-index: 1100;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -1246,17 +1246,23 @@ body.builder-body {
 
 .junction-info-tip-close {
   position: absolute;
-  top: 7px;
-  right: 9px;
-  background: none;
-  border: none;
-  color: rgba(136, 204, 255, 0.7);
-  font-size: 16px;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(136, 204, 255, 0.25);
+  color: rgba(136, 204, 255, 0.85);
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: color 0.15s ease;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
 }
 
 .junction-info-tip-close:hover {

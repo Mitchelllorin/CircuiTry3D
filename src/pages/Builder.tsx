@@ -1879,6 +1879,11 @@ export default function Builder() {
           try {
             if (window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1") {
               setJunctionTipVisible(true);
+              // Auto-dismiss after 12 seconds as safety net
+              setTimeout(() => {
+                setJunctionTipVisible(false);
+                try { window.localStorage.setItem(JUNCTION_TIP_STORAGE_KEY, "1"); } catch {}
+              }, 12000);
             }
           } catch {
             // ignore storage read failures — ref prevents repeat triggers
