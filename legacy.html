@@ -3373,6 +3373,15 @@
         let meterCurrentTarget = null; // component for current measurement
         let lastDCSolution = null;
 
+        // ── Workspace failure state ──────────────────────────────────────────
+        // Hoisted here (near other state variables) to avoid Temporal Dead Zone
+        // errors on Android WebView where analyzeCircuit() runs before the
+        // original declaration site was reached during script execution.
+        const workspaceFailureState = new Map();   // componentId → failureResult
+        const workspaceFailureParticles = [];       // { points, velocities, lifetimes, ... }
+        // Camera-shake state for explosion effects
+        const workspaceCameraShake = { active: false, intensity: 0, duration: 0, elapsed: 0 };
+
         let scopeTimer = null;
         let scopeBuffer = [];
         const SCOPE_BUFFER_SIZE = 220;
@@ -17622,10 +17631,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // ─────────────────────────────────────────────────────────────────────
 
         // Track failure state and particle systems per component
-        const workspaceFailureState = new Map();   // componentId → failureResult
-        const workspaceFailureParticles = [];       // { points, velocities, lifetimes, ... }
-        // Camera-shake state for explosion effects
-        const workspaceCameraShake = { active: false, intensity: 0, duration: 0, elapsed: 0 };
+        // (workspaceFailureState, workspaceFailureParticles, workspaceCameraShake
+        //  are declared earlier with other state variables to avoid TDZ on Android WebView)
         // Particle lifetime range (seconds). Particles spawn with life in [MIN, MAX].
         const FAIL_PARTICLE_MIN_LIFE = 0.3;
         const FAIL_PARTICLE_MAX_LIFE = 1.5;
