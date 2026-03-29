@@ -525,7 +525,7 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
  * tasks without requiring the user to open the full component library panel.
  */
 export const QUICK_ADD_COMPONENTS: ComponentAction[] = (
-  ["battery", "resistor", "led", "junction"] as const
+  ["battery", "resistor", "led", "switch", "junction"] as const
 ).flatMap((id) => {
   const found = COMPONENT_ACTIONS.find((c) => c.id === id);
   return found ? [found] : [];
