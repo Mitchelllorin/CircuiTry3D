@@ -14,8 +14,8 @@ const STORY_CONTENT: Record<string, StoryContent> = {
     body: "Kirchhoff's Current Law (KCL) expresses charge conservation at every node. Because electrons cannot pile up at a junction, the sum of currents flowing in must equal the sum flowing out. Engineers use this to write a system of equations at each node, then solve for unknown voltages — a method called nodal analysis. Try placing a junction in Build mode and watching how CircuiTry3D visualises current splitting at each branch.",
   },
   "kvl-1": {
-    heading: "Tracing Loops With Kirchhoff's Voltage Law",
-    body: "KVL states that energy is conserved around any closed loop. When you walk around a loop adding up voltage rises (across sources) and drops (across resistors), the total is always zero. This is the foundation of mesh analysis. In CircuiTry3D's Worksheet panel you can step through KVL loops one at a time using the W.I.R.E. colour system.",
+    heading: "Applying Kirchhoff's Voltage Law",
+    body: "KVL states that energy is conserved around any closed path. When you walk around a closed path adding up voltage rises (across sources) and drops (across resistors), the total is always zero. This is the foundation of mesh analysis. In CircuiTry3D's Worksheet panel you can step through KVL circuits one at a time using the W.I.R.E. colour system.",
   },
   "ohm-1": {
     heading: "Ohm's Law: The Universal Starting Point",

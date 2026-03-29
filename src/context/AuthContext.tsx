@@ -1,5 +1,7 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
+import { getStoredTier, setStoredTier } from "../utils/playStoreBilling";
 
 type AuthStorageSchema = {
   users: StoredUser[];
@@ -151,16 +153,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const currentUser = useMemo(() => buildAuthUser(state.users.find((user) => user.id === state.currentUserId)), [state.users, state.currentUserId]);
+
+  const users = useMemo(() => state.users.map((user) => buildAuthUser(user)).filter((user): user is AuthUser => Boolean(user)), [state.users]);
+
+  // Grant lifetime tier retroactively for any signed-in founding tester.
+  useEffect(() => {
+    if (currentUser && isLifetimeTester(currentUser.email) && getStoredTier() !== "lifetime") {
+      setStoredTier("lifetime");
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (!initialisedRef.current) {
       return;
     }
     writeStorage(state);
   }, [state]);
-
-  const currentUser = useMemo(() => buildAuthUser(state.users.find((user) => user.id === state.currentUserId)), [state.users, state.currentUserId]);
-
-  const users = useMemo(() => state.users.map((user) => buildAuthUser(user)).filter((user): user is AuthUser => Boolean(user)), [state.users]);
 
   const getUserById = useCallback(
     (id: string) => {
@@ -203,6 +212,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUserId: nextUser.id,
     }));
 
+    if (isLifetimeTester(email)) {
+      setStoredTier("lifetime");
+    }
+
     return { ok: true, user: buildAuthUser(nextUser)! };
   }, []);
 
@@ -220,6 +233,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...previous,
       currentUserId: match.id,
     }));
+
+    if (isLifetimeTester(email)) {
+      setStoredTier("lifetime");
+    }
 
     return { ok: true, user: buildAuthUser(match)! };
   }, []);

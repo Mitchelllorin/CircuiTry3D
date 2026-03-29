@@ -87,6 +87,9 @@
   --z-builder-toolbar: 920;
   --z-builder-floats: 930;
   --z-builder-toolbar-top: 940;
+  /* Menu-stage toggle tabs (Library / Controls / Insights) — above action bar &
+     zoom so the small toggle buttons are never hidden behind floating elements */
+  --z-builder-menu-stage: 945;
   /* Tutorial overlay — must clear collapsed compact panel headers (z 1190–1250) */
   --z-tutorial: 1260;
   /* Compact / mobile panels */
@@ -425,6 +428,11 @@ body {
 /* On workspace page, no extra padding needed as Builder handles its own layout */
 .app-shell.is-workspace .app-content {
   padding-top: 0;
+}
+
+/* Builder has its own ticker feed — hide the global one to avoid overlap in landscape */
+.app-shell.is-workspace .tips-ticker {
+  display: none;
 }
 
 /* ── Tips & Facts ticker ─────────────────────────────────────────────────── */
@@ -828,4 +836,23 @@ body {
 
 .app-footer-sep {
   color: var(--border-subtle);
+}
+
+/* ── Landscape on touch (phone) devices ─────────────────────────────────── */
+/* Save vertical space on non-workspace pages when in landscape on Android.  */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  .app-footer {
+    display: none;
+  }
+
+  .tips-ticker {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    bottom: calc(var(--app-safe-area-bottom) + 4px);
+  }
+
+  .app-view,
+  .app-content > * {
+    padding: 12px 16px;
+  }
 }

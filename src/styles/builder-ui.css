@@ -17,15 +17,18 @@
   --builder-muted: rgba(200, 220, 255, 0.72);
   --builder-shadow: rgba(3, 12, 32, 0.55);
   /* Toggle tabs - slimmer for minimal footprint */
-  --builder-menu-toggle-width: 24px;
-  --builder-menu-toggle-height: 64px;
+  --builder-menu-toggle-width: 32px;
+  --builder-menu-toggle-height: 72px;
   /* On touch devices, toggles are widened via min-width; keep edge actions clear of that hitbox. */
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
   --builder-menu-left-width: 180px;
   --builder-menu-right-width: 172px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
-  --builder-menu-bottom-height: 248px;
+  --builder-menu-bottom-height: clamp(320px, 65vh, 600px);
+  /* Side panel heights — tall enough to scroll through content */
+  --builder-menu-left-height: clamp(320px, 65vh, 600px);
+  --builder-menu-right-height: clamp(300px, 65vh, 580px);
   --builder-safe-area-top: env(safe-area-inset-top, 0px);
   --builder-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --builder-safe-area-left: env(safe-area-inset-left, 0px);
@@ -378,10 +381,13 @@ body.builder-body {
 
 .edge-action-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   width: var(--builder-edge-action-button-size);
-  height: var(--builder-edge-action-button-size);
+  min-height: var(--builder-edge-action-button-size);
+  padding: 6px 4px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -389,6 +395,17 @@ body.builder-body {
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+}
+
+.edge-action-label {
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: inherit;
+  user-select: none;
+  pointer-events: none;
 }
 
 .edge-action-btn:hover:not(:disabled) {
@@ -499,45 +516,25 @@ body.builder-body {
   object-fit: contain;
 }
 
-/* Right edge positioning (default - Undo, Redo, Load, Save) */
+/* Right edge positioning — default: only toggle (24px) visible, so minimal offset */
 .workspace-edge-actions--right {
-  right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
+  right: calc(var(--builder-menu-toggle-width) + clamp(8px, 2vw, 16px) + env(safe-area-inset-right, 0px));
   left: auto;
-  /* Position above the Insights toggle to avoid overlap */
   bottom: calc(
-    var(--builder-menu-toggle-height) +
-    32px +
+    var(--builder-edge-actions-gap) +
     var(--builder-safe-area-bottom)
   );
 }
 
-/* Left edge positioning (Wire, Rotate, Edit tools) */
+/* Left edge positioning — default: only toggle (24px) visible */
 .workspace-edge-actions--left {
   left: calc(
-    clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+    var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
   );
   right: auto;
 }
 
-/* When side menus are open, anchor edge actions to the "inner perimeter"
-   (i.e. inside the open menu), so they don't overlap the menu/toggle. */
-.builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-  left: calc(
-    env(safe-area-inset-left, 0px) +
-    var(--builder-menu-left-width) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
-}
-
-.builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-  right: calc(
-    env(safe-area-inset-right, 0px) +
-    var(--builder-menu-right-width) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
-}
+/* Panels overlap edge actions when open — no shift; panels have z-index:1000 */
 
 @media (max-width: 720px) {
   .workspace-edge-actions {
@@ -551,38 +548,17 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
-    /* Position above the Insights toggle to avoid overlap */
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      28px +
-      var(--builder-safe-area-bottom)
-    );
+    right: calc(var(--builder-menu-toggle-width) + clamp(6px, 1.5vw, 12px) + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--builder-edge-actions-gap) + var(--builder-safe-area-bottom));
   }
 
   .workspace-edge-actions--left {
     left: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+      var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
     );
   }
 
-  .builder-shell[data-left-menu-open="true"] .workspace-edge-actions--left {
-    left: calc(
-      env(safe-area-inset-left, 0px) +
-      var(--builder-menu-left-width) +
-      var(--builder-menu-toggle-hit-width) +
-      10px
-    );
-  }
-
-  .builder-shell[data-right-menu-open="true"] .workspace-edge-actions--right {
-    right: calc(
-      env(safe-area-inset-right, 0px) +
-      var(--builder-menu-right-width) +
-      var(--builder-menu-toggle-hit-width) +
-      10px
-    );
-  }
+  /* panels overlap edge actions — no shift rules needed at this breakpoint */
 
 }
 
@@ -597,20 +573,15 @@ body.builder-body {
   }
 
   .workspace-edge-actions--right {
-    right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
+    right: calc(var(--builder-menu-toggle-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
     left: auto;
     transform: none;
-    /* Position above the Insights toggle to avoid overlap */
-    bottom: calc(
-      var(--builder-menu-toggle-height) +
-      24px +
-      var(--builder-safe-area-bottom)
-    );
+    bottom: calc(var(--builder-edge-actions-gap) + var(--builder-safe-area-bottom));
   }
 
   .workspace-edge-actions--left {
     left: calc(
-      clamp(8px, 2.25vw, 18px) + env(safe-area-inset-left, 0px)
+      var(--builder-menu-toggle-width) + clamp(8px, 2.25vw, 14px) + env(safe-area-inset-left, 0px)
     );
     right: auto;
     transform: none;
@@ -632,14 +603,27 @@ body.builder-body {
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-builder-floats);
-  width: min(640px, calc(100vw - 28px));
-  padding: 14px 16px;
+  width: min(560px, calc(100vw - 28px));
+  /* Cap height to the available space between the top ticker and the bottom
+     safe area so the panel never overflows on shorter devices.
+     72px = ticker-top default, 32px = ticker-height default,
+     28px = gap above + below banner, 16px = bottom safe-area fallback. */
+  max-height: calc(
+    100dvh
+    - var(--builder-ticker-top, 72px)
+    - var(--builder-ticker-height, 32px)
+    - 28px
+    - var(--builder-safe-area-top)
+    - env(safe-area-inset-bottom, 16px)
+  );
+  overflow-y: auto;
+  padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid rgba(136, 204, 255, 0.34);
   background: linear-gradient(
     140deg,
-    rgba(10, 24, 48, 0.82),
-    rgba(8, 32, 52, 0.82)
+    rgba(10, 24, 48, 0.92),
+    rgba(8, 32, 52, 0.92)
   );
   box-shadow:
     0 12px 28px rgba(3, 12, 32, 0.48),
@@ -647,7 +631,7 @@ body.builder-body {
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .current-flow-payoff-kicker {
@@ -660,7 +644,7 @@ body.builder-body {
 
 .current-flow-payoff-title {
   margin: 0;
-  font-size: clamp(14px, 2.3vw, 19px);
+  font-size: clamp(13px, 2.3vw, 17px);
   letter-spacing: 0.01em;
   color: rgba(236, 248, 255, 0.96);
 }
@@ -668,7 +652,7 @@ body.builder-body {
 .current-flow-payoff-text {
   margin: 0;
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.4;
   color: rgba(204, 228, 255, 0.88);
 }
 
@@ -676,14 +660,14 @@ body.builder-body {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .current-flow-payoff-metric {
   display: inline-flex;
   align-items: baseline;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 5px;
+  padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid rgba(136, 204, 255, 0.24);
   background: rgba(7, 18, 38, 0.52);
@@ -699,7 +683,7 @@ body.builder-body {
 .current-flow-payoff-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .current-flow-payoff-btn {
@@ -711,7 +695,7 @@ body.builder-body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 9px 12px;
+  padding: 7px 11px;
   cursor: pointer;
   transition:
     border-color 0.2s ease,
@@ -762,107 +746,155 @@ body.builder-body {
       var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 26px) + 12px + var(--builder-safe-area-top)
     );
     width: calc(100vw - 20px);
-    padding: 12px 12px;
-    gap: 7px;
+    padding: 8px 10px;
+    gap: 5px;
   }
 
   .current-flow-payoff-actions {
-    gap: 6px;
+    gap: 5px;
   }
 
   .current-flow-payoff-btn {
     flex: 1 1 auto;
-    min-width: 132px;
+    min-width: 120px;
     font-size: 10px;
-    padding: 8px 10px;
+    padding: 7px 8px;
   }
 }
 
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
   .current-flow-payoff-banner {
     display: none;
   }
 }
 
-/* Zoom controls overlay
-   Positioned in the bottom-right corner.  Right offset must clear BOTH
-   the right-sidebar CONTROLS toggle (--builder-menu-toggle-hit-width) AND
-   the bottom INSIGHTS toggle (min-width: --builder-menu-toggle-height so it
-   can sit flush against the right edge of the stage).  Without both offsets
-   the zoom buttons overlap the Insights tab at the bottom-right corner. */
+/* Zoom controls — bottom-right perimeter corner, stacked vertically.
+   No container box — just the three bare symbol buttons. */
 .circuit-zoom-controls {
   position: fixed;
+  bottom: calc(48px + var(--builder-safe-area-bottom, 0px));
+  right: calc(var(--builder-menu-toggle-width) + 12px + env(safe-area-inset-right, 0px));
   top: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
-  right: calc(
-    var(--builder-menu-toggle-hit-width) +
-    var(--builder-menu-toggle-height) +
-    12px +
-    var(--builder-safe-area-right)
-  );
+  left: auto;
+  transform: none;
   z-index: var(--z-builder-toolbar);
   display: flex;
-  flex-direction: row;
-  gap: 4px;
+  flex-direction: column;
+  gap: 3px;
+  /* No background, no border, no shadow on the container */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
-/* When the right side menu is open, shift zoom controls left to stay clear
-   of the open panel (mirrors the pattern used by .workspace-edge-actions--right). */
-.builder-shell[data-right-menu-open="true"] .circuit-zoom-controls {
-  right: calc(
-    env(safe-area-inset-right, 0px) +
-    var(--builder-menu-right-width) +
-    var(--builder-menu-toggle-hit-width) +
-    12px
-  );
+.circuit-zoom-controls > * {
+  pointer-events: all;
 }
+
+/* Panels overlap the zoom controls — no shift needed, open panel has z-index:1000 */
 
 .circuit-zoom-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(136, 204, 255, 0.3);
-  background: rgba(10, 18, 38, 0.82);
-  color: rgba(200, 224, 255, 0.9);
-  font-size: 20px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  background: rgba(8, 16, 36, 0.52);
+  color: rgba(180, 215, 255, 0.88);
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  box-shadow: none;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.14s ease;
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .circuit-zoom-btn:hover:not(:disabled) {
-  background: rgba(16, 30, 60, 0.92);
-  border-color: rgba(136, 204, 255, 0.55);
-  transform: scale(1.08);
+  background: rgba(16, 30, 60, 0.78);
+  border-color: rgba(136, 204, 255, 0.42);
+  transform: scale(1.1);
 }
 
 .circuit-zoom-btn:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.94);
 }
 
 .circuit-zoom-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-/* ── Centered component quick-add bar ───────────────────────────────────
-   A horizontally centered pill strip shown over the workspace (outside the
-   iframe) so it always appears in the production React app at /#/app.
-   This is where Battery, Resistor, LED, Junction and Wire-mode shortcuts
-   belong — NOT inside legacy.html whose #quick-actions element is hidden
-   by `body.embedded #quick-actions { display:none }` when embedded.
-   Top is anchored to the bottom edge of the ticker strip (--builder-ticker-top
-   + --builder-ticker-height) with a 12px gap so the two bars never overlap or
-   appear visually stacked with no breathing room.
-   ─────────────────────────────────────────────────────────────────────── */
+/* ── Measurement Tools FAB ──────────────────────────────────────────────────
+   Positioned at top-left corner, just below the action bar.
+   One tap opens the Insights drawer (DMM, analysis).
+   ─────────────────────────────────────────────────────────────────────────── */
+.measure-fab {
+  display: none !important; /* Moved to action bar */
+  position: fixed;
+  left: calc(var(--builder-safe-area-left, 0px) + 8px);
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
+  bottom: auto;
+  z-index: var(--z-builder-floats);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 255, 136, 0.45);
+  background: linear-gradient(
+    145deg,
+    rgba(4, 20, 14, 0.92) 0%,
+    rgba(2, 12, 8, 0.95) 100%
+  );
+  color: #00ff88;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow:
+    0 4px 18px rgba(2, 8, 20, 0.55),
+    0 0 0 2px rgba(0, 255, 136, 0.08);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.measure-fab:hover {
+  transform: scale(1.08);
+  border-color: rgba(0, 255, 136, 0.72);
+  box-shadow:
+    0 6px 24px rgba(2, 8, 20, 0.65),
+    0 0 12px rgba(0, 255, 136, 0.25);
+}
+
+.measure-fab:focus-visible {
+  outline: 2px solid #00ff88;
+  outline-offset: 3px;
+}
+
+.measure-fab--active {
+  background: linear-gradient(
+    145deg,
+    rgba(0, 60, 30, 0.94) 0%,
+    rgba(0, 40, 20, 0.96) 100%
+  );
+  border-color: rgba(0, 255, 136, 0.8);
+  box-shadow:
+    0 6px 24px rgba(2, 8, 20, 0.65),
+    0 0 16px rgba(0, 255, 136, 0.35);
+}
+
+/* ── Centered component quick-add bar (legacy — kept for sub-element styles) ─ */
 .quick-add-bar {
   position: fixed;
   top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top));
@@ -880,6 +912,157 @@ body.builder-body {
   backdrop-filter: blur(14px);
   box-shadow: 0 2px 12px rgba(3, 12, 32, 0.5);
   white-space: nowrap;
+}
+
+/* ── Perimeter action strip ─────────────────────────────────────────────
+   No floating box. 13 icon-only buttons in up to 2 tight rows pinned to
+   the top edge of the workspace. Zero background/border on the container
+   so the canvas shows through between buttons.
+   ─────────────────────────────────────────────────────────────────────── */
+.unified-action-bar {
+  position: fixed;
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 2px + var(--builder-safe-area-top));
+  left: 0;
+  right: 0;
+  transform: none;
+  z-index: var(--z-builder-floats);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  max-width: 100vw;
+  /* ↓ No container — transparent strip only */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  backdrop-filter: none;
+  box-shadow: none;
+  pointer-events: none; /* pass-through on gaps between buttons */
+}
+
+/* Re-enable pointer events for the actual buttons */
+.unified-action-bar > * {
+  pointer-events: all;
+}
+
+/* Dividers removed — no container to divide inside */
+.unified-action-divider {
+  display: none;
+}
+
+/* Show compact text labels under each icon */
+.unified-action-bar .edge-action-label {
+  display: block;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(186, 220, 255, 0.75);
+  line-height: 1;
+  margin-top: 2px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.unified-action-bar .quick-add-btn-label {
+  display: block;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(186, 220, 255, 0.75);
+  line-height: 1;
+  margin-top: 2px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* Compact icon+label buttons — individual pill style instead of one big box */
+.unified-action-bar .edge-action-btn {
+  width: 48px;
+  min-height: 46px;
+  padding: 5px 3px 4px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 22, 48, 0.78);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.unified-action-bar .edge-action-btn:active {
+  background: rgba(136, 204, 255, 0.18);
+}
+
+.unified-action-bar .quick-add-btn {
+  min-width: 48px;
+  min-height: 46px;
+  padding: 5px 3px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(10, 22, 48, 0.78);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.unified-action-bar .quick-add-btn:active {
+  background: rgba(136, 204, 255, 0.18);
+}
+
+/* Give tool buttons (Wire, Rotate, etc.) same icon-box treatment as 3D component thumbnails */
+.unified-action-bar .edge-action-icon-svg {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  background: rgba(8, 18, 40, 0.78);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 6px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Wire strippers is an <img>, style separately */
+.unified-action-bar .edge-action-btn img.edge-action-icon-svg {
+  padding: 4px;
+  object-fit: contain;
+}
+
+/* Consistent button size for all action bar buttons */
+.unified-action-bar .edge-action-btn,
+.unified-action-bar .quick-add-btn {
+  width: 52px;
+  min-width: 52px;
+  min-height: 52px;
+}
+
+/* On narrow phones: tighten gap so 2 rows fit neatly */
+@media (max-width: 480px) {
+  .unified-action-bar {
+    gap: 2px;
+    padding: 2px 3px;
+  }
+  .unified-action-bar .edge-action-btn,
+  .unified-action-bar .quick-add-btn {
+    width: 42px;
+    min-height: 42px;
+    min-width: 42px;
+    padding: 4px 2px 3px;
+    border-radius: 9px;
+  }
+  .unified-action-bar .edge-action-label,
+  .unified-action-bar .quick-add-btn-label {
+    font-size: 6px;
+  }
 }
 
 .quick-add-btn {
@@ -993,11 +1176,11 @@ body.builder-body {
   max-width: 390px;
   width: calc(100vw - 32px);
   padding: 10px 14px;
-  background: rgba(40, 26, 0, 0.92);
-  border: 1px solid rgba(255, 200, 0, 0.5);
+  background: rgba(10, 24, 48, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.35);
   border-radius: 14px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 180, 0, 0.18);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 12px rgba(136, 204, 255, 0.12);
   animation: junction-tip-in 0.25s ease;
   pointer-events: auto;
 }
@@ -1022,7 +1205,7 @@ body.builder-body {
 .junction-info-tip-title {
   font-size: 12px;
   font-weight: 700;
-  color: #ffe566;
+  color: rgba(136, 204, 255, 0.9);
   letter-spacing: 0.04em;
   margin: 0 0 4px;
   text-transform: uppercase;
@@ -1031,7 +1214,7 @@ body.builder-body {
 .junction-info-tip-text {
   font-size: 11px;
   line-height: 1.5;
-  color: rgba(255, 240, 190, 0.88);
+  color: rgba(210, 230, 255, 0.85);
   margin: 0 0 6px;
 }
 
@@ -1046,7 +1229,7 @@ body.builder-body {
 
 .junction-info-tip-bullets li {
   font-size: 10px;
-  color: rgba(255, 230, 160, 0.8);
+  color: rgba(200, 220, 255, 0.75);
   padding-left: 14px;
   position: relative;
   line-height: 1.4;
@@ -1056,7 +1239,7 @@ body.builder-body {
   content: "●";
   position: absolute;
   left: 0;
-  color: #ffcc00;
+  color: rgba(0, 255, 136, 0.8);
   font-size: 7px;
   top: 3px;
 }
@@ -1067,7 +1250,7 @@ body.builder-body {
   right: 9px;
   background: none;
   border: none;
-  color: rgba(255, 220, 100, 0.7);
+  color: rgba(136, 204, 255, 0.7);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -1077,7 +1260,7 @@ body.builder-body {
 }
 
 .junction-info-tip-close:hover {
-  color: #fff;
+  color: rgba(232, 246, 255, 0.95);
 }
 
 @media (max-width: 480px) {
@@ -1170,7 +1353,7 @@ body.builder-body {
 .current-flow-payoff-explainer {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px 10px;
+  gap: 5px 8px;
   margin-top: 2px;
 }
 
@@ -1178,7 +1361,7 @@ body.builder-body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 7px 9px;
+  padding: 5px 7px;
   border-radius: 8px;
   border: 1px solid rgba(136, 204, 255, 0.14);
   background: rgba(6, 14, 32, 0.44);
@@ -1186,7 +1369,7 @@ body.builder-body {
 
 .payoff-explainer-label {
   font-size: 9px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
   color: rgba(136, 204, 255, 0.85);
@@ -1194,14 +1377,8 @@ body.builder-body {
 
 .payoff-explainer-value {
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.35;
   color: rgba(210, 234, 255, 0.88);
-}
-
-@media (max-width: 480px) {
-  .current-flow-payoff-explainer {
-    grid-template-columns: 1fr;
-  }
 }
 
 .mode-bar-actions {
@@ -1321,20 +1498,22 @@ body.builder-body {
   will-change: transform, opacity;
 }
 
-/* Left menu - square corners on left edge, rounded on right */
+/* Left menu — side-edge drawer layout */
 .builder-menu-left {
   width: var(--builder-menu-left-width);
-  height: 100%;
+  height: var(--builder-menu-left-height);
   flex-shrink: 0;
+  overflow: hidden;
   border-radius: 0 12px 12px 0;
   border-left: none;
 }
 
-/* Right menu - square corners on right edge, rounded on left */
+/* Right menu — side-edge drawer layout */
 .builder-menu-right {
   width: var(--builder-menu-right-width);
-  height: 100%;
+  height: var(--builder-menu-right-height);
   flex-shrink: 0;
+  overflow: hidden;
   border-radius: 12px 0 0 12px;
   border-right: none;
 }
@@ -1343,7 +1522,7 @@ body.builder-body {
   width: 100%;
   height: var(--builder-menu-bottom-height);
   max-height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   gap: 12px;
   padding: 18px;
   display: flex;
@@ -1356,74 +1535,82 @@ body.builder-body {
   gap: 0;
   align-items: stretch;
   overflow: visible;
-  z-index: var(--z-builder-side-menu);
+  z-index: var(--z-builder-menu-stage);
   transition:
     width 0.32s ease,
     height 0.32s ease;
   will-change: width, height;
 }
 
-.builder-menu-stage-left,
-.builder-menu-stage-right {
-  align-items: flex-start;
-}
-
 .builder-menu-stage-bottom {
   align-items: flex-end;
 }
 
-.builder-menu-stage-left,
-.builder-menu-stage-right {
-  /* Start below the ticker strip (--builder-ticker-top + --builder-ticker-height + 4px gap).
-     This prevents the toggle buttons from being hidden behind the ticker band. */
-  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 4px + var(--builder-safe-area-top));
-  bottom: calc(28px + var(--builder-safe-area-bottom));
+/* Open panels float above zoom controls, FABs, and edge-action buttons */
+.builder-menu-stage.open {
+  z-index: 1000;
 }
 
-/* Edge-attached left sidebar - toggle always at visible edge */
+/* Left panel — Library: stage clips to toggle-width when closed, expands on open */
 .builder-menu-stage-left {
   left: 0;
-  flex-direction: row;
-  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+  top: 50%;
+  bottom: auto;
+  flex-direction: row; /* toggle is first in DOM → sits at x=0 (left edge); nav clips behind it */
+  width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
+  height: var(--builder-menu-left-height);
   align-items: stretch;
-  transition: transform 0.32s ease;
-  transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+  overflow: clip; /* clips nav without cutting box-shadow */
+  overflow-clip-margin: 4px;
+  transition: width 0.32s ease;
+  transform: translateY(-50%);
 }
 
 .builder-menu-stage-left.open {
-  transform: translateX(0);
+  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+  transform: translateY(-50%);
 }
 
-/* Edge-attached right sidebar - toggle always at visible edge */
+/* Right panel — Controls: same clip approach, mirrored */
 .builder-menu-stage-right {
   right: 0;
-  flex-direction: row-reverse;
-  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
-  transition: transform 0.32s ease;
-  transform: translateX(var(--builder-menu-right-width));
+  left: auto;
+  top: 50%;
+  bottom: auto;
+  flex-direction: row; /* in row at right:0 — toggle fills the stage width when closed */
+  width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
+  height: var(--builder-menu-right-height);
+  align-items: stretch;
+  overflow: clip;
+  overflow-clip-margin: 4px;
+  transition: width 0.32s ease;
+  transform: translateY(-50%);
 }
 
 .builder-menu-stage-right.open {
-  transform: translateX(0);
+  width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+  transform: translateY(-50%);
 }
 
+/* Insights panel — small pill at bottom center when closed;
+   opens full-width, overlapping side panels */
 .builder-menu-stage-bottom {
-  right: calc(clamp(12px, 3vw, 24px) + env(safe-area-inset-right, 0px));
-  bottom: calc(24px + var(--builder-safe-area-bottom));
-  flex-direction: column;
-  width: var(--builder-menu-toggle-width);
-  /* Use toggle-HEIGHT (the long dimension = 64px desktop / 48px mobile) not
-     toggle-WIDTH (the thin dimension = 24px).  toggle-width was the wrong
-     variable: the bottom tab is a horizontal bar whose height == toggle-height.
-     Using the wrong variable made the stage 20-24px tall while the button
-     rendered at min-height:48px, causing the button to overflow 12px below
-     the viewport on portrait phones. */
-  height: var(--builder-menu-toggle-height);
+  left: 50%;
+  right: auto;
+  bottom: calc(8px + var(--builder-safe-area-bottom));
+  flex-direction: column-reverse; /* toggle at bottom (DOM-first = bottom in reverse), menu above */
+  width: var(--builder-menu-bottom-width); /* closed: slim pill */
+  height: var(--builder-menu-toggle-width); /* closed = just toggle tab */
+  overflow: clip; /* clips nav without cutting toggle box-shadow */
+  overflow-clip-margin: 4px;
+  transform: translateX(-50%);
+  transition: height 0.32s ease, width 0.32s ease;
 }
 
 .builder-menu-stage-bottom.open {
-  width: calc(var(--builder-menu-bottom-width) + var(--builder-menu-toggle-width));
   height: calc(var(--builder-menu-bottom-height) + var(--builder-menu-toggle-width));
+  width: calc(100vw - 16px); /* full-width: overlaps side panels */
+  transform: translateX(-50%);
 }
 
 .builder-menu-stage-left .builder-menu,
@@ -1448,12 +1635,11 @@ body.builder-body {
 }
 
 .builder-menu-stage-bottom .builder-menu {
-  transform: translateY(100%);
   opacity: 0;
+  transition: opacity 0.24s ease;
 }
 
 .builder-menu-stage-bottom.open .builder-menu {
-  transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
 }
@@ -1762,22 +1948,24 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   text-orientation: mixed;
 }
 
-/* Left toggle tab - rounded on right edge only, with glow */
+/* Left toggle tab — slim vertical handle at the left edge, rounded right side */
 .builder-menu-toggle-left {
   border-radius: 0 10px 10px 0;
   border-left: none;
+  border-right: 1px solid var(--builder-border-strong);
   box-shadow:
-    0 4px 12px var(--builder-shadow),
-    2px 0 16px rgba(136, 204, 255, 0.2);
+    2px 0 12px var(--builder-shadow),
+    2px 0 16px rgba(136, 204, 255, 0.18);
 }
 
-/* Right toggle tab - rounded on left edge only, with glow */
+/* Right toggle tab — slim vertical handle at the right edge, rounded left side */
 .builder-menu-toggle-right {
   border-radius: 10px 0 0 10px;
   border-right: none;
+  border-left: 1px solid var(--builder-border-strong);
   box-shadow:
-    0 4px 12px var(--builder-shadow),
-    -2px 0 16px rgba(136, 204, 255, 0.2);
+    -2px 0 12px var(--builder-shadow),
+    -2px 0 16px rgba(136, 204, 255, 0.18);
 }
 
 .builder-menu-toggle:hover,
@@ -1791,38 +1979,43 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.35);
 }
 
+/* Side panel toggle tabs: slim vertical handles, centered on the panel height */
 .builder-menu-toggle-left,
 .builder-menu-toggle-right {
   flex-shrink: 0;
-  padding: 6px 2px;
-  margin-bottom: 0;
+  width: var(--builder-menu-toggle-width);
+  min-width: var(--builder-menu-toggle-width);
+  height: 88px;
+  min-height: 0;
+  padding: 8px 3px;
+  margin: auto 0; /* vertically center within the stage */
   align-self: center;
   position: relative;
   z-index: var(--z-raised);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  flex-direction: column;
 }
 
-/* Left toggle tab positioned at right side of the flex container */
-.builder-menu-stage-left .builder-menu-toggle-left {
-  order: 1;
-}
+/* Left toggle is first in DOM with flex-direction:row — sits at x=0 (left edge) naturally */
+/* No order override needed */
 
-/* Right toggle tab positioned at left side of the flex container (row-reverse) */
+/* Right toggle sits as the first flex item in row (leftmost visually = right edge tab) */
 .builder-menu-stage-right .builder-menu-toggle-right {
-  order: 1;
-}
-
-.builder-menu-toggle-right {
-  margin-left: auto;
+  order: 0;
+  margin-left: 0;
 }
 
 .builder-menu-toggle-bottom {
   width: auto;
-  min-width: var(--builder-menu-toggle-height);
+  min-width: 80px;
+  max-width: 160px;
   height: var(--builder-menu-toggle-width);
-  padding: 2px 10px;
-  margin-left: auto;
-  margin-top: auto;
-  align-self: flex-end;
+  min-height: var(--builder-menu-toggle-width);
+  flex-shrink: 0;
+  padding: 2px 20px;
+  margin: 0 auto;
+  align-self: center;
   writing-mode: horizontal-tb;
   text-orientation: mixed;
   flex-direction: row;
@@ -4392,23 +4585,22 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-right-width: 156px;
     --builder-menu-bottom-width: min(440px, calc(100vw - 96px));
     --builder-menu-bottom-height: 216px;
-    --builder-menu-toggle-width: 22px;
-    --builder-menu-toggle-height: 56px;
+    --builder-menu-toggle-width: 28px;
+    --builder-menu-toggle-height: 64px;
     --builder-ticker-height: 28px;
-    /* Ticker starts at 68px + measure bar on tablets */
-    --builder-ticker-top: calc(68px + var(--builder-measure-bar-height));
+    --builder-ticker-top: 68px;
+    --builder-menu-left-height: clamp(280px, 60vh, 540px);
+    --builder-menu-right-height: clamp(260px, 60vh, 520px);
   }
 
+  /* Side panels remain centered (top:50%) at all widths */
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    /* ticker-top(68) + ticker-height(28) + gap(4) = 100px */
-    top: calc(var(--builder-ticker-top, 68px) + var(--builder-ticker-height, 28px) + 4px + var(--builder-safe-area-top));
-    bottom: calc(24px + var(--builder-safe-area-bottom));
+    top: 50%;
   }
 
   .builder-menu-stage-bottom {
-    right: 12px;
-    bottom: calc(20px + var(--builder-safe-area-bottom));
+    bottom: calc(8px + var(--builder-safe-area-bottom));
   }
 
   .builder-menu-bottom {
@@ -4431,29 +4623,28 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-menu-right-width: 136px;
     --builder-menu-bottom-width: calc(100vw - 24px);
     --builder-menu-bottom-height: 188px;
-    --builder-menu-toggle-width: 20px;
-    --builder-menu-toggle-height: 48px;
+    --builder-menu-toggle-width: 26px;
+    --builder-menu-toggle-height: 56px;
     --builder-ticker-height: 24px;
     --builder-floating-action-offset: 120px;
     --builder-floating-button-size: 40px;
-    /* Ticker starts at 64px + measure bar on mobile */
-    --builder-ticker-top: calc(64px + var(--builder-measure-bar-height));
+    --builder-ticker-top: 64px;
+    --builder-menu-left-height: clamp(260px, 60vh, 500px);
+    --builder-menu-right-height: clamp(240px, 58vh, 480px);
   }
 
+  /* Side panels remain centered at all widths */
   .builder-menu-stage-left,
   .builder-menu-stage-right {
-    /* ticker-top(64) + ticker-height(24) + gap(4) = 92px */
-    top: calc(var(--builder-ticker-top, 64px) + var(--builder-ticker-height, 24px) + 4px + var(--builder-safe-area-top));
-    bottom: calc(184px + var(--builder-safe-area-bottom));
+    top: 50%;
   }
 
+  /* Insights panel: inherit full-width from base styles, only update position */
   .builder-menu-stage-bottom {
-    left: calc(env(safe-area-inset-left, 0px) + 8px);
-    right: calc(env(safe-area-inset-right, 0px) + 8px);
-    width: auto;
-    /* Match zoom controls (bottom:8px) so both rows of bottom-right
-       elements sit on the same baseline. */
+    left: 50%;
+    right: auto;
     bottom: calc(8px + var(--builder-safe-area-bottom));
+    transform: translateX(-50%);
   }
 
   .builder-menu-bottom {
@@ -4524,17 +4715,15 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   .builder-menu-stage-bottom.open {
     transform: translateX(-50%);
+    width: calc(100vw - 16px);
   }
 }
 
 @media (max-width: 900px), (pointer: coarse) {
-  .builder-menu-stage-left {
-    top: calc(72px + var(--builder-safe-area-top));
-  }
+  /* Side panels are centered vertically — do NOT override top: 50% */
 
   .builder-menu-stage-left .builder-menu {
-    height: auto;
-    max-height: min(70vh, calc(100vh - 160px));
+    height: var(--builder-menu-left-height);
     overflow-y: auto;
   }
 
@@ -4543,25 +4732,25 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     min-height: 48px;
   }
 
-  /* Ensure toggle buttons are always visible on touch devices - slim but tappable */
+  /* Ensure toggle buttons are always visible on touch devices */
   .builder-menu-toggle {
-    min-width: 36px;
-    min-height: 48px;
+    min-width: 44px;
+    min-height: 44px;
     box-shadow:
-      0 4px 16px var(--builder-shadow),
-      0 0 16px rgba(136, 204, 255, 0.25);
+      0 -4px 16px var(--builder-shadow),
+      0 -4px 16px rgba(136, 204, 255, 0.25);
   }
 
   .builder-menu-toggle-left {
     box-shadow:
-      0 4px 16px var(--builder-shadow),
-      4px 0 20px rgba(136, 204, 255, 0.3);
+      0 -4px 16px var(--builder-shadow),
+      0 -4px 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-right {
     box-shadow:
-      0 4px 16px var(--builder-shadow),
-      -4px 0 20px rgba(136, 204, 255, 0.3);
+      0 -4px 16px var(--builder-shadow),
+      0 -4px 20px rgba(136, 204, 255, 0.3);
   }
 
   .builder-menu-toggle-bottom {
@@ -4570,25 +4759,27 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
       0 -4px 20px rgba(136, 204, 255, 0.3);
   }
 
-  /* On touch devices the toggle min-width (36px) exceeds --builder-menu-toggle-width
-     (20px mobile). Widen the stage to match so the closed translateX keeps the
-     toggle flush against the right viewport edge instead of partially off-screen. */
+  /* Side panels on touch devices: use same overflow+width approach as desktop */
   .builder-menu-stage-left {
-    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-hit-width));
-    transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+    top: 50%;
+    width: var(--builder-menu-toggle-width);
+    transform: translateY(-50%);
   }
 
   .builder-menu-stage-left.open {
-    transform: translateX(0);
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateY(-50%);
   }
 
   .builder-menu-stage-right {
-    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-hit-width));
-    transform: translateX(var(--builder-menu-right-width));
+    top: 50%;
+    width: var(--builder-menu-toggle-width);
+    transform: translateY(-50%);
   }
 
   .builder-menu-stage-right.open {
-    transform: translateX(0);
+    width: calc(var(--builder-menu-right-width) + var(--builder-menu-toggle-width));
+    transform: translateY(-50%);
   }
 }
 
@@ -4596,7 +4787,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
    Short landscape phones (low vertical space)
    Keep UI usable when rotated.
    ============================================ */
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 480px) {
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
   :root {
     /* Reduce bottom drawer footprint on short screens. */
     --builder-menu-bottom-height: 160px;
@@ -4605,6 +4796,8 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     --builder-ticker-gap: 0px;
     /* Ticker is hidden; side menus position just below the mode bar */
     --builder-ticker-top: 0px;
+    --builder-menu-left-height: 200px;
+    --builder-menu-right-height: 180px;
   }
 
   /* Hide the decorative ticker to free vertical space. */
@@ -4650,25 +4843,24 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .workspace-edge-actions--right {
-    /* Position above the Insights toggle to avoid overlap */
-    right: calc(clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
+    right: calc(var(--builder-menu-right-width) + clamp(4px, 1vw, 8px) + env(safe-area-inset-right, 0px));
     bottom: calc(
       var(--builder-menu-toggle-height) +
-      20px +
+      8px +
       var(--builder-safe-area-bottom)
     );
   }
 
+  /* Panels are bottom-anchored; clear top/bottom overrides for landscape */
   .builder-menu-stage-left {
-    /* Ticker hidden; position below mode bar (~44px) + gap */
-    top: calc(max(var(--app-mode-bar-height, 38px), 38px) + 14px + var(--builder-safe-area-top));
-    bottom: calc(16px + var(--builder-safe-area-bottom));
+    top: auto;
+    bottom: 0;
     left: var(--builder-safe-area-left);
   }
 
   .builder-menu-stage-right {
-    top: calc(max(var(--app-mode-bar-height, 38px), 38px) + 14px + var(--builder-safe-area-top));
-    bottom: calc(16px + var(--builder-safe-area-bottom));
+    top: auto;
+    bottom: 0;
     right: var(--builder-safe-area-right);
   }
 
@@ -4681,6 +4873,18 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     padding: 6px 12px;
     font-size: 10px;
     gap: 8px;
+  }
+
+  /* Tighten quick-add bar to sit just below the reduced 44px header. */
+  .quick-add-bar {
+    top: calc(52px + var(--builder-safe-area-top));
+  }
+
+  /* Prevent panel modals from filling the entire landscape viewport. */
+  .builder-panel-shell,
+  .builder-panel {
+    max-height: 75vh;
+    max-height: 75dvh;
   }
 }
 
@@ -5174,4 +5378,53 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .builder-intro-dialog-dot {
     transition: none !important;
   }
+}
+
+/* ── Onboarding "Start Editing" chip ─────────────────────────────────────────
+ * Fixed pill at bottom-center, appears after the payoff banner hides to let
+ * the user unlock the circuit for editing.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.onboarding-edit-chip-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: calc(60px + var(--builder-safe-area-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 1100;          /* above panels (1000) */
+  pointer-events: auto;
+}
+
+.onboarding-edit-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: 1.5px solid rgba(0, 255, 136, 0.55);
+  border-radius: 28px;
+  background: rgba(10, 24, 48, 0.92);
+  color: rgba(0, 255, 136, 0.95);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow:
+    0 0 14px rgba(0, 255, 136, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+  animation: chip-pulse 2s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.onboarding-edit-chip:hover,
+.onboarding-edit-chip:focus-visible {
+  border-color: rgba(0, 255, 136, 0.8);
+  background: rgba(10, 24, 48, 0.96);
+  box-shadow:
+    0 0 20px rgba(0, 255, 136, 0.35),
+    0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes chip-pulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(0, 255, 136, 0.25), 0 2px 8px rgba(0, 0, 0, 0.4); }
+  50%      { box-shadow: 0 0 22px rgba(0, 255, 136, 0.4),  0 2px 10px rgba(0, 0, 0, 0.4); }
 }
