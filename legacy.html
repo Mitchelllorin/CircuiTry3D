@@ -2,36 +2,6 @@
 <html>
 <head>
     <script>
-// ===== PHONE-HOME DIAGNOSTICS =====
-var _DIAG_URL = "https://webhook.site/38d56165-8de7-4d70-b27c-9b07402f6497";
-var _DIAG_START = Date.now();
-function _diagSend(step, data) {
-    // Only phone home on Android (Capacitor) - skip CI and web
-    if (!/Android/.test(navigator.userAgent) && location.protocol !== "https:") return;
-    var payload = JSON.stringify({
-        step: step,
-        elapsed: (Date.now() - _DIAG_START) + "ms",
-        data: data || {},
-        ua: navigator.userAgent.substring(0, 120),
-        url: location.href
-    });
-    try { navigator.sendBeacon(_DIAG_URL, payload); } catch(e) {}
-    try { fetch(_DIAG_URL, {method:"POST",body:payload,keepalive:true}).catch(function(){}); } catch(e) {}
-}
-_diagSend("page_loaded", {
-    hasThree: typeof THREE !== "undefined",
-    canvasExists: !!document.getElementById("canvas"),
-    innerW: window.innerWidth,
-    innerH: window.innerHeight
-});
-window.addEventListener("error", function(e) {
-    _diagSend("JS_ERROR", {msg:e.message, file:e.filename, line:e.lineno, stack: e.error?e.error.stack:null});
-});
-window.addEventListener("unhandledrejection", function(e) {
-    _diagSend("PROMISE_REJECT", {reason: e.reason?(e.reason.message||String(e.reason)):"unknown", stack:e.reason?e.reason.stack:null});
-});
-// ===== END PHONE-HOME =====
-
         // Immediately detect embedded mode and add class to prevent splash flash
         (function() {
             try {
@@ -2863,7 +2833,6 @@ window.addEventListener("unhandledrejection", function(e) {
         if (isEmbedded) {
             document.documentElement.classList.add("embedded");
             window.addEventListener("DOMContentLoaded", () => {
-            _diagSend('DOMContentLoaded', {readyState: document.readyState, canvasExists: !!document.getElementById('canvas'), bodyChildren: document.body?document.body.children.length:-1});
                 const body = document.body;
                 if (body) {
                     body.classList.add("embedded");
@@ -3048,7 +3017,6 @@ body.android-optimized .zoom-btn {
                     window.parent.postMessage({ type: 'legacy:ready' }, '*');
                     notifyParentModeState();
                 } catch (error) {
-            _diagSend("init_CATCH_ERROR", {msg: error.message, stack: error.stack, name: error.name});
                     console.warn('Builder bridge: unable to notify parent window', error);
                 }
             }
@@ -6488,24 +6456,7 @@ body.android-optimized .zoom-btn {
 
         // Initialize the scene
         function init() {
-            _diagSend("init_called", {});
             try {
-                // DIAGNOSTIC: Check prerequisites
-                var _diag = [];
-                _diag.push('THREE=' + (typeof THREE !== 'undefined' ? 'YES' : 'NO'));
-                _diag.push('canvas=' + (document.getElementById('canvas') ? 'YES' : 'NO'));
-                _diag.push('vw=' + window.innerWidth + ' vh=' + window.innerHeight);
-                _diag.push('loc=' + window.location.href);
-                var _diagEl = document.createElement('div');
-                _diagEl.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:8px;background:rgba(0,0,0,0.9);color:#0f0;font:12px monospace;z-index:999998;';
-                _diagEl.textContent = _diag.join(' | ');
-                document.body.appendChild(_diagEl);
-                setTimeout(function() { _diagEl.remove(); }, 30000);
-
-                if (typeof THREE === 'undefined') {
-                    throw new Error('THREE.js not loaded! vendor/three.min.js failed to load');
-                }
-
                 // On Android WebView, window.innerWidth/innerHeight may not yet reflect
                 // the final layout dimensions when the script runs synchronously.  Fall
                 // back to documentElement client dimensions and use safe minimums so we
@@ -6522,14 +6473,12 @@ body.android-optimized .zoom-btn {
                 // window.innerHeight at 0.  Falling back to clientWidth and a
                 // sensible minimum prevents a 0×0 WebGL framebuffer.
                 const canvas = document.getElementById('canvas');
-                _diagSend('canvas_in_init', {found: !!canvas, tag: canvas?canvas.tagName:'null', display: canvas?canvas.style.display:'null', w: canvas?canvas.width:-1, h: canvas?canvas.height:-1, offsetW: canvas?canvas.offsetWidth:-1, offsetH: canvas?canvas.offsetHeight:-1, parentTag: canvas&&canvas.parentElement?canvas.parentElement.tagName:'null', parentDisplay: canvas&&canvas.parentElement?getComputedStyle(canvas.parentElement).display:'null'});
                 const _vw = Math.max(1, window.innerWidth  || (canvas && canvas.clientWidth)  || 360);
                 const _vh = Math.max(1, window.innerHeight || (canvas && canvas.clientHeight) || 640);
 
                 camera = new THREE.PerspectiveCamera(75, _vw / _vh, 0.1, 1000);
                 updateCameraPosition();
                 
-            _diagSend("creating_renderer", {canvasExists: !!canvas, THREE_exists: typeof THREE !== "undefined", WebGLRenderer_exists: typeof THREE !== "undefined" && typeof THREE.WebGLRenderer !== "undefined"});
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas,
                     antialias: !isMobile, // Disable antialiasing on mobile for performance
@@ -6538,7 +6487,6 @@ body.android-optimized .zoom-btn {
                     // silent null renderer when the GPU driver reports perf caveats.
                     failIfMajorPerformanceCaveat: false
                 });
-            _diagSend("renderer_created", {rendererExists: !!renderer, type: renderer?renderer.constructor.name:null});
                 renderer.setSize(_vw, _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setClearColor(0x0a0a1a, 1);
@@ -6645,22 +6593,13 @@ body.android-optimized .zoom-btn {
             } catch (error) {
                 console.error('Initialization error:', error);
                 console.error('Error loading. Please refresh.');
-                // DIAGNOSTIC: Show init error on screen since we can't see console
-                try {
-                    var errDiv = document.createElement('div');
-                    errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:12px;background:red;color:white;font:bold 14px monospace;z-index:999999;white-space:pre-wrap;max-height:40vh;overflow:auto;';
-                    errDiv.textContent = 'INIT ERROR: ' + (error && error.stack ? error.stack : String(error));
-                    document.body.appendChild(errDiv);
-                } catch(e2) {}
             } finally {
                 // Mark the builder as ready regardless of whether init() succeeded
                 // or encountered a non-fatal error.  The flag must be set here —
                 // before notifyParentReady() — so that any queued builder:ping
                 // that fires between now and when the React host processes the
                 // legacy:ready message also responds correctly.
-                
-            _diagSend("init_finally", {builderReady: true, hasRenderer: typeof renderer !== "undefined" && !!renderer, sceneChildren: typeof scene !== "undefined" && scene ? scene.children.length : -1});
-            _builderReady = true;
+                _builderReady = true;
                 // Always notify the parent frame so the React UI never stays
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
@@ -17512,7 +17451,6 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // event for any remaining layout bookkeeping, but the canvas must be
         // visible first.
         const _preInitCanvas = document.getElementById('canvas');
-        _diagSend('pre_init_canvas', {found: !!_preInitCanvas, display: _preInitCanvas?_preInitCanvas.style.display:'null'});
         if (_preInitCanvas) _preInitCanvas.style.display = 'block';
 
         // Defer init() via requestAnimationFrame so the Android WebView has had
@@ -17527,16 +17465,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
             var h = window.innerHeight || document.documentElement.clientHeight;
-            // DIAGNOSTIC: track scheduleInit
-            if (!window._schedDiag) {
-                window._schedDiag = document.createElement('div');
-                window._schedDiag.style.cssText = 'position:fixed;top:40px;left:0;right:0;padding:4px 8px;background:rgba(0,0,80,0.9);color:#ff0;font:11px monospace;z-index:999997;';
-                document.body.appendChild(window._schedDiag);
-                setTimeout(function() { if(window._schedDiag) window._schedDiag.remove(); }, 30000);
-            }
-            window._schedDiag.textContent = 'scheduleInit: w=' + w + ' h=' + h + ' retries=' + retries;
             if (w > 0 && h > 0) {
-                window._schedDiag.textContent += ' → CALLING init()';
                 init();
             } else if (retries > 0) {
                 // Dimensions not ready yet — try again next frame.
