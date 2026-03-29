@@ -98,7 +98,7 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
     }
   };
 
-  const handleBackdropKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const handlePanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
       onClose();
     }
@@ -107,101 +107,110 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
   if (!isOpen) return null;
 
   return (
-    <div
-      className="ai-helper-panel"
-      role="dialog"
-      aria-modal="false"
-      aria-label="Circuit AI assistant"
-      onKeyDown={handleBackdropKeyDown}
-    >
-      {/* Header */}
-      <div className="ai-helper-panel__header">
-        <span className="ai-helper-panel__header-icon" aria-hidden="true">
-          ⚡
-        </span>
-        <div>
-          <div className="ai-helper-panel__header-title">Circuit AI</div>
-          <div className="ai-helper-panel__header-subtitle">
-            Ask anything about circuits or the app
-          </div>
-        </div>
-        <button
-          type="button"
-          className="ai-helper-panel__close"
-          onClick={onClose}
-          aria-label="Close Circuit AI"
-          title="Close"
-        >
-          ×
-        </button>
-      </div>
+    <>
+      {/* Backdrop — tap anywhere outside the panel to dismiss */}
+      <div
+        className="ai-helper-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* Messages */}
-      <div className="ai-helper-panel__messages" aria-live="polite" aria-relevant="additions">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`ai-msg ai-msg--${msg.role}`}
-          >
-            {msg.role === "assistant" && (
-              <div className="ai-msg__avatar">⚡ Circuit AI</div>
-            )}
-            {msg.text}
+      <div
+        className="ai-helper-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Circuit AI assistant"
+        onKeyDown={handlePanelKeyDown}
+      >
+        {/* Header */}
+        <div className="ai-helper-panel__header">
+          <span className="ai-helper-panel__header-icon" aria-hidden="true">
+            ⚡
+          </span>
+          <div>
+            <div className="ai-helper-panel__header-title">Circuit AI</div>
+            <div className="ai-helper-panel__header-subtitle">
+              Ask anything about circuits or the app
+            </div>
           </div>
-        ))}
-        {isTyping && (
-          <div className="ai-typing" aria-label="Circuit AI is typing">
-            <span className="ai-typing__dot" />
-            <span className="ai-typing__dot" />
-            <span className="ai-typing__dot" />
+          <button
+            type="button"
+            className="ai-helper-panel__close"
+            onClick={onClose}
+            aria-label="Close Circuit AI"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="ai-helper-panel__messages" aria-live="polite" aria-relevant="additions">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`ai-msg ai-msg--${msg.role}`}
+            >
+              {msg.role === "assistant" && (
+                <div className="ai-msg__avatar">⚡ Circuit AI</div>
+              )}
+              {msg.text}
+            </div>
+          ))}
+          {isTyping && (
+            <div className="ai-typing" aria-label="Circuit AI is typing">
+              <span className="ai-typing__dot" />
+              <span className="ai-typing__dot" />
+              <span className="ai-typing__dot" />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Suggestion chips (only while no back-and-forth has started) */}
+        {showSuggestions && (
+          <div className="ai-helper-panel__suggestions" aria-label="Suggested questions">
+            {SUGGESTED_QUESTIONS.map((q) => (
+              <button
+                key={q}
+                type="button"
+                className="ai-suggestion-chip"
+                onClick={() => sendMessage(q)}
+              >
+                {q}
+              </button>
+            ))}
           </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Suggestion chips (only while no back-and-forth has started) */}
-      {showSuggestions && (
-        <div className="ai-helper-panel__suggestions" aria-label="Suggested questions">
-          {SUGGESTED_QUESTIONS.map((q) => (
-            <button
-              key={q}
-              type="button"
-              className="ai-suggestion-chip"
-              onClick={() => sendMessage(q)}
-            >
-              {q}
-            </button>
-          ))}
+        {/* Input */}
+        <div className="ai-helper-panel__input-row">
+          <input
+            ref={inputRef}
+            type="text"
+            className="ai-helper-panel__input"
+            placeholder="Ask about circuits, Ohm's Law, or the app…"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            aria-label="Message to Circuit AI"
+            maxLength={500}
+            autoComplete="off"
+            spellCheck
+          />
+          <button
+            type="button"
+            className="ai-helper-panel__send"
+            onClick={handleSend}
+            disabled={!inputValue.trim() || isTyping}
+            aria-label="Send message"
+            title="Send (Enter)"
+          >
+            ➤
+          </button>
         </div>
-      )}
-
-      {/* Input */}
-      <div className="ai-helper-panel__input-row">
-        <input
-          ref={inputRef}
-          type="text"
-          className="ai-helper-panel__input"
-          placeholder="Ask about circuits, Ohm's Law, or the app…"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          aria-label="Message to Circuit AI"
-          maxLength={500}
-          autoComplete="off"
-          spellCheck
-        />
-        <button
-          type="button"
-          className="ai-helper-panel__send"
-          onClick={handleSend}
-          disabled={!inputValue.trim() || isTyping}
-          aria-label="Send message"
-          title="Send (Enter)"
-        >
-          ➤
-        </button>
       </div>
-    </div>
+    </>
   );
 }
 

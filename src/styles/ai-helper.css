@@ -93,6 +93,24 @@
   to   { transform: scale(1); }
 }
 
+/* ── Backdrop — tap outside panel to dismiss ─────────────────────────────── */
+
+.ai-helper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-ai-helper, 1100) - 1);
+  background: rgba(0, 0, 0, 0.35);
+  /* Let touches through to close */
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: aiBackdropFade 0.2s ease forwards;
+}
+
+@keyframes aiBackdropFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* ── Chat Panel ──────────────────────────────────────────────────────────── */
 
 .ai-helper-panel {
@@ -106,7 +124,7 @@
   );
   right: calc(var(--builder-safe-area-right, 0px) + 8px);
   top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top, 0px));
-  z-index: var(--z-ai-helper);
+  z-index: var(--z-ai-helper, 1100);
   width: clamp(300px, 38vw, 420px);
   border-radius: 16px;
   border: 1px solid rgba(136, 204, 255, 0.32);
@@ -169,26 +187,38 @@
   margin-top: 1px;
 }
 
+/* ── Close button — HIGH VISIBILITY ──────────────────────────────────────── */
+
 .ai-helper-panel__close {
-  background: none;
-  border: none;
-  color: rgba(136, 204, 255, 0.55);
-  font-size: 22px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
+  padding: 0;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 36px;
   min-height: 36px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .ai-helper-panel__close:hover {
-  color: #88ccff;
-  background: rgba(136, 204, 255, 0.1);
+  color: #fff;
+  background: rgba(255, 80, 80, 0.35);
+  border-color: rgba(255, 80, 80, 0.6);
+}
+
+.ai-helper-panel__close:active {
+  background: rgba(255, 80, 80, 0.5);
 }
 
 .ai-helper-panel__close:focus-visible {
