@@ -602,7 +602,7 @@ body.builder-body {
   );
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--z-builder-floats);
+  z-index: 1100;
   width: min(560px, calc(100vw - 28px));
   /* Cap height to the available space between the top ticker and the bottom
      safe area so the panel never overflows on shorter devices.
@@ -632,6 +632,35 @@ body.builder-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.current-flow-payoff-close {
+  position: sticky;
+  top: 0;
+  align-self: flex-end;
+  background: rgba(136, 204, 255, 0.08);
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  border-radius: 50%;
+  color: rgba(136, 204, 255, 0.7);
+  font-size: 20px;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 0 4px auto;
+  transition: color 0.15s, background 0.15s;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.current-flow-payoff-close:hover {
+  color: #88ccff;
+  background: rgba(136, 204, 255, 0.18);
 }
 
 .current-flow-payoff-kicker {

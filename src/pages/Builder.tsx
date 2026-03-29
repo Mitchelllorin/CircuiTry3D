@@ -3058,6 +3058,14 @@ export default function Builder() {
 
       {shouldShowCurrentFlowPayoffBanner && (
         <section className="current-flow-payoff-banner" role="status" aria-live="polite">
+          <button
+            type="button"
+            className="current-flow-payoff-close"
+            aria-label="Dismiss"
+            onClick={() => setCurrentFlowPayoffVisible(false)}
+          >
+            ×
+          </button>
           <div className="current-flow-payoff-kicker">Electricity in motion</div>
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
