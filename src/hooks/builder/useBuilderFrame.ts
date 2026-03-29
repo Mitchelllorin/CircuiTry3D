@@ -65,24 +65,7 @@ export function useBuilderFrame({
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const iframeWindow = iframeRef.current?.contentWindow;
-
-      // Strict source check: prefer event.source identity, but fall back to
-      // checking the message shape when source is null/mismatched.  On some
-      // Android WebViews (Capacitor), event.source can be null or a different
-      // object reference even when the message genuinely originates from our
-      // iframe.  Accepting well-typed "legacy:*" messages avoids the 15-second
-      // ping-timeout fallback that previously locked users out.
-      const msgType =
-        event.data && typeof event.data === "object"
-          ? (event.data as { type?: unknown }).type
-          : undefined;
-      const isLegacyProtocol =
-        typeof msgType === "string" && msgType.startsWith("legacy:");
-
-      if (!iframeWindow) {
-        return;
-      }
-      if (event.source !== iframeWindow && !isLegacyProtocol) {
+      if (!iframeWindow || event.source !== iframeWindow) {
         return;
       }
 
@@ -92,9 +75,6 @@ export function useBuilderFrame({
       }
 
       const { type, payload } = data as { type?: string; payload?: unknown };
-
-      if (type === "legacy:diag") {
-      }
 
       if (type === "legacy:ready") {
         setFrameReady(true);
@@ -176,18 +156,6 @@ export function useBuilderFrame({
         return;
       }
 
-      if (type === "legacy:component-error") {
-        const errPayload = (payload || {}) as {
-          componentType?: string;
-          reason?: string;
-        };
-        console.error(
-          `[Builder] Component failed to load: ${errPayload.componentType ?? "unknown"} — ${errPayload.reason ?? "unknown reason"}. ` +
-            "The 3D scene may not have initialized. Try reloading the app.",
-        );
-        return;
-      }
-
       if (type === "legacy:arena-export") {
         const summary = (payload || {}) as ArenaExportSummary | undefined;
         if (summary && typeof summary.sessionId === "string") {
@@ -251,8 +219,8 @@ export function useBuilderFrame({
   useEffect(() => {
     if (isFrameReady) return;
 
-    const PING_INTERVAL_MS = 300;
-    const PING_TIMEOUT_MS = 4_000; // give up after 4 seconds and unlock the UI
+    const PING_INTERVAL_MS = 400;
+    const PING_TIMEOUT_MS = 15_000; // give up after 15 seconds and unlock the UI
 
     const intervalId = window.setInterval(() => {
       const frameWindow = iframeRef.current?.contentWindow;

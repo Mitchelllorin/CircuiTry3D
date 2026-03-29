@@ -32,7 +32,7 @@ const CIRCUIT_FACTS = [
     tip: "In CircuiTry3D, watch how the voltage readout changes as you swap resistor values in a series circuit.",
   },
   {
-    fact: "In a series circuit all components share the same current path — break one link and the whole circuit stops.",
+    fact: "In a series circuit all components share the same current path — break one link and the whole loop stops.",
     tip: "Try removing a single resistor in a series build in CircuiTry3D and watch every component go dark.",
   },
   {
@@ -60,8 +60,8 @@ const CIRCUIT_FACTS = [
     tip: "Place a current probe at a parallel junction in CircuiTry3D and verify the branch currents add up.",
   },
   {
-    fact: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed path equals zero.",
-    tip: "Trace a complete circuit in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
+    fact: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed loop equals zero.",
+    tip: "Trace a complete loop in CircuiTry3D with the voltage inspector — the drops will always balance the supply.",
   },
   {
     fact: "A short circuit provides a near-zero resistance path, causing dangerously high current.",

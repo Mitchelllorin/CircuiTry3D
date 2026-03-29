@@ -35,13 +35,8 @@ const OUTPUT_FILE = process.env.OUTPUT_FILE || join(ROOT, 'dist', 'pr-portrait.p
 const VIEWPORT = { width: 412, height: 915 };
 
 async function main() {
-  // Navigate directly to legacy.html (the 3-D circuit builder) so the WebGL
-  // canvas renders fully in the headless Chromium process without the extra
-  // React → Builder.tsx → iframe indirection that produces a blank canvas.
-  // BASE_PATH ends with '/', so strip a leading '/' from 'legacy.html' to
-  // avoid a double-slash.
-  const builderUrl = `${BASE_URL}${BASE_PATH}legacy.html`;
-  console.log(`📸  Capturing PR portrait screenshot from ${builderUrl}`);
+  const url = `${BASE_URL}${BASE_PATH}`;
+  console.log(`📸  Capturing PR portrait screenshot from ${url}`);
 
   await mkdir(dirname(OUTPUT_FILE), { recursive: true });
 
@@ -65,7 +60,7 @@ async function main() {
   await page.setViewportSize(VIEWPORT);
 
   try {
-    await page.goto(builderUrl, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
     // Wait for web fonts to finish loading so text renders correctly in the screenshot
     await page.evaluate(() => document.fonts.ready).catch(() => {});
     // Allow time for iframe content and any CSS animations to settle

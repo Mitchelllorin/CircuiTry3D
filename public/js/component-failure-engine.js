@@ -1,414 +1,27 @@
 /**
- * ============================================================================
- *  F.U.S.E.™ — Failure Understanding Simulation Engine  v2.0.0
- *  Copyright © 2025 Mitchell Lorin / CircuiTry3D.  All Rights Reserved.
+ * CircuiTry3D — Component Failure Engine  v1.0
  *
- *  FUSE™ is a proprietary, registered trademark of CircuiTry3D.
- *  This software and its associated documentation are the exclusive intellectual
- *  property of CircuiTry3D.  No part of this file may be reproduced, distributed,
- *  sublicensed, or incorporated into another product without the express written
- *  permission of CircuiTry3D.
+ * Shared, zero-dependency library for component failure detection, family
+ * resolution, and runtime profile registration.  Has NO THREE.js or DOM
+ * dependencies — safe to load in any context (arena, builder workspace, tests).
  *
- *  LICENSING
- *  ---------
- *  Commercial licensing, OEM embedding, and API partnerships are available.
- *  Contact: licensing@circuitry3d.com
+ * Exported as window.FailureEngine so both arena.html and legacy.html can share
+ * the exact same physics data and detection logic without duplication.
  *
- *  PATENT NOTICE
- *  -------------
- *  The component failure-profile system, insulation-class thermal cascade model,
- *  and gauge-accurate wire stress detection described herein are subject to
- *  pending intellectual property protection.
- * ============================================================================
+ * Usage
+ * -----
+ *   const { detectFailure, resolveComponentFamily, registerComponentType } = window.FailureEngine;
  *
- *  WHAT IS FUSE™?
- *  --------------
- *  FUSE™ is a zero-dependency, physics-based component failure detection and
- *  visualization engine built exclusively for CircuiTry3D.  Every simulation tick
- *  it evaluates every component against hand-crafted failure profiles to produce:
- *
- *    • A failure name   (e.g. "Thermal Runaway", "Insulation Burnthrough")
- *    • A severity score  0 – 3  (OK → Stressed → Critical → Destroyed)
- *    • A visual effect key  driving the Three.js particle renderer
- *    • A physics-accurate description of what is happening inside the part
- *
- *  It has NO Three.js, DOM, or npm dependencies — safe to load in any context:
- *  browser, Node.js test runner, server-side grader, or future native app.
- *
- *  PHYSICAL SPECIFICATION TABLES  (new in v2.0)
- *  ---------------------------------------------
- *  FUSE™ v2.0 ships three canonical physical spec tables that make it the single
- *  source of truth for all component and wire physics in the application:
- *
- *    • WIRE_INSULATION_SPECS   — 11 insulation classes with thermal, visual, and
- *                                electrical ratings (replaces legacy.html inline table)
- *    • WIRE_GAUGE_TABLE        — AWG 30 → 4/0  conductor diameter, cross-section,
- *                                DC resistance, and NEC ampacity per gauge
- *    • COMPONENT_PHYSICAL_SPECS — per-family package type, body dimensions, and
- *                                 absolute maximum temperature for all 21 families
- *
- *  USAGE
- *  -----
- *    const { detectFailure, resolveComponentFamily,
- *            WIRE_INSULATION_SPECS, WIRE_GAUGE_TABLE, COMPONENT_PHYSICAL_SPECS,
- *            FUSE_VERSION } = window.FailureEngine;
- *
- *    const metrics = { powerDissipation: 0.8, currentRms: 0.15, operatingVoltage: 12,
+ *   const metrics = { powerDissipation: 0.8, currentRms: 0.15, operatingVoltage: 12,
  *                      thermalRise: 45, impedance: 80, storedEnergy: 0 };
- *    const failure = detectFailure(component, metrics);
- *    // { failed: false, severity: 1.2, name: "Thermal Overload", visual: "char", ... }
- *
- *  Powered by FUSE™ — CircuiTry3D's proprietary failure intelligence layer.
+ *   const failure = detectFailure(component, metrics);
+ *   // { failed: false, severity: 1.2, name: "Thermal Overload", visual: "char", description: "..." }
  */
 (function (global) {
   "use strict";
 
   // ---------------------------------------------------------------------------
-  // FUSE™ Version
-  // ---------------------------------------------------------------------------
-  const FUSE_VERSION = "2.0.0";
-
-  // ---------------------------------------------------------------------------
-  // WIRE_INSULATION_SPECS  (FUSE™ canonical source — v2.0)
-  //
-  // Physical, visual, and electrical specifications for all 11 supported
-  // insulation classes.  This table is the single source of truth shared by
-  // the failure-detection engine, the 3D renderer (via jacketRatio / color /
-  // opacity), and the wire-stress thermal model.
-  //
-  // Fields
-  // ------
-  //   jacketRatio          — outer-radius / conductor-radius (1.0 = bare)
-  //   color                — THREE.js hex colour for the jacket mesh
-  //   opacity              — jacket mesh transparency (0 = invisible, 1 = opaque)
-  //   thermalLimitC        — max continuous operating temperature of the insulation (°C)
-  //   maxVoltageV          — insulation voltage rating (V, 0 = not voltage-rated)
-  //   densityKgPerM3       — jacket material density (kg/m³)
-  //   thermalConductivityWPerMK — jacket thermal conductivity (W/m·K)
-  //   dielectricStrengthKVPerMm — short-time dielectric breakdown voltage (kV/mm)
-  //   necType              — NEC / industry type designation string
-  //   description          — human-readable summary
-  // ---------------------------------------------------------------------------
-  const WIRE_INSULATION_SPECS = {
-    pvc80: {
-      jacketRatio: 1.55, color: 0x1a1a1a, opacity: 0.58,
-      thermalLimitC: 80, maxVoltageV: 600,
-      densityKgPerM3: 1350, thermalConductivityWPerMK: 0.17,
-      dielectricStrengthKVPerMm: 15,
-      necType: "TW / THHN (60 °C column)",
-      description: "Standard PVC insulation, 300–600 V class, easy to strip. Common for building wire and hook-up wiring.",
-    },
-    pvc105: {
-      jacketRatio: 1.65, color: 0x111111, opacity: 0.60,
-      thermalLimitC: 105, maxVoltageV: 600,
-      densityKgPerM3: 1380, thermalConductivityWPerMK: 0.18,
-      dielectricStrengthKVPerMm: 15,
-      necType: "MTW / TEW (105 °C)",
-      description: "Thicker PVC jacket rated 105 °C for control wiring, welding cable, and battery leads.",
-    },
-    xlpe125: {
-      jacketRatio: 1.60, color: 0xeeeeee, opacity: 0.50,
-      thermalLimitC: 125, maxVoltageV: 600,
-      densityKgPerM3: 950, thermalConductivityWPerMK: 0.25,
-      dielectricStrengthKVPerMm: 25,
-      necType: "THHN / THWN-2 / XHHW (75–90 °C column)",
-      description: "Cross-linked polyethylene (XLPE) building wire. Superior moisture and heat resistance over PVC.",
-    },
-    silicone200: {
-      jacketRatio: 1.70, color: 0xcc2200, opacity: 0.45,
-      thermalLimitC: 200, maxVoltageV: 600,
-      densityKgPerM3: 1200, thermalConductivityWPerMK: 0.25,
-      dielectricStrengthKVPerMm: 20,
-      necType: "SFF-2 / SiRubber",
-      description: "High-flex silicone rubber insulation. Stays pliable from −60 °C to +200 °C; used in robotics and test leads.",
-    },
-    ptfe260: {
-      jacketRatio: 1.20, color: 0xf5f5f5, opacity: 0.38,
-      thermalLimitC: 260, maxVoltageV: 600,
-      densityKgPerM3: 2200, thermalConductivityWPerMK: 0.25,
-      dielectricStrengthKVPerMm: 60,
-      necType: "PTFE / TFE / Teflon®",
-      description: "Thin-wall PTFE fluoropolymer: chemically inert, UV-stable, very low friction. Preferred for aerospace and vacuum.",
-    },
-    bare1200: {
-      jacketRatio: 1.00, color: 0xb87333, opacity: 0.00,
-      thermalLimitC: 1200, maxVoltageV: 0,
-      densityKgPerM3: 0, thermalConductivityWPerMK: 0,
-      dielectricStrengthKVPerMm: 0,
-      necType: "Bare / Self-Oxide",
-      description: "No insulation jacket. Self-forming oxide film on resistance alloy wire (Nichrome, Kanthal). Designed to glow red-hot.",
-    },
-    epdm150: {
-      jacketRatio: 2.10, color: 0x0d0d0d, opacity: 0.62,
-      thermalLimitC: 150, maxVoltageV: 600,
-      densityKgPerM3: 860, thermalConductivityWPerMK: 0.25,
-      dielectricStrengthKVPerMm: 30,
-      necType: "EPR / EPDM welding cable",
-      description: "Ethylene propylene rubber: heavy-duty jacket rated 150 °C. Oil, ozone, and cold-weather resistant. Used in welding cable.",
-    },
-    tpe105: {
-      jacketRatio: 1.60, color: 0x333333, opacity: 0.55,
-      thermalLimitC: 105, maxVoltageV: 300,
-      densityKgPerM3: 1050, thermalConductivityWPerMK: 0.20,
-      dielectricStrengthKVPerMm: 18,
-      necType: "SPT / SVT thermoplastic elastomer cord",
-      description: "Thermoplastic elastomer: flexible, recyclable, 105 °C. Used for appliance cords, power tool leads, and extension cords.",
-    },
-    fiberglass482: {
-      jacketRatio: 1.50, color: 0xd4c070, opacity: 0.52,
-      thermalLimitC: 482, maxVoltageV: 600,
-      densityKgPerM3: 1100, thermalConductivityWPerMK: 0.04,
-      dielectricStrengthKVPerMm: 5,
-      necType: "FEP / Fibreglass braid (Type FE)",
-      description: "Braided E-glass sleeving over bare conductor. Rated to 482 °C (900 °F). Used in kilns, furnaces, and high-temp appliances.",
-    },
-    kapton400: {
-      jacketRatio: 1.18, color: 0xc87020, opacity: 0.48,
-      thermalLimitC: 400, maxVoltageV: 1000,
-      densityKgPerM3: 1420, thermalConductivityWPerMK: 0.12,
-      dielectricStrengthKVPerMm: 300,
-      necType: "Kapton® / Polyimide film (MIL-W-81044)",
-      description: "Polyimide film wrap: ultra-thin, extreme dielectric strength (300 kV/mm), cryogenic to +400 °C. Standard for aerospace harnesses.",
-    },
-    neoprene90: {
-      jacketRatio: 1.90, color: 0x1a1a1a, opacity: 0.62,
-      thermalLimitC: 90, maxVoltageV: 300,
-      densityKgPerM3: 1250, thermalConductivityWPerMK: 0.19,
-      dielectricStrengthKVPerMm: 10,
-      necType: "S / SO / SOO neoprene portable cord",
-      description: "Neoprene rubber: oil-resistant, flame-retardant, rated 90 °C. Standard for industrial portable cords and marine wiring.",
-    },
-  };
-
-  // ---------------------------------------------------------------------------
-  // WIRE_GAUGE_TABLE  (FUSE™ canonical source — v2.0)
-  //
-  // Physics-accurate per-gauge conductor data for all standard AWG sizes
-  // (30 AWG down to 4/0 AWG).  All resistance values assume annealed copper
-  // at 20 °C (resistivity 1.724 × 10⁻⁸ Ω·m per IEC 60228 / ASTM B3).
-  // Ampacity values are NEC Table 310.16 (75 °C column, single conductor
-  // in free air) and a conservative bundled / chassis-wiring derating.
-  //
-  // Fields
-  // ------
-  //   awg                  — AWG gauge number (negative = 1/0, 2/0, 3/0, 4/0)
-  //   conductorDiameterMm  — nominal conductor diameter (mm)
-  //   areaMm2              — conductor cross-sectional area (mm²)
-  //   resistanceOhmPerMeter — DC resistance at 20 °C, annealed copper (Ω/m)
-  //   ampacityChassisA     — NEC 310.16 chassis / free-air ampacity (A)
-  //   ampacityBundleA      — derated bundled / conduit ampacity (A)
-  // ---------------------------------------------------------------------------
-  const WIRE_GAUGE_TABLE = [
-    // AWG  dia(mm)  area(mm²) R(Ω/m)    chassisA  bundleA
-    { awg: 30,  conductorDiameterMm: 0.255, areaMm2: 0.0507, resistanceOhmPerMeter: 0.3390, ampacityChassisA: 0.14,  ampacityBundleA: 0.08  },
-    { awg: 28,  conductorDiameterMm: 0.321, areaMm2: 0.0804, resistanceOhmPerMeter: 0.2140, ampacityChassisA: 0.23,  ampacityBundleA: 0.15  },
-    { awg: 26,  conductorDiameterMm: 0.405, areaMm2: 0.1278, resistanceOhmPerMeter: 0.1350, ampacityChassisA: 0.36,  ampacityBundleA: 0.24  },
-    { awg: 24,  conductorDiameterMm: 0.511, areaMm2: 0.2047, resistanceOhmPerMeter: 0.0842, ampacityChassisA: 0.58,  ampacityBundleA: 0.30  },
-    { awg: 22,  conductorDiameterMm: 0.644, areaMm2: 0.3243, resistanceOhmPerMeter: 0.0531, ampacityChassisA: 0.92,  ampacityBundleA: 0.60  },
-    { awg: 20,  conductorDiameterMm: 0.812, areaMm2: 0.5176, resistanceOhmPerMeter: 0.0333, ampacityChassisA: 1.50,  ampacityBundleA: 1.00  },
-    { awg: 18,  conductorDiameterMm: 1.024, areaMm2: 0.8231, resistanceOhmPerMeter: 0.0210, ampacityChassisA: 2.30,  ampacityBundleA: 1.50  },
-    { awg: 16,  conductorDiameterMm: 1.291, areaMm2: 1.309,  resistanceOhmPerMeter: 0.0132, ampacityChassisA: 3.70,  ampacityBundleA: 3.00  },
-    { awg: 14,  conductorDiameterMm: 1.628, areaMm2: 2.082,  resistanceOhmPerMeter: 0.00829, ampacityChassisA: 5.90,  ampacityBundleA: 15.0  },
-    { awg: 12,  conductorDiameterMm: 2.053, areaMm2: 3.309,  resistanceOhmPerMeter: 0.00521, ampacityChassisA: 9.30,  ampacityBundleA: 20.0  },
-    { awg: 10,  conductorDiameterMm: 2.588, areaMm2: 5.261,  resistanceOhmPerMeter: 0.00328, ampacityChassisA: 15.0,  ampacityBundleA: 30.0  },
-    { awg: 8,   conductorDiameterMm: 3.264, areaMm2: 8.367,  resistanceOhmPerMeter: 0.00206, ampacityChassisA: 24.0,  ampacityBundleA: 40.0  },
-    { awg: 6,   conductorDiameterMm: 4.115, areaMm2: 13.30,  resistanceOhmPerMeter: 0.00130, ampacityChassisA: 38.0,  ampacityBundleA: 55.0  },
-    { awg: 4,   conductorDiameterMm: 5.189, areaMm2: 21.15,  resistanceOhmPerMeter: 0.000816, ampacityChassisA: 60.0,  ampacityBundleA: 70.0  },
-    { awg: 2,   conductorDiameterMm: 6.543, areaMm2: 33.63,  resistanceOhmPerMeter: 0.000514, ampacityChassisA: 95.0,  ampacityBundleA: 90.0  },
-    { awg: 1,   conductorDiameterMm: 7.348, areaMm2: 42.41,  resistanceOhmPerMeter: 0.000407, ampacityChassisA: 110.0, ampacityBundleA: 115.0 },
-    { awg: 0,   conductorDiameterMm: 8.251, areaMm2: 53.48,  resistanceOhmPerMeter: 0.000323, ampacityChassisA: 150.0, ampacityBundleA: 125.0 },  // 1/0
-    { awg: -1,  conductorDiameterMm: 9.266, areaMm2: 67.43,  resistanceOhmPerMeter: 0.000256, ampacityChassisA: 175.0, ampacityBundleA: 145.0 },  // 2/0
-    { awg: -2,  conductorDiameterMm: 10.40, areaMm2: 85.01,  resistanceOhmPerMeter: 0.000203, ampacityChassisA: 200.0, ampacityBundleA: 175.0 },  // 3/0
-    { awg: -3,  conductorDiameterMm: 11.68, areaMm2: 107.2,  resistanceOhmPerMeter: 0.000161, ampacityChassisA: 230.0, ampacityBundleA: 195.0 },  // 4/0
-  ];
-
-  /** Look up a WIRE_GAUGE_TABLE entry by AWG number (returns null if not found). */
-  function getWireGaugeData(awg) {
-    if (typeof awg !== "number") return null;
-    return WIRE_GAUGE_TABLE.find((row) => row.awg === awg) || null;
-  }
-
-  // ---------------------------------------------------------------------------
-  // COMPONENT_PHYSICAL_SPECS  (FUSE™ canonical source — v2.0)
-  //
-  // Real-world physical and thermal reference data for each component family.
-  // Drives 3D rendering dimensions, thermal shutdown thresholds, and the
-  // "what is physically happening" narrative in failure descriptions.
-  //
-  // Fields
-  // ------
-  //   commonPackages       — list of typical package names / form factors
-  //   typicalBodyMm        — representative body dimensions {length?, diameter?,
-  //                          width?, height?, depth?}  in mm
-  //   junctionLimitC       — maximum continuous junction / element temperature (°C)
-  //   absoluteMaxTempC     — absolute maximum temperature before irreversible damage (°C)
-  //   description          — physics-narrative for this family
-  // ---------------------------------------------------------------------------
-  const COMPONENT_PHYSICAL_SPECS = {
-    resistor: {
-      commonPackages: ["axial-0204", "axial-0207", "smd-0402", "smd-0603", "smd-0805", "smd-1206"],
-      typicalBodyMm: { length: 3.5, diameter: 1.5 },
-      junctionLimitC: 155,
-      absoluteMaxTempC: 175,
-      description: "Carbon film or metal film resistor on alumina ceramic substrate. Carbon-film rated to 155 °C body temp; metal-film to 175 °C. Failure by resistive layer delamination or lead-solder fatigue.",
-    },
-    capacitor: {
-      commonPackages: ["radial-electrolytic-5mm", "radial-electrolytic-8mm", "smd-0402", "smd-0603", "smd-0805", "mlcc-1206"],
-      typicalBodyMm: { diameter: 8, height: 12 },
-      junctionLimitC: 105,
-      absoluteMaxTempC: 125,
-      description: "Electrolytic: etched aluminium anode foil + Al₂O₃ dielectric + ethylene-glycol electrolyte in aluminium can. MLCC: BaTiO₃ dielectric in monolithic ceramic chip. Electrolyte boil-over begins ~105 °C.",
-    },
-    led: {
-      commonPackages: ["thru-hole-t1-3/4", "thru-hole-t1", "smd-0805", "smd-3528", "smd-5050"],
-      typicalBodyMm: { diameter: 5.0, height: 8.7 },
-      junctionLimitC: 125,
-      absoluteMaxTempC: 150,
-      description: "InGaN (blue/white/green) or AlGaInP (red/amber) p-n junction in epoxy lens package. Junction temperature above 125 °C causes permanent efficiency loss; above 150 °C the bond wire melts.",
-    },
-    diode: {
-      commonPackages: ["do-41", "do-35", "smd-sod-123", "smd-sod-80", "smd-sma"],
-      typicalBodyMm: { length: 5.2, diameter: 2.7 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 175,
-      description: "Silicon p-n rectifier or signal diode. Tj max 150 °C. Failure begins with bond-wire intermetallic growth; at 175 °C the aluminium wire melts open.",
-    },
-    zener_diode: {
-      commonPackages: ["do-35", "do-41", "smd-sod-80", "smd-melf"],
-      typicalBodyMm: { length: 3.5, diameter: 1.9 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 175,
-      description: "Zener (< 5 V) or avalanche (> 6 V) voltage reference. Tj max 150 °C. Sustained reverse-avalanche at excess power ruptures the junction.",
-    },
-    bjt: {
-      commonPackages: ["to-92", "to-18", "to-39", "to-220", "smd-sot-23", "smd-sot-223"],
-      typicalBodyMm: { diameter: 4.6, height: 3.6 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 175,
-      description: "Silicon NPN or PNP bipolar junction transistor. Aluminium bond wires, epoxy or metal-can package. Tj 150 °C max; second breakdown concentrates current in a thermal filament before the die cracks.",
-    },
-    mosfet: {
-      commonPackages: ["to-220", "to-263-d2pak", "dpak-to-252", "smd-sot-23", "smd-sot-223"],
-      typicalBodyMm: { width: 10.3, height: 8.7, depth: 4.6 },
-      junctionLimitC: 175,
-      absoluteMaxTempC: 200,
-      description: "Power N-channel or P-channel MOSFET. Al-Si alloy die, thermally grown SiO₂ gate oxide, copper bond wires. Tj max 175 °C; beyond this the gate oxide degrades and drain-source leakage rises sharply.",
-    },
-    opamp: {
-      commonPackages: ["dip-8", "so-8", "soic-8", "msop-8"],
-      typicalBodyMm: { length: 9.9, width: 6.3, height: 3.5 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 165,
-      description: "Bipolar or CMOS op-amp. DIP-8 or SOIC-8 epoxy-mold package, aluminium metallisation on silicon die. Tj 150 °C max; latch-up from ESD or overvoltage permanently ruins the input stage.",
-    },
-    voltage_regulator: {
-      commonPackages: ["to-220", "to-92", "d2pak", "smd-sod-123"],
-      typicalBodyMm: { width: 10.3, height: 8.7, depth: 4.6 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 165,
-      description: "Linear regulator (LM78xx, LM317, LM1117). TO-220 or TO-92 package. Internal thermal shutdown activates ~150 °C Tj; (Vin−Vout)×Iout is entirely dissipated as heat in the pass transistor.",
-    },
-    ic: {
-      commonPackages: ["dip-8", "dip-14", "dip-16", "soic-8", "ssop-16", "qfp-32"],
-      typicalBodyMm: { length: 9.9, width: 6.3, height: 3.5 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 165,
-      description: "General-purpose integrated circuit in plastic DIP or SMD package. Epoxy-mold compound housing, silicon die, gold or aluminium bond wires. Typically Tj max 150 °C; ESD punch-through destroys gate oxides instantly.",
-    },
-    battery: {
-      commonPackages: ["9v-pp3", "aa-lr6", "aaa-lr03", "c-lr14", "d-lr20", "cr2032"],
-      typicalBodyMm: { width: 26.5, height: 48.5, depth: 17.5 },
-      junctionLimitC: 60,
-      absoluteMaxTempC: 75,
-      description: "Alkaline (ZnMnO₂) or lithium primary cell. Operating limit 60 °C; above this the electrolyte decomposes and internal gas pressure rises. Thermal venting or rupture possible above 75 °C.",
-    },
-    switch: {
-      commonPackages: ["spst-6mm-tactile", "spdt-6mm", "toggle-1ms1", "rocker-dpdt"],
-      typicalBodyMm: { width: 6.0, height: 6.0, depth: 5.0 },
-      junctionLimitC: 200,
-      absoluteMaxTempC: 200,
-      description: "Mechanical contact switch. AgCdO or AgSnO₂ contacts rated to 200 °C contact temperature. Excess current fuses the contacts closed; arcing erodes and oxidises the contact surface.",
-    },
-    relay: {
-      commonPackages: ["signal-g5v-1", "power-g5le", "din-rail-g2r"],
-      typicalBodyMm: { width: 14.9, height: 10.2, depth: 12.7 },
-      junctionLimitC: 130,
-      absoluteMaxTempC: 155,
-      description: "Electromagnetic relay with enameled copper coil, iron core, and AgCdO contacts in polyamide housing. Coil Class B insulation 130 °C; contact arcing above rated load welds contacts permanently closed.",
-    },
-    inductor: {
-      commonPackages: ["axial-through-hole", "toroid-t30", "smd-1210", "pot-core-e25"],
-      typicalBodyMm: { length: 10, diameter: 5 },
-      junctionLimitC: 130,
-      absoluteMaxTempC: 155,
-      description: "Ferrite-core or air-core coil with enameled copper winding. Class B winding insulation standard (130 °C). Core saturation distorts current waveform; insulation burnthrough creates an interwinding short.",
-    },
-    heatsink: {
-      commonPackages: ["to-220-clip-on", "extruded-fin-80mm", "pcb-mount-pad"],
-      typicalBodyMm: { width: 38, height: 30, depth: 18 },
-      junctionLimitC: 200,
-      absoluteMaxTempC: 200,
-      description: "Extruded aluminium alloy 6061 with anodised surface for improved emissivity. Thermally saturates when fin temperature approaches ambient + (Rθ × P). Fin annealing begins above 200 °C.",
-    },
-    fuse: {
-      commonPackages: ["5x20mm-glass", "6.3x32mm-glass", "blade-mini-atm", "blade-ato", "smd-1206-polyfuse"],
-      typicalBodyMm: { length: 20, diameter: 5 },
-      junctionLimitC: 221,
-      absoluteMaxTempC: 221,
-      description: "Glass cartridge or blade fuse with Ag-Sn eutectic fuse element (melts at 221 °C). Current-limiting sand filler (HRC types) quenches the arc. I²t characteristic governs blow time vs. overcurrent magnitude.",
-    },
-    lamp: {
-      commonPackages: ["t1-3/4-5mm", "miniature-e10-bayonet", "ba9s"],
-      typicalBodyMm: { diameter: 5, height: 9 },
-      junctionLimitC: 2500,
-      absoluteMaxTempC: 3422,
-      description: "Incandescent tungsten-filament lamp. Filament operates at ~2500 °C in a halogen or inert atmosphere. Failure by filament evaporation (hotspot thinning) and fatigue fracture after thermal cycling.",
-    },
-    motor: {
-      commonPackages: ["dc-130", "dc-280", "dc-motor-n20", "stepper-nema17"],
-      typicalBodyMm: { diameter: 13, height: 18 },
-      junctionLimitC: 130,
-      absoluteMaxTempC: 155,
-      description: "Brushed or brushless DC motor. Class B winding insulation (130 °C); bearing grease limit 130 °C. Locked-rotor condition saturates the windings with DC heating up to 40× normal running temperature.",
-    },
-    thermistor: {
-      commonPackages: ["disc-5mm", "bead-1mm", "smd-0402", "smd-0603"],
-      typicalBodyMm: { diameter: 5, thickness: 1.5 },
-      junctionLimitC: 150,
-      absoluteMaxTempC: 150,
-      description: "NTC or PTC semiconductor bead or disc in epoxy or glass encapsulant. Self-heating above rated power shifts the indicated temperature; above 150 °C the semiconductor doping profile degrades permanently.",
-    },
-    transformer: {
-      commonPackages: ["ei-30", "ei-42", "toroid-30", "smd-ep-7"],
-      typicalBodyMm: { width: 30, height: 26, depth: 12 },
-      junctionLimitC: 130,
-      absoluteMaxTempC: 155,
-      description: "Laminated silicon-steel core, Class B enameled copper windings. Core saturates at rated flux density (1.4–1.7 T). Winding insulation Class B 130 °C; inter-winding arc possible above 155 °C.",
-    },
-    crystal: {
-      commonPackages: ["hc-49s", "hc-49u", "smd-3225", "smd-5032"],
-      typicalBodyMm: { length: 11.8, width: 5.0, height: 4.3 },
-      junctionLimitC: 85,
-      absoluteMaxTempC: 125,
-      description: "AT-cut quartz crystal in hermetically sealed metal or ceramic can. Drive-level limit ~1 mW; excess drive stress causes electrode delamination and microfracture. Frequency drifts irreversibly before fracture.",
-    },
-    wire: {
-      commonPackages: ["stranded-chassis", "solid-building", "fine-stranded-flexible"],
-      typicalBodyMm: { conductorDiameterMm: 1.628 },
-      junctionLimitC: 80,
-      absoluteMaxTempC: 1200,
-      description: "Stranded or solid conductor with polymer insulation jacket. Ampacity per NEC Table 310.16 (75 °C column). Thermal limit is set by the insulation class — see WIRE_INSULATION_SPECS for per-class data.",
-    },
-    generic: {
-      commonPackages: ["through-hole", "smd"],
-      typicalBodyMm: { length: 5, width: 5, height: 3 },
-      junctionLimitC: 125,
-      absoluteMaxTempC: 125,
-      description: "Generic electronic component assumed rated to 125 °C maximum operating temperature.",
-    },
-  };
-
-
+  // Component Family Map
   // Maps raw type strings (keywords, part-number prefixes, aliases) to the
   // canonical physics-family name.  Used by resolveComponentFamily().
   // ---------------------------------------------------------------------------
@@ -1111,58 +724,29 @@
           physicalDescription:
             "Current exceeds the wire's rated ampacity. I²R heating in the conductor raises its temperature above the design limit. Thermal energy conducts outward through the insulation jacket — the jacket surface becomes hot to the touch, then begins to soften and deform. If overcurrent is sustained, the insulation chars, splits, or melts away.",
           // Trigger whenever current exceeds the wire's rated continuous ampacity.
-          // Prefer props.ampacityA (chassis), then look up from WIRE_GAUGE_TABLE if awg is set.
-          trigger: (metrics, props) => {
-            const ampacity = props.ampacityA ?? props.ampacityChassisA ?? getWireGaugeData(props.awg)?.ampacityChassisA ?? 15;
-            return metrics.currentRms > ampacity;
-          },
+          // Real cables begin to heat above ambient as soon as current flows, but
+          // the rated ampacity (NEC Table 310.16) already includes a safety margin.
+          trigger: (metrics, props) => metrics.currentRms > (props.ampacityA ?? 15),
           // Severity scales from 0 (at rated ampacity) to 3 (at 2.33× ampacity).
-          severity: (metrics, props) => {
-            const ampacity = props.ampacityA ?? props.ampacityChassisA ?? getWireGaugeData(props.awg)?.ampacityChassisA ?? 15;
-            return Math.min(((metrics.currentRms / ampacity) - 1) * 3, 3);
-          },
+          severity: (metrics, props) =>
+            Math.min(((metrics.currentRms / (props.ampacityA ?? 15)) - 1) * 3, 3),
         },
         insulation_burnthrough: {
           name: "Insulation Burnthrough — Short-Circuit Risk",
           visual: "arc",
-          // Dynamic description built at trigger-time using the insulation class specs.
           physicalDescription:
-            "Wire temperature has risen above the insulation class rating. Once this thermal limit is crossed, the polymer matrix breaks down: it softens, flows, then chars. The exposed bare conductor can contact adjacent conductors or a grounded chassis, creating a dead short. Sustained arcing erodes both conductors and can ignite surrounding materials.",
+            "Wire temperature has risen above the insulation class rating. PVC at 80 °C, XLPE at 125 °C, silicone at 200 °C — once this thermal limit is crossed, the polymer matrix breaks down: it softens, flows, then chars. The exposed bare conductor can contact adjacent conductors or a grounded chassis, creating a dead short. Sustained arcing erodes both conductors and can ignite surrounding materials.",
           // Trigger when the conductor has heated the insulation past its class limit.
-          // Prefer props.insulationMaxTempC, then look up from WIRE_INSULATION_SPECS if
-          // props.insulationClass is set, then fall back to PVC-80 default (80 °C).
-          trigger: (metrics, props) => {
-            const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
-            const limitC = props.insulationMaxTempC ?? insulSpec?.thermalLimitC ?? 80;
-            return (25 + metrics.thermalRise) > limitC;
-          },
+          // thermalRise encodes the temperature increase above 25 °C ambient via
+          // I²R × thermalResistance, so 25 + thermalRise gives the jacket surface temp.
+          trigger: (metrics, props) => (25 + metrics.thermalRise) > (props.insulationMaxTempC ?? 80),
           // Severity ramps from 0 at the insulation limit up to 3 at limit+60 °C —
           // matching the narrow window between first degradation (charring, cracking)
           // and total burnthrough / arcing.
           severity: (metrics, props) => {
-            const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
-            const limitC = props.insulationMaxTempC ?? insulSpec?.thermalLimitC ?? 80;
+            const limitC = props.insulationMaxTempC ?? 80;
             const temp = 25 + metrics.thermalRise;
             return Math.min((temp - limitC) / 60, 3);
-          },
-        },
-        voltage_overstress: {
-          name: "Insulation Dielectric Overstress",
-          visual: "arc",
-          physicalDescription:
-            "Applied voltage exceeds the insulation's rated dielectric withstand level. The polymer jacket undergoes partial discharge (corona) followed by electrical treeing — microscopic carbonised channels propagate through the insulation. Once a channel bridges conductor to outer surface the insulation punctures, creating a dead short or arc fault.",
-          // Trigger when operating voltage exceeds the insulation's voltage rating.
-          // Only applies when insulationClass is known and maxVoltageV > 0.
-          trigger: (metrics, props) => {
-            const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
-            const maxV = props.maxVoltageV ?? insulSpec?.maxVoltageV ?? 600;
-            return maxV > 0 && metrics.operatingVoltage > maxV * 1.2;
-          },
-          severity: (metrics, props) => {
-            const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
-            const maxV = props.maxVoltageV ?? insulSpec?.maxVoltageV ?? 600;
-            if (maxV <= 0) return 0;
-            return Math.min(((metrics.operatingVoltage / maxV) - 1.0) * 5, 3);
           },
         },
       },
@@ -1506,27 +1090,15 @@
   // Public API
   // ---------------------------------------------------------------------------
   const FailureEngine = {
-    // Version
-    FUSE_VERSION,
-    // Physical specification tables (FUSE™ canonical source)
-    WIRE_INSULATION_SPECS,
-    WIRE_GAUGE_TABLE,
-    COMPONENT_PHYSICAL_SPECS,
-    // Internal data tables (also exposed for extensions / testing)
     COMPONENT_FAMILY_MAP,
     COMPONENT_PROFILES,
     COMPONENT_FAILURE_PROFILES,
-    // Core detection & family resolution
     resolveComponentFamily,
     detectFailure: detectFailureWithComposition,
-    // Runtime registration API
     registerComponentType,
     registerFailureProfile,
-    // Composition / material integration
     loadCompositions,
     getCompositionThresholds,
-    // Gauge lookup helper
-    getWireGaugeData,
   };
 
   // Support CommonJS (vitest / Node) and browser globals

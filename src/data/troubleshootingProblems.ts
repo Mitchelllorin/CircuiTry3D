@@ -120,7 +120,7 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
     diagram: "switchOpenRect",
     hints: [
       "Try interacting with the switch (SW1).",
-      "When the switch is closed, the circuit should allow current to flow.",
+      "When the switch is closed, the loop should allow current to flow.",
     ],
     diagnosis: {
       placeholder: "Example: SW1 is open, so current cannot flow.",
@@ -140,28 +140,28 @@ const troubleshootingProblems: TroubleshootingProblem[] = [
   },
   {
     id: "ts_missing_wire",
-    title: "Troubleshoot: Open Circuit",
+    title: "Troubleshoot: Broken Loop",
     prompt:
-      "The schematic looks almost right, but the circuit is open. Add the missing connection to restore current flow.",
+      "The schematic looks almost right, but the loop is open. Add the missing connection to restore current flow.",
     preset: "troubleshoot_missing_wire",
     diagram: "missingWireRect",
     hints: [
-      "A series circuit needs a complete path from battery + back to battery -.",
+      "A series circuit needs a complete loop from battery + back to battery -.",
       "Look for a missing return connection near the battery.",
     ],
     diagnosis: {
-      placeholder: "Example: The return wire is missing and the circuit is open.",
+      placeholder: "Example: The return wire is missing and the loop is open.",
       acceptedAnswers: [
         "missing wire",
-        "open circuit",
-        "open circuit",
+        "broken loop",
+        "open loop",
         "missing connection",
         "missing return path",
       ],
       keywordGroups: [
         ["missing", "wire"],
-        ["broken", "circuit"],
-        ["open", "circuit"],
+        ["broken", "loop"],
+        ["open", "loop"],
       ],
     },
     success: { kind: "has-flow" },

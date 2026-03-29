@@ -39,8 +39,8 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     id: "kvl",
     keywords: ["kvl", "kirchhoff voltage", "voltage law", "loop voltage", "mesh"],
     answer:
-      "Kirchhoff's Voltage Law (KVL): the sum of all voltage drops around any closed path equals zero. This underpins mesh analysis — a systematic way to solve multi-branch circuits.",
-    followUp: "Open the W.I.R.E. Worksheet in Practice mode to step through KVL problems.",
+      "Kirchhoff's Voltage Law (KVL): the sum of all voltage drops around any closed loop equals zero. This underpins mesh analysis — a systematic way to solve multi-loop circuits.",
+    followUp: "Open the W.I.R.E. Worksheet in Practice mode to step through KVL loops.",
   },
   // Series circuits
   {
@@ -179,20 +179,6 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     answer:
       "Thévenin's theorem says any linear two-terminal network can be replaced by a single voltage source (V_th) in series with a resistance (R_th). Find V_th with the output open-circuited, and R_th by zeroing all sources and measuring the terminal resistance.",
   },
-  // Norton
-  {
-    id: "norton",
-    keywords: ["norton", "norton's theorem", "norton equivalent", "in norton", "rn norton"],
-    answer:
-      "Norton's theorem is the current-source dual of Thévenin's: any linear two-terminal network can be replaced by a current source (I_N) in parallel with a resistance (R_N). I_N is the short-circuit current; R_N equals the Thévenin resistance. Convert between the two using I_N = V_th / R_th.",
-  },
-  // Maximum power transfer
-  {
-    id: "max-power-transfer",
-    keywords: ["maximum power transfer", "max power", "load resistance", "matched impedance", "source resistance"],
-    answer:
-      "Maximum power is delivered to a load when its resistance equals the source (Thévenin) resistance: R_load = R_th. At this point efficiency is 50% — half the power is dissipated in R_th. Use this principle when designing audio output stages, RF systems, and antenna matching networks.",
-  },
   // Superposition
   {
     id: "superposition",
@@ -214,190 +200,6 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     answer:
       "Transistors are semiconductor switches and amplifiers. BJTs control collector current via base current; MOSFETs control drain current via gate voltage. CircuiTry3D includes NPN, PNP BJT, and MOSFET components in the library.",
   },
-  // Darlington pair
-  {
-    id: "darlington",
-    keywords: ["darlington", "darlington pair", "super beta", "high gain transistor", "beta squared"],
-    answer:
-      "A Darlington pair connects two BJTs in cascade so the first transistor's emitter drives the second's base. The composite current gain (β_total ≈ β₁ × β₂) can exceed 1000. Darlingtons are ideal for driving high-current loads (motors, solenoids, relays) from a low-current microcontroller output. Find the Darlington Pair component in the CircuiTry3D library.",
-  },
-  // Op-Amp
-  {
-    id: "opamp",
-    keywords: ["opamp", "op-amp", "operational amplifier", "comparator", "inverting", "non-inverting", "virtual ground"],
-    answer:
-      "An op-amp is a high-gain differential amplifier. Key configurations: inverting amplifier (gain = −R_f/R_in), non-inverting amplifier (gain = 1 + R_f/R_in), voltage follower (gain = 1), and comparator. The virtual-ground rule applies when negative feedback is present: the inputs are forced to the same potential by the feedback loop.",
-    followUp: "Add an Op-Amp from the Component Library and try the voltage follower configuration.",
-  },
-  // Relay
-  {
-    id: "relay",
-    keywords: ["relay", "electromagnetic relay", "coil relay", "normally open", "normally closed", "no nc com"],
-    answer:
-      "A relay uses an electromagnetic coil to mechanically switch a set of contacts (Normally Open / Normally Closed). The coil circuit is electrically isolated from the switching circuit — ideal for controlling high-voltage loads with a low-voltage microcontroller. Always add a flyback diode across the coil to suppress the back-EMF spike when the coil de-energises.",
-    followUp: "Find the Relay (K-prefix) in the Component Library. Connect the coil to a transistor driver for best results.",
-  },
-  // Voltage regulator
-  {
-    id: "voltage-regulator",
-    keywords: ["voltage regulator", "lm7805", "ldo", "linear regulator", "regulated supply", "3.3v regulator", "5v regulator"],
-    answer:
-      "A linear voltage regulator (e.g., LM7805) accepts a higher input voltage and outputs a stable, lower regulated voltage. The dropout voltage is the minimum input-to-output difference needed for regulation (LDO regulators achieve <0.3 V). Heat dissipation = (V_in − V_out) × I_out — add a heatsink for high currents. CircuiTry3D simulates thermal shutdown when the regulator overheats.",
-    followUp: "Find the Voltage Regulator (VR-prefix) in the Component Library. Always check V_in > V_out + V_dropout.",
-  },
-  // Potentiometer
-  {
-    id: "potentiometer",
-    keywords: ["potentiometer", "pot", "variable resistor", "rheostat", "wiper", "trim pot", "trimpot"],
-    answer:
-      "A potentiometer is a three-terminal variable resistor with a wiper that slides between two end terminals. Used as a voltage divider (all three terminals) or a variable resistor (two terminals). Common uses: volume controls, position sensors, and bias adjustment. CircuiTry3D's Potentiometer component lets you set the wiper position from 0% to 100%.",
-  },
-  // Photodiode
-  {
-    id: "photodiode",
-    keywords: ["photodiode", "photo diode", "light sensor", "photocurrent", "photodetector", "reverse biased sensor"],
-    answer:
-      "A photodiode generates a small reverse current proportional to incident light intensity (photoconductive mode) or produces a voltage with no bias (photovoltaic mode). Used in light sensors, optical communications, and solar cells. Add a Photodiode from the Component Library to build a light-sensing circuit.",
-  },
-  // Speaker / Buzzer
-  {
-    id: "speaker-buzzer",
-    keywords: ["speaker", "buzzer", "audio", "sound", "impedance ohm speaker", "8 ohm"],
-    answer:
-      "A speaker converts electrical energy to sound. Its impedance (typically 4–16 Ω) limits current at audio frequencies. A piezo buzzer is self-oscillating and only needs a DC voltage. Always match amplifier output impedance to the speaker for maximum power transfer and avoid damage.",
-  },
-  // Thermistor
-  {
-    id: "thermistor",
-    keywords: ["thermistor", "ntc", "ptc", "temperature sensor", "temperature dependent", "thermal resistance"],
-    answer:
-      "A thermistor is a temperature-sensitive resistor. NTC (Negative Temperature Coefficient) resistance decreases as temperature rises — used for temperature measurement and inrush current limiting. PTC (Positive Temperature Coefficient) resistance increases sharply above a trip temperature — used as self-resetting fuses. CircuiTry3D's FUSE™ engine models NTC self-heating deviation.",
-  },
-  // Crystal oscillator
-  {
-    id: "crystal-oscillator",
-    keywords: ["crystal", "oscillator", "quartz", "clock signal", "resonator", "frequency stability", "mhz crystal"],
-    answer:
-      "A quartz crystal resonates at a precise frequency determined by its cut and dimensions. Crystal oscillators provide timing references for microcontrollers, clocks, and RF systems with typical accuracy of ±50 ppm or better. Overdrive (excess drive level) can cause microfractures and frequency drift — the FUSE™ engine simulates this failure mode.",
-  },
-  // Motor
-  {
-    id: "motor-dc",
-    keywords: ["motor", "dc motor", "back emf", "stall current", "brushed motor", "motor control"],
-    answer:
-      "A DC motor converts electrical energy into rotation. Key parameters: stall current (peak current at zero RPM) and back-EMF (voltage generated as the motor spins, which reduces net current). Always use a transistor or H-bridge driver — motors draw far more current than a microcontroller pin can supply. Add a flyback diode to handle back-EMF spikes.",
-    followUp: "Find the Motor component in the Component Library. Pair it with a MOSFET for efficient switching.",
-  },
-  // Transformer
-  {
-    id: "transformer",
-    keywords: ["transformer", "turns ratio", "isolation", "step up", "step down", "primary secondary winding"],
-    answer:
-      "A transformer transfers energy between two electrically isolated coils via a shared magnetic field. The turns ratio N₁:N₂ determines voltage scaling (V₂ = V₁ × N₂/N₁) and current scaling (I₂ = I₁ × N₁/N₂). Transformers only work with AC. Use them for mains isolation, impedance matching, and voltage conversion.",
-  },
-  // AC Source
-  {
-    id: "ac-source",
-    keywords: ["ac source", "signal generator", "sine wave source", "function generator", "ac supply", "amplitude frequency"],
-    answer:
-      "The AC Source component generates a sinusoidal voltage with configurable amplitude and frequency. It's the starting point for AC analysis, filter design, and amplifier simulations. RMS voltage = Peak / √2 ≈ 0.707 × Peak. Use it with capacitors and inductors to explore frequency-dependent impedance in CircuiTry3D.",
-  },
-  // Switch
-  {
-    id: "switch",
-    keywords: ["switch", "toggle switch", "spst", "spdt", "contact bounce", "debounce", "normally open switch"],
-    answer:
-      "A switch mechanically opens or closes a conductive path. SPST (Single Pole Single Throw) has one input and one output. SPDT routes one input to either of two outputs. Real switches exhibit contact bounce — multiple rapid transitions at the moment of switching. Debounce with an RC filter (hardware) or a timer delay (software) to prevent false triggers.",
-  },
-  // RC filter
-  {
-    id: "rc-filter",
-    keywords: ["rc filter", "low pass filter", "high pass filter", "cutoff frequency", "time constant", "rc circuit", "rc time"],
-    answer:
-      "An RC circuit's time constant τ = R × C determines how quickly the capacitor charges/discharges. For a low-pass filter, the −3 dB cutoff frequency f_c = 1 / (2π × R × C). Signals below f_c pass; signals above are attenuated. Swap R and C positions to make a high-pass filter. Build one in CircuiTry3D and change the frequency of the AC Source to see the effect.",
-    followUp: "Try the Arena to plot frequency response for your RC filter.",
-  },
-  // RL circuit
-  {
-    id: "rl-circuit",
-    keywords: ["rl circuit", "rl time constant", "inductive circuit", "rl filter", "inductor time"],
-    answer:
-      "In an RL circuit the time constant τ = L / R governs how quickly current builds up or decays. At t = τ, the current reaches ~63% of its final value. Inductors block rapid current changes — at high frequencies the inductive reactance X_L = 2π × f × L becomes large, making RL circuits useful as high-frequency chokes and low-pass filters.",
-  },
-  // Impedance
-  {
-    id: "impedance",
-    keywords: ["impedance", "reactance", "capacitive reactance", "inductive reactance", "xc", "xl", "phasor", "complex impedance"],
-    answer:
-      "Impedance (Z) is the AC generalisation of resistance, combining resistance (R) and reactance (X): Z = R + jX. Capacitive reactance X_C = 1/(2πfC) decreases at higher frequencies. Inductive reactance X_L = 2πfL increases at higher frequencies. Impedance is the denominator in Ohm's Law for AC: V = I × Z.",
-  },
-  // Wire gauge / AWG
-  {
-    id: "wire-gauge",
-    keywords: ["wire gauge", "awg", "american wire gauge", "wire size", "wire ampacity", "wire current rating", "conductor size"],
-    answer:
-      "Wire gauge (AWG in the US) determines a wire's resistance per unit length and current-carrying capacity (ampacity). Smaller AWG numbers = thicker wire = lower resistance = higher ampacity. AWG 22 handles ~300 mA; AWG 14 handles ~15 A. In CircuiTry3D select a wire profile in the Settings to model resistance and ampacity warnings in the simulation.",
-    followUp: "Open the Wire Profile selector in the Settings panel. The W.I.R.E. readout will show utilisation %.",
-  },
-  // Wire insulation
-  {
-    id: "wire-insulation",
-    keywords: ["wire insulation", "pvc wire", "ptfe wire", "silicone wire", "insulation rating", "insulation temperature", "wire jacket"],
-    answer:
-      "Wire insulation protects the conductor and limits operating temperature. Common types in CircuiTry3D: PVC (80–105 °C, low cost), XLPE (125 °C, good flexibility), Silicone (200 °C, high-temp), PTFE (260 °C, chemical resistant), Kapton (400 °C, aerospace). Exceeding the thermal limit causes insulation burnthrough — the FUSE™ engine simulates the arc risk.",
-    followUp: "Select a wire profile from Settings to model insulation limits. A warning appears when limits are exceeded.",
-  },
-  // FUSE™ engine / component failures
-  {
-    id: "fuse-engine",
-    keywords: ["fuse engine", "fuse™", "component failure", "thermal runaway", "failure simulation", "failure mode", "component damage"],
-    answer:
-      "CircuiTry3D's FUSE™ (Failure Under Simulated Electrical stress) engine models realistic component destruction. Each component family (resistor, capacitor, LED, MOSFET, BJT, relay, motor, fuse, and more) has physics-based failure triggers: thermal overload, overvoltage breakdown, overcurrent burnout, and insulation failure. Severity escalates from stressed → critical → destroyed. Visual effects (smoke, arc, blowout) show exactly where the failure occurs.",
-    followUp: "Run a circuit that exceeds a component's rated power to see the FUSE™ engine in action.",
-  },
-  // Thermal management
-  {
-    id: "thermal-management",
-    keywords: ["thermal", "heat", "heatsink", "derating", "junction temperature", "thermal resistance", "cooling", "thermal runaway"],
-    answer:
-      "Heat is the primary cause of component failure. Derate components: operate at 70–80% of rated power to double the lifespan. Thermal resistance (θ_JA, in °C/W) determines how hot a component gets: T_junction = T_ambient + P × θ_JA. Heatsinks reduce θ_JA. In CircuiTry3D, add a Heatsink component to power transistors and regulators — the FUSE™ engine adjusts the thermal trajectory accordingly.",
-    followUp: "Watch the temperature rise in real time when you simulate a circuit near its power limit.",
-  },
-  // Protection circuits
-  {
-    id: "protection-circuits",
-    keywords: ["protection", "flyback diode", "snubber", "transient", "overvoltage protection", "esd", "tvs diode", "crowbar", "clamp"],
-    answer:
-      "Protection circuits prevent damage from voltage transients and overcurrent. Key techniques: Flyback diode (freewheeling diode) across inductive loads to absorb back-EMF; TVS (Transient Voltage Suppressor) diode clamps voltage spikes; Fuse or PTC thermistor for overcurrent; capacitive decoupling near ICs to absorb supply noise. In CircuiTry3D, add a Fuse and a flyback Diode to any inductive load to demonstrate protection.",
-  },
-  // Component ratings and derating
-  {
-    id: "component-ratings",
-    keywords: ["component rating", "derating", "tolerance", "maximum rating", "absolute maximum", "rated current", "rated voltage", "safety factor"],
-    answer:
-      "Every component has absolute maximum ratings (voltage, current, power, temperature) that must not be exceeded. Good practice is to derate — operate at 60–80% of the maximum rating for margin and long life. Tolerance (e.g., ±5% resistor) means the actual value may differ from the marked value. In CircuiTry3D the FUSE™ engine uses these ratings to determine failure onset.",
-  },
-  // 3D view navigation
-  {
-    id: "3d-navigation",
-    keywords: ["3d view", "rotate", "zoom", "camera", "orbit", "pan", "3d navigation", "tilt", "perspective"],
-    answer:
-      "CircuiTry3D renders the circuit in an interactive 3D workspace. Orbit: drag with left mouse button (or one finger). Pan: right-click drag (or two-finger drag). Zoom: scroll wheel or pinch. Reset view: double-tap the canvas or press R. Zoom deeper into a wire to see electron-drift animations. Press Z to fit all components in view.",
-  },
-  // Save / load
-  {
-    id: "save-load",
-    keywords: ["save", "load", "export", "import", "file", "project", "circuit file", "json"],
-    answer:
-      "Save your circuit from the File menu (or Ctrl+S). CircuiTry3D exports circuits as JSON files you can share or reload later. Use File → Open (Ctrl+O) to import a saved circuit. Cloud auto-save keeps a rolling history of recent changes so you can undo across sessions.",
-  },
-  // Schematic reading
-  {
-    id: "schematic",
-    keywords: ["schematic", "schematic symbol", "circuit diagram", "read schematic", "wiring diagram", "schematic reading"],
-    answer:
-      "Schematics use standardised symbols to represent components: a zigzag for a resistor, parallel lines for a capacitor, a coil for an inductor, a triangle for an op-amp. Wires are straight lines; junctions are dots. CircuiTry3D shows a live schematic overlay of your 3D circuit — tap the Schematic button in the toolbar to switch views.",
-  },
   // Help / getting started
   {
     id: "help",
@@ -415,9 +217,6 @@ export const SUGGESTED_QUESTIONS = [
   "How do I add a component?",
   "What is the difference between series and parallel?",
   "How do I wire components together?",
-  "What is the FUSE™ engine?",
-  "How do I use a relay?",
-  "What is an RC filter?",
 ];
 
 // ── Context-aware greeting ───────────────────────────────────────────────────
@@ -441,20 +240,11 @@ export function buildGreeting(circuitState: LegacyCircuitState | null): string {
     if (reason === "no-wires") {
       return `You have ${counts.components} component(s) but no wires. Press W to enter Wire Mode and connect the terminals!`;
     }
-    return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to close the circuit.`;
-  }
-
-  // Wire warning takes priority in the greeting
-  if (metrics.wireWarning) {
-    return `⚠️ Wire alert: ${metrics.wireWarning} Check the wire profile in Settings and consider upgrading the gauge or insulation.`;
+    return `Almost there! Your circuit has ${counts.components} component(s) but is not yet complete (${reason}). Connect all terminals to close the loop.`;
   }
 
   if (Number.isFinite(metrics.voltage) && Number.isFinite(metrics.current)) {
-    const ampPct =
-      metrics.wireAmpacityUtilization != null && Number.isFinite(metrics.wireAmpacityUtilization)
-        ? ` (wire at ${Math.round(metrics.wireAmpacityUtilization * 100)}% ampacity)`
-        : "";
-    return `Your circuit is live! It's running at ${fmt(metrics.voltage, "V")} and ${fmt(metrics.current, "A")}${ampPct}. Ask me anything about the results or circuit theory.`;
+    return `Your circuit is live! It's running at ${fmt(metrics.voltage, "V")} and ${fmt(metrics.current, "A")}. Ask me anything about the results or circuit theory.`;
   }
 
   return "Your circuit looks good! Ask me anything about the readings or circuit theory.";
@@ -483,14 +273,9 @@ function buildCircuitContext(circuitState: LegacyCircuitState | null): string {
   const { counts, metrics } = circuitState;
   const parts: string[] = [];
 
-  // Component summary
-  const typeEntries = Object.entries(counts.byType ?? {});
-  if (typeEntries.length > 0) {
-    const typeList = typeEntries.map(([t, n]) => `${n}× ${t}`).join(", ");
-    parts.push(`Circuit: ${typeList} (${counts.wires} wire(s)).`);
-  } else {
-    parts.push(`Your current circuit has ${counts.components} component(s) and ${counts.wires} wire(s).`);
-  }
+  parts.push(
+    `Your current circuit has ${counts.components} component(s) and ${counts.wires} wire(s).`,
+  );
 
   if (metrics.isComplete) {
     parts.push(
@@ -498,83 +283,11 @@ function buildCircuitContext(circuitState: LegacyCircuitState | null): string {
         metrics.resistance != null ? fmt(metrics.resistance, "Ω") : "open circuit"
       }, ${fmt(metrics.power, "W")}.`,
     );
-    // Ampacity utilisation
-    if (
-      metrics.wireAmpacityUtilization != null &&
-      Number.isFinite(metrics.wireAmpacityUtilization) &&
-      metrics.wireAmpacityUtilization > 0.5
-    ) {
-      parts.push(
-        `Wire ampacity utilisation: ${Math.round(metrics.wireAmpacityUtilization * 100)}% — ${
-          metrics.wireAmpacityUtilization >= 1
-            ? "⚠️ over-rated! Increase wire gauge."
-            : metrics.wireAmpacityUtilization >= 0.8
-              ? "high — consider heavier gauge."
-              : "approaching limit."
-        }`,
-      );
-    }
-    // Wire warning
-    if (metrics.wireWarning) {
-      parts.push(`⚠️ Wire warning: ${metrics.wireWarning}`);
-    }
   } else if (metrics.reason) {
     parts.push(`The circuit is incomplete: ${metrics.reason}.`);
   }
 
   return parts.join(" ");
-}
-
-// ── Keyword scoring — length-weighted ────────────────────────────────────────
-// Longer, more specific keyword phrases earn a higher score than short generic
-// single words, so "ohm's law" outscores a bare "ohm" match.
-
-function scoreEntry(entry: KnowledgeEntry, q: string): number {
-  let score = 0;
-  for (const kw of entry.keywords) {
-    if (q.includes(kw)) {
-      score += kw.length;
-    }
-  }
-  return score;
-}
-
-// ── Component-type–aware hints ────────────────────────────────────────────────
-
-// Checks that `q` contains `word` as a whole word (not as part of a longer word).
-function hasWord(q: string, word: string): boolean {
-  const re = new RegExp(`(?<![a-z])${word}(?![a-z])`, "i");
-  return re.test(q);
-}
-
-function buildComponentTypeHint(circuitState: LegacyCircuitState | null, q: string): string | null {
-  if (!circuitState) return null;
-  const byType = circuitState.counts.byType ?? {};
-
-  // LED advice — use whole-word match to avoid "misled", "tiled", etc.
-  if ((byType.led ?? 0) > 0 && (hasWord(q, "led") || q.includes("light") || q.includes("bright"))) {
-    return "Your circuit contains an LED. LEDs require a current-limiting resistor in series — typical forward current is 20 mA and forward voltage is ~2 V. Formula: R = (V_supply − V_f) / I_f.";
-  }
-
-  // Motor advice
-  if ((byType.motor ?? 0) > 0 && (q.includes("motor") || q.includes("spin") || q.includes("back emf"))) {
-    return "Your circuit has a DC Motor. Always use a transistor or MOSFET driver — motors draw high stall current. Add a flyback diode across the motor terminals to protect the driver from back-EMF spikes.";
-  }
-
-  // Relay advice
-  if ((byType.relay ?? 0) > 0 && (q.includes("relay") || q.includes("coil") || q.includes("contact"))) {
-    return "Your circuit includes a Relay. The coil draws continuous current when energised — connect it via a transistor driver and add a flyback diode to suppress the back-EMF when the coil switches off.";
-  }
-
-  // Capacitor charging question
-  if (
-    (byType.capacitor ?? 0) > 0 &&
-    (q.includes("capacitor") || q.includes("charge") || q.includes("time constant"))
-  ) {
-    return "Your circuit has a Capacitor. The RC time constant τ = R × C (seconds) controls how quickly it charges to ~63% of the supply voltage. After 5τ, it is considered fully charged.";
-  }
-
-  return null;
 }
 
 // ── Core response engine ──────────────────────────────────────────────────────
@@ -597,18 +310,6 @@ export function getAIResponse(
     return buildGreeting(circuitState);
   }
 
-  // Wire-warning shortcut — surface immediately if user asks specifically about
-  // wire-related topics (avoid triggering on generic "current" questions)
-  if (
-    circuitState?.metrics.wireWarning &&
-    (q.includes("warn") || q.includes("wire") || q.includes("ampacity") ||
-      q.includes("gauge") || q.includes("insulation") || q.includes("overcurrent"))
-  ) {
-    const ctx = buildCircuitContext(circuitState);
-    const ctxNote = ctx ? ` \n\n📡 Context: ${ctx}` : "";
-    return `⚠️ Wire warning detected: ${circuitState.metrics.wireWarning} To fix this, open Settings → Wire Profile and select a heavier gauge or higher-rated insulation for your current level.${ctxNote}`;
-  }
-
   // Circuit-specific numeric questions
   if (circuitState?.metrics.isComplete) {
     const { metrics } = circuitState;
@@ -621,13 +322,7 @@ export function getAIResponse(
 
     if (q.includes("current") || q.includes("amps") || q.includes("amperage") || q.includes("what is the i")) {
       if (Number.isFinite(metrics.current)) {
-        const ampPct =
-          metrics.wireAmpacityUtilization != null &&
-          Number.isFinite(metrics.wireAmpacityUtilization) &&
-          metrics.wireAmpacityUtilization > 0
-            ? ` The wire is at ${Math.round(metrics.wireAmpacityUtilization * 100)}% of its ampacity rating.`
-            : "";
-        return `Your circuit is drawing ${fmt(metrics.current, "A")} of current. Current is the rate of charge flow through the circuit (I in W.I.R.E.).${ampPct}`;
+        return `Your circuit is drawing ${fmt(metrics.current, "A")} of current. Current is the rate of charge flow through the circuit (I in W.I.R.E.).`;
       }
     }
 
@@ -651,23 +346,15 @@ export function getAIResponse(
     }
   }
 
-  // Component-type-aware hints
-  const typeHint = buildComponentTypeHint(circuitState, q);
-  if (typeHint) {
-    const ctx = buildCircuitContext(circuitState);
-    const ctxNote = ctx ? ` \n\n📡 Context: ${ctx}` : "";
-    return `${typeHint}${ctxNote}`;
-  }
-
-  // Knowledge base keyword matching — length-weighted score
-  const scores = KNOWLEDGE_BASE.map((entry) => ({
-    entry,
-    score: scoreEntry(entry, q),
-  }));
-  scores.sort((a, b) => b.score - a.score);
+  // Knowledge base keyword matching — score each entry
+  const scores = KNOWLEDGE_BASE.map((entry) => {
+    const matches = entry.keywords.filter((kw) => q.includes(kw)).length;
+    return { entry, matches };
+  });
+  scores.sort((a, b) => b.matches - a.matches);
 
   const best = scores[0];
-  if (best.score > 0) {
+  if (best.matches > 0) {
     const ctx = buildCircuitContext(circuitState);
     const base = best.entry.answer;
     const followUp = best.entry.followUp ? ` ${best.entry.followUp}` : "";
@@ -678,5 +365,5 @@ export function getAIResponse(
   // Generic fallback
   const ctx = buildCircuitContext(circuitState);
   const ctxNote = ctx ? ` \n\n📡 Context: ${ctx}` : "";
-  return `Great question! I didn't find an exact match in my knowledge base, but I can help you explore it. Try asking about Ohm's Law, series vs parallel, power calculations, component failures, or how to use specific tools in CircuiTry3D.${ctxNote}`;
+  return `Great question! I didn't find an exact match in my knowledge base, but I can help you explore it. Try asking about Ohm's Law, series vs parallel, power calculations, or how to use specific tools in CircuiTry3D.${ctxNote}`;
 }

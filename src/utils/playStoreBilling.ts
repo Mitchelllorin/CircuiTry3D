@@ -68,7 +68,7 @@ const BillingPluginProxy = registerPlugin<BillingPluginInterface>("Billing");
 export const SUBSCRIPTION_TIER_KEY = "circuitry3d_subscription_tier";
 
 /** Supported subscription tiers, in ascending order. */
-export type SubscriptionTier = "free" | "student" | "educator" | "institutional" | "lifetime";
+export type SubscriptionTier = "free" | "student" | "educator" | "institutional";
 
 /**
  * Maps each Play Store product ID to its corresponding subscription tier.
@@ -121,7 +121,7 @@ export function isAndroidApp(): boolean {
 export function getStoredTier(): SubscriptionTier {
   try {
     const raw = localStorage.getItem(SUBSCRIPTION_TIER_KEY);
-    if (raw === "student" || raw === "educator" || raw === "institutional" || raw === "lifetime") {
+    if (raw === "student" || raw === "educator" || raw === "institutional") {
       return raw;
     }
   } catch {
@@ -141,7 +141,7 @@ export function setStoredTier(tier: SubscriptionTier): void {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TIER_ORDER: SubscriptionTier[] = ["free", "student", "educator", "institutional", "lifetime"];
+const TIER_ORDER: SubscriptionTier[] = ["free", "student", "educator", "institutional"];
 
 /** Return the highest tier present in a list of active product IDs. */
 function tierFromProducts(products: string[]): SubscriptionTier {

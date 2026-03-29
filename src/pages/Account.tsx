@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import type { FormEvent } from "react";
-import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import "../styles/account.css";
 
 type Mode = "signin" | "signup" | "profile";
@@ -161,9 +160,6 @@ export default function Account() {
                   onChange={(event) => setSignInForm({ ...signInForm, email: event.target.value })}
                   placeholder="you@example.com"
                 />
-                {isLifetimeTester(signInForm.email) && (
-                  <span className="lifetime-hint"><span aria-hidden="true">✦ </span>Founding Tester — Lifetime all-access will be granted</span>
-                )}
               </label>
               <label>
                 Password
@@ -214,9 +210,6 @@ export default function Account() {
                   onChange={(event) => setSignUpForm({ ...signUpForm, email: event.target.value })}
                   placeholder="you@example.com"
                 />
-                {isLifetimeTester(signUpForm.email) && (
-                  <span className="lifetime-hint"><span aria-hidden="true">✦ </span>Founding Tester — Lifetime all-access will be granted</span>
-                )}
               </label>
               <label>
                 Password
@@ -249,15 +242,6 @@ export default function Account() {
 
           {mode === "profile" && currentUser && (
             <section className="account-dashboard" aria-label="Profile overview">
-              {isLifetimeTester(currentUser.email) && (
-                <div className="lifetime-banner" role="status" aria-label="Lifetime membership active">
-                  <span className="lifetime-banner-icon" aria-hidden="true">✦</span>
-                  <div>
-                    <strong>Founding Tester · Lifetime All-Access</strong>
-                    <p>Thank you for being part of the CircuiTry3D founding team. You have permanent, full access to every feature — past, present, and future.</p>
-                  </div>
-                </div>
-              )}
               <div className="profile-card">
                 <div className="profile-avatar" style={{ backgroundColor: currentUser.avatarColor }} aria-hidden="true">
                   {currentUser.displayName
@@ -269,12 +253,7 @@ export default function Account() {
                     .toUpperCase()}
                 </div>
                 <div>
-                  <h2>
-                    {currentUser.displayName}
-                    {isLifetimeTester(currentUser.email) && (
-                      <span className="lifetime-badge" title="Founding Tester — Lifetime All-Access"><span aria-hidden="true">✦ </span>Lifetime</span>
-                    )}
-                  </h2>
+                  <h2>{currentUser.displayName}</h2>
                   <p>{currentUser.email}</p>
                   {currentUser.bio && <p className="profile-bio">{currentUser.bio}</p>}
                   <button type="button" className="account-secondary" onClick={handleSignOut} disabled={isSubmitting}>

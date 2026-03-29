@@ -13,7 +13,6 @@ import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
-import { isCapacitor } from "../hooks/capacitor/useAndroidInit";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
 import { getSchematicSymbol, type ComponentSymbol } from "../components/circuit/SchematicSymbols";
@@ -209,7 +208,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     title: "Getting Started",
     paragraphs: [
       "Add components from the Components menu, then place them directly into the 3D workspace.",
-      "Use the Wire tool to connect terminals and close the circuit so current can flow.",
+      "Use the Wire tool to connect terminals and close the circuit loop so current can flow.",
       "Open the analysis panels on the right to watch live calculations while you build.",
     ],
     bullets: [
@@ -273,7 +272,7 @@ const TUTORIAL_SECTIONS: HelpSection[] = [
     bullets: [
       "Reset View recentres the camera; Fit to Screen frames the active circuit.",
       "Toggle Grid and Toggle Labels for precision placement or a cleaner screenshot.",
-      "Complete the circuit, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
+      "Complete the circuit loop, use junctions for parallel runs, and experiment with routing modes for tidy builds.",
     ],
   },
 ];
@@ -283,7 +282,7 @@ const WIRE_GUIDE_SECTIONS: HelpSection[] = [
     title: "W.I.R.E. Overview",
     paragraphs: [
       "The W.I.R.E. method keeps four core electrical values front and centre while you build or solve circuits. Each value has a dedicated color so you can spot it instantly in any panel or worksheet.",
-      "Use this solve cycle: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
+      "Use this solve loop: capture known values, choose one unknown, pick the matching formula, then verify with simulation.",
     ],
     bullets: [
       "W - Watts (Power) — color: Blue",
@@ -443,7 +442,7 @@ const TABLE_METHOD_SECTIONS: HelpSection[] = [
       "2. Fill in every given value for W, I, R, or E in the worksheet rows.",
       "3. Choose the Ohm's Law or power identity that matches the two known values in the row.",
       "4. Record the newly solved value in the table, then update the totals row when complete.",
-      "5. Check your work with Kirchhoff: sum voltages around each closed path and verify currents at junctions.",
+      "5. Check your work with Kirchhoff: sum voltages around each loop and verify currents at junctions.",
     ],
   },
   {
@@ -871,12 +870,6 @@ const IconSave = ({ className }: IconProps) => (
   </svg>
 );
 
-const IconBolt = ({ className }: IconProps) => (
-  <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-    <path d="M11.25 1.5L4 11.5h5l-1.25 7L15 8.5h-5l1.25-7Z" />
-  </svg>
-);
-
 const IconRotate = ({ className }: IconProps) => (
   <svg
     className={className}
@@ -1137,9 +1130,9 @@ const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
   {
     icon: "⚡",
     title: "What is an Electric Circuit?",
-    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken circuit.",
+    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken loop.",
     analogy:
-      "🔄 Think of it like a water circuit: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
+      "🔄 Think of it like a water loop: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
   },
   {
     icon: "🔋",
@@ -1253,10 +1246,6 @@ export default function Builder() {
   const [activeGuideWorkflow, setActiveGuideWorkflow] =
     useState<GuideWorkflowId>("help");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
-  // Tracks whether the circuit is locked specifically for the onboarding payoff
-  // sequence. Used to distinguish onboarding lock from practice/troubleshoot lock
-  // and to show a "tap to edit" chip after the payoff banner is dismissed.
-  const [isOnboardingLocked, setOnboardingLocked] = useState(false);
   const [isEnvironmentalPanelOpen, setEnvironmentalPanelOpen] = useState(false);
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentalScenario>(
     getDefaultScenario()
@@ -1278,13 +1267,9 @@ export default function Builder() {
     useState(false);
   const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
   const [introDialogStep, setIntroDialogStep] = useState(0);
-  // Junction tip starts hidden — it is shown the first time the user
-  // explicitly uses the Junction button, not automatically on page load,
-  // so that it never blocks the 3D canvas or grid on first visit.
-  const [isJunctionTipVisible, setJunctionTipVisible] = useState(false);
-  // Session-level guard: once the tip has been triggered (or suppressed) this
-  // session, never trigger it again regardless of localStorage availability.
-  const junctionTipTriggeredRef = useRef(false);
+  const [isJunctionTipVisible, setJunctionTipVisible] = useState(
+    () => window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1",
+  );
 
   // Global workspace mode context - sync with local state
   const globalModeContext = useWorkspaceMode();
@@ -1641,7 +1626,6 @@ export default function Builder() {
     setActiveWorkspacePanelMode(null);
     setWorkspacePanelOpen(false);
     setCircuitLocked(false);
-    setOnboardingLocked(false);
     setEnvironmentalPanelOpen(false);
     setHelpOpen(false);
   }, [setHelpOpen]);
@@ -1870,20 +1854,6 @@ export default function Builder() {
 
       if (component.action === "junction") {
         postToBuilder({ type: "builder:add-junction" });
-        // Show the junction info tip the first time the user places a junction.
-        // The ref guards against re-showing within the same session even if
-        // localStorage is unavailable, while the storage key prevents it on
-        // subsequent visits.
-        if (!junctionTipTriggeredRef.current) {
-          junctionTipTriggeredRef.current = true;
-          try {
-            if (window.localStorage.getItem(JUNCTION_TIP_STORAGE_KEY) !== "1") {
-              setJunctionTipVisible(true);
-            }
-          } catch {
-            // ignore storage read failures — ref prevents repeat triggers
-          }
-        }
         return;
       }
 
@@ -2116,10 +2086,7 @@ export default function Builder() {
       // ignore storage write failures
     }
 
-    // Launch the current-flow payoff demo immediately after closing the intro.
-    // Lock the circuit as onboarding-locked so the preset circuit stays
-    // view-only until the user explicitly taps "Edit Circuit".
-    setOnboardingLocked(true);
+    // Launch the current-flow payoff demo immediately after closing the intro
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [runCurrentFlowPayoffSequence]);
 
@@ -2204,7 +2171,6 @@ export default function Builder() {
 
     // Lock circuit during first-visit payoff sequence so the user watches before editing
     setCircuitLocked(true);
-    setOnboardingLocked(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
@@ -2214,40 +2180,15 @@ export default function Builder() {
     }
 
     const timer = window.setTimeout(() => {
-      // Hide the payoff banner when it expires. The circuit stays locked
-      // (isOnboardingLocked) so the user can't accidentally move components;
-      // a "tap to edit" chip appears instead, requiring an explicit tap to
-      // begin editing.
+      // Auto-unlock circuit when payoff banner expires so user can edit freely
       setCurrentFlowPayoffVisible(false);
+      setCircuitLocked(false);
     }, 14000);
 
     return () => {
       window.clearTimeout(timer);
     };
   }, [isCurrentFlowPayoffVisible]);
-
-  // Safety net: auto-unlock if the onboarding lock persists for more than 25s
-  // after the payoff banner has been dismissed.  This prevents users from
-  // getting permanently stuck if the "Start Editing" chip is not visible or
-  // tappable for any reason (CSS conflict, z-index overlap, etc.).
-  useEffect(() => {
-    if (
-      !isOnboardingLocked ||
-      isCurrentFlowPayoffVisible ||
-      isIntroDialogVisible
-    ) {
-      return;
-    }
-
-    const safetyTimer = window.setTimeout(() => {
-      setOnboardingLocked(false);
-      setCircuitLocked(false);
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(safetyTimer);
-    };
-  }, [isOnboardingLocked, isCurrentFlowPayoffVisible, isIntroDialogVisible]);
 
   const activeWireProfilePayload = useMemo(
     () => toWireProfileBridgePayload(activeWireProfile),
@@ -2329,15 +2270,12 @@ export default function Builder() {
     isWorksheetVisible,
   ]);
 
-
   const controlsDisabled = !isFrameReady || isCircuitLocked;
   const controlDisabledTitle = !isFrameReady
     ? "Workspace is still loading"
-    : isOnboardingLocked
-      ? "Tap '✏️ Start Editing' to begin editing the circuit"
-      : isCircuitLocked
-        ? "Complete the active challenge to unlock editing"
-        : undefined;
+    : isCircuitLocked
+      ? "Complete the active challenge to unlock editing"
+      : undefined;
 
   const activeTroubleshootProblem = useMemo(() => {
     if (!activeTroubleshootId) return null;
@@ -2583,16 +2521,6 @@ export default function Builder() {
     isCurrentFlowPayoffVisible &&
     shouldShowEdgeActions &&
     !isInteractiveTutorialOpen;
-  // Show the "tap to edit" chip when the circuit is still onboarding-locked
-  // but the payoff banner has been dismissed/auto-hidden. This gives the user
-  // a clear, explicit action to start editing rather than accidentally
-  // dragging components.
-  const shouldShowOnboardingLockChip =
-    isOnboardingLocked &&
-    !isCurrentFlowPayoffVisible &&
-    !isIntroDialogVisible &&
-    shouldShowEdgeActions &&
-    isFrameReady;
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -2742,29 +2670,71 @@ export default function Builder() {
       data-right-menu-open={isRightMenuOpen ? "true" : "false"}
       data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
     >
-
       {/* Mode bar is now rendered globally in AppLayout */}
 
-      {/* ── Unified top action bar ─────────────────────────────────────────
-          Combines the former workspace-edge-actions (left + right) and the
-          quick-add-bar into a single horizontal strip below the ticker. */}
       {shouldShowEdgeActions && (
         <Fragment>
-          <div className="unified-action-bar" aria-label="Quick actions">
-            {/* Quick-add components */}
-            {QUICK_ADD_COMPONENTS.map((component) => (
-              <QuickAddButton
-                key={component.id}
-                component={component}
-                onClick={() => handleComponentAction(component)}
-                disabled={controlsDisabled}
-                title={component.description || component.label}
-              />
-            ))}
+          {/* Workspace Quick Action Buttons - History/File actions on right edge */}
+          <div className="workspace-edge-actions workspace-edge-actions--right" aria-label="History and file actions">
+            <button
+              type="button"
+              className="edge-action-btn edge-action-btn--simulate"
+              onClick={handleRunSimulationClick}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              data-pulse={isSimulatePulsing ? "true" : undefined}
+              aria-label="Run simulation"
+              title="Run the current circuit simulation"
+            >
+              <IconPlay className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => triggerBuilderAction("undo")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Undo last change"
+              title="Undo (Ctrl+Z)"
+            >
+              <IconUndo className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => triggerBuilderAction("redo")}
+              disabled={controlsDisabled}
+              aria-disabled={controlsDisabled}
+              aria-label="Redo previous change"
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <IconRedo className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => setIsLoadModalOpen(true)}
+              aria-label="Open circuit"
+              title="Open saved circuit (Ctrl+O)"
+            >
+              <IconFolder className="edge-action-icon-svg" />
+            </button>
+            <button
+              type="button"
+              className="edge-action-btn"
+              onClick={() => setIsSaveModalOpen(true)}
+              aria-label="Save circuit"
+              title="Save circuit (Ctrl+S)"
+            >
+              <IconSave className="edge-action-icon-svg" />
+              {circuitStorage.hasUnsavedChanges && (
+                <span className="unsaved-dot" aria-label="Unsaved changes" />
+              )}
+            </button>
+          </div>
 
-            <span className="unified-action-divider" aria-hidden="true" />
-
-            {/* Tool actions (formerly left edge) */}
+          {/* Workspace Quick Action Buttons - Tool actions on left edge */}
+          <div className="workspace-edge-actions workspace-edge-actions--left" aria-label="Tool quick actions">
             <button
               type="button"
               className="edge-action-btn edge-action-btn--clear"
@@ -2775,7 +2745,6 @@ export default function Builder() {
               title="Clear all components, wires, and analysis data"
             >
               <IconTrash className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Clear</span>
             </button>
             <button
               type="button"
@@ -2788,7 +2757,6 @@ export default function Builder() {
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
             >
               <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
-              <span className="edge-action-label" aria-hidden="true">Wire</span>
             </button>
             <button
               type="button"
@@ -2801,7 +2769,6 @@ export default function Builder() {
               title={modeState.isRotateMode ? "Exit Rotate Mode (R)" : "Rotate Mode (R)"}
             >
               <IconRotate className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Rotate</span>
             </button>
             <button
               type="button"
@@ -2813,97 +2780,22 @@ export default function Builder() {
               title="Edit / Select (E)"
             >
               <IconPencil className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Edit</span>
             </button>
+          </div>
 
-            <span className="unified-action-divider" aria-hidden="true" />
-
-            {/* History / file actions (formerly right edge) */}
-            <button
-              type="button"
-              className="edge-action-btn edge-action-btn--simulate"
-              onClick={handleRunSimulationClick}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              data-pulse={isSimulatePulsing ? "true" : undefined}
-              aria-label="Run simulation"
-              title="Run the current circuit simulation"
-            >
-              <IconPlay className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Run</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("undo")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Undo last change"
-              title="Undo (Ctrl+Z)"
-            >
-              <IconUndo className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Undo</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => triggerBuilderAction("redo")}
-              disabled={controlsDisabled}
-              aria-disabled={controlsDisabled}
-              aria-label="Redo previous change"
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <IconRedo className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Redo</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => setIsLoadModalOpen(true)}
-              aria-label="Open circuit"
-              title="Open saved circuit (Ctrl+O)"
-            >
-              <IconFolder className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Load</span>
-            </button>
-            <button
-              type="button"
-              className="edge-action-btn"
-              onClick={() => setIsSaveModalOpen(true)}
-              aria-label="Save circuit"
-              title="Save circuit (Ctrl+S)"
-            >
-              <IconSave className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Save</span>
-              {circuitStorage.hasUnsavedChanges && (
-                <span className="unsaved-dot" aria-label="Unsaved changes" />
-              )}
-            </button>
-
-            <span className="unified-action-divider" aria-hidden="true" />
-
-            {/* AI & Measurement tools — integrated into action bar */}
-            <button
-              type="button"
-              className={`edge-action-btn${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
-              onClick={() => setIsAIHelperOpen((prev) => !prev)}
-              aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
-              aria-expanded={isAIHelperOpen}
-              title="Circuit AI — ask anything about circuits or the app"
-            >
-              <IconBolt className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">AI</span>
-            </button>
-            <button
-              type="button"
-              className={`edge-action-btn${meterState.armed ? " edge-action-btn--active" : ""}`}
-              onClick={() => setBottomMenuOpen(true)}
-              aria-label="Open measurement tools"
-              title="Measurement Tools — Digital Multimeter"
-            >
-              <IconRuler className="edge-action-icon-svg" />
-              <span className="edge-action-label" aria-hidden="true">Measure</span>
-            </button>
+          {/* Centered component quick-add bar — ports the intent of legacy-html
+              PR #467 / #516 (which targeted a hidden element) to the correct
+              React layer so changes are always visible in the production app */}
+          <div className="quick-add-bar" aria-label="Quick add components">
+            {QUICK_ADD_COMPONENTS.map((component) => (
+              <QuickAddButton
+                key={component.id}
+                component={component}
+                onClick={() => handleComponentAction(component)}
+                disabled={controlsDisabled}
+                title={component.description || component.label}
+              />
+            ))}
           </div>
 
           {/* Junction info tip — shown until dismissed, explains the role
@@ -3057,7 +2949,7 @@ export default function Builder() {
           <h2 className="current-flow-payoff-title">
             {currentFlowPayoffHasFlow
               ? "Current is flowing in 3D right now."
-              : "Load a closed circuit to watch current flow instantly."}
+              : "Load a closed loop to watch current flow instantly."}
           </h2>
           <p className="current-flow-payoff-text">
             This is the core experience: virtual electricity moving through a
@@ -3073,13 +2965,13 @@ export default function Builder() {
                 Flow of electric charge through the circuit.{" "}
                 {currentFlowPayoffAmps > 0
                   ? `${currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A flowing now.`
-                  : "Close the circuit to start flow."}
+                  : "Close the loop to start flow."}
               </span>
             </div>
             <div className="payoff-explainer-item">
               <span className="payoff-explainer-label">🔋 Voltage (E)</span>
               <span className="payoff-explainer-value">
-                Electrical pressure pushing charge around the circuit.{" "}
+                Electrical pressure pushing charge around the loop.{" "}
                 {currentFlowPayoffVolts > 0
                   ? `${currentFlowPayoffVolts.toFixed(1)} V supplied by the battery.`
                   : "Add a battery to supply voltage."}
@@ -3122,7 +3014,6 @@ export default function Builder() {
               className="current-flow-payoff-btn current-flow-payoff-btn--primary"
               onClick={() => {
                 setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
                 setCircuitLocked(false);
               }}
             >
@@ -3142,7 +3033,6 @@ export default function Builder() {
               className="current-flow-payoff-btn"
               onClick={() => {
                 setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
                 setCircuitLocked(false);
                 openGuidesWorkspace("tutorial");
                 setInteractiveTutorialOpen(true);
@@ -3154,31 +3044,14 @@ export default function Builder() {
               type="button"
               className="current-flow-payoff-btn current-flow-payoff-btn--ghost"
               onClick={() => {
-                // Dismiss hides the banner but keeps the circuit locked so the
-                // user can't accidentally move components. A "tap to edit" chip
-                // will appear to let them explicitly start editing.
                 setCurrentFlowPayoffVisible(false);
+                setCircuitLocked(false);
               }}
             >
               Dismiss
             </button>
           </div>
         </section>
-      )}
-
-      {shouldShowOnboardingLockChip && (
-        <div className="onboarding-edit-chip-wrap" role="status">
-          <button
-            type="button"
-            className="onboarding-edit-chip"
-            onClick={() => {
-              setOnboardingLocked(false);
-              setCircuitLocked(false);
-            }}
-          >
-            ✏️ Start Editing
-          </button>
-        </div>
       )}
 
       <div
@@ -3271,6 +3144,67 @@ export default function Builder() {
                   <span style={{ opacity: 0.7 }}>Get it on Play Store →</span>
                 </a>
               )}
+            </div>
+            <div className="slider-section">
+              <span className="slider-heading">Wiring Tools</span>
+              <div className="slider-stack">
+                {WIRE_TOOL_ACTIONS.map((action) => {
+                  const isWireToggle = action.action === "toggle-wire-mode";
+                  const isRotateToggle = action.action === "toggle-rotate-mode";
+                  const isCycleRouting = action.action === "cycle-wire-routing";
+                  const isActionActive =
+                    (isWireToggle && modeState.isWireMode) ||
+                    (isRotateToggle && modeState.isRotateMode);
+                  const description = (() => {
+                    if (isWireToggle) {
+                      return modeState.isWireMode
+                        ? "Wire tool active"
+                        : "Activate wire mode to sketch connections";
+                    }
+                    if (isRotateToggle) {
+                      return modeState.isRotateMode
+                        ? "Rotate mode active"
+                        : "Rotate the active component";
+                    }
+                    if (isCycleRouting) {
+                      return `Current routing: ${wireRoutingLabel}`;
+                    }
+                    return action.description;
+                  })();
+
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      className="slider-btn slider-btn-stacked"
+                      onClick={() =>
+                        triggerBuilderAction(action.action, action.data)
+                      }
+                      disabled={controlsDisabled}
+                      aria-disabled={controlsDisabled}
+                      title={
+                        controlsDisabled
+                          ? controlDisabledTitle
+                          : action.description
+                      }
+                      data-active={isActionActive ? "true" : undefined}
+                      aria-pressed={
+                        isWireToggle || isRotateToggle
+                          ? isActionActive
+                          : undefined
+                      }
+                      data-tutorial-id={
+                        action.action === "toggle-wire-mode"
+                          ? "tutorial-enable-wire"
+                          : undefined
+                      }
+                    >
+                      <span className="slider-label">{action.label}</span>
+                      <span className="slider-description">{description}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </nav>
@@ -3836,9 +3770,6 @@ export default function Builder() {
       </div>
 
       <div className="builder-workspace" aria-busy={!isFrameReady}>
-
-
-
         <iframe
           ref={iframeRef}
           className="builder-iframe"
@@ -4180,11 +4111,18 @@ export default function Builder() {
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
       />
-
-
-      {/* ── Diagnostic overlay (OUTSIDE workspace stacking context) ──── */}
-      
-
+      <button
+        type="button"
+        className={`ai-helper-fab${isAIHelperOpen ? " ai-helper-fab--open" : ""}`}
+        onClick={() => setIsAIHelperOpen((prev) => !prev)}
+        aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
+        aria-expanded={isAIHelperOpen}
+        title="Circuit AI — ask anything about circuits or the app"
+      >
+        <span className="ai-helper-fab__icon" aria-hidden="true">
+          {isAIHelperOpen ? "✕" : "⚡"}
+        </span>
+      </button>
     </div>
   );
 }

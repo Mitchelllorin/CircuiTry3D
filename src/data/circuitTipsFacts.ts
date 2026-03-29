@@ -14,7 +14,7 @@ const CIRCUIT_TIPS_FACTS: TipOrFact[] = [
   {
     id: "kvl-1",
     kind: "fact",
-    text: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed path equals zero.",
+    text: "Kirchhoff's Voltage Law: the sum of all voltage drops around any closed loop equals zero.",
   },
   // Ohm's Law
   {
@@ -157,7 +157,7 @@ const CIRCUIT_TIPS_FACTS: TipOrFact[] = [
   {
     id: "trick-3",
     kind: "trick",
-    text: "Trick: Label each node with its voltage before writing any equations — it prevents sign errors in KVL equations.",
+    text: "Trick: Label each node with its voltage before writing any equations — it prevents sign errors in KVL loops.",
   },
   {
     id: "trick-4",
