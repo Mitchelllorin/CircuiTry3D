@@ -2803,25 +2803,39 @@
     
     <canvas id="canvas" style="display: none;"></canvas>
 
-    <!-- ── On-screen Android Diagnostics ── -->
-    <div id="ct3d-diag" style="position:fixed;top:0;left:0;right:0;z-index:999999;
-      background:rgba(0,0,0,0.92);color:#0f0;font:13px/1.5 monospace;padding:10px 12px;
-      max-height:40vh;overflow-y:auto;display:block;"></div>
+    <!-- ── On-screen Android Diagnostics (centered modal with dismiss) ── -->
+    <div id="ct3d-diag-backdrop" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999999;
+      background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;padding:16px;">
+      <div style="background:#111;border:2px solid #0f0;border-radius:12px;padding:16px;
+        max-width:90vw;max-height:85vh;overflow-y:auto;width:100%;">
+        <div id="ct3d-diag" style="color:#0f0;font:12px/1.6 monospace;word-break:break-all;"></div>
+        <button id="ct3d-diag-dismiss" onclick="document.getElementById('ct3d-diag-backdrop').style.display='none'"
+          style="display:block;margin:12px auto 0;padding:10px 32px;font-size:16px;font-weight:bold;
+          background:#0f0;color:#000;border:none;border-radius:8px;cursor:pointer;">
+          DISMISS ✕
+        </button>
+      </div>
+    </div>
     <script>
-    // Global diagnostic function - writes ON SCREEN
+    // Global diagnostic function - writes ON SCREEN in centered modal
     function _diag(m){var e=document.getElementById('ct3d-diag');
       if(e){e.innerHTML+=m+'<br>';e.scrollTop=e.scrollHeight;}
       console.log('[CT3D] '+m);}
-    _diag('\u26a1 CircuiTry3D Diagnostics');
+    _diag('\u26a1 <b>CircuiTry3D Diagnostics</b>');
     _diag('Time: '+new Date().toISOString());
-    _diag('UA: '+navigator.userAgent.substring(0,120));
+    _diag('UA: '+navigator.userAgent.substring(0,100));
     _diag('Protocol: '+location.protocol+' Host: '+location.host);
+    _diag('URL: '+location.href.substring(0,120));
     _diag('Screen: '+screen.width+'x'+screen.height+' DPR: '+window.devicePixelRatio);
     _diag('Viewport: '+window.innerWidth+'x'+window.innerHeight);
     _diag('Capacitor: '+(typeof window.Capacitor)+
       (window.Capacitor&&window.Capacitor.getPlatform?' platform='+window.Capacitor.getPlatform():''));
+    // Check embedded mode detection
+    _diag('Embedded class: '+(document.documentElement.classList.contains('embedded')?'YES':'NO'));
+    _diag('In iframe: '+(window.self!==window.top?'YES':'NO'));
+    _diag('Has embed param: '+(new URLSearchParams(location.search).has('embed')?'YES':'NO'));
 
-    // Quick WebGL capability test on a TEMP canvas (doesn't affect main canvas)
+    // Quick WebGL capability test on a TEMP canvas
     (function(){
       var tc=document.createElement('canvas');tc.width=2;tc.height=2;
       var g2=tc.getContext('webgl2');
@@ -2837,7 +2851,7 @@
         var lose=gl.getExtension('WEBGL_lose_context');
         if(lose)lose.loseContext();
       } else {
-        _diag('\u274c WebGL NOT AVAILABLE on this device!');
+        _diag('\u274c WebGL NOT AVAILABLE!');
       }
       tc=null;
     })();
@@ -6970,7 +6984,9 @@ body.android-optimized .zoom-btn {
                 updateCameraPosition();
                 
                 // ── Multi-strategy renderer creation with diagnostics ──
-                _diag('init() entered. Canvas: '+(canvas?'FOUND':'NULL')+' Dims: '+_vw+'x'+_vh);
+                _diag('init() entered. Canvas: '+(canvas?'FOUND id='+canvas.id+' display='+canvas.style.display:'NULL')+' Dims: '+_vw+'x'+_vh);
+                _diag('Canvas parent: '+(canvas&&canvas.parentNode?canvas.parentNode.nodeName:'NONE'));
+                _diag('Document embedded: '+document.documentElement.classList.contains('embedded'));
                 
                 var _rendererOk = false;
                 
@@ -7039,12 +7055,12 @@ body.android-optimized .zoom-btn {
                     throw new Error('All WebGL renderer creation strategies failed');
                 }
                 
-                // Auto-hide diagnostic overlay after 5 seconds on success
-                setTimeout(function() {
-                    var d = document.getElementById('ct3d-diag');
-                    if (d) { d.style.transition = 'opacity 1s'; d.style.opacity = '0';
-                      setTimeout(function(){ d.style.display='none'; }, 1000); }
-                }, 5000);
+                // Diagnostic overlay stays visible until manual dismiss
+                _diag('<span style="color:#0ff">\u2705 Renderer created successfully!</span>');
+                _diag('Renderer type: '+renderer.constructor.name);
+                _diag('Canvas size: '+renderer.domElement.width+'x'+renderer.domElement.height);
+                _diag('Pixel ratio: '+renderer.getPixelRatio());
+                _diag('<b style="color:#ff0">Tap DISMISS to close this overlay</b>');
                 
                 renderer.setSize(_vw, _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
