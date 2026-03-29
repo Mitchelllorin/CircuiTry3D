@@ -2803,6 +2803,46 @@
     
     <canvas id="canvas" style="display: none;"></canvas>
 
+    <!-- ── On-screen Android Diagnostics ── -->
+    <div id="ct3d-diag" style="position:fixed;top:0;left:0;right:0;z-index:999999;
+      background:rgba(0,0,0,0.92);color:#0f0;font:13px/1.5 monospace;padding:10px 12px;
+      max-height:40vh;overflow-y:auto;display:block;"></div>
+    <script>
+    // Global diagnostic function - writes ON SCREEN
+    function _diag(m){var e=document.getElementById('ct3d-diag');
+      if(e){e.innerHTML+=m+'<br>';e.scrollTop=e.scrollHeight;}
+      console.log('[CT3D] '+m);}
+    _diag('\u26a1 CircuiTry3D Diagnostics');
+    _diag('Time: '+new Date().toISOString());
+    _diag('UA: '+navigator.userAgent.substring(0,120));
+    _diag('Protocol: '+location.protocol+' Host: '+location.host);
+    _diag('Screen: '+screen.width+'x'+screen.height+' DPR: '+window.devicePixelRatio);
+    _diag('Viewport: '+window.innerWidth+'x'+window.innerHeight);
+    _diag('Capacitor: '+(typeof window.Capacitor)+
+      (window.Capacitor&&window.Capacitor.getPlatform?' platform='+window.Capacitor.getPlatform():''));
+
+    // Quick WebGL capability test on a TEMP canvas (doesn't affect main canvas)
+    (function(){
+      var tc=document.createElement('canvas');tc.width=2;tc.height=2;
+      var g2=tc.getContext('webgl2');
+      var g1=!g2?(tc.getContext('webgl')||tc.getContext('experimental-webgl')):null;
+      var gl=g2||g1;
+      if(gl){
+        var v=g2?'WebGL2':'WebGL1';
+        var d=gl.getExtension('WEBGL_debug_renderer_info');
+        var gpu=d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL):'(no debug ext)';
+        _diag('\u2705 '+v+' AVAILABLE: '+gpu);
+        _diag('Max texture: '+gl.getParameter(gl.MAX_TEXTURE_SIZE));
+        _diag('Max viewport: '+JSON.stringify(gl.getParameter(gl.MAX_VIEWPORT_DIMS)));
+        var lose=gl.getExtension('WEBGL_lose_context');
+        if(lose)lose.loseContext();
+      } else {
+        _diag('\u274c WebGL NOT AVAILABLE on this device!');
+      }
+      tc=null;
+    })();
+    </script>
+
     <!-- ── Tutorial Modal ──────────────────────────────────────────────── -->
     <div class="tutorial-backdrop" id="tutorial-backdrop" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" onclick="if(event.target===this)dismissTutorial()">
         <div class="tutorial-modal" id="tutorial-modal">
@@ -6929,14 +6969,83 @@ body.android-optimized .zoom-btn {
                 camera = new THREE.PerspectiveCamera(75, _vw / _vh, 0.1, 1000);
                 updateCameraPosition();
                 
-                renderer = new THREE.WebGLRenderer({ 
-                    canvas: canvas,
-                    antialias: !isMobile, // Disable antialiasing on mobile for performance
-                    powerPreference: isMobile ? "low-power" : "high-performance",
-                    // Allow degraded GL contexts on Android WebView so we never get a
-                    // silent null renderer when the GPU driver reports perf caveats.
-                    failIfMajorPerformanceCaveat: false
-                });
+                // ── Multi-strategy renderer creation with diagnostics ──
+                _diag('init() entered. Canvas: '+(canvas?'FOUND':'NULL')+' Dims: '+_vw+'x'+_vh);
+                
+                var _rendererOk = false;
+                
+                // Strategy 1: Default Three.js options
+                if (!_rendererOk) {
+                    try {
+                        _diag('Strategy 1: default WebGLRenderer...');
+                        renderer = new THREE.WebGLRenderer({ 
+                            canvas: canvas,
+                            antialias: !isMobile,
+                            powerPreference: isMobile ? "low-power" : "high-performance",
+                            failIfMajorPerformanceCaveat: false
+                        });
+                        _rendererOk = !!renderer;
+                        _diag('Strategy 1: ' + (_rendererOk ? 'SUCCESS \u2705' : 'null renderer'));
+                    } catch(e1) {
+                        _diag('Strategy 1 FAILED: ' + e1.message);
+                    }
+                }
+                
+                // Strategy 2: Minimal options (no antialias, default power)
+                if (!_rendererOk) {
+                    try {
+                        _diag('Strategy 2: minimal options...');
+                        renderer = new THREE.WebGLRenderer({ 
+                            canvas: canvas,
+                            antialias: false,
+                            powerPreference: "default",
+                            failIfMajorPerformanceCaveat: false
+                        });
+                        _rendererOk = !!renderer;
+                        _diag('Strategy 2: ' + (_rendererOk ? 'SUCCESS \u2705' : 'null renderer'));
+                    } catch(e2) {
+                        _diag('Strategy 2 FAILED: ' + e2.message);
+                    }
+                }
+                
+                // Strategy 3: Let Three.js create its own canvas
+                if (!_rendererOk) {
+                    try {
+                        _diag('Strategy 3: Three.js-managed canvas...');
+                        renderer = new THREE.WebGLRenderer({ 
+                            antialias: false,
+                            failIfMajorPerformanceCaveat: false
+                        });
+                        if (renderer && renderer.domElement && canvas && canvas.parentNode) {
+                            renderer.domElement.id = 'canvas';
+                            renderer.domElement.style.display = 'block';
+                            canvas.parentNode.replaceChild(renderer.domElement, canvas);
+                        }
+                        _rendererOk = !!renderer;
+                        _diag('Strategy 3: ' + (_rendererOk ? 'SUCCESS \u2705' : 'null renderer'));
+                    } catch(e3) {
+                        _diag('Strategy 3 FAILED: ' + e3.message);
+                    }
+                }
+                
+                if (!_rendererOk) {
+                    _diag('\u274c ALL RENDERER STRATEGIES FAILED');
+                    var diagEl = document.getElementById('ct3d-diag');
+                    if (diagEl) {
+                        diagEl.style.color = '#ff4444';
+                        diagEl.style.fontSize = '16px';
+                        diagEl.innerHTML += '<br><b>\u274c WebGL FAILED - Please screenshot this</b><br>';
+                    }
+                    throw new Error('All WebGL renderer creation strategies failed');
+                }
+                
+                // Auto-hide diagnostic overlay after 5 seconds on success
+                setTimeout(function() {
+                    var d = document.getElementById('ct3d-diag');
+                    if (d) { d.style.transition = 'opacity 1s'; d.style.opacity = '0';
+                      setTimeout(function(){ d.style.display='none'; }, 1000); }
+                }, 5000);
+                
                 renderer.setSize(_vw, _vh);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
                 renderer.setClearColor(0x0a0a1a, 1);
@@ -7038,6 +7147,8 @@ body.android-optimized .zoom-btn {
 
             } catch (error) {
                 console.error('Initialization error:', error);
+                _diag('\u274c INIT ERROR: ' + error.message);
+                _diag('Stack: ' + (error.stack || '').substring(0, 200));
                 console.error('Error loading. Please refresh.');
             } finally {
                 // Mark the builder as ready regardless of whether init() succeeded
@@ -18139,6 +18250,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // visible first.
         const _preInitCanvas = document.getElementById('canvas');
         if (_preInitCanvas) _preInitCanvas.style.display = 'block';
+        _diag('Pre-init canvas: '+ (_preInitCanvas ? 'display='+_preInitCanvas.style.display+' size='+_preInitCanvas.offsetWidth+'x'+_preInitCanvas.offsetHeight : 'NOT FOUND'));
 
         // Defer init() via requestAnimationFrame so the Android WebView has had
         // at least one layout/paint cycle before we try to create the WebGL
@@ -18152,7 +18264,9 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         (function scheduleInit(retries) {
             var w = window.innerWidth  || document.documentElement.clientWidth;
             var h = window.innerHeight || document.documentElement.clientHeight;
+            if (retries === 120) _diag('scheduleInit: waiting for viewport... w='+w+' h='+h);
             if (w > 0 && h > 0) {
+                _diag('scheduleInit: viewport ready ('+w+'x'+h+'), calling init()...');
                 init();
             } else if (retries > 0) {
                 // Dimensions not ready yet — try again next frame.
