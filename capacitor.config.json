@@ -9,8 +9,7 @@
     "backgroundColor": "#0f172a"
   },
   "server": {
-    "androidScheme": "https",
-    "url": "https://circui-try3-d.vercel.app"
+    "androidScheme": "https"
   },
   "plugins": {
     "SplashScreen": {
