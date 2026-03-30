@@ -1197,7 +1197,7 @@ export default function Builder() {
     currentFlowStyle: "misty",
     showPolarityIndicators: true,
     layoutMode: "free",
-    wireRoutingMode: "freeform",
+    wireRoutingMode: "manhattan",
     showGrid: true,
     showLabels: true,
   });
