@@ -1435,6 +1435,129 @@ export const JunctionSymbol: FC<SchematicSymbolProps> = ({
   );
 };
 
+export const RelaySymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -26,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  return (
+    <g transform={transform}>
+      {/* Coil rectangle */}
+      <rect x="-12" y="4" width="24" height="12" rx="2" stroke={color} strokeWidth={strokeWidth * 0.8} fill="none" />
+      {/* Coil leads */}
+      <line x1="-30" y1="10" x2="-12" y2="10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="12" y1="10" x2="30" y2="10" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Switch contacts above */}
+      <circle cx="-10" cy="-8" r="2.5" fill={color} />
+      <line x1="-10" y1="-8" x2="8" y2="-16" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <circle cx="10" cy="-8" r="2.5" fill={color} />
+      {/* Mechanical coupling dashed line */}
+      <line x1="0" y1="4" x2="0" y2="-6" stroke={color} strokeWidth={strokeWidth * 0.6} strokeDasharray="2,2" strokeLinecap="round" />
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const VoltageRegulatorSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -26,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  return (
+    <g transform={transform}>
+      {/* Body box */}
+      <rect x="-14" y="-10" width="28" height="22" rx="3" stroke={color} strokeWidth={strokeWidth * 0.8} fill="none" />
+      {/* Input lead (left) */}
+      <line x1="-30" y1="-4" x2="-14" y2="-4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Output lead (right) */}
+      <line x1="14" y1="-4" x2="30" y2="-4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Ground/adjust lead (bottom) */}
+      <line x1="0" y1="12" x2="0" y2="22" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* VR label inside box */}
+      <text x="0" y="5" textAnchor="middle" fill={color} fontSize={LABEL_SPECS.componentLabelSize} fontWeight={LABEL_SPECS.labelWeight}>VR</text>
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const CircuitBreakerSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -20,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  return (
+    <g transform={transform}>
+      {/* Left lead */}
+      <line x1="-30" y1="0" x2="-8" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Left contact */}
+      <circle cx="-8" cy="0" r="2.5" fill={color} />
+      {/* Switch blade (angled — open state) */}
+      <line x1="-8" y1="0" x2="6" y2="-12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Right contact */}
+      <circle cx="8" cy="0" r="2.5" fill={color} />
+      {/* Right lead */}
+      <line x1="8" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Trip indicator arc — distinguishes from a plain switch */}
+      <path d="M-4,-14 Q0,-21 4,-14" stroke={color} strokeWidth={strokeWidth * 0.9} fill="none" strokeLinecap="round" />
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
 export type ComponentSymbol =
   | 'resistor'
   | 'capacitor'
@@ -1461,7 +1584,10 @@ export type ComponentSymbol =
   | 'mosfet'
   | 'thermistor'
   | 'crystal'
-  | 'junction';
+  | 'junction'
+  | 'relay'
+  | 'voltage-regulator'
+  | 'circuit-breaker';
 
 export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolProps>> = {
   'resistor': ResistorSymbol,
@@ -1490,6 +1616,9 @@ export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolPro
   'thermistor': ThermistorSymbol,
   'crystal': CrystalSymbol,
   'junction': JunctionSymbol,
+  'relay': RelaySymbol,
+  'voltage-regulator': VoltageRegulatorSymbol,
+  'circuit-breaker': CircuitBreakerSymbol,
 };
 
 export function getSchematicSymbol(type: ComponentSymbol): FC<SchematicSymbolProps> | undefined {
