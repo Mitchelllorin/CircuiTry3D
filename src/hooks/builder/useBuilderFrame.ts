@@ -336,6 +336,11 @@ export function useBuilderFrame({
       { type: "builder:request-mode-state" },
       { allowQueue: false },
     );
+    // Sync the initial routing mode from Builder to legacy.
+    // Builder defaults to freeform; legacy may have a cached mode in localStorage.
+    // By not sending an override here, we let legacy report its actual mode back
+    // via the mode-state response above, keeping both sides in sync.
+    console.log("[CT3D-REACT] Frame ready — requested mode state sync from legacy");
   }, [isFrameReady, postToBuilder]);
 
   const triggerBuilderAction = useCallback(
