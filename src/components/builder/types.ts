@@ -10,6 +10,7 @@ export type BuilderInvokeAction =
   | "cycle-layout"
   | "open-measurement-tools"
   | "cycle-wire-routing"
+  | "set-wire-routing"
   | "toggle-grid"
   | "toggle-labels"
   | "load-preset"

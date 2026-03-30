@@ -3694,6 +3694,11 @@ body.android-optimized .zoom-btn {
                             case 'cycle-wire-routing':
                                 if (typeof cycleRoutingMode === 'function') cycleRoutingMode();
                                 break;
+                            case 'set-wire-routing':
+                                if (typeof data.mode === 'string' && typeof applyRoutingMode === 'function') {
+                                    applyRoutingMode(data.mode);
+                                }
+                                break;
                             case 'toggle-grid':
                                 if (typeof toggleGrid === 'function') toggleGrid();
                                 break;
@@ -7022,13 +7027,10 @@ body.android-optimized .zoom-btn {
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.1;
-                // sRGB encoding reverted: while the TDZ crash was the primary Android
-                // issue, sRGB encoding on some Android WebView versions causes particle
-                // rendering to fail silently (current flow invisible).  Use the r150+
-                // outputColorSpace API which is a safe no-op on r128 and will take
-                // effect if THREE is ever upgraded.
-                renderer.outputColorSpace = THREE.SRGBColorSpace;
-
+                // sRGB encoding removed: Three.js r128 does not support
+                // renderer.outputColorSpace.  Setting it was a no-op but caused
+                // confusion across multiple fix cycles.  If upgrading to r152+,
+                // re-enable: renderer.outputColorSpace = THREE.SRGBColorSpace
                 // Handle WebGL context loss / restoration (common on Android when
                 // the app is backgrounded or the OS reclaims GPU memory).
                 // preventDefault() on contextlost tells the browser to attempt
@@ -8441,7 +8443,7 @@ body.android-optimized .zoom-btn {
             'serpentine': 'scurve'
         });
 
-        function normalizeRouterMode(rawMode, fallback = 'manhattan') {
+        function normalizeRouterMode(rawMode, fallback = 'freeform') {
             if (typeof rawMode !== 'string') {
                 return fallback;
             }
@@ -8478,7 +8480,7 @@ body.android-optimized .zoom-btn {
             }
 
             if (!resolved) {
-                resolved = normalizeRouterMode(window.ROUTER_MODE, 'manhattan');
+                resolved = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
             }
 
             window.ROUTER_MODE = resolved;
@@ -14709,16 +14711,26 @@ Made with ? for visual learners everywhere!
         }
 
         function computeFlowState(batteries, components, wires, junctions) {
+            console.log('[CT3D Flow] computeFlowState called: batteries=' + (batteries?.length||0) +
+                ', components=' + (components?.length||0) + ', wires=' + (wires?.length||0) +
+                ', junctions=' + (junctions?.length||0));
             if (!batteries || batteries.length === 0) {
+                console.log('[CT3D Flow] computeFlowState: no batteries, returning no-source');
                 return { hasPath: false, reason: 'no-source' };
             }
 
             const sourceBattery = batteries[0];
             const startKey = getTerminalKey(sourceBattery, 'negative');
             const endKey = getTerminalKey(sourceBattery, 'positive');
+            console.log('[CT3D Flow] startKey=' + startKey + ', endKey=' + endKey);
 
             const adjacency = buildFlowGraph(components, wires, junctions);
+            console.log('[CT3D Flow] adjacency has ' + adjacency.size + ' nodes');
+            adjacency.forEach((edges, key) => {
+                edges.forEach(e => console.log('[CT3D Flow]   ' + key + ' -> ' + e.to + ' type=' + e.type));
+            });
             const path = findLowestResistancePath(adjacency, startKey, endKey);
+            console.log('[CT3D Flow] computeFlowState: path ' + (path ? 'FOUND (' + path.segments.length + ' segments)' : 'NOT FOUND'));
 
             if (!path) {
                 const polarityBlocked = hasClosedCircuitPath(sourceBattery, wires, components);
@@ -15606,6 +15618,7 @@ Made with ? for visual learners everywhere!
         // This function uses terminal-level checking: each connection point (component+side)
         // is a separate node in the graph to ensure BOTH terminals must be connected
         function hasClosedCircuitPath(battery, wires, allComponents) {
+            console.log('[CT3D Flow] hasClosedCircuitPath: battery=' + (battery?.id || 'null') + ', wires=' + wires.length);
             if (!battery || wires.length === 0) return false;
 
             // Build adjacency graph using TERMINAL-LEVEL nodes (component+side combinations)
@@ -15890,6 +15903,9 @@ Made with ? for visual learners everywhere!
         const PARTICLE_EMISSIVE_MULTIPLIER = 0.85;
 
         function animateCurrentFlow(flowState) {
+            console.log('[CT3D Flow] animateCurrentFlow called: hasFlow=' + flowState?.hasFlow +
+                ', currentValue=' + flowState?.currentValue +
+                ', wireSegments=' + (flowState?.wireSegments?.length ?? 'none'));
             // Capture whether the circuit was already flowing BEFORE we update the state.
             // Used below to detect the no-flow → flow transition for FUSE thermal onset.
             const wasFlowing = Boolean(currentFlowState?.hasFlow);
@@ -15915,7 +15931,10 @@ Made with ? for visual learners everywhere!
             const hasFlow    = Boolean(flowState?.hasFlow);
             const currentValue = flowState?.currentValue ?? 0;
 
+            console.log('[CT3D Flow] animateCurrentFlow decision: hasFlow=' + hasFlow + ', currentValue=' + currentValue);
+
             if (!hasFlow || currentValue <= 0) {
+                console.log('[CT3D Flow] animateCurrentFlow: SKIPPING (no flow or zero current)');
                 // Circuit no longer flowing — cancel any pending FUSE re-check and
                 // reset the thermal onset clock so the next circuit start is fresh.
                 clearTimeout(fuseOnsetTimer);
@@ -15928,7 +15947,7 @@ Made with ? for visual learners everywhere!
             // Mark activation time for the circuit-completion flash
             flowActivationTime = performance.now();
 
-            // ── FUSE thermal onset ───────────────────────────────────────────
+// ── FUSE thermal onset ───────────────────────────────────────────
             // Start the thermal clock the first time current flows after an open
             // circuit.  Don't reset it on subsequent calls while still flowing
             // (e.g. atomic-zoom re-trigger) so the accumulated heat is preserved.
@@ -15954,9 +15973,20 @@ Made with ? for visual learners everywhere!
             }
             // ────────────────────────────────────────────────────────────────
 
-            const segments = (flowState.wireSegments && flowState.wireSegments.length > 0)
+            let segments = (flowState.wireSegments && flowState.wireSegments.length > 0)
                 ? flowState.wireSegments
                 : wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
+            
+            console.log('[CT3D Flow] animateCurrentFlow: using ' + segments.length + ' segments' +
+                (flowState.wireSegments?.length > 0 ? ' (from flow path)' : ' (fallback: all wires)'));
+            
+            // Failsafe: if wireSegments exist but their wire references are broken
+            // (e.g. serialized wireId instead of wire object), fall back to all wires
+            const firstSeg = segments[0];
+            if (firstSeg && !firstSeg.wire && firstSeg.wireId) {
+                console.warn('[CT3D Flow] wireSegments contain wireId strings instead of wire objects, falling back to all wires');
+                segments = wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
+            }
 
             if (!segments.length) return;
 
@@ -15974,10 +16004,15 @@ Made with ? for visual learners everywhere!
 
             segments.forEach((segment, segmentIndex) => {
                 const wire = segment.wire;
-                if (!wire || !wire.wireGroup) return;
+                if (!wire || !wire.wireGroup) {
+                    console.warn('[CT3D Flow] Segment ' + segmentIndex + ': SKIPPED (wire=' + !!wire + ', wireGroup=' + !!(wire && wire.wireGroup) + ')');
+                    return;
+                }
+                console.log('[CT3D Flow] Segment ' + segmentIndex + ': processing wire ' + (wire.id || 'no-id'));
 
                 // Always recreate the curve to ensure it uses current terminal positions.
-                try { wire.createCurve(); } catch (e) { console.warn('Could not create wire curve:', e); }
+                try { wire.createCurve(); console.log('[CT3D Flow] Segment ' + segmentIndex + ': curve created OK'); } catch (e) {
+                    console.error('[CT3D Flow] Segment ' + segmentIndex + ': createCurve FAILED:', e); console.warn('Could not create wire curve:', e); }
                 if (!wire.curve) return;
 
                 const segmentSpeed       = Math.max(0.002, baseSpeed * (segment.speedFactor || 1));
@@ -16156,6 +16191,40 @@ Made with ? for visual learners everywhere!
                     }
                 }
             });
+
+            // ── Failsafe: if we expected particles but none were created ──
+            if (hasFlow && currentValue > 0 && currentFlowParticles.length === 0 && wires.length > 0) {
+                console.warn('[CT3D Flow] FAILSAFE: Expected particles but none created. Forcing on ALL ' + wires.length + ' wires.');
+                wires.forEach(function(wire, wi) {
+                    if (!wire || !wire.wireGroup) return;
+                    try { wire.createCurve(); } catch(e) { return; }
+                    if (!wire.curve) return;
+                    var pCount = Math.max(3, Math.floor(6 * (wire.wireLength || 1)));
+                    for (var pi = 0; pi < pCount; pi++) {
+                        var progress = pi / pCount;
+                        try {
+                            var pos = wire.curve.getPoint(progress);
+                            if (!pos || isNaN(pos.x) || isNaN(pos.y) || isNaN(pos.z)) continue;
+                            var geom = new THREE.SphereGeometry(0.06, 6, 6);
+                            var mat = new THREE.MeshPhongMaterial({
+                                color: 0xff6600, emissive: 0xff3300,
+                                emissiveIntensity: 0.8, transparent: true, opacity: 0.9
+                            });
+                            var particle = new THREE.Mesh(geom, mat);
+                            particle.position.copy(pos);
+                            particle.userData.progress = progress;
+                            particle.userData.speed = 0.003 * (1 + Math.random() * 0.3);
+                            particle.userData.wire = wire;
+                            particle.userData.direction = 1;
+                            particle.userData.baseY = pos.y;
+                            particle.userData.trailMeshes = [];
+                            scene.add(particle);
+                            currentFlowParticles.push(particle);
+                        } catch(e) { /* skip */ }
+                    }
+                });
+                console.log('[CT3D Flow] FAILSAFE: Created ' + currentFlowParticles.length + ' particles');
+            }
         }
 
         /**
