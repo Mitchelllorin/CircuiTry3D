@@ -56,6 +56,7 @@ type SharedThumbnailRenderer = {
 };
 
 let sharedRenderer: SharedThumbnailRenderer | null = null;
+let sharedRendererFailed = false;
 let renderQueue: Promise<void> = Promise.resolve();
 
 type ThumbnailKind = string;
@@ -278,38 +279,47 @@ function renderComponentThumbnail(
   // Creating too many WebGL contexts (one per thumbnail) will fail on many devices.
   // Reuse a single renderer/canvas for all thumbnails.
   if (!sharedRenderer) {
-    const canvas = document.createElement("canvas");
-    canvas.width = thumbnailSize;
-    canvas.height = thumbnailSize;
+    if (sharedRendererFailed) {
+      return "";
+    }
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = thumbnailSize;
+      canvas.height = thumbnailSize;
 
-    // Enable antialiasing for smoother edges (even on lower-tier devices)
-    const useAntialias = true; // Always enable for visual quality
+      // Enable antialiasing for smoother edges (even on lower-tier devices)
+      const useAntialias = true; // Always enable for visual quality
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: useAntialias,
-      preserveDrawingBuffer: true,
-      powerPreference: isMobile() ? 'low-power' : 'default',
-    });
-    const threeCompat = THREE as unknown as Record<string, unknown>;
-    const srgbColorSpace = threeCompat["SRGBColorSpace"];
-    const legacySrgbEncoding = threeCompat["sRGBEncoding"];
-    if ("outputColorSpace" in renderer && srgbColorSpace) {
-      (renderer as any).outputColorSpace = srgbColorSpace;
-    } else if ("outputEncoding" in renderer && legacySrgbEncoding) {
-      (renderer as any).outputEncoding = legacySrgbEncoding;
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: useAntialias,
+        preserveDrawingBuffer: true,
+        powerPreference: isMobile() ? 'low-power' : 'default',
+      });
+      const threeCompat = THREE as unknown as Record<string, unknown>;
+      const srgbColorSpace = threeCompat["SRGBColorSpace"];
+      const legacySrgbEncoding = threeCompat["sRGBEncoding"];
+      if ("outputColorSpace" in renderer && srgbColorSpace) {
+        (renderer as any).outputColorSpace = srgbColorSpace;
+      } else if ("outputEncoding" in renderer && legacySrgbEncoding) {
+        (renderer as any).outputEncoding = legacySrgbEncoding;
+      }
+      if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
+        (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;
+        (renderer as any).toneMappingExposure = 1.15;
+      }
+      if ("physicallyCorrectLights" in renderer) {
+        (renderer as any).physicallyCorrectLights = true;
+      }
+      renderer.setSize(thumbnailSize, thumbnailSize, false);
+      renderer.setPixelRatio(1);
+      sharedRenderer = { canvas, renderer };
+    } catch (err) {
+      console.warn("[CT3D] 3D thumbnail renderer unavailable – falling back to SVG icons", err);
+      sharedRendererFailed = true;
+      return "";
     }
-    if ("toneMapping" in renderer && (THREE as any).ACESFilmicToneMapping) {
-      (renderer as any).toneMapping = (THREE as any).ACESFilmicToneMapping;
-      (renderer as any).toneMappingExposure = 1.15;
-    }
-    if ("physicallyCorrectLights" in renderer) {
-      (renderer as any).physicallyCorrectLights = true;
-    }
-    renderer.setSize(thumbnailSize, thumbnailSize, false);
-    renderer.setPixelRatio(1);
-    sharedRenderer = { canvas, renderer };
   }
 
   const { canvas, renderer } = sharedRenderer;
