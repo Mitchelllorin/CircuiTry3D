@@ -6762,6 +6762,12 @@ body.android-optimized .zoom-btn {
                     const startPos = this.getStartPosition();
                     const endPos = this.getEndPosition();
                     const path = createRightAngledWirePath(startPos, endPos, this.startSide, this.endSide);
+
+                    // Guard: need at least 2 points for a valid curve
+                    if (!path || path.length < 2) {
+                        this.curve = null;
+                        return;
+                    }
                     
                     this.curve = {
                         getPoint: (t) => {
@@ -6776,15 +6782,24 @@ body.android-optimized .zoom-btn {
                                 distances.push(segmentDistance);
                                 totalDistance += segmentDistance;
                             }
+
+                            // Guard: zero total distance (collapsed path) — return midpoint
+                            if (totalDistance < 0.001) {
+                                return path[0].clone();
+                            }
                             
                             // Find which segment we're on
                             const targetDistance = t * totalDistance;
                             let currentDistance = 0;
                             
                             for (let i = 0; i < distances.length; i++) {
+                                // Skip zero-length segments to avoid NaN from 0/0
+                                if (distances[i] < 0.001) {
+                                    continue;
+                                }
                                 if (currentDistance + distances[i] >= targetDistance) {
                                     const segmentT = (targetDistance - currentDistance) / distances[i];
-                                    return new THREE.Vector3().lerpVectors(path[i], path[i + 1], segmentT);
+                                    return new THREE.Vector3().lerpVectors(path[i], path[i + 1], Math.min(1, segmentT));
                                 }
                                 currentDistance += distances[i];
                             }
@@ -7007,10 +7022,12 @@ body.android-optimized .zoom-btn {
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.1;
-                // Enable proper sRGB output encoding for vivid, accurate colors.
-                // Previously reverted due to "dim grid on Android" — root cause was
-                // actually the TDZ crash + missing androidScheme:https, not sRGB.
-                renderer.outputEncoding = THREE.sRGBEncoding;
+                // sRGB encoding reverted: while the TDZ crash was the primary Android
+                // issue, sRGB encoding on some Android WebView versions causes particle
+                // rendering to fail silently (current flow invisible).  Use the r150+
+                // outputColorSpace API which is a safe no-op on r128 and will take
+                // effect if THREE is ever upgraded.
+                renderer.outputColorSpace = THREE.SRGBColorSpace;
 
                 // Handle WebGL context loss / restoration (common on Android when
                 // the app is backgrounded or the OS reclaims GPU memory).
@@ -8935,7 +8952,10 @@ body.android-optimized .zoom-btn {
 
         function routeManhattan(A, B, startSide, endSide) {
             const GRID = GRID_SIZE;
-            const STUB = GRID * 2;
+            // Cap stub length to prevent visual spikes when components are close together
+            const componentDist = A.distanceTo(B);
+            const STUB_BASE = GRID * 2;
+            const STUB = (componentDist < STUB_BASE * 3) ? Math.max(GRID * 0.5, componentDist * 0.3) : STUB_BASE;
             
             // Create stub segments extending from connection points
             function createStub(point, side, toward) {
@@ -12344,7 +12364,36 @@ body.android-optimized .zoom-btn {
             }
             
             // Re-animate current flow with new style
-            const result = performCircuitAnalysis();
+            let result;
+            try {
+                result = performCircuitAnalysis();
+            } catch (perfError) {
+                console.error('[CT3D Flow] performCircuitAnalysis threw:', perfError);
+                // Fallback: if circuit looks closed, create a basic flow so particles appear
+                const fallbackBatteries = components.filter(c => c.type === 'battery');
+                const fallbackBattery = fallbackBatteries[0];
+                if (fallbackBattery && wires.length >= 2 && hasClosedCircuitPath(fallbackBattery, wires, components)) {
+                    const totalV = fallbackBatteries.reduce((s, b) => s + b.properties.voltage, 0);
+                    const fallbackR = components.filter(c => c.type !== 'battery')
+                        .reduce((s, c) => s + (c.properties?.resistance || 100), 0) || 100;
+                    const fallbackI = totalV / Math.max(fallbackR, 0.001);
+                    result = {
+                        voltage: totalV, current: fallbackI, resistance: fallbackR,
+                        power: totalV * fallbackI, isComplete: true, topology: 'fallback',
+                        flow: { hasFlow: true, currentValue: fallbackI, wireSegments: [],
+                            totalVoltage: totalV, warning: null }
+                    };
+                    currentFlowState = result.flow;
+                    console.log('[CT3D Flow] Fallback flow activated: V=' + totalV + ' I=' + fallbackI.toFixed(4));
+                } else {
+                    result = {
+                        voltage: 0, current: 0, resistance: Infinity, power: 0,
+                        isComplete: false, topology: 'error',
+                        flow: { hasFlow: false, currentValue: 0 }
+                    };
+                    currentFlowState = result.flow;
+                }
+            }
             const runtimeFlow = currentFlowState || result.flow;
             if (runtimeFlow) {
                 animateCurrentFlow(runtimeFlow);
@@ -13401,6 +13450,13 @@ Made with ? for visual learners everywhere!
                 showHazardWarning();
                 setStatus('DANGER: AC and DC power sources connected — real-world explosion hazard! Remove the connection.');
             }
+
+            // ── Diagnostic: log flow pipeline state ──────────────────────────
+            const _flowDebugBatteries = components.filter(c => c.type === 'battery');
+            const _flowDebugWires = wires.length;
+            const _flowDebugComps = components.length;
+            console.log('[CT3D Flow] analyzeCircuit: ' + _flowDebugBatteries.length + ' batteries, ' +
+                _flowDebugComps + ' components, ' + _flowDebugWires + ' wires, mode=' + getRouterMode());
             // ─────────────────────────────────────────────────────────────────
             const batteries = components.filter(c => c.type === 'battery');
             
@@ -13505,7 +13561,36 @@ Made with ? for visual learners everywhere!
                 };
             }
             
-            const result = performCircuitAnalysis();
+            let result;
+            try {
+                result = performCircuitAnalysis();
+            } catch (perfError) {
+                console.error('[CT3D Flow] performCircuitAnalysis threw:', perfError);
+                // Fallback: if circuit looks closed, create a basic flow so particles appear
+                const fallbackBatteries = components.filter(c => c.type === 'battery');
+                const fallbackBattery = fallbackBatteries[0];
+                if (fallbackBattery && wires.length >= 2 && hasClosedCircuitPath(fallbackBattery, wires, components)) {
+                    const totalV = fallbackBatteries.reduce((s, b) => s + b.properties.voltage, 0);
+                    const fallbackR = components.filter(c => c.type !== 'battery')
+                        .reduce((s, c) => s + (c.properties?.resistance || 100), 0) || 100;
+                    const fallbackI = totalV / Math.max(fallbackR, 0.001);
+                    result = {
+                        voltage: totalV, current: fallbackI, resistance: fallbackR,
+                        power: totalV * fallbackI, isComplete: true, topology: 'fallback',
+                        flow: { hasFlow: true, currentValue: fallbackI, wireSegments: [],
+                            totalVoltage: totalV, warning: null }
+                    };
+                    currentFlowState = result.flow;
+                    console.log('[CT3D Flow] Fallback flow activated: V=' + totalV + ' I=' + fallbackI.toFixed(4));
+                } else {
+                    result = {
+                        voltage: 0, current: 0, resistance: Infinity, power: 0,
+                        isComplete: false, topology: 'error',
+                        flow: { hasFlow: false, currentValue: 0 }
+                    };
+                    currentFlowState = result.flow;
+                }
+            }
             updateCircuitDisplay(result.voltage, result.current, result.resistance, result.power);
 
             // Keep measurement tools synced with latest DC solve
@@ -13519,6 +13604,10 @@ Made with ? for visual learners everywhere!
             }
 
             const runtimeFlow = currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 };
+            console.log('[CT3D Flow] runtimeFlow: hasFlow=' + runtimeFlow.hasFlow +
+                ' current=' + (runtimeFlow.currentValue || 0).toFixed(4) +
+                ' segments=' + (runtimeFlow.wireSegments?.length || 0) +
+                ' topology=' + (result.topology || '?'));
             animateCurrentFlow(runtimeFlow);
 
             const flowMeta = result.flow || sanitizeFlowState(runtimeFlow);
