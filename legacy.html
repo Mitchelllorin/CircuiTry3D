@@ -8443,7 +8443,7 @@ body.android-optimized .zoom-btn {
             'serpentine': 'scurve'
         });
 
-        function normalizeRouterMode(rawMode, fallback = 'freeform') {
+        function normalizeRouterMode(rawMode, fallback = 'manhattan') {
             if (typeof rawMode !== 'string') {
                 return fallback;
             }
@@ -8480,7 +8480,7 @@ body.android-optimized .zoom-btn {
             }
 
             if (!resolved) {
-                resolved = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
+                resolved = normalizeRouterMode(window.ROUTER_MODE, 'manhattan');
             }
 
             window.ROUTER_MODE = resolved;
@@ -8502,8 +8502,8 @@ body.android-optimized .zoom-btn {
                 notifyParent = true
             } = options;
 
-            const normalizedMode = normalizeRouterMode(nextMode, 'freeform');
-            const previousMode = normalizeRouterMode(window.ROUTER_MODE, 'freeform');
+            const normalizedMode = normalizeRouterMode(nextMode, 'manhattan');
+            const previousMode = normalizeRouterMode(window.ROUTER_MODE, 'manhattan');
 
             window.ROUTER_MODE = normalizedMode;
             if (persist) {
@@ -12382,7 +12382,11 @@ body.android-optimized .zoom-btn {
                     result = {
                         voltage: totalV, current: fallbackI, resistance: fallbackR,
                         power: totalV * fallbackI, isComplete: true, topology: 'fallback',
-                        flow: { hasFlow: true, currentValue: fallbackI, wireSegments: [],
+                        flow: { hasFlow: true, hasPath: true, currentValue: fallbackI,
+                            wireSegments: wires.map(function(w) { return { wire: w, direction: 1, speedFactor: 1 }; }),
+                            componentSegments: components.filter(function(c) { return c.type !== 'battery'; }).map(function(c) {
+                                return { component: c, direction: 1, resistance: c.properties && c.properties.resistance ? c.properties.resistance : 100, fromSide: 'left', toSide: 'right' };
+                            }),
                             totalVoltage: totalV, warning: null }
                     };
                     currentFlowState = result.flow;
@@ -13579,7 +13583,11 @@ Made with ? for visual learners everywhere!
                     result = {
                         voltage: totalV, current: fallbackI, resistance: fallbackR,
                         power: totalV * fallbackI, isComplete: true, topology: 'fallback',
-                        flow: { hasFlow: true, currentValue: fallbackI, wireSegments: [],
+                        flow: { hasFlow: true, hasPath: true, currentValue: fallbackI,
+                            wireSegments: wires.map(function(w) { return { wire: w, direction: 1, speedFactor: 1 }; }),
+                            componentSegments: components.filter(function(c) { return c.type !== 'battery'; }).map(function(c) {
+                                return { component: c, direction: 1, resistance: c.properties && c.properties.resistance ? c.properties.resistance : 100, fromSide: 'left', toSide: 'right' };
+                            }),
                             totalVoltage: totalV, warning: null }
                     };
                     currentFlowState = result.flow;
@@ -14726,9 +14734,7 @@ Made with ? for visual learners everywhere!
 
             const adjacency = buildFlowGraph(components, wires, junctions);
             console.log('[CT3D Flow] adjacency has ' + adjacency.size + ' nodes');
-            adjacency.forEach((edges, key) => {
-                edges.forEach(e => console.log('[CT3D Flow]   ' + key + ' -> ' + e.to + ' type=' + e.type));
-            });
+            // Edge-level logging removed for performance
             const path = findLowestResistancePath(adjacency, startKey, endKey);
             console.log('[CT3D Flow] computeFlowState: path ' + (path ? 'FOUND (' + path.segments.length + ' segments)' : 'NOT FOUND'));
 
