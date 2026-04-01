@@ -138,6 +138,13 @@ try {
   createRoot(container).render(
     <React.StrictMode>
 
+    // NEW: ensure Android-specific sim systems are bootstrapped
+    setupAndroidSimBootstrap();
+  }
+
+  createRoot(container).render(
+    <React.StrictMode>
+
   createRoot(container).render(
     <React.StrictMode>
       <HashRouter>
