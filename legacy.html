@@ -12389,7 +12389,7 @@ body.android-optimized .zoom-btn {
                             }),
                             totalVoltage: totalV, warning: null }
                     };
-                    currentFlowState = result.flow;
+                    // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                     console.log('[CT3D Flow] Fallback flow activated: V=' + totalV + ' I=' + fallbackI.toFixed(4));
                 } else {
                     result = {
@@ -12397,10 +12397,14 @@ body.android-optimized .zoom-btn {
                         isComplete: false, topology: 'error',
                         flow: { hasFlow: false, currentValue: 0 }
                     };
-                    currentFlowState = result.flow;
+                    // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                 }
             }
-            const runtimeFlow = currentFlowState || result.flow;
+            // If circuit analysis says flow is possible, use that. Otherwise fall back to currentFlowState.
+            // This ensures that when a failed component is replaced/fixed, flow restarts properly.
+            const runtimeFlow = result.flow?.hasFlow
+                ? result.flow
+                : (currentFlowState || result.flow);
             if (runtimeFlow) {
                 animateCurrentFlow(runtimeFlow);
             }
@@ -13590,7 +13594,7 @@ Made with ? for visual learners everywhere!
                             }),
                             totalVoltage: totalV, warning: null }
                     };
-                    currentFlowState = result.flow;
+                    // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                     console.log('[CT3D Flow] Fallback flow activated: V=' + totalV + ' I=' + fallbackI.toFixed(4));
                 } else {
                     result = {
@@ -13598,7 +13602,7 @@ Made with ? for visual learners everywhere!
                         isComplete: false, topology: 'error',
                         flow: { hasFlow: false, currentValue: 0 }
                     };
-                    currentFlowState = result.flow;
+                    // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                 }
             }
             updateCircuitDisplay(result.voltage, result.current, result.resistance, result.power);
@@ -13613,7 +13617,16 @@ Made with ? for visual learners everywhere!
                 updateMeterUI();
             }
 
-            const runtimeFlow = currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 };
+            // DEBUG: Log the state before deciding runtimeFlow
+            console.log('[CT3D Flow DEBUG] result.flow:', result.flow);
+            console.log('[CT3D Flow DEBUG] currentFlowState:', currentFlowState);
+            console.log('[CT3D Flow DEBUG] result.flow?.hasFlow:', result.flow?.hasFlow);
+            
+            // If circuit analysis says flow is possible, use that. Otherwise fall back to currentFlowState.
+            // This ensures that when a failed component is replaced/fixed, flow restarts properly.
+            const runtimeFlow = result.flow?.hasFlow
+                ? result.flow
+                : (currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 });
             console.log('[CT3D Flow] runtimeFlow: hasFlow=' + runtimeFlow.hasFlow +
                 ' current=' + (runtimeFlow.currentValue || 0).toFixed(4) +
                 ' segments=' + (runtimeFlow.wireSegments?.length || 0) +
@@ -14903,7 +14916,7 @@ Made with ? for visual learners everywhere!
                     currentValue: 0,
                     totalVoltage
                 };
-                currentFlowState = flowResult;
+                // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                 return {
                     voltage: totalVoltage,
                     current: 0,
@@ -14945,7 +14958,7 @@ Made with ? for visual learners everywhere!
                         currentValue: 0,
                         totalVoltage
                     };
-                    currentFlowState = flowResult;
+                    // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                     return {
                         voltage: totalVoltage,
                         current: 0,
@@ -15020,7 +15033,7 @@ Made with ? for visual learners everywhere!
                             voltageUtilization: approxStress.voltageUtilization,
                             thermalMultiplier: approxStress.thermalMultiplier
                         };
-                        currentFlowState = flowResult;
+                        // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                         return {
                             voltage: totalVoltage,
                             current: approxCurrent,
@@ -15040,7 +15053,7 @@ Made with ? for visual learners everywhere!
                         currentValue: 0,
                         shortCircuit: flowState.shortCircuit || false
                     };
-                    currentFlowState = flowResult;
+                    // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                     return {
                         voltage: totalVoltage,
                         current: 0,
@@ -15123,8 +15136,7 @@ Made with ? for visual learners everywhere!
                     voltageUtilization: wireStress.voltageUtilization,
                     thermalMultiplier: wireStress.thermalMultiplier
                 };
-                currentFlowState = flowResult;
-                
+                // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                 return {
                     voltage: totalVoltage,
                     current: current,
@@ -15148,7 +15160,7 @@ Made with ? for visual learners everywhere!
                     currentValue: 0,
                     totalVoltage
                 };
-                currentFlowState = flowResult;
+                // Note: currentFlowState is updated in animateCurrentFlow() to ensure proper FUSE timer handling
                 return {
                     voltage: totalVoltage,
                     current: 0,
