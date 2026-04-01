@@ -9,7 +9,7 @@ import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
 import { initBilling, restorePurchases, isAndroidApp } from "./utils/playStoreBilling";
-
+import { setupAndroidSimBootstrap } from "./sim/androidBootstrap";
 function renderFatalOverlay(payload: {
   title: string;
   message: string;
@@ -130,7 +130,13 @@ try {
       .catch((error) => {
         console.warn('[App] Billing restore failed:', error);
       });
+
+    // NEW: ensure Android-specific sim systems are bootstrapped
+    setupAndroidSimBootstrap();
   }
+
+  createRoot(container).render(
+    <React.StrictMode>
 
   createRoot(container).render(
     <React.StrictMode>
