@@ -1112,9 +1112,18 @@
             "Current exceeds the wire's rated ampacity. I²R heating in the conductor raises its temperature above the design limit. Thermal energy conducts outward through the insulation jacket — the jacket surface becomes hot to the touch, then begins to soften and deform. If overcurrent is sustained, the insulation chars, splits, or melts away.",
           // Trigger whenever current exceeds the wire's rated continuous ampacity.
           // Prefer props.ampacityA (chassis), then look up from WIRE_GAUGE_TABLE if awg is set.
+          // Exception: resistance-class heating elements (nichrome, kanthal, constantan, bare1200
+          // insulation) are designed to operate at their rated current — only trigger at 1.5×
+          // rated current to signal a dangerously overloaded heating element.
           trigger: (metrics, props) => {
             const ampacity = props.ampacityA ?? props.ampacityChassisA ?? getWireGaugeData(props.awg)?.ampacityChassisA ?? 15;
-            return metrics.currentRms > ampacity;
+            const isResistanceWire = props.insulationClass === 'bare1200'
+              || props.conductorMaterial === 'nichrome80'
+              || props.conductorMaterial === 'kanthalA1'
+              || props.conductorMaterial === 'constantan';
+            return isResistanceWire
+              ? metrics.currentRms > ampacity * 1.5
+              : metrics.currentRms > ampacity;
           },
           // Severity scales from 0 (at rated ampacity) to 3 (at 2.33× ampacity).
           severity: (metrics, props) => {
@@ -1131,7 +1140,9 @@
           // Trigger when the conductor has heated the insulation past its class limit.
           // Prefer props.insulationMaxTempC, then look up from WIRE_INSULATION_SPECS if
           // props.insulationClass is set, then fall back to PVC-80 default (80 °C).
+          // Not applicable for bare/oxide insulation (bare1200) — no polymer jacket to degrade.
           trigger: (metrics, props) => {
+            if (props.insulationClass === 'bare1200') return false;
             const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
             const limitC = props.insulationMaxTempC ?? insulSpec?.thermalLimitC ?? 80;
             return (25 + metrics.thermalRise) > limitC;
@@ -1153,6 +1164,7 @@
             "Applied voltage exceeds the insulation's rated dielectric withstand level. The polymer jacket undergoes partial discharge (corona) followed by electrical treeing — microscopic carbonised channels propagate through the insulation. Once a channel bridges conductor to outer surface the insulation punctures, creating a dead short or arc fault.",
           // Trigger when operating voltage exceeds the insulation's voltage rating.
           // Only applies when insulationClass is known and maxVoltageV > 0.
+          // Not applicable for bare/oxide insulation (maxVoltageV = 0 by definition).
           trigger: (metrics, props) => {
             const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
             const maxV = props.maxVoltageV ?? insulSpec?.maxVoltageV ?? 600;
