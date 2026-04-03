@@ -73,13 +73,35 @@ export const IS_DEMO_MODE: boolean = BUILD_IS_DEMO && !isOwnerUnlocked();
 
 /**
  * Component IDs that are available in the demo version.
- * All other components are unlocked in the full Play Store release.
+ * The web demo includes the full component library — everything is available.
+ * The Play Store release provides the native Android experience with offline support.
  */
 export const DEMO_COMPONENT_IDS: readonly string[] = [
   "battery",
+  "ac_source",
   "resistor",
+  "capacitor",
+  "capacitor-ceramic",
+  "inductor",
+  "diode",
+  "zener-diode",
+  "photodiode",
   "led",
+  "thermistor",
+  "crystal",
+  "bjt",
+  "bjt-npn",
+  "bjt-pnp",
+  "darlington",
+  "mosfet",
   "switch",
+  "fuse",
+  "potentiometer",
+  "lamp",
+  "motor",
+  "speaker",
+  "opamp",
+  "transformer",
   "ground",
   "junction",
 ] as const;
