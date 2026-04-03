@@ -1,5 +1,6 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
 import BrandSignature from "../components/BrandSignature";
 import GlobalModeBar from "../components/GlobalModeBar";
@@ -36,11 +37,13 @@ const Promo4 = lazy(() => import("../pages/Promo4"));
 const Promo5 = lazy(() => import("../pages/Promo5"));
 const Promo7 = lazy(() => import("../pages/Promo7"));
 const Promo9 = lazy(() => import("../pages/Promo9"));
+const Upgrade = lazy(() => import("../pages/Upgrade"));
 
 function PageFallback() {
+  const { t } = useTranslation();
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "40vh", color: "rgba(200,220,255,0.7)" }}>
-      <span>Loading…</span>
+      <span>{t("common.loading")}</span>
     </div>
   );
 }
@@ -78,6 +81,7 @@ export default function App() {
             <Route path="/promo5" element={<Promo5 />} />
             <Route path="/promo7" element={<Promo7 />} />
             <Route path="/promo9" element={<Promo9 />} />
+            <Route path="/upgrade" element={<Upgrade />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -88,20 +92,22 @@ export default function App() {
 }
 
 function NotFound() {
+  const { t } = useTranslation();
   return (
     <div style={{ padding: 24, color: "var(--text-primary)", background: "var(--bg-darker)", minHeight: "100vh" }}>
       <div style={{ marginBottom: 16 }}>
         <BrandSignature size="md" />
       </div>
       <h1>404</h1>
-      <p>Page not found.</p>
-      <Link to="/" style={{ color: "var(--brand-primary)" }}>Go Home</Link>
+      <p>{t("common.pageNotFound")}</p>
+      <Link to="/" style={{ color: "var(--brand-primary)" }}>{t("common.goHome")}</Link>
     </div>
   );
 }
 
 function AppLayout() {
   const location = useLocation();
+  const { t } = useTranslation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
   const isArena = location.pathname === "/arena";
@@ -173,17 +179,17 @@ function AppLayout() {
       {/* Site footer with legal links - shown on all pages except landing, workspace, arena & promo */}
       {!isLanding && !isWorkspace && !isArena && !isAnyPromo && (
         <footer className="app-footer">
-          <Link to="/privacy" className="app-footer-link">Privacy Policy</Link>
+          <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/data-safety" className="app-footer-link">Data Safety</Link>
+          <Link to="/data-safety" className="app-footer-link">{t("footer.dataSafety")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/app-access" className="app-footer-link">Get the App</Link>
+          <Link to="/app-access" className="app-footer-link">{t("footer.getTheApp")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/play-store" className="app-footer-link">Play Store Compliance</Link>
+          <Link to="/play-store" className="app-footer-link">{t("footer.playStoreCompliance")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/delete-account" className="app-footer-link">Delete Account</Link>
+          <Link to="/delete-account" className="app-footer-link">{t("footer.deleteAccount")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
-          <Link to="/partnerships" className="app-footer-link">Partnerships</Link>
+          <Link to="/partnerships" className="app-footer-link">{t("footer.partnerships")}</Link>
         </footer>
       )}
     </div>
