@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 
 const CONTACT = {
-  schoolBoard: "hello@circuitry3d.com?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",
-  manufacturer: "hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership",
-  general: "hello@circuitry3d.com?subject=CircuiTry3D%20Partnership",
+  schoolBoard: "info@circuitry3d.net?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",
+  manufacturer: "info@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership",
+  general: "info@circuitry3d.net?subject=CircuiTry3D%20Partnership",
 };
 
 export default function Partnerships() {
@@ -168,7 +168,7 @@ export default function Partnerships() {
           we'll figure out the best path forward.
         </p>
         <a href={`mailto:${CONTACT.general}`} style={styles.ctaButtonSecondary}>
-          hello@circuitry3d.com →
+          info@circuitry3d.net →
         </a>
       </div>
 

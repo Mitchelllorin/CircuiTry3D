@@ -81,7 +81,7 @@ export default function PrivacyPolicy() {
         </ul>
         <p>
           To exercise these rights, contact us at{" "}
-          <a href="mailto:privacy@circuitry3d.app">privacy@circuitry3d.app</a>.
+          <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a>.
         </p>
 
         <h2>Data Deletion</h2>
@@ -93,7 +93,7 @@ export default function PrivacyPolicy() {
           </li>
           <li>
             <strong>Email Request</strong> — Send a deletion request to{" "}
-            <a href="mailto:privacy@circuitry3d.app">privacy@circuitry3d.app</a>. We respond within 48 hours and
+            <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a>. We respond within 48 hours and
             complete deletion within 30 days.
           </li>
         </ol>
@@ -132,8 +132,8 @@ export default function PrivacyPolicy() {
         <div className="legal-contact-card">
           <h3>Contact — Data Protection Officer</h3>
           <p><strong>Mitchell Lorin McKnight</strong></p>
-          <p>Email: <a href="mailto:privacy@circuitry3d.app">privacy@circuitry3d.app</a></p>
-          <p>Website: <a href="https://circuitry3d.app/privacy" target="_blank" rel="noopener noreferrer">https://circuitry3d.app/privacy</a></p>
+          <p>Email: <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a></p>
+          <p>Website: <a href="https://www.circuitry3d.net/privacy" target="_blank" rel="noopener noreferrer">https://www.circuitry3d.net/privacy</a></p>
           <p>Response time: within 48 hours (2 business days)</p>
         </div>
 

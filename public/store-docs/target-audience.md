@@ -49,4 +49,4 @@ If users under 13 access the app, parental supervision is recommended. The app:
 
 ---
 
-**Contact:** support@circuitry3d.app
+**Contact:** info@circuitry3d.net

@@ -42,4 +42,4 @@
 
 ---
 
-**Contact:** support@circuitry3d.app
+**Contact:** info@circuitry3d.net

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/legal.css";
 
-const SITE_ORIGIN = "https://circuitry3d.app";
+const SITE_ORIGIN = "https://www.circuitry3d.net";
 
 type ConsoleUrl = { label: string; field: string; url: string };
 
@@ -485,7 +485,7 @@ export default function PlayStoreCompliance() {
           </p>
           <p>
             Questions or review requests:{" "}
-            <a href="mailto:support@circuitry3d.app">support@circuitry3d.app</a>
+            <a href="mailto:info@circuitry3d.net">info@circuitry3d.net</a>
           </p>
         </div>
       </div>
