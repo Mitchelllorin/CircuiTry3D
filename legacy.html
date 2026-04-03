@@ -4544,10 +4544,16 @@ body.android-optimized .zoom-btn {
                 const maxTemperatureC   = Number(profile?.maxTemperatureC);
                 const diameterMm        = Number(profile?.diameterMm);
                 const insulationMaxTempC = Number(profile?.insulationMaxTempC ?? profile?.maxTemperatureC);
+                const conductorThermalConductivityWPerMK = Number(profile?.conductorThermalConductivityWPerMK);
                 activeWireProfile = {
                     id:                  typeof profile?.id === 'string' ? profile.id : null,
                     gaugeLabel:          typeof profile?.gaugeLabel === 'string' ? profile.gaugeLabel : 'Custom wire',
+                    // Conductor material ID (e.g. "annealedCopper", "nichrome80") — used by
+                    // FUSE™ thermal model to identify resistance-class heating elements.
+                    conductorMaterial:   typeof profile?.conductorMaterial === 'string' ? profile.conductorMaterial : null,
                     materialLabel:       typeof profile?.materialLabel === 'string' ? profile.materialLabel : null,
+                    // Conductor thermal conductivity (W/m·K) — used to scale I²R heat retention.
+                    conductorThermalConductivityWPerMK: Number.isFinite(conductorThermalConductivityWPerMK) && conductorThermalConductivityWPerMK > 0 ? conductorThermalConductivityWPerMK : null,
                     insulationLabel:     typeof profile?.insulationLabel === 'string' ? profile.insulationLabel : null,
                     insulationClass:     typeof profile?.insulationClass === 'string' ? profile.insulationClass : 'pvc80',
                     diameterMm:          Number.isFinite(diameterMm) && diameterMm > 0 ? diameterMm : null,
@@ -13992,6 +13998,19 @@ Made with ? for visual learners everywhere!
             const thermalHeadroomFactor = Number.isFinite(maxTemperatureC) && maxTemperatureC > 0
                 ? Math.max(0.4, Math.min(1.4, maxTemperatureC / 120))
                 : 1;
+
+            // ── Resistance-class heating element detection ─────────────────────────
+            // Nichrome, Kanthal, and constantan wires are designed to dissipate power
+            // as heat — their rated ampacity IS their continuous thermal operating
+            // point, not a safety ceiling.  Suppress the ampacity soft warning for
+            // these materials; only raise a critical alert at ≥ 2× rated current
+            // (dangerously overloaded element).  Bare-oxide insulation (bare1200) is
+            // also used exclusively with resistance alloys and serves as a fallback
+            // identifier when the material ID is not present.
+            const RESISTANCE_WIRE_MATERIAL_IDS = new Set(['nichrome80', 'kanthalA1', 'constantan']);
+            const isResistanceWire = (
+                profile?.conductorMaterial && RESISTANCE_WIRE_MATERIAL_IDS.has(profile.conductorMaterial)
+            ) || profile?.insulationClass === 'bare1200';
             const ampacityUtilization = (Number.isFinite(ampacityLimitA) && ampacityLimitA > 0)
                 ? (current / ampacityLimitA)
                 : null;
@@ -14003,12 +14022,21 @@ Made with ? for visual learners everywhere!
             let thermalMultiplier = 1;
 
             if (Number.isFinite(ampacityUtilization) && ampacityUtilization > FLOW_CONSTANTS.ampacitySoftLimitRatio) {
-                const overload = ampacityUtilization - FLOW_CONSTANTS.ampacitySoftLimitRatio;
-                thermalMultiplier += ((overload * overload * FLOW_CONSTANTS.ampacityThermalGain) + (overload * 0.35)) / thermalHeadroomFactor;
-                warning = pickMoreSevereWarning(
-                    warning,
-                    ampacityUtilization >= FLOW_CONSTANTS.ampacityCriticalRatio ? 'ampacity-critical' : 'ampacity'
-                );
+                // Resistance-class heating elements (nichrome, kanthal, constantan, bare insulation)
+                // are intentionally operated at or above their rated current to produce heat.
+                // Suppress the ampacity warning until 2× rated current — a level that indicates
+                // a genuinely dangerous overload of the heating element, not normal operation.
+                const resistanceCriticalRatio = 2.0;
+                if (isResistanceWire && ampacityUtilization < resistanceCriticalRatio) {
+                    // Operating within the designed thermal envelope — no warning.
+                } else {
+                    const overload = ampacityUtilization - FLOW_CONSTANTS.ampacitySoftLimitRatio;
+                    thermalMultiplier += ((overload * overload * FLOW_CONSTANTS.ampacityThermalGain) + (overload * 0.35)) / thermalHeadroomFactor;
+                    warning = pickMoreSevereWarning(
+                        warning,
+                        ampacityUtilization >= FLOW_CONSTANTS.ampacityCriticalRatio ? 'ampacity-critical' : 'ampacity'
+                    );
+                }
             }
 
             if (Number.isFinite(voltageUtilization) && voltageUtilization > FLOW_CONSTANTS.voltageSoftLimitRatio) {
@@ -14024,28 +14052,43 @@ Made with ? for visual learners everywhere!
             // ampacity-derating; we compute a physical temp to compare against the
             // insulation class operating limit.
             //
-            // T_conductor ≈ 25°C (ambient) + I² × R_path × R_thermal_jacket
-            // We use a normalised R_thermal value (°C/W per metre) derived from the
-            // insulation class; in the absence of per-profile data we use 12 °C/W as
-            // the default (approximate for PVC on 14 AWG at chassis ampacity).
+            // T_conductor ≈ 25°C (ambient) + I² × R_wire × R_jacket × conductorFactor
+            // R_jacket (°C/W per metre) is derived from the insulation class jacket-ratio via
+            // WIRE_JACKET_THERMAL_BASE + (jacketRatio − 1.0) × WIRE_JACKET_THERMAL_SLOPE.
+            // conductorFactor scales heat retention based on the conductor's actual thermal
+            // conductivity relative to annealed copper.
             const insulationMaxTempC = Number(profile?.insulationMaxTempC ?? profile?.maxTemperatureC) || 80;
-            const radii = getWireRadii(profile);
             // Approximate thermal resistance of jacket from known insulation specs.
             // Derived from cylindrical shell formula: R = ln(r_outer/r_inner)/(2π·k·L),
-            // normalised to 1 m length for comparison.  We bake it into a single constant
-            // per insulation class; for default (no profile) fall back to 12 °C·m/W.
+            // normalised to 1 m length for comparison.  Jacket ratio drives the per-class value;
+            // pvc80 (ratio 1.55) falls back to ~10.6 °C·m/W, EPDM (ratio 2.1) to ~17.2 °C·m/W.
             const INSUL_SPEC = (profile && profile.insulationClass)
                 ? (WIRE_INSULATION_SPECS[profile.insulationClass] || WIRE_INSULATION_SPECS.pvc80)
                 : WIRE_INSULATION_SPECS.pvc80;
-            // Simple thermal model: conductor temp = ambient + I² × wireResistance × jacketThermalR
-            // wirePathResistance is the total path resistance; scale to per-metre for the model.
+            // Thermal model: conductor temp = ambient + I² × R_wire × R_jacket × conductorFactor
+            // R_jacket (°C/W per metre) is scaled by jacket thickness ratio.
+            // conductorFactor corrects for the conductor's own thermal conductivity relative to
+            // annealed copper (401 W/m·K): low-conductivity alloys (nichrome: 11 W/m·K) retain
+            // heat much more effectively, raising the conductor surface temperature.
             const wireResOhmPerMetre = Number.isFinite(profile?.resistanceOhmPerMeter) && profile.resistanceOhmPerMeter > 0
                 ? profile.resistanceOhmPerMeter
                 : (FLOW_CONSTANTS.wireResistance || 0.01);
             // jacketThermalR (°C/W per metre): use jacket thickness ratio as a proxy.
             // Thicker jackets (EPDM ratio 2.1) have higher thermal resistance than thin PTFE (1.2).
             const jacketThermalRPerMetre = WIRE_JACKET_THERMAL_BASE + (INSUL_SPEC.jacketRatio - 1.0) * WIRE_JACKET_THERMAL_SLOPE;
-            const conductorTempC = 25 + current * current * wireResOhmPerMetre * jacketThermalRPerMetre;
+            // Conductor thermal correction: low-conductivity alloys (nichrome ~11 W/m·K) retain heat
+            // more than copper (~401 W/m·K).  The correction scales inversely with conductivity,
+            // capped at 3× to avoid runaway for extreme alloys.
+            // Reference: annealed copper thermal conductivity at 20 °C (IEC 60228 / ASTM B3).
+            // All conductor materials are normalised against this value so copper gives a
+            // correction factor of 1.0.  Resistance alloys (nichrome ~11 W/m·K, kanthal ~11 W/m·K)
+            // yield factors up to 3× before the cap is applied.
+            const CONDUCTOR_K_REFERENCE = 401; // annealed copper W/m·K
+            const conductorK = Number.isFinite(profile?.conductorThermalConductivityWPerMK) && profile.conductorThermalConductivityWPerMK > 0
+                ? profile.conductorThermalConductivityWPerMK
+                : CONDUCTOR_K_REFERENCE;
+            const conductorThermalCorrectionFactor = Math.min(3.0, CONDUCTOR_K_REFERENCE / conductorK);
+            const conductorTempC = 25 + current * current * wireResOhmPerMetre * jacketThermalRPerMetre * conductorThermalCorrectionFactor;
             const insulationUtilization = conductorTempC / insulationMaxTempC;
 
             if (conductorTempC > insulationMaxTempC) {
