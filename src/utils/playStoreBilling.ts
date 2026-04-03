@@ -53,7 +53,9 @@ interface BillingPluginInterface {
   initialize(): Promise<void>;
   getProducts(options: { skus: string[] }): Promise<{ products: ProductInfo[] }>;
   purchase(options: { sku: string }): Promise<void>;
+  purchaseInApp(options: { sku: string }): Promise<void>;
   restorePurchases(): Promise<{ purchases: RestoredPurchase[] }>;
+  restoreInAppPurchases(): Promise<{ purchases: RestoredPurchase[] }>;
   addListener(
     event: "purchaseCompleted" | "purchaseFailed",
     callback: (result: PurchaseResult) => void
@@ -66,6 +68,12 @@ const BillingPluginProxy = registerPlugin<BillingPluginInterface>("Billing");
 
 /** localStorage key that stores the active subscription tier. */
 export const SUBSCRIPTION_TIER_KEY = "circuitry3d_subscription_tier";
+
+/** localStorage key that stores the one-time Pro purchase state. */
+export const PRO_UNLOCK_KEY = "circuitry3d_pro_unlock";
+
+/** Product ID for the one-time Pro unlock managed product. */
+export const PRO_UNLOCK_SKU = "pro_unlock";
 
 /** Supported subscription tiers, in ascending order. */
 export type SubscriptionTier = "free" | "student" | "educator" | "institutional" | "lifetime";
@@ -139,6 +147,33 @@ export function setStoredTier(tier: SubscriptionTier): void {
   }
 }
 
+// ── One-time Pro unlock ───────────────────────────────────────────────────────
+
+/**
+ * Returns true if the user has purchased the "pro_unlock" one-time product.
+ * The value is cached in localStorage so it persists across app restarts.
+ */
+export function userHasPro(): boolean {
+  try {
+    return localStorage.getItem(PRO_UNLOCK_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+/** Persist the Pro purchase state. */
+export function setProPurchased(purchased: boolean): void {
+  try {
+    if (purchased) {
+      localStorage.setItem(PRO_UNLOCK_KEY, "true");
+    } else {
+      localStorage.removeItem(PRO_UNLOCK_KEY);
+    }
+  } catch {
+    // localStorage unavailable
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const TIER_ORDER: SubscriptionTier[] = ["free", "student", "educator", "institutional", "lifetime"];
@@ -173,11 +208,19 @@ export async function initBilling(): Promise<void> {
 
     await BillingPluginProxy.addListener("purchaseCompleted", (result) => {
       if (result.success && result.products) {
+        // Handle subscription tier upgrades
         const tier = tierFromProducts(result.products);
-        setStoredTier(tier);
-        window.dispatchEvent(
-          new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
-        );
+        if (tier !== "free") {
+          setStoredTier(tier);
+          window.dispatchEvent(
+            new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
+          );
+        }
+        // Handle one-time Pro unlock
+        if (result.products.includes(PRO_UNLOCK_SKU)) {
+          setProPurchased(true);
+          window.dispatchEvent(new CustomEvent("circuitry3d:proUnlocked"));
+        }
       }
     });
 
@@ -236,5 +279,44 @@ export async function restorePurchases(): Promise<SubscriptionTier> {
     return tier;
   } catch {
     return getStoredTier();
+  }
+}
+
+/**
+ * Launch the Play Store one-time purchase flow for the "pro_unlock" product.
+ *
+ * @returns true if the native billing flow was launched (Android only),
+ *          false on web.
+ */
+export async function purchaseProUnlock(): Promise<boolean> {
+  if (!isAndroidApp()) return false;
+
+  try {
+    await BillingPluginProxy.purchaseInApp({ sku: PRO_UNLOCK_SKU });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Restore any previously purchased "pro_unlock" one-time product.
+ * Updates localStorage and dispatches a `circuitry3d:proUnlocked` event if found.
+ *
+ * @returns true if the Pro purchase was found and restored.
+ */
+export async function restoreProPurchases(): Promise<boolean> {
+  if (!isAndroidApp()) return userHasPro();
+
+  try {
+    const { purchases } = await BillingPluginProxy.restoreInAppPurchases();
+    const hasPro = purchases.some((p) => p.products.includes(PRO_UNLOCK_SKU));
+    if (hasPro) {
+      setProPurchased(true);
+      window.dispatchEvent(new CustomEvent("circuitry3d:proUnlocked"));
+    }
+    return hasPro;
+  } catch {
+    return userHasPro();
   }
 }
