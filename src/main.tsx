@@ -129,9 +129,16 @@ try {
   // before the UI renders.
   if (isAndroidApp()) {
     initBilling()
-      .then(() => Promise.all([restorePurchases(), restoreProPurchases()]))
+      .then(() => {
+        restorePurchases().catch((error) => {
+          console.warn('[App] Subscription restore failed:', error);
+        });
+        restoreProPurchases().catch((error) => {
+          console.warn('[App] Pro unlock restore failed:', error);
+        });
+      })
       .catch((error) => {
-        console.warn('[App] Billing restore failed:', error);
+        console.warn('[App] Billing initialization failed:', error);
       });
 
     // NEW: ensure Android-specific sim systems are bootstrapped

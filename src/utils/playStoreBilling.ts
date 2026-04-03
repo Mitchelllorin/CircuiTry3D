@@ -208,14 +208,12 @@ export async function initBilling(): Promise<void> {
 
     await BillingPluginProxy.addListener("purchaseCompleted", (result) => {
       if (result.success && result.products) {
-        // Handle subscription tier upgrades
+        // Handle subscription tier upgrades (including downgrades to "free")
         const tier = tierFromProducts(result.products);
-        if (tier !== "free") {
-          setStoredTier(tier);
-          window.dispatchEvent(
-            new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
-          );
-        }
+        setStoredTier(tier);
+        window.dispatchEvent(
+          new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
+        );
         // Handle one-time Pro unlock
         if (result.products.includes(PRO_UNLOCK_SKU)) {
           setProPurchased(true);

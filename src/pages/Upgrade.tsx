@@ -89,7 +89,7 @@ export default function Upgrade() {
       <section style={sectionStyle}>
         {hasPro || status === "success" ? (
           <div style={successBannerStyle}>
-            <span>🎉</span> {hasPro && status !== "success" ? t("upgrade.alreadyPro") : t("upgrade.thankYou")}
+            <span>🎉</span> {hasPro ? t("upgrade.alreadyPro") : t("upgrade.thankYou")}
           </div>
         ) : (
           <>
