@@ -72,8 +72,8 @@ const BUILD_IS_DEMO: boolean = import.meta.env.VITE_DEMO_MODE === "true";
 export const IS_DEMO_MODE: boolean = BUILD_IS_DEMO && !isOwnerUnlocked();
 
 /**
- * Component IDs that are available in the demo version.
- * The web demo includes the full component library — everything is available.
+ * Component IDs available in the web demo version.
+ * All 27 builder components are included — no component is restricted in the web demo.
  * The Play Store release provides the native Android experience with offline support.
  */
 export const DEMO_COMPONENT_IDS: readonly string[] = [
