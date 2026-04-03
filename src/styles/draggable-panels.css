@@ -1,0 +1,370 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Draggable & Resizable Panel System
+   ───────────────────────────────────────────────────────────────────────────
+   Panels can float freely anywhere on-screen by dragging their handle strip.
+   Resize handles appear at all four edges and corners when hovering.
+   Positions are persisted to localStorage so the layout survives page reload.
+   A "Reset Layout" context-menu entry (right-click on the handle) returns the
+   panel to its original edge-pinned CSS position.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Floating stage ─────────────────────────────────────────────────────────
+   When a panel has been dragged, JS adds data-floating="true" to the stage
+   container.  These rules override the edge-pinned CSS positioning so the
+   inline left/top values take effect, and swap the slide-from-edge animation
+   for a simple fade so the panel can live anywhere on screen.              */
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-left,
+[data-draggable-stage][data-floating="true"].builder-menu-stage-right {
+  /* JS owns left/top; neutralise edge-pinned properties */
+  left: unset;
+  right: unset;
+  bottom: unset;
+  /* No slide animation when floating — JS sets transform:none inline */
+}
+
+/* When floating, nav fills remaining stage space (after toggle) */
+[data-draggable-stage][data-floating="true"].builder-menu-stage-left .builder-menu-left,
+[data-draggable-stage][data-floating="true"].builder-menu-stage-right .builder-menu-right {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* When floating and open, show the inner panel with a fade instead of a
+   translateY slide.  The slide classes are defined in builder-ui.css but the
+   specificity here overrides them for floating panels. */
+[data-draggable-stage][data-floating="true"].builder-menu-stage-left .builder-menu,
+[data-draggable-stage][data-floating="true"].builder-menu-stage-right .builder-menu {
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.97) translateY(4px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-left.open .builder-menu,
+[data-draggable-stage][data-floating="true"].builder-menu-stage-right.open .builder-menu {
+  pointer-events: auto;
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-bottom {
+  left: unset;
+  right: unset;
+  bottom: unset;
+}
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-bottom .builder-menu-bottom {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  width: 100%;
+}
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-bottom .builder-menu,
+[data-draggable-stage][data-floating="true"].builder-menu-stage-bottom.open .builder-menu {
+  transform: none;
+}
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-bottom .builder-menu {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+[data-draggable-stage][data-floating="true"].builder-menu-stage-bottom.open .builder-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Floating quick-add bar and zoom controls */
+[data-draggable-stage][data-floating="true"].quick-add-bar,
+[data-draggable-stage][data-floating="true"].circuit-zoom-controls {
+  left: unset;
+  right: unset;
+  top: unset;
+  bottom: unset;
+  transform: none;
+}
+
+/* ── Drag handle ─────────────────────────────────────────────────────────────
+   A thin horizontal strip at the top of each panel (rendered by Builder.tsx)
+   that the user can grab to reposition the panel.                          */
+
+.panel-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  cursor: grab;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  border-radius: 0 12px 0 0;
+  background: transparent;
+  /* Subtle grip indicator */
+  user-select: none;
+  touch-action: none;
+}
+
+.panel-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Grip dots */
+.panel-drag-handle__grip {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.panel-drag-handle:hover .panel-drag-handle__grip {
+  opacity: 0.55;
+}
+
+.panel-drag-handle__grip-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(136, 204, 255, 0.7);
+}
+
+/* Reset button that appears on the drag handle */
+.panel-drag-handle__reset {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  background: transparent;
+  border: none;
+  color: rgba(136, 204, 255, 0.65);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  font-family: inherit;
+  pointer-events: auto;
+}
+
+.panel-drag-handle__reset:hover {
+  color: rgba(136, 204, 255, 1);
+  background: rgba(136, 204, 255, 0.12);
+}
+
+.panel-drag-handle:hover .panel-drag-handle__reset {
+  opacity: 1;
+}
+
+/* When the stage is floating, always show drag affordance */
+[data-floating="true"] .panel-drag-handle {
+  background: rgba(136, 204, 255, 0.04);
+  border-bottom: 1px solid rgba(136, 204, 255, 0.12);
+}
+
+[data-floating="true"] .panel-drag-handle .panel-drag-handle__grip {
+  opacity: 0.35;
+}
+
+[data-floating="true"] .panel-drag-handle:hover .panel-drag-handle__grip {
+  opacity: 0.7;
+}
+
+/* ── Resize handles ──────────────────────────────────────────────────────────
+   Eight directional resize handles surrounding the panel.  They are hidden
+   by default and revealed on hover of the panel stage.                     */
+
+.panel-resize-handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Common reset for all handles */
+.panel-resize-handle {
+  position: absolute;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  background: transparent;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Show handles on hover of the whole stage */
+[data-draggable-stage]:hover .panel-resize-handle,
+[data-draggable-stage][data-floating="true"] .panel-resize-handle {
+  opacity: 1;
+}
+
+/* Active highlight */
+.panel-resize-handle:hover,
+.panel-resize-handle:active {
+  background: rgba(136, 204, 255, 0.18);
+  opacity: 1;
+}
+
+/* Edge handles */
+.panel-resize-handle--n  { top: 0;    left: 12px; right: 12px; height: 6px; cursor: n-resize; }
+.panel-resize-handle--s  { bottom: 0; left: 12px; right: 12px; height: 6px; cursor: s-resize; }
+.panel-resize-handle--e  { right: 0;  top: 12px; bottom: 12px; width: 6px;  cursor: e-resize; }
+.panel-resize-handle--w  { left: 0;   top: 12px; bottom: 12px; width: 6px;  cursor: w-resize; }
+
+/* Corner handles — slightly larger for easy grabbing */
+.panel-resize-handle--ne { top: 0;    right: 0;  width: 12px; height: 12px; cursor: ne-resize; border-radius: 0 3px 0 0; }
+.panel-resize-handle--nw { top: 0;    left: 0;   width: 12px; height: 12px; cursor: nw-resize; border-radius: 3px 0 0 0; }
+.panel-resize-handle--se { bottom: 0; right: 0;  width: 12px; height: 12px; cursor: se-resize; border-radius: 0 0 3px 0; }
+.panel-resize-handle--sw { bottom: 0; left: 0;   width: 12px; height: 12px; cursor: sw-resize; border-radius: 0 0 0 3px; }
+
+/* ── Floating indicator border ────────────────────────────────────────────── */
+[data-floating="true"].builder-menu-stage .builder-menu {
+  border-radius: 12px;
+  border: 1px solid var(--builder-border-strong, rgba(136, 204, 255, 0.45));
+}
+
+/* Floating stage: add a subtle glow outline so the panel stands out */
+[data-floating="true"].builder-menu-stage {
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(136, 204, 255, 0.2), 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Quick-add bar & zoom controls draggable wrapper ─────────────────────── */
+.draggable-widget {
+  position: fixed;
+  touch-action: none;
+  user-select: none;
+}
+
+.draggable-widget .panel-drag-handle {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  border-radius: inherit;
+  cursor: grab;
+  z-index: 1;
+}
+
+.draggable-widget .panel-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Don't intercept clicks on the actual child buttons */
+.draggable-widget .panel-drag-handle {
+  pointer-events: none;
+}
+
+/* Show drag cursor on the widget itself while floating */
+[data-floating="true"].draggable-widget {
+  cursor: grab;
+}
+
+[data-floating="true"].draggable-widget:active {
+  cursor: grabbing;
+}
+
+/* ── Quick-add bar drag grip ─────────────────────────────────────────────── */
+.quick-add-drag-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex-shrink: 0;
+  cursor: grab;
+  color: rgba(136, 204, 255, 0.35);
+  font-size: 12px;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+  padding: 0 2px;
+  transition: color 0.15s ease;
+}
+
+.quick-add-drag-grip:active {
+  cursor: grabbing;
+}
+
+.quick-add-bar:hover .quick-add-drag-grip {
+  color: rgba(136, 204, 255, 0.65);
+}
+
+[data-floating="true"].quick-add-bar .quick-add-drag-grip {
+  color: rgba(136, 204, 255, 0.55);
+}
+
+.quick-add-reset-btn {
+  background: transparent;
+  border: none;
+  color: rgba(136, 204, 255, 0.5);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.quick-add-reset-btn:hover {
+  color: rgba(136, 204, 255, 1);
+  background: rgba(136, 204, 255, 0.12);
+}
+
+/* ── Zoom controls drag grip ─────────────────────────────────────────────── */
+.zoom-drag-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex-shrink: 0;
+  cursor: grab;
+  color: rgba(136, 204, 255, 0.3);
+  font-size: 11px;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+  padding: 0 1px;
+  transition: color 0.15s ease;
+}
+
+.zoom-drag-grip:active {
+  cursor: grabbing;
+}
+
+.circuit-zoom-controls:hover .zoom-drag-grip {
+  color: rgba(136, 204, 255, 0.6);
+}
+
+.zoom-reset-btn {
+  font-size: 14px !important;
+}
+
+/* ── Panel drag handle: ensure nav content avoids the handle ─────────────── */
+.builder-menu .panel-drag-handle ~ .builder-menu-scroll {
+  padding-top: 4px;
+}
+
+@media (pointer: coarse) {
+  [data-draggable-stage] .panel-resize-handle {
+    opacity: 0.5;
+  }
+
+  .panel-drag-handle__grip {
+    opacity: 0.4 !important;
+  }
+
+  .panel-drag-handle__reset {
+    opacity: 0.8 !important;
+  }
+}

@@ -11,10 +11,12 @@ import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
 import { useResponsiveLayout } from "../hooks/builder/useResponsiveLayout";
 import { useWorkspaceBackground } from "../hooks/builder/useWorkspaceBackground";
+import { useDraggablePanel } from "../hooks/builder/useDraggablePanel";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
 import "../styles/builder-ui.css";
 import "../styles/schematic.css";
 import "../styles/interactive-tutorial.css";
+import "../styles/draggable-panels.css";
 import { getSchematicSymbol, type ComponentSymbol } from "../components/circuit/SchematicSymbols";
 import BrandMark from "../components/BrandMark";
 import { CompactWorksheetPanel } from "../components/builder/panels/CompactWorksheetPanel";
@@ -1185,6 +1187,71 @@ const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
   },
 ];
 
+// ── Drag / resize handle sub-components ────────────────────────────────────
+const RESIZE_DIRS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const;
+type ResizeDir = typeof RESIZE_DIRS[number];
+
+function PanelResizeHandles({
+  getProps,
+}: {
+  getProps: (dir: ResizeDir) => {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;
+  };
+}) {
+  return (
+    <div className="panel-resize-handles" aria-hidden="true">
+      {RESIZE_DIRS.map((dir) => (
+        <div
+          key={dir}
+          className={`panel-resize-handle panel-resize-handle--${dir}`}
+          {...getProps(dir)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PanelDragHandle({
+  dragHandleProps,
+  onReset,
+}: {
+  dragHandleProps: {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
+    onPointerUp: (e: React.PointerEvent<HTMLElement>) => void;
+  };
+  onReset: () => void;
+}) {
+  return (
+    <div
+      className="panel-drag-handle"
+      {...dragHandleProps}
+      aria-hidden="true"
+    >
+      <div className="panel-drag-handle__grip">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="panel-drag-handle__grip-dot" />
+        ))}
+      </div>
+      <button
+        type="button"
+        className="panel-drag-handle__reset"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onReset();
+        }}
+        title="Reset to default position"
+        aria-label="Reset panel to default position"
+      >
+        ↩
+      </button>
+    </div>
+  );
+}
+
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
@@ -1481,6 +1548,12 @@ export default function Builder() {
     isBottomMenuOpen,
     setBottomMenuOpen,
   } = useResponsiveLayout();
+
+  const leftPanelDrag = useDraggablePanel("panel-left");
+  const rightPanelDrag = useDraggablePanel("panel-right");
+  const bottomPanelDrag = useDraggablePanel("panel-bottom");
+  const zoomDrag = useDraggablePanel("zoom-controls");
+
   const isCoarsePointer = useMemo(() => {
     if (typeof window === "undefined") {
       return false;
@@ -3202,7 +3275,17 @@ export default function Builder() {
 
       <div
         className={`builder-menu-stage builder-menu-stage-left${isLeftMenuOpen ? " open" : ""}`}
+        data-draggable-stage=""
+        data-floating={leftPanelDrag.isFloating ? "true" : undefined}
+        style={leftPanelDrag.containerStyle}
       >
+        <PanelResizeHandles getProps={leftPanelDrag.getResizeHandleProps} />
+        {leftPanelDrag.isFloating && (
+          <PanelDragHandle
+            dragHandleProps={leftPanelDrag.dragHandleProps}
+            onReset={leftPanelDrag.resetLayout}
+          />
+        )}
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-left"
@@ -3229,6 +3312,12 @@ export default function Builder() {
           role="navigation"
           aria-label="Component and wiring controls"
         >
+          {!leftPanelDrag.isFloating && (
+            <PanelDragHandle
+              dragHandleProps={leftPanelDrag.dragHandleProps}
+              onReset={leftPanelDrag.resetLayout}
+            />
+          )}
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Components</span>
@@ -3297,7 +3386,17 @@ export default function Builder() {
 
       <div
         className={`builder-menu-stage builder-menu-stage-right${isRightMenuOpen ? " open" : ""}`}
+        data-draggable-stage=""
+        data-floating={rightPanelDrag.isFloating ? "true" : undefined}
+        style={rightPanelDrag.containerStyle}
       >
+        <PanelResizeHandles getProps={rightPanelDrag.getResizeHandleProps} />
+        {rightPanelDrag.isFloating && (
+          <PanelDragHandle
+            dragHandleProps={rightPanelDrag.dragHandleProps}
+            onReset={rightPanelDrag.resetLayout}
+          />
+        )}
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-right"
@@ -3324,6 +3423,12 @@ export default function Builder() {
           role="complementary"
           aria-label="Mode and view controls"
         >
+          {!rightPanelDrag.isFloating && (
+            <PanelDragHandle
+              dragHandleProps={rightPanelDrag.dragHandleProps}
+              onReset={rightPanelDrag.resetLayout}
+            />
+          )}
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Visualization</span>
@@ -3440,7 +3545,11 @@ export default function Builder() {
 
       <div
         className={`builder-menu-stage builder-menu-stage-bottom${isBottomMenuOpen ? " open" : ""}`}
+        data-draggable-stage=""
+        data-floating={bottomPanelDrag.isFloating ? "true" : undefined}
+        style={bottomPanelDrag.containerStyle}
       >
+        <PanelResizeHandles getProps={bottomPanelDrag.getResizeHandleProps} />
         <button
           type="button"
           className="builder-menu-toggle builder-menu-toggle-bottom"
@@ -3467,6 +3576,10 @@ export default function Builder() {
           role="navigation"
           aria-label="Analysis, practice, and guides"
         >
+          <PanelDragHandle
+            dragHandleProps={bottomPanelDrag.dragHandleProps}
+            onReset={bottomPanelDrag.resetLayout}
+          />
           <div className="builder-menu-scroll builder-menu-scroll-bottom">
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
@@ -3870,7 +3983,21 @@ export default function Builder() {
       </div>
 
       {isActiveCircuitBuildMode && !isOverlayActive && (
-        <div className="circuit-zoom-controls" aria-label="Zoom controls">
+        <div
+          className="circuit-zoom-controls"
+          aria-label="Zoom controls"
+          data-draggable-stage=""
+          data-floating={zoomDrag.isFloating ? "true" : undefined}
+          style={zoomDrag.containerStyle}
+        >
+          <div
+            className="zoom-drag-grip"
+            {...zoomDrag.dragHandleProps}
+            title="Drag to reposition"
+            aria-hidden="true"
+          >
+            ⠿
+          </div>
           <button
             type="button"
             className="circuit-zoom-btn"
@@ -3901,6 +4028,18 @@ export default function Builder() {
           >
             −
           </button>
+          {zoomDrag.isFloating && (
+            <button
+              type="button"
+              className="circuit-zoom-btn zoom-reset-btn"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={zoomDrag.resetLayout}
+              title="Reset to default position"
+              aria-label="Reset zoom controls position"
+            >
+              ↩
+            </button>
+          )}
         </div>
       )}
 
