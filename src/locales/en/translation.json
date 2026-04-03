@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "home": "Home",
+    "builder": "Builder",
+    "arena": "Arena",
+    "practice": "Practice",
+    "pricing": "Pricing",
+    "community": "Community",
+    "account": "Account",
+    "classroom": "Classroom",
+    "arcade": "Arcade",
+    "textbook": "Textbook"
+  },
+  "footer": {
+    "privacyPolicy": "Privacy Policy",
+    "dataSafety": "Data Safety",
+    "getTheApp": "Get the App",
+    "playStoreCompliance": "Play Store Compliance",
+    "deleteAccount": "Delete Account",
+    "partnerships": "Partnerships"
+  },
+  "common": {
+    "loading": "Loading…",
+    "pageNotFound": "Page not found.",
+    "goHome": "Go Home",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "error": "Error",
+    "success": "Success"
+  },
+  "upgrade": {
+    "title": "Upgrade to Pro",
+    "subtitle": "Unlock the full CircuiTry3D experience",
+    "description": "Get unlimited circuit saves, advanced components, AI assistant, and more with a one-time purchase.",
+    "price": "One-time purchase",
+    "purchaseButton": "Unlock Pro — $4.99",
+    "restoreButton": "Restore Purchase",
+    "alreadyPro": "You already have Pro!",
+    "thankYou": "Thank you for your purchase!",
+    "purchaseFailed": "Purchase failed. Please try again.",
+    "purchaseCancelled": "Purchase cancelled.",
+    "notAvailableOnWeb": "Purchase available on Android only. Visit the Play Store to get the app.",
+    "features": {
+      "title": "Pro Features",
+      "saves": "Unlimited circuit saves",
+      "components": "All advanced components",
+      "ai": "AI circuit assistant",
+      "export": "Export & share circuits",
+      "textbook": "Full interactive textbook",
+      "support": "Priority support"
+    }
+  },
+  "paywall": {
+    "lockedTitle": "Pro Feature",
+    "lockedMessage": "This feature requires CircuiTry3D Pro.",
+    "upgradePrompt": "Upgrade to unlock this and all other premium features.",
+    "upgradeButton": "Upgrade to Pro",
+    "maybeLater": "Maybe Later"
+  },
+  "language": {
+    "switcherLabel": "Language",
+    "en": "English",
+    "fr": "Français",
+    "es": "Español"
+  }
+}

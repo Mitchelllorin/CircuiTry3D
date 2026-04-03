@@ -8,8 +8,10 @@ import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
 import { ClassroomProvider } from "./context/ClassroomContext";
-import { initBilling, restorePurchases, isAndroidApp } from "./utils/playStoreBilling";
+import { initBilling, restorePurchases, restoreProPurchases, isAndroidApp } from "./utils/playStoreBilling";
 import { setupAndroidSimBootstrap } from "./sim/androidBootstrap";
+// Initialize i18n before rendering so all components can use translations.
+import "./i18n";
 function renderFatalOverlay(payload: {
   title: string;
   message: string;
@@ -123,12 +125,20 @@ try {
   });
 
   // On Android, initialize the Play Store billing client and restore any
-  // active subscriptions so the stored tier is correct before the UI renders.
+  // active subscriptions and one-time purchases so stored state is correct
+  // before the UI renders.
   if (isAndroidApp()) {
     initBilling()
-      .then(() => restorePurchases())
+      .then(() => {
+        restorePurchases().catch((error) => {
+          console.warn('[App] Subscription restore failed:', error);
+        });
+        restoreProPurchases().catch((error) => {
+          console.warn('[App] Pro unlock restore failed:', error);
+        });
+      })
       .catch((error) => {
-        console.warn('[App] Billing restore failed:', error);
+        console.warn('[App] Billing initialization failed:', error);
       });
 
     // NEW: ensure Android-specific sim systems are bootstrapped

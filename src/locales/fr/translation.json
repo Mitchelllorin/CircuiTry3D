@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "builder": "Constructeur",
+    "arena": "Arène",
+    "practice": "Pratique",
+    "pricing": "Tarifs",
+    "community": "Communauté",
+    "account": "Compte",
+    "classroom": "Classe",
+    "arcade": "Arcade",
+    "textbook": "Manuel"
+  },
+  "footer": {
+    "privacyPolicy": "Politique de confidentialité",
+    "dataSafety": "Sécurité des données",
+    "getTheApp": "Obtenir l'application",
+    "playStoreCompliance": "Conformité Play Store",
+    "deleteAccount": "Supprimer le compte",
+    "partnerships": "Partenariats"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "pageNotFound": "Page non trouvée.",
+    "goHome": "Aller à l'accueil",
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "upgrade": {
+    "title": "Passer à Pro",
+    "subtitle": "Débloquez l'expérience CircuiTry3D complète",
+    "description": "Obtenez des sauvegardes de circuits illimitées, des composants avancés, un assistant IA, et plus encore avec un achat unique.",
+    "price": "Achat unique",
+    "purchaseButton": "Débloquer Pro — 4,99 €",
+    "restoreButton": "Restaurer l'achat",
+    "alreadyPro": "Vous avez déjà Pro !",
+    "thankYou": "Merci pour votre achat !",
+    "purchaseFailed": "Achat échoué. Veuillez réessayer.",
+    "purchaseCancelled": "Achat annulé.",
+    "notAvailableOnWeb": "Achat disponible sur Android uniquement. Visitez le Play Store pour obtenir l'application.",
+    "features": {
+      "title": "Fonctionnalités Pro",
+      "saves": "Sauvegardes de circuits illimitées",
+      "components": "Tous les composants avancés",
+      "ai": "Assistant de circuit IA",
+      "export": "Exporter et partager des circuits",
+      "textbook": "Manuel interactif complet",
+      "support": "Assistance prioritaire"
+    }
+  },
+  "paywall": {
+    "lockedTitle": "Fonctionnalité Pro",
+    "lockedMessage": "Cette fonctionnalité nécessite CircuiTry3D Pro.",
+    "upgradePrompt": "Mettez à niveau pour débloquer cette fonctionnalité et toutes les autres fonctionnalités premium.",
+    "upgradeButton": "Passer à Pro",
+    "maybeLater": "Plus tard"
+  },
+  "language": {
+    "switcherLabel": "Langue",
+    "en": "English",
+    "fr": "Français",
+    "es": "Español"
+  }
+}

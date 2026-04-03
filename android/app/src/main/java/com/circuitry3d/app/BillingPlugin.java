@@ -204,6 +204,64 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
         );
     }
 
+    /**
+     * Launch the Play Store one-time in-app purchase sheet for the given SKU.
+     * The result is delivered asynchronously via the purchaseCompleted /
+     * purchaseFailed events.
+     */
+    @PluginMethod
+    public void purchaseInApp(PluginCall call) {
+        String sku = call.getString("sku");
+        if (sku == null || sku.isEmpty()) {
+            call.reject("sku is required");
+            return;
+        }
+
+        bridge.saveCall(call);
+
+        List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+        products.add(
+                QueryProductDetailsParams.Product.newBuilder()
+                        .setProductId(sku)
+                        .setProductType(BillingClient.ProductType.INAPP)
+                        .build()
+        );
+
+        billingClient.queryProductDetailsAsync(
+                QueryProductDetailsParams.newBuilder().setProductList(products).build(),
+                (billingResult, productDetailsList) -> {
+                    if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK
+                            || productDetailsList.isEmpty()) {
+                        call.reject("Product not found: " + sku);
+                        return;
+                    }
+
+                    ProductDetails productDetails = productDetailsList.get(0);
+
+                    List<BillingFlowParams.ProductDetailsParams> detailsParams = new ArrayList<>();
+                    detailsParams.add(
+                            BillingFlowParams.ProductDetailsParams.newBuilder()
+                                    .setProductDetails(productDetails)
+                                    .build()
+                    );
+
+                    BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
+                            .setProductDetailsParamsList(detailsParams)
+                            .build();
+
+                    Activity activity = getActivity();
+                    BillingResult launchResult =
+                            billingClient.launchBillingFlow(activity, billingFlowParams);
+
+                    if (launchResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                        call.reject("Failed to launch billing flow: "
+                                + launchResult.getDebugMessage());
+                    }
+                    // Outcome delivered via onPurchasesUpdated → purchaseCompleted/purchaseFailed
+                }
+        );
+    }
+
     /** Query all currently active subscriptions (for restoring purchases). */
     @PluginMethod
     public void restorePurchases(PluginCall call) {
@@ -214,6 +272,45 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
                 (billingResult, purchases) -> {
                     if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                         call.reject("Restore failed: " + billingResult.getDebugMessage());
+                        return;
+                    }
+
+                    JSArray purchaseArray = new JSArray();
+                    for (Purchase purchase : purchases) {
+                        if (purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED) {
+                            JSObject p = new JSObject();
+                            p.put("orderId", purchase.getOrderId());
+                            p.put("purchaseToken", purchase.getPurchaseToken());
+                            p.put("purchaseTime", purchase.getPurchaseTime());
+
+                            JSArray productsArray = new JSArray();
+                            for (String pid : purchase.getProducts()) {
+                                productsArray.put(pid);
+                            }
+                            p.put("products", productsArray);
+                            purchaseArray.put(p);
+
+                            acknowledgePurchaseIfNeeded(purchase);
+                        }
+                    }
+
+                    JSObject ret = new JSObject();
+                    ret.put("purchases", purchaseArray);
+                    call.resolve(ret);
+                }
+        );
+    }
+
+    /** Query all previously purchased one-time in-app products (for restoring). */
+    @PluginMethod
+    public void restoreInAppPurchases(PluginCall call) {
+        billingClient.queryPurchasesAsync(
+                QueryPurchasesParams.newBuilder()
+                        .setProductType(BillingClient.ProductType.INAPP)
+                        .build(),
+                (billingResult, purchases) -> {
+                    if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                        call.reject("Restore in-app failed: " + billingResult.getDebugMessage());
                         return;
                     }
 
