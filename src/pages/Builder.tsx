@@ -109,7 +109,13 @@ const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   return {
     id: wireProfile.id,
     gaugeLabel: wireProfile.gaugeLabel,
+    // Conductor material ID (e.g. "annealedCopper", "nichrome80") — used by FUSE™ for
+    // material-aware failure detection (resistance vs. conductor category)
+    conductorMaterial: wireProfile.material,
     materialLabel: wireProfile.materialLabel,
+    // Conductor thermal conductivity (W/m·K) — used in the FUSE™ thermal model to
+    // scale heat retention for low-conductivity resistance alloys vs. copper
+    conductorThermalConductivityWPerMK: wireProfile.thermalConductivityWPerMK,
     insulationLabel: wireProfile.insulationLabel,
     // Conductor bare diameter (mm) — drives 3D tube radius scaling
     diameterMm: wireProfile.diameterMm,

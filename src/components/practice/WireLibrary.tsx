@@ -67,6 +67,10 @@ const getWarningInfo = (warning: string | null | undefined): WarningInfo | null 
       return { text: "Approaching ampacity limit — wire will run warm at this load", level: "warning" };
     case "ampacity-critical":
       return { text: "Overcurrent — wire will overheat and may fail at this load", level: "critical" };
+    case "insulation":
+      return { text: "Insulation at temperature class limit — reduce load or upgrade insulation", level: "warning" };
+    case "insulation-critical":
+      return { text: "Insulation burnthrough risk — jacket charring, short-circuit hazard", level: "critical" };
     case "voltage":
       return { text: "Near maximum voltage rating — check insulation class", level: "warning" };
     case "voltage-critical":
@@ -107,11 +111,14 @@ const pickMoreSevereWarning = (
   current: string | null,
   candidate: string | null,
 ): string | null => {
+  // Severity order mirrors legacy.html pickMoreSevereWarning — must stay in sync.
   const severity: Record<string, number> = {
     voltage: 1,
     ampacity: 2,
-    "voltage-critical": 3,
-    "ampacity-critical": 4,
+    insulation: 3,
+    "voltage-critical": 4,
+    "ampacity-critical": 5,
+    "insulation-critical": 6,
   };
   const currentScore = current ? severity[current] ?? 0 : 0;
   const candidateScore = candidate ? severity[candidate] ?? 0 : 0;
