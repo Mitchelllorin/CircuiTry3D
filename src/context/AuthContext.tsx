@@ -47,6 +47,7 @@ type AuthContextValue = {
   signOut: () => void;
   updateProfile: (payload: UpdateProfilePayload) => Promise<AuthResult>;
   getUserById: (id: string) => AuthUser | null;
+  resetPassword: (email: string, newPassword: string) => Promise<AuthResult>;
 };
 
 const STORAGE_KEY = "circuiTry3d.auth.v1";
@@ -248,6 +249,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const resetPassword = useCallback(async (email: string, newPassword: string): Promise<AuthResult> => {
+    await introduceLatency();
+    const snapshot = stateSnapshotRef.current;
+    const normalised = email.trim().toLowerCase();
+
+    if (!normalised) {
+      return { ok: false, reason: "unknown", message: "Please provide your email address." };
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return { ok: false, reason: "unknown", message: "New password must be at least 6 characters." };
+    }
+
+    const match = snapshot.users.find((user) => user.email.toLowerCase() === normalised);
+    if (!match) {
+      return { ok: false, reason: "invalid-credentials", message: "No account found with that email address." };
+    }
+
+    let updatedUser: StoredUser | null = null;
+    setState((previous) => {
+      const users = previous.users.map((user) => {
+        if (user.id !== match.id) {
+          return user;
+        }
+        const next: StoredUser = { ...user, password: newPassword };
+        updatedUser = next;
+        return next;
+      });
+      return { ...previous, users };
+    });
+
+    return updatedUser ? { ok: true, user: buildAuthUser(updatedUser)! } : { ok: false, reason: "unknown", message: "Unable to update password." };
+  }, []);
+
   const updateProfile = useCallback(async (payload: UpdateProfilePayload): Promise<AuthResult> => {
     await introduceLatency(180, 420);
     const snapshot = stateSnapshotRef.current;
@@ -291,8 +326,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       updateProfile,
       getUserById,
+      resetPassword,
     }),
-    [currentUser, users, loading, signUp, signIn, signOut, updateProfile, getUserById]
+    [currentUser, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -259,7 +259,28 @@
   margin: 0 0 8px;
 }
 
-@media (max-width: 720px) {
+.account-hint-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.forgot-intro {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(148, 163, 184, 0.9);
+  line-height: 1.5;
+}
+
+.forgot-intro strong {
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.account-form form {
+  display: contents;
+}
   .account-header {
     align-items: flex-start;
   }

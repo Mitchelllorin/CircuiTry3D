@@ -4,14 +4,15 @@ import type { FormEvent } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import "../styles/account.css";
 
-type Mode = "signin" | "signup" | "profile";
+type Mode = "signin" | "signup" | "profile" | "forgot-password";
 
 export default function Account() {
-  const { currentUser, loading, signIn, signUp, signOut, updateProfile } = useAuth();
+  const { currentUser, loading, signIn, signUp, signOut, updateProfile, resetPassword } = useAuth();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
   const [profileForm, setProfileForm] = useState({ displayName: currentUser?.displayName ?? "", bio: currentUser?.bio ?? "" });
+  const [forgotForm, setForgotForm] = useState({ email: "", newPassword: "", confirmPassword: "", step: 1 as 1 | 2 });
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,6 +86,41 @@ export default function Account() {
     setStatus({ type: "success", message: "Signed out." });
   };
 
+  const handleForgotStep1 = async (event: FormEvent) => {
+    event.preventDefault();
+    setStatus(null);
+    setForgotForm((previous) => ({ ...previous, step: 2 }));
+  };
+
+  const handleForgotStep2 = async (event: FormEvent) => {
+    event.preventDefault();
+    setStatus(null);
+    if (forgotForm.newPassword !== forgotForm.confirmPassword) {
+      setStatus({ type: "error", message: "Passwords do not match." });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await resetPassword(forgotForm.email, forgotForm.newPassword);
+      if (result.ok) {
+        setStatus({ type: "success", message: "Password reset successfully. You can now sign in." });
+        setForgotForm({ email: "", newPassword: "", confirmPassword: "", step: 1 });
+        setMode("signin");
+      } else {
+        setStatus({ type: "error", message: result.message });
+        setForgotForm((previous) => ({ ...previous, step: 1 }));
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelForgot = () => {
+    setForgotForm({ email: "", newPassword: "", confirmPassword: "", step: 1 });
+    setStatus(null);
+    setMode("signin");
+  };
+
   const modeLabel = useMemo(() => {
     switch (mode) {
       case "signin":
@@ -93,6 +129,8 @@ export default function Account() {
         return "Create Account";
       case "profile":
         return "Your Account";
+      case "forgot-password":
+        return "Reset Password";
       default:
         return "Account";
     }
@@ -178,9 +216,14 @@ export default function Account() {
               <button type="submit" className="account-primary" disabled={isSubmitting}>
                 {isSubmitting ? "Signing In…" : "Sign In"}
               </button>
-              <p className="account-hint">
-                Need an account? <button type="button" onClick={() => setMode("signup")}>Create one</button>
-              </p>
+              <div className="account-hint-row">
+                <p className="account-hint">
+                  Need an account? <button type="button" onClick={() => setMode("signup")}>Create one</button>
+                </p>
+                <p className="account-hint">
+                  <button type="button" onClick={() => { setStatus(null); setMode("forgot-password"); }}>Forgot password?</button>
+                </p>
+              </div>
               <aside className="account-sample">
                 <strong>Sample accounts</strong>
                 <div>
@@ -245,6 +288,64 @@ export default function Account() {
                 Already registered? <button type="button" onClick={() => setMode("signin")}>Sign in</button>
               </p>
             </form>
+          )}
+
+          {mode === "forgot-password" && (
+            <div className="account-form" aria-label="Reset password">
+              {forgotForm.step === 1 ? (
+                <form onSubmit={handleForgotStep1} aria-label="Verify email for password reset">
+                  <p className="forgot-intro">Enter the email address for your account and we'll let you set a new password.</p>
+                  <label>
+                    Email
+                    <input
+                      type="email"
+                      required
+                      value={forgotForm.email}
+                      onChange={(event) => setForgotForm((previous) => ({ ...previous, email: event.target.value }))}
+                      placeholder="you@example.com"
+                    />
+                  </label>
+                  <button type="submit" className="account-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Checking…" : "Continue"}
+                  </button>
+                  <p className="account-hint">
+                    <button type="button" onClick={handleCancelForgot}>← Back to Sign In</button>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleForgotStep2} aria-label="Set new password">
+                  <p className="forgot-intro">Choose a new password for <strong>{forgotForm.email}</strong>.</p>
+                  <label>
+                    New password
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={forgotForm.newPassword}
+                      onChange={(event) => setForgotForm((previous) => ({ ...previous, newPassword: event.target.value }))}
+                      placeholder="At least 6 characters"
+                    />
+                  </label>
+                  <label>
+                    Confirm new password
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={forgotForm.confirmPassword}
+                      onChange={(event) => setForgotForm((previous) => ({ ...previous, confirmPassword: event.target.value }))}
+                      placeholder="Repeat your new password"
+                    />
+                  </label>
+                  <button type="submit" className="account-primary" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving…" : "Reset Password"}
+                  </button>
+                  <p className="account-hint">
+                    <button type="button" onClick={() => setForgotForm((previous) => ({ ...previous, step: 1 }))}>← Change email</button>
+                  </p>
+                </form>
+              )}
+            </div>
           )}
 
           {mode === "profile" && currentUser && (
