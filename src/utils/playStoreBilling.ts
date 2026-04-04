@@ -318,3 +318,24 @@ export async function restoreProPurchases(): Promise<boolean> {
     return userHasPro();
   }
 }
+
+// ── Web payment (non-Android) ─────────────────────────────────────────────────
+
+/**
+ * URL of the web payment page (e.g. Stripe / Gumroad checkout link).
+ * Set VITE_PAYMENT_URL at build time in Vercel project settings.
+ * Left empty for the GitHub Pages / Android builds.
+ */
+export const WEB_PAYMENT_URL: string = (import.meta.env.VITE_PAYMENT_URL ?? "").trim();
+
+/**
+ * Open the web payment page in a new tab.
+ *
+ * @returns true if a payment URL was configured and the tab was opened,
+ *          false otherwise (caller can show a fallback message).
+ */
+export function openWebPayment(): boolean {
+  if (!WEB_PAYMENT_URL) return false;
+  window.open(WEB_PAYMENT_URL, "_blank", "noopener,noreferrer");
+  return true;
+}
