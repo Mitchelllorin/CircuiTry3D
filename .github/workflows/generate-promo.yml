@@ -1,0 +1,115 @@
+name: Generate Promo Footage
+
+on:
+  workflow_dispatch:
+    inputs:
+      portrait:
+        description: 'Record in portrait mode (412×915) for social / Reels'
+        required: false
+        default: false
+        type: boolean
+      scene:
+        description: 'Record a single scene by ID (leave blank for all scenes)'
+        required: false
+        default: ''
+        type: string
+  release:
+    types: [published]
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      NODE_VERSION: '20.19.0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Install FFmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Start preview server
+        run: npm run preview &
+
+      - name: Wait for preview server
+        run: |
+          echo "Waiting for preview server on port 4173..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 >/dev/null 2>&1; then
+              echo "Server is ready."
+              exit 0
+            fi
+            echo "  attempt $i/30…"
+            sleep 2
+          done
+          echo "::error::Preview server did not become ready after 60 seconds."
+          exit 1
+
+      - name: Record promo footage
+        run: |
+          ARGS="--local"
+          if [ "${{ inputs.portrait }}" = "true" ]; then
+            ARGS="$ARGS --portrait"
+          fi
+          if [ -n "${{ inputs.scene }}" ]; then
+            ARGS="$ARGS --scene ${{ inputs.scene }}"
+          fi
+          npm run circuit-bot -- $ARGS
+
+      - name: Upload promo footage as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: promo-footage${{ inputs.portrait == 'true' && '-portrait' || '' }}
+          path: promo-footage/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Commit footage to promo-footage branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stash the generated footage so a branch switch doesn't lose it
+          mkdir -p /tmp/promo-footage-deploy
+          cp -r promo-footage/. /tmp/promo-footage-deploy/
+
+          # Switch to the promo-footage branch (create orphan if it doesn't exist)
+          git fetch origin promo-footage 2>/dev/null && \
+            git checkout promo-footage || \
+            git checkout --orphan promo-footage
+
+          # On a freshly-created orphan branch, clear any staged main-branch files
+          if ! git rev-parse HEAD 2>/dev/null; then
+            git rm -rf . --quiet 2>/dev/null || true
+          fi
+
+          # Restore footage and force-add (it's in .gitignore on main)
+          mkdir -p promo-footage
+          cp -r /tmp/promo-footage-deploy/. promo-footage/
+          git add -f promo-footage/
+
+          if git diff --cached --quiet; then
+            echo "No footage changes to commit."
+          else
+            git commit -m "chore: update promo footage [skip screenshots]"
+            git push origin promo-footage
+          fi
