@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — Every Component, In 3D</title>
+  <meta name="theme-color" content="#050b1f" />
+  <meta name="description" content="All 26 circuit components — rendered in real 3D, described on screen. Battery to Transformer. Switch to Op-Amp. Every part of your circuit, alive." />
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --blue:   #88ccff;
+      --orange: #ff8844;
+      --green:  #00ff88;
+      --purple: #c084fc;
+      --red:    #ff4455;
+      --yellow: #ffd060;
+      --teal:   #22d3ee;
+      --bg:     #050b1f;
+      --text:   #f9fafc;
+      --muted:  #9db8ff;
+    }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Background particle canvas ────────────────────────────── */
+    #bg-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0; opacity: 0.35;
+    }
+
+    /* ── Stage ─────────────────────────────────────────────────── */
+    #stage { position: fixed; inset: 0; z-index: 1; }
+
+    /* ── Scene ─────────────────────────────────────────────────── */
+    .scene {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    .scene.active { opacity: 1; pointer-events: auto; }
+
+    /* ── Screenshot background ─────────────────────────────────── */
+    .scene-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      z-index: 0;
+      opacity: 0; transition: opacity 1.1s ease 0.2s;
+      transform: scale(1.08);
+      animation: ken-burns 18s ease-in-out infinite alternate;
+    }
+    .scene.active .scene-img { opacity: 1; }
+    @keyframes ken-burns {
+      0%   { transform: scale(1.08) translate(0%, 0%); }
+      33%  { transform: scale(1.09) translate(-1.2%, -0.6%); }
+      66%  { transform: scale(1.08) translate(1.0%, 0.5%); }
+      100% { transform: scale(1.07) translate(0%, -0.4%); }
+    }
+
+    /* Fallback gradient when screenshot hasn't been generated yet */
+    .scene-gradient {
+      position: absolute; inset: 0;
+      z-index: 0;
+      opacity: 1; transition: opacity 0.6s ease;
+    }
+    /* When screenshot loads, hide the gradient */
+    .scene-img.loaded + .scene-gradient,
+    .scene-img.loaded ~ .scene-gradient { opacity: 0; }
+
+    /* ── Cinematic vignette ─────────────────────────────────────── */
+    .vignette {
+      position: absolute; inset: 0; z-index: 1;
+      background:
+        linear-gradient(to top,    rgba(5,11,31,0.92) 0%,  rgba(5,11,31,0.32) 42%, transparent 68%),
+        linear-gradient(to bottom, rgba(5,11,31,0.72) 0%,  transparent 28%),
+        linear-gradient(to right,  rgba(5,11,31,0.52) 0%,  transparent 48%);
+      pointer-events: none;
+    }
+
+    /* ── Content overlay ───────────────────────────────────────── */
+    .scene-content {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; flex-direction: column;
+      pointer-events: none;
+    }
+
+    /* Top bar */
+    .top-bar {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 28px 44px 0;
+    }
+    .brand {
+      font-size: 13px; font-weight: 800; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(157,184,255,0.6);
+    }
+    .rec-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 100px;
+      background: rgba(255,68,85,0.15); border: 1.5px solid rgba(255,68,85,0.45);
+      font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--red);
+    }
+    .rec-dot {
+      width: 6px; height: 6px;
+      background: var(--red); border-radius: 50%;
+      box-shadow: 0 0 5px var(--red);
+      animation: rec-blink 1s ease-in-out infinite;
+    }
+    @keyframes rec-blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    .component-counter {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      color: rgba(157,184,255,0.5); font-family: "SF Mono","Fira Code",monospace;
+    }
+
+    /* Bottom info block */
+    .info-block {
+      margin-top: auto;
+      padding: 0 52px 60px;
+      display: flex; flex-direction: column; gap: 11px;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.55s ease 0.45s, transform 0.55s ease 0.45s;
+    }
+    .scene.active .info-block { opacity: 1; transform: translateY(0); }
+
+    .cat-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 100px;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; width: fit-content;
+      border: 1.5px solid; background: transparent;
+    }
+
+    .comp-icon {
+      display: inline-flex; padding: 4px 16px;
+      border-radius: 8px; width: fit-content;
+      font-family: "SF Mono","Fira Code",monospace;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+      color: rgba(249,250,252,0.55);
+      background: rgba(249,250,252,0.07);
+      border: 1px solid rgba(249,250,252,0.12);
+      margin-bottom: 4px;
+    }
+
+    .comp-name {
+      font-size: clamp(2.8rem, 5.5vw, 5.2rem);
+      font-weight: 900; letter-spacing: -0.025em; line-height: 1.03;
+      color: #f9fafc;
+      text-shadow: 0 2px 32px rgba(5,11,31,0.9);
+    }
+
+    .comp-desc {
+      font-size: clamp(0.88rem, 1.6vw, 1.12rem);
+      color: rgba(249,250,252,0.70); font-weight: 400;
+      line-height: 1.6; max-width: 580px;
+      text-shadow: 0 1px 12px rgba(5,11,31,0.85);
+    }
+
+    /* Bottom-right meta block */
+    .meta-block {
+      position: absolute;
+      bottom: 60px; right: 52px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+      z-index: 2;
+      opacity: 0; transform: translateX(14px);
+      transition: opacity 0.5s ease 0.7s, transform 0.5s ease 0.7s;
+    }
+    .scene.active .meta-block { opacity: 1; transform: translateX(0); }
+    .meta-chip {
+      padding: 5px 13px; border-radius: 100px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; border: 1.5px solid; backdrop-filter: blur(6px);
+    }
+    .mc-blue   { color:var(--blue);   border-color:rgba(136,204,255,.5); background:rgba(136,204,255,.12); }
+    .mc-green  { color:var(--green);  border-color:rgba(0,255,136,.4);   background:rgba(0,255,136,.1);   }
+    .mc-orange { color:var(--orange); border-color:rgba(255,136,68,.45); background:rgba(255,136,68,.1);  }
+    .mc-purple { color:var(--purple); border-color:rgba(192,132,252,.45);background:rgba(192,132,252,.1); }
+    .mc-yellow { color:var(--yellow); border-color:rgba(255,208,96,.45); background:rgba(255,208,96,.1);  }
+
+    /* ── Progress bar ───────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed; bottom: 0; left: 0;
+      height: 3px; background: var(--blue);
+      z-index: 10; transition: width 0.1s linear;
+      box-shadow: 0 0 8px var(--blue);
+    }
+
+    /* ── Navigation dots ───────────────────────────────────────── */
+    #nav-dots {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 5px; z-index: 10;
+    }
+    .dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(157,184,255,0.3);
+      cursor: pointer; transition: all 0.25s ease;
+    }
+    .dot.active {
+      background: var(--blue);
+      box-shadow: 0 0 6px var(--blue);
+      transform: scale(1.4);
+    }
+
+    /* ── Prev / Next arrows ─────────────────────────────────────── */
+    .nav-arrow {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      z-index: 10; background: rgba(5,11,31,0.45);
+      border: 1.5px solid rgba(136,204,255,0.25);
+      color: var(--blue); font-size: 20px; width: 44px; height: 44px;
+      border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .nav-arrow:hover {
+      background: rgba(136,204,255,0.15);
+      border-color: rgba(136,204,255,0.55);
+    }
+    #prev-btn { left: 16px; }
+    #next-btn { right: 16px; }
+
+    /* ── Intro / outro overlay ──────────────────────────────────── */
+    #intro-overlay {
+      position: fixed; inset: 0; z-index: 20;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+      transition: opacity 0.8s ease;
+    }
+    #intro-overlay.hidden { opacity: 0; pointer-events: none; }
+    .intro-wordmark {
+      font-size: clamp(3rem, 9vw, 6rem);
+      font-weight: 900; letter-spacing: -0.02em;
+      display: flex; gap: 0;
+      filter: drop-shadow(0 0 36px rgba(40,255,190,0.45));
+    }
+    .intro-sub {
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: var(--muted); letter-spacing: 0.12em;
+      text-transform: uppercase; font-weight: 600;
+    }
+    .intro-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 20px; border-radius: 100px;
+      border: 1.5px solid rgba(136,204,255,.4);
+      background: rgba(136,204,255,.08);
+      font-size: 13px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--blue);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Particle background -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── Intro splash ──────────────────────────────────────────────── -->
+<div id="intro-overlay">
+  <div class="intro-wordmark">
+    <span style="color:#88ccff">Circui</span><span style="color:#00ff88">Try</span><span style="color:#ffd060">3D</span>
+  </div>
+  <p class="intro-sub">Real 3D · Real Physics · Real Components</p>
+  <div class="intro-chip">⚡ 26 Components · Every Part Explained</div>
+</div>
+
+<!-- ── Scene stage ─────────────────────────────────────────────── -->
+<div id="stage"></div>
+
+<!-- ── Progress bar ───────────────────────────────────────────── -->
+<div id="progress-bar"></div>
+
+<!-- ── Navigation dots ────────────────────────────────────────── -->
+<div id="nav-dots"></div>
+
+<!-- ── Prev / Next arrows ─────────────────────────────────────── -->
+<button class="nav-arrow" id="prev-btn" aria-label="Previous component">‹</button>
+<button class="nav-arrow" id="next-btn" aria-label="Next component">›</button>
+
+<script>
+// ── Component data ────────────────────────────────────────────────────────────
+// Must match COMPONENTS array in scripts/capture-component-showcase.js
+const COMPONENTS = [
+  { id: 'battery',          label: 'Battery',           desc: 'Power source — drives current through the circuit',                    icon: '─|├─',    cat: 'Power',             color: '#ffd060' },
+  { id: 'ac_source',        label: 'AC Source',          desc: 'AC power source — alternating current supply',                         icon: '─(~)─',   cat: 'Power',             color: '#ffd060' },
+  { id: 'resistor',         label: 'Resistor',           desc: 'Controls current flow and voltage drop',                               icon: '─/\\/\\/─', cat: 'Passive',           color: '#88ccff' },
+  { id: 'capacitor',        label: 'Capacitor',          desc: 'Stores electrical energy temporarily',                                 icon: '─||─',    cat: 'Passive',           color: '#88ccff' },
+  { id: 'capacitor-ceramic',label: 'Ceramic Capacitor',  desc: 'Non-polarized, small-value coupling & decoupling',                    icon: '─| |─',   cat: 'Passive',           color: '#88ccff' },
+  { id: 'inductor',         label: 'Inductor',           desc: 'Stores energy in a magnetic field',                                   icon: '─⌇⌇⌇─',  cat: 'Passive',           color: '#88ccff' },
+  { id: 'diode',            label: 'Diode',              desc: 'One-way current flow control',                                        icon: '─▷|─',    cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'zener-diode',      label: 'Zener Diode',        desc: 'Reverse-breakdown voltage reference & regulation',                    icon: '─▷|⟂─',   cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'photodiode',       label: 'Photodiode',         desc: 'Light sensor diode — reverse biased in most circuits',                icon: '⇢─▷|─',   cat: 'Sensor',            color: '#00ff88' },
+  { id: 'led',              label: 'LED',                desc: 'Light-emitting diode indicator',                                      icon: '─▷|→',    cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'thermistor',       label: 'Thermistor',         desc: 'Temperature-dependent resistor (NTC / PTC)',                          icon: '─/\\/\\─°', cat: 'Sensor',           color: '#00ff88' },
+  { id: 'crystal',          label: 'Crystal',            desc: 'Quartz resonator — stable timing reference for oscillators',          icon: '─▯─',     cat: 'Passive',           color: '#88ccff' },
+  { id: 'bjt',              label: 'BJT',                desc: 'Bipolar junction transistor — amplification & switching',             icon: '─⧫─',     cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'bjt-npn',          label: 'NPN Transistor',     desc: 'Current flows collector → emitter when base is positive',             icon: '─⧫→',     cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'bjt-pnp',          label: 'PNP Transistor',     desc: 'Current flows emitter → collector when base is negative',             icon: '─⧫←',     cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'darlington',       label: 'Darlington Pair',    desc: 'High-gain transistor configuration (β²)',                             icon: '─⧫⧫─',    cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'mosfet',           label: 'MOSFET',             desc: 'Power switching transistor — voltage-controlled gate',                icon: '─⫞|─',    cat: 'Semiconductor',     color: '#c084fc' },
+  { id: 'switch',           label: 'Switch',             desc: 'Open / close the circuit path on demand',                            icon: '─o/o─',   cat: 'Electromechanical', color: '#ff8844' },
+  { id: 'fuse',             label: 'Fuse',               desc: 'Overcurrent protection — breaks circuit on overload',                icon: '─◇─',     cat: 'Electromechanical', color: '#ff8844' },
+  { id: 'potentiometer',    label: 'Potentiometer',      desc: 'Variable resistance — adjustable voltage divider',                   icon: '─/↕/─',   cat: 'Passive',           color: '#88ccff' },
+  { id: 'lamp',             label: 'Lamp',               desc: 'Visual load indicator with incandescent glow effect',                icon: '─⊗─',     cat: 'Electromechanical', color: '#ff8844' },
+  { id: 'motor',            label: 'Motor',              desc: 'DC motor with rotating armature',                                    icon: '─(M)─',   cat: 'Electromechanical', color: '#ff8844' },
+  { id: 'speaker',          label: 'Speaker',            desc: 'Audio output device or buzzer',                                      icon: '─◁)))',   cat: 'Electromechanical', color: '#ff8844' },
+  { id: 'opamp',            label: 'Op-Amp',             desc: 'Operational amplifier for analog signal processing',                 icon: '─▷─',     cat: 'Integrated',        color: '#ff4455' },
+  { id: 'transformer',      label: 'Transformer',        desc: 'Voltage step-up / step-down & galvanic isolation',                  icon: '⌇||⌇',    cat: 'Passive',           color: '#88ccff' },
+  { id: 'ground',           label: 'Ground',             desc: 'Circuit reference node — return path to zero volts',                 icon: '─┴─',     cat: 'Connector',         color: '#9db8ff' },
+];
+
+// Fallback gradient backgrounds by category (used when screenshots aren't captured yet)
+const CAT_GRADIENTS = {
+  'Power':             'linear-gradient(135deg, #1a1200 0%, #3a2200 50%, #1a0a00 100%)',
+  'Passive':           'linear-gradient(135deg, #050d1f 0%, #0a1a35 50%, #040c1e 100%)',
+  'Semiconductor':     'linear-gradient(135deg, #110620 0%, #1e0a38 50%, #0e0420 100%)',
+  'Sensor':            'linear-gradient(135deg, #001810 0%, #002a1a 50%, #001208 100%)',
+  'Electromechanical': 'linear-gradient(135deg, #200d00 0%, #381500 50%, #180a00 100%)',
+  'Integrated':        'linear-gradient(135deg, #200004 0%, #380008 50%, #180003 100%)',
+  'Connector':         'linear-gradient(135deg, #050b22 0%, #0a1438 50%, #040a1c 100%)',
+};
+
+const META_CHIPS = {
+  'Power':             [{ label: 'DC / AC',     cls: 'mc-yellow' }, { label: 'Energy',   cls: 'mc-orange' }],
+  'Passive':           [{ label: 'RLC',         cls: 'mc-blue'   }, { label: 'Linear',   cls: 'mc-blue'   }],
+  'Semiconductor':     [{ label: 'Silicon',     cls: 'mc-purple' }, { label: 'Junction', cls: 'mc-purple' }],
+  'Sensor':            [{ label: 'Sensing',     cls: 'mc-green'  }, { label: 'Transducer',cls: 'mc-green' }],
+  'Electromechanical': [{ label: 'Mechanical',  cls: 'mc-orange' }, { label: 'Output',   cls: 'mc-orange' }],
+  'Integrated':        [{ label: 'Analog IC',   cls: 'mc-orange' }, { label: 'Signal',   cls: 'mc-blue'   }],
+  'Connector':         [{ label: 'Reference',   cls: 'mc-blue'   }, { label: '0 V',      cls: 'mc-green'  }],
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function shotUrl(id) {
+  // Path is relative — works both on GitHub Pages and locally
+  return `component-shots/${id}.png`;
+}
+
+// ── Build scenes ──────────────────────────────────────────────────────────────
+
+const stage    = document.getElementById('stage');
+const navDots  = document.getElementById('nav-dots');
+const progBar  = document.getElementById('progress-bar');
+
+const sceneEls = [];
+
+COMPONENTS.forEach((comp, idx) => {
+  const c = comp.color;
+  const gradient = CAT_GRADIENTS[comp.cat] || CAT_GRADIENTS['Passive'];
+  const chips = META_CHIPS[comp.cat] || [];
+
+  // Scene element
+  const scene = document.createElement('div');
+  scene.className = 'scene';
+  scene.dataset.idx = idx;
+
+  // Screenshot image (will be swapped in if it exists)
+  const img = document.createElement('img');
+  img.className = 'scene-img';
+  img.alt = comp.label;
+  img.decoding = 'async';
+  img.addEventListener('load', () => img.classList.add('loaded'));
+
+  // Fallback gradient background
+  const grad = document.createElement('div');
+  grad.className = 'scene-gradient';
+  grad.style.background = gradient;
+
+  // Vignette
+  const vig = document.createElement('div');
+  vig.className = 'vignette';
+
+  // Content overlay
+  const content = document.createElement('div');
+  content.className = 'scene-content';
+
+  // Top bar
+  content.innerHTML = `
+    <div class="top-bar">
+      <span class="brand">CircuiTry3D · Component Library</span>
+      <div class="rec-badge"><div class="rec-dot"></div>3D LIVE</div>
+      <span class="component-counter">${String(idx + 1).padStart(2,'0')} / ${COMPONENTS.length}</span>
+    </div>
+  `;
+
+  // Info block
+  const info = document.createElement('div');
+  info.className = 'info-block';
+  info.innerHTML = `
+    <div class="cat-badge" style="color:${c};border-color:${hexToRgba(c,0.5)};background:${hexToRgba(c,0.12)}">${comp.cat}</div>
+    <div class="comp-icon">${comp.icon}</div>
+    <div class="comp-name" style="text-shadow:0 0 48px ${hexToRgba(c,0.55)},0 2px 28px rgba(5,11,31,0.9)">${comp.label}</div>
+    <div class="comp-desc">${comp.desc}</div>
+  `;
+  content.appendChild(info);
+
+  // Meta chips (bottom-right)
+  const meta = document.createElement('div');
+  meta.className = 'meta-block';
+  chips.forEach(ch => {
+    const chip = document.createElement('div');
+    chip.className = `meta-chip ${ch.cls}`;
+    chip.textContent = ch.label;
+    meta.appendChild(chip);
+  });
+  const timecode = document.createElement('div');
+  timecode.style.cssText = 'font-family:"SF Mono","Fira Code",monospace;font-size:10px;font-weight:600;color:rgba(157,184,255,0.45);letter-spacing:0.08em;margin-top:4px;';
+  timecode.textContent = `3D · REAL PHYSICS`;
+  meta.appendChild(timecode);
+
+  scene.appendChild(img);
+  scene.appendChild(grad);
+  scene.appendChild(vig);
+  scene.appendChild(content);
+  scene.appendChild(meta);
+
+  stage.appendChild(scene);
+  sceneEls.push({ scene, img });
+
+  // Nav dot
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dot.dataset.idx = idx;
+  dot.addEventListener('click', () => goTo(idx));
+  navDots.appendChild(dot);
+});
+
+// Lazy-load images: only load current + neighbours
+function loadNearby(idx) {
+  const range = 3;
+  for (let i = Math.max(0, idx - range); i <= Math.min(COMPONENTS.length - 1, idx + range); i++) {
+    const { img } = sceneEls[i];
+    if (!img.src) {
+      img.src = shotUrl(COMPONENTS[i].id);
+    }
+  }
+}
+
+// ── Slideshow engine ──────────────────────────────────────────────────────────
+
+let current = 0;
+let timer   = null;
+const SLIDE_DURATION = 3800; // ms per slide
+
+function goTo(idx) {
+  const prev = current;
+  current = ((idx % COMPONENTS.length) + COMPONENTS.length) % COMPONENTS.length;
+
+  sceneEls[prev].scene.classList.remove('active');
+  sceneEls[current].scene.classList.add('active');
+
+  // Nav dot
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+
+  // Progress bar
+  updateProgress(0);
+  loadNearby(current);
+
+  resetTimer();
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+let progressStart = null;
+
+function updateProgress(elapsed) {
+  const pct = Math.min(100, (elapsed / SLIDE_DURATION) * 100);
+  progBar.style.width = `${pct}%`;
+}
+
+function resetTimer() {
+  if (timer) cancelAnimationFrame(timer);
+  progressStart = performance.now();
+
+  function tick(now) {
+    const elapsed = now - progressStart;
+    updateProgress(elapsed);
+    if (elapsed >= SLIDE_DURATION) {
+      next();
+    } else {
+      timer = requestAnimationFrame(tick);
+    }
+  }
+
+  timer = requestAnimationFrame(tick);
+}
+
+// ── Keyboard & arrow navigation ───────────────────────────────────────────────
+
+document.getElementById('prev-btn').addEventListener('click', prev);
+document.getElementById('next-btn').addEventListener('click', next);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ')  next();
+  if (e.key === 'ArrowLeft')                     prev();
+});
+
+// Pause on hover
+stage.addEventListener('mouseenter', () => { if (timer) cancelAnimationFrame(timer); });
+stage.addEventListener('mouseleave', () => resetTimer());
+
+// ── Particle background ───────────────────────────────────────────────────────
+
+(function initParticles() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const N = 80;
+  const pts = Array.from({ length: N }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    r: Math.random() * 1.5 + 0.5,
+    a: Math.random(),
+  }));
+
+  function drawFrame() {
+    ctx.clearRect(0, 0, W, H);
+    pts.forEach(p => {
+      p.x = (p.x + p.vx + W) % W;
+      p.y = (p.y + p.vy + H) % H;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(136,204,255,${p.a * 0.6})`;
+      ctx.fill();
+    });
+    // Connect nearby particles
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const dx = pts[i].x - pts[j].x;
+        const dy = pts[i].y - pts[j].y;
+        const d  = Math.sqrt(dx * dx + dy * dy);
+        if (d < 100) {
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.strokeStyle = `rgba(136,204,255,${0.12 * (1 - d / 100)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(drawFrame);
+  }
+  requestAnimationFrame(drawFrame);
+})();
+
+// ── Intro splash ──────────────────────────────────────────────────────────────
+
+const introEl = document.getElementById('intro-overlay');
+setTimeout(() => {
+  introEl.classList.add('hidden');
+  // Start the slideshow after intro fades out
+  goTo(0);
+  // Trigger image preload for first few components immediately
+  loadNearby(0);
+}, 2000);
+</script>
+</body>
+</html>
