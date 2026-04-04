@@ -3,9 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
-  "build": {
-    "env": {
-      "VITE_DEMO_MODE": "true"
-    }
+  "env": {
+    "VITE_DEMO_MODE": "true"
   }
 }

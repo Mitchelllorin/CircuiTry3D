@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasPro, purchaseProUnlock, restoreProPurchases, isAndroidApp } from "../utils/playStoreBilling";
+import { userHasPro, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, WEB_PAYMENT_URL } from "../utils/playStoreBilling";
 import i18n from "../i18n";
 
 type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed" | "cancelled";
@@ -37,13 +37,18 @@ export default function Upgrade() {
 
   const handlePurchase = useCallback(async () => {
     if (hasPro) return;
+    // On web with a payment URL configured, open the checkout page.
+    if (!isAndroid && WEB_PAYMENT_URL) {
+      openWebPayment();
+      return;
+    }
     setStatus("purchasing");
     const launched = await purchaseProUnlock();
     if (!launched) {
-      // Not on Android — can't launch native flow
+      // Not on Android and no web payment URL — can't launch native flow
       setStatus("idle");
     }
-  }, [hasPro]);
+  }, [hasPro, isAndroid]);
 
   const handleRestore = useCallback(async () => {
     setStatus("restoring");
@@ -101,7 +106,16 @@ export default function Upgrade() {
             )}
 
             {!isAndroid ? (
-              <p style={infoStyle}>{t("upgrade.notAvailableOnWeb")}</p>
+              WEB_PAYMENT_URL ? (
+                <button
+                  style={primaryButtonStyle}
+                  onClick={handlePurchase}
+                >
+                  {t("upgrade.purchaseButton")}
+                </button>
+              ) : (
+                <p style={infoStyle}>{t("upgrade.notAvailableOnWeb")}</p>
+              )
             ) : (
               <>
                 <button
