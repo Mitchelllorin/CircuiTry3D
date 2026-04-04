@@ -102,16 +102,38 @@ async function openBuilder(page) {
   // Mark the tutorial as already seen so maybeAutoShowTutorial() never shows
   // the Quick Start Guide modal.  A fresh Playwright context has no localStorage,
   // which normally triggers the modal — blocking every scene from being recorded.
+  //
+  // Also install a MutationObserver that forcibly removes the 'visible' class
+  // from the tutorial backdrop the instant it is added.  This handles the race
+  // where builder init finishes *after* the bot's earlier dismiss call — which
+  // caused the tutorial to reappear mid-scene in CI where WebGL initialisation
+  // can take far longer than the previous hardcoded 2 500 ms wait.
   await page.addInitScript(() => {
     try { localStorage.setItem('circuitry3d_tutorial_seen', '1'); } catch (_) {}
+
+    // Auto-dismiss the tutorial backdrop whenever it becomes visible.
+    document.addEventListener('DOMContentLoaded', () => {
+      const backdrop = document.getElementById('tutorial-backdrop');
+      if (!backdrop) return;
+      const mo = new MutationObserver(() => {
+        if (backdrop.classList.contains('visible')) {
+          backdrop.classList.remove('visible');
+        }
+      });
+      mo.observe(backdrop, { attributes: true, attributeFilter: ['class'] });
+    });
   });
 
   const url = `${BASE_URL}/legacy.html`;
   await page.goto(url, { waitUntil: 'networkidle', timeout: 45_000 });
   await page.waitForSelector('canvas', { timeout: 20_000 });
-  // Extra settle time for THREE.js / WebGL initialisation
-  await page.waitForTimeout(2500);
-  // Belt-and-suspenders: dismiss the tutorial modal if it appeared anyway
+  // Wait for the builder's init() to complete (_builderReady flag) rather than
+  // using a fixed timeout.  On CI, WebGL initialisation can exceed 2 500 ms.
+  await page.waitForFunction(() => window._builderReady === true, { timeout: 30_000 }).catch(() => {});
+  // The tutorial setTimeout fires 800 ms after _builderReady — wait past it so
+  // the MutationObserver has a chance to suppress it before recording starts.
+  await page.waitForTimeout(1200);
+  // Belt-and-suspenders: explicitly dismiss in case the observer missed it.
   await page.evaluate(() => {
     try { if (typeof dismissTutorial === 'function') dismissTutorial(); } catch (_) {}
     const backdrop = document.getElementById('tutorial-backdrop');
