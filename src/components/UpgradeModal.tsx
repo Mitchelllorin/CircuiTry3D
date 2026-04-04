@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasPro, purchaseProUnlock, isAndroidApp } from "../utils/playStoreBilling";
+import { userHasPro, purchaseProUnlock, isAndroidApp, openWebPayment, WEB_PAYMENT_URL } from "../utils/playStoreBilling";
 
 interface UpgradeModalProps {
   /** Whether the modal is currently visible. */
@@ -44,10 +44,15 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       setStatus("success");
       return;
     }
+    // On web with a payment URL configured, open the checkout page.
+    if (!isAndroidApp() && WEB_PAYMENT_URL) {
+      openWebPayment();
+      return;
+    }
     setStatus("purchasing");
     const launched = await purchaseProUnlock();
     if (!launched) {
-      // On web, the native flow is unavailable — revert to idle so we show the
+      // On web without a payment URL, revert to idle so we show the
       // "not available on web" message.
       setStatus("idle");
     }
@@ -96,10 +101,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
             {status === "cancelled" && (
               <p style={cancelledStyle}>{t("upgrade.purchaseCancelled")}</p>
             )}
-            {!isAndroid && (
-              <p style={infoStyle}>{t("upgrade.notAvailableOnWeb")}</p>
-            )}
-            {isAndroid && (
+            {isAndroid ? (
               <button
                 style={purchaseButtonStyle}
                 onClick={handlePurchase}
@@ -107,6 +109,15 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
               >
                 {status === "purchasing" ? t("common.loading") : t("upgrade.purchaseButton")}
               </button>
+            ) : WEB_PAYMENT_URL ? (
+              <button
+                style={purchaseButtonStyle}
+                onClick={handlePurchase}
+              >
+                {t("upgrade.purchaseButton")}
+              </button>
+            ) : (
+              <p style={infoStyle}>{t("upgrade.notAvailableOnWeb")}</p>
             )}
           </>
         )}
