@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+    <meta name="description" content="Build, simulate, and explore electric circuits in interactive 3D — from wire-level current to quantum probability clouds. Powered by the FUSE™ Failure Understanding Simulation Engine." />
+    <meta name="keywords" content="circuit builder, electronics, 3D visualization, Ohm's law, educational, interactive" />
+    <meta name="author" content="Mitchell Lorin McKnight" />
+    <meta name="application-name" content="CircuiTry3D" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="dark" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.circuitry3d.net/" />
+    <meta property="og:title" content="CircuiTry3D — Illuminate Electricity" />
+    <meta property="og:description" content="Build, simulate, and explore electric circuits in interactive 3D — from wire-level current all the way down to quantum probability clouds. Powered by FUSE™." />
+    <meta property="og:image" content="https://www.circuitry3d.net/icons/icon-512.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://www.circuitry3d.net/" />
+    <meta property="twitter:title" content="CircuiTry3D — Illuminate Electricity" />
+    <meta property="twitter:description" content="Build, simulate, and explore electric circuits in interactive 3D — from wire-level current all the way down to quantum probability clouds. Powered by FUSE™." />
+    <meta property="twitter:image" content="https://www.circuitry3d.net/icons/icon-512.png" />
+    
+    <title>CircuiTry3D — Illuminate Electricity</title>
+
+    <!-- Google Fonts - UI body font + bold display fonts for Arena -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/CircuiTry3D/pr-preview/pr-679/manifest.json" />
+
+    <!-- App Icons -->
+    <link rel="icon" href="/CircuiTry3D/pr-preview/pr-679/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/CircuiTry3D/pr-preview/pr-679/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/CircuiTry3D/pr-preview/pr-679/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/CircuiTry3D/pr-preview/pr-679/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/CircuiTry3D/pr-preview/pr-679/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/CircuiTry3D/pr-preview/pr-679/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/CircuiTry3D/pr-preview/pr-679/icons/icon-512.png" />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      html {
+        touch-action: pan-x pan-y;
+        -webkit-text-size-adjust: 100%;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #0f172a;
+        color: #ffffff;
+        overscroll-behavior: none;
+      }
+      
+      #root {
+        width: 100%;
+        height: 100vh;
+        overscroll-behavior: contain;
+      }
+      
+      .initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        z-index: 9999;
+        background: #0f172a;
+      }
+      
+      .loader-text {
+        font-size: 1.05rem;
+        color: rgba(136, 204, 255, 0.78);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .loader-logo-orbit {
+        position: relative;
+        width: 280px;
+        height: 220px;
+        display: grid;
+        place-items: center;
+        margin-top: 4px;
+      }
+
+      .loader-wordmark {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.12em;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        transform: translateY(-2px);
+        filter: drop-shadow(0 10px 24px rgba(56, 189, 248, 0.16));
+      }
+
+      .loader-wordmark span {
+        font-size: clamp(2.1rem, 8.2vw, 2.8rem);
+        line-height: 1;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 10px 22px rgba(2, 6, 23, 0.35);
+      }
+
+      .loader-wordmark .wm-circui {
+        color: #88ccff;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 0 14px rgba(136, 204, 255, 0.35),
+          0 0 26px rgba(136, 204, 255, 0.22);
+      }
+
+      .loader-wordmark .wm-try {
+        color: #ff8844;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 0 14px rgba(255, 136, 68, 0.35),
+          0 0 26px rgba(255, 136, 68, 0.22);
+      }
+
+      .loader-wordmark .wm-3d {
+        color: #00ff88;
+        letter-spacing: 0.18em;
+        text-shadow:
+          0 1px 0 rgba(2, 6, 23, 0.65),
+          0 2px 0 rgba(2, 6, 23, 0.55),
+          0 3px 0 rgba(2, 6, 23, 0.45),
+          0 0 14px rgba(0, 255, 136, 0.28),
+          0 0 26px rgba(0, 255, 136, 0.2);
+      }
+    </style>
+    <script type="module" crossorigin src="/CircuiTry3D/pr-preview/pr-679/assets/index-D04_2CJY.js"></script>
+    <link rel="modulepreload" crossorigin href="/CircuiTry3D/pr-preview/pr-679/assets/react-vendor-Bzgz95E1.js">
+    <link rel="modulepreload" crossorigin href="/CircuiTry3D/pr-preview/pr-679/assets/router-BZzXuVii.js">
+    <link rel="stylesheet" crossorigin href="/CircuiTry3D/pr-preview/pr-679/assets/index-v7xWVRLq.css">
+  </head>
+  <body>
+    <div id="root">
+      <div class="initial-loader">
+        <div class="loader-text">Loading</div>
+        <div class="loader-logo-orbit" aria-hidden="true">
+          <div class="loader-wordmark" aria-label="CircuiTry3D">
+            <span class="wm-circui">Circui</span><span class="wm-try">Try</span><span class="wm-3d">3D</span>
+          </div>
+        </div>
+        <div style="color: rgba(136, 204, 255, 0.6); font-size: 0.9rem; margin-top: 10px;">Initializing...</div>
+      </div>
+    </div>
+  </body>
+</html>

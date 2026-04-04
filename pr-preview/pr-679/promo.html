@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CircuiTry3D — Promo Demo</title>
+  <meta name="theme-color" content="#050b1f" />
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      color-scheme: dark;
+      --blue:   #88ccff;
+      --orange: #ff8844;
+      --green:  #00ff88;
+      --purple: #c084fc;
+      --bg:     #050b1f;
+      --card:   rgba(13, 25, 60, 0.85);
+      --text:   #f9fafc;
+      --muted:  #9db8ff;
+      --scene-duration: 5500ms;
+    }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Canvas layer ──────────────────────────────────────────────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    /* ── Scene container ───────────────────────────────────────────── */
+    #stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Scene base ────────────────────────────────────────────────── */
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.7s ease;
+    }
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── Typography helpers ────────────────────────────────────────── */
+    .eyebrow {
+      font-size: clamp(0.65rem, 2vw, 0.85rem);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 0.3s, transform 0.55s ease 0.3s;
+    }
+    .scene.active .eyebrow { opacity: 1; transform: translateY(0); }
+
+    .headline {
+      font-size: clamp(2rem, 7vw, 5.2rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s;
+      max-width: 900px;
+    }
+    .scene.active .headline { opacity: 1; transform: translateY(0); }
+
+    .tagline {
+      font-size: clamp(0.9rem, 2.5vw, 1.25rem);
+      color: var(--muted);
+      font-weight: 500;
+      text-align: center;
+      max-width: 620px;
+      margin-top: 18px;
+      line-height: 1.55;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease 0.75s, transform 0.6s ease 0.75s;
+    }
+    .scene.active .tagline { opacity: 1; transform: translateY(0); }
+
+    /* ── Brand colours ─────────────────────────────────────────────── */
+    .c-blue   { color: var(--blue);   text-shadow: 0 0 22px rgba(136,204,255,.65); }
+    .c-orange { color: var(--orange); text-shadow: 0 0 20px rgba(255,136,68,.6);  }
+    .c-green  { color: var(--green);  text-shadow: 0 0 22px rgba(0,255,136,.65);  }
+    .c-purple { color: var(--purple); text-shadow: 0 0 20px rgba(192,132,252,.6); }
+
+    /* ── Logo wordmark ─────────────────────────────────────────────── */
+    .wordmark {
+      font-size: clamp(3rem, 11vw, 7.5rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      display: flex;
+      gap: 0;
+      filter: drop-shadow(0 0 30px rgba(40,255,190,.35));
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.7s ease 0.2s, transform 0.7s cubic-bezier(.34,1.56,.64,1) 0.2s;
+      line-height: 1;
+    }
+    .scene.active .wordmark { opacity: 1; transform: scale(1); }
+
+    .logo-tm {
+      font-size: 0.22em;
+      vertical-align: super;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    /* ── Feature chips ─────────────────────────────────────────────── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 24px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.55s ease 1s, transform 0.55s ease 1s;
+    }
+    .scene.active .chips { opacity: 1; transform: translateY(0); }
+    .chip {
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: 1.5px solid;
+    }
+    .chip-blue   { border-color: rgba(136,204,255,.5); color: var(--blue);   background: rgba(136,204,255,.08); }
+    .chip-green  { border-color: rgba(0,255,136,.4);  color: var(--green);  background: rgba(0,255,136,.07);  }
+    .chip-orange { border-color: rgba(255,136,68,.45); color: var(--orange); background: rgba(255,136,68,.07); }
+    .chip-purple { border-color: rgba(192,132,252,.45);color: var(--purple); background: rgba(192,132,252,.07);}
+
+    /* ── Zoom tier diagram ─────────────────────────────────────────── */
+    .zoom-tiers {
+      display: flex;
+      gap: clamp(8px, 2vw, 18px);
+      margin-top: 32px;
+      align-items: flex-end;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.9s;
+    }
+    .scene.active .zoom-tiers { opacity: 1; }
+    .zoom-tier {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .zoom-orb {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .zoom-orb::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      opacity: 0.35;
+    }
+    .zoom-label {
+      font-size: clamp(0.55rem, 1.5vw, 0.72rem);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .tier-arrow {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--muted);
+      opacity: 0.5;
+      margin-bottom: 12px;
+      align-self: center;
+    }
+
+    /* ── FUSE panel ─────────────────────────────────────────────────── */
+    .fuse-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      max-width: 720px;
+      width: 100%;
+      margin-top: 28px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease 0.9s, transform 0.6s ease 0.9s;
+    }
+    .scene.active .fuse-panel { opacity: 1; transform: translateY(0); }
+    .fuse-card {
+      background: var(--card);
+      border: 1.5px solid rgba(255,255,255,0.09);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-align: left;
+      backdrop-filter: blur(8px);
+    }
+    .fuse-card-status {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .status-ok       { background: rgba(0,255,136,.15); color: #00ff88; }
+    .status-stressed { background: rgba(255,160,0,.15);  color: #ffa500; }
+    .status-warning  { background: rgba(255,136,68,.15); color: #ff8844; }
+    .status-failed   { background: rgba(255,50,50,.15);  color: #ff5555; }
+    .fuse-card-name  { font-size: clamp(0.8rem, 2vw, 0.95rem); font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .fuse-card-desc  { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── Feature grid ────────────────────────────────────────────────── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      max-width: 880px;
+      width: 100%;
+      margin-top: 28px;
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.55s ease 0.85s, transform 0.55s ease 0.85s;
+    }
+    .scene.active .feat-grid { opacity: 1; transform: translateY(0); }
+    .feat-card {
+      background: var(--card);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 18px 20px;
+      backdrop-filter: blur(8px);
+    }
+    .feat-icon { font-size: 1.6rem; margin-bottom: 10px; display: block; }
+    .feat-name { font-size: 0.9rem; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+    .feat-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.45; }
+
+    /* ── CTA button ─────────────────────────────────────────────────── */
+    .cta-wrap {
+      margin-top: 32px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.55s ease 1.1s, transform 0.55s ease 1.1s;
+    }
+    .scene.active .cta-wrap { opacity: 1; transform: translateY(0); }
+    .btn-primary {
+      display: inline-block;
+      padding: 14px 34px;
+      border-radius: 100px;
+      font-weight: 800;
+      font-size: clamp(0.85rem, 2.5vw, 1rem);
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--green) 100%);
+      color: #050b1f;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 30px rgba(0,255,136,.25), 0 4px 16px rgba(0,0,0,.4);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,255,136,.35), 0 6px 22px rgba(0,0,0,.5); }
+    .btn-secondary {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+      letter-spacing: 0.03em;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid rgba(136,204,255,.4);
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.18s ease, color 0.18s ease;
+    }
+    .btn-secondary:hover { border-color: rgba(136,204,255,.8); color: var(--blue); }
+
+    /* ── Progress bar ───────────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      z-index: 100;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px rgba(0,255,136,.6);
+    }
+
+    /* ── Scene dots ─────────────────────────────────────────────────── */
+    #scene-dots {
+      position: fixed;
+      bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px;
+      z-index: 100;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(136,204,255,.25);
+      transition: background 0.3s ease, transform 0.3s ease;
+      cursor: pointer;
+    }
+    .dot.active { background: var(--green); transform: scale(1.3); }
+
+    /* ── Controls ───────────────────────────────────────────────────── */
+    #controls {
+      position: fixed;
+      top: 18px; right: 18px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+    .ctrl-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(13,25,60,.7);
+      border: 1.5px solid rgba(136,204,255,.3);
+      color: var(--blue);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ctrl-btn:hover { background: rgba(20,40,90,.85); border-color: rgba(136,204,255,.65); }
+
+    /* ── Back-to-app link ────────────────────────────────────────────── */
+    #back-link {
+      position: fixed;
+      top: 18px; left: 18px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: rgba(136,204,255,.55);
+      text-decoration: none;
+      z-index: 100;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.15s ease;
+    }
+    #back-link:hover { color: var(--blue); }
+
+    /* ── Scan line overlay ─────────────────────────────────────────── */
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.04) 3px,
+        rgba(0,0,0,0.04) 4px
+      );
+      opacity: 0.55;
+    }
+
+    /* ── Flare overlay (scene transitions) ─────────────────────────── */
+    #flare {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.65) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #flare.flash { opacity: 1; transition: none; }
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div id="scanlines"></div>
+  <div id="flare"></div>
+
+  <!-- Back link -->
+  <a id="back-link" href="/#/" target="_top">← CircuiTry3D</a>
+
+  <!-- Controls -->
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-prev" title="Previous scene">&#8592;</button>
+    <button class="ctrl-btn" id="btn-play" title="Pause/Play">&#10074;&#10074;</button>
+    <button class="ctrl-btn" id="btn-next" title="Next scene">&#8594;</button>
+  </div>
+
+  <!-- Progress bar -->
+  <div id="progress-bar" style="width:0%"></div>
+
+  <!-- Scene dots -->
+  <div id="scene-dots"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SCENES                                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div id="stage">
+
+    <!-- SCENE 0 · Intro / Logo -->
+    <div class="scene" id="scene-0">
+      <div class="wordmark">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="margin-top:22px; font-size:clamp(1rem,3vw,1.4rem); font-weight:300;">
+        Illuminate&nbsp;Electricity<br>
+        <span style="color:rgba(136,204,255,.45); font-size:0.75em;">Interactive 3D Circuit Learning &amp; Simulation</span>
+      </p>
+    </div>
+
+    <!-- SCENE 1 · Builder -->
+    <div class="scene" id="scene-1">
+      <p class="eyebrow">Circuit Builder</p>
+      <h1 class="headline">
+        Build Circuits in&nbsp;<span class="c-blue">Real&nbsp;3D</span>
+      </h1>
+      <p class="tagline">
+        Drag-and-drop resistors, capacitors, LEDs &amp; more onto a live 3D workspace.
+        Ohm's law powers every simulation — watch voltage &amp; current update instantly.
+      </p>
+      <div class="chips">
+        <span class="chip chip-blue">W.I.R.E. Routing</span>
+        <span class="chip chip-green">Live Simulation</span>
+        <span class="chip chip-orange">Ohm's Law Engine</span>
+        <span class="chip chip-blue">Schematic Mode</span>
+      </div>
+    </div>
+
+    <!-- SCENE 2 · Multi-scale Current Flow -->
+    <div class="scene" id="scene-2">
+      <p class="eyebrow">Multi-Scale Visualisation</p>
+      <h1 class="headline">
+        Zoom&nbsp;Into&nbsp;<span class="c-green">Electrons</span>
+      </h1>
+      <p class="tagline">
+        Five interactive zoom tiers bring you from circuit-level current all the way down
+        to quantum probability clouds — no microscope required.
+      </p>
+      <div class="zoom-tiers">
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(44px,7vw,64px);height:clamp(44px,7vw,64px);background:rgba(136,204,255,.12);color:var(--blue);">⚡</div>
+          <div class="zoom-label" style="color:var(--blue);">Macro</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(38px,6vw,56px);height:clamp(38px,6vw,56px);background:rgba(0,255,136,.1);color:var(--green);">〰</div>
+          <div class="zoom-label" style="color:var(--green);">Close</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(32px,5vw,48px);height:clamp(32px,5vw,48px);background:rgba(255,136,68,.1);color:var(--orange);">⬡</div>
+          <div class="zoom-label" style="color:var(--orange);">Atomic</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(26px,4vw,40px);height:clamp(26px,4vw,40px);background:rgba(192,132,252,.1);color:var(--purple);">◉</div>
+          <div class="zoom-label" style="color:var(--purple);">Deep</div>
+        </div>
+        <div class="tier-arrow">→</div>
+        <div class="zoom-tier">
+          <div class="zoom-orb" style="width:clamp(20px,3vw,32px);height:clamp(20px,3vw,32px);background:rgba(255,255,255,.06);color:#fff;">∿</div>
+          <div class="zoom-label" style="color:#aaa;">Quantum</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 3 · Arena + FUSE -->
+    <div class="scene" id="scene-3">
+      <p class="eyebrow">Component Arena · FUSE™</p>
+      <h1 class="headline">
+        <span class="c-orange">Fail</span>&nbsp;Safely.&nbsp;
+        <span class="c-green">Learn</span>&nbsp;Deeply.
+      </h1>
+      <p class="tagline">
+        The <strong style="color:var(--orange)">F</strong>ailure&nbsp;<strong style="color:var(--orange)">U</strong>nderstanding&nbsp;<strong style="color:var(--orange)">S</strong>imulation&nbsp;<strong style="color:var(--orange)">E</strong>ngine™
+        stress-tests every component — smoke, arcs, explosions &amp; all.
+      </p>
+      <div class="fuse-panel">
+        <div class="fuse-card">
+          <span class="fuse-card-status status-ok">OK</span>
+          <div class="fuse-card-name">Resistor 10 kΩ</div>
+          <div class="fuse-card-desc">Operating at 12 % rated power — thermally stable.</div>
+        </div>
+        <div class="fuse-card">
+          <span class="fuse-card-status status-stressed">Stressed</span>
+          <div class="fuse-card-name">Capacitor 100 µF</div>
+          <div class="fuse-card-desc">Approaching voltage limit — ripple current elevated.</div>
+        </div>
+        <div class="fuse-card">
+          <span class="fuse-card-status status-warning">Warning</span>
+          <div class="fuse-card-name">LED (Red)</div>
+          <div class="fuse-card-desc">Forward current exceeds spec — dimming imminent.</div>
+        </div>
+        <div class="fuse-card">
+          <span class="fuse-card-status status-failed">Failed</span>
+          <div class="fuse-card-name">Fuse 0.5 A</div>
+          <div class="fuse-card-desc">Overcurrent event detected — element vaporised.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 4 · Features Reel -->
+    <div class="scene" id="scene-4">
+      <p class="eyebrow">Everything You Need</p>
+      <h1 class="headline" style="font-size:clamp(1.8rem,5.5vw,3.8rem);">
+        One Platform.&nbsp;<span class="c-green">Infinite Circuits.</span>
+      </h1>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <span class="feat-icon">🏟️</span>
+          <div class="feat-name">Component Arena</div>
+          <div class="feat-desc">Test components side-by-side with live FUSE™ failure analysis.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">📐</span>
+          <div class="feat-name">Schematic Mode</div>
+          <div class="feat-desc">Professional 2D schematics auto-generated from your 3D build.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">🎓</span>
+          <div class="feat-name">Classroom</div>
+          <div class="feat-desc">Assign circuits, track progress &amp; grade labs at scale.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">🕹️</span>
+          <div class="feat-name">Practice Arcade</div>
+          <div class="feat-desc">Circuit puzzles and challenges to sharpen your skills.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">🌐</span>
+          <div class="feat-name">Community</div>
+          <div class="feat-desc">Share builds, fork circuits &amp; learn from peers worldwide.</div>
+        </div>
+        <div class="feat-card">
+          <span class="feat-icon">📱</span>
+          <div class="feat-name">Android App</div>
+          <div class="feat-desc">Full mobile experience — build &amp; simulate on the go.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 5 · Outro / CTA -->
+    <div class="scene" id="scene-5">
+      <div class="wordmark">
+        <span class="c-blue">Circui</span><span class="c-orange">Try</span><span class="c-green">3D</span>
+      </div>
+      <p class="tagline" style="font-size:clamp(1rem,2.8vw,1.3rem); margin-top:16px;">
+        The future of electronics education is <span class="c-green">interactive</span>,
+        <span class="c-blue">immersive</span>, and <span class="c-orange">illuminated</span>.
+      </p>
+      <div class="cta-wrap">
+        <a class="btn-primary" href="/#/app" target="_top">Launch Builder</a>
+        <a class="btn-secondary" href="/#/arena" target="_top">Open Arena</a>
+      </div>
+    </div>
+
+  </div><!-- /#stage -->
+
+  <script>
+  (() => {
+    "use strict";
+
+    /* ── Constants ──────────────────────────────────────────────────── */
+    const SCENE_COUNT   = 6;
+    const SCENE_MS      = 6000;   // ms each scene stays active
+    const TRANSIT_MS    = 700;    // fade transition time
+
+    /* ── State ──────────────────────────────────────────────────────── */
+    let currentScene = 0;
+    let playing      = true;
+    let timerId      = null;
+    let progressRaf  = null;
+    let sceneStart   = performance.now();
+
+    /* ── DOM helpers ────────────────────────────────────────────────── */
+    const stages  = /** @type {HTMLElement[]} */ (Array.from(document.querySelectorAll(".scene")));
+    const dots    = document.getElementById("scene-dots");
+    const progBar = document.getElementById("progress-bar");
+    const btnPlay = document.getElementById("btn-play");
+    const flare   = document.getElementById("flare");
+
+    /* ── Build dots ──────────────────────────────────────────────────── */
+    for (let i = 0; i < SCENE_COUNT; i++) {
+      const d = document.createElement("div");
+      d.className = "dot" + (i === 0 ? " active" : "");
+      d.addEventListener("click", () => goTo(i, true));
+      dots.appendChild(d);
+    }
+
+    function getDots() { return /** @type {HTMLDivElement[]} */ (Array.from(dots.querySelectorAll(".dot"))); }
+
+    /* ── Flash transition ────────────────────────────────────────────── */
+    function triggerFlare() {
+      flare.classList.add("flash");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { flare.classList.remove("flash"); });
+      });
+    }
+
+    /* ── Go to scene ─────────────────────────────────────────────────── */
+    function goTo(idx, resetTimer = false) {
+      const prev = currentScene;
+      currentScene = (idx + SCENE_COUNT) % SCENE_COUNT;
+
+      // Swap active class
+      stages[prev].classList.remove("active");
+      stages[currentScene].classList.add("active");
+
+      // Update dots
+      getDots().forEach((d, i) => d.classList.toggle("active", i === currentScene));
+
+      triggerFlare();
+
+      if (resetTimer) {
+        clearTimeout(timerId);
+        sceneStart = performance.now();
+        if (playing) scheduleNext();
+      }
+    }
+
+    /* ── Advance ──────────────────────────────────────────────────────── */
+    function advance() {
+      goTo(currentScene + 1);
+      sceneStart = performance.now();
+      if (playing) scheduleNext();
+    }
+
+    function scheduleNext() {
+      clearTimeout(timerId);
+      timerId = setTimeout(advance, SCENE_MS);
+    }
+
+    /* ── Progress bar ─────────────────────────────────────────────────── */
+    function tickProgress() {
+      if (playing) {
+        const elapsed = performance.now() - sceneStart;
+        const pct = Math.min(100, (elapsed / SCENE_MS) * 100);
+        progBar.style.width = pct + "%";
+      }
+      progressRaf = requestAnimationFrame(tickProgress);
+    }
+
+    /* ── Play/Pause ──────────────────────────────────────────────────── */
+    function togglePlay() {
+      playing = !playing;
+      btnPlay.innerHTML = playing ? "&#10074;&#10074;" : "&#9654;";
+      if (playing) {
+        sceneStart = performance.now() - (parseFloat(progBar.style.width) / 100) * SCENE_MS;
+        scheduleNext();
+      } else {
+        clearTimeout(timerId);
+      }
+    }
+
+    /* ── Controls ────────────────────────────────────────────────────── */
+    document.getElementById("btn-prev").addEventListener("click", () => goTo(currentScene - 1, true));
+    document.getElementById("btn-next").addEventListener("click", () => goTo(currentScene + 1, true));
+    btnPlay.addEventListener("click", togglePlay);
+
+    /* ── Keyboard nav ────────────────────────────────────────────────── */
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") goTo(currentScene + 1, true);
+      if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   goTo(currentScene - 1, true);
+      if (e.key === " " || e.key === "k") { e.preventDefault(); togglePlay(); }
+    });
+
+    /* ── Boot first scene ────────────────────────────────────────────── */
+    stages[0].classList.add("active");
+    scheduleNext();
+    tickProgress();
+
+    /* ══════════════════════════════════════════════════════════════════
+       BACKGROUND CANVAS — animated particle / circuit field
+    ══════════════════════════════════════════════════════════════════ */
+    const canvas = document.getElementById("bg-canvas");
+    const ctx    = canvas.getContext("2d");
+
+    let W, H;
+    const MAX_PARTICLES = 220;
+    const particles     = [];
+    const NODE_COUNT    = 28;
+    const nodes         = [];
+    let   globalTime    = 0;
+
+    /* ── Resize ─────────────────────────────────────────────────────── */
+    function resize() {
+      W = canvas.width  = window.innerWidth  * (window.devicePixelRatio || 1);
+      H = canvas.height = window.innerHeight * (window.devicePixelRatio || 1);
+      canvas.style.width  = window.innerWidth  + "px";
+      canvas.style.height = window.innerHeight + "px";
+      buildNodes();
+    }
+    window.addEventListener("resize", resize);
+
+    /* ── Circuit nodes ───────────────────────────────────────────────── */
+    function buildNodes() {
+      nodes.length = 0;
+      for (let i = 0; i < NODE_COUNT; i++) {
+        nodes.push({
+          x:  Math.random() * W,
+          y:  Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: (Math.random() - 0.5) * 0.18,
+          r:  Math.random() * 3 + 1.5,
+          phase: Math.random() * Math.PI * 2,
+          color: [
+            "rgba(136,204,255,",
+            "rgba(0,255,136,",
+            "rgba(255,136,68,",
+            "rgba(192,132,252,",
+          ][Math.floor(Math.random() * 4)],
+        });
+      }
+    }
+
+    /* ── Flow particles ──────────────────────────────────────────────── */
+    function spawnParticle(fromNode, toNode) {
+      if (particles.length >= MAX_PARTICLES) return;
+      particles.push({
+        x: fromNode.x,
+        y: fromNode.y,
+        tx: toNode.x,
+        ty: toNode.y,
+        t: 0,
+        speed: Math.random() * 0.012 + 0.006,
+        size:  Math.random() * 2.5 + 1,
+        color: fromNode.color,
+        trail: [],
+      });
+    }
+
+    /* ── Render loop ─────────────────────────────────────────────────── */
+    function draw() {
+      globalTime += 0.008;
+
+      ctx.clearRect(0, 0, W, H);
+
+      /* Gradient background */
+      const grad = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, W * 0.75);
+      grad.addColorStop(0,   "rgba(15,30,80,0.55)");
+      grad.addColorStop(0.5, "rgba(4,10,30,0.65)");
+      grad.addColorStop(1,   "rgba(3,7,22,0.8)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      /* Move nodes */
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      });
+
+      /* Draw edges between nearby nodes */
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > W * 0.28) continue;
+          const alpha = (1 - dist / (W * 0.28)) * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+
+          /* Orthogonal "circuit trace" routing */
+          const mx = nodes[i].x;
+          const my = nodes[j].y;
+          ctx.lineTo(mx, my);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = nodes[i].color + alpha + ")";
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+
+          /* Occasionally spawn a flow particle */
+          if (Math.random() < 0.0015) spawnParticle(nodes[i], nodes[j]);
+        }
+      }
+
+      /* Draw nodes */
+      nodes.forEach(n => {
+        const pulse = 0.6 + 0.4 * Math.sin(globalTime * 1.8 + n.phase);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + (0.55 * pulse) + ")";
+        ctx.fill();
+        /* Glow ring */
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse * 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = n.color + (0.06 * pulse) + ")";
+        ctx.fill();
+      });
+
+      /* Move & draw flow particles */
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.t += p.speed;
+        if (p.t >= 1) { particles.splice(i, 1); continue; }
+
+        /* Lerp along the two-segment orthogonal trace:
+           first half = vertical move (x stays at p.x, y moves toward p.ty),
+           second half = horizontal move (y stays at p.ty, x moves toward p.tx) */
+        let px, py;
+        if (p.t < 0.5) {
+          const t2 = p.t * 2;
+          px = p.x;
+          py = p.y + (p.ty - p.y) * t2;
+        } else {
+          const t2 = (p.t - 0.5) * 2;
+          px = p.x + (p.tx - p.x) * t2;
+          py = p.ty;
+        }
+
+        p.trail.push({ x: px, y: py });
+        if (p.trail.length > 10) p.trail.shift();
+
+        /* Draw trail */
+        p.trail.forEach((pt, ti) => {
+          const a = (ti / p.trail.length) * 0.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, p.size * (ti / p.trail.length), 0, Math.PI * 2);
+          ctx.fillStyle = p.color + a + ")";
+          ctx.fill();
+        });
+
+        /* Draw head */
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + "0.9)";
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+  })();
+  </script>
+</body>
+</html>
