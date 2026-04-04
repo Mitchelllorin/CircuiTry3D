@@ -99,13 +99,24 @@ async function smoothZoomOut(page, steps = 6, delayMs = 150) {
  * Dismisses any initial overlay via Escape.
  */
 async function openBuilder(page) {
+  // Mark the tutorial as already seen so maybeAutoShowTutorial() never shows
+  // the Quick Start Guide modal.  A fresh Playwright context has no localStorage,
+  // which normally triggers the modal — blocking every scene from being recorded.
+  await page.addInitScript(() => {
+    try { localStorage.setItem('circuitry3d_tutorial_seen', '1'); } catch (_) {}
+  });
+
   const url = `${BASE_URL}/legacy.html`;
   await page.goto(url, { waitUntil: 'networkidle', timeout: 45_000 });
   await page.waitForSelector('canvas', { timeout: 20_000 });
   // Extra settle time for THREE.js / WebGL initialisation
   await page.waitForTimeout(2500);
-  // Dismiss any tutorial/splash overlay
-  await page.keyboard.press('Escape').catch(() => {});
+  // Belt-and-suspenders: dismiss the tutorial modal if it appeared anyway
+  await page.evaluate(() => {
+    try { if (typeof dismissTutorial === 'function') dismissTutorial(); } catch (_) {}
+    const backdrop = document.getElementById('tutorial-backdrop');
+    if (backdrop) backdrop.classList.remove('visible');
+  }).catch(() => {});
   await page.waitForTimeout(400);
 }
 
