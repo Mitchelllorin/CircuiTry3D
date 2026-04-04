@@ -89,7 +89,7 @@ jobs:
             | **Commit** | \`${{ github.event.pull_request.head.sha }}\` |
 
             > This preview is protected by Vercel Deployment Protection.
-            > Only authorised team members can access it.`;
+            > Only authorized team members can access it.`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
