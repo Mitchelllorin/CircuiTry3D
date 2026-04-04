@@ -4,6 +4,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "env": {
-    "VITE_DEMO_MODE": "true"
+    "VITE_DEMO_MODE": "true",
+    "VITE_DEMO_APP_URL": ""
   }
 }
