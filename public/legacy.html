@@ -11512,29 +11512,30 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        const COMPONENT_FRIENDLY_NAMES = {
+            'bjt': 'BJT',
+            'bjt-npn': 'NPN Transistor',
+            'bjt-pnp': 'PNP Transistor',
+            'mosfet': 'MOSFET',
+            'led': 'LED',
+            'ac_source': 'AC Source',
+            'zener-diode': 'Zener Diode',
+            'photodiode': 'Photodiode',
+            'capacitor-ceramic': 'Ceramic Cap',
+            'darlington': 'Darlington Pair',
+            'opamp': 'Op-Amp',
+            'voltage-regulator': 'Voltage Reg.',
+        };
+
         function getComponentFriendlyName(entity) {
             if (!entity) {
                 return 'component';
             }
 
             if (entity.type) {
-                const nameMap = {
-                    'bjt': 'BJT',
-                    'bjt-npn': 'NPN Transistor',
-                    'bjt-pnp': 'PNP Transistor',
-                    'mosfet': 'MOSFET',
-                    'led': 'LED',
-                    'ac_source': 'AC Source',
-                    'zener-diode': 'Zener Diode',
-                    'photodiode': 'Photodiode',
-                    'capacitor-ceramic': 'Ceramic Cap',
-                    'darlington': 'Darlington Pair',
-                    'opamp': 'Op-Amp',
-                    'voltage-regulator': 'Voltage Reg.',
-                };
                 const type = String(entity.type);
-                if (nameMap[type]) {
-                    return nameMap[type];
+                if (COMPONENT_FRIENDLY_NAMES[type]) {
+                    return COMPONENT_FRIENDLY_NAMES[type];
                 }
                 return type.charAt(0).toUpperCase() + type.slice(1);
             }
@@ -11546,43 +11547,43 @@ body.android-optimized .zoom-btn {
             return 'component';
         }
 
+        const COMPONENT_DESCRIPTIONS = {
+            'battery': 'Provides DC voltage to power circuits. Pushes electrons through the circuit via chemical energy.',
+            'resistor': 'Limits current flow and drops voltage. Dissipates energy as heat — fundamental to Ohm\'s law.',
+            'led': 'Light Emitting Diode — glows when current flows in the correct forward direction.',
+            'switch': 'Opens or closes the circuit path on demand. Controls when current can flow through.',
+            'capacitor': 'Stores electrical charge temporarily. Blocks DC, passes AC — used for filtering and timing.',
+            'capacitor-ceramic': 'Non-polarized ceramic disc capacitor. Small value, used for decoupling and high-frequency filtering.',
+            'inductor': 'Resists changes in current using a magnetic field. Stores energy magnetically — used in filters and oscillators.',
+            'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve (anode → cathode).',
+            'zener-diode': 'Conducts in reverse at a precise breakdown voltage. Used for voltage regulation and reference.',
+            'photodiode': 'Generates current proportional to incident light. Used in light sensing, optical communication, and solar cells.',
+            'thermistor': 'Resistance changes with temperature (NTC = decreases, PTC = increases). Used for temperature sensing.',
+            'crystal': 'Piezoelectric quartz resonator with very precise frequency. Used as timing reference in oscillators and microcontrollers.',
+            'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal (current-controlled).',
+            'bjt-npn': 'NPN transistor — conducts when base is driven positive. Collector to emitter when base signal is applied.',
+            'bjt-pnp': 'PNP transistor — conducts when base is driven negative. Emitter to collector when base signal is removed.',
+            'darlington': 'Two cascaded BJTs for very high current gain (β²). Used to drive heavy loads from weak control signals.',
+            'mosfet': 'Voltage-controlled transistor. Gate voltage controls drain-source channel — used for power switching.',
+            'fuse': 'Overcurrent protection device. Wire melts and breaks the circuit if current exceeds the rated amperage.',
+            'potentiometer': 'Variable resistor with adjustable wiper. Used for volume, brightness, position, and tuning control.',
+            'lamp': 'Incandescent bulb — converts electrical energy to light and heat. Visual indicator or load element.',
+            'ground': 'Circuit reference point at 0 V. Provides the return path for current and a common reference for voltage.',
+            'ac_source': 'Alternating current source — voltage oscillates sinusoidally at a set frequency (e.g., 60 Hz mains).',
+            'motor': 'DC motor — converts electrical energy to mechanical rotation. Speed proportional to applied voltage.',
+            'speaker': 'Converts electrical signals to sound via a magnetic coil and paper cone. Used for audio output.',
+            'opamp': 'High-gain differential amplifier IC. Used for amplification, filtering, comparators, and signal processing.',
+            'transformer': 'Couples AC between primary and secondary coils to step voltage up or down via magnetic induction.',
+            'relay': 'Electromagnetic switch — coil current creates a magnetic field that opens or closes contact terminals.',
+            'voltage-regulator': 'Three-terminal IC that maintains a fixed output voltage regardless of input fluctuations or load.',
+        };
+
         function getComponentDescription(entity) {
             if (!entity || !entity.type) {
                 return '';
             }
 
-            const descriptions = {
-                'battery': 'Provides DC voltage to power circuits. Pushes electrons through the circuit via chemical energy.',
-                'resistor': 'Limits current flow and drops voltage. Dissipates energy as heat — fundamental to Ohm\'s law.',
-                'led': 'Light Emitting Diode — glows when current flows in the correct forward direction.',
-                'switch': 'Opens or closes the circuit path on demand. Controls when current can flow through.',
-                'capacitor': 'Stores electrical charge temporarily. Blocks DC, passes AC — used for filtering and timing.',
-                'capacitor-ceramic': 'Non-polarized ceramic disc capacitor. Small value, used for decoupling and high-frequency filtering.',
-                'inductor': 'Resists changes in current using a magnetic field. Stores energy magnetically — used in filters and oscillators.',
-                'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve (anode → cathode).',
-                'zener-diode': 'Conducts in reverse at a precise breakdown voltage. Used for voltage regulation and reference.',
-                'photodiode': 'Generates current proportional to incident light. Used in light sensing, optical communication, and solar cells.',
-                'thermistor': 'Resistance changes with temperature (NTC = decreases, PTC = increases). Used for temperature sensing.',
-                'crystal': 'Piezoelectric quartz resonator with very precise frequency. Used as timing reference in oscillators and microcontrollers.',
-                'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal (current-controlled).',
-                'bjt-npn': 'NPN transistor — conducts when base is driven positive. Collector to emitter when base signal is applied.',
-                'bjt-pnp': 'PNP transistor — conducts when base is driven negative. Emitter to collector when base signal is removed.',
-                'darlington': 'Two cascaded BJTs for very high current gain (β²). Used to drive heavy loads from weak control signals.',
-                'mosfet': 'Voltage-controlled transistor. Gate voltage controls drain-source channel — used for power switching.',
-                'fuse': 'Overcurrent protection device. Wire melts and breaks the circuit if current exceeds the rated amperage.',
-                'potentiometer': 'Variable resistor with adjustable wiper. Used for volume, brightness, position, and tuning control.',
-                'lamp': 'Incandescent bulb — converts electrical energy to light and heat. Visual indicator or load element.',
-                'ground': 'Circuit reference point at 0 V. Provides the return path for current and a common reference for voltage.',
-                'ac_source': 'Alternating current source — voltage oscillates sinusoidally at a set frequency (e.g., 60 Hz mains).',
-                'motor': 'DC motor — converts electrical energy to mechanical rotation. Speed proportional to applied voltage.',
-                'speaker': 'Converts electrical signals to sound via a magnetic coil and paper cone. Used for audio output.',
-                'opamp': 'High-gain differential amplifier IC. Used for amplification, filtering, comparators, and signal processing.',
-                'transformer': 'Couples AC between primary and secondary coils to step voltage up or down via magnetic induction.',
-                'relay': 'Electromagnetic switch — coil current creates a magnetic field that opens or closes contact terminals.',
-                'voltage-regulator': 'Three-terminal IC that maintains a fixed output voltage regardless of input fluctuations or load.',
-            };
-
-            return descriptions[entity.type] || '';
+            return COMPONENT_DESCRIPTIONS[entity.type] || '';
         }
 
         function handleGroundClick(clientX, clientY) {

@@ -1455,7 +1455,7 @@ export const RelaySymbol: FC<SchematicSymbolProps> = ({
       {/* Coil body rectangle */}
       <rect x="-16" y="-10" width="32" height="20" rx="2" stroke={color} strokeWidth={strokeWidth * 0.8} fill="none" />
       {/* Coil winding loops inside */}
-      {([-8, -2, 4, 10] as number[]).map((cx) => (
+      {([-8, -2, 4, 10]).map((cx) => (
         <ellipse key={cx} cx={cx} cy="0" rx="3.5" ry="6" stroke={color} strokeWidth={strokeWidth * 0.55} fill="none" />
       ))}
       {/* Contact switch arm above coil */}
