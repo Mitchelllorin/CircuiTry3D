@@ -775,10 +775,409 @@
     .partner-cta-link:hover {
       color: #7fffd4;
     }
+
+/* ── Panel Tabs ──────────────────────────────────────────────────────── */
+.panel-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 2px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.15);
+  padding-bottom: 8px;
+}
+.panel-tab-btn {
+  flex: 1;
+  padding: 5px 4px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.65);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.panel-tab-btn.active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+.panel-tab-btn:hover:not(.active) {
+  background: rgba(56, 189, 248, 0.06);
+  color: rgba(224, 242, 254, 0.85);
+}
+.panel-tab-pane {
+  display: none;
+}
+.panel-tab-pane.active {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Drop Zone ─────────────────────────────────────────────────────── */
+.import-dropzone {
+  border: 2px dashed rgba(136, 204, 255, 0.35);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  background: rgba(8, 15, 28, 0.4);
+  position: relative;
+}
+.import-dropzone.drag-over {
+  border-color: rgba(57, 255, 183, 0.7);
+  background: rgba(5, 30, 22, 0.45);
+}
+.import-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.import-dropzone-label {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+  pointer-events: none;
+}
+.import-dropzone-label strong {
+  color: #7dd3fc;
+}
+.import-url-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.import-url-row input {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  background: rgba(8, 15, 28, 0.92);
+  color: var(--text-strong);
+  font-size: 12px;
+}
+.import-url-btn {
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(14, 116, 144, 0.2);
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.import-url-btn:hover { background: rgba(14, 116, 144, 0.38); }
+.import-paste-area {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  background: rgba(8, 15, 28, 0.92);
+  color: var(--text-strong);
+  font-size: 11px;
+  font-family: "Inter", monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.import-validation-summary {
+  font-size: 11px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(136, 204, 255, 0.2);
+  background: rgba(12, 22, 42, 0.65);
+  color: rgba(148, 163, 184, 0.9);
+  display: none;
+}
+.import-validation-summary.visible { display: block; }
+.import-validation-summary.ok { border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; }
+.import-validation-summary.warn { border-color: rgba(251, 146, 60, 0.4); color: #fed7aa; }
+
+/* Vendor badge colors */
+.vendor-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.vendor-ti { background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220,38,38,0.4); color: #fca5a5; }
+.vendor-infineon { background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6,182,212,0.4); color: #67e8f9; }
+.vendor-stmicro { background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59,130,246,0.4); color: #93c5fd; }
+.vendor-vishay { background: rgba(250, 204, 21, 0.2); border: 1px solid rgba(250,204,21,0.4); color: #fde68a; }
+.vendor-murata { background: rgba(167, 139, 250, 0.2); border: 1px solid rgba(167,139,250,0.4); color: #c4b5fd; }
+.vendor-onsemi { background: rgba(52, 211, 153, 0.2); border: 1px solid rgba(52,211,153,0.4); color: #6ee7b7; }
+.vendor-ref { background: rgba(100, 116, 139, 0.2); border: 1px solid rgba(100,116,139,0.4); color: #94a3b8; }
+
+/* ── Metric card health colors ───────────────────────────────────────── */
+.metric-card.health-safe .metric-value { color: #4ade80; }
+.metric-card.health-warn .metric-value { color: #fbbf24; }
+.metric-card.health-critical .metric-value { color: #f87171; }
+.metric-card.health-safe { border-color: rgba(74, 222, 128, 0.4); }
+.metric-card.health-warn { border-color: rgba(251, 191, 36, 0.4); }
+.metric-card.health-critical { border-color: rgba(248, 113, 113, 0.4); }
+
+/* Abs max exceeded banner */
+.abs-max-banner {
+  display: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.abs-max-banner.visible { display: block; }
+
+/* Tolerance range sub-line */
+.metric-tolerance {
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.6);
+  font-style: italic;
+}
+
+/* ── FUSE Test Presets ───────────────────────────────────────────────── */
+.preset-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.preset-row label {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.preset-row select {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 9px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  background: rgba(8, 15, 28, 0.92);
+  color: var(--text-strong);
+  font-size: 12px;
+}
+.preset-locked .row input {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ── Stress Timeline Strip ───────────────────────────────────────────── */
+.stress-timeline {
+  position: fixed;
+  bottom: calc(12px + var(--safe-bottom));
+  left: calc(360px + var(--safe-left) + 16px);
+  right: calc(16px + var(--safe-right));
+  height: 76px;
+  background: rgba(8, 12, 24, 0.82);
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 12px;
+  backdrop-filter: blur(14px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px 6px;
+  gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.stress-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.stress-timeline-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.75);
+}
+.stress-timeline-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.stress-ctrl-btn {
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(12, 22, 42, 0.5);
+  color: #7dd3fc;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.stress-ctrl-btn:hover { background: rgba(14, 116, 144, 0.3); }
+.stress-timeline-canvas {
+  flex: 1;
+  width: 100%;
+  cursor: crosshair;
+  border-radius: 6px;
+  display: block;
+}
+
+/* ── Fuse Sizing Calculator ─────────────────────────────────────────── */
+.fuse-calc {
+  background: rgba(8, 15, 28, 0.55);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fuse-calc-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fde68a;
+}
+.fuse-calc-result {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  font-size: 12px;
+  color: #fde68a;
+  min-height: 36px;
+}
+.fuse-wire-coord {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(8, 15, 28, 0.5);
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.9);
+  min-height: 28px;
+}
+
+/* ── Mobile bottom sheet ─────────────────────────────────────────────── */
+@media (max-width: 700px), (pointer: coarse) {
+  .panel {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 55vh !important;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    transform: translateY(calc(100% - 52px));
+    transition: transform 0.32s cubic-bezier(0.32, 0, 0.67, 0);
+    padding-top: 10px;
+  }
+  .panel.sheet-open {
+    transform: translateY(0);
+  }
+  .panel-drag-handle {
+    display: block;
+  }
+  .stress-timeline {
+    left: 8px;
+    right: 8px;
+    bottom: calc(60px + var(--safe-bottom));
+  }
+}
+.panel-drag-handle {
+  display: none;
+  width: 40px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(136, 204, 255, 0.3);
+  margin: 0 auto 8px;
+  cursor: grab;
+  flex-shrink: 0;
+}
+/* Panel resize handle (desktop) */
+.panel-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  width: 10px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+}
+
+/* ── Catalog browser (Featured/Catalog tab) ──────────────────────────── */
+.catalog-search-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.catalog-search-input {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  background: rgba(8, 15, 28, 0.92);
+  color: var(--text-strong);
+  font-size: 12px;
+}
+.catalog-pagination {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.catalog-page-btn {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(12, 22, 42, 0.5);
+  color: #7dd3fc;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.catalog-page-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* ── FUSE Report ─────────────────────────────────────────────────────── */
+.fuse-report-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fuse-report-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(251, 146, 60, 0.45);
+  background: rgba(124, 45, 18, 0.2);
+  color: #fed7aa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+.fuse-report-btn:hover { background: rgba(124, 45, 18, 0.38); border-color: rgba(251, 146, 60, 0.7); }
   </style>
 </head>
 <body>
-  <header class="arena-header">
+  <header class="arena-header" id="arena-header">
     <div class="arena-brand" aria-label="CircuiTry3D">
       <span class="arena-brand-green">Circui</span>
       <span class="arena-brand-orange">Try</span>
@@ -794,126 +1193,231 @@
       <a class="arena-nav-btn" href="/#/account" target="_top">Account</a>
     </nav>
   </header>
-  <div class="hud">
-    <button class="btn" id="btn-reset" data-command="reset">Reset</button>
-    <button class="btn" id="btn-run" data-command="run-test">Run Test</button>
-    <button class="btn" id="btn-export" data-command="export">Export Results</button>
-    <button class="btn" id="btn-import-builder">Load Builder Export</button>
-    <label class="btn file-btn">
-      Import JSON
-      <input type="file" id="input-import-json" accept="application/json" />
-    </label>
+  <div class="hud" role="toolbar" aria-label="Arena controls">
+    <button class="btn" id="btn-reset" data-command="reset" aria-label="Reset arena">Reset</button>
+    <button class="btn" id="btn-run" data-command="run-test" aria-label="Run simulation test">Run Test</button>
+    <button class="btn" id="btn-export" data-command="export" aria-label="Export metrics JSON">Export</button>
+    <button class="btn" id="btn-import-builder" aria-label="Load latest builder export">Builder Sync</button>
+    <button class="btn" id="btn-show-timeline" aria-label="Show stress timeline">Timeline</button>
   </div>
-  <div class="panel">
+  <div class="panel" id="arena-panel">
+    <div class="panel-drag-handle" id="panel-drag-handle" role="button" aria-label="Resize panel" tabindex="0"></div>
+    <div class="panel-resize-handle" id="panel-resize-handle" aria-hidden="true"></div>
+    <!-- Tab bar -->
+    <div class="panel-tabs" role="tablist" aria-label="Arena panel tabs">
+      <button class="panel-tab-btn active" data-tab="components" role="tab" aria-selected="true" aria-controls="tab-components">📦 Parts</button>
+      <button class="panel-tab-btn" data-tab="test" role="tab" aria-selected="false" aria-controls="tab-test">⚙️ Test</button>
+      <button class="panel-tab-btn" data-tab="metrics" role="tab" aria-selected="false" aria-controls="tab-metrics">📊 Metrics</button>
+      <button class="panel-tab-btn" data-tab="fuse" role="tab" aria-selected="false" aria-controls="tab-fuse">🔥 FUSE</button>
+      <button class="panel-tab-btn" data-tab="composition" role="tab" aria-selected="false" aria-controls="tab-composition">⚛️ Matter</button>
+    </div>
     <div class="panel-scroll">
-      <section class="panel-section">
-        <div class="panel-header">
-          <div class="section-heading">Import Sources</div>
-          <button class="chip-btn" id="reload-import" type="button">Reload</button>
-        </div>
-        <div id="import-status" class="import-status panel-subtext"></div>
-        <div class="import-tags" id="import-tags"></div>
-        <div class="row">
-          <label for="mode">Mode</label>
-          <select id="mode">
-            <option value="single">Single Component</option>
-            <option value="compare">Compare (A vs B)</option>
-          </select>
-        </div>
-      </section>
-      <section class="panel-section" id="component-summary-section">
-        <div class="section-heading">Component Summary</div>
-        <ul class="summary-list" id="component-summary"></ul>
-      </section>
-      <section class="panel-section">
-        <div class="section-heading">Component Selection</div>
-        <div class="row">
-          <label for="component-a">Component A</label>
-          <select id="component-a"></select>
-        </div>
-        <div class="row compare-only">
-          <label for="component-b">Component B</label>
-          <select id="component-b"></select>
-        </div>
-      </section>
-      <section class="panel-section">
-        <div class="section-heading">Test Variables</div>
-        <div class="row">
-          <label for="input-voltage">Voltage (V)</label>
-          <input id="input-voltage" type="number" value="5" step="0.1" />
-        </div>
-        <div class="row">
-          <label for="input-frequency">Frequency (Hz)</label>
-          <input id="input-frequency" type="number" value="1000" step="1" />
-        </div>
-        <div class="row">
-          <label for="input-temperature">Ambient Temp (C)</label>
-          <input id="input-temperature" type="number" value="25" step="1" />
-        </div>
-        <div class="row">
-          <label for="input-humidity">Humidity (%)</label>
-          <input id="input-humidity" type="number" value="45" step="1" />
-        </div>
-        <div class="row">
-          <label for="input-duty">Duty Cycle (%)</label>
-          <input id="input-duty" type="number" value="100" step="1" />
-        </div>
-        <div class="row">
-          <label for="input-duration">Duration (s)</label>
-          <input id="input-duration" type="number" value="60" step="1" />
-        </div>
-        <div class="row">
-          <label for="input-load">Load Impedance (Ohm)</label>
-          <input id="input-load" type="number" value="100" step="1" />
-        </div>
-      </section>
-      <section class="panel-section">
-        <div class="section-heading">Metrics ? Component A</div>
-        <div id="metrics-a" class="metric-grid"></div>
-      </section>
-      <section class="panel-section compare-only">
-        <div class="section-heading">Metrics ? Component B</div>
-        <div id="metrics-b" class="metric-grid"></div>
-      </section>
-      <section class="panel-section compare-only">
-        <div class="section-heading">Relative Delta</div>
-        <div id="metrics-delta" class="metric-grid"></div>
-      </section>
-      <section class="panel-section">
-        <div class="section-heading">FUSE™ Analysis — A</div>
-        <div class="failure-analysis" id="failure-a"></div>
-      </section>
-      <section class="panel-section compare-only">
-        <div class="section-heading">FUSE™ Analysis — B</div>
-        <div class="failure-analysis" id="failure-b"></div>
-      </section>
-      <section class="panel-section" id="composition-section">
-        <div class="panel-header">
-          <div class="section-heading">⚛ Component Composition</div>
-          <button class="chip-btn composition-cutaway-btn" id="btn-cutaway" type="button" title="Toggle cutaway 3D view showing internal structure">🔬 Cutaway</button>
-        </div>
-        <div id="composition-a"></div>
-      </section>
-      <section class="panel-section">
-        <div class="section-heading">Status</div>
-        <div class="stat" id="stat-out">Ready.</div>
-      </section>
-      <section class="panel-section" id="featured-section">
-        <div class="panel-header">
-          <div class="section-heading">Featured Components</div>
-          <span class="chip-btn" style="cursor:default;pointer-events:none;">Real-World Specs</span>
-        </div>
-        <p class="panel-subtext">Test against real manufacturer datasheets. Click any card to load it into Component A.</p>
-        <div class="featured-component-grid" id="featured-component-grid">
-          <!-- Cards injected by script below -->
-        </div>
-        <div class="partner-cta">
-          <span class="partner-cta-text">Have a component you'd like featured here?</span>
-          <a class="partner-cta-link" href="/#/partnerships" target="_top">Partner with us →</a>
-        </div>
-      </section>
-    </div>
-    </div>
+
+      <!-- ── Tab: Components ─────────────────────────── -->
+      <div class="panel-tab-pane active" id="tab-components" role="tabpanel">
+        <section class="panel-section">
+          <div class="panel-header">
+            <div class="section-heading">Import Sources</div>
+            <button class="chip-btn" id="reload-import" type="button" aria-label="Reload builder snapshot">Reload</button>
+          </div>
+          <div id="import-status" class="import-status panel-subtext" aria-live="polite"></div>
+          <div class="import-tags" id="import-tags" aria-label="Imported component sources"></div>
+
+          <!-- Drop zone -->
+          <div class="import-dropzone" id="import-dropzone" role="button" aria-label="Drop JSON file here or click to browse">
+            <input type="file" id="input-import-json" accept="application/json" aria-label="Import JSON file" />
+            <div class="import-dropzone-label">
+              <strong>Drop JSON</strong> here or click to browse<br>
+              <span style="font-size:10px;opacity:0.7">ManufacturerCatalog or Builder export</span>
+            </div>
+          </div>
+
+          <!-- URL import -->
+          <div class="import-url-row">
+            <input type="url" id="import-url-input" class="import-url-row input" placeholder="https://…/catalog.json" aria-label="Catalog URL" />
+            <button class="import-url-btn" id="import-url-btn" aria-label="Fetch catalog from URL">Fetch</button>
+          </div>
+
+          <!-- Paste JSON -->
+          <details style="margin-top:2px;">
+            <summary style="font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;">Paste JSON ▸</summary>
+            <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
+              <textarea id="import-paste-area" class="import-paste-area" placeholder='[{"partNumber":"…","manufacturer":"…","type":"…","name":"…","properties":{}}]' aria-label="Paste component JSON"></textarea>
+              <button class="chip-btn" id="import-paste-btn" aria-label="Apply pasted JSON">Apply Paste</button>
+            </div>
+          </details>
+
+          <div id="import-validation-summary" class="import-validation-summary" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="panel-section" id="component-summary-section">
+          <div class="section-heading">Component Summary</div>
+          <ul class="summary-list" id="component-summary" aria-label="Loaded components"></ul>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-heading">Component Selection</div>
+          <div class="row">
+            <label for="mode">Mode</label>
+            <select id="mode" aria-label="Test mode">
+              <option value="single">Single Component</option>
+              <option value="compare">Compare (A vs B)</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="component-a">Component A</label>
+            <select id="component-a" aria-label="Component A"></select>
+          </div>
+          <div class="row compare-only">
+            <label for="component-b">Component B</label>
+            <select id="component-b" aria-label="Component B"></select>
+          </div>
+        </section>
+
+        <!-- Catalog browser -->
+        <section class="panel-section" id="featured-section">
+          <div class="panel-header">
+            <div class="section-heading">Featured Components</div>
+            <span class="chip-btn" style="cursor:default;pointer-events:none;">Real-World Specs</span>
+          </div>
+          <div class="catalog-search-row">
+            <input type="search" id="catalog-search" class="catalog-search-input" placeholder="Search parts or manufacturer…" aria-label="Search catalog" />
+          </div>
+          <div class="featured-component-grid" id="featured-component-grid" role="list" aria-label="Featured components"></div>
+          <div class="catalog-pagination">
+            <button class="catalog-page-btn" id="catalog-prev" aria-label="Previous page" disabled>‹</button>
+            <span id="catalog-page-info">1 / 1</span>
+            <button class="catalog-page-btn" id="catalog-next" aria-label="Next page" disabled>›</button>
+          </div>
+          <div class="partner-cta">
+            <span class="partner-cta-text">Have a component you'd like featured here?</span>
+            <a class="partner-cta-link" href="/#/partnerships" target="_top">Partner with us →</a>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div id="stat-out" class="stat" role="status" aria-live="polite" aria-atomic="true">Ready.</div>
+        </section>
+      </div>
+
+      <!-- ── Tab: Test Setup ─────────────────────────── -->
+      <div class="panel-tab-pane" id="tab-test" role="tabpanel">
+        <section class="panel-section">
+          <div class="section-heading">Test Preset</div>
+          <div class="preset-row">
+            <label for="test-preset">Preset</label>
+            <select id="test-preset" aria-label="Test preset">
+              <option value="custom">Custom</option>
+              <option value="iec60127">IEC 60127 (Fuse)</option>
+              <option value="ul248">UL 248 (Fuse coordination)</option>
+              <option value="thermal-stress">Thermal Stress Ramp</option>
+              <option value="surge-current">Surge Current (10×)</option>
+              <option value="continuous">Continuous Operation</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="panel-section" id="test-variables-section">
+          <div class="section-heading">Test Variables</div>
+          <div class="row">
+            <label for="input-voltage">Voltage (V)</label>
+            <input id="input-voltage" type="number" value="5" step="0.1" aria-label="Test voltage in volts" />
+          </div>
+          <div class="row">
+            <label for="input-frequency">Frequency (Hz)</label>
+            <input id="input-frequency" type="number" value="1000" step="1" aria-label="Test frequency in hertz" />
+          </div>
+          <div class="row">
+            <label for="input-temperature">Ambient Temperature (°C)</label>
+            <input id="input-temperature" type="number" value="25" step="1" aria-label="Ambient temperature in Celsius" />
+          </div>
+          <div class="row">
+            <label for="input-humidity">Humidity (%)</label>
+            <input id="input-humidity" type="number" value="45" step="1" aria-label="Humidity percentage" />
+          </div>
+          <div class="row">
+            <label for="input-duty">Duty Cycle (%)</label>
+            <input id="input-duty" type="number" value="100" step="1" aria-label="Duty cycle percentage" />
+          </div>
+          <div class="row">
+            <label for="input-duration">Duration (s)</label>
+            <input id="input-duration" type="number" value="60" step="1" aria-label="Test duration in seconds" />
+          </div>
+          <div class="row">
+            <label for="input-load">Load Impedance (Ohms)</label>
+            <input id="input-load" type="number" value="100" step="1" aria-label="Load impedance in ohms" />
+          </div>
+        </section>
+
+        <!-- Fuse sizing calculator -->
+        <section class="panel-section">
+          <div class="fuse-calc">
+            <div class="fuse-calc-title">⚡ Fuse Sizing Calculator</div>
+            <div class="row">
+              <label for="fuse-calc-load" style="width:120px;font-size:12px;">Load Current (A)</label>
+              <input id="fuse-calc-load" type="number" value="1" step="0.1" min="0" aria-label="Load current for fuse sizing" style="flex:1;padding:7px 8px;border-radius:9px;border:1px solid rgba(51,65,85,0.9);background:rgba(8,15,28,0.92);color:var(--text-strong);font-size:13px;" />
+            </div>
+            <div class="row">
+              <label for="fuse-calc-inrush" style="width:120px;font-size:12px;">Inrush Factor (×)</label>
+              <input id="fuse-calc-inrush" type="number" value="3" step="0.5" min="1" aria-label="Inrush current factor" style="flex:1;padding:7px 8px;border-radius:9px;border:1px solid rgba(51,65,85,0.9);background:rgba(8,15,28,0.92);color:var(--text-strong);font-size:13px;" />
+            </div>
+            <button class="chip-btn" id="fuse-calc-btn" aria-label="Calculate recommended fuse rating">Calculate</button>
+            <div class="fuse-calc-result" id="fuse-calc-result" aria-live="polite" aria-atomic="true">Enter load current and click Calculate.</div>
+            <div class="fuse-wire-coord" id="fuse-wire-coord" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ── Tab: Metrics ────────────────────────────── -->
+      <div class="panel-tab-pane" id="tab-metrics" role="tabpanel">
+        <section class="panel-section">
+          <div class="section-heading">Component A — Metrics</div>
+          <div class="abs-max-banner" id="abs-max-banner-a" role="alert">⚠ Absolute Maximum Rating exceeded</div>
+          <div id="metrics-a" class="metric-grid" aria-live="polite" aria-label="Component A metrics"></div>
+        </section>
+        <section class="panel-section compare-only">
+          <div class="section-heading">Component B — Metrics</div>
+          <div class="abs-max-banner" id="abs-max-banner-b" role="alert">⚠ Absolute Maximum Rating exceeded</div>
+          <div id="metrics-b" class="metric-grid" aria-live="polite" aria-label="Component B metrics"></div>
+        </section>
+        <section class="panel-section compare-only">
+          <div class="section-heading">Relative Delta</div>
+          <div id="metrics-delta" class="metric-grid" aria-live="polite" aria-label="Delta metrics A vs B"></div>
+        </section>
+      </div>
+
+      <!-- ── Tab: FUSE ───────────────────────────────── -->
+      <div class="panel-tab-pane" id="tab-fuse" role="tabpanel">
+        <section class="panel-section">
+          <div class="section-heading">FUSE™ Analysis — A</div>
+          <div class="failure-analysis" id="failure-a" aria-live="polite" aria-label="FUSE analysis component A"></div>
+        </section>
+        <section class="panel-section compare-only">
+          <div class="section-heading">FUSE™ Analysis — B</div>
+          <div class="failure-analysis" id="failure-b" aria-live="polite" aria-label="FUSE analysis component B"></div>
+        </section>
+        <section class="panel-section">
+          <div class="section-heading">Export Report</div>
+          <div class="fuse-report-actions">
+            <button class="fuse-report-btn" id="btn-export-fuse" aria-label="Export FUSE report as JSON">⬇ FUSE Report v2.0</button>
+          </div>
+          <p class="panel-subtext" style="margin-top:4px;">Exports structured FUSE™ report with failure modes, derating recommendations, and time-to-failure estimates.</p>
+        </section>
+      </div>
+
+      <!-- ── Tab: Composition ────────────────────────── -->
+      <div class="panel-tab-pane" id="tab-composition" role="tabpanel">
+        <section class="panel-section" id="composition-section">
+          <div class="panel-header">
+            <div class="section-heading">⚛ Component Composition</div>
+            <button class="composition-cutaway-btn" id="btn-cutaway" aria-pressed="false" aria-label="Toggle cutaway view">Cutaway</button>
+          </div>
+          <div id="composition-a" aria-label="Component A material composition"></div>
+        </section>
+      </div>
+
+    </div><!-- end .panel-scroll -->
+  </div><!-- end .panel -->
     <div id="explosion-dom-flash" aria-hidden="true"></div>
     <canvas id="arena"></canvas>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
@@ -3978,6 +4482,38 @@
           summaryParts.push(`B: ${formatWithUnit(metricsB.currentRms, "A")} - ${formatWithUnit(metricsB.powerDissipation, "W")}`);
         }
         setStatus(`Test complete. ${summaryParts.join(" | ")}`);
+
+        // Notify React shell of updated metrics and FUSE state
+        postToReact({
+          type: "arena:metrics-update",
+          componentId: componentA.id,
+          metrics: {
+            powerDissipation: metricsA.powerDissipation,
+            currentRms: metricsA.currentRms,
+            thermalRise: metricsA.thermalRise,
+            impedance: metricsA.impedance,
+            efficiency: metricsA.efficiency,
+          },
+        });
+        if (failureA && failureA.severity && failureA.severity !== "ok") {
+          const severityMap = { stressed: "warn", warning: "warn", critical: "critical", failed: "critical" };
+          postToReact({
+            type: "arena:fuse-event",
+            severity: severityMap[failureA.severity] || "warn",
+            componentId: componentA.id,
+            failureModes: (failureA.modes || []).map((m) => m.name || m.mode || String(m)),
+          });
+        }
+        postToReact({ type: "arena:status", message: "Test complete.", testRunning: false, componentCount: state.components.length });
+
+        // Apply metric health colors and tolerance bands
+        applyMetricHealthColors("metrics-a", metricsA, componentA);
+        if (metricsB) applyMetricHealthColors("metrics-b", metricsB, componentB);
+        addToleranceSubLines("metrics-a", metricsA, componentA);
+        if (metricsB) addToleranceSubLines("metrics-b", metricsB, componentB);
+        // Auto-switch to Metrics tab after running test
+        const metricsTabBtn = document.querySelector('.panel-tab-btn[data-tab="metrics"]');
+        if (metricsTabBtn) metricsTabBtn.click();
       }
 
       function summarizeComponent(component) {
@@ -4065,6 +4601,7 @@
 
         if (family === "fuse") {
           resistance = Math.max(props.resistance ?? 0.02, 0.001);
+          // timeToBlow derived from I²t rating — computed in the return block below
         }
 
         if (family === "lamp" || family === "motor") {
@@ -4203,6 +4740,18 @@
           energyDelivered,
           thermalRise,
           efficiency,
+          timeToBlow: (() => {
+            if (family !== "fuse") return null;
+            const i2t = props.meltingI2t;
+            const i = rmsCurrent;
+            if (!i2t || !i || i <= 0) return null;
+            const ttb = i2t / (i * i);
+            return Number.isFinite(ttb) ? ttb : null;
+          })(),
+          letThroughEnergy: (() => {
+            if (family !== "fuse") return null;
+            return props.meltingI2t ?? null;
+          })(),
           ambientTemperature: variables.temperatureC,
           humidity: variables.ambientHumidityPercent,
           dutyCyclePercent: variables.dutyCyclePercent,
@@ -4269,6 +4818,12 @@
           entries.push({ label: "Delivered Energy", value: formatWithUnit(metrics.energyDelivered, "J") });
           entries.push({ label: "Thermal Rise", value: formatWithUnit(metrics.thermalRise, "C") });
           entries.push({ label: "Efficiency", value: formatPercent(metrics.efficiency) });
+          if (metrics.timeToBlow !== null && metrics.timeToBlow !== undefined) {
+            entries.push({ label: "Time to Blow", value: formatWithUnit(metrics.timeToBlow, "s"), detail: "At current operating level" });
+          }
+          if (metrics.letThroughEnergy !== null && metrics.letThroughEnergy !== undefined) {
+            entries.push({ label: "I²t (let-through)", value: formatWithUnit(metrics.letThroughEnergy, "A²s") });
+          }
         }
 
         entries
@@ -4371,6 +4926,10 @@
         renderMetricGrid("metrics-b", null);
         renderMetricGrid("metrics-delta", null);
         renderFailureAnalysis(null, null);
+        const bannerA = document.getElementById("abs-max-banner-a");
+        const bannerB = document.getElementById("abs-max-banner-b");
+        if (bannerA) bannerA.classList.remove("visible");
+        if (bannerB) bannerB.classList.remove("visible");
         setStatus("Arena reset. Metrics cleared.");
       }
 
@@ -4431,11 +4990,35 @@
         return `${value.toFixed(1)} deg`;
       }
 
+      // Capture trusted parent origin from document.referrer or first incoming message
+      let _trustedOrigin = (() => {
+        try {
+          if (document.referrer) return new URL(document.referrer).origin;
+        } catch (e) { /* ignore */ }
+        return null;
+      })();
+
+      function postToReact(message) {
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage(message, _trustedOrigin || window.location.origin);
+          }
+        } catch (e) {
+          // Cross-origin post failed — ignore
+        }
+      }
+
       function setStatus(message) {
         const element = document.getElementById("stat-out");
         if (element) {
           element.textContent = message;
         }
+        postToReact({
+          type: "arena:status",
+          message: message,
+          testRunning: false,
+          componentCount: state.components.length,
+        });
       }
 
       function renderInitialMetrics() {
@@ -4491,6 +5074,15 @@
           });
         } else if (data.type === "arena:command" && data.payload && data.payload.command) {
           handleCommand(data.payload.command);
+        } else if (data.type === "arena:init") {
+          // Record the parent's origin so postToReact can target it precisely
+          if (event.origin && event.origin !== "null") {
+            _trustedOrigin = event.origin;
+          }
+          if (data.hideNativeHeader === true) {
+            const header = document.querySelector(".arena-header");
+            if (header) header.style.display = "none";
+          }
         }
       });
 
@@ -4512,6 +5104,516 @@
       });
 
       bootstrap();
+
+// ── Panel tab switching ──────────────────────────────────────────────────
+(function initTabs() {
+  const tabs = document.querySelectorAll(".panel-tab-btn");
+  const panes = document.querySelectorAll(".panel-tab-pane");
+  tabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.tab;
+      tabs.forEach((t) => { t.classList.remove("active"); t.setAttribute("aria-selected", "false"); });
+      panes.forEach((p) => p.classList.remove("active"));
+      btn.classList.add("active");
+      btn.setAttribute("aria-selected", "true");
+      const pane = document.getElementById("tab-" + target);
+      if (pane) pane.classList.add("active");
+    });
+  });
+})();
+
+// ── Mobile bottom sheet drag ─────────────────────────────────────────────
+(function initBottomSheet() {
+  const panel = document.getElementById("arena-panel");
+  const handle = document.getElementById("panel-drag-handle");
+  if (!panel || !handle) return;
+  handle.addEventListener("click", () => { panel.classList.toggle("sheet-open"); });
+  handle.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      panel.classList.toggle("sheet-open");
+    }
+  });
+})();
+
+// ── Panel desktop resize ─────────────────────────────────────────────────
+(function initPanelResize() {
+  const panel = document.getElementById("arena-panel");
+  const handle = document.getElementById("panel-resize-handle");
+  if (!panel || !handle) return;
+  let dragging = false;
+  let startX = 0;
+  let startWidth = 0;
+  handle.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    startX = e.clientX;
+    startWidth = panel.offsetWidth;
+    handle.setPointerCapture(e.pointerId);
+    document.body.style.userSelect = "none";
+  });
+  handle.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const delta = e.clientX - startX;
+    const newWidth = Math.max(240, Math.min(520, startWidth + delta));
+    panel.style.width = newWidth + "px";
+  });
+  handle.addEventListener("pointerup", () => {
+    dragging = false;
+    document.body.style.userSelect = "";
+  });
+})();
+
+// ── Drag-over drop zone ─────────────────────────────────────────────────
+(function initDropZone() {
+  const zone = document.getElementById("import-dropzone");
+  if (!zone) return;
+  zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("drag-over"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type === "application/json") {
+      const reader = new FileReader();
+      reader.onload = () => processImportText(reader.result, file.name);
+      reader.readAsText(file);
+    }
+  });
+})();
+
+// ── URL import ──────────────────────────────────────────────────────────
+(function initUrlImport() {
+  const btn = document.getElementById("import-url-btn");
+  const input = document.getElementById("import-url-input");
+  if (!btn || !input) return;
+  btn.addEventListener("click", () => {
+    const url = input.value.trim();
+    if (!url) { setStatus("Enter a URL first."); return; }
+    setStatus("Fetching catalog…");
+    fetch(url, { mode: "cors" })
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+      .then((text) => processImportText(text, url))
+      .catch((err) => setStatus(`Fetch failed: ${err.message}`));
+  });
+})();
+
+// ── Paste JSON import ───────────────────────────────────────────────────
+(function initPasteImport() {
+  const btn = document.getElementById("import-paste-btn");
+  const area = document.getElementById("import-paste-area");
+  if (!btn || !area) return;
+  btn.addEventListener("click", () => {
+    const text = area.value.trim();
+    if (!text) { setStatus("Paste JSON first."); return; }
+    processImportText(text, "paste");
+  });
+})();
+
+// ── processImportText — shared parsing/validation for all import sources
+function processImportText(text, sourceName) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    showImportValidation("JSON parse error: " + e.message, "warn");
+    setStatus("Invalid JSON. Check format and try again.");
+    return;
+  }
+
+  // Detect ManufacturerCatalog envelope
+  if (data && typeof data === "object" && !Array.isArray(data) && Array.isArray(data.components)) {
+    const vendor = data.vendor || sourceName || "Imported Catalog";
+    const comps = data.components;
+    const valid = comps.filter((c) => c && typeof c === "object" && typeof c.type === "string");
+    const skipped = comps.length - valid.length;
+    if (valid.length === 0) {
+      showImportValidation(`0 valid components found — check required fields (partNumber, manufacturer, type).`, "warn");
+      return;
+    }
+    const normalized = valid.map((item) => normalizeComponent(
+      Object.assign({ manufacturer: item.manufacturer || vendor, partNumber: item.partNumber || item.id }, item),
+      vendor
+    )).filter(Boolean);
+    state.components = [...normalized, ...state.components.filter((c) => !normalized.some((n) => n.id === c.id))];
+    state.selectedA = normalized[0];
+    populateComponentSelectors();
+    updateCompareVisibility();
+    updateImportStatus();
+    renderCompositionPanel(state.selectedA);
+    showImportValidation(
+      `${normalized.length} component${normalized.length !== 1 ? "s" : ""} loaded from ${vendor}${skipped > 0 ? ` · ${skipped} skipped (missing type)` : ""}`,
+      "ok"
+    );
+    persistVendorCatalog(vendor, normalized);
+    setStatus(`Loaded ${normalized.length} component(s) from ${vendor}.`);
+    return;
+  }
+
+  // Fall back to existing import envelope handler
+  const applied = applyImportEnvelope(data, {
+    sessionId: data.sessionId || null,
+    label: data.sessionName || sourceName || "Uploaded Dataset",
+    source: "upload",
+  });
+  if (applied) {
+    showImportValidation("Components loaded successfully.", "ok");
+    setStatus("Imported components from JSON.");
+  } else {
+    showImportValidation("Unrecognised format. Expected ManufacturerCatalog or Builder export.", "warn");
+    setStatus("Unable to import data. Check format.");
+  }
+}
+
+function showImportValidation(message, type) {
+  const el = document.getElementById("import-validation-summary");
+  if (!el) return;
+  el.textContent = message;
+  el.className = "import-validation-summary visible " + (type || "");
+}
+
+function persistVendorCatalog(vendor, components) {
+  try {
+    const key = "circuiTry3d.arena.vendor:" + vendor.toLowerCase().replace(/\s+/g, "-");
+    localStorage.setItem(key, JSON.stringify({ vendor, exportedAt: new Date().toISOString(), components }));
+  } catch (e) { /* storage quota — ignore */ }
+}
+
+// ── FUSE Test Presets ───────────────────────────────────────────────────
+(function initTestPresets() {
+  const presetSelect = document.getElementById("test-preset");
+  const section = document.getElementById("test-variables-section");
+  if (!presetSelect || !section) return;
+
+  const PRESETS = {
+    "iec60127": { voltage: null, frequencyHz: 50, temperatureC: 23, dutyCyclePercent: 100, durationSeconds: 3600, ambientHumidityPercent: 45, loadImpedanceOhms: null, _label: "IEC 60127: 1.1× rated current for 1 h" },
+    "ul248":    { voltage: null, frequencyHz: 60, temperatureC: 25, dutyCyclePercent: 100, durationSeconds: 7200, ambientHumidityPercent: 45, loadImpedanceOhms: null, _label: "UL 248: Fuse coordination test" },
+    "thermal-stress": { voltage: 5, frequencyHz: 0, temperatureC: 150, dutyCyclePercent: 100, durationSeconds: 60, ambientHumidityPercent: 35, loadImpedanceOhms: 100, _label: "Thermal Stress: ambient → 150 °C over 60 s" },
+    "surge-current": { voltage: null, frequencyHz: 50, temperatureC: 25, dutyCyclePercent: 10, durationSeconds: 0.1, ambientHumidityPercent: 45, loadImpedanceOhms: null, _label: "Surge: 10× rated for 100 ms" },
+    "continuous": { voltage: null, frequencyHz: 50, temperatureC: 25, dutyCyclePercent: 100, durationSeconds: 3600, ambientHumidityPercent: 55, loadImpedanceOhms: null, _label: "Continuous operation (1 h)" },
+  };
+
+  function setInputVal(id, val) {
+    const el = document.getElementById(id);
+    if (el && val !== null && val !== undefined) el.value = String(val);
+  }
+
+  presetSelect.addEventListener("change", () => {
+    const key = presetSelect.value;
+    if (key === "custom") {
+      section.classList.remove("preset-locked");
+      setStatus("Custom test variables unlocked.");
+      return;
+    }
+    const preset = PRESETS[key];
+    if (!preset) return;
+    section.classList.add("preset-locked");
+    if (preset.frequencyHz !== null) setInputVal("input-frequency", preset.frequencyHz);
+    if (preset.temperatureC !== null) setInputVal("input-temperature", preset.temperatureC);
+    if (preset.dutyCyclePercent !== null) setInputVal("input-duty", preset.dutyCyclePercent);
+    if (preset.durationSeconds !== null) setInputVal("input-duration", preset.durationSeconds);
+    if (preset.ambientHumidityPercent !== null) setInputVal("input-humidity", preset.ambientHumidityPercent);
+    if (state.selectedA && state.selectedA.family === "fuse" && state.selectedA.properties) {
+      const rated = state.selectedA.properties.ratedCurrentA || 1;
+      let factor = 1.1;
+      if (key === "surge-current") factor = 10;
+      else if (key === "ul248") factor = 2;
+      const resistanceFuse = state.selectedA.properties.resistance || 0.02;
+      const impliedVoltage = +(rated * factor * (resistanceFuse + (preset.loadImpedanceOhms || 1))).toFixed(3);
+      setInputVal("input-voltage", impliedVoltage);
+    }
+    readTestVariables();
+    setStatus("Preset loaded: " + preset._label);
+  });
+})();
+
+// ── Fuse Sizing Calculator ───────────────────────────────────────────────
+(function initFuseCalc() {
+  const btn = document.getElementById("fuse-calc-btn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const loadA = parseFloat(document.getElementById("fuse-calc-load")?.value || "1");
+    const inrush = parseFloat(document.getElementById("fuse-calc-inrush")?.value || "3");
+    const resultEl = document.getElementById("fuse-calc-result");
+    const coordEl = document.getElementById("fuse-wire-coord");
+    if (!resultEl) return;
+    if (!isFinite(loadA) || loadA <= 0) { resultEl.textContent = "Enter a valid load current."; return; }
+    const derated = loadA / 0.8;
+    const inrushHandled = loadA * inrush;
+    const recommended = Math.ceil(Math.max(derated, inrushHandled / 10) * 10) / 10;
+    const fuseType = inrush >= 5 ? "slow-blow / time-delay" : "fast-blow";
+    resultEl.textContent = "";
+    const mainLine = document.createElement("span");
+    mainLine.textContent = `Recommended: ${recommended.toFixed(1)} A ${fuseType}`;
+    const strong = document.createElement("strong");
+    strong.textContent = `${recommended.toFixed(1)} A`;
+    mainLine.textContent = "Recommended: ";
+    mainLine.appendChild(strong);
+    mainLine.appendChild(document.createTextNode(` ${fuseType}`));
+    const subLine = document.createElement("span");
+    subLine.style.cssText = "font-size:10px;opacity:0.75;display:block;margin-top:2px;";
+    subLine.textContent = `Based on 80% derating of ${loadA.toFixed(2)} A load (inrush ×${inrush})`;
+    resultEl.appendChild(mainLine);
+    resultEl.appendChild(subLine);
+    if (state.selectedA && (state.selectedA.family === "fuse" || state.selectedA.type === "fuse")) {
+      const fuseRated = state.selectedA.properties?.ratedCurrentA;
+      if (fuseRated) {
+        const ok = fuseRated <= recommended * 1.5;
+        coordEl.textContent = `Loaded fuse: ${fuseRated} A — ${ok ? "✓ within coordination range" : "⚠ fuse rating may be too high for this load"}`;
+      }
+    } else if (coordEl) {
+      coordEl.textContent = "Load a fuse component to check wire/fuse coordination.";
+    }
+  });
+})();
+
+// ── Timeline strip ───────────────────────────────────────────────────────
+(function initTimeline() {
+  const timelineEl = document.getElementById("stress-timeline");
+  const canvasEl = document.getElementById("stress-timeline-canvas");
+  const showBtn = document.getElementById("btn-show-timeline");
+  const playBtn = document.getElementById("tl-play");
+  const stepBtn = document.getElementById("tl-step");
+  const closeBtn = document.getElementById("tl-close");
+  if (!timelineEl || !canvasEl) return;
+
+  let tlData = null;
+  let tlFrame = 0;
+  let tlPlaying = false;
+  let tlRaf = null;
+
+  function showTimeline(data) {
+    tlData = data;
+    tlFrame = data.t.length - 1;
+    timelineEl.style.display = "flex";
+    drawTimeline();
+  }
+
+  function drawTimeline() {
+    const ctx = canvasEl.getContext("2d");
+    if (!ctx || !tlData) return;
+    const w = canvasEl.offsetWidth || 400;
+    const h = canvasEl.offsetHeight || 30;
+    canvasEl.width = w;
+    canvasEl.height = h;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(8,12,24,0.6)";
+    ctx.fillRect(0, 0, w, h);
+
+    function drawLine(arr, color, maxVal) {
+      if (!arr || arr.length < 2) return;
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      arr.forEach((v, i) => {
+        const x = (i / (arr.length - 1)) * w;
+        const y = h - (v / maxVal) * h * 0.9 - 2;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    const maxPower = Math.max(1, ...tlData.power);
+    const maxCurrent = Math.max(0.001, ...tlData.current);
+    const maxThermal = Math.max(1, ...tlData.thermal);
+    drawLine(tlData.power, "#f59e0b", maxPower);
+    drawLine(tlData.current, "#38bdf8", maxCurrent);
+    drawLine(tlData.thermal, "#f87171", maxThermal);
+
+    (tlData.events || []).forEach((ev) => {
+      const x = (ev.t / (tlData.t[tlData.t.length - 1] || 1)) * w;
+      ctx.beginPath();
+      ctx.strokeStyle = ev.type === "thermal" ? "#f87171" : ev.type === "arc" ? "#a78bfa" : "#94a3b8";
+      ctx.setLineDash([3, 3]);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ev.type === "thermal" ? "#f87171" : "#a78bfa";
+      ctx.font = "10px sans-serif";
+      ctx.fillText(ev.icon || "●", x - 4, 10);
+    });
+
+    if (tlFrame >= 0 && tlData.t.length > 1) {
+      const px = (tlFrame / (tlData.t.length - 1)) * w;
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255,255,255,0.7)";
+      ctx.lineWidth = 1;
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, h);
+      ctx.stroke();
+    }
+  }
+
+  if (showBtn) {
+    showBtn.addEventListener("click", () => {
+      if (!state.lastRun) { setStatus("Run a test first to see the stress timeline."); return; }
+      const steps = 60;
+      const duration = state.testVariables.durationSeconds || 60;
+      const mA = state.lastRun.metrics.A;
+      const t = Array.from({ length: steps }, (_, i) => (i / (steps - 1)) * duration);
+      const power = t.map((ti) => (mA?.powerDissipation || 0) * Math.min(1, ti / Math.max(1, duration * 0.05)));
+      const current = t.map(() => mA?.currentRms || 0);
+      const thermal = t.map((ti) => (mA?.thermalRise || 0) * (1 - Math.exp(-ti / Math.max(1, duration * 0.15))));
+      const events = [];
+      if (mA?.thermalRise > 50) events.push({ t: duration * 0.7, type: "thermal", icon: "🔥" });
+      showTimeline({ t, power, current, thermal, events });
+    });
+  }
+
+  if (playBtn) {
+    playBtn.addEventListener("click", () => {
+      tlPlaying = !tlPlaying;
+      playBtn.textContent = tlPlaying ? "⏸ Pause" : "▶ Play";
+      if (tlPlaying) {
+        function tick() {
+          if (!tlPlaying || !tlData) return;
+          tlFrame = (tlFrame + 1) % tlData.t.length;
+          drawTimeline();
+          tlRaf = requestAnimationFrame(tick);
+        }
+        tlRaf = requestAnimationFrame(tick);
+      } else {
+        cancelAnimationFrame(tlRaf);
+      }
+    });
+  }
+  if (stepBtn) {
+    stepBtn.addEventListener("click", () => {
+      if (!tlData) return;
+      tlFrame = Math.min(tlFrame + 1, tlData.t.length - 1);
+      drawTimeline();
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      tlPlaying = false;
+      cancelAnimationFrame(tlRaf);
+      timelineEl.style.display = "none";
+    });
+  }
+})();
+
+// ── Color-coded metric cards ─────────────────────────────────────────────
+function applyMetricHealthColors(elementId, metrics, component) {
+  const container = document.getElementById(elementId);
+  if (!container || !metrics || !component) return;
+  const props = component.properties || {};
+  const cards = container.querySelectorAll(".metric-card");
+
+  const absMax = component.metadata?.absoluteMaxRatings || {};
+  let absMaxExceeded = false;
+
+  cards.forEach((card) => {
+    const labelEl = card.querySelector(".metric-label");
+    if (!labelEl) return;
+    const label = labelEl.textContent.toLowerCase();
+    let rating = null;
+    let value = null;
+
+    if (label.includes("power")) {
+      value = metrics.powerDissipation;
+      rating = props.powerRating ?? absMax.powerRating;
+    } else if (label.includes("thermal")) {
+      value = metrics.thermalRise;
+      rating = props.maxTempC ? props.maxTempC - 25 : null;
+    } else if (label.includes("current")) {
+      value = metrics.currentRms;
+      rating = props.maxCurrent ?? props.ic_max ?? props.id_max ?? props.ratedCurrentA;
+    }
+
+    if (rating != null && value != null) {
+      const ratio = value / rating;
+      if (ratio >= 1.0) {
+        card.classList.add("health-critical");
+        absMaxExceeded = true;
+      } else if (ratio >= 0.75) {
+        card.classList.add("health-warn");
+      } else {
+        card.classList.add("health-safe");
+      }
+    }
+  });
+
+  const bannerSuffix = elementId === "metrics-a" ? "a" : "b";
+  const banner = document.getElementById("abs-max-banner-" + bannerSuffix);
+  if (banner) banner.classList.toggle("visible", absMaxExceeded);
+}
+
+// ── Tolerance sub-lines on metric cards ─────────────────────────────────
+function addToleranceSubLines(elementId, metrics, component) {
+  const container = document.getElementById(elementId);
+  if (!container || !metrics || !component) return;
+  const tolerance = component.properties?.tolerance;
+  if (!tolerance || !Number.isFinite(tolerance)) return;
+
+  const cards = container.querySelectorAll(".metric-card");
+  cards.forEach((card) => {
+    const labelEl = card.querySelector(".metric-label");
+    const valueEl = card.querySelector(".metric-value");
+    if (!labelEl || !valueEl) return;
+    const label = labelEl.textContent.toLowerCase();
+    if (!label.includes("power") && !label.includes("impedance") && !label.includes("voltage")) return;
+
+    const base = parseFloat(valueEl.textContent);
+    if (!isFinite(base)) return;
+    const lo = base * (1 - tolerance);
+    const hi = base * (1 + tolerance);
+    const unit = valueEl.textContent.replace(/[\d.+\-\s]/g, "").trim();
+
+    const range = document.createElement("div");
+    range.className = "metric-tolerance";
+    range.textContent = `±${(tolerance * 100).toFixed(1)}%: ${lo.toFixed(2)}–${hi.toFixed(2)} ${unit}`;
+    card.appendChild(range);
+  });
+}
+
+// ── FUSE Report v2.0 export ──────────────────────────────────────────────
+document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
+  if (!state.lastRun) {
+    setStatus("Run a test before exporting the FUSE report.");
+    return;
+  }
+  const compA = state.selectedA;
+  const failureA = compA ? detectFailure(compA, state.lastRun.metrics.A) : null;
+  const report = {
+    reportVersion: "2.0",
+    generatedAt: new Date().toISOString(),
+    testConditions: Object.assign({}, state.testVariables),
+    component: compA ? {
+      id: compA.id,
+      name: compA.name,
+      type: compA.type,
+      partNumber: compA.metadata?.partNumber || null,
+      manufacturer: compA.metadata?.vendor || compA.source || null,
+      packageType: compA.metadata?.packageType || null,
+    } : null,
+    metrics: state.lastRun.metrics.A,
+    fuseAnalysis: {
+      severity: failureA?.severity || "ok",
+      failureModes: (failureA?.modes || []).map((m) => ({
+        name: m.name || m.mode || String(m),
+        visual: m.visual || null,
+        description: m.description || null,
+      })),
+      recommendedDerating: failureA && failureA.severity !== "ok" ? 0.8 : 1.0,
+      timeToFailureEstimateS: (() => {
+        if (!compA || compA.family !== "fuse") return null;
+        const i2t = compA.properties?.meltingI2t;
+        const current = state.lastRun.metrics.A?.currentRms;
+        if (!i2t || !current || current <= 0) return null;
+        return +(i2t / (current * current)).toFixed(3);
+      })(),
+    },
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `fuse-report-${compA?.id || "arena"}-${Date.now()}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setStatus("FUSE Report v2.0 exported.");
+});
     })();
   </script>
   <script>
@@ -4639,5 +5741,17 @@
       });
     })();
   </script>
+  <!-- Stress Timeline Strip -->
+  <div class="stress-timeline" id="stress-timeline" role="region" aria-label="Stress timeline" style="display:none;">
+    <div class="stress-timeline-header">
+      <span class="stress-timeline-label">Stress Timeline</span>
+      <div class="stress-timeline-controls">
+        <button class="stress-ctrl-btn" id="tl-play" aria-label="Play timeline">▶ Play</button>
+        <button class="stress-ctrl-btn" id="tl-step" aria-label="Step forward">Step ▸</button>
+        <button class="stress-ctrl-btn" id="tl-close" aria-label="Close timeline">✕</button>
+      </div>
+    </div>
+    <canvas class="stress-timeline-canvas" id="stress-timeline-canvas" aria-label="Stress timeline graph" role="img"></canvas>
+  </div>
 </body>
 </html>
