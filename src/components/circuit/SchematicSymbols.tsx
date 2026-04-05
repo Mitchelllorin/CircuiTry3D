@@ -1435,6 +1435,101 @@ export const JunctionSymbol: FC<SchematicSymbolProps> = ({
   );
 };
 
+export const RelaySymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -22,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  return (
+    <g transform={transform}>
+      {/* Coil terminal wires */}
+      <line x1="-30" y1="0" x2="-16" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="16" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Coil body rectangle */}
+      <rect x="-16" y="-10" width="32" height="20" rx="2" stroke={color} strokeWidth={strokeWidth * 0.8} fill="none" />
+      {/* Coil winding loops inside */}
+      {([-8, -2, 4, 10] as number[]).map((cx) => (
+        <ellipse key={cx} cx={cx} cy="0" rx="3.5" ry="6" stroke={color} strokeWidth={strokeWidth * 0.55} fill="none" />
+      ))}
+      {/* Contact switch arm above coil */}
+      <line x1="-8" y1="-18" x2="8" y2="-26" stroke={color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
+      <circle cx="-8" cy="-18" r="2" fill={color} />
+      <circle cx="8" cy="-28" r="2" fill="none" stroke={color} strokeWidth={strokeWidth * 0.7} />
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const VoltageRegulatorSymbol: FC<SchematicSymbolProps> = ({
+  x,
+  y,
+  rotation = 0,
+  scale = 1,
+  label,
+  showLabel = true,
+  labelOffset = -22,
+  color = COMPONENT_STROKE,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
+}) => {
+  const transform = `translate(${x}, ${y}) rotate(${rotation}) scale(${scale})`;
+  return (
+    <g transform={transform}>
+      {/* Input wire */}
+      <line x1="-30" y1="0" x2="-16" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Output wire */}
+      <line x1="16" y1="0" x2="30" y2="0" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* GND wire downward from center-bottom */}
+      <line x1="0" y1="12" x2="0" y2="22" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-6" y1="22" x2="6" y2="22" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1="-4" y1="25" x2="4" y2="25" stroke={color} strokeWidth={strokeWidth * 0.8} strokeLinecap="round" />
+      <line x1="-2" y1="28" x2="2" y2="28" stroke={color} strokeWidth={strokeWidth * 0.6} strokeLinecap="round" />
+      {/* IC box body */}
+      <rect x="-16" y="-12" width="32" height="24" rx="2" stroke={color} strokeWidth={strokeWidth * 0.8} fill="none" />
+      {/* REG label inside box */}
+      <text
+        x="0"
+        y="4"
+        textAnchor="middle"
+        fill={color}
+        fontSize={LABEL_SPECS.componentLabelSize * 0.85}
+        fontWeight={LABEL_SPECS.labelWeight}
+      >
+        REG
+      </text>
+      {showLabel && label && (
+        <text
+          x={0}
+          y={labelOffset}
+          textAnchor="middle"
+          fill={LABEL_COLOR}
+          fontSize={LABEL_SPECS.componentLabelSize}
+          fontWeight={LABEL_SPECS.labelWeight}
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  );
+};
+
 export type ComponentSymbol =
   | 'resistor'
   | 'capacitor'
@@ -1461,7 +1556,9 @@ export type ComponentSymbol =
   | 'mosfet'
   | 'thermistor'
   | 'crystal'
-  | 'junction';
+  | 'junction'
+  | 'relay'
+  | 'voltage-regulator';
 
 export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolProps>> = {
   'resistor': ResistorSymbol,
@@ -1490,6 +1587,8 @@ export const SCHEMATIC_SYMBOL_MAP: Record<ComponentSymbol, FC<SchematicSymbolPro
   'thermistor': ThermistorSymbol,
   'crystal': CrystalSymbol,
   'junction': JunctionSymbol,
+  'relay': RelaySymbol,
+  'voltage-regulator': VoltageRegulatorSymbol,
 };
 
 export function getSchematicSymbol(type: ComponentSymbol): FC<SchematicSymbolProps> | undefined {
