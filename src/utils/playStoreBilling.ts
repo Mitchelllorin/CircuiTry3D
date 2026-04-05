@@ -488,8 +488,8 @@ export async function getConsumerProductPrices(): Promise<Record<string, string>
 // ── Web payment (non-Android) ─────────────────────────────────────────────────
 
 /**
- * URL of the web payment page (e.g. Stripe / Gumroad checkout link).
- * Set VITE_PAYMENT_URL at build time in Vercel project settings.
+ * URL of the web payment page (e.g. Google Pay / Gumroad checkout link).
+ * Set VITE_PAYMENT_URL at build time in GitHub Actions repository secrets.
  * Left empty for the GitHub Pages / Android builds.
  */
 export const WEB_PAYMENT_URL: string = (import.meta.env.VITE_PAYMENT_URL ?? "").trim();
