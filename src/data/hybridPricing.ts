@@ -41,6 +41,7 @@ export interface ConsumerTier {
   /**
    * For the Pro subscription tier only: both monthly and yearly SKUs so the
    * yearly price can be auto-calculated from the monthly price.
+   * Only present when `purchaseType` is "subscription".
    */
   skus?: { monthly: string; yearly: string };
   /** "one_time" for a permanent unlock; "subscription" for recurring; undefined for free. */

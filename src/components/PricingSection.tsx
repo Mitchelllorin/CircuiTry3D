@@ -32,6 +32,24 @@ type ProCycle = "monthly" | "yearly";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
+ * Parse a localised price string (e.g. "$2.49", "€2,49") into a numeric
+ * value in the major currency unit.  Returns NaN when parsing fails.
+ */
+function parsePriceAmount(formatted: string): number {
+  return parseFloat(formatted.replace(/[^0-9.]/g, ""));
+}
+
+/**
+ * Extract the currency symbol / prefix from a formatted price string.
+ *
+ * @example extractCurrencySymbol("$2.49")  // → "$"
+ * @example extractCurrencySymbol("€2,49")  // → "€"
+ */
+function extractCurrencySymbol(formatted: string): string {
+  return formatted.replace(/[0-9.,\s]/g, "").trim();
+}
+
+/**
  * Derive the yearly price label from the monthly price string.
  * Parses the currency symbol + numeric value, multiplies by 12, and formats
  * a "save X%" note.  Falls back to the static yearly fallback when parsing fails.
@@ -42,10 +60,10 @@ type ProCycle = "monthly" | "yearly";
 function buildYearlyLabel(monthlyLabel: string, yearlyLabel?: string): string {
   if (yearlyLabel) return yearlyLabel;
   // Auto-calculate: strip currency symbol, parse float, multiply by 12
-  const num = parseFloat(monthlyLabel.replace(/[^0-9.]/g, ""));
+  const num = parsePriceAmount(monthlyLabel);
   if (!Number.isFinite(num) || num <= 0) return "—";
   const yearly = num * 12;
-  const currencySymbol = monthlyLabel.replace(/[0-9.,\s]/g, "").trim();
+  const currencySymbol = extractCurrencySymbol(monthlyLabel);
   return `${currencySymbol}${yearly.toFixed(2)} / yr`;
 }
 
@@ -155,7 +173,7 @@ export default function PricingSection() {
   /** Determine whether a consumer tier is currently active for the user. */
   const isTierActive = useCallback(
     (tierId: "free" | "premium" | "pro"): boolean => {
-      if (tierId === "free") return entitlements.tier === "free" && !entitlements.isPremiumOrAbove;
+      if (tierId === "free") return entitlements.tier === "free";
       if (tierId === "premium") return entitlements.hasPremium && !entitlements.hasPro;
       if (tierId === "pro") return entitlements.hasPro;
       return false;
@@ -231,13 +249,13 @@ export default function PricingSection() {
   const yearlyPriceNote = useMemo(() => {
     const monthlyPrice = livePrices[SUB_MONTHLY_SKU];
     if (!monthlyPrice) return null;
-    const num = parseFloat(monthlyPrice.replace(/[^0-9.]/g, ""));
+    const num = parsePriceAmount(monthlyPrice);
     if (!Number.isFinite(num) || num <= 0) return null;
-    const currency = monthlyPrice.replace(/[0-9.,\s]/g, "").trim();
+    const currency = extractCurrencySymbol(monthlyPrice);
     const yearly = num * 12;
     const yearlyLive = livePrices[SUB_YEARLY_SKU];
     if (yearlyLive) {
-      const yearlyNum = parseFloat(yearlyLive.replace(/[^0-9.]/g, ""));
+      const yearlyNum = parsePriceAmount(yearlyLive);
       if (Number.isFinite(yearlyNum) && yearlyNum > 0) {
         const saving = Math.round((1 - yearlyNum / yearly) * 100);
         if (saving > 0) return `Save ${saving}% with yearly`;

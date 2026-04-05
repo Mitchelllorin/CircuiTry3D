@@ -107,5 +107,5 @@ export function tierLabel(tier: SubscriptionTier): string {
     institutional: "Institutional",
     lifetime: "Lifetime",
   };
-  return labels[tier] ?? tier;
+  return labels[tier] ?? "Unknown";
 }
