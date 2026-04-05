@@ -431,6 +431,114 @@
        PLATFORM
     ═══════════════════════════════════════════════════════════════ */
     .platform-section { background: var(--bg); }
+    /* ═══════════════════════════════════════════════════════════════
+       PRICING
+    ═══════════════════════════════════════════════════════════════ */
+    .pricing-section {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .pricing-group-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(157,184,255,.45);
+      margin: 44px 0 18px;
+    }
+    .pricing-group-label:first-of-type { margin-top: 44px; }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .plan-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 26px 22px;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      position: relative;
+    }
+    .plan-card.featured { border-color: rgba(136,204,255,.45); }
+    .plan-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--blue);
+      color: #fff;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 3px 12px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .plan-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .plan-tagline { font-size: 0.77rem; color: var(--muted); margin-bottom: 6px; }
+    .plan-price {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--text);
+      margin: 4px 0;
+      line-height: 1;
+    }
+    .plan-price sup { font-size: 1rem; vertical-align: super; }
+    .plan-price .per { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
+    .plan-unit { font-size: 0.73rem; color: var(--muted); margin-bottom: 10px; }
+    .plan-divider { height: 1px; background: var(--border); margin: 12px 0; }
+    .plan-features {
+      list-style: none;
+      padding: 0;
+      flex: 1;
+    }
+    .plan-features li {
+      font-size: 0.79rem;
+      color: var(--muted);
+      padding: 5px 0 5px 18px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .plan-features li:last-child { border-bottom: none; }
+    .plan-features li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-size: 0.72rem;
+    }
+    .plan-cta { margin-top: 16px; }
+    .plan-btn {
+      display: block;
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .plan-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .plan-btn-primary { background: var(--blue); color: #fff; }
+    .plan-btn-green   { background: var(--green); color: #000; }
+    .plan-btn-outline {
+      background: transparent;
+      color: var(--blue);
+      border: 1.5px solid rgba(136,204,255,.32);
+    }
+    .plan-btn-outline:hover { border-color: rgba(136,204,255,.6); }
+    .pricing-footnote {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 0.78rem;
+      color: rgba(157,184,255,.4);
+    }
     .platform-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -721,6 +829,10 @@
         <span class="chip chip-orange">FUSE™ Failure Sim</span>
         <span class="chip chip-purple">Schematic Mode</span>
         <span class="chip chip-blue">W.I.R.E. Routing</span>
+        <span class="chip chip-green">AI Assistant</span>
+        <span class="chip chip-purple">Cinematic Camera</span>
+        <span class="chip chip-orange">Wire Failure Physics</span>
+        <span class="chip chip-blue">EN · FR · ES</span>
       </div>
 
       <!-- Loading / ready status -->
@@ -822,6 +934,31 @@
           <div class="feat-name">Practice Arcade</div>
           <div class="feat-desc">Circuit puzzles and timed challenges that sharpen your skills. Level up from Ohm's law basics to complex multi-loop networks.</div>
         </article>
+        <article class="feat-card">
+          <span class="feat-icon">🔥</span>
+          <div class="feat-name">Wire Failure Physics</div>
+          <div class="feat-desc">Gauge-accurate ampacity limits and 11 insulation classes (PVC, PTFE, Silicone, Kapton, and more). Exceed rated current and watch the jacket smoke or arc — thermally modelled per material.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🤖</span>
+          <div class="feat-name">AI Circuit Assistant</div>
+          <div class="feat-desc">Ask the AI to explain any failure, suggest circuit improvements, or walk through Ohm's law step by step — context-aware and always available inside the app.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🎬</span>
+          <div class="feat-name">Cinematic Camera</div>
+          <div class="feat-desc">Record smooth fly-through videos of your circuits with keyframe waypoints and interpolation. Capture stills or export video to share your builds.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🖼️</span>
+          <div class="feat-name">Circuit Gallery</div>
+          <div class="feat-desc">Save up to 40 circuits with screenshots, share cinematics to the community gallery, and browse builds from other users — all persisted locally for offline use.</div>
+        </article>
+        <article class="feat-card">
+          <span class="feat-icon">🌍</span>
+          <div class="feat-name">Multi-Language Support</div>
+          <div class="feat-desc">Automatically switches to English, French, or Spanish based on your device locale. Language preference persists across sessions — no manual switching needed.</div>
+        </article>
       </div>
     </div>
   </section>
@@ -890,8 +1027,8 @@
       </h2>
       <p class="section-subtitle">
         The <strong>F</strong>ailure <strong>U</strong>nderstanding <strong>S</strong>imulation <strong>E</strong>ngine™
-        applies realistic thermal and electrical stress models to every component —
-        complete with smoke, arcs, and explosions.
+        applies realistic thermal and electrical stress models to all 23 component families —
+        including wires. Exceed a wire's rated ampacity and the jacket smokes; push past insulation limits and it arcs. Complete with particle effects and physics-accurate material descriptions.
       </p>
       <div class="fuse-panel" role="list" aria-label="Component status examples">
         <div class="fuse-card" role="listitem">
@@ -994,7 +1131,163 @@
           <div class="platform-name">Android App</div>
           <div class="platform-desc">Full mobile experience — build and simulate on the go. The same powerful engine, optimized for touch.</div>
         </article>
+        <article class="platform-card">
+          <span class="platform-icon">🤖</span>
+          <div class="platform-name">AI Assistant</div>
+          <div class="platform-desc">Context-aware AI helper that explains failures, walks through calculations, and surfaces relevant curriculum content from the integrated textbook.</div>
+        </article>
+        <article class="platform-card">
+          <span class="platform-icon">🎬</span>
+          <div class="platform-name">Cinematic & Gallery</div>
+          <div class="platform-desc">Record fly-through videos with keyframe camera control. Save up to 40 circuits with previews and browse the community cinematic gallery.</div>
+        </article>
       </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PRICING
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section pricing-section" id="pricing" aria-labelledby="pricing-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Plans &amp; Pricing</p>
+      <h2 class="section-title" id="pricing-title">
+        Start free. <span class="c-blue">Go further.</span>
+      </h2>
+      <p class="section-subtitle">
+        The free sandbox gets you in the door instantly — no account required.
+        Unlock everything with a single one-time purchase, or subscribe for cloud save,
+        pro tools, and early access.
+      </p>
+
+      <!-- Consumer Plans -->
+      <p class="pricing-group-label">Individual &amp; Consumer</p>
+      <div class="pricing-grid">
+        <div class="plan-card">
+          <div class="plan-name">Free Sandbox</div>
+          <div class="plan-tagline">Jump in — no account required</div>
+          <div class="plan-price">Free</div>
+          <div class="plan-unit">forever</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>3 active circuits</li>
+            <li>Core component library</li>
+            <li>W.I.R.E. analysis preview</li>
+            <li>FUSE™ severity badge</li>
+            <li>Community hub access</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-btn plan-btn-outline" href="/#/app" id="pricing-free-btn">Try Free</a>
+          </div>
+        </div>
+
+        <div class="plan-card featured">
+          <div class="plan-badge">One-Time</div>
+          <div class="plan-name">Premium Unlock</div>
+          <div class="plan-tagline">Own it forever, pay once</div>
+          <div class="plan-price"><sup>$</sup>4.99</div>
+          <div class="plan-unit">one-time purchase · Android</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>All components unlocked</li>
+            <li>Unlimited save slots</li>
+            <li>Advanced physics simulation</li>
+            <li>All templates &amp; future components</li>
+            <li>FUSE™ full failure analysis</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-btn plan-btn-primary" href="/#/upgrade" id="pricing-premium-btn">Unlock Premium</a>
+          </div>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-badge" style="background:var(--green);color:#000;">Best Value</div>
+          <div class="plan-name">Pro Subscription</div>
+          <div class="plan-tagline">Everything, plus cloud &amp; early access</div>
+          <div class="plan-price"><sup>$</sup>2.49<span class="per">/mo</span></div>
+          <div class="plan-unit">billed monthly · cancel any time</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>Everything in Premium</li>
+            <li>Cloud save &amp; sync</li>
+            <li>Early access to new features</li>
+            <li>Exclusive circuit templates</li>
+            <li>Pro tools — oscilloscope, multimeter, logic analyzer</li>
+            <li>Priority support</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-btn plan-btn-outline" href="/#/upgrade" id="pricing-pro-btn">Subscribe</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Education / Institutional Plans -->
+      <p class="pricing-group-label" style="margin-top:52px;">Education &amp; Institutional</p>
+      <div class="pricing-grid">
+        <div class="plan-card">
+          <div class="plan-name">Student Plan</div>
+          <div class="plan-tagline">Build circuits. Ace your coursework.</div>
+          <div class="plan-price"><sup>$</sup>9<span class="per">/mo</span></div>
+          <div class="plan-unit">or $92/year · per student · save 15%</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>10 active circuits</li>
+            <li>Full component library</li>
+            <li>W.I.R.E. analysis tools</li>
+            <li>FUSE™ full failure names + visual effects</li>
+            <li>Component Arena access</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-btn plan-btn-outline" href="mailto:hello@circuitry3d.net?subject=Student%20Plan%20Subscription">Enquire</a>
+          </div>
+        </div>
+
+        <div class="plan-card featured">
+          <div class="plan-badge">Popular</div>
+          <div class="plan-name">Educator License</div>
+          <div class="plan-tagline">Full toolkit for classroom instruction</div>
+          <div class="plan-price"><sup>$</sup>29<span class="per">/mo</span></div>
+          <div class="plan-unit">or $299/year · per educator · save 15%</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>Unlimited saved circuits</li>
+            <li>Advanced W.I.R.E. coaching</li>
+            <li>Lesson templates &amp; assessments</li>
+            <li>FUSE™ full analysis + physical descriptions</li>
+            <li>Component Arena — single &amp; compare modes</li>
+            <li>Export results as JSON</li>
+            <li>Priority email support</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-btn plan-btn-primary" href="mailto:hello@circuitry3d.net?subject=Educator%20License%20Subscription">Get License</a>
+          </div>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-name">Institutional License</div>
+          <div class="plan-tagline">Campus-wide access with admin controls</div>
+          <div class="plan-price">Custom</div>
+          <div class="plan-unit">minimum 10 seats</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>Bulk educator seats</li>
+            <li>Dedicated onboarding</li>
+            <li>SIS integrations &amp; SSO</li>
+            <li>Curriculum alignment toolkit</li>
+            <li>FUSE™ + custom component profiles</li>
+            <li>Component Arena — all modes + import/export</li>
+            <li>School board reporting &amp; usage analytics</li>
+          </ul>
+          <div class="plan-cta">
+            <a class="plan-btn plan-btn-outline" href="mailto:hello@circuitry3d.net?subject=Institutional%20Pricing">Contact Us</a>
+          </div>
+        </div>
+      </div>
+
+      <p class="pricing-footnote">
+        Android in-app purchases handled via Google Play Billing. Annual education plans save 15%.
+        Consumer prices in USD. Contact <a href="mailto:hello@circuitry3d.net" style="color:rgba(157,184,255,.6);">hello@circuitry3d.net</a> for custom packages.
+      </p>
     </div>
   </section>
 
@@ -1092,7 +1385,7 @@
 
       // Intercept all internal nav links
       document.querySelectorAll(
-        "#launch-btn, #cta-launch-btn, .landing-footer-link"
+        "#launch-btn, #cta-launch-btn, .landing-footer-link, #pricing-free-btn, #pricing-premium-btn, #pricing-pro-btn"
       ).forEach(interceptLink);
     })();
   </script>
