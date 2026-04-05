@@ -4201,9 +4201,8 @@ export default function Builder() {
       {isMeasureWidgetOpen && (
         <div
           className={`measure-widget${meterState.armed ? " measure-widget--armed" : ""}`}
-          role="dialog"
+          role="region"
           aria-label="Measurement tools"
-          aria-modal="false"
         >
           {/* Header */}
           <div className="measure-widget-header">

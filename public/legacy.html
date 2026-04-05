@@ -12295,7 +12295,7 @@ body.android-optimized .zoom-btn {
             });
             const tip = new THREE.Mesh(tipGeo, tipMat);
             tip.rotation.z = Math.PI; // flip apex to -Y (pointing down)
-            // ConeGeometry is centered; after flip apex is at local y = -0.14
+            // ConeGeometry (height=0.28) is centered; after flip apex is at local y = -(0.28/2) = -0.14
             group.add(tip);
 
             // Collar ring between tip and handle
@@ -12372,10 +12372,10 @@ body.android-optimized .zoom-btn {
             const leanZ = which === 'a' ? -0.42 : 0.42;
             mesh.rotation.z = leanZ;
 
-            // After Z rotation by leanZ, the cone apex (local (0,-0.14,0)) lands at:
-            //   dx = 0.14 * sin(leanZ),   dy = -0.14 * cos(leanZ)
+            // After Z rotation by leanZ, the cone apex (local (0,-TIP_HALF,0)) lands at:
+            //   dx = TIP_HALF * sin(leanZ),   dy = -TIP_HALF * cos(leanZ)
             // Invert to find the group origin that places the tip exactly at worldPos.
-            const TIP_HALF = 0.14;
+            const TIP_HALF = 0.28 / 2; // half the cone height defined in _createProbeMesh
             mesh.position.x = worldPos.x - TIP_HALF * Math.sin(leanZ);
             mesh.position.y = worldPos.y + TIP_HALF * Math.cos(leanZ);
             mesh.position.z = worldPos.z;
