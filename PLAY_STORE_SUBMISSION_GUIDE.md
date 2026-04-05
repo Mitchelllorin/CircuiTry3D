@@ -230,9 +230,9 @@ CircuiTry3D
 
 8. **App Category and Contact Details:**
    - Category: `Education`
-   - Email: `support@circuitry3d.app` (Mitchell Lorin McKnight)
+   - Email: `info@circuitry3d.net` (Mitchell Lorin McKnight)
    - Phone: (Optional)
-   - Website: `https://circuitry3d.app` (update with your website)
+   - Website: `https://www.circuitry3d.net` (update with your website)
    
 9. **Click "Save"**
 
@@ -245,7 +245,7 @@ CircuiTry3D
 10. **Add Privacy Policy URL:**
     - In "Store listing" → "Privacy policy"
     - URL: Upload `play-store-assets/metadata/privacy-policy.md` to your website
-    - Enter the public URL (e.g., `https://circuitry3d.app/privacy`)
+    - Enter the public URL (e.g., `https://www.circuitry3d.net/privacy`)
     - Click "Save"
 
 ### Data Safety Section
@@ -505,7 +505,7 @@ After launch, track these metrics in Play Console:
 - [Data Safety Guide](https://support.google.com/googleplay/android-developer/answer/10787469)
 
 ### CircuiTry3D Support
-- Email: Mitchell Lorin McKnight — support@circuitry3d.app
+- Email: Mitchell Lorin McKnight — info@circuitry3d.net
 - GitHub: https://github.com/Mitchelllorin/CircuiTry3D
 
 ### Google Play Support

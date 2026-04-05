@@ -5,7 +5,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
 
-[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://circuitry3d.app)
+[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://www.circuitry3d.net)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -57,7 +57,7 @@ You don't need an engineering background to use CircuiTry3D.
 - **Just curious?** Open the Builder, drop in a battery and an LED, and watch it light up — then crank the voltage and watch it explode in 3D
 - **Visual learner?** Zoom all the way in from the wire surface to the atomic crystal lattice to see individual electrons vibrating and drifting through the metal in real time
 - **Self-studying?** The in-app textbook starts from "what is electricity?" and walks you through two full years of electrical engineering concepts with worked examples, formulas, and interactive practice
-- **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [circuitry3d.app](https://circuitry3d.app)
+- **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [www.circuitry3d.net](https://www.circuitry3d.net)
 
 ---
 
@@ -398,7 +398,7 @@ The **Educator License** ($299/educator/yr) unlocks:
 - Advanced W.I.R.E. coaching tools
 - Priority support and onboarding
 
-For **Institutional Licenses** (schools and districts), contact support@circuitry3d.app — bulk educator seats, dedicated onboarding, SIS integrations, SSO, and curriculum alignment toolkit are included.
+For **Institutional Licenses** (schools and districts), contact info@circuitry3d.net — bulk educator seats, dedicated onboarding, SIS integrations, SSO, and curriculum alignment toolkit are included.
 
 > 📋 For outreach templates, grant funding angles, and a competitive comparison table, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md).
 
@@ -471,7 +471,7 @@ The key datasheet parameters vary by component family (e.g. a MOSFET needs `vth`
 
 ### How to Get Started
 
-1. **Email us** at [hello@circuitry3d.com](mailto:hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership) with:
+1. **Email us** at [info@circuitry3d.net](mailto:info@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership) with:
    - Your company name and the component families you'd like featured
    - Part numbers and links to the relevant datasheets
 2. **We map your specs** to a FUSE™ component profile and build the card
@@ -499,13 +499,13 @@ You can also request a **live demo** showing the Arena running a FUSE™ simulat
 
 > 📋 For full pitch deck structure, email templates, and outreach strategy, see [`docs/ARENA_MARKETING.md`](docs/ARENA_MARKETING.md) — Part 3: Manufacturer Product Placement.
 >
-> 🤝 To start the conversation, visit the in-app [Partnerships page](https://circuitry3d.app/#/partnerships) or email [hello@circuitry3d.com](mailto:hello@circuitry3d.com?subject=Component%20Arena%20Manufacturer%20Partnership).
+> 🤝 To start the conversation, visit the in-app [Partnerships page](https://www.circuitry3d.net/#/partnerships) or email [info@circuitry3d.net](mailto:info@circuitry3d.net?subject=Component%20Arena%20Manufacturer%20Partnership).
 
 ---
 
 ## 💳 Pricing
 
-Pricing is available at [`/pricing`](https://circuitry3d.app/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
+Pricing is available at [`/pricing`](https://www.circuitry3d.net/#/pricing). Plans are offered on **monthly** or **annual** (save 15%) billing cycles.
 
 | Plan | Price (Annual) | Who it's for | Highlights |
 |---|---|---|---|
@@ -516,7 +516,7 @@ Pricing is available at [`/pricing`](https://circuitry3d.app/#/pricing). Plans a
 
 **Add-on — Certification Bundle** *(Coming Soon)* — $99 / yr: Guided certification pathway, accredited PD modules, printable achievement badges.
 
-Volume discounts available for 25+ seats. Custom enterprise packages available — contact support@circuitry3d.app.
+Volume discounts available for 25+ seats. Custom enterprise packages available — contact info@circuitry3d.net.
 
 ---
 
@@ -573,5 +573,5 @@ Pull requests are welcome! Please open an issue first to discuss what you'd like
 ## 📞 Support
 
 - **GitHub Issues:** https://github.com/Mitchelllorin/CircuiTry3D/issues
-- **Email:** support@circuitry3d.app
+- **Email:** info@circuitry3d.net
 

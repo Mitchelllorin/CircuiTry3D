@@ -446,6 +446,7 @@ export default function PricingSection() {
       {/* ── Footer ── */}
       <footer className="pricing-footer">
         <p className="pricing-contact-help">
+          Need a custom package? <a href="mailto:info@circuitry3d.net">Contact our team</a> for tailored pricing.
           Have questions?{" "}
           <a href="mailto:hello@circuitry3d.com">Contact our team</a> for
           tailored pricing or enterprise onboarding.

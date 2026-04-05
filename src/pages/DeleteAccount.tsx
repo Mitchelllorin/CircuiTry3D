@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import "../styles/legal.css";
 
-const DELETION_EMAIL = "privacy@circuitry3d.app";
+const DELETION_EMAIL = "info@circuitry3d.net";
 
 const MAILTO_LINK = `mailto:${DELETION_EMAIL}?subject=${encodeURIComponent(
   "Account Deletion Request — CircuiTry3D"

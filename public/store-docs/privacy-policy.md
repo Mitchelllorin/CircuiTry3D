@@ -68,7 +68,7 @@ You have the right to:
 - Opt-out of non-essential data collection
 - Export your circuit designs and data
 
-To exercise these rights, contact us at: [privacy@circuitry3d.app]
+To exercise these rights, contact us at: [info@circuitry3d.net]
 
 ## Children's Privacy
 
@@ -86,8 +86,8 @@ We may update this Privacy Policy from time to time. We will notify you of any s
 
 If you have questions about this Privacy Policy, please contact founder and data controller **Mitchell Lorin McKnight** at:
 
-**Email:** privacy@circuitry3d.app  
-**Website:** https://circuitry3d.app/privacy  
+**Email:** info@circuitry3d.net  
+**Website:** https://www.circuitry3d.net/privacy  
 
 ## Compliance
 

@@ -174,7 +174,7 @@ Users can request data deletion by:
    - All data will be permanently deleted within 30 days
 
 2. **Email Request:**
-   - Send email to: privacy@circuitry3d.app
+   - Send email to: info@circuitry3d.net
    - Include: account email and deletion request
    - We will respond within 48 hours
    - Data deletion completed within 30 days
@@ -199,8 +199,8 @@ Users can request data deletion by:
 
 **Data Protection Officer:**  
 Mitchell Lorin McKnight  
-Email: privacy@circuitry3d.app  
-Website: https://circuitry3d.app/privacy  
+Email: info@circuitry3d.net  
+Website: https://www.circuitry3d.net/privacy  
 
 **Response Time:**  
 We respond to privacy requests within 48 hours (2 business days)
