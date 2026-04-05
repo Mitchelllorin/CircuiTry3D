@@ -61,6 +61,7 @@ export type MediaShare = {
 };
 
 export type ShareMediaPayload = {
+  /** Base64 data URL of the image/video. May be empty when sharing a title-only reference from the community form (actual media lives in GalleryContext). */
   dataUrl: string;
   type: "image" | "video";
   title: string;

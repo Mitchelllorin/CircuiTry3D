@@ -1191,6 +1191,8 @@ const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
   },
 ];
 
+const GALLERY_TOAST_DURATION_MS = 6000;
+
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
@@ -1406,7 +1408,7 @@ export default function Builder() {
       galleryToastTimerRef.current = window.setTimeout(() => {
         setShowGalleryToast(false);
         galleryToastTimerRef.current = null;
-      }, 6000);
+      }, GALLERY_TOAST_DURATION_MS);
     },
     [addGalleryItem],
   );

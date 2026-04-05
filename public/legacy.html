@@ -7618,6 +7618,8 @@ body.android-optimized .zoom-btn {
 
         // ─── Cinematic Camera Controller ────────────────────────────────────
         class CinematicController {
+            static DEFAULT_FOV = 75;
+            static MACRO_FOV   = 30;
             constructor() {
                 this._keyframes = [];
                 this._playing = false;
@@ -7677,10 +7679,10 @@ body.android-optimized .zoom-btn {
                     }
                     case 'atom': {
                         return [
-                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 800, easing: 'smooth' },
-                            { angleX: cameraAngleX + 0.4, angleY: 0.3, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: 30, duration: 3000, easing: 'ease-in' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 800, easing: 'smooth' },
+                            { angleX: cameraAngleX + 0.4, angleY: 0.3, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.MACRO_FOV, duration: 3000, easing: 'ease-in' },
                             { angleX: cameraAngleX + 0.8, angleY: 0.5, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: 20, duration: 2000, easing: 'linear' },
-                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 2000, easing: 'ease-out' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 2000, easing: 'ease-out' },
                         ];
                     }
                     case 'lattice': {
@@ -7688,7 +7690,7 @@ body.android-optimized .zoom-btn {
                             { angleX: cameraAngleX, angleY: 0.15, distance: d * 0.4, targetX: cx - 3, targetY: cy, targetZ: cz, fov: 50, duration: 800, easing: 'smooth' },
                             { angleX: cameraAngleX + Math.PI * 0.5, angleY: 0.15, distance: d * 0.4, targetX: cx, targetY: cy, targetZ: cz, fov: 45, duration: 4000, easing: 'linear' },
                             { angleX: cameraAngleX + Math.PI, angleY: 0.25, distance: d * 0.35, targetX: cx + 3, targetY: cy, targetZ: cz, fov: 40, duration: 3000, easing: 'linear' },
-                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 1500, easing: 'ease-out' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 1500, easing: 'ease-out' },
                         ];
                     }
                     case 'focus': {
@@ -7698,10 +7700,10 @@ body.android-optimized .zoom-btn {
                         const fy = focused ? focused.position.y : cy;
                         const fz = focused ? focused.position.z : cz;
                         return [
-                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 500, easing: 'smooth' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 500, easing: 'smooth' },
                             { angleX: cameraAngleX + 0.6, angleY: 0.55, distance: 1.8, targetX: fx, targetY: fy, targetZ: fz, fov: 35, duration: 2500, easing: 'ease-in' },
-                            { angleX: cameraAngleX + 1.2, angleY: 0.45, distance: 1.5, targetX: fx, targetY: fy, targetZ: fz, fov: 30, duration: 2000, easing: 'linear' },
-                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 2000, easing: 'ease-out' },
+                            { angleX: cameraAngleX + 1.2, angleY: 0.45, distance: 1.5, targetX: fx, targetY: fy, targetZ: fz, fov: CinematicController.MACRO_FOV, duration: 2000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 2000, easing: 'ease-out' },
                         ];
                     }
                     default:
@@ -7835,12 +7837,18 @@ body.android-optimized .zoom-btn {
                     : MediaRecorder.isTypeSupported('video/webm')
                     ? 'video/webm'
                     : '';
+                // If no WebM variant is supported the browser will use its own default codec.
+                // Construction still succeeds on most modern browsers; only truly unsupported
+                // environments (e.g. old Safari) will throw, which is caught below.
                 try {
                     this._mediaRecorder = mimeType
                         ? new MediaRecorder(stream, { mimeType })
                         : new MediaRecorder(stream);
                 } catch (e) {
-                    window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recordError: 'MediaRecorder not supported' } }, '*');
+                    const msg = mimeType === ''
+                        ? 'Video recording is not supported in this browser (no WebM codec available).'
+                        : 'MediaRecorder could not be initialised.';
+                    window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recordError: msg } }, '*');
                     return;
                 }
                 this._recordedChunks = [];

@@ -26,7 +26,7 @@ type GalleryContextValue = {
 };
 
 const STORAGE_KEY = "circuiTry3d.gallery.v1";
-const MAX_ITEMS = 40;
+const MAX_ITEMS = 40; // Cap at 40 to stay within typical localStorage quota (~5 MB) given PNG/WebM data URLs
 
 const GalleryContext = createContext<GalleryContextValue | undefined>(undefined);
 

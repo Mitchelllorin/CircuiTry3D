@@ -116,7 +116,9 @@ export default function Gallery() {
                   loop
                   muted
                   playsInline
-                  onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => undefined)}
+                  onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {
+                    // Autoplay may be blocked by browser policy; silently ignore
+                  })}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLVideoElement).pause(); }}
                   aria-label={item.title || item.circuitName}
                 />
