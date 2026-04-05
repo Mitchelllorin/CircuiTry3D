@@ -3769,6 +3769,27 @@ body.android-optimized .zoom-btn {
                                 cameraDistance = Math.min(ZOOM_MAX, cameraDistance + Math.max(ZOOM_OUT_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
                                 updateCameraPosition();
                                 break;
+                            case 'cinematic-play':
+                                _cinematicCtrl.start(data.preset || null, data.keyframes || []);
+                                break;
+                            case 'cinematic-stop':
+                                _cinematicCtrl.stop();
+                                break;
+                            case 'cinematic-capture':
+                                _cinematicCtrl.captureFrame();
+                                break;
+                            case 'cinematic-record-start':
+                                _cinematicCtrl.startRecord();
+                                break;
+                            case 'cinematic-record-stop':
+                                _cinematicCtrl.stopRecord();
+                                break;
+                            case 'cinematic-add-waypoint':
+                                _cinematicCtrl.addCurrentAsWaypoint();
+                                break;
+                            case 'cinematic-clear-waypoints':
+                                _cinematicCtrl.clearWaypoints();
+                                break;
                             default:
                                 break;
                         }
@@ -7594,6 +7615,275 @@ body.android-optimized .zoom-btn {
 
             updateCameraPosition();
         }
+
+        // ─── Cinematic Camera Controller ────────────────────────────────────
+        class CinematicController {
+            constructor() {
+                this._keyframes = [];
+                this._playing = false;
+                this._recording = false;
+                this._mediaRecorder = null;
+                this._recordedChunks = [];
+                this._startTime = 0;
+                this._totalDuration = 0;
+                this._raf = null;
+                this._origFov = camera.fov;
+                this._circuitName = 'circuit';
+            }
+
+            // ── Keyframe management ──────────────────────────────────────────
+            addCurrentAsWaypoint() {
+                this._keyframes.push({
+                    angleX: cameraAngleX,
+                    angleY: cameraAngleY,
+                    distance: cameraDistance,
+                    targetX: cameraTarget.x,
+                    targetY: cameraTarget.y,
+                    targetZ: cameraTarget.z,
+                    fov: camera.fov,
+                    duration: 3000,
+                    easing: 'smooth',
+                });
+                window.parent.postMessage({
+                    type: 'legacy:cinematic-state',
+                    payload: { keyframes: this._keyframes.length }
+                }, '*');
+            }
+
+            clearWaypoints() {
+                this._keyframes = [];
+            }
+
+            // ── Built-in presets ─────────────────────────────────────────────
+            _buildPresetKeyframes(preset) {
+                const cx = cameraTarget.x, cy = cameraTarget.y, cz = cameraTarget.z;
+                const d = cameraDistance;
+                switch (preset) {
+                    case 'orbit': {
+                        const frames = [];
+                        const steps = 8;
+                        for (let i = 0; i <= steps; i++) {
+                            frames.push({
+                                angleX: cameraAngleX + (Math.PI * 2 * i / steps),
+                                angleY: cameraAngleY,
+                                distance: d,
+                                targetX: cx, targetY: cy, targetZ: cz,
+                                fov: 60,
+                                duration: 1000,
+                                easing: 'linear',
+                            });
+                        }
+                        return frames;
+                    }
+                    case 'atom': {
+                        return [
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 800, easing: 'smooth' },
+                            { angleX: cameraAngleX + 0.4, angleY: 0.3, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: 30, duration: 3000, easing: 'ease-in' },
+                            { angleX: cameraAngleX + 0.8, angleY: 0.5, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: 20, duration: 2000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 2000, easing: 'ease-out' },
+                        ];
+                    }
+                    case 'lattice': {
+                        return [
+                            { angleX: cameraAngleX, angleY: 0.15, distance: d * 0.4, targetX: cx - 3, targetY: cy, targetZ: cz, fov: 50, duration: 800, easing: 'smooth' },
+                            { angleX: cameraAngleX + Math.PI * 0.5, angleY: 0.15, distance: d * 0.4, targetX: cx, targetY: cy, targetZ: cz, fov: 45, duration: 4000, easing: 'linear' },
+                            { angleX: cameraAngleX + Math.PI, angleY: 0.25, distance: d * 0.35, targetX: cx + 3, targetY: cy, targetZ: cz, fov: 40, duration: 3000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 1500, easing: 'ease-out' },
+                        ];
+                    }
+                    case 'focus': {
+                        const focused = (typeof components !== 'undefined' && components.size > 0)
+                            ? [...components.values()][0] : null;
+                        const fx = focused ? focused.position.x : cx;
+                        const fy = focused ? focused.position.y : cy;
+                        const fz = focused ? focused.position.z : cz;
+                        return [
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 500, easing: 'smooth' },
+                            { angleX: cameraAngleX + 0.6, angleY: 0.55, distance: 1.8, targetX: fx, targetY: fy, targetZ: fz, fov: 35, duration: 2500, easing: 'ease-in' },
+                            { angleX: cameraAngleX + 1.2, angleY: 0.45, distance: 1.5, targetX: fx, targetY: fy, targetZ: fz, fov: 30, duration: 2000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: 75, duration: 2000, easing: 'ease-out' },
+                        ];
+                    }
+                    default:
+                        return [];
+                }
+            }
+
+            // ── Easing ───────────────────────────────────────────────────────
+            _ease(t, mode) {
+                switch (mode) {
+                    case 'ease-in':   return t * t;
+                    case 'ease-out':  return t * (2 - t);
+                    case 'smooth':    return t * t * (3 - 2 * t);
+                    case 'linear':
+                    default:          return t;
+                }
+            }
+
+            // ── Playback ─────────────────────────────────────────────────────
+            start(preset, userKeyframes) {
+                this.stop();
+                const kf = (preset && typeof preset === 'string')
+                    ? this._buildPresetKeyframes(preset)
+                    : (Array.isArray(userKeyframes) && userKeyframes.length >= 2 ? userKeyframes : null);
+                if (!kf || kf.length < 2) return;
+
+                this._playing = true;
+                this._origFov = camera.fov;
+                this._keyframes = kf;
+                this._totalDuration = kf.slice(1).reduce((s, f) => s + (f.duration || 2000), 0);
+                this._startTime = performance.now();
+                this._origState = {
+                    angleX: cameraAngleX,
+                    angleY: cameraAngleY,
+                    distance: cameraDistance,
+                    targetX: cameraTarget.x,
+                    targetY: cameraTarget.y,
+                    targetZ: cameraTarget.z,
+                    fov: camera.fov,
+                };
+                this._circuitName = document.title || 'circuit';
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { playing: true } }, '*');
+                this._tick = this._tick.bind(this);
+                this._raf = requestAnimationFrame(this._tick);
+            }
+
+            _tick(now) {
+                if (!this._playing) return;
+                const elapsed = now - this._startTime;
+
+                // Determine which segment we are in
+                const kf = this._keyframes;
+                let segStart = 0;
+                let segIdx = 0;
+                for (let i = 1; i < kf.length; i++) {
+                    const segDur = kf[i].duration || 2000;
+                    if (elapsed < segStart + segDur) {
+                        segIdx = i - 1;
+                        const t = this._ease((elapsed - segStart) / segDur, kf[i].easing || 'smooth');
+                        const a = kf[i - 1], b = kf[i];
+                        cameraAngleX = a.angleX + (b.angleX - a.angleX) * t;
+                        cameraAngleY = a.angleY + (b.angleY - a.angleY) * t;
+                        cameraDistance = a.distance + (b.distance - a.distance) * t;
+                        cameraTarget.set(
+                            a.targetX + (b.targetX - a.targetX) * t,
+                            a.targetY + (b.targetY - a.targetY) * t,
+                            a.targetZ + (b.targetZ - a.targetZ) * t,
+                        );
+                        const newFov = a.fov + (b.fov - a.fov) * t;
+                        camera.fov = newFov;
+                        camera.updateProjectionMatrix();
+                        updateCameraPosition();
+                        this._raf = requestAnimationFrame(this._tick);
+                        return;
+                    }
+                    segStart += segDur;
+                    segIdx = i;
+                }
+
+                // Animation finished
+                const last = kf[kf.length - 1];
+                cameraAngleX = last.angleX;
+                cameraAngleY = last.angleY;
+                cameraDistance = last.distance;
+                cameraTarget.set(last.targetX, last.targetY, last.targetZ);
+                camera.fov = last.fov;
+                camera.updateProjectionMatrix();
+                updateCameraPosition();
+                this._playing = false;
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { playing: false } }, '*');
+            }
+
+            stop() {
+                this._playing = false;
+                if (this._raf !== null) {
+                    cancelAnimationFrame(this._raf);
+                    this._raf = null;
+                }
+                if (this._origState) {
+                    cameraAngleX = this._origState.angleX;
+                    cameraAngleY = this._origState.angleY;
+                    cameraDistance = this._origState.distance;
+                    cameraTarget.set(this._origState.targetX, this._origState.targetY, this._origState.targetZ);
+                    camera.fov = this._origState.fov;
+                    camera.updateProjectionMatrix();
+                    updateCameraPosition();
+                }
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { playing: false } }, '*');
+            }
+
+            // ── Frame capture ────────────────────────────────────────────────
+            captureFrame() {
+                renderer.render(scene, camera);
+                const dataUrl = renderer.domElement.toDataURL('image/png');
+                window.parent.postMessage({
+                    type: 'legacy:cinematic-frame',
+                    payload: {
+                        dataUrl,
+                        circuitName: this._circuitName || document.title || 'circuit',
+                        timestamp: Date.now(),
+                    }
+                }, '*');
+            }
+
+            // ── Recording ────────────────────────────────────────────────────
+            startRecord() {
+                if (this._recording) return;
+                const stream = renderer.domElement.captureStream(30);
+                const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                    ? 'video/webm;codecs=vp9'
+                    : MediaRecorder.isTypeSupported('video/webm')
+                    ? 'video/webm'
+                    : '';
+                try {
+                    this._mediaRecorder = mimeType
+                        ? new MediaRecorder(stream, { mimeType })
+                        : new MediaRecorder(stream);
+                } catch (e) {
+                    window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recordError: 'MediaRecorder not supported' } }, '*');
+                    return;
+                }
+                this._recordedChunks = [];
+                this._recordStart = Date.now();
+                this._mediaRecorder.ondataavailable = (ev) => {
+                    if (ev.data && ev.data.size > 0) {
+                        this._recordedChunks.push(ev.data);
+                    }
+                };
+                this._mediaRecorder.onstop = () => {
+                    const blob = new Blob(this._recordedChunks, { type: this._mediaRecorder.mimeType || 'video/webm' });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        window.parent.postMessage({
+                            type: 'legacy:cinematic-video',
+                            payload: {
+                                dataUrl: reader.result,
+                                circuitName: this._circuitName || document.title || 'circuit',
+                                timestamp: Date.now(),
+                                durationMs: Date.now() - this._recordStart,
+                            }
+                        }, '*');
+                    };
+                    reader.readAsDataURL(blob);
+                    this._recording = false;
+                    window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recording: false } }, '*');
+                };
+                this._mediaRecorder.start(500);
+                this._recording = true;
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recording: true } }, '*');
+            }
+
+            stopRecord() {
+                if (!this._recording || !this._mediaRecorder) return;
+                this._mediaRecorder.stop();
+            }
+
+            get isPlaying() { return this._playing; }
+            get isRecording() { return this._recording; }
+        }
+
+        const _cinematicCtrl = new CinematicController();
+        // ─── End Cinematic Camera Controller ─────────────────────────────────
 
         function setupEvents() {
             const canvas = renderer.domElement;

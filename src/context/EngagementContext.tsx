@@ -48,22 +48,46 @@ export type SubmitReviewPayload = {
   body: string;
 };
 
+export type MediaShare = {
+  id: string;
+  userId: string;
+  type: "image" | "video";
+  dataUrl: string;
+  title: string;
+  description: string;
+  circuitName: string;
+  createdAt: number;
+  likes: string[];
+};
+
+export type ShareMediaPayload = {
+  dataUrl: string;
+  type: "image" | "video";
+  title: string;
+  description: string;
+  circuitName: string;
+};
+
 type EngagementState = {
   messages: CommunityMessage[];
   circuits: CircuitShare[];
   reviews: CommunityReview[];
+  media: MediaShare[];
 };
 
 type EngagementContextValue = {
   messages: CommunityMessage[];
   circuits: CircuitShare[];
   reviews: CommunityReview[];
+  media: MediaShare[];
   postMessage: (payload: PostMessagePayload) => Promise<{ ok: true } | { ok: false; message: string }>;
   shareCircuit: (payload: ShareCircuitPayload) => Promise<{ ok: true } | { ok: false; message: string }>;
   submitReview: (payload: SubmitReviewPayload) => Promise<{ ok: true } | { ok: false; message: string }>;
+  shareMedia: (payload: ShareMediaPayload) => Promise<{ ok: true } | { ok: false; message: string }>;
   toggleMessageReaction: (messageId: string) => void;
   toggleCircuitLike: (circuitId: string) => void;
   toggleReviewEndorsement: (reviewId: string) => void;
+  toggleMediaLike: (mediaId: string) => void;
   stats: {
     memberCount: number;
     totalMessages: number;
@@ -114,6 +138,7 @@ const seededState: EngagementState = {
       endorsements: ["sample-builder"],
     },
   ],
+  media: [],
 };
 
 const EngagementContext = createContext<EngagementContextValue | undefined>(undefined);
@@ -135,11 +160,13 @@ const readStoredState = (): EngagementState => {
     const messages = Array.isArray(parsed.messages) ? parsed.messages.filter((entry): entry is CommunityMessage => Boolean(entry && entry.id && entry.userId && entry.body)) : seededState.messages;
     const circuits = Array.isArray(parsed.circuits) ? parsed.circuits.filter((entry): entry is CircuitShare => Boolean(entry && entry.id && entry.userId && entry.title && entry.summary)) : seededState.circuits;
     const reviews = Array.isArray(parsed.reviews) ? parsed.reviews.filter((entry): entry is CommunityReview => Boolean(entry && entry.id && entry.userId && entry.rating)) : seededState.reviews;
+    const media = Array.isArray(parsed.media) ? parsed.media.filter((entry): entry is MediaShare => Boolean(entry && entry.id && entry.userId && entry.dataUrl && entry.type)) : seededState.media;
 
     return {
       messages,
       circuits,
       reviews,
+      media,
     };
   } catch (error) {
     console.warn("Community storage read failed", error);
@@ -342,6 +369,56 @@ export function EngagementProvider({ children }: { children: ReactNode }) {
     [currentUser]
   );
 
+  const shareMedia = useCallback<EngagementContextValue["shareMedia"]>(
+    async (payload) => {
+      const title = payload.title.trim();
+      if (!title) {
+        return { ok: false, message: "Please add a title before sharing." };
+      }
+      if (!currentUser) {
+        return { ok: false, message: "Sign in to share to the community." };
+      }
+      setState((previous) => ({
+        ...previous,
+        media: [
+          {
+            id: randomId("media"),
+            userId: currentUser.id,
+            type: payload.type,
+            dataUrl: payload.dataUrl,
+            title,
+            description: payload.description?.trim() ?? "",
+            circuitName: payload.circuitName?.trim() ?? "",
+            createdAt: Date.now(),
+            likes: [],
+          },
+          ...previous.media,
+        ].slice(0, 60),
+      }));
+      return { ok: true };
+    },
+    [currentUser]
+  );
+
+  const toggleMediaLike = useCallback<EngagementContextValue["toggleMediaLike"]>(
+    (mediaId) => {
+      const activeUserId = currentUser?.id;
+      if (!activeUserId) return;
+      setState((previous) => ({
+        ...previous,
+        media: previous.media.map((item) => {
+          if (item.id !== mediaId) return item;
+          const liked = item.likes.includes(activeUserId);
+          return {
+            ...item,
+            likes: liked ? item.likes.filter((id) => id !== activeUserId) : [...item.likes, activeUserId],
+          };
+        }),
+      }));
+    },
+    [currentUser]
+  );
+
   const stats = useMemo<EngagementContextValue["stats"]>(() => {
     const distinctMemberIds = new Set<string>();
     state.messages.forEach((message) => distinctMemberIds.add(message.userId));
@@ -365,15 +442,18 @@ export function EngagementProvider({ children }: { children: ReactNode }) {
       messages: state.messages,
       circuits: state.circuits,
       reviews: state.reviews,
+      media: state.media,
       postMessage,
       shareCircuit,
       submitReview,
+      shareMedia,
       toggleMessageReaction,
       toggleCircuitLike,
       toggleReviewEndorsement,
+      toggleMediaLike,
       stats,
     }),
-    [state.messages, state.circuits, state.reviews, postMessage, shareCircuit, submitReview, toggleMessageReaction, toggleCircuitLike, toggleReviewEndorsement, stats]
+    [state.messages, state.circuits, state.reviews, state.media, postMessage, shareCircuit, submitReview, shareMedia, toggleMessageReaction, toggleCircuitLike, toggleReviewEndorsement, toggleMediaLike, stats]
   );
 
   return <EngagementContext.Provider value={value}>{children}</EngagementContext.Provider>;
