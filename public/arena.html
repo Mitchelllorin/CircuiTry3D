@@ -1328,7 +1328,7 @@
             <input id="input-frequency" type="number" value="1000" step="1" aria-label="Test frequency in hertz" />
           </div>
           <div class="row">
-            <label for="input-temperature">Ambient Temp (°C)</label>
+            <label for="input-temperature">Ambient Temperature (°C)</label>
             <input id="input-temperature" type="number" value="25" step="1" aria-label="Ambient temperature in Celsius" />
           </div>
           <div class="row">
@@ -1344,7 +1344,7 @@
             <input id="input-duration" type="number" value="60" step="1" aria-label="Test duration in seconds" />
           </div>
           <div class="row">
-            <label for="input-load">Load Impedance (Ω)</label>
+            <label for="input-load">Load Impedance (Ohms)</label>
             <input id="input-load" type="number" value="100" step="1" aria-label="Load impedance in ohms" />
           </div>
         </section>
@@ -5274,7 +5274,7 @@ function showImportValidation(message, type) {
 function persistVendorCatalog(vendor, components) {
   try {
     const key = "circuiTry3d.arena.vendor:" + vendor.toLowerCase().replace(/\s+/g, "-");
-    localStorage.setItem(key, JSON.stringify({ vendor, exportedAt: new Date().toISOString(), components: components.map((c) => c) }));
+    localStorage.setItem(key, JSON.stringify({ vendor, exportedAt: new Date().toISOString(), components }));
   } catch (e) { /* storage quota — ignore */ }
 }
 
@@ -5341,8 +5341,19 @@ function persistVendorCatalog(vendor, components) {
     const inrushHandled = loadA * inrush;
     const recommended = Math.ceil(Math.max(derated, inrushHandled / 10) * 10) / 10;
     const fuseType = inrush >= 5 ? "slow-blow / time-delay" : "fast-blow";
-    resultEl.innerHTML = `Recommended: <strong>${recommended.toFixed(1)} A</strong> ${fuseType}<br>
-      <span style="font-size:10px;opacity:0.75">Based on 80% derating of ${loadA.toFixed(2)} A load (inrush ×${inrush})</span>`;
+    resultEl.textContent = "";
+    const mainLine = document.createElement("span");
+    mainLine.textContent = `Recommended: ${recommended.toFixed(1)} A ${fuseType}`;
+    const strong = document.createElement("strong");
+    strong.textContent = `${recommended.toFixed(1)} A`;
+    mainLine.textContent = "Recommended: ";
+    mainLine.appendChild(strong);
+    mainLine.appendChild(document.createTextNode(` ${fuseType}`));
+    const subLine = document.createElement("span");
+    subLine.style.cssText = "font-size:10px;opacity:0.75;display:block;margin-top:2px;";
+    subLine.textContent = `Based on 80% derating of ${loadA.toFixed(2)} A load (inrush ×${inrush})`;
+    resultEl.appendChild(mainLine);
+    resultEl.appendChild(subLine);
     if (state.selectedA && (state.selectedA.family === "fuse" || state.selectedA.type === "fuse")) {
       const fuseRated = state.selectedA.properties?.ratedCurrentA;
       if (fuseRated) {
