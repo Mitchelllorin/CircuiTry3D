@@ -52,6 +52,7 @@ export interface RestoredPurchase {
 interface BillingPluginInterface {
   initialize(): Promise<void>;
   getProducts(options: { skus: string[] }): Promise<{ products: ProductInfo[] }>;
+  getInAppProducts(options: { skus: string[] }): Promise<{ products: ProductInfo[] }>;
   purchase(options: { sku: string }): Promise<void>;
   purchaseInApp(options: { sku: string }): Promise<void>;
   restorePurchases(): Promise<{ purchases: RestoredPurchase[] }>;
@@ -72,11 +73,32 @@ export const SUBSCRIPTION_TIER_KEY = "circuitry3d_subscription_tier";
 /** localStorage key that stores the one-time Pro purchase state. */
 export const PRO_UNLOCK_KEY = "circuitry3d_pro_unlock";
 
-/** Product ID for the one-time Pro unlock managed product. */
+/** localStorage key that stores the one-time Premium Unlock purchase state. */
+export const PREMIUM_UNLOCK_KEY = "circuitry3d_premium_unlock";
+
+/** Product ID for the one-time Pro unlock managed product (legacy). */
 export const PRO_UNLOCK_SKU = "pro_unlock";
 
+/**
+ * Product ID for the one-time Premium Unlock managed product.
+ * Must match the in-app product created in Google Play Console.
+ */
+export const PREMIUM_UNLOCK_SKU = "premium_unlock";
+
+/**
+ * Product ID for the monthly Pro subscription.
+ * Must match the subscription created in Google Play Console.
+ */
+export const SUB_MONTHLY_SKU = "sub_monthly";
+
+/**
+ * Product ID for the yearly Pro subscription.
+ * Must match the subscription created in Google Play Console.
+ */
+export const SUB_YEARLY_SKU = "sub_yearly";
+
 /** Supported subscription tiers, in ascending order. */
-export type SubscriptionTier = "free" | "student" | "educator" | "institutional" | "lifetime";
+export type SubscriptionTier = "free" | "premium" | "pro" | "student" | "educator" | "institutional" | "lifetime";
 
 /**
  * Maps each Play Store product ID to its corresponding subscription tier.
@@ -87,6 +109,8 @@ export const PRODUCT_TIER_MAP: Readonly<Record<string, SubscriptionTier>> = {
   circuitry3d_student_annual: "student",
   circuitry3d_educator_monthly: "educator",
   circuitry3d_educator_annual: "educator",
+  sub_monthly: "pro",
+  sub_yearly: "pro",
 } as const;
 
 /**
@@ -101,6 +125,10 @@ export const PLAN_SKUS: Readonly<Record<string, Readonly<Partial<Record<string, 
   educator: {
     monthly: "circuitry3d_educator_monthly",
     annual: "circuitry3d_educator_annual",
+  },
+  pro: {
+    monthly: SUB_MONTHLY_SKU,
+    yearly: SUB_YEARLY_SKU,
   },
 } as const;
 
@@ -129,7 +157,14 @@ export function isAndroidApp(): boolean {
 export function getStoredTier(): SubscriptionTier {
   try {
     const raw = localStorage.getItem(SUBSCRIPTION_TIER_KEY);
-    if (raw === "student" || raw === "educator" || raw === "institutional" || raw === "lifetime") {
+    if (
+      raw === "premium" ||
+      raw === "pro" ||
+      raw === "student" ||
+      raw === "educator" ||
+      raw === "institutional" ||
+      raw === "lifetime"
+    ) {
       return raw;
     }
   } catch {
@@ -174,9 +209,36 @@ export function setProPurchased(purchased: boolean): void {
   }
 }
 
+// ── One-time Premium Unlock ───────────────────────────────────────────────────
+
+/**
+ * Returns true if the user has purchased the "premium_unlock" one-time product.
+ * The value is cached in localStorage so it persists across app restarts.
+ */
+export function userHasPremium(): boolean {
+  try {
+    return localStorage.getItem(PREMIUM_UNLOCK_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+/** Persist the Premium Unlock purchase state. */
+export function setPremiumPurchased(purchased: boolean): void {
+  try {
+    if (purchased) {
+      localStorage.setItem(PREMIUM_UNLOCK_KEY, "true");
+    } else {
+      localStorage.removeItem(PREMIUM_UNLOCK_KEY);
+    }
+  } catch {
+    // localStorage unavailable
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TIER_ORDER: SubscriptionTier[] = ["free", "student", "educator", "institutional", "lifetime"];
+const TIER_ORDER: SubscriptionTier[] = ["free", "premium", "pro", "student", "educator", "institutional", "lifetime"];
 
 /** Return the highest tier present in a list of active product IDs. */
 function tierFromProducts(products: string[]): SubscriptionTier {
@@ -214,10 +276,15 @@ export async function initBilling(): Promise<void> {
         window.dispatchEvent(
           new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
         );
-        // Handle one-time Pro unlock
+        // Handle one-time Pro unlock (legacy SKU)
         if (result.products.includes(PRO_UNLOCK_SKU)) {
           setProPurchased(true);
           window.dispatchEvent(new CustomEvent("circuitry3d:proUnlocked"));
+        }
+        // Handle one-time Premium Unlock (new SKU)
+        if (result.products.includes(PREMIUM_UNLOCK_SKU)) {
+          setPremiumPurchased(true);
+          window.dispatchEvent(new CustomEvent("circuitry3d:premiumUnlocked"));
         }
       }
     });
@@ -298,6 +365,42 @@ export async function purchaseProUnlock(): Promise<boolean> {
 }
 
 /**
+ * Launch the Play Store one-time purchase flow for the "premium_unlock" product.
+ *
+ * @returns true if the native billing flow was launched (Android only),
+ *          false on web.
+ */
+export async function purchasePremiumUnlock(): Promise<boolean> {
+  if (!isAndroidApp()) return false;
+
+  try {
+    await BillingPluginProxy.purchaseInApp({ sku: PREMIUM_UNLOCK_SKU });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Launch the Play Store subscription flow for the Pro plan.
+ *
+ * @param cycle - "monthly" uses sub_monthly; "yearly" uses sub_yearly.
+ * @returns true if the native billing flow was launched (Android only),
+ *          false on web.
+ */
+export async function purchaseProSubscription(cycle: "monthly" | "yearly"): Promise<boolean> {
+  if (!isAndroidApp()) return false;
+
+  const sku = cycle === "monthly" ? SUB_MONTHLY_SKU : SUB_YEARLY_SKU;
+  try {
+    await BillingPluginProxy.purchase({ sku });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Restore any previously purchased "pro_unlock" one-time product.
  * Updates localStorage and dispatches a `circuitry3d:proUnlocked` event if found.
  *
@@ -317,6 +420,69 @@ export async function restoreProPurchases(): Promise<boolean> {
   } catch {
     return userHasPro();
   }
+}
+
+/**
+ * Restore any previously purchased "premium_unlock" one-time product.
+ * Updates localStorage and dispatches a `circuitry3d:premiumUnlocked` event if found.
+ *
+ * @returns true if the Premium purchase was found and restored.
+ */
+export async function restorePremiumPurchases(): Promise<boolean> {
+  if (!isAndroidApp()) return userHasPremium();
+
+  try {
+    const { purchases } = await BillingPluginProxy.restoreInAppPurchases();
+    const hasPremium = purchases.some((p) => p.products.includes(PREMIUM_UNLOCK_SKU));
+    if (hasPremium) {
+      setPremiumPurchased(true);
+      window.dispatchEvent(new CustomEvent("circuitry3d:premiumUnlocked"));
+    }
+    return hasPremium;
+  } catch {
+    return userHasPremium();
+  }
+}
+
+/**
+ * Fetch live, localised prices for all consumer products from the Play Store.
+ * On web (non-Android) this always returns an empty map.
+ *
+ * Returns a map of { [productId]: formattedPrice } for each known product:
+ *   premium_unlock  — one-time purchase
+ *   sub_monthly     — Pro monthly subscription
+ *   sub_yearly      — Pro yearly subscription
+ */
+export async function getConsumerProductPrices(): Promise<Record<string, string>> {
+  if (!isAndroidApp()) return {};
+
+  const prices: Record<string, string> = {};
+
+  try {
+    // Fetch one-time in-app product prices
+    const { products: inAppProducts } = await BillingPluginProxy.getInAppProducts({
+      skus: [PREMIUM_UNLOCK_SKU],
+    });
+    for (const p of inAppProducts) {
+      if (p.price) prices[p.productId] = p.price;
+    }
+  } catch {
+    // Billing unavailable or product not found — fall back to static defaults
+  }
+
+  try {
+    // Fetch subscription prices
+    const { products: subProducts } = await BillingPluginProxy.getProducts({
+      skus: [SUB_MONTHLY_SKU, SUB_YEARLY_SKU],
+    });
+    for (const p of subProducts) {
+      if (p.price) prices[p.productId] = p.price;
+    }
+  } catch {
+    // Billing unavailable or products not found — fall back to static defaults
+  }
+
+  return prices;
 }
 
 // ── Web payment (non-Android) ─────────────────────────────────────────────────

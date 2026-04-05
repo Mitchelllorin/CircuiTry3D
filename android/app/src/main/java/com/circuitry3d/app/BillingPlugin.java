@@ -28,10 +28,13 @@ import java.util.List;
  * Capacitor plugin that exposes Google Play Billing to the web layer.
  *
  * Exposed methods (callable via window.Capacitor.Plugins.Billing):
- *   initialize()          — connect the BillingClient
- *   getProducts(skus)     — query subscription product details
- *   purchase(sku)         — launch the Play Store subscription flow
- *   restorePurchases()    — query all active subscriptions
+ *   initialize()             — connect the BillingClient
+ *   getProducts(skus)        — query subscription product details
+ *   getInAppProducts(skus)   — query one-time in-app product details (e.g. premium_unlock)
+ *   purchase(sku)            — launch the Play Store subscription flow
+ *   purchaseInApp(sku)       — launch the Play Store one-time purchase flow
+ *   restorePurchases()       — query all active subscriptions
+ *   restoreInAppPurchases()  — query all purchased one-time products
  *
  * Emitted events:
  *   purchaseCompleted     — { success, purchaseToken, orderId, products[] }
@@ -74,7 +77,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
         });
     }
 
-    /** Query Play Store for subscription product details by SKU list. */
+    /**
+     * Query Play Store for subscription product details by SKU list.
+     * Returns price, currency, and offer token for each subscription product.
+     */
     @PluginMethod
     public void getProducts(PluginCall call) {
         JSArray skus = call.getArray("skus");
@@ -126,6 +132,69 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
                                 item.put("priceMicros", phase.getPriceAmountMicros());
                                 item.put("currencyCode", phase.getPriceCurrencyCode());
                             }
+                        }
+                        resultArray.put(item);
+                    }
+
+                    JSObject ret = new JSObject();
+                    ret.put("products", resultArray);
+                    call.resolve(ret);
+                }
+        );
+    }
+
+    /**
+     * Query Play Store for one-time in-app product details by SKU list.
+     * Used to fetch localised prices for INAPP products (e.g. premium_unlock)
+     * so the pricing page can display real, region-adjusted prices.
+     *
+     * Returns the same shape as getProducts() so callers can handle both uniformly.
+     */
+    @PluginMethod
+    public void getInAppProducts(PluginCall call) {
+        JSArray skus = call.getArray("skus");
+        if (skus == null || skus.length() == 0) {
+            call.reject("skus array is required");
+            return;
+        }
+
+        List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+        try {
+            for (int i = 0; i < skus.length(); i++) {
+                products.add(
+                        QueryProductDetailsParams.Product.newBuilder()
+                                .setProductId(skus.getString(i))
+                                .setProductType(BillingClient.ProductType.INAPP)
+                                .build()
+                );
+            }
+        } catch (Exception e) {
+            call.reject("Invalid skus: " + e.getMessage());
+            return;
+        }
+
+        billingClient.queryProductDetailsAsync(
+                QueryProductDetailsParams.newBuilder().setProductList(products).build(),
+                (billingResult, productDetailsList) -> {
+                    if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                        call.reject("In-app product query failed: " + billingResult.getDebugMessage());
+                        return;
+                    }
+
+                    JSArray resultArray = new JSArray();
+                    for (ProductDetails detail : productDetailsList) {
+                        JSObject item = new JSObject();
+                        item.put("productId", detail.getProductId());
+                        item.put("title", detail.getTitle());
+                        item.put("description", detail.getDescription());
+
+                        // One-time products expose price via getOneTimePurchaseOfferDetails()
+                        ProductDetails.OneTimePurchaseOfferDetails oneTime =
+                                detail.getOneTimePurchaseOfferDetails();
+                        if (oneTime != null) {
+                            item.put("price", oneTime.getFormattedPrice());
+                            item.put("priceMicros", oneTime.getPriceAmountMicros());
+                            item.put("currencyCode", oneTime.getPriceCurrencyCode());
                         }
                         resultArray.put(item);
                     }
