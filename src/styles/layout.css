@@ -190,6 +190,7 @@ body {
 
 .circuitry-wordmark__try {
   color: var(--brand-orange);
+  font-style: italic;
   text-shadow:
     0 0 12px rgba(255, 136, 68, 0.3),
     0 0 24px rgba(255, 136, 68, 0.22);
