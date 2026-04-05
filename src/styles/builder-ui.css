@@ -1586,24 +1586,28 @@ body.builder-body {
   z-index: 1000;
 }
 
-/* Left panel — Library: stage clips to toggle-width when closed, expands on open */
+/* Left panel — Library: slide the whole stage left so only the toggle peeks at the
+   screen edge when closed; open slides it fully into view with nav at the left edge
+   (mirrors Controls: nav at its screen edge, toggle adjacent on the inside). */
 .builder-menu-stage-left {
   left: 0;
   top: 50%;
   bottom: auto;
-  flex-direction: row; /* toggle is first in DOM → sits at x=0 (left edge); nav clips behind it */
-  width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
+  /* row-reverse: nav is the leftmost child (at screen-left when open),
+     toggle is the rightmost child (at the toggle-width peek position when closed) */
+  flex-direction: row-reverse;
+  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
   height: var(--builder-menu-left-height);
   align-items: stretch;
-  overflow: clip; /* clips nav without cutting box-shadow */
-  overflow-clip-margin: 4px;
-  transition: width 0.32s ease;
-  transform: translateY(-50%);
+  overflow: visible; /* transform-based reveal — no clip required */
+  transition: transform 0.32s ease;
+  /* Closed: stage shifted left so nav is off-screen; toggle peek at x=0 */
+  transform: translateX(calc(-1 * var(--builder-menu-left-width))) translateY(-50%);
 }
 
 .builder-menu-stage-left.open {
-  width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
-  transform: translateY(-50%);
+  /* Fully in view: nav at left edge (x=0), toggle to its right */
+  transform: translateX(0) translateY(-50%);
 }
 
 /* Right panel — Controls: same clip approach, mirrored */
@@ -1627,17 +1631,18 @@ body.builder-body {
   transform: translateY(-50%);
 }
 
-/* Insights panel — small pill at bottom center when closed;
+/* Insights panel — small pill docked to the bottom edge when closed;
    opens full-width, overlapping side panels */
 .builder-menu-stage-bottom {
   left: 50%;
   right: auto;
-  bottom: calc(8px + var(--builder-safe-area-bottom));
+  /* Docked to the bottom safe-area edge (mirrors how left/right panels are flush
+     to their respective screen edges with no extra gap) */
+  bottom: var(--builder-safe-area-bottom);
   flex-direction: column-reverse; /* toggle at bottom (DOM-first = bottom in reverse), menu above */
   width: var(--builder-menu-bottom-width); /* closed: slim pill */
   height: var(--builder-menu-toggle-width); /* closed = just toggle tab */
-  overflow: clip; /* clips nav without cutting toggle box-shadow */
-  overflow-clip-margin: 4px;
+  overflow: hidden; /* robust height-based clip; works even with composited children */
   transform: translateX(-50%);
   transition: height 0.32s ease, width 0.32s ease;
 }
@@ -1648,28 +1653,34 @@ body.builder-body {
   transform: translateX(-50%);
 }
 
-.builder-menu-stage-left .builder-menu,
+/* Left sidebar nav: hidden (opacity 0) when the stage is in its closed (slid-out)
+   position; revealed when open. The stage transform already moves it off-screen,
+   but opacity adds a secondary fade so it never flashes during edge-case resizes. */
+.builder-menu-stage-left .builder-menu {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.builder-menu-stage-left.open .builder-menu {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* Right sidebar nav: pointer-events gated; opacity stays 1 (overflow: clip hides it via width animation) */
 .builder-menu-stage-right .builder-menu {
   pointer-events: none;
   opacity: 1;
   transition: opacity 0.25s ease;
 }
 
-.builder-menu-stage-bottom .builder-menu {
-  pointer-events: none;
-}
-
-/* Left sidebar - show/hide on slide */
-.builder-menu-stage-left.open .builder-menu {
-  pointer-events: auto;
-}
-
-/* Right sidebar - show/hide on slide */
+/* Right sidebar - show on slide */
 .builder-menu-stage-right.open .builder-menu {
   pointer-events: auto;
 }
 
 .builder-menu-stage-bottom .builder-menu {
+  pointer-events: none;
   opacity: 0;
   transition: opacity 0.24s ease;
 }
@@ -4635,7 +4646,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .builder-menu-stage-bottom {
-    bottom: calc(8px + var(--builder-safe-area-bottom));
+    bottom: var(--builder-safe-area-bottom);
   }
 
   .builder-menu-bottom {
@@ -4678,7 +4689,7 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   .builder-menu-stage-bottom {
     left: 50%;
     right: auto;
-    bottom: calc(8px + var(--builder-safe-area-bottom));
+    bottom: var(--builder-safe-area-bottom);
     transform: translateX(-50%);
   }
 
@@ -4794,16 +4805,15 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
       0 -4px 20px rgba(136, 204, 255, 0.3);
   }
 
-  /* Side panels on touch devices: use same overflow+width approach as desktop */
+  /* Side panels on touch devices: use same transform-based approach as desktop */
   .builder-menu-stage-left {
     top: 50%;
-    width: var(--builder-menu-toggle-width);
-    transform: translateY(-50%);
+    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
+    transform: translateX(calc(-1 * var(--builder-menu-left-width))) translateY(-50%);
   }
 
   .builder-menu-stage-left.open {
-    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
-    transform: translateY(-50%);
+    transform: translateX(0) translateY(-50%);
   }
 
   .builder-menu-stage-right {
@@ -4886,11 +4896,19 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     );
   }
 
-  /* Panels are bottom-anchored; clear top/bottom overrides for landscape */
+  /* Panels are bottom-anchored; clear top/bottom overrides for landscape.
+     The left panel uses a transform-based reveal so we reset translateY and
+     keep the translateX slide. */
   .builder-menu-stage-left {
     top: auto;
     bottom: 0;
     left: var(--builder-safe-area-left);
+    /* Closed: push nav off-screen to the left; toggle peeks at left edge */
+    transform: translateX(calc(-1 * var(--builder-menu-left-width)));
+  }
+
+  .builder-menu-stage-left.open {
+    transform: translateX(0);
   }
 
   .builder-menu-stage-right {
@@ -5176,12 +5194,15 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 }
 
-/* GPU-promote frequently animated / scrollable containers */
+/* Style containment on nav menus — keeps paint isolated without creating a new
+   stacking/layout context that could escape the parent stage's overflow clipping.
+   NOTE: will-change:transform and contain:layout were intentionally removed here;
+   those properties promoted the navs onto their own GPU compositing layers which
+   caused them to escape the parent's overflow:clip on certain rendering engines. */
 .builder-menu-left,
 .builder-menu-right,
 .builder-menu-bottom {
-  will-change: transform;
-  contain: layout style;
+  contain: style;
 }
 
 .builder-mode-bar {
@@ -5462,4 +5483,126 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 @keyframes chip-pulse {
   0%, 100% { box-shadow: 0 0 14px rgba(0, 255, 136, 0.25), 0 2px 8px rgba(0, 0, 0, 0.4); }
   50%      { box-shadow: 0 0 22px rgba(0, 255, 136, 0.4),  0 2px 10px rgba(0, 0, 0, 0.4); }
+}
+
+/* ── Floating Measure Widget ──────────────────────────────────────────────── */
+
+.measure-widget {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 620;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(4, 8, 20, 0.96);
+  border: 1px solid rgba(0, 255, 136, 0.28);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 24px rgba(0, 200, 100, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: auto;
+  animation: measure-widget-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.measure-widget--armed {
+  border-color: rgba(0, 255, 136, 0.55);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 28px rgba(0, 200, 100, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+@keyframes measure-widget-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Header row */
+.measure-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.12);
+}
+
+.measure-widget-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(0, 200, 100, 0.6);
+}
+
+.measure-widget-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.measure-widget-armed-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #00ff88;
+  background: rgba(0, 255, 136, 0.14);
+  border: 1px solid rgba(0, 255, 136, 0.45);
+  border-radius: 4px;
+  padding: 1px 5px;
+  animation: live-badge-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes live-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+.measure-widget-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.measure-widget-close:hover {
+  background: rgba(255, 80, 80, 0.18);
+  color: #ff8080;
+  border-color: rgba(255, 80, 80, 0.4);
+}
+
+/* The .dmm-display, .dmm-mode-row, .dmm-probes, .dmm-actions,
+   and .dmm-instructions rules defined earlier for the Insights panel
+   are intentionally reused here so the widget shares the same DMM look. */
+
+@media (max-width: 900px), (pointer: coarse) {
+  .measure-widget {
+    bottom: 72px;
+    width: calc(100vw - 48px);
+    max-width: 320px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }

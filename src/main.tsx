@@ -4,6 +4,7 @@ import { HashRouter } from "react-router-dom";
 import App from "./routes/App";
 import { AuthProvider } from "./context/AuthContext";
 import { EngagementProvider } from "./context/EngagementContext";
+import { GalleryProvider } from "./context/GalleryContext";
 import { CircuitStorageProvider } from "./context/CircuitStorageContext";
 import { GamificationProvider } from "./context/GamificationContext";
 import { initializeAndroid, registerServiceWorker } from "./hooks/capacitor/useAndroidInit";
@@ -150,13 +151,15 @@ try {
       <HashRouter>
         <AuthProvider>
           <EngagementProvider>
-            <CircuitStorageProvider>
-              <GamificationProvider>
-                <ClassroomProvider>
-                  <App />
-                </ClassroomProvider>
-              </GamificationProvider>
-            </CircuitStorageProvider>
+            <GalleryProvider>
+              <CircuitStorageProvider>
+                <GamificationProvider>
+                  <ClassroomProvider>
+                    <App />
+                  </ClassroomProvider>
+                </GamificationProvider>
+              </CircuitStorageProvider>
+            </GalleryProvider>
           </EngagementProvider>
         </AuthProvider>
       </HashRouter>

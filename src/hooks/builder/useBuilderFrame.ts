@@ -17,6 +17,19 @@ export type LegacySimulationPayload = {
   error?: string;
 };
 
+export type CinematicFramePayload = {
+  dataUrl: string;
+  circuitName: string;
+  timestamp: number;
+};
+
+export type CinematicVideoPayload = {
+  dataUrl: string;
+  circuitName: string;
+  timestamp: number;
+  durationMs: number;
+};
+
 const DEFAULT_METER_STATE: LegacyMeterState = {
   mode: "voltage",
   armed: false,
@@ -32,6 +45,8 @@ interface UseBuilderFrameOptions {
   onModeStateChange: (state: Partial<LegacyModeState>) => void;
   onToolChange: (tool: BuilderToolId) => void;
   onSimulationPulse: () => void;
+  onCinematicFrame?: (payload: CinematicFramePayload) => void;
+  onCinematicVideo?: (payload: CinematicVideoPayload) => void;
 }
 
 export function useBuilderFrame({
@@ -39,6 +54,8 @@ export function useBuilderFrame({
   onModeStateChange,
   onToolChange,
   onSimulationPulse,
+  onCinematicFrame,
+  onCinematicVideo,
 }: UseBuilderFrameOptions) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pendingMessages = useRef<BuilderMessage[]>([]);
@@ -223,6 +240,22 @@ export function useBuilderFrame({
         return;
       }
 
+      if (type === "legacy:cinematic-frame") {
+        const p = (payload || {}) as CinematicFramePayload;
+        if (onCinematicFrame && p.dataUrl) {
+          onCinematicFrame(p);
+        }
+        return;
+      }
+
+      if (type === "legacy:cinematic-video") {
+        const p = (payload || {}) as CinematicVideoPayload;
+        if (onCinematicVideo && p.dataUrl) {
+          onCinematicVideo(p);
+        }
+        return;
+      }
+
       if (type === "legacy:arena-export:error") {
         const errorPayload = (payload || {}) as {
           message?: string;
@@ -241,7 +274,7 @@ export function useBuilderFrame({
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, [appBasePath, onModeStateChange, onToolChange, onSimulationPulse]);
+  }, [appBasePath, onModeStateChange, onToolChange, onSimulationPulse, onCinematicFrame, onCinematicVideo]);
 
   // On Android/Capacitor the iframe is served from the local bundle and can
   // fire its "legacy:ready" message before React's useEffect has registered

@@ -78,12 +78,18 @@ import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 import PricingSection from "../components/PricingSection";
 import SubscriptionSection from "../components/SubscriptionSection";
 import Community from "./Community";
+import Gallery from "./Gallery";
 import Account from "./Account";
 import Classroom from "./Classroom";
 import Arcade from "./Arcade";
 import Textbook from "./Textbook";
 import WireLibrary from "../components/practice/WireLibrary";
 import { AIHelperPanel } from "../components/builder/AIHelperPanel";
+import { CinematicPanel } from "../components/builder/panels/CinematicPanel";
+import type { CinematicPreset } from "../components/builder/panels/CinematicPanel";
+import { useGallery } from "../context/GalleryContext";
+import type { CinematicFramePayload, CinematicVideoPayload } from "../hooks/builder/useBuilderFrame";
+import "../styles/cinematic.css";
 
 type WorkspacePanelMode =
   | "arena"
@@ -1185,6 +1191,8 @@ const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
   },
 ];
 
+const GALLERY_TOAST_DURATION_MS = 6000;
+
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
@@ -1369,6 +1377,42 @@ export default function Builder() {
     }, 1400);
   }, []);
 
+  const handleCinematicFrame = useCallback(
+    (payload: CinematicFramePayload) => {
+      addGalleryItem({
+        type: "image",
+        dataUrl: payload.dataUrl,
+        circuitName: payload.circuitName,
+        title: `${payload.circuitName} — Frame`,
+        description: "",
+      });
+    },
+    [addGalleryItem],
+  );
+
+  const handleCinematicVideo = useCallback(
+    (payload: CinematicVideoPayload) => {
+      addGalleryItem({
+        type: "video",
+        dataUrl: payload.dataUrl,
+        circuitName: payload.circuitName,
+        title: `${payload.circuitName} — Clip`,
+        description: "",
+      });
+      setCinematicIsRecording(false);
+      // Show "View in Gallery" toast
+      if (galleryToastTimerRef.current !== null) {
+        clearTimeout(galleryToastTimerRef.current);
+      }
+      setShowGalleryToast(true);
+      galleryToastTimerRef.current = window.setTimeout(() => {
+        setShowGalleryToast(false);
+        galleryToastTimerRef.current = null;
+      }, GALLERY_TOAST_DURATION_MS);
+    },
+    [addGalleryItem],
+  );
+
   const {
     iframeRef,
     isFrameReady,
@@ -1387,7 +1431,23 @@ export default function Builder() {
     onModeStateChange: handleModeStateChange,
     onToolChange: () => {},
     onSimulationPulse: handleSimulationPulse,
+    onCinematicFrame: handleCinematicFrame,
+    onCinematicVideo: handleCinematicVideo,
   });
+
+  // Handle cinematic state updates from legacy.html (playing/recording status, waypoint count)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== "object") return;
+      const { type, payload } = event.data as { type?: string; payload?: Record<string, unknown> };
+      if (type !== "legacy:cinematic-state" || !payload) return;
+      if (typeof payload.playing === "boolean") setCinematicIsPlaying(payload.playing);
+      if (typeof payload.recording === "boolean") setCinematicIsRecording(payload.recording);
+      if (typeof payload.keyframes === "number") setCinematicWaypointCount(payload.keyframes);
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   const openArenaWorkspace = useCallback(
     (options?: { sessionName?: string; forceSync?: boolean }) => {
@@ -1501,9 +1561,17 @@ export default function Builder() {
 
   // Circuit storage for save/load functionality
   const circuitStorage = useCircuitStorage();
+  const { addItem: addGalleryItem } = useGallery();
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [isAIHelperOpen, setIsAIHelperOpen] = useState(false);
+  const [isMeasureWidgetOpen, setMeasureWidgetOpen] = useState(false);
+  const [isCinematicOpen, setIsCinematicOpen] = useState(false);
+  const [cinematicIsPlaying, setCinematicIsPlaying] = useState(false);
+  const [cinematicIsRecording, setCinematicIsRecording] = useState(false);
+  const [cinematicWaypointCount, setCinematicWaypointCount] = useState(0);
+  const [showGalleryToast, setShowGalleryToast] = useState(false);
+  const galleryToastTimerRef = useRef<number | null>(null);
   // Create a mock circuit state for demo (in production, extract from iframe)
   const currentCircuitState = useMemo(() => ({
     nodes: [],
@@ -1794,6 +1862,7 @@ export default function Builder() {
         pendingMode === "arcade" ||
         pendingMode === "classroom" ||
         pendingMode === "community" ||
+        pendingMode === "gallery" ||
         pendingMode === "account" ||
         pendingMode === "pricing" ||
         pendingMode === "textbook"
@@ -2652,6 +2721,11 @@ export default function Builder() {
           title: "Community",
           subtitle: "Lab chat, gallery, feedback, and member profiles",
         };
+      case "gallery":
+        return {
+          title: "Gallery",
+          subtitle: "Cinematic shots and fly-through clips you've captured",
+        };
       case "account":
         return {
           title: "Account",
@@ -2716,6 +2790,8 @@ export default function Builder() {
         );
       case "community":
         return <Community />;
+      case "gallery":
+        return <Gallery />;
       case "account":
         return <Account />;
       case "pricing":
@@ -2907,9 +2983,10 @@ export default function Builder() {
             </button>
             <button
               type="button"
-              className={`edge-action-btn${meterState.armed ? " edge-action-btn--active" : ""}`}
-              onClick={() => setBottomMenuOpen(true)}
-              aria-label="Open measurement tools"
+              className={`edge-action-btn${(isMeasureWidgetOpen || meterState.armed) ? " edge-action-btn--active" : ""}`}
+              onClick={() => setMeasureWidgetOpen((o) => !o)}
+              aria-label={isMeasureWidgetOpen ? "Close measurement tools" : "Open measurement tools"}
+              aria-expanded={isMeasureWidgetOpen}
               title="Measurement Tools — Digital Multimeter"
             >
               <IconRuler className="edge-action-icon-svg" />
@@ -3498,115 +3575,6 @@ export default function Builder() {
               </div>
             </div>
             <div className="slider-section">
-              <span className="slider-heading">Meters</span>
-              <div className="dmm-panel" role="region" aria-label="Digital multimeter">
-                {/* LCD display */}
-                <div className="dmm-display" aria-live="polite">
-                  <span className="dmm-mode-label">
-                    {meterState.mode === "voltage"
-                      ? "VOLTMETER"
-                      : meterState.mode === "current"
-                        ? "AMMETER"
-                        : meterState.mode === "resistance"
-                          ? "OHMMETER"
-                          : "OSCILLOSCOPE"}
-                  </span>
-                  <span
-                    className={`dmm-reading-main${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
-                    aria-label={`Reading: ${meterState.reading}`}
-                  >
-                    {meterState.reading !== "—" && meterState.reading !== ""
-                      ? meterState.reading
-                      : "- - - -"}
-                  </span>
-                  {meterState.subreading ? (
-                    <span className="dmm-subreading">{meterState.subreading}</span>
-                  ) : null}
-                </div>
-                {/* Mode selector */}
-                <div className="dmm-mode-row" role="group" aria-label="Meter mode">
-                  {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
-                    const modeLabels: Record<string, { symbol: string; name: string }> = {
-                      voltage:    { symbol: "V",  name: "Voltage" },
-                      current:    { symbol: "A",  name: "Current" },
-                      resistance: { symbol: "Ω",  name: "Resistance" },
-                      scope:      { symbol: "~",  name: "Oscilloscope" },
-                    };
-                    const isActive = meterState.mode === mode && meterState.armed;
-                    return (
-                      <button
-                        key={mode}
-                        type="button"
-                        className={`dmm-mode-btn${isActive ? " active" : ""}`}
-                        aria-pressed={isActive}
-                        title={modeLabels[mode].name}
-                        disabled={!isFrameReady}
-                        onClick={() => {
-                          postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
-                        }}
-                      >
-                        <span className="dmm-mode-symbol">{modeLabels[mode].symbol}</span>
-                        <span className="dmm-mode-name">{modeLabels[mode].name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Probe terminals */}
-                <div className="dmm-probes" aria-label="Probe terminals">
-                  <div className={`dmm-probe dmm-probe-red${meterState.probeA !== "—" ? " placed" : ""}`}>
-                    <span className="dmm-probe-dot" aria-hidden="true">●</span>
-                    <div className="dmm-probe-info">
-                      <span className="dmm-probe-port">VΩmA</span>
-                      <span className="dmm-probe-node" aria-label={`Red probe: ${meterState.probeA}`}>
-                        {meterState.probeA !== "—" ? meterState.probeA : "open"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={`dmm-probe dmm-probe-black${meterState.probeB !== "—" ? " placed" : ""}`}>
-                    <span className="dmm-probe-dot" aria-hidden="true">●</span>
-                    <div className="dmm-probe-info">
-                      <span className="dmm-probe-port">COM</span>
-                      <span className="dmm-probe-node" aria-label={`Black probe: ${meterState.probeB}`}>
-                        {meterState.probeB !== "—" ? meterState.probeB : "open"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* Arm / clear */}
-                <div className="dmm-actions">
-                  <button
-                    type="button"
-                    className={`dmm-arm-btn${meterState.armed ? " armed" : ""}`}
-                    aria-pressed={meterState.armed}
-                    title={meterState.armed ? "Probes active — click circuit terminals to measure" : "Activate probes then tap two terminals on the circuit"}
-                    disabled={!isFrameReady}
-                    onClick={() => {
-                      postToBuilder({ type: "builder:toggle-meter-armed" });
-                    }}
-                  >
-                    {meterState.armed ? "⦿ Probes Active" : "○ Place Probes"}
-                  </button>
-                  <button
-                    type="button"
-                    className="dmm-clear-btn"
-                    title="Reset probe positions and clear reading"
-                    disabled={!isFrameReady}
-                    onClick={() => {
-                      postToBuilder({ type: "builder:clear-meter" });
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-                {/* Contextual hint */}
-                {meterState.instructions && (
-                  <p className="dmm-instructions" aria-live="polite">
-                    {meterState.instructions}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="slider-section">
               <span className="slider-heading">Environment</span>
               <div className="menu-track menu-track-chips">
                 <div
@@ -3900,6 +3868,16 @@ export default function Builder() {
             title="Zoom out"
           >
             −
+          </button>
+          <button
+            type="button"
+            className={`cinematic-fab${isCinematicOpen ? " active" : ""}${cinematicIsRecording ? " cinematic-fab--recording" : ""}`}
+            onClick={() => setIsCinematicOpen((prev) => !prev)}
+            aria-label={isCinematicOpen ? "Close cinematic camera" : "Open cinematic camera"}
+            aria-expanded={isCinematicOpen}
+            title="Cinematic Camera"
+          >
+            {cinematicIsRecording ? <><span className="cinematic-rec-dot" aria-hidden="true" />REC</> : "🎬"}
           </button>
         </div>
       )}
@@ -4196,6 +4174,185 @@ export default function Builder() {
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
       />
+
+      <CinematicPanel
+        isOpen={isCinematicOpen}
+        onToggle={() => setIsCinematicOpen((prev) => !prev)}
+        isPlaying={cinematicIsPlaying}
+        isRecording={cinematicIsRecording}
+        waypointCount={cinematicWaypointCount}
+        onPlayPreset={(preset: CinematicPreset) => triggerBuilderAction("cinematic-play", { preset })}
+        onPlayKeyframes={() => triggerBuilderAction("cinematic-play", {})}
+        onStop={() => triggerBuilderAction("cinematic-stop")}
+        onCaptureFrame={() => triggerBuilderAction("cinematic-capture")}
+        onStartRecord={() => triggerBuilderAction("cinematic-record-start")}
+        onStopRecord={() => triggerBuilderAction("cinematic-record-stop")}
+        onAddWaypoint={() => {
+          triggerBuilderAction("cinematic-add-waypoint");
+          setCinematicWaypointCount((n) => n + 1);
+        }}
+        onClearWaypoints={() => {
+          triggerBuilderAction("cinematic-clear-waypoints");
+          setCinematicWaypointCount(0);
+        }}
+      />
+
+      {/* Floating Measure Widget — shown when the Measure action button is toggled */}
+      {isMeasureWidgetOpen && (
+        <div
+          className={`measure-widget${meterState.armed ? " measure-widget--armed" : ""}`}
+          role="region"
+          aria-label="Measurement tools"
+        >
+          {/* Header */}
+          <div className="measure-widget-header">
+            <span className="measure-widget-title">MULTIMETER</span>
+            <div className="measure-widget-header-actions">
+              {meterState.armed && (
+                <span className="measure-widget-armed-badge" aria-label="Probes active">LIVE</span>
+              )}
+              <button
+                type="button"
+                className="measure-widget-close"
+                onClick={() => setMeasureWidgetOpen(false)}
+                aria-label="Close measurement tools"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* LCD display */}
+          <div className="dmm-display" aria-live="polite">
+            <span className="dmm-mode-label">
+              {meterState.mode === "voltage"
+                ? "VOLTMETER"
+                : meterState.mode === "current"
+                  ? "AMMETER"
+                  : meterState.mode === "resistance"
+                    ? "OHMMETER"
+                    : "OSCILLOSCOPE"}
+            </span>
+            <span
+              className={`dmm-reading-main${meterState.reading !== "—" && meterState.reading !== "" ? " has-value" : ""}`}
+              aria-label={`Reading: ${meterState.reading}`}
+            >
+              {meterState.reading !== "—" && meterState.reading !== ""
+                ? meterState.reading
+                : "- - - -"}
+            </span>
+            {meterState.subreading ? (
+              <span className="dmm-subreading">{meterState.subreading}</span>
+            ) : null}
+          </div>
+
+          {/* Mode selector */}
+          <div className="dmm-mode-row" role="group" aria-label="Meter mode">
+            {(["voltage", "current", "resistance", "scope"] as const).map((mode) => {
+              const modeLabels: Record<string, { symbol: string; name: string }> = {
+                voltage:    { symbol: "V",  name: "Voltage" },
+                current:    { symbol: "A",  name: "Current" },
+                resistance: { symbol: "Ω",  name: "Resistance" },
+                scope:      { symbol: "~",  name: "Oscilloscope" },
+              };
+              const isActive = meterState.mode === mode && meterState.armed;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`dmm-mode-btn${isActive ? " active" : ""}`}
+                  aria-pressed={isActive}
+                  title={modeLabels[mode].name}
+                  disabled={!isFrameReady}
+                  onClick={() => {
+                    postToBuilder({ type: "builder:set-meter-mode", payload: { mode } });
+                  }}
+                >
+                  <span className="dmm-mode-symbol">{modeLabels[mode].symbol}</span>
+                  <span className="dmm-mode-name">{modeLabels[mode].name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Probe terminals */}
+          <div className="dmm-probes" aria-label="Probe terminals">
+            <div className={`dmm-probe dmm-probe-red${meterState.probeA !== "—" ? " placed" : ""}`}>
+              <span className="dmm-probe-dot" aria-hidden="true">●</span>
+              <div className="dmm-probe-info">
+                <span className="dmm-probe-port">VΩmA</span>
+                <span className="dmm-probe-node" aria-label={`Red probe: ${meterState.probeA}`}>
+                  {meterState.probeA !== "—" ? meterState.probeA : "open"}
+                </span>
+              </div>
+            </div>
+            <div className={`dmm-probe dmm-probe-black${meterState.probeB !== "—" ? " placed" : ""}`}>
+              <span className="dmm-probe-dot" aria-hidden="true">●</span>
+              <div className="dmm-probe-info">
+                <span className="dmm-probe-port">COM</span>
+                <span className="dmm-probe-node" aria-label={`Black probe: ${meterState.probeB}`}>
+                  {meterState.probeB !== "—" ? meterState.probeB : "open"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Arm / clear */}
+          <div className="dmm-actions">
+            <button
+              type="button"
+              className={`dmm-arm-btn${meterState.armed ? " armed" : ""}`}
+              aria-pressed={meterState.armed}
+              title={meterState.armed ? "Probes active — click circuit terminals to measure" : "Activate probes then tap two terminals on the circuit"}
+              disabled={!isFrameReady}
+              onClick={() => {
+                postToBuilder({ type: "builder:toggle-meter-armed" });
+              }}
+            >
+              {meterState.armed ? "⦿ Probes Active" : "○ Place Probes"}
+            </button>
+            <button
+              type="button"
+              className="dmm-clear-btn"
+              title="Reset probe positions and clear reading"
+              disabled={!isFrameReady}
+              onClick={() => {
+                postToBuilder({ type: "builder:clear-meter" });
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Contextual hint */}
+          {meterState.instructions && (
+            <p className="dmm-instructions" aria-live="polite">
+              {meterState.instructions}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Gallery toast — shown when a recording is saved */}
+      <div className={`cinematic-toast${showGalleryToast ? " visible" : ""}`} role="status" aria-live="polite">
+        <span>🎬 Recording saved to gallery</span>
+        <a
+          href="#/gallery"
+          className="cinematic-toast__link"
+          onClick={() => setShowGalleryToast(false)}
+        >
+          View Gallery
+        </a>
+        <button
+          type="button"
+          className="cinematic-toast__dismiss"
+          onClick={() => setShowGalleryToast(false)}
+          aria-label="Dismiss"
+        >
+          ✕
+        </button>
+      </div>
 
     </div>
   );

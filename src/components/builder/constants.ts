@@ -51,6 +51,8 @@ export const SCHEMATIC_SYMBOLS = {
   CRYSTAL: "ANSI_CRYSTAL",
   GROUND: "ANSI_GROUND",
   JUNCTION: "ANSI_JUNCTION",
+  RELAY: "ANSI_RELAY",
+  VOLTAGE_REGULATOR: "ANSI_VOLTAGE_REGULATOR",
 } as const;
 
 export const COMPONENT_ACTIONS: ComponentAction[] = [
@@ -497,6 +499,40 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
       symbolRef: "GND",
       category: "connector",
       educationalTags: ["reference", "return-path", "common"],
+    },
+  },
+  {
+    id: "relay",
+    icon: "─[⌁]─",
+    label: "Relay",
+    action: "component",
+    builderType: "relay",
+    description: "Electromagnetic switch — coil energizes to open or close contacts",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.RELAY,
+      symbolText: "─[⌁]─",
+      symbolDesc: "SPDT",
+      symbolUnit: "V",
+      symbolRef: "K1",
+      category: "electromechanical",
+      educationalTags: ["switch", "coil", "isolation", "electromagnetic"],
+    },
+  },
+  {
+    id: "voltage-regulator",
+    icon: "─[REG]─",
+    label: "Voltage Reg.",
+    action: "component",
+    builderType: "voltage-regulator",
+    description: "Three-terminal IC regulator — fixed output voltage from varying input",
+    metadata: {
+      schematicSymbol: SCHEMATIC_SYMBOLS.VOLTAGE_REGULATOR,
+      symbolText: "─[REG]─",
+      symbolDesc: "Vout",
+      symbolUnit: "V",
+      symbolRef: "U1",
+      category: "integrated",
+      educationalTags: ["regulation", "power-supply", "ldo", "linear"],
     },
   },
   {

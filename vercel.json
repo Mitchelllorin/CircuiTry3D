@@ -2,5 +2,9 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci"
+  "installCommand": "npm ci",
+  "env": {
+    "VITE_DEMO_MODE": "true",
+    "VITE_DEMO_APP_URL": ""
+  }
 }

@@ -16,7 +16,11 @@
     "generate-screenshots:local": "node scripts/generate-screenshots.js --local",
     "capture-pr-portrait": "node scripts/capture-pr-portrait.js",
     "circuit-bot": "node scripts/circuit-bot.js",
-    "circuit-bot:local": "node scripts/circuit-bot.js --local"
+    "circuit-bot:local": "node scripts/circuit-bot.js --local",
+    "circuit-bot:portrait": "node scripts/circuit-bot.js --portrait",
+    "circuit-bot:portrait:local": "node scripts/circuit-bot.js --local --portrait",
+    "component-showcase": "node scripts/capture-component-showcase.js",
+    "component-showcase:local": "node scripts/capture-component-showcase.js --local"
   },
   "repository": {
     "type": "git",

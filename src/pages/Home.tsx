@@ -6,6 +6,14 @@ type LandingMessage = {
   path?: string;
 };
 
+/**
+ * When VITE_DEMO_APP_URL is set at build time, the landing page "Launch Builder"
+ * buttons open the Vercel demo in a new tab instead of navigating in-app.
+ * The Vercel demo build has VITE_DEMO_MODE=true, which limits the component
+ * library to the six free components and shows the paywall for the rest.
+ */
+const DEMO_APP_URL: string = (import.meta.env.VITE_DEMO_APP_URL ?? "").trim();
+
 export default function Home() {
   const navigate = useNavigate();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -28,6 +36,14 @@ export default function Home() {
       }
 
       const nextPath = typeof message.path === "string" && message.path.trim().length > 0 ? message.path : "/";
+
+      // If a Vercel demo URL is configured and the user is trying to open the
+      // builder, send them to the demo deployment in a new tab instead.
+      if (DEMO_APP_URL && nextPath === "/app") {
+        window.open(DEMO_APP_URL, "_blank", "noopener,noreferrer");
+        return;
+      }
+
       navigate(nextPath);
     };
 

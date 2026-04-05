@@ -8,6 +8,7 @@ import TipsTicker from "../components/TipsTicker";
 import ErrorBoundary from "../components/ErrorBoundary";
 import DemoBanner from "../components/DemoBanner";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
+import { ArenaProvider } from "../context/ArenaContext";
 import { IS_DEMO_MODE } from "../utils/demoMode";
 import "../styles/layout.css";
 
@@ -38,6 +39,8 @@ const Promo5 = lazy(() => import("../pages/Promo5"));
 const Promo7 = lazy(() => import("../pages/Promo7"));
 const Promo9 = lazy(() => import("../pages/Promo9"));
 const Upgrade = lazy(() => import("../pages/Upgrade"));
+const ContactSales = lazy(() => import("../pages/ContactSales"));
+const Gallery = lazy(() => import("../pages/Gallery"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -51,6 +54,7 @@ function PageFallback() {
 export default function App() {
   return (
     <WorkspaceModeProvider>
+      <ArenaProvider>
       <ErrorBoundary>
       {/* Fixed demo-version banner – rendered above the entire app shell */}
       <DemoBanner />
@@ -82,11 +86,14 @@ export default function App() {
             <Route path="/promo7" element={<Promo7 />} />
             <Route path="/promo9" element={<Promo9 />} />
             <Route path="/upgrade" element={<Upgrade />} />
+            <Route path="/contact-sales" element={<ContactSales />} />
+            <Route path="/gallery" element={<Gallery />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
       </ErrorBoundary>
+      </ArenaProvider>
     </WorkspaceModeProvider>
   );
 }
@@ -169,13 +176,13 @@ function AppLayout() {
       ref={shellRef}
       style={IS_DEMO_MODE ? { paddingTop: "var(--demo-banner-height, 38px)" } : undefined}
     >
-      {/* Global Mode Bar - shown on all pages except landing, arena, and promo */}
-      {!isLanding && !isArena && !isAnyPromo && <GlobalModeBar />}
+      {/* Global Mode Bar - shown on all pages except landing and promo */}
+      {!isLanding && !isAnyPromo && <GlobalModeBar />}
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Tips & facts ticker - shown on all pages except landing, arena, and promo */}
-      {!isLanding && !isArena && !isAnyPromo && <TipsTicker />}
+      {/* Tips & facts ticker - shown on all pages except landing and promo */}
+      {!isLanding && !isAnyPromo && <TipsTicker />}
       {/* Site footer with legal links - shown on all pages except landing, workspace, arena & promo */}
       {!isLanding && !isWorkspace && !isArena && !isAnyPromo && (
         <footer className="app-footer">

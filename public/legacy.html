@@ -3317,6 +3317,8 @@
         let meterProbeA = null; // pointData for red probe
         let meterProbeB = null; // pointData for black probe
         let meterCurrentTarget = null; // component for current measurement
+        let meterProbeAMesh = null; // THREE.Group – physical red probe model
+        let meterProbeBMesh = null; // THREE.Group – physical black probe model
         let lastDCSolution = null;
 
         // ── Workspace failure state ──────────────────────────────────────────
@@ -3768,6 +3770,27 @@ body.android-optimized .zoom-btn {
                             case 'zoom-out':
                                 cameraDistance = Math.min(ZOOM_MAX, cameraDistance + Math.max(ZOOM_OUT_MIN_STEP, cameraDistance * ZOOM_STEP_PROPORTIONAL));
                                 updateCameraPosition();
+                                break;
+                            case 'cinematic-play':
+                                _cinematicCtrl.start(data.preset || null, data.keyframes || []);
+                                break;
+                            case 'cinematic-stop':
+                                _cinematicCtrl.stop();
+                                break;
+                            case 'cinematic-capture':
+                                _cinematicCtrl.captureFrame();
+                                break;
+                            case 'cinematic-record-start':
+                                _cinematicCtrl.startRecord();
+                                break;
+                            case 'cinematic-record-stop':
+                                _cinematicCtrl.stopRecord();
+                                break;
+                            case 'cinematic-add-waypoint':
+                                _cinematicCtrl.addCurrentAsWaypoint();
+                                break;
+                            case 'cinematic-clear-waypoints':
+                                _cinematicCtrl.clearWaypoints();
                                 break;
                             default:
                                 break;
@@ -4635,7 +4658,9 @@ body.android-optimized .zoom-btn {
             motor: 0,
             speaker: 0,
             opamp: 0,
-            transformer: 0
+            transformer: 0,
+            relay: 0,
+            'voltage-regulator': 0
         };
 
         // Track placement offset for staggering components
@@ -4832,13 +4857,15 @@ body.android-optimized .zoom-btn {
             }
 
             createConnectionPoint() {
-                const pointGeometry = new THREE.SphereGeometry(0.18, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const pointGeometry = new THREE.SphereGeometry(0.08, isMobile ? 8 : 16, isMobile ? 6 : 12);
                 const pointMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x007777,
-                    emissiveIntensity: 0.5,
+                    emissiveIntensity: 0.2,
                     metalness: 0.3,
-                    roughness: 0.3
+                    roughness: 0.3,
+                    transparent: true,
+                    opacity: 0.22
                 });
                 
                 const connectionPoint = new THREE.Mesh(pointGeometry, pointMaterial);
@@ -4975,6 +5002,8 @@ body.android-optimized .zoom-btn {
                     case 'speaker': return { impedance: 8, power: 1 }; // Ω, W
                     case 'opamp': return { gain: 100000 };
                     case 'transformer': return { ratio: 1, primaryVoltage: 120 }; // turns ratio, V
+                    case 'relay': return { coilVoltage: 12, coilResistance: 200 }; // V, Ω
+                    case 'voltage-regulator': return { outputVoltage: 5, maxCurrent: 1.5 }; // V, A
                     default: return {};
                 }
             }
@@ -5323,7 +5352,7 @@ body.android-optimized .zoom-btn {
                         this.createCapacitorMesh(group);
                         break;
                     case 'capacitor-ceramic':
-                        this.createCapacitorMesh(group);
+                        this.createCeramicCapacitorMesh(group);
                         break;
                     case 'inductor':
                         this.createInductorMesh(group);
@@ -5332,16 +5361,16 @@ body.android-optimized .zoom-btn {
                         this.createDiodeMesh(group);
                         break;
                     case 'zener-diode':
-                        this.createDiodeMesh(group);
+                        this.createZenerDiodeMesh(group);
                         break;
                     case 'photodiode':
-                        this.createDiodeMesh(group);
+                        this.createPhotodiodeMesh(group);
                         break;
                     case 'thermistor':
-                        this.createResistorMesh(group);
+                        this.createThermistorMesh(group);
                         break;
                     case 'crystal':
-                        this.createFuseMesh(group);
+                        this.createCrystalMesh(group);
                         break;
                     case 'bjt':
                         this.createBJTMesh(group);
@@ -5384,6 +5413,12 @@ body.android-optimized .zoom-btn {
                         break;
                     case 'transformer':
                         this.createTransformerMesh(group);
+                        break;
+                    case 'relay':
+                        this.createRelayMesh(group);
+                        break;
+                    case 'voltage-regulator':
+                        this.createVoltageRegulatorMesh(group);
                         break;
                 }
 
@@ -5444,6 +5479,16 @@ body.android-optimized .zoom-btn {
                     width = isMobile ? 3.5 : 3.0;
                     height = isMobile ? 3.0 : 2.6;
                     depth = isMobile ? 2.5 : 2.2;
+                } else if (this.type === 'relay') {
+                    // Relay has taller housing
+                    width = isMobile ? 3.5 : 2.8;
+                    height = isMobile ? 3.0 : 2.6;
+                    depth = isMobile ? 2.5 : 2.2;
+                } else if (this.type === 'voltage-regulator') {
+                    // Voltage regulator TO-220 package
+                    width = isMobile ? 3.5 : 2.8;
+                    height = isMobile ? 3.5 : 3.0;
+                    depth = isMobile ? 2.5 : 2.2;
                 } else {
                     // Default size for 2-terminal components
                     width = isMobile ? 4.0 : 3.2;
@@ -5467,35 +5512,59 @@ body.android-optimized .zoom-btn {
             }
 
             createBatteryMesh(group) {
-                // Battery body
+                // Duracell CopperTop-inspired look: black body, prominent copper positive cap, gold label band
                 const segments = isMobile ? 8 : 12;
-                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.2, segments);
-                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
+
+                // Black main body
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.9, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.75 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
+                body.position.x = -0.05;
                 group.add(body);
 
-                // Positive terminal — extended to x=1.0 so it overlaps the connection sphere
-                // (sphere center at x=1.2, inner edge at x=0.9), eliminating the visual gap.
-                const posGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.4, segments);
-                const posMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.9, roughness: 0.2 });
-                const pos = new THREE.Mesh(posGeometry, posMaterial);
-                pos.rotation.z = Math.PI / 2;
-                pos.position.x = 0.8;
-                group.add(pos);
+                // Gold/copper label band — the signature CopperTop band wrapping the upper body
+                const bandGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.46, segments);
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xb8860b, metalness: 0.2, roughness: 0.55 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.12;
+                group.add(band);
 
-                // Negative terminal — previously ended at x=-0.775 leaving a 0.125-unit gap
-                // before the connection sphere (inner edge at x=-0.9). Now extended to x=-1.0.
-                const negGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments);
-                const negMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.1, roughness: 0.8 });
-                const neg = new THREE.Mesh(negGeometry, negMaterial);
-                neg.rotation.z = Math.PI / 2;
-                neg.position.x = -0.8;
-                group.add(neg);
+                // Copper-top positive cap — the signature full-diameter copper end cap
+                const copperCapGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.38, segments);
+                const copperMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.78, roughness: 0.2 });
+                const copperCap = new THREE.Mesh(copperCapGeometry, copperMaterial);
+                copperCap.rotation.z = Math.PI / 2;
+                copperCap.position.x = 0.64;
+                group.add(copperCap);
 
-                // Labels
-                this.addText(group, '+', new THREE.Vector3(1.0, 0.4, 0), 0xff0000);
-                this.addText(group, '-', new THREE.Vector3(-1.0, 0.4, 0), 0x000000);
+                // Positive nub (raised button) — the small raised contact at the positive tip
+                const nubGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.16, segments);
+                const nub = new THREE.Mesh(nubGeometry, copperMaterial);
+                nub.rotation.z = Math.PI / 2;
+                nub.position.x = 0.91;
+                group.add(nub);
+
+                // Negative flat cap — dark steel plate at negative end
+                const negCapGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.22, segments);
+                const negCapMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.4, roughness: 0.65 });
+                const negCap = new THREE.Mesh(negCapGeometry, negCapMaterial);
+                negCap.rotation.z = Math.PI / 2;
+                negCap.position.x = -0.61;
+                group.add(negCap);
+
+                // Thin lead from negative cap to connection sphere at x=-1.2
+                const negLeadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.42, segments);
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.85, roughness: 0.22 });
+                const negLead = new THREE.Mesh(negLeadGeometry, leadMaterial);
+                negLead.rotation.z = Math.PI / 2;
+                negLead.position.x = -0.91;
+                group.add(negLead);
+
+                // +/- labels
+                this.addText(group, '+', new THREE.Vector3(1.0, 0.42, 0), 0xffffff);
+                this.addText(group, '-', new THREE.Vector3(-0.95, 0.42, 0), 0xaaaaaa);
             }
 
             createResistorMesh(group) {
@@ -5984,7 +6053,242 @@ body.android-optimized .zoom-btn {
                 this.addLeads(group);
             }
 
-            // BJT NPN - TO-92 package with NPN marking
+            // Crystal oscillator — HC-49 metal can package with two leads
+            createCrystalMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Metal can body (flat silver rectangular/capsule package)
+                const canGeometry = new THREE.BoxGeometry(0.7, 0.35, 0.22);
+                const canMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.85, roughness: 0.18 });
+                const can = new THREE.Mesh(canGeometry, canMaterial);
+                can.position.y = 0.25;
+                group.add(can);
+
+                // Seam line on can (dark edge detail)
+                const seamGeometry = new THREE.BoxGeometry(0.72, 0.04, 0.24);
+                const seamMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.3 });
+                const seam = new THREE.Mesh(seamGeometry, seamMaterial);
+                seam.position.y = 0.08;
+                group.add(seam);
+
+                // Two leads from bottom of can
+                const leadGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.5, 4);
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.85, roughness: 0.22 });
+
+                const leadL = new THREE.Mesh(leadGeometry, leadMaterial);
+                leadL.position.set(-0.2, -0.18, 0);
+                group.add(leadL);
+
+                const leadR = new THREE.Mesh(leadGeometry, leadMaterial);
+                leadR.position.set(0.2, -0.18, 0);
+                group.add(leadR);
+
+                this.addLeads(group);
+            }
+
+            // Ceramic disc capacitor — flat tan disc, distinct from electrolytic cylinder
+            createCeramicCapacitorMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Flat disc body (ceramic disc cap shape)
+                const discGeometry = new THREE.CylinderGeometry(0.28, 0.28, 0.12, segments);
+                const discMaterial = new THREE.MeshStandardMaterial({ color: 0xd4a96a, metalness: 0.0, roughness: 0.82 });
+                const disc = new THREE.Mesh(discGeometry, discMaterial);
+                disc.rotation.x = Math.PI / 2;
+                disc.position.y = 0.12;
+                group.add(disc);
+
+                // Rim detail
+                const rimGeometry = new THREE.TorusGeometry(0.28, 0.025, 6, segments);
+                const rimMaterial = new THREE.MeshStandardMaterial({ color: 0xc49050, metalness: 0.05, roughness: 0.75 });
+                const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+                rim.rotation.x = Math.PI / 2;
+                rim.position.y = 0.12;
+                group.add(rim);
+
+                this.addLeads(group);
+            }
+
+            // Zener diode — purple body with distinctive notched cathode band
+            createZenerDiodeMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Purple-tinted body (distinguishes from regular diode)
+                const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x3d1a6e, metalness: 0.08, roughness: 0.72 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // Cathode band (silver)
+                const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.3;
+                group.add(band);
+
+                // Zener Z-notch: two small angled pieces at the cathode band ends
+                const notchGeometry = new THREE.BoxGeometry(0.05, 0.12, 0.05);
+                const notchMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
+
+                const notchTop = new THREE.Mesh(notchGeometry, notchMaterial);
+                notchTop.rotation.z = Math.PI / 4;
+                notchTop.position.set(0.3, 0.15, 0);
+                group.add(notchTop);
+
+                const notchBot = new THREE.Mesh(notchGeometry, notchMaterial);
+                notchBot.rotation.z = Math.PI / 4;
+                notchBot.position.set(0.3, -0.15, 0);
+                group.add(notchBot);
+
+                this.addLeads(group);
+            }
+
+            // Photodiode — dark body with blue lens dome and light-ray indicators
+            createPhotodiodeMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Dark body (like diode)
+                const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // Cathode band (silver)
+                const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.3;
+                group.add(band);
+
+                // Blue lens window on top of body
+                const lensGeometry = new THREE.SphereGeometry(0.12, segments, segments, 0, Math.PI * 2, 0, Math.PI / 2);
+                const lensMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x2255aa,
+                    metalness: 0.1,
+                    roughness: 0.05,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const lens = new THREE.Mesh(lensGeometry, lensMaterial);
+                lens.position.set(0, 0.15, 0);
+                group.add(lens);
+
+                // Light ray indicators — two small cylinders at angles above body
+                const rayGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 4);
+                const rayMaterial = new THREE.MeshStandardMaterial({ color: 0xffee44, metalness: 0.0, roughness: 0.5, transparent: true, opacity: 0.7 });
+
+                const ray1 = new THREE.Mesh(rayGeometry, rayMaterial);
+                ray1.rotation.z = Math.PI / 4;
+                ray1.position.set(-0.2, 0.35, 0);
+                group.add(ray1);
+
+                const ray2 = new THREE.Mesh(rayGeometry, rayMaterial);
+                ray2.rotation.z = -Math.PI / 6;
+                ray2.position.set(0.08, 0.4, 0);
+                group.add(ray2);
+
+                this.addLeads(group);
+            }
+
+            // Thermistor — small blue NTC bead with two leads (distinct from resistor)
+            createThermistorMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // NTC bead body — small round blue bead
+                const beadGeometry = new THREE.SphereGeometry(0.22, segments, segments);
+                const beadMaterial = new THREE.MeshStandardMaterial({ color: 0x1a55aa, metalness: 0.05, roughness: 0.65 });
+                const bead = new THREE.Mesh(beadGeometry, beadMaterial);
+                group.add(bead);
+
+                // Temperature marker — thin orange ring around bead equator
+                const ringGeometry = new THREE.TorusGeometry(0.22, 0.025, 6, segments);
+                const ringMaterial = new THREE.MeshStandardMaterial({ color: 0xff6600, metalness: 0.0, roughness: 0.6 });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.y = Math.PI / 2;
+                group.add(ring);
+
+                this.addLeads(group);
+            }
+
+            // Relay — blue coil housing with dark armature and mounting leads
+            createRelayMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Coil housing body (rectangular blue block)
+                const bodyGeometry = new THREE.BoxGeometry(0.72, 0.52, 0.38);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, metalness: 0.05, roughness: 0.72 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.28;
+                group.add(body);
+
+                // Armature bar on top (dark metal)
+                const armGeometry = new THREE.BoxGeometry(0.55, 0.08, 0.32);
+                const armMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.6, roughness: 0.4 });
+                const armature = new THREE.Mesh(armGeometry, armMaterial);
+                armature.position.y = 0.58;
+                group.add(armature);
+
+                // Coil winding hint — copper-colored side strip
+                const windingGeometry = new THREE.BoxGeometry(0.74, 0.18, 0.04);
+                const windingMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.7, roughness: 0.3 });
+                const winding = new THREE.Mesh(windingGeometry, windingMaterial);
+                winding.position.set(0, 0.28, 0.21);
+                group.add(winding);
+
+                // Contact spring detail (silver strip)
+                const springGeometry = new THREE.BoxGeometry(0.35, 0.04, 0.04);
+                const springMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.85, roughness: 0.2 });
+                const spring = new THREE.Mesh(springGeometry, springMaterial);
+                spring.position.set(0.1, 0.62, 0);
+                group.add(spring);
+
+                this.addLeads(group);
+            }
+
+            // Voltage Regulator — TO-220 package with heat sink tab and 3 leads
+            createVoltageRegulatorMesh(group) {
+                // Black TO-220 body
+                const bodyGeometry = new THREE.BoxGeometry(0.65, 0.52, 0.22);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.05, roughness: 0.78 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.3;
+                group.add(body);
+
+                // Heat sink tab (silver metal tongue at back/top)
+                const tabGeometry = new THREE.BoxGeometry(0.68, 0.22, 0.02);
+                const tabMaterial = new THREE.MeshStandardMaterial({ color: 0x8c8c8c, metalness: 0.82, roughness: 0.22 });
+                const tab = new THREE.Mesh(tabGeometry, tabMaterial);
+                tab.position.set(0, 0.65, 0.12);
+                group.add(tab);
+
+                // Mounting hole in tab
+                const holeGeometry = new THREE.TorusGeometry(0.06, 0.02, 6, isMobile ? 8 : 12);
+                const holeMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.3, roughness: 0.65 });
+                const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+                hole.position.set(0, 0.65, 0.14);
+                group.add(hole);
+
+                // White label strip
+                const labelGeometry = new THREE.BoxGeometry(0.5, 0.2, 0.02);
+                const labelMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.0, roughness: 0.85 });
+                const label = new THREE.Mesh(labelGeometry, labelMaterial);
+                label.position.set(0, 0.32, 0.12);
+                group.add(label);
+
+                // Three leads (Input, GND, Output)
+                const leadGeometry = new THREE.BoxGeometry(0.05, 0.5, 0.05);
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
+
+                for (let i = 0; i < 3; i++) {
+                    const lead = new THREE.Mesh(leadGeometry, leadMaterial);
+                    lead.position.set(-0.22 + i * 0.22, -0.2, 0);
+                    group.add(lead);
+                }
+            }
             createBJTNPNMesh(group) {
                 const segments = isMobile ? 8 : 12;
                 // BJT body (TO-92 package)
@@ -6088,7 +6392,7 @@ body.android-optimized .zoom-btn {
             createConnectionPoints() {
                 this.connectionPoints = [];
 
-                const pointGeometry = new THREE.SphereGeometry(0.15, isMobile ? 16 : 20, isMobile ? 12 : 16);
+                const pointGeometry = new THREE.SphereGeometry(0.07, isMobile ? 8 : 16, isMobile ? 6 : 12);
                 const leftPos = new THREE.Vector3(-1.2, 0, 0);
                 const rightPos = new THREE.Vector3(1.2, 0, 0);
                 const centerPos = new THREE.Vector3(0, 0, 0);
@@ -6098,9 +6402,11 @@ body.android-optimized .zoom-btn {
                     const positiveMaterial = new THREE.MeshStandardMaterial({
                         color: 0xff0000,
                         emissive: 0x330000,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
@@ -6117,9 +6423,11 @@ body.android-optimized .zoom-btn {
                     const negativeMaterial = new THREE.MeshStandardMaterial({
                         color: 0x4488ff,
                         emissive: 0x112244,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
@@ -6137,9 +6445,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Collector (left, -0.2 x offset matching lead positions)
@@ -6183,9 +6493,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Gate (left)
@@ -6229,9 +6541,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Terminal 1 (left)
@@ -6275,9 +6589,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     const groundPoint = new THREE.Mesh(pointGeometry, neutralMaterial);
@@ -6296,9 +6612,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Collector (left)
@@ -6342,9 +6660,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Collector (left)
@@ -6388,9 +6708,11 @@ body.android-optimized .zoom-btn {
                     const positiveMaterial = new THREE.MeshStandardMaterial({
                         color: 0xff8844,
                         emissive: 0x331100,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
@@ -6406,9 +6728,11 @@ body.android-optimized .zoom-btn {
                     const negativeMaterial = new THREE.MeshStandardMaterial({
                         color: 0x4488ff,
                         emissive: 0x112244,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
@@ -6426,9 +6750,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     const leftPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
@@ -7594,6 +7920,283 @@ body.android-optimized .zoom-btn {
 
             updateCameraPosition();
         }
+
+        // ─── Cinematic Camera Controller ────────────────────────────────────
+        class CinematicController {
+            static DEFAULT_FOV = 75;
+            static MACRO_FOV   = 30;
+            constructor() {
+                this._keyframes = [];
+                this._playing = false;
+                this._recording = false;
+                this._mediaRecorder = null;
+                this._recordedChunks = [];
+                this._startTime = 0;
+                this._totalDuration = 0;
+                this._raf = null;
+                this._origFov = camera.fov;
+                this._circuitName = 'circuit';
+            }
+
+            // ── Keyframe management ──────────────────────────────────────────
+            addCurrentAsWaypoint() {
+                this._keyframes.push({
+                    angleX: cameraAngleX,
+                    angleY: cameraAngleY,
+                    distance: cameraDistance,
+                    targetX: cameraTarget.x,
+                    targetY: cameraTarget.y,
+                    targetZ: cameraTarget.z,
+                    fov: camera.fov,
+                    duration: 3000,
+                    easing: 'smooth',
+                });
+                window.parent.postMessage({
+                    type: 'legacy:cinematic-state',
+                    payload: { keyframes: this._keyframes.length }
+                }, '*');
+            }
+
+            clearWaypoints() {
+                this._keyframes = [];
+            }
+
+            // ── Built-in presets ─────────────────────────────────────────────
+            _buildPresetKeyframes(preset) {
+                const cx = cameraTarget.x, cy = cameraTarget.y, cz = cameraTarget.z;
+                const d = cameraDistance;
+                switch (preset) {
+                    case 'orbit': {
+                        const frames = [];
+                        const steps = 8;
+                        for (let i = 0; i <= steps; i++) {
+                            frames.push({
+                                angleX: cameraAngleX + (Math.PI * 2 * i / steps),
+                                angleY: cameraAngleY,
+                                distance: d,
+                                targetX: cx, targetY: cy, targetZ: cz,
+                                fov: 60,
+                                duration: 1000,
+                                easing: 'linear',
+                            });
+                        }
+                        return frames;
+                    }
+                    case 'atom': {
+                        return [
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 800, easing: 'smooth' },
+                            { angleX: cameraAngleX + 0.4, angleY: 0.3, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.MACRO_FOV, duration: 3000, easing: 'ease-in' },
+                            { angleX: cameraAngleX + 0.8, angleY: 0.5, distance: Math.max(0.5, d * 0.08), targetX: cx, targetY: cy, targetZ: cz, fov: 20, duration: 2000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 2000, easing: 'ease-out' },
+                        ];
+                    }
+                    case 'lattice': {
+                        return [
+                            { angleX: cameraAngleX, angleY: 0.15, distance: d * 0.4, targetX: cx - 3, targetY: cy, targetZ: cz, fov: 50, duration: 800, easing: 'smooth' },
+                            { angleX: cameraAngleX + Math.PI * 0.5, angleY: 0.15, distance: d * 0.4, targetX: cx, targetY: cy, targetZ: cz, fov: 45, duration: 4000, easing: 'linear' },
+                            { angleX: cameraAngleX + Math.PI, angleY: 0.25, distance: d * 0.35, targetX: cx + 3, targetY: cy, targetZ: cz, fov: 40, duration: 3000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 1500, easing: 'ease-out' },
+                        ];
+                    }
+                    case 'focus': {
+                        const focused = (typeof components !== 'undefined' && components.size > 0)
+                            ? [...components.values()][0] : null;
+                        const fx = focused ? focused.position.x : cx;
+                        const fy = focused ? focused.position.y : cy;
+                        const fz = focused ? focused.position.z : cz;
+                        return [
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 500, easing: 'smooth' },
+                            { angleX: cameraAngleX + 0.6, angleY: 0.55, distance: 1.8, targetX: fx, targetY: fy, targetZ: fz, fov: 35, duration: 2500, easing: 'ease-in' },
+                            { angleX: cameraAngleX + 1.2, angleY: 0.45, distance: 1.5, targetX: fx, targetY: fy, targetZ: fz, fov: CinematicController.MACRO_FOV, duration: 2000, easing: 'linear' },
+                            { angleX: cameraAngleX, angleY: cameraAngleY, distance: d, targetX: cx, targetY: cy, targetZ: cz, fov: CinematicController.DEFAULT_FOV, duration: 2000, easing: 'ease-out' },
+                        ];
+                    }
+                    default:
+                        return [];
+                }
+            }
+
+            // ── Easing ───────────────────────────────────────────────────────
+            _ease(t, mode) {
+                switch (mode) {
+                    case 'ease-in':   return t * t;
+                    case 'ease-out':  return t * (2 - t);
+                    case 'smooth':    return t * t * (3 - 2 * t);
+                    case 'linear':
+                    default:          return t;
+                }
+            }
+
+            // ── Playback ─────────────────────────────────────────────────────
+            start(preset, userKeyframes) {
+                this.stop();
+                const kf = (preset && typeof preset === 'string')
+                    ? this._buildPresetKeyframes(preset)
+                    : (Array.isArray(userKeyframes) && userKeyframes.length >= 2 ? userKeyframes : null);
+                if (!kf || kf.length < 2) return;
+
+                this._playing = true;
+                this._origFov = camera.fov;
+                this._keyframes = kf;
+                this._totalDuration = kf.slice(1).reduce((s, f) => s + (f.duration || 2000), 0);
+                this._startTime = performance.now();
+                this._origState = {
+                    angleX: cameraAngleX,
+                    angleY: cameraAngleY,
+                    distance: cameraDistance,
+                    targetX: cameraTarget.x,
+                    targetY: cameraTarget.y,
+                    targetZ: cameraTarget.z,
+                    fov: camera.fov,
+                };
+                this._circuitName = document.title || 'circuit';
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { playing: true } }, '*');
+                this._tick = this._tick.bind(this);
+                this._raf = requestAnimationFrame(this._tick);
+            }
+
+            _tick(now) {
+                if (!this._playing) return;
+                const elapsed = now - this._startTime;
+
+                // Determine which segment we are in
+                const kf = this._keyframes;
+                let segStart = 0;
+                let segIdx = 0;
+                for (let i = 1; i < kf.length; i++) {
+                    const segDur = kf[i].duration || 2000;
+                    if (elapsed < segStart + segDur) {
+                        segIdx = i - 1;
+                        const t = this._ease((elapsed - segStart) / segDur, kf[i].easing || 'smooth');
+                        const a = kf[i - 1], b = kf[i];
+                        cameraAngleX = a.angleX + (b.angleX - a.angleX) * t;
+                        cameraAngleY = a.angleY + (b.angleY - a.angleY) * t;
+                        cameraDistance = a.distance + (b.distance - a.distance) * t;
+                        cameraTarget.set(
+                            a.targetX + (b.targetX - a.targetX) * t,
+                            a.targetY + (b.targetY - a.targetY) * t,
+                            a.targetZ + (b.targetZ - a.targetZ) * t,
+                        );
+                        const newFov = a.fov + (b.fov - a.fov) * t;
+                        camera.fov = newFov;
+                        camera.updateProjectionMatrix();
+                        updateCameraPosition();
+                        this._raf = requestAnimationFrame(this._tick);
+                        return;
+                    }
+                    segStart += segDur;
+                    segIdx = i;
+                }
+
+                // Animation finished
+                const last = kf[kf.length - 1];
+                cameraAngleX = last.angleX;
+                cameraAngleY = last.angleY;
+                cameraDistance = last.distance;
+                cameraTarget.set(last.targetX, last.targetY, last.targetZ);
+                camera.fov = last.fov;
+                camera.updateProjectionMatrix();
+                updateCameraPosition();
+                this._playing = false;
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { playing: false } }, '*');
+            }
+
+            stop() {
+                this._playing = false;
+                if (this._raf !== null) {
+                    cancelAnimationFrame(this._raf);
+                    this._raf = null;
+                }
+                if (this._origState) {
+                    cameraAngleX = this._origState.angleX;
+                    cameraAngleY = this._origState.angleY;
+                    cameraDistance = this._origState.distance;
+                    cameraTarget.set(this._origState.targetX, this._origState.targetY, this._origState.targetZ);
+                    camera.fov = this._origState.fov;
+                    camera.updateProjectionMatrix();
+                    updateCameraPosition();
+                }
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { playing: false } }, '*');
+            }
+
+            // ── Frame capture ────────────────────────────────────────────────
+            captureFrame() {
+                renderer.render(scene, camera);
+                const dataUrl = renderer.domElement.toDataURL('image/png');
+                window.parent.postMessage({
+                    type: 'legacy:cinematic-frame',
+                    payload: {
+                        dataUrl,
+                        circuitName: this._circuitName || document.title || 'circuit',
+                        timestamp: Date.now(),
+                    }
+                }, '*');
+            }
+
+            // ── Recording ────────────────────────────────────────────────────
+            startRecord() {
+                if (this._recording) return;
+                const stream = renderer.domElement.captureStream(30);
+                const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                    ? 'video/webm;codecs=vp9'
+                    : MediaRecorder.isTypeSupported('video/webm')
+                    ? 'video/webm'
+                    : '';
+                // If no WebM variant is supported the browser will use its own default codec.
+                // Construction still succeeds on most modern browsers; only truly unsupported
+                // environments (e.g. old Safari) will throw, which is caught below.
+                try {
+                    this._mediaRecorder = mimeType
+                        ? new MediaRecorder(stream, { mimeType })
+                        : new MediaRecorder(stream);
+                } catch (e) {
+                    const msg = mimeType === ''
+                        ? 'Video recording is not supported in this browser (no WebM codec available).'
+                        : 'MediaRecorder could not be initialised.';
+                    window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recordError: msg } }, '*');
+                    return;
+                }
+                this._recordedChunks = [];
+                this._recordStart = Date.now();
+                this._mediaRecorder.ondataavailable = (ev) => {
+                    if (ev.data && ev.data.size > 0) {
+                        this._recordedChunks.push(ev.data);
+                    }
+                };
+                this._mediaRecorder.onstop = () => {
+                    const blob = new Blob(this._recordedChunks, { type: this._mediaRecorder.mimeType || 'video/webm' });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        window.parent.postMessage({
+                            type: 'legacy:cinematic-video',
+                            payload: {
+                                dataUrl: reader.result,
+                                circuitName: this._circuitName || document.title || 'circuit',
+                                timestamp: Date.now(),
+                                durationMs: Date.now() - this._recordStart,
+                            }
+                        }, '*');
+                    };
+                    reader.readAsDataURL(blob);
+                    this._recording = false;
+                    window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recording: false } }, '*');
+                };
+                this._mediaRecorder.start(500);
+                this._recording = true;
+                window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recording: true } }, '*');
+            }
+
+            stopRecord() {
+                if (!this._recording || !this._mediaRecorder) return;
+                this._mediaRecorder.stop();
+            }
+
+            get isPlaying() { return this._playing; }
+            get isRecording() { return this._recording; }
+        }
+
+        const _cinematicCtrl = new CinematicController();
+        // ─── End Cinematic Camera Controller ─────────────────────────────────
 
         function setupEvents() {
             const canvas = renderer.domElement;
@@ -10694,15 +11297,18 @@ body.android-optimized .zoom-btn {
             if (highlight) {
                 connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
+                connectionPoint.material.opacity = 1.0;
                 connectionPoint.scale.setScalar(1.4);
             } else {
                 if (pointData.junction) {
                     connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
                     connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
+                    connectionPoint.material.opacity = 0.22;
                 } else {
                     const originalColor = getOriginalColor(pointData.polarity);
                     connectionPoint.material.color.copy(originalColor);
                     setOriginalEmissive(connectionPoint, pointData.polarity);
+                    connectionPoint.material.opacity = getOriginalOpacity(pointData.polarity);
                 }
                 connectionPoint.scale.setScalar(1.0);
             }
@@ -10717,11 +11323,13 @@ body.android-optimized .zoom-btn {
                     if (!cp?.material) return;
                     cp.material.color.setRGB(1.0, 1.0, 0.0);
                     cp.material.emissive.setRGB(0.8, 0.8, 0.0);
+                    cp.material.opacity = 1.0;
                     cp.scale.setScalar(1.5);
                 });
             } else if (entity instanceof Junction && entity.connectionPoint?.material) {
                 entity.connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 entity.connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
+                entity.connectionPoint.material.opacity = 1.0;
                 entity.connectionPoint.scale.setScalar(1.5);
             }
         }
@@ -10735,11 +11343,13 @@ body.android-optimized .zoom-btn {
                     const polarity = cp.userData.polarity || 'neutral';
                     cp.material.color.copy(getOriginalColor(polarity));
                     setOriginalEmissive(cp, polarity);
+                    cp.material.opacity = getOriginalOpacity(polarity);
                     cp.scale.setScalar(1.0);
                 });
             } else if (entity instanceof Junction && entity.connectionPoint?.material) {
                 entity.connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
                 entity.connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
+                entity.connectionPoint.material.opacity = 0.22;
                 entity.connectionPoint.scale.setScalar(1.0);
             }
         }
@@ -10762,6 +11372,10 @@ body.android-optimized .zoom-btn {
                 case 'negative': return new THREE.Color(0.267, 0.533, 1.0); // 0x4488ff
                 default: return new THREE.Color(0, 1, 1); // 0x00ffff cyan
             }
+        }
+
+        function getOriginalOpacity(polarity) {
+            return (polarity === 'positive' || polarity === 'negative') ? 0.3 : 0.22;
         }
 
         function setOriginalEmissive(point, polarity) {
@@ -10935,6 +11549,21 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        const COMPONENT_FRIENDLY_NAMES = {
+            'bjt': 'BJT',
+            'bjt-npn': 'NPN Transistor',
+            'bjt-pnp': 'PNP Transistor',
+            'mosfet': 'MOSFET',
+            'led': 'LED',
+            'ac_source': 'AC Source',
+            'zener-diode': 'Zener Diode',
+            'photodiode': 'Photodiode',
+            'capacitor-ceramic': 'Ceramic Cap',
+            'darlington': 'Darlington Pair',
+            'opamp': 'Op-Amp',
+            'voltage-regulator': 'Voltage Reg.',
+        };
+
         function getComponentFriendlyName(entity) {
             if (!entity) {
                 return 'component';
@@ -10942,8 +11571,8 @@ body.android-optimized .zoom-btn {
 
             if (entity.type) {
                 const type = String(entity.type);
-                if (type.length <= 4) {
-                    return type.toUpperCase();
+                if (COMPONENT_FRIENDLY_NAMES[type]) {
+                    return COMPONENT_FRIENDLY_NAMES[type];
                 }
                 return type.charAt(0).toUpperCase() + type.slice(1);
             }
@@ -10955,28 +11584,43 @@ body.android-optimized .zoom-btn {
             return 'component';
         }
 
+        const COMPONENT_DESCRIPTIONS = {
+            'battery': 'Provides DC voltage to power circuits. Pushes electrons through the circuit via chemical energy.',
+            'resistor': 'Limits current flow and drops voltage. Dissipates energy as heat — fundamental to Ohm\'s law.',
+            'led': 'Light Emitting Diode — glows when current flows in the correct forward direction.',
+            'switch': 'Opens or closes the circuit path on demand. Controls when current can flow through.',
+            'capacitor': 'Stores electrical charge temporarily. Blocks DC, passes AC — used for filtering and timing.',
+            'capacitor-ceramic': 'Non-polarized ceramic disc capacitor. Small value, used for decoupling and high-frequency filtering.',
+            'inductor': 'Resists changes in current using a magnetic field. Stores energy magnetically — used in filters and oscillators.',
+            'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve (anode → cathode).',
+            'zener-diode': 'Conducts in reverse at a precise breakdown voltage. Used for voltage regulation and reference.',
+            'photodiode': 'Generates current proportional to incident light. Used in light sensing, optical communication, and solar cells.',
+            'thermistor': 'Resistance changes with temperature (NTC = decreases, PTC = increases). Used for temperature sensing.',
+            'crystal': 'Piezoelectric quartz resonator with very precise frequency. Used as timing reference in oscillators and microcontrollers.',
+            'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal (current-controlled).',
+            'bjt-npn': 'NPN transistor — conducts when base is driven positive. Collector to emitter when base signal is applied.',
+            'bjt-pnp': 'PNP transistor — conducts when base is driven negative. Emitter to collector when base signal is removed.',
+            'darlington': 'Two cascaded BJTs for very high current gain (β²). Used to drive heavy loads from weak control signals.',
+            'mosfet': 'Voltage-controlled transistor. Gate voltage controls drain-source channel — used for power switching.',
+            'fuse': 'Overcurrent protection device. Wire melts and breaks the circuit if current exceeds the rated amperage.',
+            'potentiometer': 'Variable resistor with adjustable wiper. Used for volume, brightness, position, and tuning control.',
+            'lamp': 'Incandescent bulb — converts electrical energy to light and heat. Visual indicator or load element.',
+            'ground': 'Circuit reference point at 0 V. Provides the return path for current and a common reference for voltage.',
+            'ac_source': 'Alternating current source — voltage oscillates sinusoidally at a set frequency (e.g., 60 Hz mains).',
+            'motor': 'DC motor — converts electrical energy to mechanical rotation. Speed proportional to applied voltage.',
+            'speaker': 'Converts electrical signals to sound via a magnetic coil and paper cone. Used for audio output.',
+            'opamp': 'High-gain differential amplifier IC. Used for amplification, filtering, comparators, and signal processing.',
+            'transformer': 'Couples AC between primary and secondary coils to step voltage up or down via magnetic induction.',
+            'relay': 'Electromagnetic switch — coil current creates a magnetic field that opens or closes contact terminals.',
+            'voltage-regulator': 'Three-terminal IC that maintains a fixed output voltage regardless of input fluctuations or load.',
+        };
+
         function getComponentDescription(entity) {
             if (!entity || !entity.type) {
                 return '';
             }
 
-            const descriptions = {
-                'battery': 'Provides voltage to power circuits. Energy source that pushes electrons through the circuit.',
-                'resistor': 'Limits current flow and reduces voltage. Creates heat to control electrical energy.',
-                'led': 'Light Emitting Diode that glows when current flows in the correct direction.',
-                'switch': 'Opens or closes the circuit path. Controls when current can flow through.',
-                'capacitor': 'Stores electrical energy temporarily. Charges and discharges in AC circuits.',
-                'inductor': 'Resists changes in current using magnetic fields. Stores energy magnetically.',
-                'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve.',
-                'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal.',
-                'mosfet': 'Metal-Oxide-Semiconductor transistor. Controls current with voltage, used in modern circuits.',
-                'fuse': 'Safety device that breaks circuit if current is too high. Protects against overload.',
-                'potentiometer': 'Variable resistor with adjustable resistance. Used for volume, brightness, and tuning.',
-                'lamp': 'Converts electrical energy to light and heat. Visual indicator or light source.',
-                'ground': 'Reference point for voltage. Completes the circuit and provides safety path.'
-            };
-
-            return descriptions[entity.type] || '';
+            return COMPONENT_DESCRIPTIONS[entity.type] || '';
         }
 
         function handleGroundClick(clientX, clientY) {
@@ -11610,6 +12254,14 @@ body.android-optimized .zoom-btn {
             meterArmed = !meterArmed;
             if (!meterArmed) {
                 stopScope();
+                // Disarming – restore visuals and remove 3-D probe models
+                if (meterProbeA) restoreConnectionPointVisual(meterProbeA);
+                if (meterProbeB) restoreConnectionPointVisual(meterProbeB);
+                meterProbeA = null;
+                meterProbeB = null;
+                meterCurrentTarget = null;
+                scopeBuffer = [];
+                _removeAllProbeMeshes();
             } else if (meterMode === 'scope') {
                 startScope();
             }
@@ -11623,7 +12275,119 @@ body.android-optimized .zoom-btn {
             meterProbeB = null;
             meterCurrentTarget = null;
             scopeBuffer = [];
+            _removeAllProbeMeshes();
             updateMeterUI();
+        }
+
+        // ── Physical 3-D probe models ────────────────────────────────────────
+        // Creates a Three.js Group that looks like a real multimeter probe pen:
+        //   - chrome metal tip (cone) pointing down
+        //   - metal collar separating tip from handle
+        //   - rubber-grip handle (cylinder) in red or black
+        //   - three grip ridges along the handle
+        function _createProbeMesh(isRed) {
+            const group = new THREE.Group();
+
+            // Metal tip – a cone with apex pointing down
+            const tipGeo = new THREE.ConeGeometry(0.035, 0.28, 8);
+            const tipMat = new THREE.MeshStandardMaterial({
+                color: 0xc0c0c0, metalness: 0.85, roughness: 0.18,
+            });
+            const tip = new THREE.Mesh(tipGeo, tipMat);
+            tip.rotation.z = Math.PI; // flip apex to -Y (pointing down)
+            // ConeGeometry (height=0.28) is centered; after flip apex is at local y = -(0.28/2) = -0.14
+            group.add(tip);
+
+            // Collar ring between tip and handle
+            const collarGeo = new THREE.CylinderGeometry(0.048, 0.048, 0.09, 12);
+            const collarMat = new THREE.MeshStandardMaterial({
+                color: 0x888888, metalness: 0.75, roughness: 0.25,
+            });
+            const collar = new THREE.Mesh(collarGeo, collarMat);
+            collar.position.y = 0.235; // sit just above tip base
+            group.add(collar);
+
+            // Handle body
+            const handleGeo = new THREE.CylinderGeometry(0.065, 0.052, 0.82, 12);
+            const handleMat = new THREE.MeshStandardMaterial({
+                color: isRed ? 0xcc2222 : 0x111111,
+                metalness: 0.05, roughness: 0.88,
+            });
+            const handle = new THREE.Mesh(handleGeo, handleMat);
+            handle.position.y = 0.72; // above collar
+            group.add(handle);
+
+            // Grip ridges
+            const ridgeColor = isRed ? 0x991111 : 0x2a2a2a;
+            for (let i = 0; i < 3; i++) {
+                const ridgeGeo = new THREE.CylinderGeometry(0.068, 0.068, 0.022, 12);
+                const ridgeMat = new THREE.MeshStandardMaterial({
+                    color: ridgeColor, metalness: 0.08, roughness: 0.95,
+                });
+                const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
+                ridge.position.y = 0.46 + i * 0.19;
+                group.add(ridge);
+            }
+
+            // Top cap nub
+            const capGeo = new THREE.CylinderGeometry(0.035, 0.05, 0.06, 12);
+            const capMat = new THREE.MeshStandardMaterial({
+                color: 0x888888, metalness: 0.6, roughness: 0.35,
+            });
+            const cap = new THREE.Mesh(capGeo, capMat);
+            cap.position.y = 1.16;
+            group.add(cap);
+
+            return group;
+        }
+
+        // Returns the world-space position of a probe pointData's connection sphere.
+        function _getTerminalWorldPos(pointData) {
+            const pos = new THREE.Vector3();
+            if (pointData?.component?.connectionPoints) {
+                const cp = pointData.component.connectionPoints.find(
+                    p => p.userData?.side === pointData.side
+                );
+                if (cp) cp.getWorldPosition(pos);
+            } else if (pointData?.junction?.connectionPoint) {
+                pointData.junction.connectionPoint.getWorldPosition(pos);
+            }
+            return pos;
+        }
+
+        // Places (or replaces) a probe mesh at the given pointData terminal.
+        // `which` is 'a' (red) or 'b' (black).
+        function _placeProbeMesh(which, pointData) {
+            if (which === 'a') {
+                if (meterProbeAMesh) { scene.remove(meterProbeAMesh); meterProbeAMesh = null; }
+            } else {
+                if (meterProbeBMesh) { scene.remove(meterProbeBMesh); meterProbeBMesh = null; }
+            }
+            if (!pointData || !scene) return;
+
+            const worldPos = _getTerminalWorldPos(pointData);
+            const mesh = _createProbeMesh(which === 'a');
+
+            // Lean the probe naturally: red leans left (-Z rotation), black right (+Z)
+            const leanZ = which === 'a' ? -0.42 : 0.42;
+            mesh.rotation.z = leanZ;
+
+            // After Z rotation by leanZ, the cone apex (local (0,-TIP_HALF,0)) lands at:
+            //   dx = TIP_HALF * sin(leanZ),   dy = -TIP_HALF * cos(leanZ)
+            // Invert to find the group origin that places the tip exactly at worldPos.
+            const TIP_HALF = 0.28 / 2; // half the cone height defined in _createProbeMesh
+            mesh.position.x = worldPos.x - TIP_HALF * Math.sin(leanZ);
+            mesh.position.y = worldPos.y + TIP_HALF * Math.cos(leanZ);
+            mesh.position.z = worldPos.z;
+
+            scene.add(mesh);
+            if (which === 'a') meterProbeAMesh = mesh;
+            else meterProbeBMesh = mesh;
+        }
+
+        function _removeAllProbeMeshes() {
+            if (meterProbeAMesh && scene) { scene.remove(meterProbeAMesh); meterProbeAMesh = null; }
+            if (meterProbeBMesh && scene) { scene.remove(meterProbeBMesh); meterProbeBMesh = null; }
         }
 
         function updateMeterButtonStates() {
@@ -11671,20 +12435,31 @@ body.android-optimized .zoom-btn {
                 connectionPoint.material.color.setRGB(1.0, 0.25, 0.25);
                 connectionPoint.material.emissive.setRGB(0.5, 0.05, 0.05);
                 connectionPoint.scale.setScalar(1.5);
+                _placeProbeMesh('a', pointData);
             } else if (which === 'b') {
                 connectionPoint.material.color.setRGB(0.7, 0.7, 0.75);
                 connectionPoint.material.emissive.setRGB(0.15, 0.15, 0.18);
                 connectionPoint.scale.setScalar(1.3);
+                _placeProbeMesh('b', pointData);
             } else {
                 connectionPoint.material.color.setRGB(0.5, 0.9, 1.0);
                 connectionPoint.material.emissive.setRGB(0.05, 0.22, 0.28);
                 connectionPoint.scale.setScalar(1.4);
+                _placeProbeMesh('a', pointData); // scope uses probe A
             }
         }
 
         function restoreConnectionPointVisual(pointData) {
             if (!pointData) return;
             highlightConnectionPoint(pointData, false);
+            // Remove the 3-D probe mesh that was placed at this terminal
+            if (pointData === meterProbeA && meterProbeAMesh) {
+                scene.remove(meterProbeAMesh);
+                meterProbeAMesh = null;
+            } else if (pointData === meterProbeB && meterProbeBMesh) {
+                scene.remove(meterProbeBMesh);
+                meterProbeBMesh = null;
+            }
         }
 
         function handleMeterProbeClick(pointData) {
@@ -15713,7 +16488,7 @@ Made with ? for visual learners everywhere!
             // - 'positive'/'negative' (polarity-based)
             // - 'left'/'right' (position-based)
             // We create internal paths for ALL terminal pairs to handle both conventions.
-            const conductingTypes = ['resistor', 'led', 'switch', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker'];
+            const conductingTypes = ['resistor', 'led', 'switch', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker', 'relay', 'voltage-regulator'];
             allComponents.forEach(comp => {
                 if (conductingTypes.includes(comp.type)) {
                     // Only conduct if switch is ON

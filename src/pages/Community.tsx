@@ -53,12 +53,15 @@ export default function Community() {
     messages,
     circuits,
     reviews,
+    media,
     postMessage,
     shareCircuit,
     submitReview,
+    shareMedia,
     toggleMessageReaction,
     toggleCircuitLike,
     toggleReviewEndorsement,
+    toggleMediaLike,
     stats,
   } = useEngagement();
 
@@ -68,6 +71,9 @@ export default function Community() {
   const [circuitStatus, setCircuitStatus] = useState<string | null>(null);
   const [reviewForm, setReviewForm] = useState({ headline: "", body: "", rating: 5 });
   const [reviewStatus, setReviewStatus] = useState<string | null>(null);
+  const [mediaForm, setMediaForm] = useState({ title: "", description: "", galleryId: "" });
+  const [mediaStatus, setMediaStatus] = useState<string | null>(null);
+  const [isSubmittingMedia, setIsSubmittingMedia] = useState(false);
   const [isSubmittingMessage, setIsSubmittingMessage] = useState(false);
   const [isSubmittingCircuit, setIsSubmittingCircuit] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -235,6 +241,36 @@ export default function Community() {
     setIsSavingProfile(false);
   };
 
+  const handleShareMedia = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!currentUser) {
+      setMediaStatus("Sign in to share cinematic shots.");
+      return;
+    }
+    const title = mediaForm.title.trim();
+    if (!title) {
+      setMediaStatus("Please enter a title.");
+      return;
+    }
+    setMediaStatus(null);
+    setIsSubmittingMedia(true);
+    // The Gallery context holds the actual dataUrl; the community feed stores a lightweight reference
+    const result = await shareMedia({
+      dataUrl: "",
+      type: "image",
+      title,
+      description: mediaForm.description.trim(),
+      circuitName: mediaForm.galleryId.trim() || title,
+    });
+    if (result.ok) {
+      setMediaStatus("Cinematic shared ✓");
+      setMediaForm({ title: "", description: "", galleryId: "" });
+    } else {
+      setMediaStatus(result.message ?? "Share failed.");
+    }
+    setIsSubmittingMedia(false);
+  };
+
   return (
     <div className="community-page">
       <header className="community-hero">
@@ -259,6 +295,12 @@ export default function Community() {
           <div className="stat-card">
             <span className="stat-value">{averageRatingLabel}</span>
             <span className="stat-label">Community rating</span>
+          </div>
+          <div className="stat-card">
+            <Link to="/gallery" style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <span className="stat-value" style={{ fontSize: 22 }}>🎬</span>
+              <span className="stat-label">My Gallery</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -474,6 +516,93 @@ export default function Community() {
               <span className="form-status">{reviewStatus}</span>
               <button type="submit" className="form-primary" disabled={!currentUser || isSubmittingReview}>
                 {isSubmittingReview ? "Submitting…" : "Submit Review"}
+              </button>
+            </div>
+          </form>
+        </article>
+
+        <article className="community-panel">
+          <header className="panel-header">
+            <div>
+              <h2>🎬 Cinematic Gallery</h2>
+              <p>Fly-through shots and circuit videos shared by the community.</p>
+            </div>
+            {!currentUser && <p className="panel-cta">Sign in to share your cinematic shots.</p>}
+          </header>
+
+          <div className="community-feed" role="list">
+            {media.length === 0 ? (
+              <p style={{ color: "rgba(200,230,255,0.4)", fontSize: 13, padding: "8px 0" }}>
+                No cinematic shots shared yet. Use the 🎬 button in the builder to capture and share!
+              </p>
+            ) : (
+              media.map((item) => {
+                const author = getUserById(item.userId);
+                return (
+                  <div key={item.id} className="feed-item" role="listitem">
+                    <div
+                      className="feed-avatar"
+                      style={{ backgroundColor: author?.avatarColor ?? "#334155" }}
+                      aria-hidden="true"
+                    >
+                      {getInitials(author?.displayName) || "?"}
+                    </div>
+                    <div className="feed-body">
+                      <div className="feed-meta">
+                        <strong>{author?.displayName ?? "Member"}</strong>
+                        <span>{formatRelativeTime(item.createdAt)}</span>
+                      </div>
+                      <p>
+                        <strong>{item.title}</strong>
+                        {item.circuitName && item.circuitName !== item.title && (
+                          <span style={{ color: "rgba(200,230,255,0.5)", marginLeft: 6, fontSize: 11 }}>
+                            — {item.circuitName}
+                          </span>
+                        )}
+                      </p>
+                      {item.description && <p style={{ fontSize: 12, color: "rgba(200,230,255,0.6)" }}>{item.description}</p>}
+                      <button
+                        type="button"
+                        className="reaction-button"
+                        onClick={() => toggleMediaLike(item.id)}
+                        disabled={!currentUser}
+                      >
+                        ⚡ {item.likes.length}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <form className="community-form" onSubmit={handleShareMedia}>
+            <input
+              type="text"
+              placeholder="Title for your cinematic shot or clip"
+              value={mediaForm.title}
+              onChange={(event) => setMediaForm({ ...mediaForm, title: event.target.value })}
+              disabled={!currentUser || isSubmittingMedia}
+              required
+            />
+            <textarea
+              rows={2}
+              placeholder="Describe what makes this shot special (optional)"
+              value={mediaForm.description}
+              onChange={(event) => setMediaForm({ ...mediaForm, description: event.target.value })}
+              disabled={!currentUser || isSubmittingMedia}
+            />
+            <input
+              type="text"
+              placeholder="Circuit name or Gallery ID (optional)"
+              value={mediaForm.galleryId}
+              onChange={(event) => setMediaForm({ ...mediaForm, galleryId: event.target.value })}
+              disabled={!currentUser || isSubmittingMedia}
+            />
+            <div className="form-actions">
+              <span className="form-status">{mediaStatus}</span>
+              <button type="submit" className="form-primary" disabled={!currentUser || isSubmittingMedia}>
+                {isSubmittingMedia ? "Sharing…" : "Share Cinematic"}
               </button>
             </div>
           </form>
