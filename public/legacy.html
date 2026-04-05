@@ -3317,6 +3317,8 @@
         let meterProbeA = null; // pointData for red probe
         let meterProbeB = null; // pointData for black probe
         let meterCurrentTarget = null; // component for current measurement
+        let meterProbeAMesh = null; // THREE.Group – physical red probe model
+        let meterProbeBMesh = null; // THREE.Group – physical black probe model
         let lastDCSolution = null;
 
         // ── Workspace failure state ──────────────────────────────────────────
@@ -12252,6 +12254,14 @@ body.android-optimized .zoom-btn {
             meterArmed = !meterArmed;
             if (!meterArmed) {
                 stopScope();
+                // Disarming – restore visuals and remove 3-D probe models
+                if (meterProbeA) restoreConnectionPointVisual(meterProbeA);
+                if (meterProbeB) restoreConnectionPointVisual(meterProbeB);
+                meterProbeA = null;
+                meterProbeB = null;
+                meterCurrentTarget = null;
+                scopeBuffer = [];
+                _removeAllProbeMeshes();
             } else if (meterMode === 'scope') {
                 startScope();
             }
@@ -12265,7 +12275,119 @@ body.android-optimized .zoom-btn {
             meterProbeB = null;
             meterCurrentTarget = null;
             scopeBuffer = [];
+            _removeAllProbeMeshes();
             updateMeterUI();
+        }
+
+        // ── Physical 3-D probe models ────────────────────────────────────────
+        // Creates a Three.js Group that looks like a real multimeter probe pen:
+        //   - chrome metal tip (cone) pointing down
+        //   - metal collar separating tip from handle
+        //   - rubber-grip handle (cylinder) in red or black
+        //   - three grip ridges along the handle
+        function _createProbeMesh(isRed) {
+            const group = new THREE.Group();
+
+            // Metal tip – a cone with apex pointing down
+            const tipGeo = new THREE.ConeGeometry(0.035, 0.28, 8);
+            const tipMat = new THREE.MeshStandardMaterial({
+                color: 0xc0c0c0, metalness: 0.85, roughness: 0.18,
+            });
+            const tip = new THREE.Mesh(tipGeo, tipMat);
+            tip.rotation.z = Math.PI; // flip apex to -Y (pointing down)
+            // ConeGeometry (height=0.28) is centered; after flip apex is at local y = -(0.28/2) = -0.14
+            group.add(tip);
+
+            // Collar ring between tip and handle
+            const collarGeo = new THREE.CylinderGeometry(0.048, 0.048, 0.09, 12);
+            const collarMat = new THREE.MeshStandardMaterial({
+                color: 0x888888, metalness: 0.75, roughness: 0.25,
+            });
+            const collar = new THREE.Mesh(collarGeo, collarMat);
+            collar.position.y = 0.235; // sit just above tip base
+            group.add(collar);
+
+            // Handle body
+            const handleGeo = new THREE.CylinderGeometry(0.065, 0.052, 0.82, 12);
+            const handleMat = new THREE.MeshStandardMaterial({
+                color: isRed ? 0xcc2222 : 0x111111,
+                metalness: 0.05, roughness: 0.88,
+            });
+            const handle = new THREE.Mesh(handleGeo, handleMat);
+            handle.position.y = 0.72; // above collar
+            group.add(handle);
+
+            // Grip ridges
+            const ridgeColor = isRed ? 0x991111 : 0x2a2a2a;
+            for (let i = 0; i < 3; i++) {
+                const ridgeGeo = new THREE.CylinderGeometry(0.068, 0.068, 0.022, 12);
+                const ridgeMat = new THREE.MeshStandardMaterial({
+                    color: ridgeColor, metalness: 0.08, roughness: 0.95,
+                });
+                const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
+                ridge.position.y = 0.46 + i * 0.19;
+                group.add(ridge);
+            }
+
+            // Top cap nub
+            const capGeo = new THREE.CylinderGeometry(0.035, 0.05, 0.06, 12);
+            const capMat = new THREE.MeshStandardMaterial({
+                color: 0x888888, metalness: 0.6, roughness: 0.35,
+            });
+            const cap = new THREE.Mesh(capGeo, capMat);
+            cap.position.y = 1.16;
+            group.add(cap);
+
+            return group;
+        }
+
+        // Returns the world-space position of a probe pointData's connection sphere.
+        function _getTerminalWorldPos(pointData) {
+            const pos = new THREE.Vector3();
+            if (pointData?.component?.connectionPoints) {
+                const cp = pointData.component.connectionPoints.find(
+                    p => p.userData?.side === pointData.side
+                );
+                if (cp) cp.getWorldPosition(pos);
+            } else if (pointData?.junction?.connectionPoint) {
+                pointData.junction.connectionPoint.getWorldPosition(pos);
+            }
+            return pos;
+        }
+
+        // Places (or replaces) a probe mesh at the given pointData terminal.
+        // `which` is 'a' (red) or 'b' (black).
+        function _placeProbeMesh(which, pointData) {
+            if (which === 'a') {
+                if (meterProbeAMesh) { scene.remove(meterProbeAMesh); meterProbeAMesh = null; }
+            } else {
+                if (meterProbeBMesh) { scene.remove(meterProbeBMesh); meterProbeBMesh = null; }
+            }
+            if (!pointData || !scene) return;
+
+            const worldPos = _getTerminalWorldPos(pointData);
+            const mesh = _createProbeMesh(which === 'a');
+
+            // Lean the probe naturally: red leans left (-Z rotation), black right (+Z)
+            const leanZ = which === 'a' ? -0.42 : 0.42;
+            mesh.rotation.z = leanZ;
+
+            // After Z rotation by leanZ, the cone apex (local (0,-TIP_HALF,0)) lands at:
+            //   dx = TIP_HALF * sin(leanZ),   dy = -TIP_HALF * cos(leanZ)
+            // Invert to find the group origin that places the tip exactly at worldPos.
+            const TIP_HALF = 0.28 / 2; // half the cone height defined in _createProbeMesh
+            mesh.position.x = worldPos.x - TIP_HALF * Math.sin(leanZ);
+            mesh.position.y = worldPos.y + TIP_HALF * Math.cos(leanZ);
+            mesh.position.z = worldPos.z;
+
+            scene.add(mesh);
+            if (which === 'a') meterProbeAMesh = mesh;
+            else meterProbeBMesh = mesh;
+        }
+
+        function _removeAllProbeMeshes() {
+            if (meterProbeAMesh && scene) { scene.remove(meterProbeAMesh); meterProbeAMesh = null; }
+            if (meterProbeBMesh && scene) { scene.remove(meterProbeBMesh); meterProbeBMesh = null; }
         }
 
         function updateMeterButtonStates() {
@@ -12313,20 +12435,31 @@ body.android-optimized .zoom-btn {
                 connectionPoint.material.color.setRGB(1.0, 0.25, 0.25);
                 connectionPoint.material.emissive.setRGB(0.5, 0.05, 0.05);
                 connectionPoint.scale.setScalar(1.5);
+                _placeProbeMesh('a', pointData);
             } else if (which === 'b') {
                 connectionPoint.material.color.setRGB(0.7, 0.7, 0.75);
                 connectionPoint.material.emissive.setRGB(0.15, 0.15, 0.18);
                 connectionPoint.scale.setScalar(1.3);
+                _placeProbeMesh('b', pointData);
             } else {
                 connectionPoint.material.color.setRGB(0.5, 0.9, 1.0);
                 connectionPoint.material.emissive.setRGB(0.05, 0.22, 0.28);
                 connectionPoint.scale.setScalar(1.4);
+                _placeProbeMesh('a', pointData); // scope uses probe A
             }
         }
 
         function restoreConnectionPointVisual(pointData) {
             if (!pointData) return;
             highlightConnectionPoint(pointData, false);
+            // Remove the 3-D probe mesh that was placed at this terminal
+            if (pointData === meterProbeA && meterProbeAMesh) {
+                scene.remove(meterProbeAMesh);
+                meterProbeAMesh = null;
+            } else if (pointData === meterProbeB && meterProbeBMesh) {
+                scene.remove(meterProbeBMesh);
+                meterProbeBMesh = null;
+            }
         }
 
         function handleMeterProbeClick(pointData) {
