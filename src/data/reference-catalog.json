@@ -1,0 +1,457 @@
+{
+  "vendor": "CircuiTry3D Reference Library",
+  "version": "1.0.0",
+  "exportedAt": "2026-04-05T00:00:00.000Z",
+  "components": [
+    {
+      "id": "resistor-100",
+      "partNumber": "R-100R-REF",
+      "manufacturer": "Reference Library",
+      "name": "Resistor 100 Ω",
+      "type": "resistor",
+      "packageType": "axial",
+      "properties": {
+        "resistance": 100,
+        "tempCoeff": 0.0005,
+        "tolerance": 0.05,
+        "thermalResistance": 70
+      }
+    },
+    {
+      "id": "resistor-330",
+      "partNumber": "R-330R-REF",
+      "manufacturer": "Reference Library",
+      "name": "Resistor 330 Ω",
+      "type": "resistor",
+      "packageType": "axial",
+      "properties": {
+        "resistance": 330,
+        "tempCoeff": 0.0005,
+        "tolerance": 0.05,
+        "thermalResistance": 80
+      }
+    },
+    {
+      "id": "led-red",
+      "partNumber": "LED-RED-2V",
+      "manufacturer": "Reference Library",
+      "name": "LED Red 2 V",
+      "type": "led",
+      "packageType": "T-1 3/4 (5mm)",
+      "properties": {
+        "forwardVoltage": 2,
+        "seriesResistance": 120,
+        "efficiency": 0.32,
+        "thermalResistance": 110,
+        "wavelengthNm": 630,
+        "luminousEfficacy": 15
+      }
+    },
+    {
+      "id": "battery-9v",
+      "partNumber": "BAT-9V-REF",
+      "manufacturer": "Reference Library",
+      "name": "Battery 9 V",
+      "type": "battery",
+      "packageType": "PP3",
+      "properties": {
+        "voltage": 9,
+        "internalResistance": 0.18,
+        "capacityMah": 1200,
+        "thermalResistance": 35
+      }
+    },
+    {
+      "id": "capacitor-1u",
+      "partNumber": "C-1UF-REF",
+      "manufacturer": "Reference Library",
+      "name": "Capacitor 1 µF",
+      "type": "capacitor",
+      "packageType": "radial",
+      "properties": {
+        "capacitance": 1e-6,
+        "esr": 0.12,
+        "tempCoeff": 0.0002,
+        "thermalResistance": 45,
+        "maxVoltage": 50
+      }
+    },
+    {
+      "id": "switch-basic",
+      "partNumber": "SW-TOGGLE-REF",
+      "manufacturer": "Reference Library",
+      "name": "Toggle Switch",
+      "type": "switch",
+      "properties": {
+        "onResistance": 0.05,
+        "offResistance": 1000000,
+        "transitionTimeMs": 1.5
+      }
+    },
+    {
+      "id": "mosfet-irf540",
+      "partNumber": "IRF540N",
+      "manufacturer": "Vishay",
+      "name": "MOSFET IRF540N",
+      "type": "mosfet",
+      "packageType": "TO-220",
+      "datasheetUrl": "https://www.vishay.com/docs/91021/91021.pdf",
+      "certifications": ["RoHS"],
+      "absoluteMaxRatings": {
+        "vds_max": 100,
+        "vgs_max": 20,
+        "id_max": 33,
+        "powerRating": 130,
+        "tjMax": 175
+      },
+      "properties": {
+        "vth": 4,
+        "rds_on": 0.044,
+        "id_max": 33,
+        "vds_max": 100,
+        "vgs_max": 20,
+        "powerRating": 130,
+        "thermalResistance": 0.92
+      }
+    },
+    {
+      "id": "mosfet-2n7000",
+      "partNumber": "2N7000",
+      "manufacturer": "ON Semiconductor",
+      "name": "MOSFET 2N7000",
+      "type": "mosfet",
+      "packageType": "TO-92",
+      "absoluteMaxRatings": {
+        "vds_max": 60,
+        "vgs_max": 20,
+        "id_max": 0.2,
+        "powerRating": 0.4,
+        "tjMax": 150
+      },
+      "properties": {
+        "vth": 2.1,
+        "rds_on": 5,
+        "id_max": 0.2,
+        "vds_max": 60,
+        "vgs_max": 20,
+        "powerRating": 0.4,
+        "thermalResistance": 62.5
+      }
+    },
+    {
+      "id": "heatsink-to220",
+      "partNumber": "HS-TO220-REF",
+      "manufacturer": "Reference Library",
+      "name": "Heat Sink TO-220",
+      "type": "heatsink",
+      "properties": {
+        "thermalResistanceJA": 10,
+        "maxTempC": 200,
+        "thermalResistance": 2
+      }
+    },
+    {
+      "id": "bjt-2n2222a",
+      "partNumber": "2N2222A",
+      "manufacturer": "ON Semiconductor",
+      "name": "2N2222A NPN BJT",
+      "type": "bjt-npn",
+      "packageType": "TO-18",
+      "absoluteMaxRatings": {
+        "vce_max": 40,
+        "ic_max": 0.6,
+        "powerRating": 0.625,
+        "tjMax": 175
+      },
+      "properties": {
+        "vce_max": 40,
+        "ic_max": 0.6,
+        "hfe": 100,
+        "vbe": 0.7,
+        "powerRating": 0.625,
+        "thermalResistance": 200
+      }
+    },
+    {
+      "id": "bjt-bc547",
+      "partNumber": "BC547",
+      "manufacturer": "Various",
+      "name": "BC547 NPN BJT",
+      "type": "bjt",
+      "packageType": "TO-92",
+      "absoluteMaxRatings": {
+        "vce_max": 45,
+        "ic_max": 0.1,
+        "powerRating": 0.5,
+        "tjMax": 150
+      },
+      "properties": {
+        "vce_max": 45,
+        "ic_max": 0.1,
+        "hfe": 110,
+        "vbe": 0.7,
+        "powerRating": 0.5,
+        "thermalResistance": 250
+      }
+    },
+    {
+      "id": "diode-1n4007",
+      "partNumber": "1N4007",
+      "manufacturer": "Various",
+      "name": "1N4007 Rectifier Diode",
+      "type": "diode",
+      "packageType": "DO-41",
+      "absoluteMaxRatings": {
+        "reverseVoltage": 1000,
+        "maxCurrent": 1,
+        "powerRating": 3,
+        "tjMax": 175
+      },
+      "properties": {
+        "forwardVoltage": 0.7,
+        "maxCurrent": 1,
+        "reverseVoltage": 1000,
+        "thermalResistance": 60,
+        "powerRating": 3
+      }
+    },
+    {
+      "id": "diode-1n4148",
+      "partNumber": "1N4148",
+      "manufacturer": "Various",
+      "name": "1N4148 Signal Diode",
+      "type": "diode",
+      "packageType": "DO-35",
+      "absoluteMaxRatings": {
+        "reverseVoltage": 75,
+        "maxCurrent": 0.3,
+        "powerRating": 0.5,
+        "tjMax": 150
+      },
+      "properties": {
+        "forwardVoltage": 0.72,
+        "maxCurrent": 0.3,
+        "reverseVoltage": 75,
+        "thermalResistance": 150,
+        "powerRating": 0.5
+      }
+    },
+    {
+      "id": "opamp-lm741",
+      "partNumber": "LM741",
+      "manufacturer": "Texas Instruments",
+      "name": "LM741 Op-Amp",
+      "type": "opamp",
+      "packageType": "DIP-8",
+      "datasheetUrl": "https://www.ti.com/lit/ds/symlink/lm741.pdf",
+      "absoluteMaxRatings": {
+        "supplyVoltage": 22,
+        "powerRating": 0.5,
+        "tjMax": 150
+      },
+      "properties": {
+        "supplyVoltage": 15,
+        "slewRate": 0.5,
+        "gainBandwidth": 1e6,
+        "powerRating": 0.5,
+        "thermalResistance": 100
+      }
+    },
+    {
+      "id": "vreg-lm7805",
+      "partNumber": "LM7805",
+      "manufacturer": "Texas Instruments",
+      "name": "LM7805 5 V Regulator",
+      "type": "voltage_regulator",
+      "packageType": "TO-220",
+      "datasheetUrl": "https://www.ti.com/lit/ds/symlink/lm340.pdf",
+      "absoluteMaxRatings": {
+        "outputVoltage": 5,
+        "maxCurrent": 1.5,
+        "powerRating": 15,
+        "tjMax": 125
+      },
+      "properties": {
+        "outputVoltage": 5,
+        "dropoutVoltage": 2,
+        "maxCurrent": 1.5,
+        "powerRating": 15,
+        "thermalResistance": 5
+      }
+    },
+    {
+      "id": "ic-ne555",
+      "partNumber": "NE555",
+      "manufacturer": "Various",
+      "name": "NE555 Timer IC",
+      "type": "ic",
+      "packageType": "DIP-8",
+      "properties": {
+        "supplyVoltage": 5,
+        "maxCurrent": 0.2,
+        "powerRating": 0.6,
+        "thermalResistance": 70
+      }
+    },
+    {
+      "id": "relay-5v",
+      "partNumber": "RLY-5V-REF",
+      "manufacturer": "Reference Library",
+      "name": "5 V Relay",
+      "type": "relay",
+      "properties": {
+        "coilVoltage": 5,
+        "coilResistance": 72,
+        "maxSwitchCurrent": 5,
+        "maxSwitchVoltage": 250,
+        "thermalResistance": 80
+      }
+    },
+    {
+      "id": "fuse-1a",
+      "partNumber": "FUSE-1A-REF",
+      "manufacturer": "Reference Library",
+      "name": "Fuse 1 A",
+      "type": "fuse",
+      "packageType": "5×20 mm cartridge",
+      "properties": {
+        "ratedCurrentA": 1,
+        "meltingI2t": 1,
+        "resistance": 0.02,
+        "thermalResistance": 40,
+        "fuseClass": "fast-blow",
+        "voltageRatingV": 250,
+        "breakingCapacityA": 1500
+      }
+    },
+    {
+      "id": "vishay-crcw0402-100r",
+      "partNumber": "CRCW0402100RFKEA",
+      "manufacturer": "Vishay",
+      "name": "CRCW0402 100 Ω",
+      "type": "resistor",
+      "packageType": "0402",
+      "datasheetUrl": "https://www.vishay.com/docs/20035/dcrcwe3.pdf",
+      "certifications": ["AEC-Q200", "RoHS"],
+      "absoluteMaxRatings": {
+        "powerRating": 0.063,
+        "tjMax": 155
+      },
+      "properties": {
+        "resistance": 100,
+        "powerRating": 0.063,
+        "tolerance": 0.01,
+        "thermalResistance": 300
+      }
+    },
+    {
+      "id": "murata-gcj-1uf",
+      "partNumber": "GCJ316R71H105KA12D",
+      "manufacturer": "Murata",
+      "name": "GCJ316R71H105KA12D",
+      "type": "capacitor",
+      "packageType": "0805",
+      "datasheetUrl": "https://search.murata.co.jp/Ceramy/image/img/A01X/G101/ENG/GCJ316R71H105KA12-E.pdf",
+      "certifications": ["AEC-Q200", "RoHS"],
+      "absoluteMaxRatings": {
+        "maxVoltage": 50
+      },
+      "properties": {
+        "capacitance": 1e-6,
+        "maxVoltage": 50,
+        "esr": 0.05,
+        "thermalResistance": 45
+      }
+    },
+    {
+      "id": "infineon-irf540n",
+      "partNumber": "IRF540NPBF",
+      "manufacturer": "Infineon",
+      "name": "IRF540N",
+      "type": "mosfet",
+      "packageType": "TO-220",
+      "datasheetUrl": "https://www.infineon.com/dgdl/irf540n.pdf",
+      "certifications": ["RoHS"],
+      "absoluteMaxRatings": {
+        "vds_max": 100,
+        "id_max": 33,
+        "vgs_max": 20,
+        "powerRating": 130,
+        "tjMax": 175
+      },
+      "properties": {
+        "vth": 4,
+        "rds_on": 0.044,
+        "id_max": 33,
+        "vds_max": 100,
+        "vgs_max": 20,
+        "powerRating": 130,
+        "thermalResistance": 0.92,
+        "qg": 72
+      }
+    },
+    {
+      "id": "on-semi-1n4148",
+      "partNumber": "1N4148",
+      "manufacturer": "ON Semiconductor",
+      "name": "1N4148",
+      "type": "diode",
+      "packageType": "DO-35",
+      "absoluteMaxRatings": {
+        "reverseVoltage": 100,
+        "maxCurrent": 0.3,
+        "powerRating": 0.5,
+        "tjMax": 150
+      },
+      "properties": {
+        "forwardVoltage": 0.72,
+        "maxCurrent": 0.3,
+        "reverseVoltage": 100,
+        "thermalResistance": 250,
+        "powerRating": 0.5
+      }
+    },
+    {
+      "id": "vishay-bzx84c-5v1",
+      "partNumber": "BZX84C5V1",
+      "manufacturer": "Vishay",
+      "name": "BZX84C5V1",
+      "type": "zener_diode",
+      "packageType": "SOT-23",
+      "absoluteMaxRatings": {
+        "powerRating": 0.3,
+        "tjMax": 150
+      },
+      "properties": {
+        "zenerVoltage": 5.1,
+        "maxCurrent": 0.059,
+        "powerRating": 0.3,
+        "thermalResistance": 500
+      }
+    },
+    {
+      "id": "ti-lm7805-featured",
+      "partNumber": "LM7805CT",
+      "manufacturer": "Texas Instruments",
+      "name": "LM7805",
+      "type": "voltage_regulator",
+      "packageType": "TO-220",
+      "datasheetUrl": "https://www.ti.com/lit/ds/symlink/lm340.pdf",
+      "certifications": ["RoHS"],
+      "absoluteMaxRatings": {
+        "outputVoltage": 5,
+        "maxCurrent": 1,
+        "powerRating": 15,
+        "tjMax": 125
+      },
+      "properties": {
+        "outputVoltage": 5,
+        "dropoutVoltage": 2,
+        "maxCurrent": 1,
+        "powerRating": 15,
+        "thermalResistance": 5,
+        "maxTempC": 125
+      }
+    }
+  ]
+}
