@@ -4990,10 +4990,18 @@
         return `${value.toFixed(1)} deg`;
       }
 
+      // Capture trusted parent origin from document.referrer or first incoming message
+      let _trustedOrigin = (() => {
+        try {
+          if (document.referrer) return new URL(document.referrer).origin;
+        } catch (e) { /* ignore */ }
+        return null;
+      })();
+
       function postToReact(message) {
         try {
           if (window.parent && window.parent !== window) {
-            window.parent.postMessage(message, "*");
+            window.parent.postMessage(message, _trustedOrigin || window.location.origin);
           }
         } catch (e) {
           // Cross-origin post failed — ignore
@@ -5067,6 +5075,10 @@
         } else if (data.type === "arena:command" && data.payload && data.payload.command) {
           handleCommand(data.payload.command);
         } else if (data.type === "arena:init") {
+          // Record the parent's origin so postToReact can target it precisely
+          if (event.origin && event.origin !== "null") {
+            _trustedOrigin = event.origin;
+          }
           if (data.hideNativeHeader === true) {
             const header = document.querySelector(".arena-header");
             if (header) header.style.display = "none";
