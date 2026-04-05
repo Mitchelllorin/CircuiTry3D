@@ -1667,7 +1667,7 @@ body.builder-body {
   opacity: 1;
 }
 
-/* Right sidebar nav: pointer-events gated; opacity stays 1 (overflow-clip hides it) */
+/* Right sidebar nav: pointer-events gated; opacity stays 1 (overflow: clip hides it via width animation) */
 .builder-menu-stage-right .builder-menu {
   pointer-events: none;
   opacity: 1;
@@ -4813,7 +4813,6 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   }
 
   .builder-menu-stage-left.open {
-    width: calc(var(--builder-menu-left-width) + var(--builder-menu-toggle-width));
     transform: translateX(0) translateY(-50%);
   }
 
