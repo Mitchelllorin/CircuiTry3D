@@ -12,7 +12,7 @@
  *  LICENSING
  *  ---------
  *  Commercial licensing, OEM embedding, and API partnerships are available.
- *  Contact: licensing@circuitry3d.com
+ *  Contact: info@circuitry3d.net
  *
  *  PATENT NOTICE
  *  -------------
