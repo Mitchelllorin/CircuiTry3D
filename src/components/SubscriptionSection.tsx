@@ -177,7 +177,7 @@ export default function SubscriptionSection() {
           </Link>
           <a
             className="subscription-cta-button"
-            href="mailto:hello@circuitry3d.com?subject=CircuiTry3D%20Subscription%20Planning"
+            href="mailto:hello@circuitry3d.net?subject=CircuiTry3D%20Subscription%20Planning"
             data-cta-type="external"
           >
             Book a planning call

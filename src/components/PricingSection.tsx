@@ -143,7 +143,7 @@ export default function PricingSection() {
     const launched = await purchasePremiumUnlock();
     if (!launched) {
       window.location.href =
-        "mailto:hello@circuitry3d.com?subject=Premium%20Unlock%20Purchase";
+        "mailto:hello@circuitry3d.net?subject=Premium%20Unlock%20Purchase";
     }
   }, []);
 
@@ -152,7 +152,7 @@ export default function PricingSection() {
     const launched = await purchaseProSubscription(proCycle);
     if (!launched) {
       window.location.href =
-        "mailto:hello@circuitry3d.com?subject=Pro%20Subscription%20Purchase";
+        "mailto:hello@circuitry3d.net?subject=Pro%20Subscription%20Purchase";
     }
   }, [proCycle]);
 
@@ -447,7 +447,7 @@ export default function PricingSection() {
       <footer className="pricing-footer">
         <p className="pricing-contact-help">
           Have questions?{" "}
-          <a href="mailto:hello@circuitry3d.com">Contact our team</a> for
+          <a href="mailto:hello@circuitry3d.net">Contact our team</a> for
           tailored pricing or enterprise onboarding.
         </p>
       </footer>
