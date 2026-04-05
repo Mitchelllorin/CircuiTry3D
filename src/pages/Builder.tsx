@@ -1377,6 +1377,8 @@ export default function Builder() {
     }, 1400);
   }, []);
 
+  const { addItem: addGalleryItem } = useGallery();
+
   const handleCinematicFrame = useCallback(
     (payload: CinematicFramePayload) => {
       addGalleryItem({
@@ -1561,7 +1563,6 @@ export default function Builder() {
 
   // Circuit storage for save/load functionality
   const circuitStorage = useCircuitStorage();
-  const { addItem: addGalleryItem } = useGallery();
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [isAIHelperOpen, setIsAIHelperOpen] = useState(false);

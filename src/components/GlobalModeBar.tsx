@@ -48,11 +48,6 @@ export function GlobalModeBar() {
   const isWorkspacePage = location.pathname === "/app";
   const isLandingPage = location.pathname === "/";
 
-  // Don't show on landing page
-  if (isLandingPage) {
-    return null;
-  }
-
   const checkModeBarScroll = useCallback(() => {
     const container = modeBarRef.current;
     if (!container) {
@@ -93,6 +88,11 @@ export function GlobalModeBar() {
     },
     [setWorkspaceMode, navigate, isWorkspacePage],
   );
+
+  // Don't show on landing page — all hooks must be called above this guard.
+  if (isLandingPage) {
+    return null;
+  }
 
   return (
     <>
