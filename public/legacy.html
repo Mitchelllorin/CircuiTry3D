@@ -4853,13 +4853,15 @@ body.android-optimized .zoom-btn {
             }
 
             createConnectionPoint() {
-                const pointGeometry = new THREE.SphereGeometry(0.18, isMobile ? 12 : 16, isMobile ? 8 : 12);
+                const pointGeometry = new THREE.SphereGeometry(0.08, isMobile ? 8 : 10, isMobile ? 6 : 8);
                 const pointMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x007777,
-                    emissiveIntensity: 0.5,
+                    emissiveIntensity: 0.2,
                     metalness: 0.3,
-                    roughness: 0.3
+                    roughness: 0.3,
+                    transparent: true,
+                    opacity: 0.22
                 });
                 
                 const connectionPoint = new THREE.Mesh(pointGeometry, pointMaterial);
@@ -6109,7 +6111,7 @@ body.android-optimized .zoom-btn {
             createConnectionPoints() {
                 this.connectionPoints = [];
 
-                const pointGeometry = new THREE.SphereGeometry(0.15, isMobile ? 16 : 20, isMobile ? 12 : 16);
+                const pointGeometry = new THREE.SphereGeometry(0.07, isMobile ? 8 : 10, isMobile ? 6 : 8);
                 const leftPos = new THREE.Vector3(-1.2, 0, 0);
                 const rightPos = new THREE.Vector3(1.2, 0, 0);
                 const centerPos = new THREE.Vector3(0, 0, 0);
@@ -6119,9 +6121,11 @@ body.android-optimized .zoom-btn {
                     const positiveMaterial = new THREE.MeshStandardMaterial({
                         color: 0xff0000,
                         emissive: 0x330000,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
@@ -6138,9 +6142,11 @@ body.android-optimized .zoom-btn {
                     const negativeMaterial = new THREE.MeshStandardMaterial({
                         color: 0x4488ff,
                         emissive: 0x112244,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
@@ -6158,9 +6164,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Collector (left, -0.2 x offset matching lead positions)
@@ -6204,9 +6212,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Gate (left)
@@ -6250,9 +6260,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Terminal 1 (left)
@@ -6296,9 +6308,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     const groundPoint = new THREE.Mesh(pointGeometry, neutralMaterial);
@@ -6317,9 +6331,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Collector (left)
@@ -6363,9 +6379,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     // Collector (left)
@@ -6409,9 +6427,11 @@ body.android-optimized .zoom-btn {
                     const positiveMaterial = new THREE.MeshStandardMaterial({
                         color: 0xff8844,
                         emissive: 0x331100,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const positivePoint = new THREE.Mesh(pointGeometry, positiveMaterial);
                     positivePoint.position.copy(rightPos);
@@ -6427,9 +6447,11 @@ body.android-optimized .zoom-btn {
                     const negativeMaterial = new THREE.MeshStandardMaterial({
                         color: 0x4488ff,
                         emissive: 0x112244,
-                        emissiveIntensity: 0.4,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.3
                     });
                     const negativePoint = new THREE.Mesh(pointGeometry, negativeMaterial);
                     negativePoint.position.copy(leftPos);
@@ -6447,9 +6469,11 @@ body.android-optimized .zoom-btn {
                     const neutralMaterial = new THREE.MeshStandardMaterial({
                         color: 0x00ffff,
                         emissive: 0x007777,
-                        emissiveIntensity: 0.5,
+                        emissiveIntensity: 0.2,
                         metalness: 0.3,
-                        roughness: 0.3
+                        roughness: 0.3,
+                        transparent: true,
+                        opacity: 0.22
                     });
 
                     const leftPoint = new THREE.Mesh(pointGeometry, neutralMaterial.clone());
@@ -10992,15 +11016,18 @@ body.android-optimized .zoom-btn {
             if (highlight) {
                 connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
+                connectionPoint.material.opacity = 1.0;
                 connectionPoint.scale.setScalar(1.4);
             } else {
                 if (pointData.junction) {
                     connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
                     connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
+                    connectionPoint.material.opacity = 0.22;
                 } else {
                     const originalColor = getOriginalColor(pointData.polarity);
                     connectionPoint.material.color.copy(originalColor);
                     setOriginalEmissive(connectionPoint, pointData.polarity);
+                    connectionPoint.material.opacity = getOriginalOpacity(pointData.polarity);
                 }
                 connectionPoint.scale.setScalar(1.0);
             }
@@ -11015,11 +11042,13 @@ body.android-optimized .zoom-btn {
                     if (!cp?.material) return;
                     cp.material.color.setRGB(1.0, 1.0, 0.0);
                     cp.material.emissive.setRGB(0.8, 0.8, 0.0);
+                    cp.material.opacity = 1.0;
                     cp.scale.setScalar(1.5);
                 });
             } else if (entity instanceof Junction && entity.connectionPoint?.material) {
                 entity.connectionPoint.material.color.setRGB(1.0, 1.0, 0.0);
                 entity.connectionPoint.material.emissive.setRGB(0.8, 0.8, 0.0);
+                entity.connectionPoint.material.opacity = 1.0;
                 entity.connectionPoint.scale.setScalar(1.5);
             }
         }
@@ -11033,11 +11062,13 @@ body.android-optimized .zoom-btn {
                     const polarity = cp.userData.polarity || 'neutral';
                     cp.material.color.copy(getOriginalColor(polarity));
                     setOriginalEmissive(cp, polarity);
+                    cp.material.opacity = getOriginalOpacity(polarity);
                     cp.scale.setScalar(1.0);
                 });
             } else if (entity instanceof Junction && entity.connectionPoint?.material) {
                 entity.connectionPoint.material.color.setRGB(0.0, 1.0, 1.0);
                 entity.connectionPoint.material.emissive.setRGB(0.0, 0.467, 0.467);
+                entity.connectionPoint.material.opacity = 0.22;
                 entity.connectionPoint.scale.setScalar(1.0);
             }
         }
@@ -11060,6 +11091,10 @@ body.android-optimized .zoom-btn {
                 case 'negative': return new THREE.Color(0.267, 0.533, 1.0); // 0x4488ff
                 default: return new THREE.Color(0, 1, 1); // 0x00ffff cyan
             }
+        }
+
+        function getOriginalOpacity(polarity) {
+            return (polarity === 'positive' || polarity === 'negative') ? 0.3 : 0.22;
         }
 
         function setOriginalEmissive(point, polarity) {
