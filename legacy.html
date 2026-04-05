@@ -4656,7 +4656,9 @@ body.android-optimized .zoom-btn {
             motor: 0,
             speaker: 0,
             opamp: 0,
-            transformer: 0
+            transformer: 0,
+            relay: 0,
+            'voltage-regulator': 0
         };
 
         // Track placement offset for staggering components
@@ -4998,6 +5000,8 @@ body.android-optimized .zoom-btn {
                     case 'speaker': return { impedance: 8, power: 1 }; // Ω, W
                     case 'opamp': return { gain: 100000 };
                     case 'transformer': return { ratio: 1, primaryVoltage: 120 }; // turns ratio, V
+                    case 'relay': return { coilVoltage: 12, coilResistance: 200 }; // V, Ω
+                    case 'voltage-regulator': return { outputVoltage: 5, maxCurrent: 1.5 }; // V, A
                     default: return {};
                 }
             }
@@ -5346,7 +5350,7 @@ body.android-optimized .zoom-btn {
                         this.createCapacitorMesh(group);
                         break;
                     case 'capacitor-ceramic':
-                        this.createCapacitorMesh(group);
+                        this.createCeramicCapacitorMesh(group);
                         break;
                     case 'inductor':
                         this.createInductorMesh(group);
@@ -5355,16 +5359,16 @@ body.android-optimized .zoom-btn {
                         this.createDiodeMesh(group);
                         break;
                     case 'zener-diode':
-                        this.createDiodeMesh(group);
+                        this.createZenerDiodeMesh(group);
                         break;
                     case 'photodiode':
-                        this.createDiodeMesh(group);
+                        this.createPhotodiodeMesh(group);
                         break;
                     case 'thermistor':
-                        this.createResistorMesh(group);
+                        this.createThermistorMesh(group);
                         break;
                     case 'crystal':
-                        this.createFuseMesh(group);
+                        this.createCrystalMesh(group);
                         break;
                     case 'bjt':
                         this.createBJTMesh(group);
@@ -5407,6 +5411,12 @@ body.android-optimized .zoom-btn {
                         break;
                     case 'transformer':
                         this.createTransformerMesh(group);
+                        break;
+                    case 'relay':
+                        this.createRelayMesh(group);
+                        break;
+                    case 'voltage-regulator':
+                        this.createVoltageRegulatorMesh(group);
                         break;
                 }
 
@@ -5467,6 +5477,16 @@ body.android-optimized .zoom-btn {
                     width = isMobile ? 3.5 : 3.0;
                     height = isMobile ? 3.0 : 2.6;
                     depth = isMobile ? 2.5 : 2.2;
+                } else if (this.type === 'relay') {
+                    // Relay has taller housing
+                    width = isMobile ? 3.5 : 2.8;
+                    height = isMobile ? 3.0 : 2.6;
+                    depth = isMobile ? 2.5 : 2.2;
+                } else if (this.type === 'voltage-regulator') {
+                    // Voltage regulator TO-220 package
+                    width = isMobile ? 3.5 : 2.8;
+                    height = isMobile ? 3.5 : 3.0;
+                    depth = isMobile ? 2.5 : 2.2;
                 } else {
                     // Default size for 2-terminal components
                     width = isMobile ? 4.0 : 3.2;
@@ -5490,35 +5510,59 @@ body.android-optimized .zoom-btn {
             }
 
             createBatteryMesh(group) {
-                // Battery body
+                // Duracell CopperTop-inspired look: black body, prominent copper positive cap, gold label band
                 const segments = isMobile ? 8 : 12;
-                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.2, segments);
-                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
+
+                // Black main body
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.9, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.75 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
+                body.position.x = -0.05;
                 group.add(body);
 
-                // Positive terminal — extended to x=1.0 so it overlaps the connection sphere
-                // (sphere center at x=1.2, inner edge at x=0.9), eliminating the visual gap.
-                const posGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.4, segments);
-                const posMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.9, roughness: 0.2 });
-                const pos = new THREE.Mesh(posGeometry, posMaterial);
-                pos.rotation.z = Math.PI / 2;
-                pos.position.x = 0.8;
-                group.add(pos);
+                // Gold/copper label band — the signature CopperTop band wrapping the upper body
+                const bandGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.46, segments);
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xb8860b, metalness: 0.2, roughness: 0.55 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.12;
+                group.add(band);
 
-                // Negative terminal — previously ended at x=-0.775 leaving a 0.125-unit gap
-                // before the connection sphere (inner edge at x=-0.9). Now extended to x=-1.0.
-                const negGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments);
-                const negMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.1, roughness: 0.8 });
-                const neg = new THREE.Mesh(negGeometry, negMaterial);
-                neg.rotation.z = Math.PI / 2;
-                neg.position.x = -0.8;
-                group.add(neg);
+                // Copper-top positive cap — the signature full-diameter copper end cap
+                const copperCapGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.38, segments);
+                const copperMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.78, roughness: 0.2 });
+                const copperCap = new THREE.Mesh(copperCapGeometry, copperMaterial);
+                copperCap.rotation.z = Math.PI / 2;
+                copperCap.position.x = 0.64;
+                group.add(copperCap);
 
-                // Labels
-                this.addText(group, '+', new THREE.Vector3(1.0, 0.4, 0), 0xff0000);
-                this.addText(group, '-', new THREE.Vector3(-1.0, 0.4, 0), 0x000000);
+                // Positive nub (raised button) — the small raised contact at the positive tip
+                const nubGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.16, segments);
+                const nub = new THREE.Mesh(nubGeometry, copperMaterial);
+                nub.rotation.z = Math.PI / 2;
+                nub.position.x = 0.91;
+                group.add(nub);
+
+                // Negative flat cap — dark steel plate at negative end
+                const negCapGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.22, segments);
+                const negCapMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.4, roughness: 0.65 });
+                const negCap = new THREE.Mesh(negCapGeometry, negCapMaterial);
+                negCap.rotation.z = Math.PI / 2;
+                negCap.position.x = -0.61;
+                group.add(negCap);
+
+                // Thin lead from negative cap to connection sphere at x=-1.2
+                const negLeadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.42, segments);
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.85, roughness: 0.22 });
+                const negLead = new THREE.Mesh(negLeadGeometry, leadMaterial);
+                negLead.rotation.z = Math.PI / 2;
+                negLead.position.x = -0.91;
+                group.add(negLead);
+
+                // +/- labels
+                this.addText(group, '+', new THREE.Vector3(1.0, 0.42, 0), 0xffffff);
+                this.addText(group, '-', new THREE.Vector3(-0.95, 0.42, 0), 0xaaaaaa);
             }
 
             createResistorMesh(group) {
@@ -6007,7 +6051,242 @@ body.android-optimized .zoom-btn {
                 this.addLeads(group);
             }
 
-            // BJT NPN - TO-92 package with NPN marking
+            // Crystal oscillator — HC-49 metal can package with two leads
+            createCrystalMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Metal can body (flat silver rectangular/capsule package)
+                const canGeometry = new THREE.BoxGeometry(0.7, 0.35, 0.22);
+                const canMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.85, roughness: 0.18 });
+                const can = new THREE.Mesh(canGeometry, canMaterial);
+                can.position.y = 0.25;
+                group.add(can);
+
+                // Seam line on can (dark edge detail)
+                const seamGeometry = new THREE.BoxGeometry(0.72, 0.04, 0.24);
+                const seamMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.3 });
+                const seam = new THREE.Mesh(seamGeometry, seamMaterial);
+                seam.position.y = 0.08;
+                group.add(seam);
+
+                // Two leads from bottom of can
+                const leadGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.5, 4);
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.85, roughness: 0.22 });
+
+                const leadL = new THREE.Mesh(leadGeometry, leadMaterial);
+                leadL.position.set(-0.2, -0.18, 0);
+                group.add(leadL);
+
+                const leadR = new THREE.Mesh(leadGeometry, leadMaterial);
+                leadR.position.set(0.2, -0.18, 0);
+                group.add(leadR);
+
+                this.addLeads(group);
+            }
+
+            // Ceramic disc capacitor — flat tan disc, distinct from electrolytic cylinder
+            createCeramicCapacitorMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Flat disc body (ceramic disc cap shape)
+                const discGeometry = new THREE.CylinderGeometry(0.28, 0.28, 0.12, segments);
+                const discMaterial = new THREE.MeshStandardMaterial({ color: 0xd4a96a, metalness: 0.0, roughness: 0.82 });
+                const disc = new THREE.Mesh(discGeometry, discMaterial);
+                disc.rotation.x = Math.PI / 2;
+                disc.position.y = 0.12;
+                group.add(disc);
+
+                // Rim detail
+                const rimGeometry = new THREE.TorusGeometry(0.28, 0.025, 6, segments);
+                const rimMaterial = new THREE.MeshStandardMaterial({ color: 0xc49050, metalness: 0.05, roughness: 0.75 });
+                const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+                rim.rotation.x = Math.PI / 2;
+                rim.position.y = 0.12;
+                group.add(rim);
+
+                this.addLeads(group);
+            }
+
+            // Zener diode — purple body with distinctive notched cathode band
+            createZenerDiodeMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Purple-tinted body (distinguishes from regular diode)
+                const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x3d1a6e, metalness: 0.08, roughness: 0.72 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // Cathode band (silver)
+                const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.3;
+                group.add(band);
+
+                // Zener Z-notch: two small angled pieces at the cathode band ends
+                const notchGeometry = new THREE.BoxGeometry(0.05, 0.12, 0.05);
+                const notchMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
+
+                const notchTop = new THREE.Mesh(notchGeometry, notchMaterial);
+                notchTop.rotation.z = Math.PI / 4;
+                notchTop.position.set(0.3, 0.15, 0);
+                group.add(notchTop);
+
+                const notchBot = new THREE.Mesh(notchGeometry, notchMaterial);
+                notchBot.rotation.z = Math.PI / 4;
+                notchBot.position.set(0.3, -0.15, 0);
+                group.add(notchBot);
+
+                this.addLeads(group);
+            }
+
+            // Photodiode — dark body with blue lens dome and light-ray indicators
+            createPhotodiodeMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Dark body (like diode)
+                const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.rotation.z = Math.PI / 2;
+                group.add(body);
+
+                // Cathode band (silver)
+                const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
+                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.9, roughness: 0.15 });
+                const band = new THREE.Mesh(bandGeometry, bandMaterial);
+                band.rotation.z = Math.PI / 2;
+                band.position.x = 0.3;
+                group.add(band);
+
+                // Blue lens window on top of body
+                const lensGeometry = new THREE.SphereGeometry(0.12, segments, segments, 0, Math.PI * 2, 0, Math.PI / 2);
+                const lensMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x2255aa,
+                    metalness: 0.1,
+                    roughness: 0.05,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const lens = new THREE.Mesh(lensGeometry, lensMaterial);
+                lens.position.set(0, 0.15, 0);
+                group.add(lens);
+
+                // Light ray indicators — two small cylinders at angles above body
+                const rayGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 4);
+                const rayMaterial = new THREE.MeshStandardMaterial({ color: 0xffee44, metalness: 0.0, roughness: 0.5, transparent: true, opacity: 0.7 });
+
+                const ray1 = new THREE.Mesh(rayGeometry, rayMaterial);
+                ray1.rotation.z = Math.PI / 4;
+                ray1.position.set(-0.2, 0.35, 0);
+                group.add(ray1);
+
+                const ray2 = new THREE.Mesh(rayGeometry, rayMaterial);
+                ray2.rotation.z = -Math.PI / 6;
+                ray2.position.set(0.08, 0.4, 0);
+                group.add(ray2);
+
+                this.addLeads(group);
+            }
+
+            // Thermistor — small blue NTC bead with two leads (distinct from resistor)
+            createThermistorMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // NTC bead body — small round blue bead
+                const beadGeometry = new THREE.SphereGeometry(0.22, segments, segments);
+                const beadMaterial = new THREE.MeshStandardMaterial({ color: 0x1a55aa, metalness: 0.05, roughness: 0.65 });
+                const bead = new THREE.Mesh(beadGeometry, beadMaterial);
+                group.add(bead);
+
+                // Temperature marker — thin orange ring around bead equator
+                const ringGeometry = new THREE.TorusGeometry(0.22, 0.025, 6, segments);
+                const ringMaterial = new THREE.MeshStandardMaterial({ color: 0xff6600, metalness: 0.0, roughness: 0.6 });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.y = Math.PI / 2;
+                group.add(ring);
+
+                this.addLeads(group);
+            }
+
+            // Relay — blue coil housing with dark armature and mounting leads
+            createRelayMesh(group) {
+                const segments = isMobile ? 8 : 12;
+
+                // Coil housing body (rectangular blue block)
+                const bodyGeometry = new THREE.BoxGeometry(0.72, 0.52, 0.38);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, metalness: 0.05, roughness: 0.72 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.28;
+                group.add(body);
+
+                // Armature bar on top (dark metal)
+                const armGeometry = new THREE.BoxGeometry(0.55, 0.08, 0.32);
+                const armMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.6, roughness: 0.4 });
+                const armature = new THREE.Mesh(armGeometry, armMaterial);
+                armature.position.y = 0.58;
+                group.add(armature);
+
+                // Coil winding hint — copper-colored side strip
+                const windingGeometry = new THREE.BoxGeometry(0.74, 0.18, 0.04);
+                const windingMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.7, roughness: 0.3 });
+                const winding = new THREE.Mesh(windingGeometry, windingMaterial);
+                winding.position.set(0, 0.28, 0.21);
+                group.add(winding);
+
+                // Contact spring detail (silver strip)
+                const springGeometry = new THREE.BoxGeometry(0.35, 0.04, 0.04);
+                const springMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.85, roughness: 0.2 });
+                const spring = new THREE.Mesh(springGeometry, springMaterial);
+                spring.position.set(0.1, 0.62, 0);
+                group.add(spring);
+
+                this.addLeads(group);
+            }
+
+            // Voltage Regulator — TO-220 package with heat sink tab and 3 leads
+            createVoltageRegulatorMesh(group) {
+                // Black TO-220 body
+                const bodyGeometry = new THREE.BoxGeometry(0.65, 0.52, 0.22);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.05, roughness: 0.78 });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 0.3;
+                group.add(body);
+
+                // Heat sink tab (silver metal tongue at back/top)
+                const tabGeometry = new THREE.BoxGeometry(0.68, 0.22, 0.02);
+                const tabMaterial = new THREE.MeshStandardMaterial({ color: 0x8c8c8c, metalness: 0.82, roughness: 0.22 });
+                const tab = new THREE.Mesh(tabGeometry, tabMaterial);
+                tab.position.set(0, 0.65, 0.12);
+                group.add(tab);
+
+                // Mounting hole in tab
+                const holeGeometry = new THREE.TorusGeometry(0.06, 0.02, 6, isMobile ? 8 : 12);
+                const holeMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.3, roughness: 0.65 });
+                const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+                hole.position.set(0, 0.65, 0.14);
+                group.add(hole);
+
+                // White label strip
+                const labelGeometry = new THREE.BoxGeometry(0.5, 0.2, 0.02);
+                const labelMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.0, roughness: 0.85 });
+                const label = new THREE.Mesh(labelGeometry, labelMaterial);
+                label.position.set(0, 0.32, 0.12);
+                group.add(label);
+
+                // Three leads (Input, GND, Output)
+                const leadGeometry = new THREE.BoxGeometry(0.05, 0.5, 0.05);
+                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
+
+                for (let i = 0; i < 3; i++) {
+                    const lead = new THREE.Mesh(leadGeometry, leadMaterial);
+                    lead.position.set(-0.22 + i * 0.22, -0.2, 0);
+                    group.add(lead);
+                }
+            }
             createBJTNPNMesh(group) {
                 const segments = isMobile ? 8 : 12;
                 // BJT body (TO-92 package)
@@ -11268,6 +11547,21 @@ body.android-optimized .zoom-btn {
             }
         }
 
+        const COMPONENT_FRIENDLY_NAMES = {
+            'bjt': 'BJT',
+            'bjt-npn': 'NPN Transistor',
+            'bjt-pnp': 'PNP Transistor',
+            'mosfet': 'MOSFET',
+            'led': 'LED',
+            'ac_source': 'AC Source',
+            'zener-diode': 'Zener Diode',
+            'photodiode': 'Photodiode',
+            'capacitor-ceramic': 'Ceramic Cap',
+            'darlington': 'Darlington Pair',
+            'opamp': 'Op-Amp',
+            'voltage-regulator': 'Voltage Reg.',
+        };
+
         function getComponentFriendlyName(entity) {
             if (!entity) {
                 return 'component';
@@ -11275,8 +11569,8 @@ body.android-optimized .zoom-btn {
 
             if (entity.type) {
                 const type = String(entity.type);
-                if (type.length <= 4) {
-                    return type.toUpperCase();
+                if (COMPONENT_FRIENDLY_NAMES[type]) {
+                    return COMPONENT_FRIENDLY_NAMES[type];
                 }
                 return type.charAt(0).toUpperCase() + type.slice(1);
             }
@@ -11288,28 +11582,43 @@ body.android-optimized .zoom-btn {
             return 'component';
         }
 
+        const COMPONENT_DESCRIPTIONS = {
+            'battery': 'Provides DC voltage to power circuits. Pushes electrons through the circuit via chemical energy.',
+            'resistor': 'Limits current flow and drops voltage. Dissipates energy as heat — fundamental to Ohm\'s law.',
+            'led': 'Light Emitting Diode — glows when current flows in the correct forward direction.',
+            'switch': 'Opens or closes the circuit path on demand. Controls when current can flow through.',
+            'capacitor': 'Stores electrical charge temporarily. Blocks DC, passes AC — used for filtering and timing.',
+            'capacitor-ceramic': 'Non-polarized ceramic disc capacitor. Small value, used for decoupling and high-frequency filtering.',
+            'inductor': 'Resists changes in current using a magnetic field. Stores energy magnetically — used in filters and oscillators.',
+            'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve (anode → cathode).',
+            'zener-diode': 'Conducts in reverse at a precise breakdown voltage. Used for voltage regulation and reference.',
+            'photodiode': 'Generates current proportional to incident light. Used in light sensing, optical communication, and solar cells.',
+            'thermistor': 'Resistance changes with temperature (NTC = decreases, PTC = increases). Used for temperature sensing.',
+            'crystal': 'Piezoelectric quartz resonator with very precise frequency. Used as timing reference in oscillators and microcontrollers.',
+            'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal (current-controlled).',
+            'bjt-npn': 'NPN transistor — conducts when base is driven positive. Collector to emitter when base signal is applied.',
+            'bjt-pnp': 'PNP transistor — conducts when base is driven negative. Emitter to collector when base signal is removed.',
+            'darlington': 'Two cascaded BJTs for very high current gain (β²). Used to drive heavy loads from weak control signals.',
+            'mosfet': 'Voltage-controlled transistor. Gate voltage controls drain-source channel — used for power switching.',
+            'fuse': 'Overcurrent protection device. Wire melts and breaks the circuit if current exceeds the rated amperage.',
+            'potentiometer': 'Variable resistor with adjustable wiper. Used for volume, brightness, position, and tuning control.',
+            'lamp': 'Incandescent bulb — converts electrical energy to light and heat. Visual indicator or load element.',
+            'ground': 'Circuit reference point at 0 V. Provides the return path for current and a common reference for voltage.',
+            'ac_source': 'Alternating current source — voltage oscillates sinusoidally at a set frequency (e.g., 60 Hz mains).',
+            'motor': 'DC motor — converts electrical energy to mechanical rotation. Speed proportional to applied voltage.',
+            'speaker': 'Converts electrical signals to sound via a magnetic coil and paper cone. Used for audio output.',
+            'opamp': 'High-gain differential amplifier IC. Used for amplification, filtering, comparators, and signal processing.',
+            'transformer': 'Couples AC between primary and secondary coils to step voltage up or down via magnetic induction.',
+            'relay': 'Electromagnetic switch — coil current creates a magnetic field that opens or closes contact terminals.',
+            'voltage-regulator': 'Three-terminal IC that maintains a fixed output voltage regardless of input fluctuations or load.',
+        };
+
         function getComponentDescription(entity) {
             if (!entity || !entity.type) {
                 return '';
             }
 
-            const descriptions = {
-                'battery': 'Provides voltage to power circuits. Energy source that pushes electrons through the circuit.',
-                'resistor': 'Limits current flow and reduces voltage. Creates heat to control electrical energy.',
-                'led': 'Light Emitting Diode that glows when current flows in the correct direction.',
-                'switch': 'Opens or closes the circuit path. Controls when current can flow through.',
-                'capacitor': 'Stores electrical energy temporarily. Charges and discharges in AC circuits.',
-                'inductor': 'Resists changes in current using magnetic fields. Stores energy magnetically.',
-                'diode': 'Allows current to flow in one direction only. Acts as a one-way electrical valve.',
-                'bjt': 'Bipolar Junction Transistor. Amplifies or switches current using a small base signal.',
-                'mosfet': 'Metal-Oxide-Semiconductor transistor. Controls current with voltage, used in modern circuits.',
-                'fuse': 'Safety device that breaks circuit if current is too high. Protects against overload.',
-                'potentiometer': 'Variable resistor with adjustable resistance. Used for volume, brightness, and tuning.',
-                'lamp': 'Converts electrical energy to light and heat. Visual indicator or light source.',
-                'ground': 'Reference point for voltage. Completes the circuit and provides safety path.'
-            };
-
-            return descriptions[entity.type] || '';
+            return COMPONENT_DESCRIPTIONS[entity.type] || '';
         }
 
         function handleGroundClick(clientX, clientY) {
@@ -16046,7 +16355,7 @@ Made with ? for visual learners everywhere!
             // - 'positive'/'negative' (polarity-based)
             // - 'left'/'right' (position-based)
             // We create internal paths for ALL terminal pairs to handle both conventions.
-            const conductingTypes = ['resistor', 'led', 'switch', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker'];
+            const conductingTypes = ['resistor', 'led', 'switch', 'lamp', 'inductor', 'capacitor', 'capacitor-ceramic', 'fuse', 'thermistor', 'diode', 'zener-diode', 'photodiode', 'motor', 'speaker', 'relay', 'voltage-regulator'];
             allComponents.forEach(comp => {
                 if (conductingTypes.includes(comp.type)) {
                     // Only conduct if switch is ON
