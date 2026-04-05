@@ -38,6 +38,7 @@ const Promo5 = lazy(() => import("../pages/Promo5"));
 const Promo7 = lazy(() => import("../pages/Promo7"));
 const Promo9 = lazy(() => import("../pages/Promo9"));
 const Upgrade = lazy(() => import("../pages/Upgrade"));
+const Gallery = lazy(() => import("../pages/Gallery"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -82,6 +83,7 @@ export default function App() {
             <Route path="/promo7" element={<Promo7 />} />
             <Route path="/promo9" element={<Promo9 />} />
             <Route path="/upgrade" element={<Upgrade />} />
+            <Route path="/gallery" element={<Gallery />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

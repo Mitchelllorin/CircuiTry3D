@@ -31,6 +31,7 @@ const NAV_TABS: TabConfig[] = [
   { mode: "arcade",       icon: "🎯", label: "Arcade",      title: "Circuit Arcade" },
   { mode: "classroom",    icon: "🎓", label: "Classroom",   title: "Classroom" },
   { mode: "community",    icon: "🌐", label: "Community",   title: "Community" },
+  { mode: "gallery",      icon: "🎬", label: "Gallery",     title: "Cinematic gallery — your captured shots and fly-throughs" },
   { mode: "account",      icon: "👤", label: "Account",     title: "Account" },
 ];
 
@@ -80,6 +81,11 @@ export function GlobalModeBar() {
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
+      // Gallery has its own standalone page; navigate directly.
+      if (mode === "gallery") {
+        navigate("/gallery");
+        return;
+      }
       // Keep all top-nav workflows anchored to the main workspace shell.
       if (!isWorkspacePage) {
         navigate("/app");

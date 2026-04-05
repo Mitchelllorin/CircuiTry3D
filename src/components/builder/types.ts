@@ -33,7 +33,14 @@ export type BuilderInvokeAction =
   | "lock-circuit"
   | "unlock-circuit"
   | "zoom-in"
-  | "zoom-out";
+  | "zoom-out"
+  | "cinematic-play"
+  | "cinematic-stop"
+  | "cinematic-capture"
+  | "cinematic-record-start"
+  | "cinematic-record-stop"
+  | "cinematic-add-waypoint"
+  | "cinematic-clear-waypoints";
 
 export type MeterMode = "voltage" | "current" | "resistance" | "scope";
 
@@ -205,7 +212,8 @@ export type WorkspaceMode =
   | "community"
   | "account"
   | "pricing"
-  | "textbook";
+  | "textbook"
+  | "gallery";
 
 export type GuideWorkflowId = "help" | "tutorial" | "wire-guide";
 
