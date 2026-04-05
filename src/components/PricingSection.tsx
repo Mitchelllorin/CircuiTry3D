@@ -1,291 +1,454 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import pricingSource from "../data/pricing.json";
 import BrandSignature from "./BrandSignature";
 import {
   initBilling,
   isAndroidApp,
-  PLAN_SKUS,
-  purchasePlan,
+  purchasePremiumUnlock,
+  purchaseProSubscription,
+  restorePurchases,
+  restorePremiumPurchases,
+  restoreProPurchases,
+  getConsumerProductPrices,
+  PREMIUM_UNLOCK_SKU,
+  SUB_MONTHLY_SKU,
+  SUB_YEARLY_SKU,
 } from "../utils/playStoreBilling";
+import { useEntitlements } from "../utils/entitlementManager";
+import {
+  CONSUMER_TIERS,
+  ENTERPRISE_TIERS,
+  COMPARISON_ROWS,
+  type ConsumerTier,
+  type EnterpriseTier,
+} from "../data/hybridPricing";
 import "../styles/pricing.css";
 
-type BillingCycleId = "monthly" | "annual";
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-type BillingCycle = {
-  id: BillingCycleId;
-  label: string;
-  note?: string;
-};
+/** Billing cycle selector for the Pro subscription tier. */
+type ProCycle = "monthly" | "yearly";
 
-type PriceMap = Partial<Record<BillingCycleId, number | null>>;
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-type CallToAction =
-  | {
-      label: string;
-      type: "link";
-      href: string;
-    };
-
-type Plan = {
-  id: string;
-  name: string;
-  tagline?: string;
-  badge?: string;
-  price: PriceMap;
-  unit?: string;
-  features: string[];
-  renewal?: string;
-  cta: CallToAction;
-  bulk?: {
-    minimumSeats?: number;
-    notes?: string;
-  };
-};
-
-type AddOn = {
-  id: string;
-  name: string;
-  tagline?: string;
-  price: PriceMap;
-  unit?: string;
-  availability?: string;
-  features: string[];
-  cta: CallToAction;
-};
-
-type PricingData = {
-  currency: string;
-  billingCycles: BillingCycle[];
-  plans: Plan[];
-  addons?: AddOn[];
-};
-
-const pricingData = pricingSource as PricingData;
-
-const DEFAULT_CYCLE: BillingCycleId = "annual";
-
-function normalizeCycle(requested: string | undefined): BillingCycleId {
-  if (requested === "monthly" || requested === "annual") {
-    return requested;
-  }
-  return DEFAULT_CYCLE;
+/**
+ * Parse a localised price string (e.g. "$2.49", "€2,49") into a numeric
+ * value in the major currency unit.  Returns NaN when parsing fails.
+ */
+function parsePriceAmount(formatted: string): number {
+  return parseFloat(formatted.replace(/[^0-9.]/g, ""));
 }
 
-function formatPrice(amount: number | null | undefined, currency: string): string {
-  if (amount == null) {
-    return "Contact";
-  }
-
-  if (amount === 0) {
-    return "Free";
-  }
-
-  const formatter = new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: amount % 100 === 0 ? 0 : 2,
-  });
-
-  return formatter.format(amount / 100);
+/**
+ * Extract the currency symbol / prefix from a formatted price string.
+ *
+ * @example extractCurrencySymbol("$2.49")  // → "$"
+ * @example extractCurrencySymbol("€2,49")  // → "€"
+ */
+function extractCurrencySymbol(formatted: string): string {
+  return formatted.replace(/[0-9.,\s]/g, "").trim();
 }
 
-function getDisplayUnit(plan: Plan | AddOn): string | undefined {
-  if (plan.unit) {
-    return plan.unit;
-  }
-  return undefined;
+/**
+ * Derive the yearly price label from the monthly price string.
+ * Parses the currency symbol + numeric value, multiplies by 12, and formats
+ * a "save X%" note.  Falls back to the static yearly fallback when parsing fails.
+ *
+ * @param monthlyLabel  Formatted price string from BillingClient, e.g. "$2.49"
+ * @param yearlyLabel   Formatted price string from BillingClient, e.g. "$14.99"
+ */
+function buildYearlyLabel(monthlyLabel: string, yearlyLabel?: string): string {
+  if (yearlyLabel) return yearlyLabel;
+  // Auto-calculate: strip currency symbol, parse float, multiply by 12
+  const num = parsePriceAmount(monthlyLabel);
+  if (!Number.isFinite(num) || num <= 0) return "—";
+  const yearly = num * 12;
+  const currencySymbol = extractCurrencySymbol(monthlyLabel);
+  return `${currencySymbol}${yearly.toFixed(2)} / yr`;
 }
 
-function resolveCycleNote(cycle: BillingCycle | undefined): string | undefined {
-  return cycle?.note;
-}
+// ── Component ─────────────────────────────────────────────────────────────────
 
+/**
+ * PricingSection — hybrid pricing page that displays both consumer tiers
+ * (backed by Google Play Billing) and enterprise tiers (Contact Sales only).
+ *
+ * On Android, live localised prices are fetched from BillingClient via
+ * `getConsumerProductPrices()` and override the static fallback values.
+ * On web, static fallback prices are shown instead.
+ *
+ * Features:
+ *  • Consumer tier cards with live prices and Play Store purchase buttons
+ *  • Pro subscription toggle (monthly / yearly) with auto-calculated yearly price
+ *  • Enterprise tier cards with "Contact Sales" CTA (no in-app purchase)
+ *  • Feature comparison table
+ *  • "Restore Purchases" button for consumer tiers
+ *  • EntitlementManager integration to show locked/unlocked state
+ */
 export default function PricingSection() {
-  const [billingCycle, setBillingCycle] = useState<BillingCycleId>(() => {
-    const preferred = normalizeCycle(pricingData.billingCycles?.[0]?.id);
-    return preferred ?? DEFAULT_CYCLE;
-  });
-
   const onAndroid = isAndroidApp();
+  const entitlements = useEntitlements();
 
-  // Initialize the Play Store billing client once on Android
+  // Live prices fetched from BillingClient (Android only; empty on web)
+  const [livePrices, setLivePrices] = useState<Record<string, string>>({});
+  // Pro subscription billing cycle selector
+  const [proCycle, setProCycle] = useState<ProCycle>("monthly");
+  // Restore-purchases UX state
+  const [restoreStatus, setRestoreStatus] = useState<"idle" | "restoring" | "done">("idle");
+
+  // ── Initialise billing & fetch live prices ──────────────────────────────────
+
   useEffect(() => {
-    if (onAndroid) {
-      void initBilling();
-    }
+    if (!onAndroid) return;
+
+    void (async () => {
+      await initBilling();
+      const prices = await getConsumerProductPrices();
+      setLivePrices(prices);
+    })();
   }, [onAndroid]);
 
-  const cycles = useMemo(() => pricingData.billingCycles.map((cycle) => normalizeCycle(cycle.id)), []);
-
-  const activeCycle = billingCycle;
-  const activeCycleMeta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === activeCycle);
-
-  const handleCycleChange = (cycle: BillingCycleId) => {
-    setBillingCycle(cycle);
-  };
+  // ── Price resolution helpers ───────────────────────────────────────────────
 
   /**
-   * Handle a subscribe CTA for a paid plan.
-   * On Android: opens the Play Store subscription sheet.
-   * On web: navigates to the mailto: fallback href.
+   * Return the display price for a consumer tier.
+   * Prefers the live BillingClient price when available.
    */
-  const handleSubscribeClick = useCallback(
-    async (planId: string, fallbackHref: string) => {
-      const launched = await purchasePlan(planId, activeCycle);
-      if (!launched) {
-        window.location.href = fallbackHref;
+  const resolveTierPrice = useCallback(
+    (tier: ConsumerTier, cycle?: ProCycle): string => {
+      if (tier.id === "free") return "Free";
+
+      if (tier.id === "premium" && tier.sku) {
+        return livePrices[tier.sku] ?? tier.staticPriceFallback;
       }
+
+      if (tier.id === "pro" && tier.skus) {
+        if (cycle === "yearly") {
+          const monthlyPrice = livePrices[tier.skus.monthly] ?? "";
+          const yearlyPrice = livePrices[tier.skus.yearly];
+          return buildYearlyLabel(monthlyPrice || tier.staticPriceFallback, yearlyPrice);
+        }
+        return livePrices[tier.skus.monthly] ?? tier.staticPriceFallback;
+      }
+
+      return tier.staticPriceFallback;
     },
-    [activeCycle]
+    [livePrices]
   );
 
-  const renderCTA = (cta: CallToAction, planId?: string) => {
-    if (cta.type === "link") {
-      const isInternal = cta.href.startsWith("/");
+  // ── Purchase handlers ──────────────────────────────────────────────────────
 
-      // On Android, paid plans with a known Play Store SKU get a native billing button
-      if (onAndroid && planId && PLAN_SKUS[planId]) {
+  /** Handle a tap on the Premium Unlock buy button. */
+  const handlePurchasePremium = useCallback(async () => {
+    const launched = await purchasePremiumUnlock();
+    if (!launched) {
+      window.location.href =
+        "mailto:hello@circuitry3d.com?subject=Premium%20Unlock%20Purchase";
+    }
+  }, []);
+
+  /** Handle a tap on the Pro Subscription buy button. */
+  const handlePurchasePro = useCallback(async () => {
+    const launched = await purchaseProSubscription(proCycle);
+    if (!launched) {
+      window.location.href =
+        "mailto:hello@circuitry3d.com?subject=Pro%20Subscription%20Purchase";
+    }
+  }, [proCycle]);
+
+  /** Restore all consumer purchases (subscriptions + one-time). */
+  const handleRestorePurchases = useCallback(async () => {
+    setRestoreStatus("restoring");
+    await Promise.all([
+      restorePurchases(),
+      restorePremiumPurchases(),
+      restoreProPurchases(),
+    ]);
+    setRestoreStatus("done");
+    setTimeout(() => setRestoreStatus("idle"), 3000);
+  }, []);
+
+  // ── Render helpers ────────────────────────────────────────────────────────
+
+  /** Determine whether a consumer tier is currently active for the user. */
+  const isTierActive = useCallback(
+    (tierId: "free" | "premium" | "pro"): boolean => {
+      if (tierId === "free") return entitlements.tier === "free";
+      if (tierId === "premium") return entitlements.hasPremium && !entitlements.hasPro;
+      if (tierId === "pro") return entitlements.hasPro;
+      return false;
+    },
+    [entitlements]
+  );
+
+  /** Render the CTA button for a consumer tier. */
+  const renderConsumerCTA = useCallback(
+    (tier: ConsumerTier) => {
+      if (tier.id === "free") {
+        return (
+          <Link className="pricing-cta" to="/app" data-cta-type="internal">
+            Start Free
+          </Link>
+        );
+      }
+
+      if (isTierActive(tier.id)) {
+        return (
+          <button type="button" className="pricing-cta pricing-cta--active" disabled>
+            ✓ Current Plan
+          </button>
+        );
+      }
+
+      if (tier.id === "premium") {
         return (
           <button
             type="button"
             className="pricing-cta"
             data-cta-type="play-store"
-            onClick={() => handleSubscribeClick(planId, cta.href)}
+            onClick={handlePurchasePremium}
           >
-            {cta.label}
+            Unlock — {resolveTierPrice(tier)}
           </button>
         );
       }
 
-      if (isInternal) {
+      if (tier.id === "pro") {
         return (
-          <Link className="pricing-cta" to={cta.href} data-cta-type="internal">
-            {cta.label}
-          </Link>
+          <button
+            type="button"
+            className="pricing-cta"
+            data-cta-type="play-store"
+            onClick={handlePurchasePro}
+          >
+            Subscribe — {resolveTierPrice(tier, proCycle)}
+          </button>
         );
       }
 
-      return (
-        <a
-          className="pricing-cta"
-          href={cta.href}
-          data-cta-type="external"
-          target={cta.href.startsWith("mailto:") ? undefined : "_blank"}
-          rel="noreferrer noopener"
-        >
-          {cta.label}
-        </a>
-      );
+      return null;
+    },
+    [isTierActive, handlePurchasePremium, handlePurchasePro, resolveTierPrice, proCycle]
+  );
+
+  /** Render the CTA for an enterprise tier. */
+  const renderEnterpriseCTA = useCallback((tier: EnterpriseTier) => {
+    return (
+      <Link
+        className="pricing-cta pricing-cta--enterprise"
+        to={`/contact-sales?tier=${tier.id}`}
+        data-cta-type="internal"
+      >
+        Contact Sales
+      </Link>
+    );
+  }, []);
+
+  // ── Yearly price note ──────────────────────────────────────────────────────
+
+  const yearlyPriceNote = useMemo(() => {
+    const monthlyPrice = livePrices[SUB_MONTHLY_SKU];
+    if (!monthlyPrice) return null;
+    const num = parsePriceAmount(monthlyPrice);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    const currency = extractCurrencySymbol(monthlyPrice);
+    const yearly = num * 12;
+    const yearlyLive = livePrices[SUB_YEARLY_SKU];
+    if (yearlyLive) {
+      const yearlyNum = parsePriceAmount(yearlyLive);
+      if (Number.isFinite(yearlyNum) && yearlyNum > 0) {
+        const saving = Math.round((1 - yearlyNum / yearly) * 100);
+        if (saving > 0) return `Save ${saving}% with yearly`;
+      }
     }
-  };
+    return `Yearly billed as ${currency}${yearly.toFixed(2)}`;
+  }, [livePrices]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <section className="pricing-section" aria-labelledby="pricing-title">
+
+      {/* ── Hero ── */}
       <div className="pricing-hero">
         <BrandSignature size="sm" decorative className="pricing-brand" />
         <h1 id="pricing-title">Plans &amp; Pricing</h1>
         <p className="pricing-subtitle">
-          Choose the subscription that powers your classroom. Upgrade any time as your program grows.
+          Choose the plan that powers your circuits. Upgrade any time.
         </p>
-        <div className="billing-toggle" role="group" aria-label="Billing cycle selector">
-          {cycles.map((cycleId) => {
-            const meta = pricingData.billingCycles.find((cycle) => normalizeCycle(cycle.id) === cycleId);
-            const isActive = activeCycle === cycleId;
+      </div>
+
+      {/* ── Consumer tiers ── */}
+      <div className="pricing-section-group">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker">App Purchase</span>
+          <h2 className="pricing-section-title">Consumer Plans</h2>
+          <p className="pricing-section-desc">
+            One-time purchase or subscription — fully managed through Google Play.
+          </p>
+        </div>
+
+        {/* Pro cycle toggle — only visible above the Pro card */}
+        <div className="pricing-pro-cycle-toggle" role="group" aria-label="Pro billing cycle">
+          {(["monthly", "yearly"] as ProCycle[]).map((cycle) => (
+            <button
+              key={cycle}
+              type="button"
+              className={`billing-toggle-btn${proCycle === cycle ? " active" : ""}`}
+              onClick={() => setProCycle(cycle)}
+              aria-pressed={proCycle === cycle}
+            >
+              <span className="billing-toggle-label">
+                {cycle.charAt(0).toUpperCase() + cycle.slice(1)}
+              </span>
+              {cycle === "yearly" && yearlyPriceNote && (
+                <span className="billing-toggle-note">{yearlyPriceNote}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="plan-grid plan-grid--consumer">
+          {CONSUMER_TIERS.map((tier) => {
+            const active = isTierActive(tier.id);
             return (
-              <button
-                key={cycleId}
-                type="button"
-                className={`billing-toggle-btn${isActive ? " active" : ""}`}
-                onClick={() => handleCycleChange(cycleId)}
-                aria-pressed={isActive}
+              <article
+                key={tier.id}
+                className={`plan-card plan-card--consumer plan-${tier.id}${active ? " plan-card--active" : ""}`}
+                aria-current={active ? "true" : undefined}
               >
-                <span className="billing-toggle-label">{meta?.label ?? cycleId}</span>
-                {meta?.note && <span className="billing-toggle-note">{meta.note}</span>}
-              </button>
+                <header className="plan-header">
+                  {tier.badge && <span className="plan-badge">{tier.badge}</span>}
+                  <div className="plan-icon" aria-hidden="true">{tier.icon}</div>
+                  <h3 className="plan-name">{tier.name}</h3>
+                </header>
+
+                <div className="plan-price">
+                  <span className="plan-price-amount">
+                    {tier.id === "pro"
+                      ? resolveTierPrice(tier, proCycle)
+                      : resolveTierPrice(tier)}
+                  </span>
+                  {tier.id === "pro" && (
+                    <span className="plan-price-cycle">
+                      {proCycle === "monthly" ? "/ month" : "/ year"}
+                    </span>
+                  )}
+                  {tier.purchaseType === "one_time" && (
+                    <span className="plan-price-cycle">one-time</span>
+                  )}
+                </div>
+
+                <ul className="plan-features">
+                  {tier.features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+
+                <div className="plan-cta-wrapper">{renderConsumerCTA(tier)}</div>
+              </article>
             );
           })}
         </div>
-        {resolveCycleNote(activeCycleMeta) && (
-          <p className="pricing-cycle-note">{resolveCycleNote(activeCycleMeta)}</p>
-        )}
+
+        {/* Restore Purchases */}
+        <div className="pricing-restore-row">
+          <button
+            type="button"
+            className="pricing-restore-btn"
+            onClick={handleRestorePurchases}
+            disabled={restoreStatus === "restoring"}
+          >
+            {restoreStatus === "restoring"
+              ? "Restoring…"
+              : restoreStatus === "done"
+              ? "✓ Purchases Restored"
+              : "Restore Purchases"}
+          </button>
+        </div>
       </div>
 
-      <div className="plan-grid">
-        {pricingData.plans.map((plan) => {
-          const amount = plan.price?.[activeCycle];
-          const priceLabel = formatPrice(amount, pricingData.currency);
-          const unit = getDisplayUnit(plan);
-          return (
-            <article key={plan.id} className={`plan-card plan-${plan.id}`}>
-              <header className="plan-header">
-                {plan.badge && <span className="plan-badge">{plan.badge}</span>}
-                <h2>{plan.name}</h2>
-                {plan.tagline && <p className="plan-tagline">{plan.tagline}</p>}
-              </header>
-              <div className="plan-price">
-                <span className="plan-price-amount">{priceLabel}</span>
-                {unit && <span className="plan-price-unit">{unit}</span>}
-                {amount && amount > 0 && (
-                  <span className="plan-price-cycle">per {activeCycle}</span>
-                )}
-                {plan.renewal && <p className="plan-renewal">{plan.renewal}</p>}
+      {/* ── Feature comparison table ── */}
+      <div className="pricing-comparison">
+        <h2 className="pricing-comparison-title">Feature Comparison</h2>
+        <div className="pricing-comparison-table" role="table" aria-label="Feature comparison">
+          {/* Header row */}
+          <div className="pricing-comparison-row pricing-comparison-row--header" role="row">
+            <div className="pricing-comparison-cell pricing-comparison-cell--label" role="columnheader">Feature</div>
+            {CONSUMER_TIERS.map((t) => (
+              <div key={t.id} className="pricing-comparison-cell pricing-comparison-cell--tier" role="columnheader">
+                <span className="pricing-comparison-tier-icon" aria-hidden="true">{t.icon}</span>
+                {t.name}
               </div>
+            ))}
+          </div>
+          {/* Data rows */}
+          {COMPARISON_ROWS.map((row) => (
+            <div key={row.id} className="pricing-comparison-row" role="row">
+              <div className="pricing-comparison-cell pricing-comparison-cell--label" role="rowheader">
+                {row.label}
+              </div>
+              {(["free", "premium", "pro"] as const).map((tierId) => {
+                const value = row[tierId];
+                const isCheck = value === "✓";
+                const isCross = value === "✗";
+                return (
+                  <div
+                    key={tierId}
+                    className={`pricing-comparison-cell${isCheck ? " pricing-comparison-cell--yes" : ""}${isCross ? " pricing-comparison-cell--no" : ""}`}
+                    role="cell"
+                  >
+                    {value}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Enterprise tiers ── */}
+      <div className="pricing-section-group pricing-section-group--enterprise">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker pricing-section-kicker--enterprise">Enterprise</span>
+          <h2 className="pricing-section-title">Arena Plans</h2>
+          <p className="pricing-section-desc">
+            Designed for manufacturers, educators, and enterprise teams. No in-app
+            purchase — contact our sales team to get started.
+          </p>
+        </div>
+
+        <div className="plan-grid plan-grid--enterprise">
+          {ENTERPRISE_TIERS.map((tier) => (
+            <article key={tier.id} className={`plan-card plan-card--enterprise plan-${tier.id}`}>
+              <header className="plan-header">
+                <span className="plan-badge plan-badge--enterprise">{tier.badge}</span>
+                <div className="plan-icon" aria-hidden="true">{tier.icon}</div>
+                <h3 className="plan-name">{tier.name}</h3>
+              </header>
+
+              <div className="plan-price">
+                <span className="plan-price-amount plan-price-amount--enterprise">Contact Sales</span>
+              </div>
+
               <ul className="plan-features">
-                {plan.features.map((feature) => (
-                  <li key={feature}>{feature}</li>
+                {tier.description.map((f) => (
+                  <li key={f}>{f}</li>
                 ))}
               </ul>
-              {plan.bulk && (
-                <div className="plan-bulk">
-                  {plan.bulk.minimumSeats && <p>Minimum {plan.bulk.minimumSeats} seats</p>}
-                  {plan.bulk.notes && <p>{plan.bulk.notes}</p>}
-                </div>
-              )}
-              <div className="plan-cta-wrapper">{renderCTA(plan.cta, plan.id)}</div>
+
+              <div className="plan-cta-wrapper">{renderEnterpriseCTA(tier)}</div>
             </article>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
-      {pricingData.addons && pricingData.addons.length > 0 && (
-        <div className="addon-section">
-          <h3>Certification Bundle (Coming Soon)</h3>
-          <div className="addon-grid">
-            {pricingData.addons.map((addon) => {
-              const amount = addon.price?.[activeCycle];
-              const priceLabel = formatPrice(amount, pricingData.currency);
-              const unit = getDisplayUnit(addon);
-              return (
-                <article key={addon.id} className="addon-card">
-                  <header className="addon-header">
-                    <h4>{addon.name}</h4>
-                    {addon.tagline && <p className="addon-tagline">{addon.tagline}</p>}
-                    {addon.availability && <span className="addon-availability">{addon.availability}</span>}
-                  </header>
-                  <div className="addon-price">
-                    <span className="addon-price-amount">{priceLabel}</span>
-                    {unit && <span className="addon-price-unit">{unit}</span>}
-                    {amount && amount > 0 && (
-                      <span className="addon-price-cycle">per {activeCycle}</span>
-                    )}
-                  </div>
-                  <ul className="addon-features">
-                    {addon.features.map((feature) => (
-                      <li key={feature}>{feature}</li>
-                    ))}
-                  </ul>
-                  <div className="addon-cta-wrapper">{renderCTA(addon.cta)}</div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
+      {/* ── Footer ── */}
       <footer className="pricing-footer">
         <p className="pricing-contact-help">
-          Need a custom package? <a href="mailto:hello@circuitry3d.com">Contact our team</a> for tailored pricing.
+          Have questions?{" "}
+          <a href="mailto:hello@circuitry3d.com">Contact our team</a> for
+          tailored pricing or enterprise onboarding.
         </p>
       </footer>
     </section>
