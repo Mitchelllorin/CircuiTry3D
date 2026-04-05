@@ -4829,6 +4829,32 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 }
 
 /* ============================================
+   All landscape touch devices (phones + tablets)
+   Shift side panels and the mode bar inward so they
+   clear any camera notch / rounded-corner cutout that
+   appears on the left or right side when the device
+   is rotated. Zero-cost in portrait (insets are 0).
+   More specific blocks (max-height / min-width) below
+   will override where needed.
+   ============================================ */
+@media (pointer: coarse) and (orientation: landscape) {
+  .workspace-mode-bar {
+    max-width: calc(
+      min(1200px, 100vw - 24px) -
+        var(--builder-safe-area-left) - var(--builder-safe-area-right)
+    );
+  }
+
+  .builder-menu-stage-left {
+    left: var(--builder-safe-area-left);
+  }
+
+  .builder-menu-stage-right {
+    right: var(--builder-safe-area-right);
+  }
+}
+
+/* ============================================
    Short landscape phones (low vertical space)
    Keep UI usable when rotated.
    ============================================ */
