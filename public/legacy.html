@@ -5527,9 +5527,9 @@ body.android-optimized .zoom-btn {
                 // Duracell CopperTop-inspired: large copper/gold positive cap (~40%), solid black body with DARASAL brand (~60%)
                 const segments = isMobile ? 8 : 12;
 
-                // Black main body — covers ~60% of visible battery length (negative side)
-                // Visible body spans x = -0.72 (neg cap start) to x = 0.83 (copper cap end), total 1.55 units.
-                // Black: 0.93 units → center at x = -0.255; Copper: 0.62 units → center at x = 0.52
+                // Black main body — covers ~60% of visible battery length (negative side).
+                // Total visible cylinder span is ~1.55 units; black portion is 0.93 (60%), copper is 0.62 (40%).
+                // They meet at x = 0.21; centers: black at x = -0.255, copper at x = 0.52.
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.93, segments);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.05, roughness: 0.75 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
