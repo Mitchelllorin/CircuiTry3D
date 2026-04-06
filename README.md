@@ -20,6 +20,8 @@ CircuiTry3D is a **complete electrical education ecosystem.**  The circuit build
 | **3D Circuit Builder** | Build and simulate DC circuits in a real-time 3D sandbox with live W.I.R.E. analysis |
 | **Multi-Scale Current Flow Visualization** | Watch electrons move — from macro wire flow all the way to atomic crystal lattices and quantum probability clouds |
 | **FUSE™ Failure Engine** | See what actually happens when a component is pushed past its limits — smoke, arcs, explosions, and plain-language explanations of the physics |
+| **Circuit AI Assistant** | Free in-app AI chat covering 40+ electrical topics — Ohm's Law, KCL/KVL, component guides, troubleshooting, and app tutorials |
+| **AI Circuit Explanation** | Pro-tier engine that analyzes your live circuit and returns a structured 5-section report: Summary, Current Flow, Component Roles, Expected Behavior, and Common Mistakes |
 | **Component Arena** | Stress-test any component against configurable voltage, temperature, humidity, and duty-cycle parameters without touching real hardware |
 | **Integrated Electrical Textbook** | A full two-year post-secondary electrical engineering curriculum built directly into the app — Year 1 fundamentals through Year 2 advanced analysis |
 | **Adaptive Practice** | Targeted worksheet generator that identifies your weakest W.I.R.E. concepts and surfaces problems that close those gaps |
@@ -294,6 +296,40 @@ Every worksheet completion awards XP, streak bonuses, and badges via **Gamificat
 Teachers can create cohorts, share join codes, and schedule assignments from the problem library. **ClassroomContext** syncs rosters, assignments, and analytics to an Upstash-compatible KV store via `/api/classroom`. Set `CLASSROOM_KV_URL` and `CLASSROOM_KV_TOKEN` as GitHub repository secrets to enable cloud persistence; the app falls back to local storage without them.
 
 Supports grade levels: Grade 8, Grades 9–10, Grades 11–12, Higher Education, and CTE programs.
+
+### 🤖 AI Features
+
+CircuiTry3D has two built-in AI tools that live directly in the circuit builder workspace. Both are accessible from the right-edge action bar.
+
+#### ⚡ Circuit AI (Free)
+A real-time chat assistant that answers electrical theory questions and guides you through the app — no account required.
+
+| What it covers | Details |
+|---|---|
+| **Electrical theory** | Ohm's Law, KCL/KVL, power, impedance, AC/DC fundamentals, and more |
+| **Component guides** | Resistors, capacitors, inductors, transistors, MOSFETs, op-amps, relays, motors, transformers, and 20+ other types |
+| **Troubleshooting** | Diagnoses common wiring errors, polarity mistakes, open circuits, and more |
+| **App tutorials** | Step-by-step help for every Builder, Arena, and Practice feature |
+| **Context-aware** | Reads your live circuit metrics and tailors answers to what you've actually built |
+
+The knowledge base spans 40+ topics with keyword scoring that surfaces the most relevant answer for every question.  Tap **⚡** in the right edge bar to open.
+
+#### ✨ Explain Circuit (Pro)
+One-tap AI circuit analysis that breaks your current build into a structured, plain-language report.  Tap **✨** in the right edge bar to open.
+
+**Report sections:**
+
+| Section | What it tells you |
+|---|---|
+| **Summary** | High-level description of the circuit topology |
+| **Current Flow** | Step-by-step path current takes through the circuit |
+| **Component Roles** | What each component is doing and why it matters |
+| **Expected Behavior** | Predicted voltage, current, and power values aligned with your simulation |
+| **Common Mistakes** | Design errors most often seen in circuits like yours |
+
+**Dual-mode engine:** if a remote AI endpoint is configured (`VITE_EXPLAIN_API_URL`), the panel calls it and labels results **"AI"**. Without it, a local deterministic fallback analyzes topology, component roles, and known mistake patterns and labels results **"Local"** — so the feature always works, even offline.
+
+> 💡 The Explain Circuit panel is available on the **Premium plan** and above. A free trial view is shown to all users so they can see what the report looks like before upgrading.
 
 ### 🧑‍🤝‍🧑 Community Hub (`/community`)
 Share circuit exports, post lab notes, and browse the circuit gallery. Member profiles (set via `/account`) roll up contributions automatically. The feed and gallery persist locally for offline use.
