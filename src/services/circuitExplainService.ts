@@ -85,6 +85,8 @@ const COMPONENT_ROLE_MAP: Record<string, string> = {
   mosfet: "Field-Effect Transistor — voltage-controlled switch or amplifier.",
   switch: "Mechanically opens or closes the circuit path.",
   fuse: "Sacrificial overcurrent protection — melts to break the circuit when rated current is exceeded.",
+  relay: "Electromagnetic switch — a coil energises a magnetic armature that opens or closes an isolated set of contacts, letting a low-power signal control a high-power circuit.",
+  "voltage-regulator": "Linear voltage regulator — accepts a higher unregulated input and outputs a stable lower voltage; excess energy is dissipated as heat (heat = (V_in − V_out) × I_out).",
   potentiometer: "Variable resistor — adjusts voltage or current continuously via a wiper.",
   opamp: "Operational amplifier — versatile analog building block for amplification and signal processing.",
   transformer: "Transfers AC energy between two inductively coupled coils; steps voltage up or down.",
@@ -211,6 +213,10 @@ function buildLocalExplanation(circuit: LegacyCircuitState): ExplainResult {
       parts.push("The speaker will emit a tone if driven by an AC or pulsed signal.");
     if (hasComponent(byType, "capacitor", "capacitor-ceramic"))
       parts.push("Capacitors charge toward supply voltage and block DC in steady state.");
+    if (hasComponent(byType, "relay"))
+      parts.push("The relay coil will energise and switch its contacts when sufficient current flows; add a flyback diode to suppress back-EMF.");
+    if (hasComponent(byType, "voltage-regulator"))
+      parts.push("The voltage regulator will output a stable lower voltage; heat dissipation scales with (V_in − V_out) × I_out.");
     if (metrics.wireWarning)
       parts.push(`⚠️ Wire warning: ${metrics.wireWarning}`);
     expectedBehavior = parts.length > 0 ? parts.join(". ") + "." : "Circuit is operating within normal parameters.";
@@ -232,6 +238,12 @@ function buildLocalExplanation(circuit: LegacyCircuitState): ExplainResult {
   }
   if (hasComponent(byType, "capacitor", "capacitor-ceramic") && !hasComponent(byType, "resistor")) {
     commonMistakes.push("Capacitor without a series resistor — the charge/discharge rate (RC time constant) depends on resistance.");
+  }
+  if (hasComponent(byType, "relay") && !hasComponent(byType, "diode", "zener-diode")) {
+    commonMistakes.push("Relay coil without a flyback diode — the back-EMF spike when the coil de-energises can damage the driver transistor.");
+  }
+  if (hasComponent(byType, "voltage-regulator") && !hasBattery) {
+    commonMistakes.push("Voltage regulator without a voltage source — connect a battery or supply with a higher voltage than the regulator's output.");
   }
   if (counts.junctions === 0 && counts.components > 3) {
     commonMistakes.push("Large series chain — consider whether some components should be in parallel branches instead.");
