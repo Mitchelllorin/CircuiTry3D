@@ -3,7 +3,7 @@
  *
  * AI Circuit Explanation Engine for CircuiTry3D.
  *
- * Behaviour:
+ * Behavior:
  *  1. If VITE_EXPLAIN_API_URL is set, POST the circuit snapshot to
  *     `{VITE_EXPLAIN_API_URL}/explain-circuit` and return the AI-generated
  *     result.
@@ -26,7 +26,7 @@ export interface ExplainResult {
   currentFlow: string;
   /** Per-component roles inferred from the component types present. */
   componentRoles: { component: string; role: string }[];
-  /** Predicted steady-state behaviour based on simulation metrics. */
+  /** Predicted steady-state behavior based on simulation metrics. */
   expectedBehavior: string;
   /** Common mistakes associated with this circuit topology. */
   commonMistakes: string[];
@@ -186,10 +186,10 @@ function buildLocalExplanation(circuit: LegacyCircuitState): ExplainResult {
   // ── Component roles ────────────────────────────────────────────────────────
   const componentRoles = describeComponentRoles(byType);
 
-  // ── Expected behaviour ─────────────────────────────────────────────────────
+  // ── Expected behavior ──────────────────────────────────────────────────────
   let expectedBehavior: string;
   if (topology === "empty" || topology === "open") {
-    expectedBehavior = "No observable behaviour — the circuit is incomplete.";
+    expectedBehavior = "No observable behavior — the circuit is incomplete.";
   } else if (!simRan) {
     expectedBehavior =
       "Tap Run to simulate and compute voltage, current, resistance, and power values for this circuit.";

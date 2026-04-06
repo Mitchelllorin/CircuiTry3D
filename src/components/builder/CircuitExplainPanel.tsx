@@ -138,7 +138,7 @@ export function CircuitExplainPanel({
           /* Loading */
           <div className="circuit-explain-panel__loading" aria-live="polite" aria-busy="true">
             <div className="explain-spinner" aria-hidden="true" />
-            <span>Analysing your circuit…</span>
+            <span>Analyzing your circuit…</span>
           </div>
         ) : hasError ? (
           /* Error / unavailable */
@@ -190,7 +190,7 @@ export function CircuitExplainPanel({
                 </section>
               )}
 
-              {/* Expected behaviour */}
+              {/* Expected behavior */}
               <section className="explain-section" aria-label="Expected behavior">
                 <div className="explain-section__title">Expected Behavior</div>
                 <p className="explain-section__text">{result.expectedBehavior}</p>
