@@ -4678,8 +4678,11 @@ body.android-optimized .zoom-btn {
         let lastTwoFingerCenter = { x: 0, y: 0 };
         let lastPinchDistance = 0;
         let lastAtomicMode = false;
-        let _lastLayerOpacity = -1;  // Sentinel: forces evaluation on first call
+        let _lastLayerOpacity = -1;   // Sentinel: forces evaluation on first call
         let _layerVisibDist   = -999; // Last cameraDistance processed by _updateLayerVisibility
+        let _layerVisibTargetX = 0;   // Last cameraTarget.x processed
+        let _layerVisibTargetY = 0;   // Last cameraTarget.y processed
+        let _layerVisibTargetZ = 0;   // Last cameraTarget.z processed
 
         // Mobile detection
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -4758,13 +4761,19 @@ body.android-optimized .zoom-btn {
         const ELONGATION_SPEED_NORM   = 0.18;   // speed at which elongation saturates
 
         // Copper lattice atoms (atomic zoom only, d < ATOMIC_ZOOM_THRESHOLD)
-        const LATTICE_SPACING         = 0.38;   // scene units between Cu⁺ ions
-        const LATTICE_ATOM_RADIUS     = 0.14;   // ion sphere radius
-        const LATTICE_MAX_ATOMS       = isMobile ? 40 : 80; // cap for performance
+        const LATTICE_SPACING         = 0.38;   // scene units between Cu⁺ ions (FCC lattice parameter)
+        const LATTICE_ATOM_RADIUS     = 0.11;   // ion sphere radius
+        const LATTICE_MAX_ATOMS       = isMobile ? 52 : 104; // cap for performance (multiple of 13 per A/B pair)
         const LATTICE_HEAT_THRESHOLD  = 0.05;   // current (A) above which ions glow
+        const LATTICE_BOND_OPACITY    = 0.32;   // base opacity of inter-atom bond lines
+        const LATTICE_BOND_TOLERANCE  = 1.05;   // nearest-neighbour distance = LATTICE_SPACING × this factor
 
         // Thermal jitter on electrons (atomic zoom)
         const THERMAL_JITTER          = 0.018;  // max random displacement per axis
+
+        // Perspective-consistent zoom fade (proximity to camera target)
+        const MIN_ATTENTION_RADIUS    = 1.5;    // smallest attention radius at deepest zoom (world units)
+        const ATTENTION_RADIUS_SCALE  = 2.2;    // multiplier: attentionRadius = cameraDistance × this
 
         // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
         const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
@@ -7502,7 +7511,6 @@ body.android-optimized .zoom-btn {
 
             globalFlowTime++;
             updateFlowParticles(currentTime);
-            updateWireGlows(currentTime);
             updateJunctionGlows(currentTime);
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
@@ -7541,9 +7549,16 @@ body.android-optimized .zoom-btn {
         // progressively fade out so only the current-flow particles / lattice /
         // probability clouds remain visible — giving the "anatomy app" layer effect.
         function _updateLayerVisibility() {
-            // Only recalculate when the camera distance has changed meaningfully
-            if (Math.abs(cameraDistance - _layerVisibDist) < LAYER_VISIB_DIST_THRESHOLD) return;
-            _layerVisibDist = cameraDistance;
+            // Recalculate when camera distance or target changes meaningfully
+            const targetChanged =
+                Math.abs(cameraTarget.x - _layerVisibTargetX) > LAYER_VISIB_DIST_THRESHOLD ||
+                Math.abs(cameraTarget.y - _layerVisibTargetY) > LAYER_VISIB_DIST_THRESHOLD ||
+                Math.abs(cameraTarget.z - _layerVisibTargetZ) > LAYER_VISIB_DIST_THRESHOLD;
+            if (!targetChanged && Math.abs(cameraDistance - _layerVisibDist) < LAYER_VISIB_DIST_THRESHOLD) return;
+            _layerVisibDist    = cameraDistance;
+            _layerVisibTargetX = cameraTarget.x;
+            _layerVisibTargetY = cameraTarget.y;
+            _layerVisibTargetZ = cameraTarget.z;
 
             // Map distance → [0, 1] macro-object opacity
             let targetOpacity;
@@ -7563,12 +7578,28 @@ body.android-optimized .zoom-btn {
                 targetOpacity = 0.0;
             }
 
-            // Skip if opacity hasn't changed enough to justify mesh traversal
-            if (Math.abs(targetOpacity - _lastLayerOpacity) < LAYER_OPACITY_CHANGE_THRESHOLD) return;
+            // Skip if opacity and target haven't changed enough to justify mesh traversal
+            if (!targetChanged && Math.abs(targetOpacity - _lastLayerOpacity) < LAYER_OPACITY_CHANGE_THRESHOLD) return;
             _lastLayerOpacity = targetOpacity;
 
-            const fullyVisible   = targetOpacity >= 0.999;
-            const fullyInvisible = targetOpacity < 0.01;
+            const fullyVisible = targetOpacity >= 0.999;
+
+            // Perspective-consistent fade: when zoomed in, objects far from the
+            // camera target fade out so you can't see a resistor in perfect clarity
+            // while looking at an atomic-scale wire elsewhere.
+            const useProximityFade = !fullyVisible && cameraDistance < CLOSE_ZOOM_THRESHOLD;
+            // Attention radius shrinks as you zoom deeper — at macro zoom it covers
+            // the whole scene; at deep atomic zoom it collapses to ~1.5 world units.
+            const attentionRadius = Math.max(MIN_ATTENTION_RADIUS, cameraDistance * ATTENTION_RADIUS_SCALE);
+
+            function _getProximityOpacity(worldPos) {
+                if (!useProximityFade) return targetOpacity;
+                const dist = worldPos.distanceTo(cameraTarget);
+                // Objects within attentionRadius get full tier opacity;
+                // linear fade to 0 at 2 × attentionRadius.
+                const proxT = Math.max(0, Math.min(1, (dist - attentionRadius) / attentionRadius));
+                return targetOpacity * (1.0 - proxT);
+            }
 
             // Helper: apply scaled opacity to one Three.js material.
             // Original values are cached in _lyr* properties so they can be
@@ -7578,7 +7609,7 @@ body.android-optimized .zoom-btn {
                     mat._lyrBaseOpacity     = mat.opacity;
                     mat._lyrBaseTransparent = mat.transparent;
                 }
-                if (fullyVisible) {
+                if (tgt >= 0.999) {
                     mat.transparent = mat._lyrBaseTransparent;
                     mat.opacity     = mat._lyrBaseOpacity;
                 } else {
@@ -7607,16 +7638,17 @@ body.android-optimized .zoom-btn {
             for (let i = 0; i < cLen; i++) {
                 const c = components[i];
                 if (!c.mesh) continue;
-                if (fullyInvisible) {
+                const finalOpacity = _getProximityOpacity(c.mesh.position);
+                if (finalOpacity < 0.01) {
                     c.mesh.visible = false;
                 } else {
                     c.mesh.visible = true;
-                    _traverseMeshes(c.mesh, targetOpacity);
+                    _traverseMeshes(c.mesh, finalOpacity);
                 }
                 // Fade DOM label together with the component
                 if (c.labelDiv) {
-                    c.labelDiv.style.opacity      = fullyVisible ? '' : targetOpacity.toFixed(2);
-                    c.labelDiv.style.pointerEvents = targetOpacity < 0.2 ? 'none' : '';
+                    c.labelDiv.style.opacity      = fullyVisible ? '' : finalOpacity.toFixed(2);
+                    c.labelDiv.style.pointerEvents = finalOpacity < 0.2 ? 'none' : '';
                 }
             }
 
@@ -7625,11 +7657,17 @@ body.android-optimized .zoom-btn {
             for (let i = 0; i < wLen; i++) {
                 const w = wires[i];
                 if (!w.mesh) continue;
-                if (fullyInvisible) {
+                // Use wire curve midpoint for proximity check (wireGroup.position is at origin)
+                let finalOpacity = targetOpacity;
+                if (useProximityFade && w.curve) {
+                    const midPt = w.curve.getPoint(0.5);
+                    if (midPt && midPt.isVector3) finalOpacity = _getProximityOpacity(midPt);
+                }
+                if (finalOpacity < 0.01) {
                     w.mesh.visible = false;
                 } else {
                     w.mesh.visible = true;
-                    _traverseMeshes(w.mesh, targetOpacity);
+                    _traverseMeshes(w.mesh, finalOpacity);
                 }
             }
 
@@ -13702,6 +13740,9 @@ Made with ? for visual learners everywhere!
             const component = new Component(type, position);
             components.push(component);
             _layerVisibDist = -999; // Force layer-visibility re-evaluation for new component
+            _layerVisibTargetX = -999;
+            _layerVisibTargetY = -999;
+            _layerVisibTargetZ = -999;
             selectComponent(component, { startDragging: true, silent: true });
 
             setStatus(`⚡ ${type} added - drag to grid position, tap to place, long press to edit values`);
@@ -16840,10 +16881,6 @@ Made with ? for visual learners everywhere!
             const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
             const intensity         = Math.min(1, currentValue / 0.5);
 
-            // Current-scaled wire glow opacity — brighter wires at higher current
-            const wireGlowOpacity = Math.min(0.32,
-                WIRE_GLOW_BASE_OPACITY + intensity * WIRE_GLOW_SPEED_SCALE * WIRE_GLOW_BASE_OPACITY);
-
             segments.forEach((segment, segmentIndex) => {
                 const wire = segment.wire;
                 if (!wire || !wire.wireGroup) {
@@ -16863,35 +16900,6 @@ Made with ? for visual learners everywhere!
 
                 let dynamicCount = Math.floor((currentValue * (isMobile ? 20 : 28)) * (segment.speedFactor || 1));
                 dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
-
-                // ── Wire energy-glow overlay (additive blended tube) ─────────
-                if (wire.segments && wire.segments.length > 0) {
-                    wire.segments.forEach(seg => {
-                        try {
-                            const segLen = seg.start.distanceTo(seg.end);
-                            if (segLen < 0.05) return;
-                            const glowGeom = new THREE.CylinderGeometry(
-                                WIRE_GLOW_RADIUS, WIRE_GLOW_RADIUS, segLen, WIRE_GLOW_RADIAL_SEGS);
-                            const glowMat  = new THREE.MeshBasicMaterial({
-                                color: flowColor.hex,
-                                transparent: true,
-                                opacity: wireGlowOpacity,
-                                blending: THREE.AdditiveBlending,
-                                depthWrite: false,
-                                side: THREE.FrontSide
-                            });
-                            const glowMesh = new THREE.Mesh(glowGeom, glowMat);
-                            glowMesh.position.copy(seg.mesh.position);
-                            glowMesh.rotation.copy(seg.mesh.rotation);
-                            scene.add(glowMesh);
-                            currentWireGlows.push({
-                                mesh: glowMesh,
-                                baseOpacity: wireGlowOpacity,
-                                phase: Math.random() * Math.PI * 2
-                            });
-                        } catch (e) { /* skip this segment */ }
-                    });
-                }
 
                 // ── Copper lattice atoms (atomic zoom only) ──────────────────
                 if (inAtomicZoom) {
@@ -17070,12 +17078,16 @@ Made with ? for visual learners everywhere!
         }
 
         /**
-         * Spawn Cu⁺ lattice-ion spheres along a wire for atomic-zoom visualization.
-         * Ions are fixed (they don't move); their emissive glow increases with current
-         * to represent resistive Joule heating as drifting electrons collide with them.
+         * Spawn a proper FCC copper crystal lattice along a wire for atomic-zoom visualization.
+         * Uses two interleaved cross-section layers (Layer A: 3×3 corner grid; Layer B: 2×2
+         * face-center grid) to replicate the [100]-direction view of an FCC unit cell.
+         * Atoms are rendered as a single InstancedMesh for GPU efficiency, with bond
+         * LineSegments connecting nearest-neighbour atoms (distance ≤ LATTICE_SPACING).
+         * Ion emissive glow intensifies with current to represent resistive Joule heating.
          */
         function _spawnLatticeAtoms(wire, currentValue, flowColor) {
             if (!wire.curve) return;
+
             // Estimate wire length by sampling the curve at regular intervals
             const SAMPLE_COUNT = 20;
             let estimatedLength = 0;
@@ -17087,41 +17099,130 @@ Made with ? for visual learners everywhere!
                 }
                 prevPt = pt;
             }
-            const totalAtoms = Math.min(LATTICE_MAX_ATOMS,
-                Math.max(4, Math.round(estimatedLength / LATTICE_SPACING)));
+
             const heatT       = Math.min(1, currentValue / (LATTICE_HEAT_THRESHOLD * 20));
-            // Copper is copper-orange; heat shifts toward red-orange
             const copperColor = new THREE.Color(0xb87333);
             const hotColor    = new THREE.Color(0xff5500);
             const ionColor    = copperColor.clone().lerp(hotColor, heatT * 0.6);
-            const emissiveHex = ionColor.clone().multiplyScalar(0.25 + heatT * 0.5).getHex();
 
-            const ionGeom = new THREE.SphereGeometry(
-                LATTICE_ATOM_RADIUS, isMobile ? 6 : 9, isMobile ? 4 : 6);
-            const ionMat  = new THREE.MeshPhongMaterial({
+            const A = LATTICE_SPACING; // FCC lattice parameter in world units
+
+            // FCC [100] cross-section:
+            // Layer A — 3×3 square arrangement (corners, edge-centres, body-centre of face)
+            const CROSS_A = [];
+            for (let ix = -1; ix <= 1; ix++)
+                for (let iy = -1; iy <= 1; iy++)
+                    CROSS_A.push([ix * A, iy * A]);
+
+            // Layer B — 2×2 face-centre atoms (FCC offset: +A/2 in both cross-section axes)
+            const CROSS_B = [
+                [-A * 0.5, -A * 0.5], [A * 0.5, -A * 0.5],
+                [-A * 0.5,  A * 0.5], [A * 0.5,  A * 0.5]
+            ];
+
+            // 13 atoms per A+B pair; cap total pairs to LATTICE_MAX_ATOMS / 13
+            const atomsPerPair  = CROSS_A.length + CROSS_B.length;
+            const totalLayers   = Math.ceil(estimatedLength / (A * 0.5)) + 1;
+            const numPairs      = Math.min(
+                Math.floor(LATTICE_MAX_ATOMS / atomsPerPair),
+                Math.ceil(totalLayers / 2)
+            );
+            if (numPairs === 0) return;
+
+            const totalAtoms  = numPairs * atomsPerPair;
+            const ionGeom     = new THREE.SphereGeometry(
+                LATTICE_ATOM_RADIUS, isMobile ? 7 : 10, isMobile ? 5 : 7);
+            const ionMat      = new THREE.MeshPhongMaterial({
                 color:             ionColor.getHex(),
-                emissive:          emissiveHex,
-                emissiveIntensity: 0.4 + heatT * 1.2,
-                shininess:         220,
+                emissive:          ionColor.clone().multiplyScalar(0.3 + heatT * 0.6).getHex(),
+                emissiveIntensity: 0.7 + heatT * 1.5,
+                shininess:         280,
                 transparent:       true,
-                opacity:           0.82
+                opacity:           0.92
             });
 
-            for (let k = 0; k < totalAtoms; k++) {
-                try {
-                    const t   = k / totalAtoms;
-                    const pos = wire.curve.getPoint(t);
-                    if (!pos || !pos.isVector3) continue;
-                    // Offset ions slightly off the wire centre to distinguish them from electrons
-                    const radialOffset = 0.10;
-                    const angle = k * GOLDEN_ANGLE_RAD;
-                    pos.x += Math.cos(angle) * radialOffset;
-                    pos.z += Math.sin(angle) * radialOffset;
-                    const ionMesh = new THREE.Mesh(ionGeom, ionMat);
-                    ionMesh.position.copy(pos);
-                    scene.add(ionMesh);
-                    currentLatticeAtoms.push(ionMesh);
-                } catch (e) { /* skip */ }
+            const instancedMesh = new THREE.InstancedMesh(ionGeom, ionMat, totalAtoms);
+            instancedMesh.frustumCulled = false;
+            const dummy           = new THREE.Object3D();
+            let   instIdx         = 0;
+            const atomWorldPositions = [];
+            const totalLayerCount = numPairs * 2;
+
+            for (let pair = 0; pair < numPairs; pair++) {
+                // ── Layer A (3×3) ────────────────────────────────────────────
+                const tA    = totalLayerCount > 1 ? (pair * 2) / (totalLayerCount - 1) : 0;
+                const safeTA = Math.min(0.999, tA);
+                const posA   = wire.curve.getPoint(safeTA);
+                if (posA && posA.isVector3) {
+                    const tangA  = wire.curve.getTangent(safeTA);
+                    const perp1A = new THREE.Vector3();
+                    if (Math.abs(tangA.y) < 0.9) {
+                        perp1A.crossVectors(tangA, new THREE.Vector3(0, 1, 0)).normalize();
+                    } else {
+                        perp1A.crossVectors(tangA, new THREE.Vector3(1, 0, 0)).normalize();
+                    }
+                    const perp2A = new THREE.Vector3().crossVectors(tangA, perp1A).normalize();
+                    for (const [dx, dy] of CROSS_A) {
+                        const p = posA.clone().addScaledVector(perp1A, dx).addScaledVector(perp2A, dy);
+                        atomWorldPositions.push(p.clone());
+                        dummy.position.copy(p);
+                        dummy.updateMatrix();
+                        instancedMesh.setMatrixAt(instIdx++, dummy.matrix);
+                    }
+                }
+
+                // ── Layer B (2×2 face-centre, half-period along wire) ────────
+                const tB    = totalLayerCount > 1 ? (pair * 2 + 1) / (totalLayerCount - 1) : 0.5;
+                const safeTB = Math.min(0.999, tB);
+                const posB   = wire.curve.getPoint(safeTB);
+                if (posB && posB.isVector3) {
+                    const tangB  = wire.curve.getTangent(safeTB);
+                    const perp1B = new THREE.Vector3();
+                    if (Math.abs(tangB.y) < 0.9) {
+                        perp1B.crossVectors(tangB, new THREE.Vector3(0, 1, 0)).normalize();
+                    } else {
+                        perp1B.crossVectors(tangB, new THREE.Vector3(1, 0, 0)).normalize();
+                    }
+                    const perp2B = new THREE.Vector3().crossVectors(tangB, perp1B).normalize();
+                    for (const [dx, dy] of CROSS_B) {
+                        const p = posB.clone().addScaledVector(perp1B, dx).addScaledVector(perp2B, dy);
+                        atomWorldPositions.push(p.clone());
+                        dummy.position.copy(p);
+                        dummy.updateMatrix();
+                        instancedMesh.setMatrixAt(instIdx++, dummy.matrix);
+                    }
+                }
+            }
+
+            instancedMesh.count = instIdx;
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            scene.add(instancedMesh);
+            currentLatticeAtoms.push(instancedMesh);
+
+            // ── Bond connections (nearest-neighbour pairs ≤ LATTICE_SPACING) ─
+            const bondVerts  = [];
+            const bondCutoff = LATTICE_SPACING * LATTICE_BOND_TOLERANCE;
+            for (let a = 0; a < atomWorldPositions.length; a++) {
+                for (let b = a + 1; b < atomWorldPositions.length; b++) {
+                    if (atomWorldPositions[a].distanceTo(atomWorldPositions[b]) <= bondCutoff) {
+                        const pa = atomWorldPositions[a], pb = atomWorldPositions[b];
+                        bondVerts.push(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z);
+                    }
+                }
+            }
+            if (bondVerts.length > 0) {
+                const bondGeom = new THREE.BufferGeometry();
+                bondGeom.setAttribute('position', new THREE.Float32BufferAttribute(bondVerts, 3));
+                const bondColor = ionColor.clone().lerp(new THREE.Color(0xffffff), 0.3);
+                const bondMat   = new THREE.LineBasicMaterial({
+                    color:       bondColor.getHex(),
+                    transparent: true,
+                    opacity:     LATTICE_BOND_OPACITY + heatT * 0.25,
+                    depthWrite:  false
+                });
+                const bondLines = new THREE.LineSegments(bondGeom, bondMat);
+                scene.add(bondLines);
+                currentLatticeAtoms.push(bondLines);
             }
         }
 
