@@ -27,9 +27,8 @@ Every major circuit simulator ignores failure. The Arena makes failure the star.
 
 1. *"What actually happens when a student wires it wrong?"*
 2. *"The first circuit simulator that teaches failure."*
-3. *"30 component failure modes. Zero sacrificial hardware."*
-4. *"From Thermal Runaway to Junction Burnout — in 3D, in real time."*
-5. *"Real datasheets. Real failure physics. No soldering iron required."*
+3. *"From Thermal Runaway to Junction Burnout — in 3D, in real time."*
+4. *"Real datasheets. Real failure physics. No soldering iron required."*
 
 ---
 
@@ -85,10 +84,9 @@ info@circuitry3d.net
 ### Talking Points for School Board Presentations
 
 1. **Safety**: "Students learn what component failure looks like before they're in a real lab. That reduces the chance of damage to equipment — or to themselves."
-2. **Cost**: "A lab full of sacrificial components costs hundreds of dollars per semester. CircuiTry3D replaces that with a $299/educator license."
-3. **Standards alignment**: "Our platform maps to NGSS PS3 (Energy) and CTE Electronics pathway standards — failure analysis is explicitly in those frameworks."
-4. **No hardware required**: "Runs in any browser. No installation, no device requirements beyond a Chromebook or tablet."
-5. **Proven concepts**: "Physics-accurate failure modeling is used in professional EDA tools costing thousands per seat. We bring that capability to the high school classroom."
+2. **Standards alignment**: "Our platform maps to NGSS PS3 (Energy) and CTE Electronics pathway standards — failure analysis is explicitly in those frameworks."
+3. **No hardware required**: "Runs in any browser. No installation, no device requirements beyond a Chromebook or tablet."
+4. **Proven concepts**: "Physics-accurate failure modeling is used in professional EDA tools costing thousands per seat. We bring that capability to the high school classroom."
 
 ### Grant Funding Angle
 

@@ -36,7 +36,6 @@ CircuiTry3D is a **complete electrical education ecosystem.**  The circuit build
 ### 🎓 Educators & Academic Institutions
 Whether you teach middle school science, high school CTE electronics, or first-year college circuits, CircuiTry3D gives you a lab that never runs out of components, never burns down, and never lets a student leave without understanding *why* something failed.
 
-- Replace sacrificial lab hardware with physics-accurate 3D simulations
 - Assign worksheets tied directly to W.I.R.E. (Watts, current **I**, Resistance, voltage **E**/electromotive force) and KCL/KVL concepts from the in-app textbook
 - Create cohorts, distribute join codes, and track every student's progress from a single dashboard
 - Full alignment with NGSS PS3 (Energy) and CTE Electronics pathway standards
@@ -392,7 +391,7 @@ CircuiTry3D was built from the ground up to solve a problem every electronics te
 |---|---|
 | Students wire circuits correctly but don't understand *why* they work | Multi-scale current flow visualization zooms from the wire surface into the atomic lattice so students see electron drift, not just current arrows |
 | Students don't understand *why* components fail or what failure looks like | FUSE™ Engine triggers real, named failure modes (Thermal Runaway, Avalanche Breakdown, Electrolyte Boilover) with 3D particle effects and plain-language physical explanations |
-| Physical lab components are expensive and destroyed by over-voltage experiments | Component Arena lets students push any component past its limits — zero hardware, zero cost, zero risk |
+| Students need a safe way to test components beyond their rated limits | Component Arena lets students push any component past its limits — safe, cost-free, and risk-free |
 | Coordinating assignments across a class is cumbersome | Classroom Mode with roster management, join codes, and per-student analytics from a single teacher dashboard |
 | Sourcing a good textbook is expensive and often incomplete | The full Year 1 + Year 2 electrical curriculum is built into the app with worked examples and interactive practice — no separate purchase required |
 | Students disengage from dry formula drills | Gamification, Arcade Mode, and adaptive practice with XP and badges keep students engaged while reinforcing core concepts |
