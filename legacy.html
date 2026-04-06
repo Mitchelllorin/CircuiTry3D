@@ -7302,6 +7302,7 @@ body.android-optimized .zoom-btn {
                     try {
                         renderer = new THREE.WebGLRenderer({ 
                             canvas: canvas,
+                            alpha: false,
                             antialias: !isMobile,
                             powerPreference: isMobile ? "low-power" : "high-performance",
                             failIfMajorPerformanceCaveat: false
@@ -7316,6 +7317,7 @@ body.android-optimized .zoom-btn {
                     try {
                         renderer = new THREE.WebGLRenderer({ 
                             canvas: canvas,
+                            alpha: false,
                             antialias: false,
                             powerPreference: "default",
                             failIfMajorPerformanceCaveat: false
@@ -7329,6 +7331,7 @@ body.android-optimized .zoom-btn {
                 if (!_rendererOk) {
                     try {
                         renderer = new THREE.WebGLRenderer({ 
+                            alpha: false,
                             antialias: false,
                             failIfMajorPerformanceCaveat: false
                         });
