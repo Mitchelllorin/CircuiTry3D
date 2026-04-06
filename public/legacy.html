@@ -2847,6 +2847,64 @@
             border-color: rgba(255, 60, 60, 0.85);
             box-shadow: 0 0 16px rgba(255, 40, 40, 0.35);
         }
+
+        /* ── Explosion & Arc flash overlays ────────────────────────────────── */
+        /* These are full-viewport DOM overlays animated by triggerExplosionFlash()
+           and triggerShortCircuitFlash() via an .active class toggle. */
+        #hazard-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 8000;
+            opacity: 0;
+            background: radial-gradient(
+                ellipse 90% 75% at 50% 50%,
+                rgba(255, 255, 200, 1.0)  0%,
+                rgba(255, 230, 80,  0.95) 10%,
+                rgba(255, 140, 20,  0.80) 30%,
+                rgba(255, 60,  0,   0.50) 55%,
+                rgba(200, 20,  0,   0.18) 72%,
+                transparent 85%
+            );
+        }
+        #hazard-overlay.active {
+            display: block;
+            animation: explosion-flash 0.95s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+        @keyframes explosion-flash {
+            0%   { opacity: 0;    transform: scale(0.85); }
+            6%   { opacity: 1;    transform: scale(1.08); }
+            18%  { opacity: 0.92; transform: scale(1.04); }
+            100% { opacity: 0;    transform: scale(1.18); }
+        }
+
+        #short-circuit-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 8000;
+            opacity: 0;
+            background: radial-gradient(
+                ellipse 80% 65% at 50% 50%,
+                rgba(220, 240, 255, 0.95)  0%,
+                rgba(100, 180, 255, 0.80) 20%,
+                rgba(60,  100, 255, 0.50) 45%,
+                rgba(40,  40,  180, 0.20) 68%,
+                transparent 82%
+            );
+        }
+        #short-circuit-overlay.active {
+            display: block;
+            animation: arc-flash 0.55s ease-out forwards;
+        }
+        @keyframes arc-flash {
+            0%   { opacity: 0;   transform: scale(0.9); }
+            8%   { opacity: 1;   transform: scale(1.0); }
+            35%  { opacity: 0.7; transform: scale(1.0); }
+            100% { opacity: 0;   transform: scale(1.05); }
+        }
     </style>
 </head>
 <body>
@@ -3434,6 +3492,10 @@
         const workspaceFailureParticles = [];       // { points, velocities, lifetimes, ... }
         // Camera-shake state for explosion effects
         const workspaceCameraShake = { active: false, intensity: 0, duration: 0, elapsed: 0 };
+        // Expanding shockwave rings spawned on burst/blowout
+        const workspaceShockwaves = [];             // { mesh, age, maxAge, startScale }
+        // Temporary point-light flashes spawned on burst/arc
+        const workspaceFlashLights = [];            // { light, age, maxAge, peakIntensity }
 
         let scopeTimer = null;
         let scopeBuffer = [];
@@ -7616,6 +7678,8 @@ body.android-optimized .zoom-btn {
             updateJunctionGlows(currentTime);
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
+            updateWorkspaceShockwaves();
+            updateWorkspaceFlashLights();
             _updateLayerVisibility();  // Fade components/wires based on zoom level
 
             // Only update labels every few frames to reduce DOM manipulation overhead
@@ -19253,16 +19317,16 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                         if (wasLowSev && failure.severity >= 2) {
                             if (failure.visual === 'burst') {
                                 // Full explosion: bright flash + strong camera shake + hazard warning
-                                triggerExplosionFlash();
+                                triggerExplosionFlash(component, 'burst');
                                 triggerCameraShake(0.35, 0.7);
                                 showHazardWarning();
                             } else if (failure.visual === 'blowout') {
-                                // Blowout: moderate flash + light shake
-                                triggerExplosionFlash();
+                                // Blowout: moderate flash + light shake + shockwave
+                                triggerExplosionFlash(component, 'blowout');
                                 triggerCameraShake(0.18, 0.45);
                             } else if (failure.visual === 'arc' || failure.visual === 'melt') {
-                                // Arc / melt: red short-circuit flash
-                                triggerShortCircuitFlash();
+                                // Arc / melt: blue-white arc flash + light
+                                triggerShortCircuitFlash(component);
                             }
                         }
                     }
@@ -19289,6 +19353,25 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 workspaceFailureState.delete(component.id);
                 component.updateLabels?.();
             });
+            // Also expire any in-flight shockwaves and flash lights immediately
+            if (scene) {
+                for (const sw of workspaceShockwaves) {
+                    scene.remove(sw.mesh);
+                    sw.mesh.geometry.dispose();
+                    sw.mesh.material.dispose();
+                    if (sw.innerMesh) {
+                        scene.remove(sw.innerMesh);
+                        sw.innerMesh.geometry.dispose();
+                        sw.innerMesh.material.dispose();
+                    }
+                }
+                for (const fl of workspaceFlashLights) {
+                    scene.remove(fl.light);
+                    fl.light.dispose();
+                }
+            }
+            workspaceShockwaves.length = 0;
+            workspaceFlashLights.length = 0;
         }
 
         /**
@@ -19323,8 +19406,135 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             camera.lookAt(cameraTarget);
         }
 
+        /**
+         * Advance all active shockwave rings each animation frame.
+         * Scales the ring outward and fades its opacity as it expands.
+         */
+        function updateWorkspaceShockwaves() {
+            const dt = 0.016;
+            for (let i = workspaceShockwaves.length - 1; i >= 0; i--) {
+                const sw = workspaceShockwaves[i];
+                sw.age += dt;
+                if (sw.age >= sw.maxAge) {
+                    scene.remove(sw.mesh);
+                    sw.mesh.geometry.dispose();
+                    sw.mesh.material.dispose();
+                    workspaceShockwaves.splice(i, 1);
+                    continue;
+                }
+                const progress = sw.age / sw.maxAge;
+                // Scale from initial to ~4x over lifetime; ease-out curve
+                const scale = 1 + progress * 3.5;
+                sw.mesh.scale.setScalar(scale);
+                // Fade out with a quick initial flash then gradual decay
+                sw.mesh.material.opacity = (1 - progress) * (1 - progress) * 0.9;
+
+                // Second inner ring: shrinks as outer expands for depth
+                if (sw.innerMesh) {
+                    const iScale = 0.6 + progress * 0.4;
+                    sw.innerMesh.scale.setScalar(iScale);
+                    sw.innerMesh.material.opacity = (1 - progress) * 0.5;
+                }
+            }
+        }
+
+        /**
+         * Advance all active point-light flashes each frame.
+         * Decays the intensity to zero over the light's lifetime.
+         */
+        function updateWorkspaceFlashLights() {
+            const dt = 0.016;
+            for (let i = workspaceFlashLights.length - 1; i >= 0; i--) {
+                const fl = workspaceFlashLights[i];
+                fl.age += dt;
+                if (fl.age >= fl.maxAge) {
+                    scene.remove(fl.light);
+                    fl.light.dispose();
+                    workspaceFlashLights.splice(i, 1);
+                    continue;
+                }
+                const progress = fl.age / fl.maxAge;
+                // Quadratic decay: bright at start, dims fast
+                fl.light.intensity = fl.peakIntensity * (1 - progress * progress);
+            }
+        }
+
+        /**
+         * Spawn a 3D shockwave ring and a temporary point-light at the given
+         * world position.  Called from triggerExplosionFlash() / triggerArcFx().
+         * @param {THREE.Vector3} worldPos  explosion origin in world space
+         * @param {string}        type      'burst' | 'arc' | 'blowout'
+         */
+        function createWorkspaceExplosionFx(worldPos, type) {
+            if (!scene || !worldPos) return;
+
+            if (type === 'burst' || type === 'blowout') {
+                // Outer shockwave ring — horizontal torus that expands outward
+                const outerGeo = new THREE.TorusGeometry(0.22, 0.055, 8, 40);
+                const outerMat = new THREE.MeshBasicMaterial({
+                    color: type === 'burst' ? 0xffaa22 : 0xffee88,
+                    transparent: true,
+                    opacity: 0.9,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                });
+                const outer = new THREE.Mesh(outerGeo, outerMat);
+                outer.position.copy(worldPos);
+                outer.rotation.x = Math.PI / 2;
+                scene.add(outer);
+
+                // Inner secondary ring (slightly delayed feel via smaller initial scale)
+                const innerGeo = new THREE.TorusGeometry(0.14, 0.035, 6, 32);
+                const innerMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.7,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                });
+                const inner = new THREE.Mesh(innerGeo, innerMat);
+                inner.position.copy(worldPos);
+                inner.rotation.x = Math.PI / 2;
+                scene.add(inner);
+
+                workspaceShockwaves.push({
+                    mesh: outer, innerMesh: inner,
+                    age: 0, maxAge: type === 'burst' ? 1.1 : 0.75,
+                });
+
+                // Warm point-light flash
+                const burstLight = new THREE.PointLight(
+                    type === 'burst' ? 0xffcc44 : 0xffffaa,
+                    type === 'burst' ? 16 : 10,
+                    12, 2
+                );
+                burstLight.position.copy(worldPos);
+                scene.add(burstLight);
+                workspaceFlashLights.push({
+                    light: burstLight,
+                    age: 0,
+                    maxAge: type === 'burst' ? 0.7 : 0.45,
+                    peakIntensity: type === 'burst' ? 16 : 10,
+                });
+
+            } else if (type === 'arc') {
+                // Blue-white arc flash light
+                const arcLight = new THREE.PointLight(0x88aaff, 12, 10, 2);
+                arcLight.position.copy(worldPos);
+                scene.add(arcLight);
+                workspaceFlashLights.push({
+                    light: arcLight,
+                    age: 0,
+                    maxAge: 0.35,
+                    peakIntensity: 12,
+                });
+            }
+        }
+
         /** Flash the screen with a fiery explosion radial gradient. */
-        function triggerExplosionFlash() {
+        function triggerExplosionFlash(component, visual) {
             const overlay = document.getElementById('hazard-overlay');
             if (!overlay) return;
             overlay.classList.remove('active');
@@ -19333,8 +19543,14 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             overlay.classList.add('active');
             overlay.addEventListener('animationend', () => {
                 overlay.classList.remove('active');
-                overlay.style.display = 'none';
             }, { once: true });
+
+            // Spawn 3D shockwave + point-light at component world position
+            if (component && component.mesh) {
+                const wp = new THREE.Vector3();
+                component.mesh.getWorldPosition(wp);
+                createWorkspaceExplosionFx(wp, visual || 'burst');
+            }
         }
 
         /** Show the persistent AC/DC hazard warning panel. */
@@ -19425,8 +19641,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         }
 
 
-        /** Flash the screen red for a short-circuit event. */
-        function triggerShortCircuitFlash() {
+        /** Flash the screen blue-white for a short-circuit / arc event. */
+        function triggerShortCircuitFlash(component) {
             const overlay = document.getElementById('short-circuit-overlay');
             if (!overlay) return;
             overlay.classList.remove('active');
@@ -19435,8 +19651,14 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             overlay.classList.add('active');
             overlay.addEventListener('animationend', () => {
                 overlay.classList.remove('active');
-                overlay.style.display = 'none';
             }, { once: true });
+
+            // Spawn arc point-light at component world position
+            if (component && component.mesh) {
+                const wp = new THREE.Vector3();
+                component.mesh.getWorldPosition(wp);
+                createWorkspaceExplosionFx(wp, 'arc');
+            }
         }
         // ─────────────────────────────────────────────────────────────────────
 
