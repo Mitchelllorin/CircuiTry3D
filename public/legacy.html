@@ -4680,7 +4680,9 @@ body.android-optimized .zoom-btn {
         let lastAtomicMode = false;
         let _lastLayerOpacity = -1;   // Sentinel: forces evaluation on first call
         let _layerVisibDist   = -999; // Last cameraDistance processed by _updateLayerVisibility
-        let _layerVisibTargetX = 0, _layerVisibTargetY = 0, _layerVisibTargetZ = 0; // Last cameraTarget processed
+        let _layerVisibTargetX = 0;   // Last cameraTarget.x processed
+        let _layerVisibTargetY = 0;   // Last cameraTarget.y processed
+        let _layerVisibTargetZ = 0;   // Last cameraTarget.z processed
 
         // Mobile detection
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -4764,9 +4766,14 @@ body.android-optimized .zoom-btn {
         const LATTICE_MAX_ATOMS       = isMobile ? 52 : 104; // cap for performance (multiple of 13 per A/B pair)
         const LATTICE_HEAT_THRESHOLD  = 0.05;   // current (A) above which ions glow
         const LATTICE_BOND_OPACITY    = 0.32;   // base opacity of inter-atom bond lines
+        const LATTICE_BOND_TOLERANCE  = 1.05;   // nearest-neighbour distance = LATTICE_SPACING × this factor
 
         // Thermal jitter on electrons (atomic zoom)
         const THERMAL_JITTER          = 0.018;  // max random displacement per axis
+
+        // Perspective-consistent zoom fade (proximity to camera target)
+        const MIN_ATTENTION_RADIUS    = 1.5;    // smallest attention radius at deepest zoom (world units)
+        const ATTENTION_RADIUS_SCALE  = 2.2;    // multiplier: attentionRadius = cameraDistance × this
 
         // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
         const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
@@ -7583,7 +7590,7 @@ body.android-optimized .zoom-btn {
             const useProximityFade = !fullyVisible && cameraDistance < CLOSE_ZOOM_THRESHOLD;
             // Attention radius shrinks as you zoom deeper — at macro zoom it covers
             // the whole scene; at deep atomic zoom it collapses to ~1.5 world units.
-            const attentionRadius = Math.max(1.5, cameraDistance * 2.2);
+            const attentionRadius = Math.max(MIN_ATTENTION_RADIUS, cameraDistance * ATTENTION_RADIUS_SCALE);
 
             function _getProximityOpacity(worldPos) {
                 if (!useProximityFade) return targetOpacity;
@@ -13733,7 +13740,9 @@ Made with ? for visual learners everywhere!
             const component = new Component(type, position);
             components.push(component);
             _layerVisibDist = -999; // Force layer-visibility re-evaluation for new component
-            _layerVisibTargetX = _layerVisibTargetY = _layerVisibTargetZ = -999;
+            _layerVisibTargetX = -999;
+            _layerVisibTargetY = -999;
+            _layerVisibTargetZ = -999;
             selectComponent(component, { startDragging: true, silent: true });
 
             setStatus(`⚡ ${type} added - drag to grid position, tap to place, long press to edit values`);
@@ -17112,7 +17121,7 @@ Made with ? for visual learners everywhere!
             ];
 
             // 13 atoms per A+B pair; cap total pairs to LATTICE_MAX_ATOMS / 13
-            const atomsPerPair  = CROSS_A.length + CROSS_B.length; // 9 + 4 = 13
+            const atomsPerPair  = CROSS_A.length + CROSS_B.length;
             const totalLayers   = Math.ceil(estimatedLength / (A * 0.5)) + 1;
             const numPairs      = Math.min(
                 Math.floor(LATTICE_MAX_ATOMS / atomsPerPair),
@@ -17192,7 +17201,7 @@ Made with ? for visual learners everywhere!
 
             // ── Bond connections (nearest-neighbour pairs ≤ LATTICE_SPACING) ─
             const bondVerts  = [];
-            const bondCutoff = A * 1.05;
+            const bondCutoff = LATTICE_SPACING * LATTICE_BOND_TOLERANCE;
             for (let a = 0; a < atomWorldPositions.length; a++) {
                 for (let b = a + 1; b < atomWorldPositions.length; b++) {
                     if (atomWorldPositions[a].distanceTo(atomWorldPositions[b]) <= bondCutoff) {
