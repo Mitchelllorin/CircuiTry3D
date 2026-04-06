@@ -5557,13 +5557,7 @@ body.android-optimized .zoom-btn {
                 negCap.position.x = -0.61;
                 group.add(negCap);
 
-                // Thin lead from negative cap to connection sphere at x=-1.2
-                const negLeadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.42, segments);
-                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.85, roughness: 0.22 });
-                const negLead = new THREE.Mesh(negLeadGeometry, leadMaterial);
-                negLead.rotation.z = Math.PI / 2;
-                negLead.position.x = -0.91;
-                group.add(negLead);
+
 
                 // +/- labels
                 this.addText(group, '+', new THREE.Vector3(1.0, 0.42, 0), 0xffffff);
@@ -5642,21 +5636,7 @@ body.android-optimized .zoom-btn {
             }
 
             addLeads(group) {
-                const segments = isMobile ? 6 : 8;
-                // Leads extend from ±0.2 (inside component body) to ±1.2 (connection sphere center)
-                // so there is no gap between the lead tip and the wire endpoint.
-                const leadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.0, segments);
-                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
-                
-                const leftLead = new THREE.Mesh(leadGeometry, leadMaterial);
-                leftLead.rotation.z = Math.PI / 2;
-                leftLead.position.x = -0.7;
-                group.add(leftLead);
-
-                const rightLead = new THREE.Mesh(leadGeometry, leadMaterial);
-                rightLead.rotation.z = Math.PI / 2;
-                rightLead.position.x = 0.7;
-                group.add(rightLead);
+                // Leads removed — connection node spheres float in space near component ends.
             }
 
             addText(group, text, position, color) {
