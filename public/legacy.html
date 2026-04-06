@@ -3492,8 +3492,6 @@
         const workspaceFailureParticles = [];       // { points, velocities, lifetimes, ... }
         // Camera-shake state for explosion effects
         const workspaceCameraShake = { active: false, intensity: 0, duration: 0, elapsed: 0 };
-        // Expanding shockwave rings spawned on burst/blowout
-        const workspaceShockwaves = [];             // { mesh, age, maxAge, startScale }
         // Temporary point-light flashes spawned on burst/arc
         const workspaceFlashLights = [];            // { light, age, maxAge, peakIntensity }
 
@@ -7699,7 +7697,6 @@ body.android-optimized .zoom-btn {
             updateJunctionGlows(currentTime);
             updateWorkspaceFailureParticles();
             updateWorkspaceCameraShake();
-            updateWorkspaceShockwaves();
             updateWorkspaceFlashLights();
             _updateLayerVisibility();  // Fade components/wires based on zoom level
 
@@ -18866,24 +18863,56 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
 
         // Soft circular radial-gradient texture for particles — eliminates the
         // hard-edged square-pixel look that WebGL PointsMaterial produces by default.
+        // Key technique: clip to a circle path before filling so the canvas corners
+        // are never touched, giving a guaranteed circular silhouette at all sizes.
         let _failParticleTexture = null;
         function getFailParticleTexture() {
             if (_failParticleTexture) return _failParticleTexture;
-            const size = 64;
+            const size = 128;
             const canvas = document.createElement('canvas');
             canvas.width = canvas.height = size;
             const ctx = canvas.getContext('2d');
             const c = size / 2;
+            // Clip to a circle so the square canvas corners are never rendered.
+            ctx.beginPath();
+            ctx.arc(c, c, c, 0, Math.PI * 2);
+            ctx.clip();
+            // Radial gradient: bright solid centre → sharp transparent edge.
             const grad = ctx.createRadialGradient(c, c, 0, c, c, c);
             grad.addColorStop(0.0,  'rgba(255,255,255,1.0)');
-            grad.addColorStop(0.25, 'rgba(255,255,255,0.9)');
-            grad.addColorStop(0.55, 'rgba(255,255,255,0.45)');
-            grad.addColorStop(0.8,  'rgba(255,255,255,0.08)');
+            grad.addColorStop(0.30, 'rgba(255,255,255,0.95)');
+            grad.addColorStop(0.60, 'rgba(255,255,255,0.55)');
+            grad.addColorStop(0.82, 'rgba(255,255,255,0.12)');
+            grad.addColorStop(0.95, 'rgba(255,255,255,0.02)');
             grad.addColorStop(1.0,  'rgba(255,255,255,0.0)');
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, size, size);
             _failParticleTexture = new THREE.CanvasTexture(canvas);
             return _failParticleTexture;
+        }
+
+        // Sharper spark texture — tight bright pinpoint for small fast sparks.
+        let _failSparkTexture = null;
+        function getFailSparkTexture() {
+            if (_failSparkTexture) return _failSparkTexture;
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const c = size / 2;
+            ctx.beginPath();
+            ctx.arc(c, c, c, 0, Math.PI * 2);
+            ctx.clip();
+            const grad = ctx.createRadialGradient(c, c, 0, c, c, c);
+            grad.addColorStop(0.0,  'rgba(255,255,255,1.0)');
+            grad.addColorStop(0.15, 'rgba(255,255,255,0.98)');
+            grad.addColorStop(0.40, 'rgba(255,255,255,0.60)');
+            grad.addColorStop(0.70, 'rgba(255,255,255,0.10)');
+            grad.addColorStop(1.0,  'rgba(255,255,255,0.0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            _failSparkTexture = new THREE.CanvasTexture(canvas);
+            return _failSparkTexture;
         }
 
         // Particle lifetime range (seconds). Particles spawn with life in [MIN, MAX].
@@ -19001,7 +19030,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
              * @param {number}   minLife    minimum particle lifetime (seconds)
              * @param {number}   maxLife    extra lifetime randomness added to minLife
              */
-            function makeLayer(count, color, size, velFn, gravity, turbulence, recycling, minLife, maxLife) {
+            function makeLayer(count, color, size, velFn, gravity, turbulence, recycling, minLife, maxLife, useSpark) {
                 const positions    = new Float32Array(count * 3);
                 const velocities   = [];
                 const lifetimes    = new Float32Array(count);
@@ -19023,8 +19052,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 const mat = new THREE.PointsMaterial({
                     color,
                     size,
-                    map: getFailParticleTexture(),
-                    alphaTest: 0.005,
+                    map: useSpark ? getFailSparkTexture() : getFailParticleTexture(),
+                    alphaTest: 0.02,
                     transparent: true,
                     opacity: 0.92,
                     depthWrite: false,
@@ -19050,10 +19079,13 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             // ── Per-visual effect configurations ──────────────────────────────
             if (visual === 'burst') {
                 // CAPACITOR / ELECTROLYTIC EXPLOSION
-                // Layer 1: spherical debris cloud (one-shot, no recycling)
-                makeLayer(100, 0xff9900, 0.30, velExplode, GRAV_EARTH, 0.05, false, 0.3, 1.1);
-                // Layer 1b: white-hot core burst (one-shot, tiny fast particles)
-                makeLayer(40,  0xffffff, 0.18, velExplode, GRAV_EARTH * 0.6, 0.08, false, 0.15, 0.5);
+                // Layer 1: spherical debris cloud — 3 size groups so pieces look
+                // organically irregular rather than a uniform grid of same-size blobs.
+                makeLayer(45, 0xff9900, 0.32, velExplode, GRAV_EARTH, 0.05, false, 0.3, 1.1);        // large chunks
+                makeLayer(38, 0xffbb44, 0.20, velExplode, GRAV_EARTH * 0.9, 0.06, false, 0.25, 1.0); // medium bits
+                makeLayer(22, 0xffdd88, 0.11, velExplode, GRAV_EARTH * 0.75, 0.08, false, 0.2, 0.7); // fine grit
+                // Layer 1b: white-hot core sparks (one-shot, fast)
+                makeLayer(40,  0xffffff, 0.15, velExplode, GRAV_EARTH * 0.6, 0.08, false, 0.15, 0.5, true);
                 // Layer 2: rising fire column (persistent)
                 makeLayer(65, 0xff5500, 0.34, velFire, GRAV_FIRE, 0.50, true, 0.4, 1.3);
                 // Layer 3: dense black smoke (persistent)
@@ -19061,10 +19093,11 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
 
             } else if (visual === 'blowout') {
                 // FUSE ELEMENT MELTS / FILAMENT BURNOUT / LED DIE
-                // Layer 1: radial spark burst (one-shot)
-                makeLayer(75, 0xffff88, 0.22, velSpark, GRAV_EARTH, 0.12, false, 0.3, 0.9);
+                // Layer 1: radial spark burst (one-shot) — 2 size groups for variety
+                makeLayer(50, 0xffff88, 0.20, velSpark, GRAV_EARTH, 0.12, false, 0.3, 0.9, true);
+                makeLayer(30, 0xffdd66, 0.12, velSpark, GRAV_EARTH * 0.85, 0.10, false, 0.25, 0.8, true);
                 // Layer 1b: dimmer trailing sparks
-                makeLayer(30, 0xffaa22, 0.15, velSpark, GRAV_EARTH * 0.7, 0.08, false, 0.2, 0.7);
+                makeLayer(30, 0xffaa22, 0.13, velSpark, GRAV_EARTH * 0.7, 0.08, false, 0.2, 0.7, true);
                 // Layer 2: smoke trail (persistent)
                 makeLayer(28, 0x777777, 0.34, velSmoke, GRAV_SMOKE, 0.28, true, 0.5, 1.6);
 
@@ -19081,12 +19114,13 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
 
             } else if (visual === 'arc') {
                 // AVALANCHE BREAKDOWN / CONTACT ARCING — electrical discharge
-                // Layer 1: fast white-blue sparks
-                makeLayer(70, 0xddeeff, 0.20, velSpark, GRAV_EARTH * 0.75, 0.20, true, 0.18, 0.75);
+                // Layer 1: fast white-blue sparks — 3 sizes for realistic discharge scatter
+                makeLayer(50, 0xddeeff, 0.18, velSpark, GRAV_EARTH * 0.75, 0.20, true, 0.18, 0.75, true);
+                makeLayer(30, 0xaaccff, 0.11, velSpark, GRAV_EARTH * 0.65, 0.16, true, 0.15, 0.60, true);
                 // Layer 1b: core bright-white sparks
-                makeLayer(25, 0xffffff, 0.12, velSpark, GRAV_EARTH * 0.5, 0.10, true, 0.12, 0.45);
+                makeLayer(25, 0xffffff, 0.09, velSpark, GRAV_EARTH * 0.5, 0.10, true, 0.12, 0.45, true);
                 // Layer 2: secondary yellow sparks
-                makeLayer(35, 0xffee44, 0.17, velSpark, GRAV_EARTH * 0.6, 0.14, true, 0.18, 0.65);
+                makeLayer(35, 0xffee44, 0.15, velSpark, GRAV_EARTH * 0.6, 0.14, true, 0.18, 0.65, true);
 
             } else if (visual === 'char') {
                 // RESISTOR THERMAL OVERLOAD / CARBON FILM ABLATION
@@ -19386,24 +19420,13 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 workspaceFailureState.delete(component.id);
                 component.updateLabels?.();
             });
-            // Also expire any in-flight shockwaves and flash lights immediately
+            // Also expire any in-flight flash lights immediately
             if (scene) {
-                for (const sw of workspaceShockwaves) {
-                    scene.remove(sw.mesh);
-                    sw.mesh.geometry.dispose();
-                    sw.mesh.material.dispose();
-                    if (sw.innerMesh) {
-                        scene.remove(sw.innerMesh);
-                        sw.innerMesh.geometry.dispose();
-                        sw.innerMesh.material.dispose();
-                    }
-                }
                 for (const fl of workspaceFlashLights) {
                     scene.remove(fl.light);
                     fl.light.dispose();
                 }
             }
-            workspaceShockwaves.length = 0;
             workspaceFlashLights.length = 0;
         }
 
@@ -19440,38 +19463,6 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         }
 
         /**
-         * Advance all active shockwave rings each animation frame.
-         * Scales the ring outward and fades its opacity as it expands.
-         */
-        function updateWorkspaceShockwaves() {
-            const dt = 0.016;
-            for (let i = workspaceShockwaves.length - 1; i >= 0; i--) {
-                const sw = workspaceShockwaves[i];
-                sw.age += dt;
-                if (sw.age >= sw.maxAge) {
-                    scene.remove(sw.mesh);
-                    sw.mesh.geometry.dispose();
-                    sw.mesh.material.dispose();
-                    workspaceShockwaves.splice(i, 1);
-                    continue;
-                }
-                const progress = sw.age / sw.maxAge;
-                // Scale from initial to ~4x over lifetime; ease-out curve
-                const scale = 1 + progress * 3.5;
-                sw.mesh.scale.setScalar(scale);
-                // Fade out with a quick initial flash then gradual decay
-                sw.mesh.material.opacity = (1 - progress) * (1 - progress) * 0.9;
-
-                // Second inner ring: shrinks as outer expands for depth
-                if (sw.innerMesh) {
-                    const iScale = 0.6 + progress * 0.4;
-                    sw.innerMesh.scale.setScalar(iScale);
-                    sw.innerMesh.material.opacity = (1 - progress) * 0.5;
-                }
-            }
-        }
-
-        /**
          * Advance all active point-light flashes each frame.
          * Decays the intensity to zero over the light's lifetime.
          */
@@ -19493,8 +19484,8 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         }
 
         /**
-         * Spawn a 3D shockwave ring and a temporary point-light at the given
-         * world position.  Called from triggerExplosionFlash() / triggerArcFx().
+         * Spawn a temporary point-light flash at the given world position.
+         * Called from triggerExplosionFlash() / triggerShortCircuitFlash().
          * @param {THREE.Vector3} worldPos  explosion origin in world space
          * @param {string}        type      'burst' | 'arc' | 'blowout'
          */
@@ -19502,42 +19493,7 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             if (!scene || !worldPos) return;
 
             if (type === 'burst' || type === 'blowout') {
-                // Outer shockwave ring — horizontal torus that expands outward
-                const outerGeo = new THREE.TorusGeometry(0.22, 0.055, 8, 40);
-                const outerMat = new THREE.MeshBasicMaterial({
-                    color: type === 'burst' ? 0xffaa22 : 0xffee88,
-                    transparent: true,
-                    opacity: 0.9,
-                    side: THREE.DoubleSide,
-                    depthWrite: false,
-                    blending: THREE.AdditiveBlending,
-                });
-                const outer = new THREE.Mesh(outerGeo, outerMat);
-                outer.position.copy(worldPos);
-                outer.rotation.x = Math.PI / 2;
-                scene.add(outer);
-
-                // Inner secondary ring (slightly delayed feel via smaller initial scale)
-                const innerGeo = new THREE.TorusGeometry(0.14, 0.035, 6, 32);
-                const innerMat = new THREE.MeshBasicMaterial({
-                    color: 0xffffff,
-                    transparent: true,
-                    opacity: 0.7,
-                    side: THREE.DoubleSide,
-                    depthWrite: false,
-                    blending: THREE.AdditiveBlending,
-                });
-                const inner = new THREE.Mesh(innerGeo, innerMat);
-                inner.position.copy(worldPos);
-                inner.rotation.x = Math.PI / 2;
-                scene.add(inner);
-
-                workspaceShockwaves.push({
-                    mesh: outer, innerMesh: inner,
-                    age: 0, maxAge: type === 'burst' ? 1.1 : 0.75,
-                });
-
-                // Warm point-light flash
+                // Warm point-light flash — illuminates surrounding geometry briefly
                 const burstLight = new THREE.PointLight(
                     type === 'burst' ? 0xffcc44 : 0xffffaa,
                     type === 'burst' ? 16 : 10,
