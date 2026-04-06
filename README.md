@@ -3,7 +3,7 @@
 > **Illuminating Electricity** — a 3D, interactive electrical learning platform that makes circuit theory visual and tangible.
 > Explore current flow from the macro scale all the way down to atomic crystal lattices and quantum probability clouds, powered by Ohm's Law and a proprietary component failure simulation engine.
 
-CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to give visual learners a more intuitive path into circuit theory.
+CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to make circuit theory accessible and intuitive for everyone — because visual learning increases retention for all kinds of learners.
 
 [![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://www.circuitry3d.net)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
@@ -57,7 +57,7 @@ CircuiTry3D's **Component Arena** is a unique channel to put your real-world dat
 You don't need an engineering background to use CircuiTry3D.
 
 - **Just curious?** Open the Builder, drop in a battery and an LED, and watch it light up — then crank the voltage and watch it explode in 3D
-- **Visual learner?** Zoom all the way in from the wire surface to the atomic crystal lattice to see individual electrons vibrating and drifting through the metal in real time
+- **Want to see what's really happening inside the wire?** Zoom all the way in from the wire surface to the atomic crystal lattice to see individual electrons vibrating and drifting through the metal in real time
 - **Self-studying?** The in-app textbook starts from "what is electricity?" and walks you through two full years of electrical engineering concepts with worked examples, formulas, and interactive practice
 - **No account required** — the Free Sandbox plan lets you build, simulate, and experiment right now at [www.circuitry3d.net](https://www.circuitry3d.net)
 
