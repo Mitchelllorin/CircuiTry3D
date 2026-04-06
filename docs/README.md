@@ -34,6 +34,7 @@ These documents define how CircuiTry3D implements electrical simulation:
 |----------|-------------|
 | [CIRCUIT_RULES.md](./CIRCUIT_RULES.md) | Platform-specific rules (C3D-001 through C3D-010), validation logic |
 | [CIRCUIT_SIMULATION_REFERENCE.md](./CIRCUIT_SIMULATION_REFERENCE.md) | DC solver technical details, MNA implementation, visualization |
+| [COMPONENT_PLACEMENT_PROTOCOL.md](./COMPONENT_PLACEMENT_PROTOCOL.md) | **Placement Protocol** — authoritative spec for auto-connection behavior when a component is dropped near an existing wire (series insert, split, highlight) |
 | [circuit-error-outcomes.md](./circuit-error-outcomes.md) | Error handling, open/short circuit detection, validation feedback |
 | [FUSE_ENGINE.md](./FUSE_ENGINE.md) | **FUSE™ — Failure Understanding Simulation Engine** — proprietary component failure detection, physics profiles, visual effects, and marketing guide |
 | [ARENA_MARKETING.md](./ARENA_MARKETING.md) | **Arena Marketing Strategy & Partnership Playbook** — school board outreach, manufacturer product placement, CTE grant positioning, email templates |
@@ -84,6 +85,7 @@ docs/
 │
 ├── CIRCUIT_RULES.md                    ← Platform implementation rules
 ├── CIRCUIT_SIMULATION_REFERENCE.md     ← Solver technical details
+├── COMPONENT_PLACEMENT_PROTOCOL.md     ← Placement protocol (drop-on-wire standard)
 ├── circuit-error-outcomes.md           ← Error handling
 ├── FUSE_ENGINE.md                      ← FUSE™ failure engine — tech spec & marketing guide
 ├── ARENA_MARKETING.md                  ← Arena marketing, school board & manufacturer outreach
