@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CircuiTry3D — Video Promo Script & Text Overlay Guide</title>
+<style>
+  :root {
+    --bg: #0a0a1a;
+    --surface: #111128;
+    --surface2: #1a1a38;
+    --blue: #9dc5ff;
+    --orange: #ff8844;
+    --green: #00ff88;
+    --purple: #bb88ff;
+    --red: #ff4455;
+    --yellow: #ffdd44;
+    --white: #f0f4ff;
+    --muted: #7788aa;
+    --border: rgba(157,197,255,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    line-height: 1.6;
+  }
+  /* ── Top bar ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,26,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .topbar-logo { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
+  .topbar-logo span.b { color: var(--blue); }
+  .topbar-logo span.o { color: var(--orange); font-style: italic; }
+  .topbar-logo span.g { color: var(--green); }
+  .topbar-badge {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 3px 10px; border-radius: 20px; color: var(--muted);
+    text-transform: uppercase;
+  }
+  .topbar-nav { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .topbar-nav a {
+    font-size: 0.75rem; color: var(--muted); text-decoration: none;
+    padding: 4px 10px; border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .topbar-nav a:hover { color: var(--blue); background: var(--surface2); }
+
+  /* ── Page layout ── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center; padding: 60px 0 48px;
+    border-bottom: 1px solid var(--border); margin-bottom: 56px;
+  }
+  .hero-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+    color: var(--orange); text-transform: uppercase; margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 800;
+    line-height: 1.15; letter-spacing: -1px; margin-bottom: 20px;
+  }
+  .hero h1 span { color: var(--blue); }
+  .hero-sub {
+    font-size: 1.05rem; color: var(--muted); max-width: 560px; margin: 0 auto 28px;
+  }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 5px 14px; background: var(--surface);
+    text-transform: uppercase; color: var(--muted);
+  }
+  .chip.blue { border-color: rgba(157,197,255,0.4); color: var(--blue); }
+  .chip.orange { border-color: rgba(255,136,68,0.4); color: var(--orange); }
+  .chip.green { border-color: rgba(0,255,136,0.4); color: var(--green); }
+  .chip.purple { border-color: rgba(187,136,255,0.4); color: var(--purple); }
+
+  /* ── Section title ── */
+  .section-title {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--orange); margin-bottom: 8px;
+  }
+  .section-heading {
+    font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px;
+  }
+  .section-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; }
+
+  /* ── Color palette ── */
+  .palette-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+  .swatch {
+    flex: 1 1 130px;
+    border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .swatch-color { height: 60px; }
+  .swatch-info { padding: 10px 14px; background: var(--surface); }
+  .swatch-name { font-size: 0.75rem; font-weight: 700; }
+  .swatch-hex { font-size: 0.7rem; color: var(--muted); font-family: monospace; margin-top: 2px; }
+  .swatch-use { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+
+  /* ── Tagline bank ── */
+  .tagline-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .tagline-card {
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); padding: 20px 22px;
+    position: relative; overflow: hidden;
+  }
+  .tagline-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  }
+  .tagline-card.blue::before { background: var(--blue); }
+  .tagline-card.orange::before { background: var(--orange); }
+  .tagline-card.green::before { background: var(--green); }
+  .tagline-card.purple::before { background: var(--purple); }
+  .tagline-card.red::before { background: var(--red); }
+  .tagline-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+  .tagline-main {
+    font-size: 1.15rem; font-weight: 700; line-height: 1.3;
+    letter-spacing: -0.3px;
+  }
+  .tagline-alt {
+    font-size: 0.8rem; color: var(--muted); margin-top: 8px; font-style: italic;
+  }
+  .tagline-where {
+    font-size: 0.68rem; color: var(--muted); margin-top: 10px;
+    border-top: 1px solid var(--border); padding-top: 8px;
+  }
+
+  /* ── Timeline ── */
+  .timeline { margin-bottom: 56px; }
+  .scene-block {
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--surface); margin-bottom: 20px; overflow: hidden;
+  }
+  .scene-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 24px; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .scene-num {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 800; letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .scene-num.blue { background: rgba(157,197,255,0.15); color: var(--blue); border: 1px solid rgba(157,197,255,0.3); }
+  .scene-num.orange { background: rgba(255,136,68,0.15); color: var(--orange); border: 1px solid rgba(255,136,68,0.3); }
+  .scene-num.green { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+  .scene-num.purple { background: rgba(187,136,255,0.15); color: var(--purple); border: 1px solid rgba(187,136,255,0.3); }
+  .scene-num.red { background: rgba(255,68,85,0.15); color: var(--red); border: 1px solid rgba(255,68,85,0.3); }
+  .scene-num.yellow { background: rgba(255,221,68,0.15); color: var(--yellow); border: 1px solid rgba(255,221,68,0.3); }
+  .scene-meta { flex: 1; min-width: 0; }
+  .scene-title { font-size: 1.05rem; font-weight: 700; }
+  .scene-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .scene-timing {
+    font-size: 0.75rem; font-weight: 700; font-family: monospace;
+    color: var(--muted); background: var(--bg);
+    border: 1px solid var(--border); padding: 4px 12px; border-radius: 6px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .scene-body { padding: 24px; }
+  .scene-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; line-height: 1.7; }
+
+  /* overlay mockup */
+  .overlay-mockup {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    position: relative; overflow: hidden; margin-bottom: 16px;
+    min-height: 180px; display: flex; flex-direction: column; justify-content: space-between;
+    padding: 16px;
+  }
+  .overlay-mockup::before {
+    content: '▶ PREVIEW'; position: absolute; top: 10px; right: 12px;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--muted); opacity: 0.5;
+  }
+  .om-top { display: flex; flex-direction: column; gap: 6px; }
+  .om-bottom { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .om-center { text-align: center; padding: 16px 0; }
+
+  .ot-topright {
+    align-self: flex-end;
+    background: rgba(0,0,0,0.7); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px;
+    font-size: 0.7rem; font-weight: 700; color: var(--muted);
+    font-family: monospace;
+  }
+  .ot-headline {
+    font-size: clamp(1.1rem, 3vw, 1.8rem); font-weight: 800;
+    letter-spacing: -0.5px; text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+    line-height: 1.2;
+  }
+  .ot-headline.blue { color: var(--blue); }
+  .ot-headline.orange { color: var(--orange); }
+  .ot-headline.green { color: var(--green); }
+  .ot-headline.white { color: #fff; }
+  .ot-body {
+    font-size: 0.8rem; color: rgba(255,255,255,0.75);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+  }
+  .ot-lower-third {
+    background: linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%);
+    border-left: 3px solid var(--blue);
+    padding: 10px 16px; border-radius: 0 6px 6px 0;
+  }
+  .ot-lower-third.orange { border-left-color: var(--orange); }
+  .ot-lower-third.green { border-left-color: var(--green); }
+  .ot-lower-third.purple { border-left-color: var(--purple); }
+  .ot-lower-third.red { border-left-color: var(--red); }
+  .ot-lt-title { font-size: 0.95rem; font-weight: 700; }
+  .ot-lt-sub { font-size: 0.72rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .ot-badge {
+    display: inline-block; background: var(--orange);
+    color: #000; font-size: 0.65rem; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 6px;
+  }
+  .ot-badge.blue { background: var(--blue); }
+  .ot-badge.green { background: var(--green); }
+  .ot-badge.red { background: var(--red); }
+  .ot-badge.purple { background: var(--purple); }
+  .ot-callout {
+    display: flex; gap: 8px; align-items: flex-start;
+    background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 6px;
+    max-width: 280px;
+  }
+  .ot-callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .ot-callout-text { font-size: 0.78rem; }
+  .ot-callout-title { font-weight: 700; }
+  .ot-callout-sub { color: var(--muted); font-size: 0.7rem; margin-top: 1px; }
+
+  /* overlay spec table */
+  .overlay-specs { margin-top: 16px; }
+  .overlay-specs table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .overlay-specs th {
+    text-align: left; padding: 6px 12px;
+    background: var(--surface2); color: var(--muted);
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .overlay-specs td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+  .overlay-specs tr:last-child td { border-bottom: none; }
+  .el-type {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 4px;
+    display: inline-block; white-space: nowrap;
+  }
+  .el-type.title { background: rgba(157,197,255,0.15); color: var(--blue); }
+  .el-type.lower { background: rgba(255,136,68,0.15); color: var(--orange); }
+  .el-type.callout { background: rgba(0,255,136,0.15); color: var(--green); }
+  .el-type.badge { background: rgba(187,136,255,0.15); color: var(--purple); }
+  .el-type.fade { background: rgba(255,255,255,0.08); color: var(--muted); }
+  .el-timing { font-family: monospace; font-size: 0.78rem; color: var(--blue); white-space: nowrap; }
+  .el-pos { font-size: 0.75rem; color: var(--muted); }
+  .el-text { font-size: 0.82rem; font-weight: 600; }
+  .el-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  /* alt taglines */
+  .alt-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .alt-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-size: 0.83rem;
+  }
+  .alt-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--border);
+    font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); flex-shrink: 0;
+  }
+  .alt-text { font-weight: 600; }
+
+  /* format versions */
+  .format-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .format-card {
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); padding: 20px 22px;
+  }
+  .format-dur {
+    font-size: 1.6rem; font-weight: 800; color: var(--blue); margin-bottom: 4px;
+  }
+  .format-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+  .format-scenes { display: flex; flex-direction: column; gap: 6px; }
+  .format-scene { display: flex; gap: 10px; align-items: flex-start; font-size: 0.8rem; }
+  .format-scene-time { font-family: monospace; color: var(--muted); white-space: nowrap; flex-shrink: 0; width: 70px; }
+  .format-scene-text { }
+
+  /* tips */
+  .tips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 40px; }
+  .tip-card {
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); padding: 16px 18px;
+  }
+  .tip-icon { font-size: 1.4rem; margin-bottom: 8px; }
+  .tip-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 4px; }
+  .tip-body { font-size: 0.78rem; color: var(--muted); }
+
+  /* divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* download-style CTA */
+  .cta-box {
+    text-align: center; padding: 40px 24px;
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--surface); margin-top: 48px;
+  }
+  .cta-box h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+  .cta-box p { font-size: 0.88rem; color: var(--muted); max-width: 440px; margin: 0 auto 20px; }
+  .cta-link {
+    display: inline-block; background: var(--blue); color: #000;
+    font-weight: 700; font-size: 0.85rem; letter-spacing: 0.04em;
+    padding: 10px 24px; border-radius: 8px; text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .cta-link:hover { opacity: 0.85; }
+
+  /* font note */
+  .font-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 32px; }
+  .font-table th, .font-table td {
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .font-table th { background: var(--surface2); color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .font-sample { font-size: 1.05rem; font-weight: 700; margin-top: 4px; }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 10px 16px; }
+    .page { padding: 24px 14px 60px; }
+    .hero { padding: 40px 0 32px; }
+    .scene-header { flex-wrap: wrap; gap: 10px; }
+    .scene-timing { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ─────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <span class="b">Circui</span><span class="o">Try</span><span class="g">3D</span>
+  </div>
+  <div class="topbar-badge">Promo Guide</div>
+  <nav class="topbar-nav">
+    <a href="#taglines">Taglines</a>
+    <a href="#timeline">Scenes</a>
+    <a href="#formats">Formats</a>
+    <a href="#palette">Style</a>
+    <a href="#tips">Tips</a>
+  </nav>
+</div>
+
+<div class="page">
+
+  <!-- ── Hero ──────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-eyebrow">🎬 Video Editor Reference</div>
+    <h1>Promo Script &<br><span>Text Overlay Guide</span></h1>
+    <p class="hero-sub">Every tagline, title card, lower third, and callout you need — scene by scene, with exact timing and placement notes.</p>
+    <div class="hero-chips">
+      <span class="chip blue">90-sec flagship</span>
+      <span class="chip orange">30-sec cut</span>
+      <span class="chip green">15-sec teaser</span>
+      <span class="chip purple">Scene breakdowns</span>
+      <span class="chip">Color palette</span>
+      <span class="chip">Font guide</span>
+      <span class="chip">Alternative taglines</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECTION 1 — TAGLINE BANK
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="taglines">
+    <div class="section-title">01 — Tagline Bank</div>
+    <div class="section-heading">Pick Your Hook</div>
+    <div class="section-desc">These are stand-alone taglines — use one as your opening card, closing card, or throughout the cut. Options are grouped by tone.</div>
+
+    <div class="tagline-grid">
+
+      <!-- Hero / Power -->
+      <div class="tagline-card orange">
+        <div class="tagline-label">🔥 Hero — Power</div>
+        <div class="tagline-main">Build. Fail. Learn.</div>
+        <div class="tagline-alt">Short, punchy, works on any first frame</div>
+        <div class="tagline-where">Use: Opening card OR closing card</div>
+      </div>
+
+      <div class="tagline-card blue">
+        <div class="tagline-label">✨ Hero — Curiosity</div>
+        <div class="tagline-main">Illuminate Electricity.</div>
+        <div class="tagline-alt">The core brand promise — simple, memorable</div>
+        <div class="tagline-where">Use: Opening card title, end card</div>
+      </div>
+
+      <div class="tagline-card green">
+        <div class="tagline-label">🔬 Hero — Scale</div>
+        <div class="tagline-main">From Wire to Wave Function.</div>
+        <div class="tagline-alt">Teases the 5-tier zoom — grabs curious minds</div>
+        <div class="tagline-where">Use: Zoom scene transition</div>
+      </div>
+
+      <!-- FUSE -->
+      <div class="tagline-card red">
+        <div class="tagline-label">💥 FUSE™ — Dramatic</div>
+        <div class="tagline-main">FUSE™ — Where Failure Becomes Understanding.</div>
+        <div class="tagline-alt">Full FUSE™ explainer in one line</div>
+        <div class="tagline-where">Use: Before or after the failure scene</div>
+      </div>
+
+      <div class="tagline-card red">
+        <div class="tagline-label">💥 FUSE™ — Punchy</div>
+        <div class="tagline-main">30+ Failure Modes.<br>Zero Real Hardware.</div>
+        <div class="tagline-alt">Two-liner — strong contrast between danger & safety</div>
+        <div class="tagline-where">Use: Lower third during failure scene</div>
+      </div>
+
+      <div class="tagline-card orange">
+        <div class="tagline-label">💥 FUSE™ — Learning angle</div>
+        <div class="tagline-main">Fail Safely. Learn Deeply.</div>
+        <div class="tagline-alt">Educator-friendly take on FUSE™</div>
+        <div class="tagline-where">Use: After explosion animation</div>
+      </div>
+
+      <!-- Physics / Credibility -->
+      <div class="tagline-card blue">
+        <div class="tagline-label">🧪 Credibility</div>
+        <div class="tagline-main">Physics-Accurate.<br>Classroom-Ready.</div>
+        <div class="tagline-alt">Dual audience — engineers + teachers</div>
+        <div class="tagline-where">Use: Feature callout or closing card</div>
+      </div>
+
+      <div class="tagline-card blue">
+        <div class="tagline-label">🧪 Physics — Poetic</div>
+        <div class="tagline-main">See Electricity at Every Scale.</div>
+        <div class="tagline-alt">Smooth bridge into the zoom-tier section</div>
+        <div class="tagline-where">Use: Just before zoom fly-through begins</div>
+      </div>
+
+      <!-- Scale -->
+      <div class="tagline-card purple">
+        <div class="tagline-label">🔭 Scale — Quantum</div>
+        <div class="tagline-main">Scroll in to the Atom.</div>
+        <div class="tagline-alt">Simple CTA — curiosity-driven</div>
+        <div class="tagline-where">Use: Zoom tier callout overlay</div>
+      </div>
+
+      <div class="tagline-card purple">
+        <div class="tagline-label">🔭 Scale — Discovery</div>
+        <div class="tagline-main">Five Zoom Tiers.<br>One Living Circuit.</div>
+        <div class="tagline-alt">Highlights the unique multi-scale feature</div>
+        <div class="tagline-where">Use: Zoom-scene title card</div>
+      </div>
+
+      <!-- Free / Access -->
+      <div class="tagline-card green">
+        <div class="tagline-label">🆓 Access</div>
+        <div class="tagline-main">Free to Start.<br>Built for Everyone.</div>
+        <div class="tagline-alt">Lowers friction for new users</div>
+        <div class="tagline-where">Use: Closing card CTA</div>
+      </div>
+
+      <div class="tagline-card green">
+        <div class="tagline-label">🆓 Access — Mobile</div>
+        <div class="tagline-main">Build in Your Browser.<br>Simulate on Your Phone.</div>
+        <div class="tagline-alt">Emphasises web + Android availability</div>
+        <div class="tagline-where">Use: End card / CTA overlay</div>
+      </div>
+
+      <!-- Arena -->
+      <div class="tagline-card orange">
+        <div class="tagline-label">🏟️ Arena — Battle</div>
+        <div class="tagline-main">The Arena. The FUSE™. The Future.</div>
+        <div class="tagline-alt">Three-part rhythm — very punchy for reels</div>
+        <div class="tagline-where">Use: Arena scene transition / end card</div>
+      </div>
+
+      <div class="tagline-card orange">
+        <div class="tagline-label">🏟️ Arena — Action</div>
+        <div class="tagline-main">Watch Components Battle Under Stress.</div>
+        <div class="tagline-alt">Describes the Arena mode action directly</div>
+        <div class="tagline-where">Use: Arena scene lower third</div>
+      </div>
+
+      <!-- Emotion / Feel -->
+      <div class="tagline-card blue">
+        <div class="tagline-label">🎯 Emotion</div>
+        <div class="tagline-main">The Invisible, Made Visible.</div>
+        <div class="tagline-alt">Works with any visual — macro or quantum</div>
+        <div class="tagline-where">Use: Electron flow or atomic zoom scene</div>
+      </div>
+
+      <div class="tagline-card purple">
+        <div class="tagline-label">🎯 Emotion — Immersive</div>
+        <div class="tagline-main">Interactive. Immersive. Illuminated.</div>
+        <div class="tagline-alt">Three brand adjectives — end card gold</div>
+        <div class="tagline-where">Use: Closing card just before app link</div>
+      </div>
+
+      <!-- WIRE -->
+      <div class="tagline-card blue">
+        <div class="tagline-label">⚡ W.I.R.E.</div>
+        <div class="tagline-main">Powered by W.I.R.E.™ — Watts. Amps. Ohms. Volts.</div>
+        <div class="tagline-alt">Explains the formula framework in one line</div>
+        <div class="tagline-where">Use: Schematic / formula callout scene</div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECTION 2 — SCENE-BY-SCENE TIMELINE (90-sec)
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="timeline">
+    <div class="section-title">02 — Scene Breakdown</div>
+    <div class="section-heading">90-Second Flagship Cut</div>
+    <div class="section-desc">Each block shows the suggested footage, every text element with its timestamp and screen position, and alternative lines you can swap in.</div>
+
+    <div class="timeline">
+
+      <!-- ── Scene 0: Opening Card ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num yellow">00</div>
+          <div class="scene-meta">
+            <div class="scene-title">Opening Card</div>
+            <div class="scene-sub">Black/dark background — no gameplay yet</div>
+          </div>
+          <div class="scene-timing">0:00 – 0:04</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">A clean, dark card. The wordmark animates in (fade or slide up), then the main tagline appears below it. Keep it under 4 seconds so you get to gameplay fast.</p>
+
+          <div class="overlay-mockup">
+            <div class="om-top">
+              <div style="display:flex;gap:4px;align-items:baseline;justify-content:center;font-size:clamp(1.4rem,4vw,2.2rem);font-weight:800;">
+                <span style="color:var(--blue)">Circui</span><span style="color:var(--orange);font-style:italic">Try</span><span style="color:var(--green)">3D</span>
+              </div>
+            </div>
+            <div class="om-center">
+              <div class="ot-headline white" style="font-size:1rem;font-weight:400;color:rgba(255,255,255,0.6);letter-spacing:0.05em;">ILLUMINATE ELECTRICITY</div>
+            </div>
+            <div class="om-bottom" style="align-items:center;">
+              <div class="ot-callout" style="margin:0 auto;">
+                <div class="ot-callout-icon">⚡</div>
+                <div class="ot-callout-text">
+                  <div class="ot-callout-title">3D Interactive Circuit Simulator</div>
+                  <div class="ot-callout-sub">Physics-Accurate · Classroom-Ready · Free to Start</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type title">Wordmark</span></td>
+                  <td><div class="el-text">CircuiTry3D</div><div class="el-sub">Blue "Circui" · Orange "Try" · Green "3D"</div></td>
+                  <td class="el-timing">0:00 → 0:04</td>
+                  <td class="el-pos">Center screen, fade in</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tagline</span></td>
+                  <td><div class="el-text">ILLUMINATE ELECTRICITY</div><div class="el-sub">All-caps, letter-spaced, muted white</div></td>
+                  <td class="el-timing">0:01 → 0:04</td>
+                  <td class="el-pos">Below wordmark, centered</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Sub-line</span></td>
+                  <td><div class="el-text">3D Interactive Circuit Simulator</div><div class="el-sub">Physics-Accurate · Classroom-Ready · Free to Start</div></td>
+                  <td class="el-timing">0:02 → 0:04</td>
+                  <td class="el-pos">Below tagline, smaller</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alt-list">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Alternative opening taglines</div>
+            <div class="alt-item"><div class="alt-num">A</div><div class="alt-text">Build. Fail. Learn.</div></div>
+            <div class="alt-item"><div class="alt-num">B</div><div class="alt-text">See Electricity at Every Scale.</div></div>
+            <div class="alt-item"><div class="alt-num">C</div><div class="alt-text">Real Circuits. Real Physics. Down to the Atom.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Scene 1: 3D Builder — Series ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num blue">01</div>
+          <div class="scene-meta">
+            <div class="scene-title">3D Circuit Builder — Series Circuit</div>
+            <div class="scene-sub">Footage: scene-01-series.webm · Drag-and-drop components, wire up, current flows</div>
+          </div>
+          <div class="scene-timing">0:04 – 0:18</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">Show the 3D workspace with a basic series circuit coming together. Drag resistors, place a battery, connect wires. Then let current flow — electrons animate along the wires. End on the live Ohm's Law readout.</p>
+
+          <div class="overlay-mockup">
+            <div class="om-top">
+              <div class="ot-badge blue">Live Simulation</div>
+              <div class="ot-headline blue">Current Flows at Every Scale.</div>
+              <div class="ot-body">Series circuit · 24 V · 40 mA · 600 Ω</div>
+            </div>
+            <div class="om-bottom">
+              <div class="ot-lower-third">
+                <div class="ot-lt-title">⚡ 3D Circuit Builder</div>
+                <div class="ot-lt-sub">Drag-and-drop · Ohm's Law engine · Real-time physics</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type badge">Badge</span></td>
+                  <td><div class="el-text">Live Simulation</div></td>
+                  <td class="el-timing">0:05 → 0:08</td>
+                  <td class="el-pos">Top-left, fade in</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type title">Headline</span></td>
+                  <td><div class="el-text">Current Flows at Every Scale.</div></td>
+                  <td class="el-timing">0:06 → 0:14</td>
+                  <td class="el-pos">Top-left or center</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Spec line</span></td>
+                  <td><div class="el-text">Series circuit · 24 V · 40 mA · 600 Ω</div></td>
+                  <td class="el-timing">0:08 → 0:14</td>
+                  <td class="el-pos">Below headline</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type lower">Lower third</span></td>
+                  <td><div class="el-text">⚡ 3D Circuit Builder</div><div class="el-sub">Drag-and-drop · Ohm's Law engine · Real-time physics</div></td>
+                  <td class="el-timing">0:10 → 0:18</td>
+                  <td class="el-pos">Bottom-left</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type fade">Fade out</span></td>
+                  <td><div class="el-text">All overlays fade</div></td>
+                  <td class="el-timing">0:17 → 0:18</td>
+                  <td class="el-pos">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alt-list">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Alternative headline options</div>
+            <div class="alt-item"><div class="alt-num">A</div><div class="alt-text">Build It. Watch It Flow.</div></div>
+            <div class="alt-item"><div class="alt-num">B</div><div class="alt-text">Real-Time Physics. Every Edit.</div></div>
+            <div class="alt-item"><div class="alt-num">C</div><div class="alt-text">Drag. Drop. Simulate.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Scene 2: Parallel Circuit ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num blue">02</div>
+          <div class="scene-meta">
+            <div class="scene-title">3D Builder — Parallel Circuit</div>
+            <div class="scene-sub">Footage: scene-02-parallel.webm · Three branches, split electron paths</div>
+          </div>
+          <div class="scene-timing">0:18 – 0:28</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">Switch to a parallel circuit. Show three branches with electrons splitting and rejoining at the nodes. The Ohm's Law panel updates as each branch is added. Ends on a full-flow shot.</p>
+
+          <div class="overlay-mockup">
+            <div class="om-top">
+              <div class="ot-headline blue">Electrons Take Every Path.</div>
+              <div class="ot-body">Parallel circuit · Three independent branches</div>
+            </div>
+            <div class="om-bottom">
+              <div class="ot-lower-third">
+                <div class="ot-lt-title">Kirchhoff's Current Law — Live</div>
+                <div class="ot-lt-sub">Currents split and sum at every node · updated per edit</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type title">Headline</span></td>
+                  <td><div class="el-text">Electrons Take Every Path.</div></td>
+                  <td class="el-timing">0:19 → 0:26</td>
+                  <td class="el-pos">Top-left</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Spec</span></td>
+                  <td><div class="el-text">Parallel circuit · Three independent branches</div></td>
+                  <td class="el-timing">0:20 → 0:26</td>
+                  <td class="el-pos">Below headline</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type lower">Lower third</span></td>
+                  <td><div class="el-text">Kirchhoff's Current Law — Live</div><div class="el-sub">Currents split and sum at every node</div></td>
+                  <td class="el-timing">0:22 → 0:28</td>
+                  <td class="el-pos">Bottom-left</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alt-list">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Alternative headline options</div>
+            <div class="alt-item"><div class="alt-num">A</div><div class="alt-text">Split Paths. Shared Voltage.</div></div>
+            <div class="alt-item"><div class="alt-num">B</div><div class="alt-text">Three Branches. One Circuit.</div></div>
+            <div class="alt-item"><div class="alt-num">C</div><div class="alt-text">KCL in Real Time.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Scene 3: FUSE Failure ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num red">03</div>
+          <div class="scene-meta">
+            <div class="scene-title">FUSE™ Failure Engine — Thermal Runaway</div>
+            <div class="scene-sub">Footage: scene-03-overload.webm · Smoke → arc → explosion animation</div>
+          </div>
+          <div class="scene-timing">0:28 – 0:48</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">This is the MONEY scene. Overload a resistor — watch stress indicator climb, warnings fire, smoke rises, arc flash ignites, then catastrophic failure. Keep it dramatic. The FUSE badge and tagline hit right after the explosion clears.</p>
+
+          <div class="overlay-mockup" style="min-height:220px;">
+            <div class="om-top">
+              <div style="display:flex;gap:8px;align-items:center;">
+                <div class="ot-badge red">FUSE™</div>
+                <div style="font-size:0.7rem;color:var(--muted);">Failure Understanding Simulation Engine</div>
+              </div>
+              <div class="ot-headline" style="color:var(--orange);">FUSE™ Detects What<br>You Can't See.</div>
+            </div>
+            <div class="om-center">
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <div class="ot-callout" style="max-width:160px;">
+                  <div class="ot-callout-icon">💨</div>
+                  <div class="ot-callout-text"><div class="ot-callout-title">Smoke</div><div class="ot-callout-sub">Thermal runaway</div></div>
+                </div>
+                <div class="ot-callout" style="max-width:160px;">
+                  <div class="ot-callout-icon">⚡</div>
+                  <div class="ot-callout-text"><div class="ot-callout-title">Arc Flash</div><div class="ot-callout-sub">Dielectric breakdown</div></div>
+                </div>
+                <div class="ot-callout" style="max-width:160px;">
+                  <div class="ot-callout-icon">💥</div>
+                  <div class="ot-callout-text"><div class="ot-callout-title">Explosion</div><div class="ot-callout-sub">Catastrophic failure</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="om-bottom">
+              <div class="ot-lower-third red">
+                <div class="ot-lt-title">30+ Failure Modes · Zero Real Hardware.</div>
+                <div class="ot-lt-sub">Fail safely — learn deeply.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type badge">Badge</span></td>
+                  <td><div class="el-text">FUSE™</div><div class="el-sub">Red badge, white text</div></td>
+                  <td class="el-timing">0:29 → 0:48</td>
+                  <td class="el-pos">Top-left, always visible</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type title">Headline</span></td>
+                  <td><div class="el-text">FUSE™ Detects What You Can't See.</div></td>
+                  <td class="el-timing">0:30 → 0:36</td>
+                  <td class="el-pos">Top-left</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Callout — Smoke</span></td>
+                  <td><div class="el-text">💨 Smoke — Thermal Runaway</div></td>
+                  <td class="el-timing">0:32 → 0:36</td>
+                  <td class="el-pos">Mid-left, appears as smoke starts</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Callout — Arc</span></td>
+                  <td><div class="el-text">⚡ Arc Flash — Dielectric Breakdown</div></td>
+                  <td class="el-timing">0:36 → 0:40</td>
+                  <td class="el-pos">Mid-left, chain after smoke</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Callout — Explosion</span></td>
+                  <td><div class="el-text">💥 Catastrophic Failure</div></td>
+                  <td class="el-timing">0:40 → 0:44</td>
+                  <td class="el-pos">Mid, flash in sync with boom</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type lower">Lower third</span></td>
+                  <td><div class="el-text">30+ Failure Modes · Zero Real Hardware.</div><div class="el-sub">Fail safely — learn deeply.</div></td>
+                  <td class="el-timing">0:44 → 0:48</td>
+                  <td class="el-pos">Bottom-left, after explosion settles</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alt-list">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Alternative FUSE headline options</div>
+            <div class="alt-item"><div class="alt-num">A</div><div class="alt-text">When Circuits Fail… It's Beautiful.</div></div>
+            <div class="alt-item"><div class="alt-num">B</div><div class="alt-text">Fail is a Feature.</div></div>
+            <div class="alt-item"><div class="alt-num">C</div><div class="alt-text">Powered by FUSE™ — Failure Understanding Simulation Engine.</div></div>
+            <div class="alt-item"><div class="alt-num">D</div><div class="alt-text">576 W. τ = 5 s. Failure Incoming.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Scene 4: Zoom Fly-Through ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num purple">04</div>
+          <div class="scene-meta">
+            <div class="scene-title">5-Tier Zoom — Macro to Quantum</div>
+            <div class="scene-sub">Footage: scene-05-3d-build.webm · Continuous fly-through from circuit overview into atom</div>
+          </div>
+          <div class="scene-timing">0:48 – 1:08</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">This is the most visually unique scene. Smooth dolly from the full circuit overview, down through component details, into the copper lattice, electron orbitals, and finally the quantum probability cloud. Each tier gets its own callout label that fades in and out.</p>
+
+          <div class="overlay-mockup" style="min-height:240px;">
+            <div class="om-top">
+              <div class="ot-badge" style="background:var(--purple);color:#fff;">Tier 1 — Macro</div>
+              <div class="ot-headline" style="color:var(--purple);">Five Zoom Tiers. One Living Circuit.</div>
+            </div>
+            <div class="om-center">
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:400px;margin:0 auto;">
+                <div style="text-align:center;font-size:0.65rem;padding:6px 2px;border:1px solid rgba(157,197,255,0.3);border-radius:6px;">
+                  <div style="color:var(--blue);font-weight:700;">Macro</div>
+                  <div style="color:var(--muted);margin-top:2px;" title="camera distance units">d&gt;8</div>
+                </div>
+                <div style="text-align:center;font-size:0.65rem;padding:6px 2px;border:1px solid rgba(0,255,136,0.3);border-radius:6px;">
+                  <div style="color:var(--green);font-weight:700;">Close</div>
+                  <div style="color:var(--muted);margin-top:2px;" title="camera distance units">d&lt;8</div>
+                </div>
+                <div style="text-align:center;font-size:0.65rem;padding:6px 2px;border:1px solid rgba(255,136,68,0.3);border-radius:6px;">
+                  <div style="color:var(--orange);font-weight:700;">Atomic</div>
+                  <div style="color:var(--muted);margin-top:2px;" title="camera distance units">d&lt;3</div>
+                </div>
+                <div style="text-align:center;font-size:0.65rem;padding:6px 2px;border:1px solid rgba(187,136,255,0.3);border-radius:6px;">
+                  <div style="color:var(--purple);font-weight:700;">Deep</div>
+                  <div style="color:var(--muted);margin-top:2px;" title="camera distance units">d&lt;0.8</div>
+                </div>
+                <div style="text-align:center;font-size:0.65rem;padding:6px 2px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;">
+                  <div style="color:#fff;font-weight:700;">Quantum</div>
+                  <div style="color:var(--muted);margin-top:2px;" title="camera distance units">d&lt;0.3</div>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:0.6rem;color:var(--muted);margin-top:4px;">d = 3D camera distance (scene units)</div>
+            </div>
+            <div class="om-bottom">
+              <div class="ot-lower-third" style="border-left-color:var(--purple);">
+                <div class="ot-lt-title" style="color:var(--purple);">Quantum View — Probability Field</div>
+                <div class="ot-lt-sub">ψ₁ₛ wavefunction · Copenhagen model · Bohr radius a₀ = 52.9 pm</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type title">Headline</span></td>
+                  <td><div class="el-text">Five Zoom Tiers. One Living Circuit.</div></td>
+                  <td class="el-timing">0:49 → 0:53</td>
+                  <td class="el-pos">Top-left, fades before first tier label</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tier badge — Macro</span></td>
+                  <td><div class="el-text">Tier 1 — Macro View</div><div class="el-sub">Circuit overview · Current flow</div></td>
+                  <td class="el-timing">0:50 → 0:52</td>
+                  <td class="el-pos">Top-right corner</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tier badge — Close</span></td>
+                  <td><div class="el-text">Tier 2 — Close View</div><div class="el-sub">Component details visible</div></td>
+                  <td class="el-timing">0:52 → 0:55</td>
+                  <td class="el-pos">Top-right corner</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tier badge — Atomic</span></td>
+                  <td><div class="el-text">Tier 3 — Atomic View</div><div class="el-sub">FCC copper lattice · drift velocity 0.07 mm/s</div></td>
+                  <td class="el-timing">0:55 → 0:59</td>
+                  <td class="el-pos">Top-right corner</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tier badge — Deep</span></td>
+                  <td><div class="el-text">Tier 4 — Deep Atomic</div><div class="el-sub">Electron orbital shells · Cu Z=29</div></td>
+                  <td class="el-timing">0:59 → 1:03</td>
+                  <td class="el-pos">Top-right corner</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tier badge — Quantum</span></td>
+                  <td><div class="el-text">Tier 5 — Quantum View</div><div class="el-sub">Probability Field · Copenhagen model</div></td>
+                  <td class="el-timing">1:03 → 1:08</td>
+                  <td class="el-pos">Top-right corner</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type lower">Lower third</span></td>
+                  <td><div class="el-text">From Wire to Wave Function.</div></td>
+                  <td class="el-timing">1:05 → 1:08</td>
+                  <td class="el-pos">Bottom-left, during quantum scene</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alt-list">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Alternative headline options</div>
+            <div class="alt-item"><div class="alt-num">A</div><div class="alt-text">Scroll in to the Atom.</div></div>
+            <div class="alt-item"><div class="alt-num">B</div><div class="alt-text">See Electricity at Every Scale.</div></div>
+            <div class="alt-item"><div class="alt-num">C</div><div class="alt-text">No Microscope Required.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Scene 5: Component Arena ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num orange">05</div>
+          <div class="scene-meta">
+            <div class="scene-title">Component Arena — Side-by-Side Battle</div>
+            <div class="scene-sub">Footage: scene-06-arena.webm · Two components under stress, one survives</div>
+          </div>
+          <div class="scene-timing">1:08 – 1:22</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">Split-screen (or sequential cuts): Metal-film resistor vs carbon-comp resistor under identical load. Stress bars fill, temps climb. One holds. One fails. The FUSE™ readout labels the winner and loser.</p>
+
+          <div class="overlay-mockup">
+            <div class="om-top">
+              <div class="ot-badge orange">Component Arena</div>
+              <div class="ot-headline orange">Watch Components Battle Under Stress.</div>
+            </div>
+            <div class="om-center">
+              <div style="display:flex;gap:10px;justify-content:center;">
+                <div class="ot-callout" style="border-color:rgba(0,255,136,0.3);">
+                  <div class="ot-callout-icon">🏆</div>
+                  <div class="ot-callout-text">
+                    <div class="ot-callout-title" style="color:var(--green);">Survivor</div>
+                    <div class="ot-callout-sub">Metal-film · 4.7 kΩ · 0.5 W</div>
+                  </div>
+                </div>
+                <div class="ot-callout" style="border-color:rgba(255,68,85,0.3);">
+                  <div class="ot-callout-icon">💥</div>
+                  <div class="ot-callout-text">
+                    <div class="ot-callout-title" style="color:var(--red);">Failed</div>
+                    <div class="ot-callout-sub">Carbon-comp · 4.7 kΩ · 0.25 W</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="om-bottom">
+              <div class="ot-lower-third orange">
+                <div class="ot-lt-title">The Arena. The FUSE™. The Future.</div>
+                <div class="ot-lt-sub">FUSE™ failure analysis · real-time stress stats</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type badge">Badge</span></td>
+                  <td><div class="el-text">Component Arena</div></td>
+                  <td class="el-timing">1:09 → 1:22</td>
+                  <td class="el-pos">Top-left</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type title">Headline</span></td>
+                  <td><div class="el-text">Watch Components Battle Under Stress.</div></td>
+                  <td class="el-timing">1:10 → 1:14</td>
+                  <td class="el-pos">Top-left</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Winner label</span></td>
+                  <td><div class="el-text">🏆 Survivor — Metal-film 4.7 kΩ / 0.5 W</div></td>
+                  <td class="el-timing">1:15 → 1:20</td>
+                  <td class="el-pos">Above/below winning component</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">Loser label</span></td>
+                  <td><div class="el-text">💥 Failed — Carbon-comp 4.7 kΩ / 0.25 W</div></td>
+                  <td class="el-timing">1:15 → 1:20</td>
+                  <td class="el-pos">Above/below failing component</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type lower">Lower third</span></td>
+                  <td><div class="el-text">The Arena. The FUSE™. The Future.</div><div class="el-sub">FUSE™ failure analysis · real-time stress stats</div></td>
+                  <td class="el-timing">1:18 → 1:22</td>
+                  <td class="el-pos">Bottom-left</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Scene 6: Closing Card ── -->
+      <div class="scene-block">
+        <div class="scene-header">
+          <div class="scene-num green">06</div>
+          <div class="scene-meta">
+            <div class="scene-title">Closing Card — CTA</div>
+            <div class="scene-sub">Wordmark + tagline + app link / QR code</div>
+          </div>
+          <div class="scene-timing">1:22 – 1:30</div>
+        </div>
+        <div class="scene-body">
+          <p class="scene-desc">Clean outro: wordmark fades back in, final tagline appears, then the URL and/or "Free to Start" CTA. Keep it under 8 seconds. If you have a QR code for the Google Play or web link, this is the place for it.</p>
+
+          <div class="overlay-mockup">
+            <div class="om-center">
+              <div style="display:flex;gap:4px;align-items:baseline;justify-content:center;font-size:clamp(1.4rem,4vw,2.2rem);font-weight:800;margin-bottom:12px;">
+                <span style="color:var(--blue)">Circui</span><span style="color:var(--orange);font-style:italic">Try</span><span style="color:var(--green)">3D</span>
+              </div>
+              <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;letter-spacing:0.08em;margin-bottom:16px;">INTERACTIVE · IMMERSIVE · ILLUMINATED</div>
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <div class="chip green">Free to Start</div>
+                <div class="chip blue">Web + Android</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="overlay-specs">
+            <table>
+              <thead><tr><th>Element</th><th>Text</th><th>Timing</th><th>Position</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="el-type title">Wordmark</span></td>
+                  <td><div class="el-text">CircuiTry3D</div></td>
+                  <td class="el-timing">1:22 → 1:30</td>
+                  <td class="el-pos">Center</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type badge">Tagline</span></td>
+                  <td><div class="el-text">INTERACTIVE · IMMERSIVE · ILLUMINATED</div><div class="el-sub">Spaced caps, muted — sits below wordmark</div></td>
+                  <td class="el-timing">1:24 → 1:30</td>
+                  <td class="el-pos">Below wordmark, centered</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">CTA chips</span></td>
+                  <td><div class="el-text">Free to Start · Web + Android</div></td>
+                  <td class="el-timing">1:25 → 1:30</td>
+                  <td class="el-pos">Below tagline</td>
+                </tr>
+                <tr>
+                  <td><span class="el-type callout">URL / QR</span></td>
+                  <td><div class="el-text">mitchelllorin.github.io/CircuiTry3D</div></td>
+                  <td class="el-timing">1:26 → 1:30</td>
+                  <td class="el-pos">Bottom-center, small</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alt-list">
+            <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Alternative closing taglines</div>
+            <div class="alt-item"><div class="alt-num">A</div><div class="alt-text">Build. Fail. Learn. — Free to Start.</div></div>
+            <div class="alt-item"><div class="alt-num">B</div><div class="alt-text">Illuminate Electricity. Start Today.</div></div>
+            <div class="alt-item"><div class="alt-num">C</div><div class="alt-text">Free to Start. Built for Everyone.</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /timeline -->
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECTION 3 — SHORTER FORMAT VERSIONS
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="formats">
+    <div class="section-title">03 — Format Versions</div>
+    <div class="section-heading">Cut-Down Scripts</div>
+    <div class="section-desc">Re-edit for shorter placements using these condensed scene lists. Each version uses a subset of the scenes above.</div>
+
+    <div class="format-grid">
+
+      <div class="format-card">
+        <div class="format-dur">90 s</div>
+        <div class="format-label">Flagship — Full story</div>
+        <div class="format-scenes">
+          <div class="format-scene"><div class="format-scene-time">0:00–0:04</div><div>Opening card</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:04–0:18</div><div>Scene 01 — Series circuit</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:18–0:28</div><div>Scene 02 — Parallel circuit</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:28–0:48</div><div>Scene 03 — FUSE™ failure</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:48–1:08</div><div>Scene 04 — 5-tier zoom</div></div>
+          <div class="format-scene"><div class="format-scene-time">1:08–1:22</div><div>Scene 05 — Arena battle</div></div>
+          <div class="format-scene"><div class="format-scene-time">1:22–1:30</div><div>Closing card + CTA</div></div>
+        </div>
+      </div>
+
+      <div class="format-card">
+        <div class="format-dur">60 s</div>
+        <div class="format-label">Standard — Social / YouTube pre-roll</div>
+        <div class="format-scenes">
+          <div class="format-scene"><div class="format-scene-time">0:00–0:03</div><div>Opening card</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:03–0:14</div><div>Scene 01 — Series circuit (trimmed)</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:14–0:34</div><div>Scene 03 — FUSE™ failure (full)</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:34–0:50</div><div>Scene 04 — Zoom fly-through (trimmed)</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:50–1:00</div><div>Closing card + CTA</div></div>
+        </div>
+      </div>
+
+      <div class="format-card">
+        <div class="format-dur">30 s</div>
+        <div class="format-label">Short — Reels / TikTok / Shorts</div>
+        <div class="format-scenes">
+          <div class="format-scene"><div class="format-scene-time">0:00–0:02</div><div>Opening card (logo flash)</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:02–0:08</div><div>Circuit building montage</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:08–0:20</div><div>Scene 03 — FUSE™ failure (core 12 s)</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:20–0:26</div><div>Scene 04 — Quantum zoom (6 s highlight)</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:26–0:30</div><div>Closing card</div></div>
+        </div>
+      </div>
+
+      <div class="format-card">
+        <div class="format-dur">15 s</div>
+        <div class="format-label">Teaser — Paid ad / story</div>
+        <div class="format-scenes">
+          <div class="format-scene"><div class="format-scene-time">0:00–0:02</div><div>"Build. Fail. Learn." card</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:02–0:10</div><div>FUSE™ explosion + "30+ Failure Modes"</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:10–0:13</div><div>Quantum zoom glimpse</div></div>
+          <div class="format-scene"><div class="format-scene-time">0:13–0:15</div><div>Logo + "Free to Start"</div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECTION 4 — STYLE GUIDE
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="palette">
+    <div class="section-title">04 — Style Guide</div>
+    <div class="section-heading">Colors, Fonts &amp; Overlay Specs</div>
+    <div class="section-desc">Match your text overlays to the app's color system so everything feels on-brand.</div>
+
+    <!-- Color palette -->
+    <div class="palette-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#9dc5ff;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color:#9dc5ff;">Electric Blue</div>
+          <div class="swatch-hex">#9dc5ff</div>
+          <div class="swatch-use">Headlines, builder scenes, tier badges</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#ff8844;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color:#ff8844;">FUSE Orange</div>
+          <div class="swatch-hex">#ff8844</div>
+          <div class="swatch-use">FUSE™ callouts, Arena, energy moments</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#00ff88;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color:#00ff88;">Current Green</div>
+          <div class="swatch-hex">#00ff88</div>
+          <div class="swatch-use">Success states, electron flow, CTA chips</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#bb88ff;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color:#bb88ff;">Quantum Purple</div>
+          <div class="swatch-hex">#bb88ff</div>
+          <div class="swatch-use">Zoom tiers 4–5, orbital / quantum scenes</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#ff4455;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color:#ff4455;">Failure Red</div>
+          <div class="swatch-hex">#ff4455</div>
+          <div class="swatch-use">Failure badges, FUSE explosion callouts</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0a0a1a;border:1px solid rgba(255,255,255,0.1);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Background</div>
+          <div class="swatch-hex">#0a0a1a</div>
+          <div class="swatch-use">All overlay backgrounds, lower thirds</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Font guide -->
+    <div class="section-title" style="margin-top:32px;">Typography</div>
+    <table class="font-table">
+      <thead>
+        <tr><th>Usage</th><th>Font</th><th>Weight</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Headlines / Taglines</td>
+          <td>Inter · Geist · Outfit · or any bold geometric sans-serif</td>
+          <td>700–800</td>
+          <td>Tight letter-spacing (−0.5 px to −1 px)</td>
+        </tr>
+        <tr>
+          <td>Sub-lines / Body</td>
+          <td>Same family, regular</td>
+          <td>400–500</td>
+          <td>Muted white: rgba(255,255,255,0.6)</td>
+        </tr>
+        <tr>
+          <td>Badges / Labels</td>
+          <td>All-caps, letter-spaced</td>
+          <td>600–700</td>
+          <td>+0.06 em letter-spacing, small (10–12 px equiv)</td>
+        </tr>
+        <tr>
+          <td>Monospace stats</td>
+          <td>JetBrains Mono · Fira Code · Roboto Mono</td>
+          <td>400</td>
+          <td>Readout values: V, A, Ω, W</td>
+        </tr>
+        <tr>
+          <td>Wordmark</td>
+          <td>Circui = Blue · Try = Orange · 3D = Green</td>
+          <td>800</td>
+          <td>Keep three-color split consistent</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Overlay spec notes -->
+    <div class="section-title">Overlay Specs</div>
+    <div class="tips-grid" style="margin-top:12px;">
+      <div class="tip-card">
+        <div class="tip-icon">📐</div>
+        <div class="tip-title">Lower Third</div>
+        <div class="tip-body">Left edge, 10–15% from bottom. Semi-transparent dark background. 3px left-border in accent color. Slide in from left (0.3 s ease-out).</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🏷️</div>
+        <div class="tip-title">Badge / Label</div>
+        <div class="tip-body">Small pill with solid accent fill, black text. Top-left. Used to label the feature mode. Always present during a scene.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">📝</div>
+        <div class="tip-title">Headline</div>
+        <div class="tip-body">Large text, top-left or center. Show for 4–8 s then fade. Use text shadow: 0 2px 12px rgba(0,0,0,0.8) over busy 3D footage.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">💬</div>
+        <div class="tip-title">Callout Box</div>
+        <div class="tip-body">Dark rounded card with icon + title + sub. Appears sequentially (one at a time) during failure stages. Keep under 280 px wide.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🎞️</div>
+        <div class="tip-title">Fade Timing</div>
+        <div class="tip-body">Fade in: 0.25 s. Hold. Fade out: 0.35 s. Never hard-cut overlays — always fade or slide. Overlaps look cheap.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🎨</div>
+        <div class="tip-title">Drop Shadow</div>
+        <div class="tip-body">Add text-shadow or drop-shadow on all text to ensure legibility over 3D backgrounds. Background panel behind text is safer than shadow alone.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECTION 5 — EXTRA TAGLINE SWAPS & MICRO-COPY
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="tips">
+    <div class="section-title">05 — Extra Copy &amp; Tips</div>
+    <div class="section-heading">More Lines to Mix In</div>
+    <div class="section-desc">Standalone one-liners, micro-callouts, and feature chips that work anywhere in the cut.</div>
+
+    <div class="tagline-grid">
+
+      <div class="tagline-card blue">
+        <div class="tagline-label">⚡ Micro — Ohm's Law</div>
+        <div class="tagline-main">V = IR. Always.</div>
+        <div class="tagline-alt">Appears over the readout panel during any simulation</div>
+        <div class="tagline-where">Callout box over Ohm's Law panel</div>
+      </div>
+
+      <div class="tagline-card blue">
+        <div class="tagline-label">⚡ Micro — KVL</div>
+        <div class="tagline-main">KVL. KCL. Live.</div>
+        <div class="tagline-alt">For the mixed series-parallel scene</div>
+        <div class="tagline-where">Lower third during advanced circuit</div>
+      </div>
+
+      <div class="tagline-card orange">
+        <div class="tagline-label">🔥 Micro — Heat</div>
+        <div class="tagline-main">576 W. τ = 5 s. Failure incoming.</div>
+        <div class="tagline-alt">Shows the physics numbers before the explosion</div>
+        <div class="tagline-where">Callout during FUSE thermal buildup</div>
+      </div>
+
+      <div class="tagline-card red">
+        <div class="tagline-label">💥 Micro — Failure types</div>
+        <div class="tagline-main">Smoke. Arc. Flame. Explosion.</div>
+        <div class="tagline-alt">Four-word staccato — cut to each word</div>
+        <div class="tagline-where">Quick-cut sequence during FUSE scene</div>
+      </div>
+
+      <div class="tagline-card purple">
+        <div class="tagline-label">🔬 Micro — Lattice</div>
+        <div class="tagline-main">FCC Copper Lattice · a = 3.615 Å</div>
+        <div class="tagline-alt">Ultra-specific for science/engineering audiences</div>
+        <div class="tagline-where">Atomic tier callout box</div>
+      </div>
+
+      <div class="tagline-card purple">
+        <div class="tagline-label">🌊 Micro — Quantum</div>
+        <div class="tagline-main">Δx·Δp ≥ ℏ/2</div>
+        <div class="tagline-alt">Heisenberg uncertainty — pure science cred</div>
+        <div class="tagline-where">Quantum tier overlay, bottom-right</div>
+      </div>
+
+      <div class="tagline-card green">
+        <div class="tagline-label">🏟️ Micro — Arena stats</div>
+        <div class="tagline-main">Power: 92% · Temp: 88% · Stress: 100%</div>
+        <div class="tagline-alt">Pre-failure readout — build tension</div>
+        <div class="tagline-where">Callout over stressed component in Arena</div>
+      </div>
+
+      <div class="tagline-card green">
+        <div class="tagline-label">🎓 Micro — Education</div>
+        <div class="tagline-main">Assign. Simulate. Grade. Repeat.</div>
+        <div class="tagline-alt">Teachers/educators version of "Build. Fail. Learn."</div>
+        <div class="tagline-where">Classroom segment or end card variant</div>
+      </div>
+
+      <div class="tagline-card blue">
+        <div class="tagline-label">📱 Micro — Mobile</div>
+        <div class="tagline-main">On your phone. In 3D. Right now.</div>
+        <div class="tagline-alt">Grabs mobile-first viewers</div>
+        <div class="tagline-where">End card, before app store link</div>
+      </div>
+
+      <div class="tagline-card orange">
+        <div class="tagline-label">🆕 Micro — New user</div>
+        <div class="tagline-main">No sign-up. No hardware. Just build.</div>
+        <div class="tagline-alt">Zero-friction onboarding pitch</div>
+        <div class="tagline-where">End card CTA area</div>
+      </div>
+
+      <div class="tagline-card blue">
+        <div class="tagline-label">🌐 Micro — Community</div>
+        <div class="tagline-main">Share. Fork. Learn Together.</div>
+        <div class="tagline-alt">Highlights community circuit sharing</div>
+        <div class="tagline-where">Community/social segment or chip overlay</div>
+      </div>
+
+      <div class="tagline-card orange">
+        <div class="tagline-label">📐 Micro — Schematic</div>
+        <div class="tagline-main">3D Build → 2D Schematic. Instantly.</div>
+        <div class="tagline-alt">Schematic auto-gen feature in one line</div>
+        <div class="tagline-where">During schematic mode toggle</div>
+      </div>
+
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Tips -->
+    <div class="section-title">Video Editor Tips</div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="tip-icon">🎬</div>
+        <div class="tip-title">Lead with the explosion</div>
+        <div class="tip-body">For social cuts (30 s or less), open with the FUSE™ failure scene — then cut back to "this is how it starts." Pattern-interrupts the scroll.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">⏱️</div>
+        <div class="tip-title">Keep text on screen ≥ 2 s</div>
+        <div class="tip-body">Even for fast-cut reels. Viewers need at least 2 seconds to read a single-line tagline at normal reading speed. 3 s is safer for two-liners.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🎵</div>
+        <div class="tip-title">Music hit = text hit</div>
+        <div class="tip-body">Time your text transitions to beat drops or musical phrase changes. The explosion callout ("💥 Catastrophic Failure") is especially powerful on a bass hit.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🔤</div>
+        <div class="tip-title">One message per screen</div>
+        <div class="tip-body">Never show more than one headline + one sub-line at the same time. Callout boxes are the exception — up to 3 in a row during the failure sequence.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🌑</div>
+        <div class="tip-title">Darken background if needed</div>
+        <div class="tip-body">If 3D footage is too bright to read text over, add a semi-transparent dark gradient behind text blocks. rgba(0,0,0,0.5) is usually enough.</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">📸</div>
+        <div class="tip-title">Use the promo8 footage</div>
+        <div class="tip-body">Run <code style="font-size:0.75rem;background:var(--surface2);padding:2px 5px;border-radius:3px;">npm run circuit-bot</code> locally to auto-record all 6 scenes as WebM clips ready to import into your editor.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h3>Record Your Footage</h3>
+    <p>Use the built-in circuit bot to auto-record all 6 promo scenes as WebM clips — ready to drop straight into your video editor.</p>
+    <a class="cta-link" href="https://github.com/Mitchelllorin/CircuiTry3D#promo" target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+
+</div><!-- /page -->
+
+</body>
+</html>
