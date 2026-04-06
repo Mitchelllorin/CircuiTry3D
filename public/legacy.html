@@ -5524,34 +5524,56 @@ body.android-optimized .zoom-btn {
             }
 
             createBatteryMesh(group) {
-                // Duracell CopperTop-inspired look: black body, prominent copper positive cap, gold label band
+                // Duracell CopperTop-inspired: large copper/gold positive cap (~40%), solid black body with DARASAL brand (~60%)
                 const segments = isMobile ? 8 : 12;
 
-                // Black main body
-                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.9, segments);
-                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x0d0d0d, metalness: 0.05, roughness: 0.75 });
+                // Black main body — covers ~60% of visible battery length (negative side)
+                // Visible body spans x = -0.72 (neg cap start) to x = 0.83 (copper cap end), total 1.55 units.
+                // Black: 0.93 units → center at x = -0.255; Copper: 0.62 units → center at x = 0.52
+                const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.93, segments);
+                const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.05, roughness: 0.75 });
                 const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
                 body.rotation.z = Math.PI / 2;
-                body.position.x = -0.05;
+                body.position.x = -0.255;
                 group.add(body);
 
-                // Gold/copper label band — the signature CopperTop band wrapping the upper body
-                const bandGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.46, segments);
-                const bandMaterial = new THREE.MeshStandardMaterial({ color: 0xb8860b, metalness: 0.2, roughness: 0.55 });
-                const band = new THREE.Mesh(bandGeometry, bandMaterial);
-                band.rotation.z = Math.PI / 2;
-                band.position.x = 0.12;
-                group.add(band);
+                // DARASAL brand label — flat canvas plane laid on the top face of the black body.
+                // rotation.x = -π/2 makes the plane face upward (+Y), aligning its width with the battery's X axis.
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = 512;
+                labelCanvas.height = 64;
+                const lctx = labelCanvas.getContext('2d');
+                lctx.clearRect(0, 0, 512, 64);
+                lctx.fillStyle = '#ffffff';
+                lctx.font = 'bold 48px Arial, sans-serif';
+                lctx.textAlign = 'center';
+                lctx.textBaseline = 'middle';
+                lctx.fillText('DARASAL', 256, 32);
+                const labelTexture = new THREE.CanvasTexture(labelCanvas);
+                const labelGeometry = new THREE.PlaneGeometry(0.82, 0.12);
+                const labelMaterial = new THREE.MeshBasicMaterial({ map: labelTexture, transparent: true, depthWrite: false });
+                const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+                labelMesh.position.set(-0.255, 0.315, 0);
+                labelMesh.rotation.x = -Math.PI / 2;
+                group.add(labelMesh);
 
-                // Copper-top positive cap — the signature full-diameter copper end cap
-                const copperCapGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.38, segments);
+                // Copper-top positive cap — prominent copper section covering ~40% of visible length
+                const copperCapGeometry = new THREE.CylinderGeometry(0.305, 0.305, 0.62, segments);
                 const copperMaterial = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.78, roughness: 0.2 });
                 const copperCap = new THREE.Mesh(copperCapGeometry, copperMaterial);
                 copperCap.rotation.z = Math.PI / 2;
-                copperCap.position.x = 0.64;
+                copperCap.position.x = 0.52;
                 group.add(copperCap);
 
-                // Positive nub (raised button) — the small raised contact at the positive tip
+                // Thin chrome ring at the boundary between black body and copper cap
+                const ringGeometry = new THREE.CylinderGeometry(0.315, 0.315, 0.04, segments);
+                const ringMaterial = new THREE.MeshStandardMaterial({ color: 0x999999, metalness: 0.9, roughness: 0.1 });
+                const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+                ring.rotation.z = Math.PI / 2;
+                ring.position.x = 0.21;
+                group.add(ring);
+
+                // Positive nub (raised button at positive tip)
                 const nubGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.16, segments);
                 const nub = new THREE.Mesh(nubGeometry, copperMaterial);
                 nub.rotation.z = Math.PI / 2;
