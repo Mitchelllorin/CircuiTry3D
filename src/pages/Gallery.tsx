@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useGallery } from "../context/GalleryContext";
 import { useEngagement } from "../context/EngagementContext";
@@ -14,12 +14,17 @@ const formatDate = (ts: number) => {
  * Convert a data URL to a Blob-backed object URL for reliable downloads of
  * large files (browsers restrict data URL navigation for files > ~2 MB).
  * Returns the object URL; caller must revoke it when done.
+ * Throws if the data URL is malformed.
  */
 function dataUrlToObjectUrl(dataUrl: string, fallbackMime = "application/octet-stream"): string {
-  const [header, base64] = dataUrl.split(",");
-  const mimeMatch = header?.match(/:(.*?);/);
+  const commaIdx = dataUrl.indexOf(",");
+  if (commaIdx === -1) throw new Error("Invalid data URL: missing comma separator");
+  const header = dataUrl.slice(0, commaIdx);
+  const base64 = dataUrl.slice(commaIdx + 1);
+  if (!base64) throw new Error("Invalid data URL: empty payload");
+  const mimeMatch = header.match(/:(.*?);/);
   const mime = mimeMatch ? mimeMatch[1] : fallbackMime;
-  const bytes = atob(base64 ?? "");
+  const bytes = atob(base64);
   const ab = new Uint8Array(bytes.length);
   for (let i = 0; i < bytes.length; i++) ab[i] = bytes.charCodeAt(i);
   return URL.createObjectURL(new Blob([ab], { type: mime }));
@@ -32,12 +37,23 @@ export default function Gallery() {
   const [shareStatus, setShareStatus] = useState<Record<string, string>>({});
   // Track which video cards are currently playing (for tap-to-play overlay)
   const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
+  // Pending object URLs created for downloads — revoked after download starts or on unmount
+  const pendingObjectUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    return () => {
+      pendingObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      pendingObjectUrlsRef.current = [];
+    };
+  }, []);
 
   const toggleVideoPlay = useCallback((id: string, videoEl: HTMLVideoElement) => {
     if (videoEl.paused) {
       videoEl.play().then(() => {
         setPlayingVideos((prev) => ({ ...prev, [id]: true }));
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error("Video playback failed:", err);
+      });
     } else {
       videoEl.pause();
       setPlayingVideos((prev) => ({ ...prev, [id]: false }));
@@ -49,15 +65,25 @@ export default function Gallery() {
     const filename = `${item.title || "circuit"}-${item.id}.${ext}`;
     // Convert data URL → object URL so large video files download reliably
     // (browsers block data URL navigation above ~2 MB).
-    const objectUrl = dataUrlToObjectUrl(item.dataUrl, item.type === "video" ? "video/webm" : "image/png");
+    let objectUrl: string;
+    try {
+      objectUrl = dataUrlToObjectUrl(item.dataUrl, item.type === "video" ? "video/webm" : "image/png");
+    } catch (err) {
+      console.error("Download failed — could not convert data URL:", err);
+      return;
+    }
+    pendingObjectUrlsRef.current.push(objectUrl);
     const a = document.createElement("a");
     a.href = objectUrl;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    // Revoke after a short delay to let the browser start the download
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+    // Revoke after 2 s — enough time for the browser to begin the download
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+      pendingObjectUrlsRef.current = pendingObjectUrlsRef.current.filter((u) => u !== objectUrl);
+    }, 2000);
   }, []);
 
   const handleShare = useCallback(
@@ -167,7 +193,9 @@ export default function Gallery() {
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLVideoElement).play().then(() => {
                         setPlayingVideos((prev) => ({ ...prev, [item.id]: true }));
-                      }).catch(() => {});
+                      }).catch((err) => {
+                        console.error("Video hover-play failed:", err);
+                      });
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLVideoElement).pause();

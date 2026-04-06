@@ -3777,7 +3777,7 @@ body.android-optimized .zoom-btn {
                             case 'cinematic-play':
                                 // When no keyframes are supplied, play the waypoints already
                                 // stored inside the controller (added via cinematic-add-waypoint).
-                                _cinematicCtrl.start(data.preset || null, data.keyframes || _cinematicCtrl._keyframes);
+                                _cinematicCtrl.start(data.preset || null, data.keyframes || _cinematicCtrl.keyframes);
                                 break;
                             case 'cinematic-stop':
                                 _cinematicCtrl.stop();
@@ -8230,7 +8230,7 @@ body.android-optimized .zoom-btn {
                                 dataUrl: reader.result,
                                 circuitName: this._circuitName || document.title || 'circuit',
                                 timestamp: Date.now(),
-                                durationMs: (this._recordStart != null ? Date.now() - this._recordStart : 0),
+                                durationMs: (this._recordStart !== null ? Date.now() - this._recordStart : 0),
                             }
                         }, '*');
                     };
@@ -8250,6 +8250,7 @@ body.android-optimized .zoom-btn {
 
             get isPlaying() { return this._playing; }
             get isRecording() { return this._recording; }
+            get keyframes() { return this._keyframes; }
         }
 
         const _cinematicCtrl = new CinematicController();
