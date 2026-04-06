@@ -442,14 +442,16 @@
     }
 
     .failure-badge {
-      display: inline-block;
-      padding: 3px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
       border-radius: 999px;
       font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     .failure-stressed {
@@ -465,16 +467,85 @@
     }
 
     .failure-critical {
-      background: rgba(239, 68, 68, 0.2);
-      border: 1px solid rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.22);
+      border: 1px solid rgba(239, 68, 68, 0.55);
       color: #fca5a5;
+      animation: pulse-critical 2s ease-in-out infinite;
     }
 
     .failure-failed {
-      background: rgba(220, 38, 38, 0.35);
-      border: 1px solid rgba(220, 38, 38, 0.7);
+      background: rgba(220, 38, 38, 0.38);
+      border: 1px solid rgba(220, 38, 38, 0.75);
       color: #fef2f2;
-      box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
+      animation: pulse-failed 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-critical {
+      0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.3); }
+      50%       { box-shadow: 0 0 18px rgba(239, 68, 68, 0.7), 0 0 36px rgba(239, 68, 68, 0.25); }
+    }
+
+    @keyframes pulse-failed {
+      0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.45), 0 0 20px rgba(220, 38, 38, 0.2); }
+      50%       { box-shadow: 0 0 22px rgba(220, 38, 38, 0.9), 0 0 44px rgba(220, 38, 38, 0.4), 0 0 70px rgba(220, 38, 38, 0.12); }
+    }
+
+    .failure-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      animation: failure-card-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes failure-card-in {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    .failure-severity-bar-track {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(30, 41, 59, 0.8);
+      overflow: hidden;
+      margin-bottom: 2px;
+    }
+
+    .failure-severity-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .failure-severity-bar-fill.sev-stressed {
+      background: linear-gradient(90deg, #d97706, #fbbf24);
+      box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+    }
+
+    .failure-severity-bar-fill.sev-warning {
+      background: linear-gradient(90deg, #ea580c, #fb923c);
+      box-shadow: 0 0 6px rgba(251, 146, 60, 0.6);
+    }
+
+    .failure-severity-bar-fill.sev-critical {
+      background: linear-gradient(90deg, #dc2626, #f87171);
+      box-shadow: 0 0 8px rgba(248, 113, 113, 0.7);
+      animation: bar-pulse-critical 2s ease-in-out infinite;
+    }
+
+    .failure-severity-bar-fill.sev-failed {
+      background: linear-gradient(90deg, #991b1b, #ef4444, #fca5a5);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+      animation: bar-pulse-failed 1.4s ease-in-out infinite;
+    }
+
+    @keyframes bar-pulse-critical {
+      0%, 100% { opacity: 0.8; }
+      50%       { opacity: 1;   box-shadow: 0 0 14px rgba(248, 113, 113, 0.9); }
+    }
+
+    @keyframes bar-pulse-failed {
+      0%, 100% { opacity: 0.85; }
+      50%       { opacity: 1;    box-shadow: 0 0 18px rgba(239, 68, 68, 1.0); }
     }
 
     .fuse-tag {
@@ -498,7 +569,7 @@
       font-size: 0.58rem;
       color: #64748b;
       letter-spacing: 0.04em;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       font-style: italic;
     }
 
@@ -3490,6 +3561,14 @@
           failure.severity >= 1.5 ? "failure-critical" :
           failure.severity >= 0.8 ? "failure-warning" : "failure-stressed";
 
+        const barClass =
+          failure.severity >= 2.5 ? "sev-failed" :
+          failure.severity >= 1.5 ? "sev-critical" :
+          failure.severity >= 0.8 ? "sev-warning" : "sev-stressed";
+
+        // Severity bar: map [0, 3] → [0%, 100%]
+        const barWidthPct = Math.min(100, Math.round((failure.severity / 3) * 100));
+
         // Visual-effect icon mapping
         const visualIcon = {
           smoke:   "💨", char:   "🔥", blowout: "💥",
@@ -3497,6 +3576,10 @@
           vent:    "🌪️",  glow:   "🌡️",
         };
         const icon = visualIcon[failure.visual] || "⚠️";
+
+        // Outer animated card wrapper
+        const card = document.createElement("div");
+        card.className = "failure-card";
 
         const fuseLabel = document.createElement("div");
         fuseLabel.className = "fuse-acronym";
@@ -3506,6 +3589,19 @@
         badge.className = `failure-badge ${severityClass}`;
         badge.textContent = `${icon} ${severityLabel}`;
 
+        // Severity progress bar
+        const barTrack = document.createElement("div");
+        barTrack.className = "failure-severity-bar-track";
+        const barFill = document.createElement("div");
+        barFill.className = `failure-severity-bar-fill ${barClass}`;
+        barFill.style.width = "0%";
+        barTrack.appendChild(barFill);
+        // Trigger CSS width transition in the next paint frame so the browser
+        // registers the initial 0% state before animating to the target width.
+        requestAnimationFrame(() => {
+          barFill.style.width = `${barWidthPct}%`;
+        });
+
         const name = document.createElement("div");
         name.className = "failure-name";
         name.textContent = failure.name || "Failure";
@@ -3514,10 +3610,12 @@
         desc.className = "failure-desc";
         desc.textContent = failure.description || "";
 
-        container.appendChild(fuseLabel);
-        container.appendChild(badge);
-        container.appendChild(name);
-        container.appendChild(desc);
+        card.appendChild(fuseLabel);
+        card.appendChild(badge);
+        card.appendChild(barTrack);
+        card.appendChild(name);
+        card.appendChild(desc);
+        container.appendChild(card);
       }
 
       // ---------- Composition Panel ----------

@@ -2747,6 +2747,106 @@
             text-shadow: none;
             margin-top: 1px;
         }
+
+        /* ── AC/DC Hazard Warning Panel ────────────────────────────────────── */
+        #hazard-warning {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 24px;
+            animation: hazard-bg-in 0.3s ease forwards;
+        }
+        #hazard-warning.active {
+            display: flex;
+        }
+        @keyframes hazard-bg-in {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        .hazard-box {
+            max-width: 480px;
+            width: 100%;
+            background: linear-gradient(160deg, rgba(18, 6, 6, 0.97) 0%, rgba(10, 4, 4, 0.99) 100%);
+            border: 1px solid rgba(255, 55, 55, 0.55);
+            border-radius: 18px;
+            padding: 28px 28px 22px;
+            box-shadow:
+                0 0 0 1px rgba(255, 80, 80, 0.12),
+                0 0 40px rgba(255, 40, 40, 0.22),
+                0 24px 60px rgba(0, 0, 0, 0.75);
+            animation: hazard-box-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        @keyframes hazard-box-in {
+            from { opacity: 0; transform: scale(0.88) translateY(12px); }
+            to   { opacity: 1; transform: scale(1)    translateY(0); }
+        }
+        .hazard-icon {
+            display: block;
+            text-align: center;
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 14px;
+            animation: hazard-shake 0.6s ease infinite;
+            filter: drop-shadow(0 0 12px rgba(255, 80, 0, 0.75));
+        }
+        @keyframes hazard-shake {
+            0%, 100% { transform: rotate(-4deg) scale(1.0); }
+            50%       { transform: rotate( 4deg) scale(1.08); }
+        }
+        .hazard-title {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #ff4444;
+            text-align: center;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-shadow:
+                0 0 12px rgba(255, 60, 60, 0.8),
+                0 0 30px rgba(255, 40, 40, 0.4);
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+        .hazard-body {
+            font-size: 0.82rem;
+            line-height: 1.65;
+            color: rgba(220, 180, 180, 0.88);
+            background: rgba(255, 0, 0, 0.06);
+            border: 1px solid rgba(255, 60, 60, 0.15);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+        }
+        .hazard-body strong {
+            color: #ffaaaa;
+            font-weight: 700;
+        }
+        .hazard-close {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 60, 60, 0.55);
+            background: rgba(200, 30, 30, 0.25);
+            color: #ffcccc;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .hazard-close:hover {
+            background: rgba(200, 30, 30, 0.45);
+            border-color: rgba(255, 60, 60, 0.85);
+            box-shadow: 0 0 16px rgba(255, 40, 40, 0.35);
+        }
     </style>
 </head>
 <body>
@@ -2774,23 +2874,25 @@
 
     <!-- AC/DC conflict hazard warning panel -->
     <div id="hazard-warning" role="alertdialog" aria-modal="true" aria-labelledby="hazard-warning-title" aria-describedby="hazard-warning-body">
-        <span class="hazard-icon">💥</span>
-        <div class="hazard-title" id="hazard-warning-title">⚡ EXPLOSION HAZARD ⚡</div>
-        <div class="hazard-body" id="hazard-warning-body">
-            <strong>AC and DC power sources cannot be directly connected!</strong><br><br>
-            Connecting an AC source (alternating current, ~120 V / 60 Hz) directly to a DC battery
-            creates a catastrophic short circuit. In the real world this would cause an immediate
-            explosion, fire, and destruction of every component in the circuit.
-            <br><br>
-            <strong>Why?</strong> AC and DC operate on fundamentally different principles.
-            A DC battery provides a steady voltage while an AC source reverses polarity 60 times
-            per second. Bridging them directly produces enormous surge currents that no component
-            can survive.
-            <br><br>
-            Remove one of the power sources or add the proper conversion circuitry
-            (rectifier, transformer, or power-supply circuit) before connecting them.
+        <div class="hazard-box">
+            <span class="hazard-icon">💥</span>
+            <div class="hazard-title" id="hazard-warning-title">⚡ EXPLOSION HAZARD ⚡</div>
+            <div class="hazard-body" id="hazard-warning-body">
+                <strong>AC and DC power sources cannot be directly connected!</strong><br><br>
+                Connecting an AC source (alternating current, ~120 V / 60 Hz) directly to a DC battery
+                creates a catastrophic short circuit. In the real world this would cause an immediate
+                explosion, fire, and destruction of every component in the circuit.
+                <br><br>
+                <strong>Why?</strong> AC and DC operate on fundamentally different principles.
+                A DC battery provides a steady voltage while an AC source reverses polarity 60 times
+                per second. Bridging them directly produces enormous surge currents that no component
+                can survive.
+                <br><br>
+                Remove one of the power sources or add the proper conversion circuitry
+                (rectifier, transformer, or power-supply circuit) before connecting them.
+            </div>
+            <button class="hazard-close" onclick="dismissHazardWarning()">Understood — Remove the Connection</button>
         </div>
-        <button class="hazard-close" onclick="dismissHazardWarning()">Understood — Remove the Connection</button>
     </div>
 
     <div class="edit-popup" id="edit-popup">
@@ -5525,7 +5627,7 @@ body.android-optimized .zoom-btn {
 
             createBatteryMesh(group) {
                 // Duracell CopperTop-inspired look: black body, prominent copper positive cap, gold label band
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Black main body
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.9, segments);
@@ -5580,7 +5682,7 @@ body.android-optimized .zoom-btn {
             }
 
             createResistorMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Resistor body
                 const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1, segments);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xccaa66, metalness: 0.0, roughness: 0.85 });
@@ -5603,7 +5705,7 @@ body.android-optimized .zoom-btn {
             }
 
             createLEDMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // LED dome
                 const domeGeometry = new THREE.SphereGeometry(0.25, segments, segments/2, 0, Math.PI * 2, 0, Math.PI / 2);
                 const domeMaterial = new THREE.MeshStandardMaterial({ 
@@ -5651,7 +5753,7 @@ body.android-optimized .zoom-btn {
             }
 
             addLeads(group) {
-                const segments = isMobile ? 6 : 8;
+                const segments = isMobile ? 8 : 12;
                 // Leads extend from ±0.2 (inside component body) to ±1.2 (connection sphere center)
                 // so there is no gap between the lead tip and the wire endpoint.
                 const leadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.0, segments);
@@ -5690,7 +5792,7 @@ body.android-optimized .zoom-btn {
             }
 
             createCapacitorMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Capacitor body (cylinder)
                 const bodyGeometry = new THREE.CylinderGeometry(0.25, 0.25, 0.7, segments);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x4488ff, metalness: 0.05, roughness: 0.7 });
@@ -5710,7 +5812,7 @@ body.android-optimized .zoom-btn {
             }
 
             createInductorMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Inductor coil (multiple rings)
                 for (let i = 0; i < 4; i++) {
                     const coilGeometry = new THREE.TorusGeometry(0.15, 0.08, segments, segments);
@@ -5725,7 +5827,7 @@ body.android-optimized .zoom-btn {
             }
 
             createDiodeMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Diode body
                 const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
@@ -5745,7 +5847,7 @@ body.android-optimized .zoom-btn {
             }
 
             createBJTMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // BJT body (TO-92 package)
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
@@ -5792,7 +5894,7 @@ body.android-optimized .zoom-btn {
             }
 
             createFuseMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Fuse glass body
                 const bodyGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.8, segments);
                 const bodyMaterial = new THREE.MeshStandardMaterial({
@@ -5824,7 +5926,7 @@ body.android-optimized .zoom-btn {
             }
 
             createPotentiometerMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Potentiometer body
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, segments);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x4444aa, metalness: 0.05, roughness: 0.7 });
@@ -5850,7 +5952,7 @@ body.android-optimized .zoom-btn {
             }
 
             createLampMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // Lamp bulb (sphere)
                 const bulbGeometry = new THREE.SphereGeometry(0.3, segments, segments);
                 const bulbMaterial = new THREE.MeshStandardMaterial({
@@ -5933,7 +6035,7 @@ body.android-optimized .zoom-btn {
 
             // Motor - cylindrical body with shaft
             createMotorMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Motor body (cylinder)
                 const bodyGeometry = new THREE.CylinderGeometry(0.35, 0.35, 0.6, segments);
@@ -5970,7 +6072,7 @@ body.android-optimized .zoom-btn {
 
             // Speaker - cone shape with magnet base
             createSpeakerMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Speaker cone (truncated cone)
                 const coneGeometry = new THREE.CylinderGeometry(0.15, 0.4, 0.3, segments, 1, true);
@@ -6035,7 +6137,7 @@ body.android-optimized .zoom-btn {
 
             // Transformer - two coils with core
             createTransformerMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Core (E-shaped laminations represented as box)
                 const coreGeometry = new THREE.BoxGeometry(0.15, 0.8, 0.3);
@@ -6067,7 +6169,7 @@ body.android-optimized .zoom-btn {
 
             // Crystal oscillator — HC-49 metal can package with two leads
             createCrystalMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Metal can body (flat silver rectangular/capsule package)
                 const canGeometry = new THREE.BoxGeometry(0.7, 0.35, 0.22);
@@ -6100,7 +6202,7 @@ body.android-optimized .zoom-btn {
 
             // Ceramic disc capacitor — flat tan disc, distinct from electrolytic cylinder
             createCeramicCapacitorMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Flat disc body (ceramic disc cap shape)
                 const discGeometry = new THREE.CylinderGeometry(0.28, 0.28, 0.12, segments);
@@ -6123,7 +6225,7 @@ body.android-optimized .zoom-btn {
 
             // Zener diode — purple body with distinctive notched cathode band
             createZenerDiodeMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Purple-tinted body (distinguishes from regular diode)
                 const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
@@ -6159,7 +6261,7 @@ body.android-optimized .zoom-btn {
 
             // Photodiode — dark body with blue lens dome and light-ray indicators
             createPhotodiodeMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Dark body (like diode)
                 const bodyGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, segments);
@@ -6208,7 +6310,7 @@ body.android-optimized .zoom-btn {
 
             // Thermistor — small blue NTC bead with two leads (distinct from resistor)
             createThermistorMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // NTC bead body — small round blue bead
                 const beadGeometry = new THREE.SphereGeometry(0.22, segments, segments);
@@ -6228,7 +6330,7 @@ body.android-optimized .zoom-btn {
 
             // Relay — blue coil housing with dark armature and mounting leads
             createRelayMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Coil housing body (rectangular blue block)
                 const bodyGeometry = new THREE.BoxGeometry(0.72, 0.52, 0.38);
@@ -6302,7 +6404,7 @@ body.android-optimized .zoom-btn {
                 }
             }
             createBJTNPNMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // BJT body (TO-92 package)
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
@@ -6331,7 +6433,7 @@ body.android-optimized .zoom-btn {
 
             // BJT PNP - TO-92 package with PNP marking
             createBJTPNPMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
                 // BJT body (TO-92 package)
                 const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.4, segments, 1, false, 0, Math.PI);
                 const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.05, roughness: 0.78 });
@@ -6360,7 +6462,7 @@ body.android-optimized .zoom-btn {
 
             // Darlington Pair - larger package with two transistors
             createDarlingtonMesh(group) {
-                const segments = isMobile ? 8 : 12;
+                const segments = isMobile ? 10 : 18;
 
                 // Larger TO-220 style package
                 const bodyGeometry = new THREE.BoxGeometry(0.7, 0.5, 0.25);
@@ -18664,6 +18766,29 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
         // Track failure state and particle systems per component
         // (workspaceFailureState, workspaceFailureParticles, workspaceCameraShake
         //  are declared earlier with other state variables to avoid TDZ on Android WebView)
+
+        // Soft circular radial-gradient texture for particles — eliminates the
+        // hard-edged square-pixel look that WebGL PointsMaterial produces by default.
+        let _failParticleTexture = null;
+        function getFailParticleTexture() {
+            if (_failParticleTexture) return _failParticleTexture;
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const c = size / 2;
+            const grad = ctx.createRadialGradient(c, c, 0, c, c, c);
+            grad.addColorStop(0.0,  'rgba(255,255,255,1.0)');
+            grad.addColorStop(0.25, 'rgba(255,255,255,0.9)');
+            grad.addColorStop(0.55, 'rgba(255,255,255,0.45)');
+            grad.addColorStop(0.8,  'rgba(255,255,255,0.08)');
+            grad.addColorStop(1.0,  'rgba(255,255,255,0.0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            _failParticleTexture = new THREE.CanvasTexture(canvas);
+            return _failParticleTexture;
+        }
+
         // Particle lifetime range (seconds). Particles spawn with life in [MIN, MAX].
         const FAIL_PARTICLE_MIN_LIFE = 0.3;
         const FAIL_PARTICLE_MAX_LIFE = 1.5;
@@ -18801,10 +18926,13 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                 const mat = new THREE.PointsMaterial({
                     color,
                     size,
+                    map: getFailParticleTexture(),
+                    alphaTest: 0.005,
                     transparent: true,
                     opacity: 0.92,
                     depthWrite: false,
                     blending: THREE.AdditiveBlending,
+                    sizeAttenuation: true,
                 });
 
                 const points = new THREE.Points(geo, mat);
@@ -18826,60 +18954,76 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             if (visual === 'burst') {
                 // CAPACITOR / ELECTROLYTIC EXPLOSION
                 // Layer 1: spherical debris cloud (one-shot, no recycling)
-                makeLayer(80, 0xff8800, 0.24, velExplode, GRAV_EARTH, 0.05, false, 0.3, 0.9);
+                makeLayer(100, 0xff9900, 0.30, velExplode, GRAV_EARTH, 0.05, false, 0.3, 1.1);
+                // Layer 1b: white-hot core burst (one-shot, tiny fast particles)
+                makeLayer(40,  0xffffff, 0.18, velExplode, GRAV_EARTH * 0.6, 0.08, false, 0.15, 0.5);
                 // Layer 2: rising fire column (persistent)
-                makeLayer(55, 0xff5500, 0.28, velFire, GRAV_FIRE, 0.45, true, 0.4, 1.2);
+                makeLayer(65, 0xff5500, 0.34, velFire, GRAV_FIRE, 0.50, true, 0.4, 1.3);
                 // Layer 3: dense black smoke (persistent)
-                makeLayer(35, 0x444444, 0.34, velSmoke, GRAV_SMOKE, 0.22, true, 0.6, 1.8);
+                makeLayer(45, 0x444444, 0.40, velSmoke, GRAV_SMOKE, 0.22, true, 0.7, 2.0);
 
             } else if (visual === 'blowout') {
                 // FUSE ELEMENT MELTS / FILAMENT BURNOUT / LED DIE
                 // Layer 1: radial spark burst (one-shot)
-                makeLayer(60, 0xffee66, 0.17, velSpark, GRAV_EARTH, 0.1, false, 0.3, 0.8);
+                makeLayer(75, 0xffff88, 0.22, velSpark, GRAV_EARTH, 0.12, false, 0.3, 0.9);
+                // Layer 1b: dimmer trailing sparks
+                makeLayer(30, 0xffaa22, 0.15, velSpark, GRAV_EARTH * 0.7, 0.08, false, 0.2, 0.7);
                 // Layer 2: smoke trail (persistent)
-                makeLayer(22, 0x666666, 0.28, velSmoke, GRAV_SMOKE, 0.25, true, 0.4, 1.4);
+                makeLayer(28, 0x777777, 0.34, velSmoke, GRAV_SMOKE, 0.28, true, 0.5, 1.6);
 
             } else if (visual === 'melt') {
                 // MOSFET / BJT / IC THERMAL MELTDOWN — glowing drips fall downward
                 // Layer 1: molten drips (fall under gravity)
-                makeLayer(40, 0xff5500, 0.23, velMelt, GRAV_MELT, 0.08, true, 0.5, 1.6);
+                makeLayer(50, 0xff6600, 0.28, velMelt, GRAV_MELT, 0.10, true, 0.6, 1.8);
+                // Layer 1b: white-hot core drips
+                makeLayer(20, 0xffdd88, 0.16, velMelt, GRAV_MELT * 0.8, 0.05, true, 0.4, 1.2);
                 // Layer 2: orange-core fire above melt point
-                makeLayer(25, 0xff8800, 0.20, velFire, GRAV_FIRE * 0.8, 0.3, true, 0.4, 1.2);
+                makeLayer(30, 0xff8800, 0.26, velFire, GRAV_FIRE * 0.85, 0.35, true, 0.4, 1.3);
                 // Layer 3: thin smoke
-                makeLayer(15, 0x333333, 0.26, velSmoke, GRAV_SMOKE, 0.2, true, 0.4, 1.4);
+                makeLayer(18, 0x333333, 0.32, velSmoke, GRAV_SMOKE, 0.22, true, 0.5, 1.6);
 
             } else if (visual === 'arc') {
                 // AVALANCHE BREAKDOWN / CONTACT ARCING — electrical discharge
                 // Layer 1: fast white-blue sparks
-                makeLayer(55, 0xeeeeff, 0.17, velSpark, GRAV_EARTH * 0.75, 0.18, true, 0.2, 0.7);
+                makeLayer(70, 0xddeeff, 0.20, velSpark, GRAV_EARTH * 0.75, 0.20, true, 0.18, 0.75);
+                // Layer 1b: core bright-white sparks
+                makeLayer(25, 0xffffff, 0.12, velSpark, GRAV_EARTH * 0.5, 0.10, true, 0.12, 0.45);
                 // Layer 2: secondary yellow sparks
-                makeLayer(30, 0xffee00, 0.14, velSpark, GRAV_EARTH * 0.6, 0.12, true, 0.2, 0.6);
+                makeLayer(35, 0xffee44, 0.17, velSpark, GRAV_EARTH * 0.6, 0.14, true, 0.18, 0.65);
 
             } else if (visual === 'char') {
                 // RESISTOR THERMAL OVERLOAD / CARBON FILM ABLATION
                 // Layer 1: fire plume
-                makeLayer(45, 0xff6600, 0.23, velFire, GRAV_FIRE * 0.9, 0.38, true, 0.4, 1.3);
+                makeLayer(55, 0xff6600, 0.28, velFire, GRAV_FIRE * 0.9, 0.42, true, 0.4, 1.4);
+                // Layer 1b: bright yellow fire core
+                makeLayer(20, 0xffcc00, 0.18, velFire, GRAV_FIRE, 0.3, true, 0.3, 1.0);
                 // Layer 2: rising smoke
-                makeLayer(22, 0x555555, 0.27, velSmoke, GRAV_SMOKE, 0.22, true, 0.5, 1.6);
+                makeLayer(28, 0x555555, 0.34, velSmoke, GRAV_SMOKE, 0.25, true, 0.6, 1.8);
 
             } else if (visual === 'smoke') {
                 // INDUCTOR / MOTOR / TRANSFORMER WINDING FAILURE — heavy smoke
-                makeLayer(60, 0x888888, 0.32, velSmoke, GRAV_SMOKE * 0.85, 0.28, true, 0.6, 2.0);
+                makeLayer(70, 0x888888, 0.38, velSmoke, GRAV_SMOKE * 0.85, 0.32, true, 0.7, 2.2);
+                // Layer 2: darker billowing core
+                makeLayer(25, 0x444444, 0.48, velSmoke, GRAV_SMOKE * 0.7, 0.18, true, 0.9, 2.5);
 
             } else if (visual === 'vent') {
                 // BATTERY THERMAL VENTING — pressurised gas release
                 // Layer 1: light-blue gas vent (fast upward)
-                makeLayer(45, 0xaaccee, 0.20, velVent, GRAV_VENT, 0.18, true, 0.4, 1.3);
+                makeLayer(55, 0xaaddff, 0.24, velVent, GRAV_VENT, 0.20, true, 0.4, 1.4);
+                // Layer 1b: bright white gas core
+                makeLayer(20, 0xeef8ff, 0.14, velVent, GRAV_VENT * 1.2, 0.10, true, 0.3, 1.0);
                 // Layer 2: fire if vented gas ignites (persistent)
-                makeLayer(20, 0xff7700, 0.22, velFire, GRAV_FIRE, 0.4, true, 0.4, 1.1);
+                makeLayer(25, 0xff7700, 0.26, velFire, GRAV_FIRE, 0.42, true, 0.4, 1.2);
 
             } else if (visual === 'glow') {
                 // THERMISTOR / HEATSINK THERMAL SATURATION — hot orange embers
-                makeLayer(22, 0xff8800, 0.17, velEmber, GRAV_FIRE * 0.6, 0.42, true, 0.5, 1.8);
+                makeLayer(30, 0xff8800, 0.22, velEmber, GRAV_FIRE * 0.6, 0.45, true, 0.6, 2.0);
+                // Layer 2: deeper red embers
+                makeLayer(15, 0xff3300, 0.30, velEmber, GRAV_FIRE * 0.4, 0.30, true, 0.8, 2.4);
 
             } else {
                 // Fallback: generic smoke puff
-                makeLayer(25, 0x9ca3af, 0.14, velSmoke, GRAV_SMOKE, 0.22, true, 0.4, 1.0);
+                makeLayer(30, 0x9ca3af, 0.18, velSmoke, GRAV_SMOKE, 0.24, true, 0.4, 1.2);
             }
         }
 
@@ -19017,14 +19161,14 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
                                       0x220800;   // dim ember (smoke)
 
             const emissiveIntensity =
-                visual === 'glow'    ? t * 1.2 :
-                visual === 'arc'     ? 0.8  + Math.sin(now / FAIL_FLICKER_ARC)   * 0.45 :  // rapid arc flicker
-                visual === 'burst'   ? 0.65 + Math.sin(now / FAIL_FLICKER_BURST) * 0.40 :  // explosion pulse
-                visual === 'blowout' ? t * 0.75 :
-                visual === 'melt'    ? 0.35 + t * 0.55 + Math.sin(now / FAIL_FLICKER_MELT) * 0.18 : // melt glow
-                visual === 'char'    ? 0.20 + t * 0.45 + Math.sin(now / FAIL_FLICKER_CHAR) * 0.12 : // fire flicker
-                visual === 'vent'    ? t * 0.45 :
-                                       0.05 + t * 0.18;
+                visual === 'glow'    ? t * 1.8 :
+                visual === 'arc'     ? 1.2  + Math.sin(now / FAIL_FLICKER_ARC)   * 0.65 :  // rapid arc flicker
+                visual === 'burst'   ? 1.0  + Math.sin(now / FAIL_FLICKER_BURST) * 0.60 :  // explosion pulse
+                visual === 'blowout' ? t * 1.1 :
+                visual === 'melt'    ? 0.55 + t * 0.80 + Math.sin(now / FAIL_FLICKER_MELT) * 0.28 : // melt glow
+                visual === 'char'    ? 0.35 + t * 0.65 + Math.sin(now / FAIL_FLICKER_CHAR) * 0.22 : // fire flicker
+                visual === 'vent'    ? t * 0.65 :
+                                       0.08 + t * 0.28;
 
             // Apply to all body materials in the mesh group
             component.mesh.traverse(child => {
