@@ -1,5 +1,7 @@
 # CircuiTry3D Documentation Index
 
+> 👥 **For Everyone** — to facilitate and enhance the learning.
+
 Welcome to the CircuiTry3D documentation. This index provides quick access to all reference materials for electrical theory, circuit simulation, and platform implementation.
 
 ---

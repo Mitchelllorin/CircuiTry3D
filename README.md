@@ -1,5 +1,7 @@
 # CircuiTry3D
 
+> 👥 **For Everyone** — to facilitate and enhance the learning.
+
 > **Illuminating Electricity** — a 3D, interactive electrical learning platform that makes circuit theory visual and tangible.
 > Explore current flow from the macro scale all the way down to atomic crystal lattices and quantum probability clouds, powered by Ohm's Law and a proprietary component failure simulation engine.
 
