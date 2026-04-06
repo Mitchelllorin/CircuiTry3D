@@ -85,11 +85,13 @@ import Arcade from "./Arcade";
 import Textbook from "./Textbook";
 import WireLibrary from "../components/practice/WireLibrary";
 import { AIHelperPanel } from "../components/builder/AIHelperPanel";
+import { CircuitExplainPanel } from "../components/builder/CircuitExplainPanel";
 import { CinematicPanel } from "../components/builder/panels/CinematicPanel";
 import type { CinematicPreset } from "../components/builder/panels/CinematicPanel";
 import { useGallery } from "../context/GalleryContext";
 import type { CinematicFramePayload, CinematicVideoPayload } from "../hooks/builder/useBuilderFrame";
 import "../styles/cinematic.css";
+import "../styles/circuit-explain.css";
 
 type WorkspacePanelMode =
   | "arena"
@@ -953,6 +955,13 @@ const IconRuler = ({ className }: IconProps) => (
   </svg>
 );
 
+const IconSparkle = ({ className }: IconProps) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <path d="M10 2.5 11.2 7.8l5.3 1.2-5.3 1.2L10 15.5l-1.2-5.3L3.5 9l5.3-1.2L10 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15.5 2.5 16.1 4.9l2.4.6-2.4.6-.6 2.4-.6-2.4-2.4-.6 2.4-.6.6-2.4Z" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 /**
  * Hook to detect when an element is visible in the viewport
  * Used to lazy-load expensive 3D thumbnails only when needed
@@ -1566,6 +1575,7 @@ export default function Builder() {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [isAIHelperOpen, setIsAIHelperOpen] = useState(false);
+  const [isExplainPanelOpen, setIsExplainPanelOpen] = useState(false);
   const [isMeasureWidgetOpen, setMeasureWidgetOpen] = useState(false);
   const [isCinematicOpen, setIsCinematicOpen] = useState(false);
   const [cinematicIsPlaying, setCinematicIsPlaying] = useState(false);
@@ -2984,6 +2994,17 @@ export default function Builder() {
             </button>
             <button
               type="button"
+              className={`edge-action-btn${isExplainPanelOpen ? " edge-action-btn--active" : ""}`}
+              onClick={() => setIsExplainPanelOpen((prev) => !prev)}
+              aria-label={isExplainPanelOpen ? "Close circuit explanation" : "Explain this circuit"}
+              aria-expanded={isExplainPanelOpen}
+              title="Explain Circuit — AI-powered circuit analysis (Pro)"
+            >
+              <IconSparkle className="edge-action-icon-svg" />
+              <span className="edge-action-label" aria-hidden="true">Explain</span>
+            </button>
+            <button
+              type="button"
               className={`edge-action-btn${(isMeasureWidgetOpen || meterState.armed) ? " edge-action-btn--active" : ""}`}
               onClick={() => setMeasureWidgetOpen((o) => !o)}
               aria-label={isMeasureWidgetOpen ? "Close measurement tools" : "Open measurement tools"}
@@ -4174,6 +4195,17 @@ export default function Builder() {
         isOpen={isAIHelperOpen}
         circuitState={circuitState}
         onClose={() => setIsAIHelperOpen(false)}
+      />
+
+      {/* Circuit Explanation Engine — Pro-gated AI-powered analysis panel */}
+      <CircuitExplainPanel
+        isOpen={isExplainPanelOpen}
+        circuitState={circuitState}
+        onClose={() => setIsExplainPanelOpen(false)}
+        onUpgrade={() => {
+          setIsExplainPanelOpen(false);
+          openWorkspacePanelMode("pricing");
+        }}
       />
 
       <CinematicPanel

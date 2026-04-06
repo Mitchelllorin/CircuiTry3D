@@ -1,0 +1,425 @@
+/* ── Circuit Explanation Panel ───────────────────────────────────────────────
+ * Floating panel triggered by the "Explain Circuit" action bar button.
+ * Design language mirrors ai-helper.css and the existing builder UI.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Backdrop ──────────────────────────────────────────────────────────────── */
+
+.circuit-explain-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-ai-helper, 1400) - 1);
+  background: transparent;
+  cursor: default;
+}
+
+/* ── Panel container ────────────────────────────────────────────────────────── */
+
+.circuit-explain-panel {
+  position: fixed;
+  /* Sit to the left of the right side panel, above the action bar */
+  top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 12px + var(--builder-safe-area-top, 0px));
+  bottom: calc(52px + var(--builder-safe-area-bottom, 0px));
+  right: calc(var(--builder-menu-right-width, 172px) + var(--builder-menu-toggle-width, 32px) + 10px + var(--builder-safe-area-right, 0px));
+  width: clamp(300px, 38vw, 440px);
+  z-index: var(--z-ai-helper, 1400);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  background: rgba(10, 22, 48, 0.97);
+  border: 1px solid var(--builder-border-strong, rgba(136, 204, 255, 0.45));
+  border-radius: 14px;
+  box-shadow:
+    0 20px 48px rgba(2, 8, 20, 0.72),
+    0 0 0 1px rgba(136, 204, 255, 0.08);
+  backdrop-filter: blur(18px);
+
+  animation: explainPanelReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes explainPanelReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.circuit-explain-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.14);
+  flex-shrink: 0;
+}
+
+.circuit-explain-panel__header-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.circuit-explain-panel__header-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--builder-text, #e8f6ff);
+  letter-spacing: 0.02em;
+}
+
+.circuit-explain-panel__header-subtitle {
+  font-size: 10.5px;
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+  margin-top: 1px;
+}
+
+.circuit-explain-panel__header-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.circuit-explain-panel__source-badge {
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.circuit-explain-panel__source-badge--ai {
+  color: #00ff88;
+  border-color: rgba(0, 255, 136, 0.4);
+  background: rgba(0, 255, 136, 0.08);
+}
+
+.circuit-explain-panel__source-badge--local {
+  color: #88ccff;
+  border-color: rgba(136, 204, 255, 0.35);
+  background: rgba(136, 204, 255, 0.06);
+}
+
+.circuit-explain-panel__close {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  background: rgba(136, 204, 255, 0.06);
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+  flex-shrink: 0;
+}
+
+.circuit-explain-panel__close:hover {
+  background: rgba(136, 204, 255, 0.14);
+  color: var(--builder-text, #e8f6ff);
+  border-color: rgba(136, 204, 255, 0.45);
+}
+
+.circuit-explain-panel__close:focus-visible {
+  outline: 2px solid var(--brand-blue, #88ccff);
+  outline-offset: 2px;
+}
+
+/* ── Scrollable body ─────────────────────────────────────────────────────────── */
+
+.circuit-explain-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(136, 204, 255, 0.25) transparent;
+}
+
+.circuit-explain-panel__body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.circuit-explain-panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.circuit-explain-panel__body::-webkit-scrollbar-thumb {
+  background: rgba(136, 204, 255, 0.25);
+  border-radius: 2px;
+}
+
+/* ── Explanation sections ────────────────────────────────────────────────────── */
+
+.explain-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.explain-section__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(136, 204, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.explain-section__title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(136, 204, 255, 0.12);
+}
+
+.explain-section__text {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--builder-text, #e8f6ff);
+}
+
+/* ── Component roles table ────────────────────────────────────────────────────── */
+
+.explain-roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.explain-role-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(136, 204, 255, 0.05);
+  border: 1px solid rgba(136, 204, 255, 0.1);
+}
+
+.explain-role-item__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--builder-blue, #88ccff);
+}
+
+.explain-role-item__desc {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+}
+
+/* ── Common mistakes list ────────────────────────────────────────────────────── */
+
+.explain-mistakes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-left: 0;
+  list-style: none;
+  margin: 0;
+}
+
+.explain-mistake-item {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+}
+
+.explain-mistake-item::before {
+  content: "•";
+  color: var(--builder-orange, #ffaa44);
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+/* ── Loading state ────────────────────────────────────────────────────────────── */
+
+.circuit-explain-panel__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+  flex: 1;
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+  font-size: 13px;
+}
+
+.explain-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(136, 204, 255, 0.15);
+  border-top-color: rgba(136, 204, 255, 0.8);
+  border-radius: 50%;
+  animation: explainSpin 0.8s linear infinite;
+}
+
+@keyframes explainSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Unavailable / fallback notice ───────────────────────────────────────────── */
+
+.circuit-explain-panel__unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  flex: 1;
+}
+
+.circuit-explain-panel__unavailable-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.circuit-explain-panel__unavailable-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--builder-text, #e8f6ff);
+}
+
+.circuit-explain-panel__unavailable-text {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+}
+
+/* ── Pro gate ────────────────────────────────────────────────────────────────── */
+
+.circuit-explain-panel__gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  flex: 1;
+}
+
+.circuit-explain-panel__gate-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.circuit-explain-panel__gate-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--builder-text, #e8f6ff);
+}
+
+.circuit-explain-panel__gate-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--builder-muted, rgba(200, 220, 255, 0.72));
+  max-width: 280px;
+}
+
+.circuit-explain-panel__gate-btn {
+  margin-top: 4px;
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 170, 68, 0.55);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 170, 68, 0.18) 0%,
+    rgba(255, 120, 20, 0.12) 100%
+  );
+  color: #ffcc88;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s, color 0.16s;
+  letter-spacing: 0.04em;
+}
+
+.circuit-explain-panel__gate-btn:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 170, 68, 0.28) 0%,
+    rgba(255, 120, 20, 0.20) 100%
+  );
+  border-color: rgba(255, 170, 68, 0.8);
+  color: #ffe0aa;
+}
+
+.circuit-explain-panel__gate-btn:focus-visible {
+  outline: 2px solid #ffaa44;
+  outline-offset: 3px;
+}
+
+/* ── Footer action row ───────────────────────────────────────────────────────── */
+
+.circuit-explain-panel__footer {
+  padding: 10px 16px 14px;
+  border-top: 1px solid rgba(136, 204, 255, 0.1);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.circuit-explain-panel__regenerate {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 204, 255, 0.3);
+  background: rgba(136, 204, 255, 0.06);
+  color: #88ccff;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+
+.circuit-explain-panel__regenerate:hover:not(:disabled) {
+  background: rgba(136, 204, 255, 0.13);
+  border-color: rgba(136, 204, 255, 0.55);
+  color: #bde0ff;
+}
+
+.circuit-explain-panel__regenerate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.circuit-explain-panel__regenerate:focus-visible {
+  outline: 2px solid var(--brand-blue, #88ccff);
+  outline-offset: 2px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .circuit-explain-panel {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    top: calc(var(--builder-ticker-top, 72px) + var(--builder-ticker-height, 32px) + 8px + var(--builder-safe-area-top, 0px));
+    bottom: calc(56px + var(--builder-safe-area-bottom, 0px));
+  }
+}
