@@ -47,6 +47,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        html {
+            background-color: #0a0a1a;
+        }
         * { 
             margin: 0; 
             padding: 0; 
@@ -7937,7 +7940,7 @@ body.android-optimized .zoom-btn {
                 this._startTime = 0;
                 this._totalDuration = 0;
                 this._raf = null;
-                this._origFov = camera.fov;
+                this._origFov = (camera && camera.fov != null) ? camera.fov : CinematicController.DEFAULT_FOV;
                 this._circuitName = 'circuit';
             }
 
