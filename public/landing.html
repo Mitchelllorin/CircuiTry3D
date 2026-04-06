@@ -588,6 +588,24 @@
     /* ═══════════════════════════════════════════════════════════════
        HERO AWARD BADGE
     ═══════════════════════════════════════════════════════════════ */
+    .hero-for-everyone {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 20px;
+      border-radius: 100px;
+      border: 1px solid rgba(100, 220, 120, 0.4);
+      background: rgba(100, 220, 120, 0.08);
+      font-size: clamp(0.62rem, 1.6vw, 0.78rem);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(110, 230, 130, 0.95);
+      text-shadow: 0 0 14px rgba(80, 200, 100, 0.5);
+      white-space: nowrap;
+      margin-bottom: 10px;
+    }
+
     .hero-award {
       display: inline-flex;
       align-items: center;
@@ -699,6 +717,9 @@
   ═══════════════════════════════════════════════════════════════ -->
   <section class="hero" aria-label="Hero">
     <div class="hero-content">
+      <div class="hero-for-everyone" aria-label="For Everyone">
+        👥 For Everyone — to facilitate and enhance the learning
+      </div>
       <div class="hero-award" aria-label="Award">
         ⚡ An Advanced 3D Circuit Design Simulator
       </div>
