@@ -10,7 +10,7 @@
   },
   "server": {
     "androidScheme": "https",
-    "url": "https://circui-try3-d.vercel.app"
+    "url": "https://mitchelllorin.github.io/CircuiTry3D/"
   },
   "plugins": {
     "SplashScreen": {
