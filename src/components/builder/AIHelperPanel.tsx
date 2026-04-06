@@ -13,6 +13,8 @@ interface Message {
   text: string;
 }
 
+type PanelSize = "normal" | "minimized" | "maximized";
+
 interface AIHelperPanelProps {
   isOpen: boolean;
   circuitState: LegacyCircuitState | null;
@@ -29,6 +31,7 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [panelSize, setPanelSize] = useState<PanelSize>("normal");
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const didGreetRef = useRef(false);
@@ -62,9 +65,16 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
 
   useEffect(() => {
     if (isOpen) {
+      setPanelSize("normal");
       setTimeout(() => inputRef.current?.focus(), 80);
     }
   }, [isOpen]);
+
+  const handleMinimize = () =>
+    setPanelSize((s) => (s === "minimized" ? "normal" : "minimized"));
+
+  const handleMaximize = () =>
+    setPanelSize((s) => (s === "maximized" ? "normal" : "maximized"));
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -116,7 +126,7 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
       />
 
       <div
-        className="ai-helper-panel"
+        className={`ai-helper-panel${panelSize !== "normal" ? ` ai-helper-panel--${panelSize}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label="Circuit AI assistant"
@@ -133,6 +143,26 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
               Ask anything about circuits or the app
             </div>
           </div>
+          {/* Minimize */}
+          <button
+            type="button"
+            className="ai-helper-panel__size-btn"
+            onClick={handleMinimize}
+            aria-label={panelSize === "minimized" ? "Restore panel" : "Minimize panel"}
+            title={panelSize === "minimized" ? "Restore" : "Minimize"}
+          >
+            {panelSize === "minimized" ? "▲" : "▼"}
+          </button>
+          {/* Maximize / Restore */}
+          <button
+            type="button"
+            className="ai-helper-panel__size-btn"
+            onClick={handleMaximize}
+            aria-label={panelSize === "maximized" ? "Restore panel" : "Maximize panel"}
+            title={panelSize === "maximized" ? "Restore" : "Maximize"}
+          >
+            {panelSize === "maximized" ? "⊡" : "⊞"}
+          </button>
           <button
             type="button"
             className="ai-helper-panel__close"
@@ -145,6 +175,7 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
         </div>
 
         {/* Messages */}
+        {panelSize !== "minimized" && (
         <div className="ai-helper-panel__messages" aria-live="polite" aria-relevant="additions">
           {messages.map((msg) => (
             <div
@@ -166,9 +197,10 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
           )}
           <div ref={messagesEndRef} />
         </div>
+        )}
 
         {/* Suggestion chips (only while no back-and-forth has started) */}
-        {showSuggestions && (
+        {showSuggestions && panelSize !== "minimized" && (
           <div className="ai-helper-panel__suggestions" aria-label="Suggested questions">
             {SUGGESTED_QUESTIONS.map((q) => (
               <button
@@ -184,6 +216,7 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
         )}
 
         {/* Input */}
+        {panelSize !== "minimized" && (
         <div className="ai-helper-panel__input-row">
           <input
             ref={inputRef}
@@ -209,6 +242,7 @@ export function AIHelperPanel({ isOpen, circuitState, onClose }: AIHelperPanelPr
             ➤
           </button>
         </div>
+        )}
       </div>
     </>
   );

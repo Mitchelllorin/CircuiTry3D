@@ -566,6 +566,11 @@ function buildComponentTypeHint(circuitState: LegacyCircuitState | null, q: stri
     return "Your circuit includes a Relay. The coil draws continuous current when energised — connect it via a transistor driver and add a flyback diode to suppress the back-EMF when the coil switches off.";
   }
 
+  // Voltage regulator advice
+  if ((byType["voltage-regulator"] ?? 0) > 0 && (q.includes("regulator") || q.includes("regulate") || q.includes("stable voltage") || q.includes("ldo") || q.includes("7805"))) {
+    return "Your circuit includes a Voltage Regulator. Ensure the input voltage is higher than the output by at least the dropout voltage. Heat dissipation = (V_in − V_out) × I_out — monitor the FUSE™ engine for thermal warnings if current is high.";
+  }
+
   // Capacitor charging question
   if (
     (byType.capacitor ?? 0) > 0 &&
