@@ -12,6 +12,10 @@ jobs:
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
+    # Skip CI on screenshot-regeneration commits pushed by the bot — those commits
+    # only update image assets and contain no code changes that need validation.
+    # Pull request runs are never skipped.
+    if: github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[skip screenshots]')
     permissions:
       contents: read
 

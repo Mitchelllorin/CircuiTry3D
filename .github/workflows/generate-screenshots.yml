@@ -10,8 +10,12 @@ jobs:
   screenshots:
     runs-on: ubuntu-latest
     # Skip this job when the push was itself a screenshots-regeneration commit to
-    # avoid an infinite loop.  Manual workflow_dispatch runs always proceed.
-    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip screenshots]')
+    # avoid an infinite loop.  Two independent guards are used so that either one
+    # alone is sufficient to prevent a loop — if the [skip screenshots] tag is ever
+    # accidentally dropped from the commit message, the actor check still blocks
+    # re-triggering; if a human bot account runs the workflow, the tag check covers it.
+    # Manual workflow_dispatch runs always proceed.
+    if: github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip screenshots]') && github.actor != 'github-actions[bot]')
     permissions:
       contents: write
 
