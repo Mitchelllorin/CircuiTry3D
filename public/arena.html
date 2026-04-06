@@ -1224,6 +1224,189 @@
 }
 .catalog-page-btn:disabled { opacity: 0.35; cursor: default; }
 
+/* ── Battle FAB (mobile / coarse-pointer) ───────────────────────────── */
+.battle-fab {
+  display: none;
+}
+@media (pointer: coarse), (max-width: 700px) {
+  .battle-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: fixed;
+    bottom: calc(62px + var(--safe-bottom));
+    right: calc(16px + var(--safe-right));
+    z-index: 10;
+    padding: 0 26px;
+    min-height: 56px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(94, 234, 212, 0.6);
+    background: rgba(15, 23, 42, 0.96);
+    color: #5eead4;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    box-shadow: 0 0 20px rgba(94, 234, 212, 0.25), 0 8px 24px rgba(0,0,0,0.65);
+    cursor: pointer;
+    touch-action: manipulation;
+    backdrop-filter: blur(12px);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .battle-fab:active {
+    transform: scale(0.95);
+  }
+  .battle-fab.battle-mode {
+    color: #ff8b2b;
+    border-color: rgba(255, 139, 43, 0.65);
+    box-shadow: 0 0 22px rgba(255, 139, 43, 0.3), 0 8px 24px rgba(0,0,0,0.65);
+  }
+}
+
+/* ── Battle result overlay ──────────────────────────────────────────── */
+.battle-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.battle-result-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.battle-result-trophy {
+  font-size: clamp(56px, 18vw, 88px);
+  animation: trophy-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.battle-result-title {
+  font-size: clamp(26px, 9vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #fbbf24;
+  text-shadow: 0 0 22px rgba(251, 191, 36, 0.75), 0 0 46px rgba(251, 191, 36, 0.3);
+  animation: slide-up 0.4s 0.14s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  text-align: center;
+  padding: 0 16px;
+}
+.battle-result-title.tie {
+  color: #94a3b8;
+  text-shadow: none;
+}
+.battle-result-winner-name {
+  font-size: clamp(13px, 4.5vw, 22px);
+  font-weight: 700;
+  color: #f8fafc;
+  opacity: 0.92;
+  text-align: center;
+  padding: 0 24px;
+  animation: slide-up 0.4s 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.battle-result-loser-line {
+  font-size: clamp(11px, 3.2vw, 15px);
+  color: rgba(148, 163, 184, 0.65);
+  text-align: center;
+  padding: 0 24px;
+  animation: slide-up 0.4s 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.battle-result-tap-hint {
+  margin-top: 20px;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.45);
+  animation: slide-up 0.4s 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes trophy-pop {
+  from { opacity: 0; transform: scale(0.25) rotate(-18deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Outcome badges (winner / loser) ────────────────────────────────── */
+.outcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: 8px;
+  vertical-align: middle;
+  animation: badge-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.outcome-winner {
+  background: rgba(251, 191, 36, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  color: #fbbf24;
+}
+.outcome-loser {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+.outcome-tie {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #94a3b8;
+}
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Battle result banner (inside FUSE tab) ─────────────────────────── */
+.battle-result-banner {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1.5px solid rgba(251, 191, 36, 0.35);
+  text-align: center;
+  animation: failure-card-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.battle-result-banner.visible { display: flex; }
+.battle-result-banner.tie {
+  background: rgba(148, 163, 184, 0.07);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+.battle-result-banner-icon { font-size: 26px; }
+.battle-result-banner-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fbbf24;
+}
+.battle-result-banner.tie .battle-result-banner-title { color: #94a3b8; }
+.battle-result-banner-desc {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.8);
+  line-height: 1.4;
+}
+
+/* ── Run/Battle button: battle-mode highlight ───────────────────────── */
+#btn-run.battle-mode {
+  border-color: rgba(255, 139, 43, 0.65);
+  color: #ff8b2b;
+  box-shadow: 0 0 14px rgba(255, 139, 43, 0.22);
+}
+
 /* ── FUSE Report ─────────────────────────────────────────────────────── */
 .fuse-report-actions {
   display: flex;
@@ -1264,9 +1447,10 @@
       <a class="arena-nav-btn" href="/#/account" target="_top">Account</a>
     </nav>
   </header>
+  <button class="battle-fab" id="btn-battle-fab" aria-label="Run simulation test">▶ RUN TEST</button>
   <div class="hud" role="toolbar" aria-label="Arena controls">
     <button class="btn" id="btn-reset" data-command="reset" aria-label="Reset arena">Reset</button>
-    <button class="btn" id="btn-run" data-command="run-test" aria-label="Run simulation test">Run Test</button>
+    <button class="btn" id="btn-run" data-command="run-test" aria-label="Run simulation test">▶ Run Test</button>
     <button class="btn" id="btn-export" data-command="export" aria-label="Export metrics JSON">Export</button>
     <button class="btn" id="btn-import-builder" aria-label="Load latest builder export">Builder Sync</button>
     <button class="btn" id="btn-show-timeline" aria-label="Show stress timeline">Timeline</button>
@@ -1442,12 +1626,12 @@
       <!-- ── Tab: Metrics ────────────────────────────── -->
       <div class="panel-tab-pane" id="tab-metrics" role="tabpanel">
         <section class="panel-section">
-          <div class="section-heading">Component A — Metrics</div>
+          <div class="section-heading" id="metrics-heading-a">Component A — Metrics</div>
           <div class="abs-max-banner" id="abs-max-banner-a" role="alert">⚠ Absolute Maximum Rating exceeded</div>
           <div id="metrics-a" class="metric-grid" aria-live="polite" aria-label="Component A metrics"></div>
         </section>
         <section class="panel-section compare-only">
-          <div class="section-heading">Component B — Metrics</div>
+          <div class="section-heading" id="metrics-heading-b">Component B — Metrics</div>
           <div class="abs-max-banner" id="abs-max-banner-b" role="alert">⚠ Absolute Maximum Rating exceeded</div>
           <div id="metrics-b" class="metric-grid" aria-live="polite" aria-label="Component B metrics"></div>
         </section>
@@ -1459,12 +1643,14 @@
 
       <!-- ── Tab: FUSE ───────────────────────────────── -->
       <div class="panel-tab-pane" id="tab-fuse" role="tabpanel">
+        <!-- Battle result banner: shown after compare-mode test -->
+        <div class="battle-result-banner" id="battle-result-banner" role="status" aria-live="polite"></div>
         <section class="panel-section">
-          <div class="section-heading">FUSE™ Analysis — A</div>
+          <div class="section-heading" id="fuse-heading-a">FUSE™ Analysis — A</div>
           <div class="failure-analysis" id="failure-a" aria-live="polite" aria-label="FUSE analysis component A"></div>
         </section>
         <section class="panel-section compare-only">
-          <div class="section-heading">FUSE™ Analysis — B</div>
+          <div class="section-heading" id="fuse-heading-b">FUSE™ Analysis — B</div>
           <div class="failure-analysis" id="failure-b" aria-live="polite" aria-label="FUSE analysis component B"></div>
         </section>
         <section class="panel-section">
@@ -1490,6 +1676,8 @@
     </div><!-- end .panel-scroll -->
   </div><!-- end .panel -->
     <div id="explosion-dom-flash" aria-hidden="true"></div>
+    <!-- Battle result overlay (flash animation after compare test) -->
+    <div class="battle-result-overlay" id="battle-result-overlay" role="dialog" aria-modal="true" aria-label="Battle result" aria-live="assertive"></div>
     <canvas id="arena"></canvas>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
     <script>
@@ -3634,6 +3822,195 @@
         coil_insulation: "#603010",
       };
 
+      // ---------- Battle Result Logic ----------
+
+      /**
+       * Determine the winner of a compare-mode test.
+       * Lower severity = healthier = winner.
+       * Returns "A", "B", or "tie".
+       */
+      function determineWinner(failureA, failureB) {
+        const sevA = (failureA && failureA.severity > 0) ? failureA.severity : 0;
+        const sevB = (failureB && failureB.severity > 0) ? failureB.severity : 0;
+        if (sevA < sevB) return "A";
+        if (sevB < sevA) return "B";
+        return "tie";
+      }
+
+      /**
+       * Show the full-screen battle result overlay briefly, then auto-dismiss.
+       */
+      function showBattleResultOverlay(winner, nameA, nameB) {
+        const overlay = document.getElementById("battle-result-overlay");
+        if (!overlay) return;
+
+        overlay.innerHTML = "";
+
+        const trophy = document.createElement("div");
+        trophy.className = "battle-result-trophy";
+        trophy.textContent = winner === "tie" ? "🤝" : "🏆";
+
+        const title = document.createElement("div");
+        title.className = "battle-result-title" + (winner === "tie" ? " tie" : "");
+
+        const winnerName = document.createElement("div");
+        winnerName.className = "battle-result-winner-name";
+
+        const loserLine = document.createElement("div");
+        loserLine.className = "battle-result-loser-line";
+
+        if (winner === "tie") {
+          title.textContent = "DRAW!";
+          winnerName.textContent = "Both components survived equally.";
+          loserLine.textContent = nameA + " vs " + nameB;
+        } else {
+          const winName = winner === "A" ? nameA : nameB;
+          const loseName = winner === "A" ? nameB : nameA;
+          title.textContent = "WINNER!";
+          winnerName.textContent = winName;
+          loserLine.textContent = loseName + " was outperformed.";
+        }
+
+        const hint = document.createElement("div");
+        hint.className = "battle-result-tap-hint";
+        hint.textContent = "Tap anywhere to see results →";
+
+        overlay.appendChild(trophy);
+        overlay.appendChild(title);
+        overlay.appendChild(winnerName);
+        overlay.appendChild(loserLine);
+        overlay.appendChild(hint);
+
+        overlay.classList.add("active");
+
+        let autoDismissTimer = null;
+
+        function dismiss() {
+          clearTimeout(autoDismissTimer);
+          overlay.classList.remove("active");
+          overlay.removeEventListener("click", dismiss);
+          // Switch to FUSE tab to show winner/loser analysis
+          const fuseTabBtn = document.querySelector('.panel-tab-btn[data-tab="fuse"]');
+          if (fuseTabBtn) fuseTabBtn.click();
+          // Open bottom sheet on mobile
+          const panel = document.getElementById("arena-panel");
+          if (panel) panel.classList.add("sheet-open");
+        }
+
+        overlay.addEventListener("click", dismiss);
+        // Auto-dismiss after 3.5 s if not tapped
+        autoDismissTimer = setTimeout(dismiss, 3500);
+      }
+
+      /**
+       * Render outcome badges on section headings and the battle-result-banner in the FUSE tab.
+       */
+      function renderBattleResult(winner, nameA, nameB, failureA, failureB) {
+        // -- Heading badges in Metrics tab --
+        function setBadge(headingId, side) {
+          const heading = document.getElementById(headingId);
+          if (!heading) return;
+          // Remove existing badge
+          const existing = heading.querySelector(".outcome-badge");
+          if (existing) existing.remove();
+          let cls, label;
+          if (winner === "tie") {
+            cls = "outcome-tie"; label = "🤝 DRAW";
+          } else if (winner === side) {
+            cls = "outcome-winner"; label = "🏆 WINNER";
+          } else {
+            cls = "outcome-loser"; label = "💀 LOSER";
+          }
+          const badge = document.createElement("span");
+          badge.className = "outcome-badge " + cls;
+          badge.textContent = label;
+          heading.appendChild(badge);
+        }
+        setBadge("metrics-heading-a", "A");
+        setBadge("metrics-heading-b", "B");
+        setBadge("fuse-heading-a", "A");
+        setBadge("fuse-heading-b", "B");
+
+        // -- Battle result banner in FUSE tab --
+        const banner = document.getElementById("battle-result-banner");
+        if (!banner) return;
+        banner.innerHTML = "";
+        banner.className = "battle-result-banner compare-only visible" + (winner === "tie" ? " tie" : "");
+
+        const icon = document.createElement("div");
+        icon.className = "battle-result-banner-icon";
+        icon.textContent = winner === "tie" ? "🤝" : "🏆";
+
+        const btitle = document.createElement("div");
+        btitle.className = "battle-result-banner-title";
+
+        const bdesc = document.createElement("div");
+        bdesc.className = "battle-result-banner-desc";
+
+        if (winner === "tie") {
+          btitle.textContent = "DRAW — Both Survived";
+          bdesc.textContent = nameA + " and " + nameB + " performed equally under these conditions.";
+        } else {
+          const winName = winner === "A" ? nameA : nameB;
+          const loseName = winner === "A" ? nameB : nameA;
+          const loseSev = winner === "A" ? failureB : failureA;
+          const loseLabel = loseSev && loseSev.severity >= 2.5 ? "DESTROYED" :
+                            loseSev && loseSev.severity >= 1.5 ? "CRITICAL" :
+                            loseSev && loseSev.severity >= 0.8 ? "WARNING" :
+                            loseSev && loseSev.severity > 0 ? "STRESSED" : "operating within ratings";
+          btitle.textContent = "🏆 " + winName + " WINS!";
+          bdesc.textContent = loseName + " reached " + loseLabel + " status. See FUSE™ analyses below.";
+        }
+
+        banner.appendChild(icon);
+        banner.appendChild(btitle);
+        banner.appendChild(bdesc);
+      }
+
+      /**
+       * Clear winner/loser badges and battle result banner (e.g., on reset or mode change).
+       */
+      function clearBattleResult() {
+        ["metrics-heading-a", "metrics-heading-b", "fuse-heading-a", "fuse-heading-b"].forEach((id) => {
+          const heading = document.getElementById(id);
+          if (!heading) return;
+          const badge = heading.querySelector(".outcome-badge");
+          if (badge) badge.remove();
+        });
+        const banner = document.getElementById("battle-result-banner");
+        if (banner) {
+          banner.className = "battle-result-banner";
+          banner.innerHTML = "";
+        }
+      }
+
+      /**
+       * Update the Run/Battle button label and FAB based on current mode.
+       */
+      function updateBattleMode() {
+        const isBattle = state.mode === "compare";
+        const btnRun = document.getElementById("btn-run");
+        const fab = document.getElementById("btn-battle-fab");
+        if (btnRun) {
+          btnRun.textContent = isBattle ? "⚔️ Battle" : "▶ Run Test";
+          btnRun.setAttribute("aria-label", isBattle ? "Run battle test" : "Run simulation test");
+          if (isBattle) {
+            btnRun.classList.add("battle-mode");
+          } else {
+            btnRun.classList.remove("battle-mode");
+          }
+        }
+        if (fab) {
+          fab.textContent = isBattle ? "⚔️ BATTLE" : "▶ RUN TEST";
+          fab.setAttribute("aria-label", isBattle ? "Run battle test" : "Run simulation test");
+          if (isBattle) {
+            fab.classList.add("battle-mode");
+          } else {
+            fab.classList.remove("battle-mode");
+          }
+        }
+      }
+
       function renderCompositionPanel(component) {
         const container = document.getElementById("composition-a");
         if (!container) return;
@@ -3971,6 +4348,11 @@
           runBtn.addEventListener("click", runTest);
         }
 
+        const battleFab = document.getElementById("btn-battle-fab");
+        if (battleFab) {
+          battleFab.addEventListener("click", runTest);
+        }
+
         const exportBtn = document.getElementById("btn-export");
         if (exportBtn) {
           exportBtn.addEventListener("click", exportResults);
@@ -4117,6 +4499,11 @@
         });
         if (componentGroupB) {
           componentGroupB.visible = compare && Boolean(state.selectedB);
+        }
+        updateBattleMode();
+        // Clear stale battle result when switching back to single mode
+        if (!compare) {
+          clearBattleResult();
         }
       }
 
@@ -4609,9 +4996,19 @@
         if (metricsB) applyMetricHealthColors("metrics-b", metricsB, componentB);
         addToleranceSubLines("metrics-a", metricsA, componentA);
         if (metricsB) addToleranceSubLines("metrics-b", metricsB, componentB);
-        // Auto-switch to Metrics tab after running test
-        const metricsTabBtn = document.querySelector('.panel-tab-btn[data-tab="metrics"]');
-        if (metricsTabBtn) metricsTabBtn.click();
+
+        if (state.mode === "compare" && componentB) {
+          // Determine and display winner/loser
+          const nameA = componentA.name || componentA.id || "Component A";
+          const nameB = componentB.name || componentB.id || "Component B";
+          const winner = determineWinner(failureA, failureB);
+          renderBattleResult(winner, nameA, nameB, failureA, failureB);
+          showBattleResultOverlay(winner, nameA, nameB);
+        } else {
+          // Auto-switch to Metrics tab for single-component tests
+          const metricsTabBtn = document.querySelector('.panel-tab-btn[data-tab="metrics"]');
+          if (metricsTabBtn) metricsTabBtn.click();
+        }
       }
 
       function summarizeComponent(component) {
@@ -5028,6 +5425,8 @@
         const bannerB = document.getElementById("abs-max-banner-b");
         if (bannerA) bannerA.classList.remove("visible");
         if (bannerB) bannerB.classList.remove("visible");
+        // Clear battle result UI
+        clearBattleResult();
         setStatus("Arena reset. Metrics cleared.");
       }
 
