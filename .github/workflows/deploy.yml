@@ -24,10 +24,10 @@
 
 name: Deploy to GitHub Pages
 
+# Disabled: the app is served by Vercel. This workflow is kept for reference
+# but will not auto-run on push. Remove workflow_dispatch below to disable
+# manual triggers as well.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
