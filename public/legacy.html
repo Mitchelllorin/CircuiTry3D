@@ -3775,7 +3775,9 @@ body.android-optimized .zoom-btn {
                                 updateCameraPosition();
                                 break;
                             case 'cinematic-play':
-                                _cinematicCtrl.start(data.preset || null, data.keyframes || []);
+                                // When no keyframes are supplied, play the waypoints already
+                                // stored inside the controller (added via cinematic-add-waypoint).
+                                _cinematicCtrl.start(data.preset || null, data.keyframes || _cinematicCtrl._keyframes);
                                 break;
                             case 'cinematic-stop':
                                 _cinematicCtrl.stop();
@@ -8003,6 +8005,10 @@ body.android-optimized .zoom-btn {
 
             clearWaypoints() {
                 this._keyframes = [];
+                window.parent.postMessage({
+                    type: 'legacy:cinematic-state',
+                    payload: { keyframes: 0 }
+                }, '*');
             }
 
             // ── Built-in presets ─────────────────────────────────────────────
@@ -8210,14 +8216,21 @@ body.android-optimized .zoom-btn {
                 this._mediaRecorder.onstop = () => {
                     const blob = new Blob(this._recordedChunks, { type: this._mediaRecorder.mimeType || 'video/webm' });
                     const reader = new FileReader();
+                    reader.onerror = () => {
+                        window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recordError: 'Failed to encode recorded video.' } }, '*');
+                    };
                     reader.onloadend = () => {
+                        if (!reader.result) {
+                            window.parent.postMessage({ type: 'legacy:cinematic-state', payload: { recordError: 'Recorded video data is empty.' } }, '*');
+                            return;
+                        }
                         window.parent.postMessage({
                             type: 'legacy:cinematic-video',
                             payload: {
                                 dataUrl: reader.result,
                                 circuitName: this._circuitName || document.title || 'circuit',
                                 timestamp: Date.now(),
-                                durationMs: Date.now() - this._recordStart,
+                                durationMs: (this._recordStart != null ? Date.now() - this._recordStart : 0),
                             }
                         }, '*');
                     };

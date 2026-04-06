@@ -10,19 +10,54 @@ const formatDate = (ts: number) => {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 };
 
+/**
+ * Convert a data URL to a Blob-backed object URL for reliable downloads of
+ * large files (browsers restrict data URL navigation for files > ~2 MB).
+ * Returns the object URL; caller must revoke it when done.
+ */
+function dataUrlToObjectUrl(dataUrl: string, fallbackMime = "application/octet-stream"): string {
+  const [header, base64] = dataUrl.split(",");
+  const mimeMatch = header?.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : fallbackMime;
+  const bytes = atob(base64 ?? "");
+  const ab = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) ab[i] = bytes.charCodeAt(i);
+  return URL.createObjectURL(new Blob([ab], { type: mime }));
+}
+
 export default function Gallery() {
   const { items, removeItem } = useGallery();
   const { shareMedia } = useEngagement();
   const { currentUser } = useAuth();
   const [shareStatus, setShareStatus] = useState<Record<string, string>>({});
+  // Track which video cards are currently playing (for tap-to-play overlay)
+  const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
+
+  const toggleVideoPlay = useCallback((id: string, videoEl: HTMLVideoElement) => {
+    if (videoEl.paused) {
+      videoEl.play().then(() => {
+        setPlayingVideos((prev) => ({ ...prev, [id]: true }));
+      }).catch(() => {});
+    } else {
+      videoEl.pause();
+      setPlayingVideos((prev) => ({ ...prev, [id]: false }));
+    }
+  }, []);
 
   const handleDownload = useCallback((item: { id: string; dataUrl: string; title: string; type: string }) => {
+    const ext = item.type === "video" ? "webm" : "png";
+    const filename = `${item.title || "circuit"}-${item.id}.${ext}`;
+    // Convert data URL → object URL so large video files download reliably
+    // (browsers block data URL navigation above ~2 MB).
+    const objectUrl = dataUrlToObjectUrl(item.dataUrl, item.type === "video" ? "video/webm" : "image/png");
     const a = document.createElement("a");
-    a.href = item.dataUrl;
-    a.download = `${item.title || "circuit"}-${item.id}.${item.type === "video" ? "webm" : "png"}`;
+    a.href = objectUrl;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    // Revoke after a short delay to let the browser start the download
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
   }, []);
 
   const handleShare = useCallback(
@@ -109,19 +144,43 @@ export default function Gallery() {
                   loading="lazy"
                 />
               ) : (
-                <video
-                  className="gallery-card__video"
-                  src={item.dataUrl}
-                  autoPlay={false}
-                  loop
-                  muted
-                  playsInline
-                  onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {
-                    // Autoplay may be blocked by browser policy; silently ignore
-                  })}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLVideoElement).pause(); }}
-                  aria-label={item.title || item.circuitName}
-                />
+                <div className="gallery-card__video-wrap" role="button" tabIndex={0} aria-label={`Play ${item.title || item.circuitName}`}
+                  onClick={(e) => {
+                    const video = (e.currentTarget as HTMLDivElement).querySelector("video");
+                    if (video) toggleVideoPlay(item.id, video);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      const video = (e.currentTarget as HTMLDivElement).querySelector("video");
+                      if (video) toggleVideoPlay(item.id, video);
+                    }
+                  }}
+                >
+                  <video
+                    className="gallery-card__video"
+                    src={item.dataUrl}
+                    autoPlay={false}
+                    loop
+                    muted
+                    playsInline
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLVideoElement).play().then(() => {
+                        setPlayingVideos((prev) => ({ ...prev, [item.id]: true }));
+                      }).catch(() => {});
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLVideoElement).pause();
+                      setPlayingVideos((prev) => ({ ...prev, [item.id]: false }));
+                    }}
+                    onPlay={() => setPlayingVideos((prev) => ({ ...prev, [item.id]: true }))}
+                    onPause={() => setPlayingVideos((prev) => ({ ...prev, [item.id]: false }))}
+                    aria-label={item.title || item.circuitName}
+                  />
+                  {!playingVideos[item.id] && (
+                    <span className="gallery-card__play-overlay" aria-hidden="true">▶</span>
+                  )}
+                </div>
               )}
               <div className="gallery-card__body">
                 <p className="gallery-card__name">{item.title || item.circuitName || "Untitled"}</p>
