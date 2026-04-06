@@ -20,6 +20,7 @@ type CinematicPanelProps = {
   isPlaying: boolean;
   isRecording: boolean;
   waypointCount: number;
+  recordError?: string | null;
   onPlayPreset: (preset: CinematicPreset) => void;
   onPlayKeyframes: () => void;
   onStop: () => void;
@@ -43,6 +44,7 @@ export function CinematicPanel({
   isPlaying,
   isRecording,
   waypointCount,
+  recordError,
   onPlayPreset,
   onPlayKeyframes,
   onStop,
@@ -194,6 +196,13 @@ export function CinematicPanel({
             </button>
           )}
         </div>
+
+        {/* Recording error */}
+        {recordError && (
+          <p className="cinematic-record-error" role="alert" aria-live="assertive">
+            ⚠ {recordError}
+          </p>
+        )}
       </div>
     </div>
   );

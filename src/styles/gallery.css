@@ -105,6 +105,29 @@
   background: #000;
 }
 
+.gallery-card__video-wrap {
+  position: relative;
+  cursor: pointer;
+  outline: none;
+}
+.gallery-card__video-wrap:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.7);
+}
+
+.gallery-card__play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.25);
+  transition: opacity 0.15s ease;
+}
+
 /* ── Card Body ────────────────────────────────────────────────────────────── */
 .gallery-card__body {
   padding: 10px 12px 12px;

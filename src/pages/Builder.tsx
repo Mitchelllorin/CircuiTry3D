@@ -1455,6 +1455,11 @@ export default function Builder() {
       if (typeof payload.playing === "boolean") setCinematicIsPlaying(payload.playing);
       if (typeof payload.recording === "boolean") setCinematicIsRecording(payload.recording);
       if (typeof payload.keyframes === "number") setCinematicWaypointCount(payload.keyframes);
+      if (typeof payload.recordError === "string") {
+        setCinematicRecordError(payload.recordError);
+        // Auto-clear after 6 s so the error doesn't linger forever
+        setTimeout(() => setCinematicRecordError(null), 6000);
+      }
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
@@ -1581,6 +1586,7 @@ export default function Builder() {
   const [cinematicIsPlaying, setCinematicIsPlaying] = useState(false);
   const [cinematicIsRecording, setCinematicIsRecording] = useState(false);
   const [cinematicWaypointCount, setCinematicWaypointCount] = useState(0);
+  const [cinematicRecordError, setCinematicRecordError] = useState<string | null>(null);
   const [showGalleryToast, setShowGalleryToast] = useState(false);
   const galleryToastTimerRef = useRef<number | null>(null);
   // Create a mock circuit state for demo (in production, extract from iframe)
@@ -4214,6 +4220,7 @@ export default function Builder() {
         isPlaying={cinematicIsPlaying}
         isRecording={cinematicIsRecording}
         waypointCount={cinematicWaypointCount}
+        recordError={cinematicRecordError}
         onPlayPreset={(preset: CinematicPreset) => triggerBuilderAction("cinematic-play", { preset })}
         onPlayKeyframes={() => triggerBuilderAction("cinematic-play", {})}
         onStop={() => triggerBuilderAction("cinematic-stop")}
