@@ -7071,6 +7071,21 @@ body.android-optimized .zoom-btn {
                     this.connectionPoints.push(rightPoint);
                 }
 
+                // Invisible larger hit spheres for easier wire-mode terminal selection.
+                // The visual dots are intentionally small; these transparent siblings
+                // give the raycaster a generously-sized target without altering the look.
+                const wireHitGeometry = new THREE.SphereGeometry(isMobile ? 0.5 : 0.35, 8, 6);
+                const wireHitMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false });
+                this.connectionPoints.forEach(pt => {
+                    const hitSphere = new THREE.Mesh(wireHitGeometry, wireHitMaterial);
+                    hitSphere.position.copy(pt.position);
+                    hitSphere.userData = Object.assign({}, pt.userData);
+                    this.mesh.add(hitSphere);
+                    pt.userData.wireHitSphere = hitSphere;
+                });
+                this._wireHitGeometry = wireHitGeometry;
+                this._wireHitMaterial = wireHitMaterial;
+
                 // Create polarity indicator labels
                 this.createPolarityIndicators();
             }
@@ -7205,6 +7220,10 @@ body.android-optimized .zoom-btn {
                         connection.wire.remove();
                     }
                 });
+                
+                // Dispose wire-mode hit sphere geometry/material to prevent memory leaks
+                if (this._wireHitGeometry) { this._wireHitGeometry.dispose(); this._wireHitGeometry = null; }
+                if (this._wireHitMaterial) { this._wireHitMaterial.dispose(); this._wireHitMaterial = null; }
                 
                 const index = components.indexOf(this);
                 if (index > -1) {
@@ -11365,11 +11384,20 @@ body.android-optimized .zoom-btn {
             
             raycaster.setFromCamera(mouse, camera);
             
-            // Check connection points
+            // Check connection points.
+            // In wire mode, swap in the invisible larger hit spheres attached to each
+            // connection point so small terminals are easy to click without changing
+            // how they look.
             const connectionPoints = [];
             components.forEach(comp => {
                 if (comp?.connectionPoints) {
-                    connectionPoints.push(...comp.connectionPoints);
+                    comp.connectionPoints.forEach(pt => {
+                        connectionPoints.push(
+                            (isWireMode && pt.userData?.wireHitSphere)
+                                ? pt.userData.wireHitSphere
+                                : pt
+                        );
+                    });
                 }
             });
             junctions.forEach(junction => {
