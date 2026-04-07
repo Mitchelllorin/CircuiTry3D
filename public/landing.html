@@ -428,6 +428,68 @@
     .wire-unit { font-size: 0.68rem; color: var(--muted); }
 
     /* ═══════════════════════════════════════════════════════════════
+       AI FEATURES
+    ═══════════════════════════════════════════════════════════════ */
+    .ai-section { background: var(--bg); }
+    .ai-features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .ai-feat-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 24px;
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ai-feat-card--free  { border-color: rgba(0,255,136,.3); }
+    .ai-feat-card--pro   { border-color: rgba(192,132,252,.3); }
+    .ai-feat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .ai-feat-icon { font-size: 2rem; line-height: 1; }
+    .ai-feat-name { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .ai-feat-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+    .ai-feat-badge--free { background: rgba(0,255,136,.15); color: var(--green); }
+    .ai-feat-badge--pro  { background: rgba(192,132,252,.15); color: var(--purple); }
+    .ai-feat-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin: 0; }
+    .ai-feat-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .ai-feat-list li { margin-bottom: 2px; }
+    .ai-feat-cta {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      opacity: .7;
+      margin-top: auto;
+      padding-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+    @media (max-width: 640px) {
+      .ai-features-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
        PLATFORM
     ═══════════════════════════════════════════════════════════════ */
     .platform-section { background: var(--bg); }
@@ -955,6 +1017,66 @@
         Powered by <strong>FUSE™</strong> — a first-order thermal time-constant model
         that simulates real-world component degradation over time.
       </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       AI FEATURES
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section ai-section" id="ai" aria-labelledby="ai-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Built-in AI tools</p>
+      <h2 class="section-title" id="ai-title">
+        Your <span class="c-green">AI learning companion</span>
+      </h2>
+      <p class="section-subtitle">
+        Two AI-powered tools live directly in the circuit builder — no separate app, no extra accounts.
+        Ask questions, get instant answers, and let AI explain exactly what your circuit is doing.
+      </p>
+      <div class="ai-features-grid">
+        <article class="ai-feat-card ai-feat-card--free">
+          <div class="ai-feat-header">
+            <span class="ai-feat-icon" aria-hidden="true">⚡</span>
+            <div>
+              <div class="ai-feat-name">Circuit AI</div>
+              <span class="ai-feat-badge ai-feat-badge--free">Free · All Users</span>
+            </div>
+          </div>
+          <p class="ai-feat-desc">
+            A real-time chat assistant built directly into the circuit builder.
+            Ask anything — Ohm's Law, KCL/KVL, component behavior, wiring mistakes — and get
+            context-aware answers based on what you've actually built.
+          </p>
+          <ul class="ai-feat-list" aria-label="Circuit AI capabilities">
+            <li>40+ electrical topics: theory, components, troubleshooting, app help</li>
+            <li>Reads your live circuit metrics and tailors answers to your build</li>
+            <li>Suggested questions help beginners get started instantly</li>
+            <li>Works offline — no internet connection required</li>
+          </ul>
+          <div class="ai-feat-cta">Tap ⚡ in the builder to open</div>
+        </article>
+        <article class="ai-feat-card ai-feat-card--pro">
+          <div class="ai-feat-header">
+            <span class="ai-feat-icon" aria-hidden="true">✨</span>
+            <div>
+              <div class="ai-feat-name">Explain Circuit</div>
+              <span class="ai-feat-badge ai-feat-badge--pro">Premium &amp; Pro</span>
+            </div>
+          </div>
+          <p class="ai-feat-desc">
+            One tap generates a full AI-powered breakdown of your live circuit.
+            Understand <em>why</em> your circuit works — or why it doesn't — with a structured, plain-language report.
+          </p>
+          <ul class="ai-feat-list" aria-label="Explain Circuit report sections">
+            <li><strong>Summary</strong> — topology overview and circuit type</li>
+            <li><strong>Current Flow</strong> — step-by-step path current takes</li>
+            <li><strong>Component Roles</strong> — what each part is doing and why</li>
+            <li><strong>Expected Behavior</strong> — predicted voltage, current, and power</li>
+            <li><strong>Common Mistakes</strong> — design errors automatically flagged</li>
+          </ul>
+          <div class="ai-feat-cta">Tap ✨ in the builder to open</div>
+        </article>
+      </div>
     </div>
   </section>
 
