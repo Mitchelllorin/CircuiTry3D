@@ -510,6 +510,61 @@ body.builder-body {
   box-shadow: 0 6px 18px rgba(255, 86, 86, 0.35);
 }
 
+/* AI button styling — stands out with a purple/violet gradient and glow */
+.edge-action-btn--ai {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.88),
+    rgba(99, 102, 241, 0.82)
+  );
+  border-color: rgba(192, 132, 252, 0.55);
+  color: #f5f0ff;
+  box-shadow:
+    0 4px 12px rgba(139, 92, 246, 0.3),
+    0 0 0 1px rgba(192, 132, 252, 0.15);
+  animation: aiActionGlow 2.8s ease-in-out infinite;
+}
+
+.edge-action-btn--ai:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.98),
+    rgba(99, 102, 241, 0.94)
+  );
+  border-color: rgba(216, 180, 254, 0.8);
+  color: #fff;
+  box-shadow:
+    0 6px 20px rgba(139, 92, 246, 0.48),
+    0 0 0 1px rgba(216, 180, 254, 0.3);
+}
+
+.edge-action-btn--ai.edge-action-btn--active {
+  background: linear-gradient(
+    135deg,
+    rgba(192, 132, 252, 0.95),
+    rgba(129, 140, 248, 0.9)
+  );
+  border-color: rgba(216, 180, 254, 0.85);
+  color: #fff;
+  box-shadow:
+    0 6px 20px rgba(139, 92, 246, 0.5),
+    0 0 16px rgba(192, 132, 252, 0.35);
+  animation: none;
+}
+
+@keyframes aiActionGlow {
+  0%, 100% {
+    box-shadow:
+      0 4px 12px rgba(139, 92, 246, 0.3),
+      0 0 0 1px rgba(192, 132, 252, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 4px 18px rgba(139, 92, 246, 0.55),
+      0 0 0 1px rgba(216, 180, 254, 0.35);
+  }
+}
+
 /* SVG icon styling for edge action buttons */
 .edge-action-icon-svg {
   display: block;
