@@ -23,6 +23,17 @@
   --builder-menu-toggle-hit-width: max(var(--builder-menu-toggle-width), 36px);
   /* Slimmer sidebar widths */
   --builder-menu-left-width: 180px;
+  /* Rainbow gradient shared between the hue slider track (WebKit + Firefox) */
+  --grid-hue-gradient: linear-gradient(
+    to right,
+    hsl(0, 70%, 55%),
+    hsl(60, 70%, 55%),
+    hsl(120, 70%, 55%),
+    hsl(180, 70%, 55%),
+    hsl(240, 70%, 55%),
+    hsl(300, 70%, 55%),
+    hsl(359, 70%, 55%)
+  );
   --builder-menu-right-width: 172px;
   --builder-menu-bottom-width: min(500px, calc(100vw - 128px));
   --builder-menu-bottom-height: clamp(320px, 65vh, 600px);
@@ -4361,30 +4372,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
 /* Rainbow gradient track for the grid-hue slider */
 .setting-input input.grid-hue-slider {
-  background: linear-gradient(
-    to right,
-    hsl(0, 70%, 55%),
-    hsl(60, 70%, 55%),
-    hsl(120, 70%, 55%),
-    hsl(180, 70%, 55%),
-    hsl(240, 70%, 55%),
-    hsl(300, 70%, 55%),
-    hsl(359, 70%, 55%)
-  );
+  background: var(--grid-hue-gradient);
   height: 6px;
 }
 
 .setting-input input.grid-hue-slider::-moz-range-track {
-  background: linear-gradient(
-    to right,
-    hsl(0, 70%, 55%),
-    hsl(60, 70%, 55%),
-    hsl(120, 70%, 55%),
-    hsl(180, 70%, 55%),
-    hsl(240, 70%, 55%),
-    hsl(300, 70%, 55%),
-    hsl(359, 70%, 55%)
-  );
+  background: var(--grid-hue-gradient);
   height: 6px;
 }
 

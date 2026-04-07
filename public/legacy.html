@@ -7740,9 +7740,9 @@ body.android-optimized .zoom-btn {
                         const storedBrightness = parseFloat(localStorage.getItem('ct3d.gridBrightness'));
                         const storedLineWidth  = parseFloat(localStorage.getItem('ct3d.gridLineWidth'));
                         const storedHue        = parseFloat(localStorage.getItem('ct3d.gridHue'));
-                        if (!isNaN(storedBrightness)) gridBrightness = Math.max(10, Math.min(100, storedBrightness));
-                        if (!isNaN(storedLineWidth))  gridLineWidth  = Math.max(1,  Math.min(3,   storedLineWidth));
-                        if (!isNaN(storedHue))        gridHue        = Math.max(0,  Math.min(359, storedHue));
+                        if (!isNaN(storedBrightness)) gridBrightness = _clamp(storedBrightness, 10, 100, gridBrightness);
+                        if (!isNaN(storedLineWidth))  gridLineWidth  = _clamp(storedLineWidth,  1,  3,   gridLineWidth);
+                        if (!isNaN(storedHue))        gridHue        = _clamp(storedHue,        0,  359, gridHue);
                     } catch {}
                     createEnhancedGrid();
                 } catch (gridErr) {
@@ -9284,7 +9284,9 @@ body.android-optimized .zoom-btn {
         }
 
         // Convert HSL (h: 0-360, s: 0-1, l: 0-1) to a packed 0xRRGGBB integer.
-        // Uses the standard CSS algorithm so the result is identical to hsl() in canvas 2D.
+        // Implements the CSS Color Level 4 algorithm: the inner `f(n)` function
+        // maps the three RGB channels via a piecewise linear approximation of the
+        // hue wheel, identical to what the browser does for `hsl()` in canvas 2D.
         function _hslToHex(h, s, l) {
             const a = s * Math.min(l, 1 - l);
             function f(n) {
@@ -9294,6 +9296,11 @@ body.android-optimized .zoom-btn {
             return (Math.round(f(0) * 255) << 16) |
                    (Math.round(f(8) * 255) <<  8) |
                     Math.round(f(4) * 255);
+        }
+
+        // Clamp `value` to [min, max] if it is a number, otherwise return `fallback`.
+        function _clamp(value, min, max, fallback) {
+            return typeof value === 'number' ? Math.max(min, Math.min(max, value)) : fallback;
         }
 
         // Scale a packed hex colour (0xRRGGBB) by a brightness factor in [0,1].
@@ -9307,9 +9314,9 @@ body.android-optimized .zoom-btn {
         // Apply brightness (10–100), lineWidth (1–3), and hue (0–359) to the workspace grid.
         // Removes the old grid from the scene and recreates it with new params.
         function applyGridStyle(brightness, lineWidth, hue) {
-            gridBrightness = typeof brightness === 'number' ? Math.max(10, Math.min(100, brightness)) : gridBrightness;
-            gridLineWidth  = typeof lineWidth  === 'number' ? Math.max(1,  Math.min(3,   lineWidth))  : gridLineWidth;
-            gridHue        = typeof hue        === 'number' ? Math.max(0,  Math.min(359, hue))        : gridHue;
+            gridBrightness = _clamp(brightness, 10, 100, gridBrightness);
+            gridLineWidth  = _clamp(lineWidth,  1,  3,   gridLineWidth);
+            gridHue        = _clamp(hue,        0,  359, gridHue);
 
             if (!scene) return;
 
