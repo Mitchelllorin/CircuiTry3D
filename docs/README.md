@@ -71,6 +71,10 @@ These documents define schematic appearance and layout:
 | `src/schematic/catalog.ts` | 3D component catalog |
 | `src/schematic/threeFactory.ts` | Three.js 3D model generation |
 | `public/js/component-failure-engine.js` | **FUSE™ engine** — component failure profiles, family map, `detectFailure()` |
+| `src/services/aiHelperService.ts` | **Circuit AI** — rule-based knowledge base (40+ topics), keyword scoring, context-aware answer generation |
+| `src/services/circuitExplainService.ts` | **AI Circuit Explanation** — 5-section structured report engine (summary, current flow, component roles, expected behavior, common mistakes); remote AI endpoint with local deterministic fallback |
+| `src/components/builder/AIHelperPanel.tsx` | **Circuit AI panel** — floating chat UI with suggested questions, minimize/maximize controls, and live circuit context |
+| `src/components/builder/CircuitExplainPanel.tsx` | **Explain Circuit panel** — Pro-gated analysis panel with loading states, AI/local source badge, and regenerate action |
 
 ---
 

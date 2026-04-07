@@ -546,10 +546,10 @@ Pricing is available at [`/pricing`](https://www.circuitry3d.net/#/pricing). Pla
 
 | Plan | Price (Annual) | Who it's for | Highlights |
 |---|---|---|---|
-| **Free Sandbox** | Free | Explorers | 3 active circuits · Core components · W.I.R.E. analysis preview · Community hub · FUSE™ severity badge only |
-| **Student Plan** | $92 / student / yr | Students | 10 active circuits · Full component library · W.I.R.E. analysis tools · **Full FUSE™ failure names + visual effects** · Community hub |
-| **Educator License** | $299 / educator / yr | Teachers | Unlimited saved circuits · Advanced W.I.R.E. coaching · Lesson templates & assessments · **Full FUSE™ analysis + physical descriptions + Component Arena** · Priority support |
-| **Institutional License** | Contact us | Schools & districts | Bulk educator seats · Dedicated onboarding · SIS integrations & SSO · Curriculum alignment toolkit · **Custom FUSE™ component profiles** |
+| **Free Sandbox** | Free | Explorers | 3 active circuits · Core components · W.I.R.E. analysis preview · Community hub · FUSE™ severity badge only · **⚡ Circuit AI chat (free)** |
+| **Student Plan** | $92 / student / yr | Students | 10 active circuits · Full component library · W.I.R.E. analysis tools · **Full FUSE™ failure names + visual effects** · Community hub · **⚡ Circuit AI chat** · **✨ AI Circuit Explanation** |
+| **Educator License** | $299 / educator / yr | Teachers | Unlimited saved circuits · Advanced W.I.R.E. coaching · Lesson templates & assessments · **Full FUSE™ analysis + physical descriptions + Component Arena** · Priority support · **⚡ Circuit AI chat** · **✨ AI Circuit Explanation** |
+| **Institutional License** | Contact us | Schools & districts | Bulk educator seats · Dedicated onboarding · SIS integrations & SSO · Curriculum alignment toolkit · **Custom FUSE™ component profiles** · **⚡ Circuit AI chat** · **✨ AI Circuit Explanation** |
 
 **Add-on — Certification Bundle** *(Coming Soon)* — $99 / yr: Guided certification pathway, accredited PD modules, printable achievement badges.
 
