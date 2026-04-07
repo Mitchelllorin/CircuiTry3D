@@ -1,9 +1,9 @@
 // CircuiTry3D Service Worker
 // Provides offline capability and caching for the PWA
 
-const CACHE_NAME = 'circuitry3d-v4';
-const STATIC_CACHE = 'circuitry3d-static-v4';
-const DYNAMIC_CACHE = 'circuitry3d-dynamic-v4';
+const CACHE_NAME = 'circuitry3d-v5';
+const STATIC_CACHE = 'circuitry3d-static-v5';
+const DYNAMIC_CACHE = 'circuitry3d-dynamic-v5';
 
 // Install event - cache static assets
 // Asset paths are computed from self.registration.scope so this worker
