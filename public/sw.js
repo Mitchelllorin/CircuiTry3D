@@ -125,7 +125,8 @@ self.addEventListener('fetch', (event) => {
   // Vercel's "max-age=0, must-revalidate" Cache-Control headers are always
   // honoured. This guarantees component-failure-engine.js (FUSE™) and other
   // simulation scripts are never served stale after a deploy.
-  const isEngineJs = url.pathname.startsWith('/js/') || url.pathname.includes('/js/');
+  // Matches any path whose first segment is /js/ (e.g. /js/component-failure-engine.js).
+  const isEngineJs = url.pathname.startsWith('/js/');
   if (isEngineJs) {
     event.respondWith(
       fetch(request)

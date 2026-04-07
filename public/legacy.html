@@ -3541,6 +3541,10 @@
                 console.error('[FUSE] FATAL: component-failure-engine.js failed to load. FUSE detection will be unavailable.');
             };
             // Insert synchronously before the next script so it executes in order
+                        // document.currentScript is always accurate for synchronously-executing
+            // inline scripts in modern browsers (Chrome, Firefox, Safari, Edge).
+            // The scripts[] fallback is a belt-and-suspenders guard that is never
+            // reached in practice but keeps very old WebViews from throwing.
             var current = document.currentScript || document.scripts[document.scripts.length - 1];
             if (current && current.parentNode) {
                 current.parentNode.insertBefore(s, current.nextSibling);
