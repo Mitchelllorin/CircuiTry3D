@@ -7479,6 +7479,22 @@ body.android-optimized .zoom-btn {
                             }
                             
                             return path[path.length - 1].clone();
+                        },
+                        getTangent: (t) => {
+                            // Finite-difference approximation of the tangent at parameter t.
+                            // TANGENT_SAMPLE_DELTA (2 × 0.001 = 0.002 of arc length) gives a
+                            // smooth but accurate direction on both short and long wire curves.
+                            const TANGENT_SAMPLE_DELTA = 0.001;
+                            // Minimum squared length below which we fall back to the X axis.
+                            // Prevents NaN on degenerate (collapsed) curve sections.
+                            const TANGENT_MIN_LEN = 1e-5;
+                            const t0 = Math.max(0, t - TANGENT_SAMPLE_DELTA);
+                            const t1 = Math.min(1, t + TANGENT_SAMPLE_DELTA);
+                            const p0 = this.curve.getPoint(t0);
+                            const p1 = this.curve.getPoint(t1);
+                            const tangent = p1.clone().sub(p0);
+                            const len = tangent.length();
+                            return len > TANGENT_MIN_LEN ? tangent.divideScalar(len) : new THREE.Vector3(1, 0, 0);
                         }
                     };
                 } catch (error) {
@@ -15961,6 +15977,78 @@ Made with ? for visual learners everywhere!
             };
         }
 
+        /**
+         * Collect ALL wire edges on any simple path from startKey to endKey in the
+         * adjacency graph.  Used to animate particles in parallel branches that are
+         * NOT on the single lowest-resistance (Dijkstra) path.
+         *
+         * Algorithm uses a two-pass reachability approach instead of full DFS over
+         * all paths, making it O(V+E) and safe for large circuits:
+         *   1. Forward BFS from startKey → forwardReachable set
+         *   2. Backward BFS from endKey on reversed graph → backwardReachable set
+         *   3. A wire edge (from→to) is on a valid path iff
+         *        from ∈ forwardReachable AND to ∈ backwardReachable
+         *
+         * Returns an array of { fromKey, edge } objects for qualifying wire edges,
+         * one per traversal direction (so each wire appears at most once in the
+         * forward direction from startKey toward endKey).
+         */
+        function _collectAllFlowWireEdges(adjacency, startKey, endKey) {
+            // Pass 1 — nodes reachable (going forward) from startKey.
+            // Index-based traversal avoids O(n) Array.shift() per step, giving O(V+E) overall.
+            const forwardReachable = new Set();
+            const fwdQ = [startKey];
+            forwardReachable.add(startKey);
+            for (let fi = 0; fi < fwdQ.length; fi++) {
+                const k = fwdQ[fi];
+                for (const edge of (adjacency.get(k) || [])) {
+                    if (!edge.to || !isFinite(edge.resistance)) continue;
+                    if (!forwardReachable.has(edge.to)) {
+                        forwardReachable.add(edge.to);
+                        fwdQ.push(edge.to);
+                    }
+                }
+            }
+
+            // Pass 2 — nodes that can reach endKey (reverse BFS).
+            // Build reverse adjacency first, then BFS from endKey.
+            const backwardReachable = new Set();
+            const reverseNeighbors = new Map();
+            for (const [from, edges] of adjacency) {
+                for (const edge of edges) {
+                    if (!edge.to || !isFinite(edge.resistance)) continue;
+                    if (!reverseNeighbors.has(edge.to)) reverseNeighbors.set(edge.to, []);
+                    reverseNeighbors.get(edge.to).push(from);
+                }
+            }
+            const bwdQ = [endKey];
+            backwardReachable.add(endKey);
+            for (let bi = 0; bi < bwdQ.length; bi++) {
+                const k = bwdQ[bi];
+                for (const prev of (reverseNeighbors.get(k) || [])) {
+                    if (!backwardReachable.has(prev)) {
+                        backwardReachable.add(prev);
+                        bwdQ.push(prev);
+                    }
+                }
+            }
+
+            // Pass 3 — collect wire edges where from ∈ forward AND to ∈ backward
+            const result = [];
+            const seenWireIds = new Set();
+            for (const [from, edges] of adjacency) {
+                if (!forwardReachable.has(from)) continue;
+                for (const edge of edges) {
+                    if (edge.type !== 'wire' || !edge.wire) continue;
+                    if (!backwardReachable.has(edge.to)) continue;
+                    if (seenWireIds.has(edge.wire.id)) continue; // one direction per wire
+                    seenWireIds.add(edge.wire.id);
+                    result.push({ fromKey: from, edge });
+                }
+            }
+            return result;
+        }
+
         function computeFlowState(batteries, components, wires, junctions) {
             console.log('[CT3D Flow] computeFlowState called: batteries=' + (batteries?.length||0) +
                 ', components=' + (components?.length||0) + ', wires=' + (wires?.length||0) +
@@ -15971,8 +16059,12 @@ Made with ? for visual learners everywhere!
             }
 
             const sourceBattery = batteries[0];
-            const startKey = getTerminalKey(sourceBattery, 'negative');
-            const endKey = getTerminalKey(sourceBattery, 'positive');
+            // Path follows conventional-current direction (positive → negative through external
+            // circuit) so that directionMultiplier logic produces correct particle direction:
+            //   solid mode  (conventional): directionMultiplier = +1 → particles go +→−  ✓
+            //   misty mode  (electron flow): directionMultiplier = −1 → particles go −→+  ✓
+            const startKey = getTerminalKey(sourceBattery, 'positive');
+            const endKey = getTerminalKey(sourceBattery, 'negative');
             console.log('[CT3D Flow] startKey=' + startKey + ', endKey=' + endKey);
 
             const adjacency = buildFlowGraph(components, wires, junctions);
@@ -15987,7 +16079,10 @@ Made with ? for visual learners everywhere!
             }
 
             const flowSegments = path.segments;
+            // Collect primary-path wire segments
             const wireSegments = [];
+            // Track which wire objects are already covered by the primary path (for dedup)
+            const primaryPathWireIds = new Set();
             const componentSegments = [];
 
             flowSegments.forEach((segment, index) => {
@@ -16004,6 +16099,7 @@ Made with ? for visual learners everywhere!
                         toSide: edge.toSide,
                         pathIndex: index
                     });
+                    primaryPathWireIds.add(edge.wire.id);
                 } else if (edge.type === 'component' && edge.component) {
                     componentSegments.push({
                         component: edge.component,
@@ -16014,6 +16110,27 @@ Made with ? for visual learners everywhere!
                         pathIndex: index
                     });
                 }
+            });
+
+            // ── Parallel branch detection ─────────────────────────────────────
+            // Find all wire edges on ANY valid path from startKey → endKey (not just
+            // the lowest-resistance path) and add them to wireSegments so particles
+            // flow through every parallel branch.
+            const parallelWireEdges = _collectAllFlowWireEdges(adjacency, startKey, endKey);
+            parallelWireEdges.forEach(({ fromKey, edge }) => {
+                if (primaryPathWireIds.has(edge.wire.id)) return; // already on primary path
+                const branchResistance = edge.resistance ?? FLOW_CONSTANTS.wireResistance;
+                wireSegments.push({
+                    wire: edge.wire,
+                    direction: edge.direction >= 0 ? 1 : -1,
+                    resistance: branchResistance,
+                    lengthMeters: edge.lengthMeters ?? getWireLengthMeters(edge.wire),
+                    fromSide: edge.fromSide,
+                    toSide: edge.toSide,
+                    pathIndex: wireSegments.length,
+                    isParallelBranch: true
+                });
+                primaryPathWireIds.add(edge.wire.id); // dedup subsequent entries
             });
 
             const resistanceLookup = new Map();
