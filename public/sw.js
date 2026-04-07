@@ -1,9 +1,9 @@
 // CircuiTry3D Service Worker
 // Provides offline capability and caching for the PWA
 
-const CACHE_NAME = 'circuitry3d-v5';
-const STATIC_CACHE = 'circuitry3d-static-v5';
-const DYNAMIC_CACHE = 'circuitry3d-dynamic-v5';
+const CACHE_NAME = 'circuitry3d-v6';
+const STATIC_CACHE = 'circuitry3d-static-v6';
+const DYNAMIC_CACHE = 'circuitry3d-dynamic-v6';
 
 // Install event - cache static assets
 // Asset paths are computed from self.registration.scope so this worker
@@ -121,7 +121,35 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For other assets, use cache-first strategy
+  // Critical engine JS files (/js/ directory) use network-first so that
+  // Vercel's "max-age=0, must-revalidate" Cache-Control headers are always
+  // honoured. This guarantees component-failure-engine.js (FUSE™) and other
+  // simulation scripts are never served stale after a deploy.
+  const isEngineJs = url.pathname.startsWith('/js/') || url.pathname.includes('/js/');
+  if (isEngineJs) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse.ok) {
+            const responseClone = networkResponse.clone();
+            caches.open(DYNAMIC_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Network unavailable — fall back to cache so offline still works
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+            return new Response('Offline', { status: 503, statusText: 'Offline' });
+          });
+        })
+    );
+    return;
+  }
+
+  // For all other assets, use cache-first strategy (images, fonts, etc.)
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
