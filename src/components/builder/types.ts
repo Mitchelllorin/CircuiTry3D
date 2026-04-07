@@ -40,7 +40,8 @@ export type BuilderInvokeAction =
   | "cinematic-record-start"
   | "cinematic-record-stop"
   | "cinematic-add-waypoint"
-  | "cinematic-clear-waypoints";
+  | "cinematic-clear-waypoints"
+  | "set-grid-style";
 
 export type MeterMode = "voltage" | "current" | "resistance" | "scope";
 
@@ -227,6 +228,8 @@ export type LegacyModeState = {
   wireRoutingMode: string;
   showGrid: boolean;
   showLabels: boolean;
+  gridBrightness: number;
+  gridLineWidth: number;
 };
 
 export type QuickAction = {

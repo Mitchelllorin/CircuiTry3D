@@ -3808,6 +3808,8 @@ body.android-optimized .zoom-btn {
                         layoutMode,
                         showGrid,
                         showLabels,
+                        gridBrightness,
+                        gridLineWidth,
                         wireRoutingMode: getRouterMode()
                     }, (extraState && typeof extraState === 'object') ? extraState : {});
 
@@ -3952,6 +3954,14 @@ body.android-optimized .zoom-btn {
                             case 'toggle-grid':
                                 if (typeof toggleGrid === 'function') toggleGrid();
                                 break;
+                            case 'set-grid-style':
+                                if (typeof applyGridStyle === 'function') {
+                                    applyGridStyle(
+                                        typeof data.brightness === 'number' ? data.brightness : gridBrightness,
+                                        typeof data.lineWidth === 'number' ? data.lineWidth : gridLineWidth
+                                    );
+                                }
+                                break;
                             case 'toggle-labels':
                                 if (typeof toggleLabels === 'function') toggleLabels();
                                 break;
@@ -4077,6 +4087,7 @@ body.android-optimized .zoom-btn {
         let clipboard = null;
         let selectedComponents = new Set();
         let showGrid = true, showLabels = true;
+        let gridBrightness = 100, gridLineWidth = 1;
         let currentAnalysisTab = 'wire';
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
         let currentPracticeCircuit = null;
@@ -7722,6 +7733,13 @@ body.android-optimized .zoom-btn {
                 // Enhanced grid system — wrapped individually so a canvas-2D or
                 // geometry error does NOT prevent the animation loop from starting.
                 try {
+                    // Restore persisted grid style from a previous session.
+                    try {
+                        const storedBrightness = parseFloat(localStorage.getItem('ct3d.gridBrightness'));
+                        const storedLineWidth  = parseFloat(localStorage.getItem('ct3d.gridLineWidth'));
+                        if (!isNaN(storedBrightness)) gridBrightness = Math.max(10, Math.min(100, storedBrightness));
+                        if (!isNaN(storedLineWidth))  gridLineWidth  = Math.max(1,  Math.min(3,   storedLineWidth));
+                    } catch {}
                     createEnhancedGrid();
                 } catch (gridErr) {
                     console.warn('[CT3D] Grid creation failed (non-fatal), trying GridHelper fallback:', gridErr);
@@ -9132,7 +9150,8 @@ body.android-optimized .zoom-btn {
         // tiles it across the full plane without any additional geometry.  This
         // approach uses ordinary triangles rather than GL_LINES and therefore
         // renders correctly on every Android GPU driver.
-        function _buildGridTileTexture(mainHex, subHex) {
+        function _buildGridTileTexture(mainHex, subHex, lineWidth) {
+            const lw = typeof lineWidth === 'number' ? Math.max(0.5, lineWidth) : 1;
             const SIZE = 64;
             const tileCanvas = document.createElement('canvas');
             tileCanvas.width  = SIZE;
@@ -9157,15 +9176,15 @@ body.android-optimized .zoom-btn {
             const sg = (subHex >>  8) & 0xff;
             const sb =  subHex        & 0xff;
             ctx.strokeStyle = `rgba(${sr},${sg},${sb},1.0)`;
-            ctx.lineWidth   = 1;
-            ctx.strokeRect(0.5, 0.5, SIZE - 1, SIZE - 1);
+            ctx.lineWidth   = lw;
+            ctx.strokeRect(lw * 0.5, lw * 0.5, SIZE - lw, SIZE - lw);
 
             // Main grid tone (slightly thicker / brighter)
             const mr = (mainHex >> 16) & 0xff;
             const mg = (mainHex >>  8) & 0xff;
             const mb =  mainHex        & 0xff;
             ctx.strokeStyle = `rgba(${mr},${mg},${mb},1.0)`;
-            ctx.lineWidth   = 1.5;
+            ctx.lineWidth   = lw * 1.5;
             ctx.beginPath();
             ctx.moveTo(0, 0); ctx.lineTo(SIZE, 0);   // top
             ctx.moveTo(0, 0); ctx.lineTo(0, SIZE);   // left
@@ -9183,8 +9202,8 @@ body.android-optimized .zoom-btn {
         // Create a flat plane mesh whose texture tiles to look like a grid.
         // Used on Android WebView where GL_LINES (THREE.GridHelper) is
         // unreliable across GPU drivers.
-        function _createCanvasGridMesh(size, divisions, mainHex, subHex) {
-            const tex = _buildGridTileTexture(mainHex, subHex);
+        function _createCanvasGridMesh(size, divisions, mainHex, subHex, lineWidth) {
+            const tex = _buildGridTileTexture(mainHex, subHex, lineWidth);
             tex.repeat.set(divisions, divisions);
 
             const geo = new THREE.PlaneGeometry(size, size);
@@ -9221,33 +9240,110 @@ body.android-optimized .zoom-btn {
             const isNative = (typeof window.Capacitor !== 'undefined' &&
                 typeof window.Capacitor.isNativePlatform === 'function' &&
                 window.Capacitor.isNativePlatform());
-            const mainGridColor = isNative ? 0xccccff : 0xaaaaee;
-            const subGridColor  = isNative ? 0x9999dd : 0x8888cc;
+            const baseMain = isNative ? 0xccccff : 0xaaaaee;
+            const baseSub  = isNative ? 0x9999dd : 0x8888cc;
+
+            // Apply user-configured brightness (10–100%).
+            const factor       = gridBrightness / 100;
+            const mainGridColor = _scaleHex(baseMain, factor);
+            const subGridColor  = _scaleHex(baseSub,  factor);
 
             // Re-evaluate whether we're on Android at grid-creation time.
             // isAndroidDevice is detected once at script-load, but on Capacitor
             // the window.Capacitor bridge may not be injected yet that early.
             // Re-checking here guarantees the canvas-texture fallback is used
             // on every Android WebView, regardless of injection timing.
-            const _useCanvasGrid = isAndroidDevice || isNative;
+            // Also use canvas grid when the user has set a line width > 1 so
+            // the thickness change is visible on all platforms (WebGL GL_LINES
+            // are clamped to 1px and cannot be widened).
+            const _useCanvasGrid = isAndroidDevice || isNative || gridLineWidth !== 1;
 
             if (_useCanvasGrid) {
                 // Android WebView has known GL_LINES rendering issues across GPU
                 // drivers (Adreno, Mali, PowerVR). Use a canvas-texture plane so
                 // the grid always appears regardless of the WebGL implementation.
-                gridHelper = _createCanvasGridMesh(gridSize, gridDivisions, mainGridColor, subGridColor);
+                gridHelper = _createCanvasGridMesh(gridSize, gridDivisions, mainGridColor, subGridColor, gridLineWidth);
             } else {
                 gridHelper = new THREE.GridHelper(gridSize, gridDivisions, mainGridColor, subGridColor);
 
                 // Fine grid overlay - only on desktop
                 if (!isMobile) {
-                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, 0x222244, 0x0a0a1a);
+                    const fineGrid = new THREE.GridHelper(gridSize, gridDivisions * 2, _scaleHex(0x222244, factor), 0x0a0a1a);
                     fineGrid.position.y = 0.01; // Slightly above main grid
                     scene.add(fineGrid);
                 }
             }
 
             scene.add(gridHelper);
+        }
+
+        // Scale a packed hex colour (0xRRGGBB) by a brightness factor in [0,1].
+        function _scaleHex(hex, factor) {
+            const r = Math.round(((hex >> 16) & 0xff) * factor);
+            const g = Math.round(((hex >>  8) & 0xff) * factor);
+            const b = Math.round(( hex        & 0xff) * factor);
+            return (r << 16) | (g << 8) | b;
+        }
+
+        // Apply brightness (10–100) and lineWidth (1–3) to the workspace grid.
+        // Removes the old grid from the scene and recreates it with new params.
+        function applyGridStyle(brightness, lineWidth) {
+            gridBrightness = typeof brightness === 'number' ? Math.max(10, Math.min(100, brightness)) : gridBrightness;
+            gridLineWidth  = typeof lineWidth  === 'number' ? Math.max(1,  Math.min(3,   lineWidth))  : gridLineWidth;
+
+            if (!scene) return;
+
+            // Remove existing grid(s)
+            if (gridHelper) {
+                scene.remove(gridHelper);
+                if (gridHelper.geometry) gridHelper.geometry.dispose();
+                if (gridHelper.material) {
+                    const mats = Array.isArray(gridHelper.material) ? gridHelper.material : [gridHelper.material];
+                    mats.forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+                }
+                gridHelper = null;
+            }
+            // Remove fine grid overlay (desktop GridHelper, y=0.01)
+            const fineGrids = scene.children.filter((c) => c.type === 'GridHelper');
+            fineGrids.forEach((fg) => { scene.remove(fg); if (fg.geometry) fg.geometry.dispose(); });
+
+            const factor       = gridBrightness / 100;
+            const gridSize     = isMobile ? 20 : 40;
+            const gridDivs     = isMobile ? 20 : 40;
+
+            const isNative = (typeof window.Capacitor !== 'undefined' &&
+                typeof window.Capacitor.isNativePlatform === 'function' &&
+                window.Capacitor.isNativePlatform());
+            const baseMain = isNative ? 0xccccff : 0xaaaaee;
+            const baseSub  = isNative ? 0x9999dd : 0x8888cc;
+
+            const mainColor = _scaleHex(baseMain, factor);
+            const subColor  = _scaleHex(baseSub,  factor);
+
+            const _useCanvasGrid = isAndroidDevice || isNative || gridLineWidth !== 1;
+
+            if (_useCanvasGrid) {
+                gridHelper = _createCanvasGridMesh(gridSize, gridDivs, mainColor, subColor, gridLineWidth);
+            } else {
+                gridHelper = new THREE.GridHelper(gridSize, gridDivs, mainColor, subColor);
+
+                if (!isMobile) {
+                    const fineSub  = _scaleHex(0x0a0a1a, 1);
+                    const fineMain = _scaleHex(0x222244, factor);
+                    const fineGrid = new THREE.GridHelper(gridSize, gridDivs * 2, fineMain, fineSub);
+                    fineGrid.position.y = 0.01;
+                    scene.add(fineGrid);
+                }
+            }
+
+            gridHelper.visible = showGrid;
+            scene.add(gridHelper);
+            // Persist the user's choice for the next session.
+            try {
+                localStorage.setItem('ct3d.gridBrightness', String(gridBrightness));
+                localStorage.setItem('ct3d.gridLineWidth',  String(gridLineWidth));
+            } catch {}
+            notifyParentModeState();
         }
 
         function createSnapIndicator() {
