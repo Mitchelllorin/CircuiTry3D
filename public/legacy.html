@@ -2617,6 +2617,74 @@
             display: none !important;
         }
 
+        /* ── Demo version banner ────────────────────────────────────────────
+           Hidden by default. Only shown in standalone demo mode
+           (html.demo-mode without html.embedded).  When embedded inside the
+           React shell, the React DemoBanner component at z-index 9999 handles
+           the notice instead.
+        ─────────────────────────────────────────────────────────────────── */
+        #demo-mode-banner {
+            display: none;
+        }
+
+        html.demo-mode:not(.embedded) #demo-mode-banner {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 400;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 7px 16px;
+            background: linear-gradient(90deg, rgba(30,58,120,0.97) 0%, rgba(15,35,90,0.99) 100%);
+            border-bottom: 1px solid rgba(136,204,255,0.22);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.45);
+            backdrop-filter: blur(6px);
+            font-size: 0.78rem;
+            font-family: 'Inter','Poppins','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+            color: rgba(200,225,255,0.9);
+            letter-spacing: 0.01em;
+            line-height: 1.4;
+            pointer-events: all;
+        }
+
+        .demo-badge {
+            background: rgba(136,204,255,0.15);
+            border: 1px solid rgba(136,204,255,0.35);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #88ccff;
+            white-space: nowrap;
+        }
+
+        .demo-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(136,204,255,0.45);
+            background: rgba(136,204,255,0.12);
+            color: #c8e6ff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .demo-cta:hover {
+            background: rgba(136,204,255,0.22);
+            border-color: rgba(136,204,255,0.7);
+        }
+
         .wire-analysis-toggle-btn {
             background: #00ff88;
             border: 3px solid #fff;
@@ -7634,14 +7702,32 @@ body.android-optimized .zoom-btn {
                 const hemisphereLight = new THREE.HemisphereLight(0x4488bb, 0x1a0a2a, isMobile ? 0.6 : 0.5);
                 scene.add(hemisphereLight);
                 
-                // Enhanced grid system
-                createEnhancedGrid();
-                createSnapIndicator();
-                
+                // Enhanced grid system — wrapped individually so a canvas-2D or
+                // geometry error does NOT prevent the animation loop from starting.
+                try {
+                    createEnhancedGrid();
+                } catch (gridErr) {
+                    console.warn('[CT3D] Grid creation failed (non-fatal), trying GridHelper fallback:', gridErr);
+                    // Fallback: plain THREE.GridHelper so the user at least sees a grid
+                    try {
+                        gridHelper = new THREE.GridHelper(40, 40, 0xaaaaee, 0x8888cc);
+                        scene.add(gridHelper);
+                    } catch (fallbackErr) {
+                        console.warn('[CT3D] GridHelper fallback also failed:', fallbackErr);
+                    }
+                }
+                try {
+                    createSnapIndicator();
+                } catch (snapErr) {
+                    console.warn('[CT3D] Snap indicator creation failed (non-fatal):', snapErr);
+                }
+
                 setupEvents();
-                
+
                 // Old UI layer removed — canvas is managed by the React host via embedded mode
 
+                // Start the animation loop AFTER grid/snap setup so the render
+                // loop always begins even if an above step threw a non-fatal error.
                 requestAnimationFrame(animate);
 
                 // Schedule a corrective resize a frame after init so that any
@@ -18333,6 +18419,11 @@ Made with ? for visual learners everywhere!
         }
 
         function loadPresetCircuit(presetName) {
+            // Guard: scene and renderer must be ready before any Three.js operations.
+            if (!scene || !renderer) {
+                console.error('[Builder] loadPresetCircuit: scene/renderer not ready — cannot load preset', presetName);
+                return;
+            }
             // Map additional preset hints to existing presets for broader compatibility
             const PRESET_ALIASES = {
                 series_voltage_drop: 'series_basic',
