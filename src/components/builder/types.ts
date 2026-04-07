@@ -230,6 +230,7 @@ export type LegacyModeState = {
   showLabels: boolean;
   gridBrightness: number;
   gridLineWidth: number;
+  gridHue: number;
 };
 
 export type QuickAction = {
