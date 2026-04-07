@@ -2994,7 +2994,7 @@ export default function Builder() {
             {/* AI & Measurement tools — integrated into action bar */}
             <button
               type="button"
-              className={`edge-action-btn${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
+              className={`edge-action-btn edge-action-btn--ai${isAIHelperOpen ? " edge-action-btn--active" : ""}`}
               onClick={() => setIsAIHelperOpen((prev) => !prev)}
               aria-label={isAIHelperOpen ? "Close Circuit AI" : "Open Circuit AI assistant"}
               aria-expanded={isAIHelperOpen}
