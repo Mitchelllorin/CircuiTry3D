@@ -3342,7 +3342,7 @@ export default function Builder() {
           <div className="builder-menu-scroll">
             <div className="slider-section">
               <span className="slider-heading">Components</span>
-              <div className="slider-stack">
+              <div className="slider-stack slider-stack--bento">
                 {(IS_DEMO_MODE
                   ? COMPONENT_ACTIONS.filter((c) =>
                       DEMO_COMPONENT_IDS.includes(c.id)
