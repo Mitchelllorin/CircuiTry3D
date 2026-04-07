@@ -3525,7 +3525,34 @@
             document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"><\\/script>');
         }
     </script>
-    <script src="js/component-failure-engine.js"></script>
+    <script src="js/component-failure-engine.js?v=6"></script>
+    <!-- FUSE™ runtime guard: if component-failure-engine.js failed to execute
+         (network error, stale SW cache, MIME mismatch) the following inline block
+         detects the missing export and attempts a forced cache-bypass reload of the
+         script.  This ensures FUSE failure detection and the current-flow animation
+         always initialise correctly regardless of caching state. -->
+    <script>
+        (function() {
+            if (typeof window.FailureEngine !== 'undefined') return; // already loaded OK
+            console.warn('[FUSE] component-failure-engine.js did not define window.FailureEngine — attempting forced reload');
+            var s = document.createElement('script');
+            s.src = 'js/component-failure-engine.js?v=6&nocache=' + Date.now();
+            s.onerror = function() {
+                console.error('[FUSE] FATAL: component-failure-engine.js failed to load. FUSE detection will be unavailable.');
+            };
+            // Insert synchronously before the next script so it executes in order
+                        // document.currentScript is always accurate for synchronously-executing
+            // inline scripts in modern browsers (Chrome, Firefox, Safari, Edge).
+            // The scripts[] fallback is a belt-and-suspenders guard that is never
+            // reached in practice but keeps very old WebViews from throwing.
+            var current = document.currentScript || document.scripts[document.scripts.length - 1];
+            if (current && current.parentNode) {
+                current.parentNode.insertBefore(s, current.nextSibling);
+            } else {
+                document.head.appendChild(s);
+            }
+        })();
+    </script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         let isEmbedded = false;

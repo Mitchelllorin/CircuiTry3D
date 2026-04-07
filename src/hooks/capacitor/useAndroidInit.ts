@@ -151,16 +151,31 @@ export function registerServiceWorker(): void {
         });
         console.log('[SW] Service worker registered:', registration.scope);
 
-        // Check for updates
+        // When a new SW version is found, tell it to skip waiting immediately
+        // so users always get fresh assets (FUSE engine, legacy.html, etc.)
+        // without needing to reload twice.
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[SW] New content available, refresh to update');
+              if (newWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  // Tell the new worker to take over right now
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  console.log('[SW] New content installed — activating immediately');
+                } else {
+                  // First install: content is cached for offline use
+                  console.log('[SW] Content cached for offline use');
+                }
               }
             });
           }
+        });
+
+        // Once the new SW has taken control, reload to get fresh assets
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('[SW] Controller changed — reloading for fresh assets');
+          window.location.reload();
         });
       } catch (error) {
         console.warn('[SW] Service worker registration failed:', error);
