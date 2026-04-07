@@ -9328,9 +9328,7 @@ body.android-optimized .zoom-btn {
                 gridHelper = new THREE.GridHelper(gridSize, gridDivs, mainColor, subColor);
 
                 if (!isMobile) {
-                    const fineSub  = _scaleHex(0x0a0a1a, 1);
-                    const fineMain = _scaleHex(0x222244, factor);
-                    const fineGrid = new THREE.GridHelper(gridSize, gridDivs * 2, fineMain, fineSub);
+                    const fineGrid = new THREE.GridHelper(gridSize, gridDivs * 2, _scaleHex(0x222244, factor), 0x0a0a1a);
                     fineGrid.position.y = 0.01;
                     scene.add(fineGrid);
                 }
