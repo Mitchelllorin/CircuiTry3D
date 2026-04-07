@@ -1,46 +1,18 @@
-# How GitHub Pages deployment works:
-# 1. This workflow builds the React/Vite app on every push to `main`.
-# 2. The built files are pushed to the `gh-pages` branch (root directory).
-# 3. GitHub Pages serves those files at:
-#      https://mitchelllorin.github.io/CircuiTry3D/
-# 4. `keep_files: true` MUST remain set — it preserves the `pr-preview/`
-#    subdirectory that is managed by the PR preview workflow.  Removing this
-#    flag would silently wipe every open PR preview on the next production deploy.
-#
-# ⚠️  gh-pages branch protection (required one-time setup):
-#    The `gh-pages` branch is the ONLY source of truth for both production and
-#    all PR previews.  A force-push or accidental wipe would take down the live
-#    site and every preview simultaneously.
-#    Recommended: Settings → Branches → Add rule for `gh-pages`:
-#      ✓ Require pull request before merging (or allow only bot pushes via rulesets)
-#      ✓ Do NOT allow force pushes
-#      ✓ Do NOT allow branch deletions
-#
-# One-time GitHub repository setup required:
-#   • Go to Settings → Pages
-#   • Source: Deploy from a branch
-#   • Branch: gh-pages  /  (root)
-#   • Save
+# Manual build gate for the Vercel deployment.
+# Vercel automatically deploys every push to `main` via its GitHub integration.
+# This workflow exists as an on-demand build check (workflow_dispatch only).
 
-name: Deploy to GitHub Pages
+name: Build (manual)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
-  contents: write
-
-# Only one production deployment at a time; don't cancel an in-progress run.
-concurrency:
-  group: pages-production
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  build-and-deploy:
-    name: Build & Deploy
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     env:
@@ -61,16 +33,4 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # Sets the Vite base path so all assets are rooted at the
-          # GitHub Pages sub-path for this repository.
-          PAGES_BASE_PATH: /CircuiTry3D/
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          # ⚠️  MUST remain true — preserves the pr-preview/ umbrella directory so
-          # open PR previews are not wiped out each time production is re-deployed.
-          keep_files: true

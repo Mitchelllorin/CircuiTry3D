@@ -4,10 +4,8 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // Use relative paths only for Capacitor builds (app:// scheme).
-  // For GitHub Pages deployments, PAGES_BASE_PATH sets the sub-path
-  // (e.g. /CircuiTry3D/ for production, /CircuiTry3D/pr-preview/pr-N/ for previews).
-  // Falls back to '/' for local dev and CI builds.
-  base: mode === 'capacitor' ? './' : (process.env.PAGES_BASE_PATH ?? '/'),
+  // Vercel serves from the root, so '/' is correct for all web deployments.
+  base: mode === 'capacitor' ? './' : '/',
   plugins: [react()],
   build: {
     outDir: 'dist',
