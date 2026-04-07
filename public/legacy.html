@@ -17228,12 +17228,26 @@ Made with ? for visual learners everywhere!
             console.log('[CT3D Flow] animateCurrentFlow: using ' + segments.length + ' segments' +
                 (flowState.wireSegments?.length > 0 ? ' (from flow path)' : ' (fallback: all wires)'));
             
-            // Failsafe: if wireSegments exist but their wire references are broken
-            // (e.g. serialized wireId instead of wire object), fall back to all wires
+            // Failsafe: if wireSegments contain wireId references instead of wire objects
+            // (happens when the sanitized flow state is used directly for animation),
+            // resolve each wireId back to the live wire object so direction/speedFactor
+            // from the computed path are preserved.
             const firstSeg = segments[0];
             if (firstSeg && !firstSeg.wire && firstSeg.wireId) {
-                console.warn('[CT3D Flow] wireSegments contain wireId strings instead of wire objects, falling back to all wires');
-                segments = wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
+                console.warn('[CT3D Flow] wireSegments contain wireId strings instead of wire objects, resolving by ID');
+                const wireById = new Map(wires.map(w => [w.id, w]));
+                segments = segments
+                    .map(seg => {
+                        if (seg.wire) return seg;
+                        const resolvedWire = wireById.get(seg.wireId);
+                        return resolvedWire ? { ...seg, wire: resolvedWire } : null;
+                    })
+                    .filter(Boolean);
+                // If none resolved (e.g. IDs don't match), fall back to all wires
+                if (!segments.length) {
+                    console.warn('[CT3D Flow] wireId resolution failed, falling back to all wires');
+                    segments = wires.map(wire => ({ wire, direction: 1, speedFactor: 1 }));
+                }
             }
 
             if (!segments.length) return;
@@ -17431,6 +17445,7 @@ Made with ? for visual learners everywhere!
                             particle.userData.speed = 0.003 * (1 + Math.random() * 0.3);
                             particle.userData.wire = wire;
                             particle.userData.direction = 1;
+                            particle.userData.isFlowing = true;
                             particle.userData.baseY = pos.y;
                             particle.userData.trailMeshes = [];
                             scene.add(particle);
