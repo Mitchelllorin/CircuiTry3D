@@ -105,7 +105,7 @@ type WorkspacePanelMode =
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
-  "circuitry3d:onboarding:current-flow-payoff:v1";
+  "circuitry3d:onboarding:current-flow-payoff:v2";
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 
@@ -2207,12 +2207,17 @@ export default function Builder() {
       // ignore storage write failures
     }
 
-    // Mark payoff as seen so the frame-ready effect doesn't trigger it a
-    // second time if the user revisits the page after dismissing the intro.
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
+    // Only mark the payoff as seen (to prevent Effect 2 from re-triggering it)
+    // when the iframe is already ready and we can run the sequence right now.
+    // If the iframe hasn't loaded yet, runCurrentFlowPayoffSequence will return
+    // early without doing anything — in that case we leave the storage key
+    // unset so that Effect 2 will run the payoff once the iframe becomes ready.
+    if (isFrameReady) {
+      try {
+        window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
+      } catch {
+        // ignore storage write failures
+      }
     }
 
     // Launch the current-flow payoff demo immediately after closing the intro.
@@ -2220,7 +2225,7 @@ export default function Builder() {
     // view-only until the user explicitly taps "Edit Circuit".
     setOnboardingLocked(true);
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
-  }, [runCurrentFlowPayoffSequence]);
+  }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   const handleDismissJunctionTip = useCallback(() => {
     setJunctionTipVisible(false);
