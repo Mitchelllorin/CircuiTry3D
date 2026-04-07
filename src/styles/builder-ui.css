@@ -4941,6 +4941,13 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     top: auto;
     bottom: 0;
     right: var(--builder-safe-area-right);
+    /* Clear the translateY(-50%) centering inherited from the (pointer:coarse) rule
+       so the panel stays bottom-anchored in landscape instead of floating mid-screen. */
+    transform: none;
+  }
+
+  .builder-menu-stage-right.open {
+    transform: none;
   }
 
   .builder-menu-stage-bottom {
@@ -4956,6 +4963,13 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
 
   /* Tighten quick-add bar to sit just below the reduced 44px header. */
   .quick-add-bar {
+    top: calc(52px + var(--builder-safe-area-top));
+  }
+
+  /* Move the unified action bar below the mode bar.  In landscape the ticker
+     variables are 0px, which would put the bar at top:~2px (under the mode bar).
+     Use the same 52px clearance as the quick-add-bar override above. */
+  .unified-action-bar {
     top: calc(52px + var(--builder-safe-area-top));
   }
 
