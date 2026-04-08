@@ -5627,6 +5627,7 @@
             const iconDiv = document.createElement("div");
             iconDiv.className = "metric-icon";
             iconDiv.textContent = METRIC_ICONS[entry.label] || "📊";
+            iconDiv.setAttribute("aria-hidden", "true");
             card.appendChild(iconDiv);
 
             const label = document.createElement("div");
