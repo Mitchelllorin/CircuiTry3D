@@ -109,6 +109,13 @@ const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 
+// Payoff retry delays: first retry shows the banner and re-triggers the flow
+// animation after the 3D scene has rendered its first frame (~480 ms).
+// Second retry at 1.2 s covers slow devices and first-load jank where the
+// WebGL context initialises later than usual.
+const PAYOFF_FIRST_RETRY_MS = 480;
+const PAYOFF_SECOND_RETRY_MS = 1200;
+
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
     return null;
@@ -2193,14 +2200,14 @@ export default function Builder() {
         if (revealBanner) {
           setCurrentFlowPayoffVisible(true);
         }
-      }, 480);
+      }, PAYOFF_FIRST_RETRY_MS);
 
       // Step 3: Second retry at 1.2 s catches slow devices / first-load jank.
       const followupTimer = window.setTimeout(() => {
         triggerBuilderAction("run-payoff-flow");
         triggerSimulationPulse();
         setCurrentFlowPayoffRunning(false);
-      }, 1200);
+      }, PAYOFF_SECOND_RETRY_MS);
 
       currentFlowPayoffTimersRef.current.push(retryTimer, followupTimer);
     },

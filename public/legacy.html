@@ -18421,12 +18421,14 @@ Made with ? for visual learners everywhere!
          */
         function loadPayoffCircuit() {
             if (!scene || !renderer) {
-                console.warn('[CT3D Payoff] loadPayoffCircuit: scene/renderer not ready — retrying in 600 ms');
-                window.setTimeout(loadPayoffCircuit, 600);
+                console.warn('[CT3D Payoff] loadPayoffCircuit: scene/renderer not ready — retrying in 800 ms (aligns with React retry at 480 ms + 1200 ms)');
+                window.setTimeout(loadPayoffCircuit, 800);
                 return;
             }
 
             try {
+                // ── Clear workspace ──────────────────────────────────────────
+                // Pass false to preserve camera position (no viewport reset).
                 clearAll(false);
 
                 // ── Components ───────────────────────────────────────────────
