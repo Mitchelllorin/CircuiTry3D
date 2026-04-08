@@ -490,6 +490,7 @@
       50%       { box-shadow: 0 0 16px rgba(239,68,68,0.22); }
     }
 
+
     .metric-icon {
       font-size: 14px;
       line-height: 1;
@@ -4062,6 +4063,9 @@
 
         const riskScore = document.createElement("div");
         riskScore.className = "failure-risk-score risk-" + riskSeverityStr;
+        // Risk scores map each severity tier to a 0-100 scale:
+        // safe=0 (no risk), stressed=28 (low), warning=58 (moderate),
+        // critical=82 (high), failed=100 (component destroyed)
         const severityToScore = { "safe": 0, "stressed": 28, "warning": 58, "critical": 82, "failed": 100 };
         riskScore.textContent = (severityToScore[riskSeverityStr] || 0).toString();
 
