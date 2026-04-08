@@ -5208,8 +5208,16 @@ body.android-optimized .zoom-btn {
                 if (this.mesh) {
                     scene.remove(this.mesh);
                 }
-                const connectedWires = [...this.connections];
-                connectedWires.forEach(wire => wire.remove());
+                // Guard against mixed-format connections (POJO {wire,...} or direct Wire).
+                // Use a Set to avoid double-removing the same wire.
+                const seen = new Set();
+                [...this.connections].forEach(item => {
+                    const wire = item?.remove ? item : item?.wire;
+                    if (wire?.remove && !seen.has(wire)) {
+                        seen.add(wire);
+                        wire.remove();
+                    }
+                });
                 const index = junctions.indexOf(this);
                 if (index > -1) {
                     junctions.splice(index, 1);
@@ -7517,26 +7525,26 @@ body.android-optimized .zoom-btn {
             }
 
             addToConnections() {
-                if (this.startObj.connections) {
+                // Prefer the typed addConnection() method (Junction) so its connections
+                // array only ever holds Wire instances — not mixed POJO / Wire entries.
+                if (this.startObj.addConnection) {
+                    this.startObj.addConnection(this);
+                } else if (this.startObj.connections) {
                     this.startObj.connections.push({
                         wire: this,
                         connectedTo: this.endObj,
                         side: this.startSide
                     });
                 }
-                if (this.startObj.addConnection) {
-                    this.startObj.addConnection(this);
-                }
-                
-                if (this.endObj.connections) {
+
+                if (this.endObj.addConnection) {
+                    this.endObj.addConnection(this);
+                } else if (this.endObj.connections) {
                     this.endObj.connections.push({
                         wire: this,
                         connectedTo: this.startObj,
                         side: this.endSide
                     });
-                }
-                if (this.endObj.addConnection) {
-                    this.endObj.addConnection(this);
                 }
             }
 
@@ -12215,9 +12223,23 @@ body.android-optimized .zoom-btn {
                 });
 
                 if (newJunction) {
-                    lightUpConnectionNodes(newJunction);
-                    scheduleNodeDim(newJunction, 5000);
-                    setStatus('⚡ Junction placed on wire — wire split! Select the ● node then a terminal to branch');
+                    // Enter wire mode (if not already) and pre-select the junction so
+                    // the user can immediately click a terminal to complete the branch.
+                    if (!isWireMode) {
+                        enableWireMode({ silent: true });
+                    }
+                    const pointData = getWireBranchStartPointData(newJunction);
+                    if (pointData) {
+                        if (wireStart) {
+                            highlightConnectionPoint(wireStart, false);
+                            wireStart = null;
+                        }
+                        wireStart = pointData;
+                        highlightConnectionPoint(wireStart, true);
+                        setStatus('⚡ Junction placed on wire — click any terminal or junction to complete the branch!');
+                    } else {
+                        setStatus('⚡ Junction placed on wire — wire split! Switch to ⚡ Wire mode to branch.');
+                    }
                 }
                 return;
             }
