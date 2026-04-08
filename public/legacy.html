@@ -3634,6 +3634,14 @@
         let menuVisible = isEmbedded ? false : true;
         let analysisVisible = isEmbedded ? false : true;
 
+        // Push-button 3D mesh constants
+        /** Y-position of the button dome cap when pressed (depressed into housing). */
+        const BUTTON_CAP_PRESSED_Y = 0.20;
+        /** Y-position of the button dome cap when resting/open (raised above housing). */
+        const BUTTON_CAP_RELEASED_Y = 0.28;
+        /** Duration (ms) of the brief press pulse triggered by a fast tap on the button. */
+        const BUTTON_BRIEF_PRESS_DURATION_MS = 300;
+
         const isAndroidDevice =
             (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "")) ||
             (typeof window !== "undefined" &&
@@ -6031,7 +6039,7 @@ body.android-optimized .zoom-btn {
                     emissiveIntensity: this.properties.isOn ? 0.4 : 0
                 });
                 const cap = new THREE.Mesh(capGeometry, capMaterial);
-                cap.position.y = this.properties.isOn ? 0.20 : 0.28;
+                cap.position.y = this.properties.isOn ? BUTTON_CAP_PRESSED_Y : BUTTON_CAP_RELEASED_Y;
                 group.add(cap);
                 this.buttonCapMesh = cap;
 
@@ -7297,7 +7305,7 @@ body.android-optimized .zoom-btn {
                     this.buttonCapMesh.material.color.setHex(this.properties.isOn ? 0x00ee44 : 0xff7722);
                     this.buttonCapMesh.material.emissive.setHex(this.properties.isOn ? 0x003300 : 0x000000);
                     this.buttonCapMesh.material.emissiveIntensity = this.properties.isOn ? 0.4 : 0;
-                    this.buttonCapMesh.position.y = this.properties.isOn ? 0.20 : 0.28;
+                    this.buttonCapMesh.position.y = this.properties.isOn ? BUTTON_CAP_PRESSED_Y : BUTTON_CAP_RELEASED_Y;
                 }
                 
                 // Update the labels with new values
@@ -12155,7 +12163,7 @@ body.android-optimized .zoom-btn {
                 // still gives feedback via a brief press pulse so the user can see current flow.
                 if (!_pressedButtonComponent) {
                     pressButton(component);
-                    setTimeout(() => releaseButton(component), 300);
+                    setTimeout(() => releaseButton(component), BUTTON_BRIEF_PRESS_DURATION_MS);
                 }
             } else if (!isWireMode && !isDragging) {
                 selectComponent(component, { startDragging: false });
