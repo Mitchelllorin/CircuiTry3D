@@ -1223,6 +1223,9 @@ export default function Builder() {
     wireRoutingMode: "manhattan",
     showGrid: true,
     showLabels: true,
+    gridBrightness: 100,
+    gridLineWidth: 1,
+    gridHue: 240,
   });
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [activeWorkspacePanelMode, setActiveWorkspacePanelMode] =
@@ -1376,6 +1379,18 @@ export default function Builder() {
         typeof next.showLabels === "boolean"
           ? next.showLabels
           : previous.showLabels,
+      gridBrightness:
+        typeof next.gridBrightness === "number"
+          ? next.gridBrightness
+          : previous.gridBrightness,
+      gridLineWidth:
+        typeof next.gridLineWidth === "number"
+          ? next.gridLineWidth
+          : previous.gridLineWidth,
+      gridHue:
+        typeof next.gridHue === "number"
+          ? next.gridHue
+          : previous.gridHue,
     }));
   }, []);
 
@@ -3542,6 +3557,90 @@ export default function Builder() {
                     </button>
                   );
                 })}
+              </div>
+              <div className="slider-section">
+                <span className="slider-heading">Grid Style</span>
+                <div className="builder-logo-setting">
+                  <label htmlFor="grid-brightness-slider">Brightness</label>
+                  <div className="setting-input">
+                    <input
+                      id="grid-brightness-slider"
+                      type="range"
+                      min={10}
+                      max={100}
+                      step={5}
+                      value={modeState.gridBrightness}
+                      onChange={(e) => {
+                        const brightness = Number(e.target.value);
+                        setModeState((prev) => ({ ...prev, gridBrightness: brightness }));
+                        triggerBuilderAction("set-grid-style", {
+                          brightness,
+                          lineWidth: modeState.gridLineWidth,
+                          hue: modeState.gridHue,
+                        });
+                      }}
+                      disabled={controlsDisabled}
+                      aria-valuetext={`${modeState.gridBrightness}% brightness`}
+                    />
+                    <span className="setting-value">{modeState.gridBrightness}%</span>
+                  </div>
+                </div>
+                <div className="builder-logo-setting">
+                  <label htmlFor="grid-linewidth-slider">Line Width</label>
+                  <div className="setting-input">
+                    <input
+                      id="grid-linewidth-slider"
+                      type="range"
+                      min={1}
+                      max={3}
+                      step={0.5}
+                      value={modeState.gridLineWidth}
+                      onChange={(e) => {
+                        const lineWidth = Number(e.target.value);
+                        setModeState((prev) => ({ ...prev, gridLineWidth: lineWidth }));
+                        triggerBuilderAction("set-grid-style", {
+                          brightness: modeState.gridBrightness,
+                          lineWidth,
+                          hue: modeState.gridHue,
+                        });
+                      }}
+                      disabled={controlsDisabled}
+                      aria-valuetext={`${modeState.gridLineWidth}px line width`}
+                    />
+                    <span className="setting-value">{modeState.gridLineWidth}px</span>
+                  </div>
+                </div>
+                <div className="builder-logo-setting">
+                  <label htmlFor="grid-hue-slider">Color</label>
+                  <div className="setting-input">
+                    <input
+                      id="grid-hue-slider"
+                      type="range"
+                      min={0}
+                      max={359}
+                      step={1}
+                      value={modeState.gridHue}
+                      className="grid-hue-slider"
+                      onChange={(e) => {
+                        const hue = Number(e.target.value);
+                        setModeState((prev) => ({ ...prev, gridHue: hue }));
+                        triggerBuilderAction("set-grid-style", {
+                          brightness: modeState.gridBrightness,
+                          lineWidth: modeState.gridLineWidth,
+                          hue,
+                        });
+                      }}
+                      disabled={controlsDisabled}
+                      aria-valuetext={`${modeState.gridHue}° hue`}
+                    />
+                    <span
+                      className="setting-value"
+                      style={{ color: `hsl(${modeState.gridHue},80%,70%)` }}
+                    >
+                      {modeState.gridHue}°
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
