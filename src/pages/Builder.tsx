@@ -1207,6 +1207,7 @@ export default function Builder() {
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
   );
   const firstRunPayoffTriggeredRef = useRef(false);
+  const pendingPayoffRef = useRef(false);
   const currentFlowPayoffTimersRef = useRef<number[]>([]);
   const appBasePath = useMemo(() => {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
@@ -2167,41 +2168,45 @@ export default function Builder() {
       } = {},
     ) => {
       if (!isFrameReady) {
+        // Iframe not ready yet — mark as pending so Effect 2 picks it up.
+        pendingPayoffRef.current = true;
         return;
       }
 
-      const { reloadPreset = true, revealBanner = true } = options;
+      const { revealBanner = true } = options;
 
       clearCurrentFlowPayoffTimers();
       setCurrentFlowPayoffRunning(true);
 
-      if (reloadPreset) {
-        triggerBuilderAction("load-preset", { preset: "series_basic" });
-      }
+      // Step 1: Send load-payoff which builds the series circuit, forces solid
+      // flow style, and calls analyzeCircuit() — all in one atomic shot inside
+      // legacy.html. No separate toggle-current-flow race condition.
+      triggerBuilderAction("load-payoff");
 
-      const primaryTimer = window.setTimeout(() => {
-        if (modeState.currentFlowStyle !== "solid") {
-          triggerBuilderAction("toggle-current-flow");
-        }
-        triggerBuilderAction("run-simulation");
+      // Step 2: After the 3D scene has had time to render the first frame,
+      // fire run-payoff-flow as a reliability retry to ensure particles are
+      // visible even if the first analyzeCircuit() fired before wires were
+      // fully in the scene graph.
+      const retryTimer = window.setTimeout(() => {
+        triggerBuilderAction("run-payoff-flow");
         triggerSimulationPulse();
         if (revealBanner) {
           setCurrentFlowPayoffVisible(true);
         }
-      }, 220);
+      }, 480);
 
+      // Step 3: Second retry at 1.2 s catches slow devices / first-load jank.
       const followupTimer = window.setTimeout(() => {
-        triggerBuilderAction("run-simulation");
+        triggerBuilderAction("run-payoff-flow");
         triggerSimulationPulse();
         setCurrentFlowPayoffRunning(false);
-      }, 720);
+      }, 1200);
 
-      currentFlowPayoffTimersRef.current.push(primaryTimer, followupTimer);
+      currentFlowPayoffTimersRef.current.push(retryTimer, followupTimer);
     },
     [
       clearCurrentFlowPayoffTimers,
       isFrameReady,
-      modeState.currentFlowStyle,
       triggerBuilderAction,
       triggerSimulationPulse,
     ],
@@ -2209,7 +2214,7 @@ export default function Builder() {
 
   const handleReplayCurrentFlowPayoff = useCallback(() => {
     setBottomMenuOpen(true);
-    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
+    runCurrentFlowPayoffSequence({ revealBanner: true });
   }, [runCurrentFlowPayoffSequence, setBottomMenuOpen]);
 
   const handleDismissIntroDialog = useCallback(() => {
@@ -2222,25 +2227,20 @@ export default function Builder() {
       // ignore storage write failures
     }
 
-    // Only mark the payoff as seen (to prevent Effect 2 from re-triggering it)
-    // when the iframe is already ready and we can run the sequence right now.
-    // If the iframe hasn't loaded yet, runCurrentFlowPayoffSequence will return
-    // early without doing anything — in that case we leave the storage key
-    // unset so that Effect 2 will run the payoff once the iframe becomes ready.
-    if (isFrameReady) {
-      try {
-        window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-      } catch {
-        // ignore storage write failures
-      }
+    try {
+      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
+    } catch {
+      // ignore storage write failures
     }
 
     // Launch the current-flow payoff demo immediately after closing the intro.
     // Lock the circuit as onboarding-locked so the preset circuit stays
     // view-only until the user explicitly taps "Edit Circuit".
+    // runCurrentFlowPayoffSequence will set pendingPayoffRef if the iframe is
+    // not ready yet, and Effect 2 will pick it up when it becomes ready.
     setOnboardingLocked(true);
-    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
-  }, [isFrameReady, runCurrentFlowPayoffSequence]);
+    runCurrentFlowPayoffSequence({ revealBanner: true });
+  }, [runCurrentFlowPayoffSequence]);
 
   const handleDismissJunctionTip = useCallback(() => {
     setJunctionTipVisible(false);
@@ -2281,7 +2281,20 @@ export default function Builder() {
   // Runs every session (once per mount) so the demo circuit is always pre-loaded
   // on startup, giving users immediate visual proof that current flow works.
   useEffect(() => {
-    if (!isFrameReady || firstRunPayoffTriggeredRef.current) {
+    if (!isFrameReady) {
+      return;
+    }
+
+    // If a payoff was requested while the iframe was not yet ready (e.g., the
+    // user dismissed the intro before the iframe finished loading), run it now.
+    if (pendingPayoffRef.current) {
+      pendingPayoffRef.current = false;
+      firstRunPayoffTriggeredRef.current = true;
+      runCurrentFlowPayoffSequence({ revealBanner: true });
+      return;
+    }
+
+    if (firstRunPayoffTriggeredRef.current) {
       return;
     }
 
@@ -2308,7 +2321,7 @@ export default function Builder() {
     // For returning users we intentionally skip the circuit lock so they can
     // start editing right away; first-time users get the full locked experience
     // via handleDismissIntroDialog.
-    runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
+    runCurrentFlowPayoffSequence({ revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
