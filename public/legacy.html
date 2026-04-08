@@ -13764,9 +13764,29 @@ body.android-optimized .zoom-btn {
             }
             // If circuit analysis says flow is possible, use that. Otherwise fall back to currentFlowState.
             // This ensures that when a failed component is replaced/fixed, flow restarts properly.
-            const runtimeFlow = result.flow?.hasFlow
+            let runtimeFlow = result.flow?.hasFlow
                 ? result.flow
                 : (currentFlowState || result.flow);
+            // Closed-circuit fallback: if path-finding still returned no flow but a BFS
+            // confirms a physical loop, force basic flow (handles Android WebView edge cases).
+            if (runtimeFlow && !runtimeFlow.hasFlow) {
+                const fallbackBatteries = components.filter(c => c.type === 'battery');
+                if (fallbackBatteries.length > 0 && wires.length > 0) {
+                    try {
+                        if (hasClosedCircuitPath(fallbackBatteries[0], wires, components)) {
+                            const totalV = fallbackBatteries.reduce((s, b) => s + (b.properties?.voltage || 0), 0);
+                            const basicR = components.filter(c => c.type !== 'battery')
+                                .reduce((s, c) => s + (c.properties?.resistance || 100), 0) || 100;
+                            runtimeFlow = {
+                                hasFlow: true, hasPath: true,
+                                currentValue: totalV / Math.max(basicR, 0.001), totalVoltage: totalV,
+                                wireSegments: wires.map(w => ({ wire: w, direction: 1, speedFactor: 1 })),
+                                warning: null
+                            };
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+            }
             if (runtimeFlow) {
                 animateCurrentFlow(runtimeFlow);
             }
@@ -14989,13 +15009,42 @@ Made with ? for visual learners everywhere!
             
             // If circuit analysis says flow is possible, use that. Otherwise fall back to currentFlowState.
             // This ensures that when a failed component is replaced/fixed, flow restarts properly.
-            const runtimeFlow = result.flow?.hasFlow
+            let runtimeFlow = result.flow?.hasFlow
                 ? result.flow
                 : (currentFlowState || result.flow || { hasFlow: false, currentValue: result.current || 0 });
             console.log('[CT3D Flow] runtimeFlow: hasFlow=' + runtimeFlow.hasFlow +
                 ' current=' + (runtimeFlow.currentValue || 0).toFixed(4) +
                 ' segments=' + (runtimeFlow.wireSegments?.length || 0) +
                 ' topology=' + (result.topology || '?'));
+
+            // ── Guaranteed-flow fallback ──────────────────────────────────────
+            // If directed path-finding returned no flow but a simple BFS confirms
+            // the circuit is physically closed (battery negative → positive through
+            // all wires + conducting components), force a basic flow so current
+            // particles always appear.  This covers Android WebView cases where
+            // terminal-key mismatches or wire.startSide/endSide gaps cause
+            // buildFlowGraph / findLowestResistancePath to silently fail.
+            if (!runtimeFlow.hasFlow && batteries.length > 0 && wires.length > 0) {
+                try {
+                    if (hasClosedCircuitPath(batteries[0], wires, components)) {
+                        const totalV = batteries.reduce((s, b) => s + (b.properties?.voltage || 0), 0);
+                        const basicR = components.filter(c => c.type !== 'battery')
+                            .reduce((s, c) => s + (c.properties?.resistance || 100), 0) || 100;
+                        const basicI = totalV / Math.max(basicR, 0.001);
+                        runtimeFlow = {
+                            hasFlow: true, hasPath: true,
+                            currentValue: basicI, totalVoltage: totalV,
+                            wireSegments: wires.map(w => ({ wire: w, direction: 1, speedFactor: 1 })),
+                            warning: null
+                        };
+                        console.log('[CT3D Flow] Closed-circuit fallback activated: V=' + totalV + ' I=' + basicI.toFixed(4));
+                    }
+                } catch (fbErr) {
+                    console.warn('[CT3D Flow] Closed-circuit fallback check failed:', fbErr);
+                }
+            }
+            // ─────────────────────────────────────────────────────────────────
+
             animateCurrentFlow(runtimeFlow);
 
             const flowMeta = result.flow || sanitizeFlowState(runtimeFlow);
@@ -16481,16 +16530,18 @@ Made with ? for visual learners everywhere!
                 const flowState = computeFlowState(batteries, components, wires, junctions);
 
                 if (!flowState.hasPath) {
-                    // Directed path finding failed. Only enable fallback flow animation if:
-                    // 1. The reason is specifically 'polarity' (not 'open' circuit)
-                    // 2. AND there's a verified physical closed loop
-                    // This prevents current from flowing in genuinely open circuits.
+                    // Directed path finding failed.  Use the simpler BFS check as the
+                    // authoritative gate: if hasClosedCircuitPath confirms a physical loop
+                    // exists, force flow regardless of why the directed search failed.
+                    // This catches Android WebView terminal-key mismatches and any other
+                    // directed-graph edge-building bugs without falsely animating open circuits.
                     const isPolarityIssue = flowState.reason === 'polarity';
-                    const hasPhysicalLoop = isPolarityIssue && hasClosedCircuitPath(batteries[0], wires, components);
+                    const hasPhysicalLoop = hasClosedCircuitPath(batteries[0], wires, components);
 
                     if (hasPhysicalLoop && wires.length > 0) {
-                        // There's a closed loop but directed path finding failed due to polarity.
-                        // Show flow animation to indicate circuit completion with polarity issue.
+                        // Physical loop confirmed — force flow animation.
+                        // Show "Polarity" for known polarity reversals; otherwise fall through
+                        // to the general series display so the topology label is sensible.
                         const wireModel = buildWirePathModel(wires);
                         const baseWireResistance = Math.max(FLOW_CONSTANTS.wireResistance, wireModel.totalResistance || 0);
                         let approxResistance = baseWireResistance;
@@ -16513,10 +16564,11 @@ Made with ? for visual learners everywhere!
                             approxStress = computeWireStressAdjustment(approxCurrent, totalVoltage, baseWireResistance);
                         }
 
-                        updateTopologyDisplay('Polarity');
+                        updateTopologyDisplay(isPolarityIssue ? 'Polarity' : 'Series');
                         const flowResult = {
                             ...flowState,
                             hasFlow: true,
+                            reason: isPolarityIssue ? flowState.reason : null,
                             currentValue: approxCurrent,
                             wireSegments: wires.map(wire => ({
                                 wire,
