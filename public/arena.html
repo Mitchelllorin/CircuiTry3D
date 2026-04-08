@@ -18,7 +18,7 @@
   <!-- Google Fonts - Inter UI body font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     .arena-header {
       position: fixed;
@@ -121,6 +121,14 @@
       --metric-accent-delta: rgba(255, 160, 0, 0.5);
       --text-muted: #94a3b8;
       --text-strong: #e2e8f0;
+      --accent-green: #39ffb7;
+      --accent-orange: #ff8b2b;
+      --accent-cyan: #38bdf8;
+      --accent-purple: rgba(168, 85, 247, 0.7);
+      --panel-radius: 18px;
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --shadow-panel: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(136,204,255,0.12);
     }
 
     * {
@@ -131,9 +139,9 @@
     body {
       margin: 0;
       height: 100%;
-      background: radial-gradient(ellipse at top, #1e1b4b 0%, #020617 55%, #010413 100%);
+      background: radial-gradient(ellipse at 50% -5%, #1a1040 0%, #0a0e27 40%, #030615 80%);
       color: var(--text-strong);
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "DM Sans", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
       padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
       box-sizing: border-box;
       overflow: hidden;
@@ -145,10 +153,10 @@
       inset: 0;
       background: radial-gradient(circle at 50% -10%, rgba(14, 165, 233, 0.28), transparent 55%),
         radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.25), transparent 52%),
-        radial-gradient(circle at 20% 80%, rgba(244, 63, 94, 0.2), transparent 60%);
+        radial-gradient(circle at 20% 80%, rgba(57, 255, 183, 0.08), transparent 60%);
       z-index: 0;
       pointer-events: none;
-      opacity: 0.9;
+      opacity: 1.0;
     }
 
     #arena {
@@ -174,7 +182,7 @@
 
     .btn {
       padding: 12px 18px;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid rgba(94, 234, 212, 0.45);
       background: rgba(15, 23, 42, 0.9);
       color: #e5e7eb;
@@ -182,7 +190,7 @@
       cursor: pointer;
       touch-action: manipulation;
       letter-spacing: 0.01em;
-      font-size: 14px;
+      font-size: 13px;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 0 0 rgba(34, 211, 238, 0);
     }
@@ -196,6 +204,22 @@
       opacity: 0.6;
       cursor: not-allowed;
       transform: none;
+    }
+
+    #btn-run {
+      border-color: rgba(57, 255, 183, 0.65);
+      color: #39ffb7;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      box-shadow: 0 0 16px rgba(57, 255, 183, 0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    #btn-run:hover {
+      box-shadow: 0 0 28px rgba(57, 255, 183, 0.38), 0 8px 24px rgba(0,0,0,0.4);
+      background: rgba(4, 40, 30, 0.95);
+    }
+    #btn-run:active {
+      transform: scale(0.97) translateY(0);
     }
 
     .file-btn {
@@ -218,16 +242,17 @@
       max-width: calc(100vw - 32px - var(--safe-left) - var(--safe-right));
       max-height: calc(100vh - 194px - var(--safe-top) - var(--safe-bottom));
       background: rgba(10, 12, 28, 0.82);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(96, 165, 250, 0.35);
-      border-radius: 16px;
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--panel-radius);
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 14px;
       overflow: hidden;
       z-index: 4;
-      box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.45);
+      box-shadow: var(--shadow-panel), 0 0 60px rgba(0,180,255,0.04) inset;
     }
 
     .panel-scroll {
@@ -251,14 +276,30 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid rgba(136,204,255,0.07);
+      margin-bottom: 2px;
     }
 
     .section-heading {
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.2em;
+      font-weight: 800;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(148, 163, 184, 0.82);
+      color: rgba(200, 220, 255, 0.9);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-heading::before {
+      content: "";
+      display: inline-block;
+      width: 3px;
+      height: 12px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #38bdf8, #39ffb7);
+      flex-shrink: 0;
     }
 
     .row {
@@ -321,12 +362,16 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       cursor: pointer;
-      transition: background 0.18s ease, border-color 0.18s ease;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
     }
 
     .chip-btn:hover {
       background: rgba(24, 32, 48, 0.6);
       border-color: rgba(136, 204, 255, 0.5);
+    }
+
+    .chip-btn:active {
+      transform: scale(0.95);
     }
 
     .import-tags {
@@ -367,54 +412,145 @@
 
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
     }
 
     .metric-card {
-      background: var(--metric-bg);
+      position: relative;
+      background: rgba(8, 14, 34, 0.82);
       border: 1px solid var(--metric-border);
-      border-radius: 12px;
-      padding: 10px;
+      border-radius: 14px;
+      padding: 12px 11px 10px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
+      overflow: hidden;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s var(--spring);
+      cursor: default;
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, transparent 60%);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(136, 204, 255, 0.36);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .metric-card:hover::before {
+      opacity: 1;
     }
 
     .metric-card.metric-accent-a {
-      border-color: var(--metric-accent-a);
+      border-color: rgba(57, 255, 183, 0.28);
+    }
+    .metric-card.metric-accent-a:hover {
+      border-color: rgba(57, 255, 183, 0.50);
+      box-shadow: 0 4px 20px rgba(57, 255, 183, 0.08);
     }
 
     .metric-card.metric-accent-b {
-      border-color: var(--metric-accent-b);
+      border-color: rgba(56, 189, 248, 0.28);
+    }
+    .metric-card.metric-accent-b:hover {
+      border-color: rgba(56, 189, 248, 0.50);
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.08);
     }
 
     .metric-card.metric-accent-delta {
-      border-color: var(--metric-accent-delta);
+      border-color: rgba(251, 146, 60, 0.28);
+    }
+    .metric-card.metric-accent-delta:hover {
+      border-color: rgba(251, 146, 60, 0.50);
+      box-shadow: 0 4px 20px rgba(251, 146, 60, 0.08);
+    }
+
+    .metric-card.health-warn {
+      border-color: rgba(251, 191, 36, 0.45) !important;
+      background: rgba(20, 15, 4, 0.88);
+    }
+    .metric-card.health-critical {
+      border-color: rgba(239, 68, 68, 0.55) !important;
+      background: rgba(22, 6, 6, 0.9);
+      animation: metric-critical-pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes metric-critical-pulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+      50%       { box-shadow: 0 0 16px rgba(239,68,68,0.22); }
+    }
+
+    .metric-icon {
+      font-size: 14px;
+      line-height: 1;
+      margin-bottom: 1px;
+      opacity: 0.7;
     }
 
     .metric-label {
-      font-size: 11px;
-      color: rgba(148, 163, 184, 0.85);
+      font-size: 10px;
+      color: rgba(148, 163, 184, 0.75);
       text-transform: uppercase;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      line-height: 1.2;
     }
 
     .metric-value {
-      font-size: 17px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 800;
       color: var(--text-strong);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
     }
 
+    .metric-value.health-safe   { color: #34d399; }
+    .metric-value.health-warn   { color: #fbbf24; }
+    .metric-value.health-critical { color: #f87171; }
+
     .metric-detail {
-      font-size: 11px;
-      color: rgba(148, 163, 184, 0.85);
+      font-size: 10.5px;
+      color: rgba(148, 163, 184, 0.7);
+      line-height: 1.3;
     }
+
+    .metric-util-bar {
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      margin-top: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .metric-util-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(56, 189, 248, 0.7);
+    }
+    .metric-util-fill.util-safe     { background: linear-gradient(90deg, #10b981, #34d399); }
+    .metric-util-fill.util-warn     { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .metric-util-fill.util-critical { background: linear-gradient(90deg, #dc2626, #f87171); box-shadow: 0 0 6px rgba(239,68,68,0.6); }
 
     .metric-empty {
       font-size: 12px;
-      color: rgba(148, 163, 184, 0.7);
-      padding: 8px 6px;
+      color: rgba(148, 163, 184, 0.6);
+      padding: 16px 6px;
+      text-align: center;
+      font-style: italic;
+      letter-spacing: 0.02em;
     }
 
     .stat {
@@ -511,6 +647,66 @@
       gap: 6px;
       animation: failure-card-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
+
+    .failure-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .failure-risk-meter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(5, 8, 20, 0.6);
+      border: 1px solid rgba(136, 204, 255, 0.10);
+      margin-bottom: 4px;
+    }
+
+    .failure-risk-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.7);
+      white-space: nowrap;
+    }
+
+    .failure-risk-score {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      min-width: 38px;
+    }
+    .failure-risk-score.risk-safe     { color: #34d399; }
+    .failure-risk-score.risk-stressed { color: #fde68a; }
+    .failure-risk-score.risk-warning  { color: #fb923c; }
+    .failure-risk-score.risk-critical { color: #f87171; }
+    .failure-risk-score.risk-failed   { color: #fef2f2; text-shadow: 0 0 12px rgba(239,68,68,0.8); }
+
+    .failure-risk-arc {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .failure-risk-arc-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .failure-risk-arc-fill.risk-safe     { background: linear-gradient(90deg, #059669, #34d399); }
+    .failure-risk-arc-fill.risk-stressed { background: linear-gradient(90deg, #b45309, #fbbf24); }
+    .failure-risk-arc-fill.risk-warning  { background: linear-gradient(90deg, #c2410c, #fb923c); box-shadow: 0 0 6px rgba(251,146,60,0.5); }
+    .failure-risk-arc-fill.risk-critical { background: linear-gradient(90deg, #991b1b, #f87171); box-shadow: 0 0 8px rgba(248,113,113,0.6); animation: bar-pulse-critical 2s ease-in-out infinite; }
+    .failure-risk-arc-fill.risk-failed   { background: linear-gradient(90deg, #7f1d1d, #ef4444, #fca5a5); box-shadow: 0 0 12px rgba(239,68,68,0.7); animation: bar-pulse-failed 1.4s ease-in-out infinite; }
 
     @keyframes failure-card-in {
       from { opacity: 0; transform: translateY(8px) scale(0.97); }
@@ -790,12 +986,14 @@
       background: rgba(8, 15, 28, 0.7);
       border: 1px solid rgba(136, 204, 255, 0.16);
       cursor: pointer;
-      transition: border-color 0.18s ease, background 0.18s ease;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s var(--spring), box-shadow 0.2s ease;
     }
 
     .featured-component-card:hover {
       border-color: rgba(136, 204, 255, 0.38);
       background: rgba(12, 22, 42, 0.85);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
 
     .featured-component-card.selected {
@@ -865,37 +1063,58 @@
 /* ── Panel Tabs ──────────────────────────────────────────────────────── */
 .panel-tabs {
   display: flex;
-  gap: 2px;
-  margin-bottom: 2px;
+  gap: 3px;
+  margin-bottom: 4px;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(136, 204, 255, 0.15);
-  padding-bottom: 8px;
+  padding: 4px;
+  background: rgba(5, 10, 25, 0.55);
+  border-radius: 14px;
+  border: 1px solid rgba(136, 204, 255, 0.10);
 }
 .panel-tab-btn {
   flex: 1;
-  padding: 5px 4px;
-  border-radius: 8px;
+  position: relative;
+  padding: 6px 3px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  color: rgba(148, 163, 184, 0.65);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.6);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-align: center;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.2s var(--ease-out), color 0.2s, border-color 0.18s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 .panel-tab-btn.active {
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(30, 50, 80, 0.85);
+  border-color: rgba(56, 189, 248, 0.30);
   color: #7dd3fc;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.45), 0 0 0 1px rgba(56,189,248,0.08) inset;
 }
 .panel-tab-btn:hover:not(.active) {
-  background: rgba(56, 189, 248, 0.06);
-  color: rgba(224, 242, 254, 0.85);
+  background: rgba(56, 189, 248, 0.07);
+  color: rgba(224, 242, 254, 0.8);
+}
+.tab-badge {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #39ffb7;
+  box-shadow: 0 0 6px rgba(57, 255, 183, 0.8);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.tab-badge.visible {
+  opacity: 1;
 }
 .panel-tab-pane {
   display: none;
@@ -913,9 +1132,13 @@
   padding: 16px 12px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.18s, background 0.18s;
+  transition: border-color 0.2s ease, background 0.2s ease;
   background: rgba(8, 15, 28, 0.4);
   position: relative;
+}
+.import-dropzone:hover {
+  border-color: rgba(57, 255, 183, 0.45);
+  background: rgba(5, 25, 18, 0.5);
 }
 .import-dropzone.drag-over {
   border-color: rgba(57, 255, 183, 0.7);
@@ -1021,16 +1244,22 @@
 /* Abs max exceeded banner */
 .abs-max-banner {
   display: none;
+  align-items: center;
+  gap: 6px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: rgba(220, 38, 38, 0.15);
-  border: 1px solid rgba(220, 38, 38, 0.5);
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(239, 68, 68, 0.5);
   color: #fca5a5;
   font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 6px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  animation: failure-card-in 0.3s var(--spring) both;
 }
-.abs-max-banner.visible { display: block; }
+.abs-max-banner.visible {
+  display: flex;
+}
 
 /* Tolerance range sub-line */
 .metric-tolerance {
@@ -1437,12 +1666,13 @@
   color: #fed7aa;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
   text-align: center;
 }
 .fuse-report-btn:hover { background: rgba(124, 45, 18, 0.38); border-color: rgba(251, 146, 60, 0.7); }
+.fuse-report-btn:active { transform: scale(0.97); }
   </style>
 </head>
 <body>
@@ -1478,8 +1708,8 @@
     <div class="panel-tabs" role="tablist" aria-label="Arena panel tabs">
       <button class="panel-tab-btn active" data-tab="components" role="tab" aria-selected="true" aria-controls="tab-components">📦 Parts</button>
       <button class="panel-tab-btn" data-tab="test" role="tab" aria-selected="false" aria-controls="tab-test">⚙️ Test</button>
-      <button class="panel-tab-btn" data-tab="metrics" role="tab" aria-selected="false" aria-controls="tab-metrics">📊 Metrics</button>
-      <button class="panel-tab-btn" data-tab="fuse" role="tab" aria-selected="false" aria-controls="tab-fuse">🔥 FUSE</button>
+      <button class="panel-tab-btn" data-tab="metrics" role="tab" aria-selected="false" aria-controls="tab-metrics">📊 Metrics<span class="tab-badge" id="badge-metrics"></span></button>
+      <button class="panel-tab-btn" data-tab="fuse" role="tab" aria-selected="false" aria-controls="tab-fuse">🔥 FUSE<span class="tab-badge" id="badge-fuse"></span></button>
       <button class="panel-tab-btn" data-tab="composition" role="tab" aria-selected="false" aria-controls="tab-composition">⚛️ Matter</button>
     </div>
     <div class="panel-scroll">
@@ -3816,6 +4046,37 @@
 
         card.appendChild(fuseLabel);
         card.appendChild(badge);
+
+        // Risk score meter
+        const riskSeverityStr =
+          failure.severity >= 2.5 ? "failed" :
+          failure.severity >= 1.5 ? "critical" :
+          failure.severity >= 0.8 ? "warning" : "stressed";
+
+        const riskMeter = document.createElement("div");
+        riskMeter.className = "failure-risk-meter";
+
+        const riskLabel = document.createElement("div");
+        riskLabel.className = "failure-risk-label";
+        riskLabel.textContent = "Risk Score";
+
+        const riskScore = document.createElement("div");
+        riskScore.className = "failure-risk-score risk-" + riskSeverityStr;
+        const severityToScore = { "safe": 0, "stressed": 28, "warning": 58, "critical": 82, "failed": 100 };
+        riskScore.textContent = (severityToScore[riskSeverityStr] || 0).toString();
+
+        const riskArc = document.createElement("div");
+        riskArc.className = "failure-risk-arc";
+        const riskArcFill = document.createElement("div");
+        riskArcFill.className = "failure-risk-arc-fill risk-" + riskSeverityStr;
+        setTimeout(() => { riskArcFill.style.width = (severityToScore[riskSeverityStr] || 0) + "%"; }, 50);
+        riskArc.appendChild(riskArcFill);
+
+        riskMeter.appendChild(riskLabel);
+        riskMeter.appendChild(riskScore);
+        riskMeter.appendChild(riskArc);
+        card.appendChild(riskMeter);
+
         card.appendChild(barTrack);
         card.appendChild(name);
         card.appendChild(desc);
@@ -5025,6 +5286,11 @@
           const metricsTabBtn = document.querySelector('.panel-tab-btn[data-tab="metrics"]');
           if (metricsTabBtn) metricsTabBtn.click();
         }
+        // Show notification badges
+        const metricsBadge = document.getElementById("badge-metrics");
+        const fuseBadge = document.getElementById("badge-fuse");
+        if (metricsBadge) metricsBadge.classList.add("visible");
+        if (fuseBadge) fuseBadge.classList.add("visible");
       }
 
       function summarizeComponent(component) {
@@ -5350,6 +5616,19 @@
               card.classList.add("metric-accent-delta");
             }
 
+            const METRIC_ICONS = {
+              "Voltage": "⚡", "Current": "〰️", "Power": "🔥", "Impedance": "♾️",
+              "Phase": "📐", "Stored Energy": "🔋", "Delivered Energy": "⚡",
+              "Thermal Rise": "🌡️", "Efficiency": "✅", "Time to Blow": "⏱️",
+              "I²t (let-through)": "⚡", "Power Delta": "🔥", "Current Delta": "〰️",
+              "Impedance Delta": "♾️", "Thermal Delta": "🌡️", "Efficiency Delta": "✅",
+              "Energy Delta": "🔋"
+            };
+            const iconDiv = document.createElement("div");
+            iconDiv.className = "metric-icon";
+            iconDiv.textContent = METRIC_ICONS[entry.label] || "📊";
+            card.appendChild(iconDiv);
+
             const label = document.createElement("div");
             label.className = "metric-label";
             label.textContent = entry.label;
@@ -5360,6 +5639,14 @@
 
             card.appendChild(label);
             card.appendChild(value);
+
+            const utilBar = document.createElement("div");
+            utilBar.className = "metric-util-bar";
+            const utilFill = document.createElement("div");
+            utilFill.className = "metric-util-fill";
+            utilFill.style.width = "0%";
+            utilBar.appendChild(utilFill);
+            card.appendChild(utilBar);
 
             if (entry.detail) {
               const detail = document.createElement("div");
@@ -5444,6 +5731,11 @@
         // Clear battle result UI
         clearBattleResult();
         setStatus("Arena reset. Metrics cleared.");
+        // Clear notification badges
+        const metricsBadge = document.getElementById("badge-metrics");
+        const fuseBadge = document.getElementById("badge-fuse");
+        if (metricsBadge) metricsBadge.classList.remove("visible");
+        if (fuseBadge) fuseBadge.classList.remove("visible");
       }
 
       function exportResults() {
@@ -5624,13 +5916,22 @@
   const panes = document.querySelectorAll(".panel-tab-pane");
   tabs.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const target = btn.dataset.tab;
+      const tab = btn.dataset.tab;
       tabs.forEach((t) => { t.classList.remove("active"); t.setAttribute("aria-selected", "false"); });
       panes.forEach((p) => p.classList.remove("active"));
       btn.classList.add("active");
       btn.setAttribute("aria-selected", "true");
-      const pane = document.getElementById("tab-" + target);
+      const pane = document.getElementById("tab-" + tab);
       if (pane) pane.classList.add("active");
+      // Clear badge when tab is opened
+      if (tab === "metrics") {
+        const b = document.getElementById("badge-metrics");
+        if (b) b.classList.remove("visible");
+      }
+      if (tab === "fuse") {
+        const b = document.getElementById("badge-fuse");
+        if (b) b.classList.remove("visible");
+      }
     });
   });
 })();
