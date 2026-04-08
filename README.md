@@ -7,7 +7,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to make circuit theory accessible and intuitive for everyone — because visual learning increases retention for all kinds of learners.
 
-[![GitHub Pages](https://img.shields.io/badge/Deployed%20on-GitHub%20Pages-blue?logo=github)](https://www.circuitry3d.net)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://www.circuitry3d.net)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -68,7 +68,7 @@ You don't need an engineering background to use CircuiTry3D.
 
 | Platform | Details |
 |---|---|
-| **Web App** | React 19 + Vite 7, deployed on GitHub Pages |
+| **Web App** | React 19 + Vite 7, deployed on Vercel |
 | **Android App** | Native app via Capacitor, available on Google Play Store |
 
 ---
@@ -83,7 +83,7 @@ You don't need an engineering background to use CircuiTry3D.
 | Mobile | Capacitor 7 |
 | Routing | React Router DOM 7 |
 | Backend/API | GitHub Actions + Upstash Redis |
-| Deployment | GitHub Pages (web), Google Play Store (Android) |
+| Deployment | Vercel (web), Google Play Store (Android) |
 | Testing | Vitest + Playwright |
 
 ---
@@ -197,6 +197,8 @@ Without these the classroom feature still works but saves to browser localStorag
 | `/data-safety` | Android data-safety disclosure |
 | `/app-access` | Download & platform links |
 | `/delete-account` | Account deletion request |
+| `/gallery` | Circuit gallery — browse and share saved circuits |
+| `/partnerships` | Manufacturer & partnership information |
 
 ---
 
