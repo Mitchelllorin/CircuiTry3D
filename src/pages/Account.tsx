@@ -85,6 +85,14 @@ export default function Account() {
     }
   }, [currentUser]);
 
+  const handlePinDigit = useCallback((digit: string) => {
+    setPinEntry((prev) => (prev.length < 4 ? prev + digit : prev));
+  }, []);
+
+  const handlePinSetupDigit = useCallback((digit: string) => {
+    setPinSetupEntry((prev) => (prev.length < 4 ? prev + digit : prev));
+  }, []);
+
   // Keyboard support for PIN entry
   useEffect(() => {
     if (mode !== "pin" && !(mode === "profile" && pinSetup.active)) return;
@@ -105,19 +113,7 @@ export default function Account() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, pinSetup.active]);
-
-  const handlePinDigit = useCallback((digit: string) => {
-    setPinEntry((prev) => {
-      const next = prev.length < 4 ? prev + digit : prev;
-      return next;
-    });
-  }, []);
-
-  const handlePinSetupDigit = useCallback((digit: string) => {
-    setPinSetupEntry((prev) => (prev.length < 4 ? prev + digit : prev));
-  }, []);
+  }, [mode, pinSetup.active, handlePinDigit, handlePinSetupDigit]);
 
   // Auto-submit PIN sign-in when 4 digits entered
   useEffect(() => {
@@ -140,8 +136,7 @@ export default function Account() {
       };
       submit();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pinEntry, mode]);
+  }, [pinEntry, mode, signInWithPIN]);
 
   // Auto-advance PIN setup when 4 digits entered
   useEffect(() => {
@@ -177,8 +172,7 @@ export default function Account() {
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pinSetupEntry, pinSetup, mode]);
+  }, [pinSetupEntry, pinSetup, mode, setPIN]);
 
   const handleSignIn = async (event: FormEvent) => {
     event.preventDefault();
