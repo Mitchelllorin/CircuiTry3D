@@ -2322,13 +2322,11 @@ export default function Builder() {
       return;
     }
 
-    // Intro already seen — always run the payoff demo on startup (every session).
-    // No "hasSeenPayoff" gate: the demo circuit should be pre-loaded every time
-    // the app opens so users see the current-flow animation immediately.
-    // For returning users we intentionally skip the circuit lock so they can
-    // start editing right away; first-time users get the full locked experience
-    // via handleDismissIntroDialog.
-    runCurrentFlowPayoffSequence({ revealBanner: true });
+    // Intro already seen — pre-load the demo circuit silently so the 3D scene
+    // is populated on startup, but don't show the payoff banner again for
+    // returning users. The banner was useful for first-time users to understand
+    // the current-flow animation; repeating it every session adds clutter.
+    runCurrentFlowPayoffSequence({ revealBanner: false });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
   useEffect(() => {
@@ -2600,13 +2598,9 @@ export default function Builder() {
   const currentFlowLabel =
     modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
   const isWireToolActive = modeState.isWireMode;
-  const isCurrentFlowSolid = modeState.currentFlowStyle === "solid";
   const wireRoutingTitle = isWireToolActive
     ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
     : `Wire tool inactive - routing preset is ${wireRoutingLabel}.`;
-  const currentFlowTitle = isCurrentFlowSolid
-    ? "Current flow visualisation active."
-    : "Electron flow visualisation active.";
 
   const liveWireMetricsSnapshot = useMemo(
     () => ({
@@ -2705,16 +2699,6 @@ export default function Builder() {
     isCurrentFlowPayoffVisible &&
     shouldShowEdgeActions &&
     !isInteractiveTutorialOpen;
-  // Show the "tap to edit" chip when the circuit is still onboarding-locked
-  // but the payoff banner has been dismissed/auto-hidden. This gives the user
-  // a clear, explicit action to start editing rather than accidentally
-  // dragging components.
-  const shouldShowOnboardingLockChip =
-    isOnboardingLocked &&
-    !isCurrentFlowPayoffVisible &&
-    !isIntroDialogVisible &&
-    shouldShowEdgeActions &&
-    isFrameReady;
 
   const renderHelpParagraph = (paragraph: string, key: string) => {
     const trimmed = paragraph.trim();
@@ -3197,7 +3181,11 @@ export default function Builder() {
             type="button"
             className="current-flow-payoff-close"
             aria-label="Dismiss"
-            onClick={() => setCurrentFlowPayoffVisible(false)}
+            onClick={() => {
+              setCurrentFlowPayoffVisible(false);
+              setOnboardingLocked(false);
+              setCircuitLocked(false);
+            }}
           >
             ×
           </button>
@@ -3207,50 +3195,6 @@ export default function Builder() {
               ? "Current is flowing in 3D right now."
               : "Load a closed circuit to watch current flow instantly."}
           </h2>
-          <p className="current-flow-payoff-text">
-            This is the core experience: virtual electricity moving through a
-            complete circuit.{" "}
-            {isCurrentFlowSolid
-              ? "Conventional current view is active (positive → negative)."
-              : "Electron flow view is active (negative → positive)."}
-          </p>
-          <div className="current-flow-payoff-explainer">
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">⚡ Current (I)</span>
-              <span className="payoff-explainer-value">
-                Flow of electric charge through the circuit.{" "}
-                {currentFlowPayoffAmps > 0
-                  ? `${currentFlowPayoffAmps.toFixed(activeWireProfile ? 4 : 3)} A flowing now.`
-                  : "Close the circuit to start flow."}
-              </span>
-            </div>
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">🔋 Voltage (E)</span>
-              <span className="payoff-explainer-value">
-                Electrical pressure pushing charge around the circuit.{" "}
-                {currentFlowPayoffVolts > 0
-                  ? `${currentFlowPayoffVolts.toFixed(1)} V supplied by the battery.`
-                  : "Add a battery to supply voltage."}
-              </span>
-            </div>
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">🟢 Resistance (R)</span>
-              <span className="payoff-explainer-value">
-                Opposition to current. Higher resistance → less current.
-                Ohm's Law: <strong>E = I × R</strong>.
-              </span>
-            </div>
-            <div className="payoff-explainer-item">
-              <span className="payoff-explainer-label">🔵 Power (W)</span>
-              <span className="payoff-explainer-value">
-                Energy used per second.{" "}
-                <strong>P = E × I</strong>.{" "}
-                {currentFlowPayoffWatts > 0
-                  ? `${currentFlowPayoffWatts.toFixed(activeWireProfile ? 3 : 2)} W consumed now.`
-                  : "Appears once current flows."}
-              </span>
-            </div>
-          </div>
           <div className="current-flow-payoff-metrics">
             <span className="current-flow-payoff-metric">
               <strong>I</strong>{" "}
@@ -3274,7 +3218,7 @@ export default function Builder() {
                 setCircuitLocked(false);
               }}
             >
-              ✏️ Edit Circuit
+              ✏️ Start Editing
             </button>
             <button
               type="button"
@@ -3283,50 +3227,10 @@ export default function Builder() {
               disabled={controlsDisabled || isCurrentFlowPayoffRunning}
               aria-disabled={controlsDisabled || isCurrentFlowPayoffRunning}
             >
-              {isCurrentFlowPayoffRunning ? "Replaying..." : "Replay Flow Demo"}
-            </button>
-            <button
-              type="button"
-              className="current-flow-payoff-btn"
-              onClick={() => {
-                setCurrentFlowPayoffVisible(false);
-                setOnboardingLocked(false);
-                setCircuitLocked(false);
-                openGuidesWorkspace("tutorial");
-                setInteractiveTutorialOpen(true);
-              }}
-            >
-              Start Interactive Tutorial
-            </button>
-            <button
-              type="button"
-              className="current-flow-payoff-btn current-flow-payoff-btn--ghost"
-              onClick={() => {
-                // Dismiss hides the banner but keeps the circuit locked so the
-                // user can't accidentally move components. A "tap to edit" chip
-                // will appear to let them explicitly start editing.
-                setCurrentFlowPayoffVisible(false);
-              }}
-            >
-              Dismiss
+              {isCurrentFlowPayoffRunning ? "Replaying..." : "↺ Replay"}
             </button>
           </div>
         </section>
-      )}
-
-      {shouldShowOnboardingLockChip && (
-        <div className="onboarding-edit-chip-wrap" role="status">
-          <button
-            type="button"
-            className="onboarding-edit-chip"
-            onClick={() => {
-              setOnboardingLocked(false);
-              setCircuitLocked(false);
-            }}
-          >
-            ✏️ Start Editing
-          </button>
-        </div>
       )}
 
       <div
