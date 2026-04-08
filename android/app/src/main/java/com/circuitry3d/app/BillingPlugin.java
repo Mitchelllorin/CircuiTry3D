@@ -7,7 +7,6 @@ import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
-import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
@@ -49,11 +48,7 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
     public void load() {
         billingClient = BillingClient.newBuilder(getContext())
                 .setListener(this)
-                .enablePendingPurchases(
-                        PendingPurchasesParams.newBuilder()
-                                .enableOneTimeProducts()
-                                .build()
-                )
+                .enablePendingPurchases()
                 .build();
     }
 
