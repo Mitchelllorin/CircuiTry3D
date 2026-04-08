@@ -35,3 +35,11 @@ tmp-screenshots/
 
 # Circuit bot recorded footage (large binary files, generated locally)
 promo-footage/
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
