@@ -2277,8 +2277,9 @@ export default function Builder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  // Effect 2 — once the iframe is ready, run the current-flow payoff demo if
-  // the intro has already been seen and the payoff hasn't run yet.
+  // Effect 2 — once the iframe is ready, run the current-flow payoff demo.
+  // Runs every session (once per mount) so the demo circuit is always pre-loaded
+  // on startup, giving users immediate visual proof that current flow works.
   useEffect(() => {
     if (!isFrameReady || firstRunPayoffTriggeredRef.current) {
       return;
@@ -2301,29 +2302,12 @@ export default function Builder() {
       return;
     }
 
-    // Intro already seen — check whether the payoff demo should still run.
-    let hasSeenPayoff = false;
-    try {
-      hasSeenPayoff =
-        window.localStorage.getItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY) === "seen";
-    } catch {
-      hasSeenPayoff = false;
-    }
-
-    if (hasSeenPayoff) {
-      return;
-    }
-
-    // Intro seen, payoff not yet seen — run the current-flow payoff demo once.
-    try {
-      window.localStorage.setItem(CURRENT_FLOW_PAYOFF_STORAGE_KEY, "seen");
-    } catch {
-      // ignore storage write failures
-    }
-
-    // Lock circuit during first-visit payoff sequence so the user watches before editing
-    setCircuitLocked(true);
-    setOnboardingLocked(true);
+    // Intro already seen — always run the payoff demo on startup (every session).
+    // No "hasSeenPayoff" gate: the demo circuit should be pre-loaded every time
+    // the app opens so users see the current-flow animation immediately.
+    // For returning users we intentionally skip the circuit lock so they can
+    // start editing right away; first-time users get the full locked experience
+    // via handleDismissIntroDialog.
     runCurrentFlowPayoffSequence({ reloadPreset: true, revealBanner: true });
   }, [isFrameReady, runCurrentFlowPayoffSequence]);
 
