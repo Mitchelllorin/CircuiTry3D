@@ -4004,6 +4004,16 @@ body.android-optimized .zoom-btn {
                                     loadPresetCircuit(data.preset);
                                 }
                                 break;
+                            case 'load-payoff':
+                                if (typeof loadPayoffCircuit === 'function') {
+                                    loadPayoffCircuit();
+                                }
+                                break;
+                            case 'run-payoff-flow':
+                                if (typeof runPayoffFlow === 'function') {
+                                    runPayoffFlow();
+                                }
+                                break;
                             case 'generate-practice':
                                 if (typeof generateRandomProblem === 'function') generateRandomProblem();
                                 break;
@@ -18394,6 +18404,120 @@ Made with ? for visual learners everywhere!
             
             feedback += '</div>';
             feedbackEl.innerHTML = feedback;
+        }
+
+        /**
+         * loadPayoffCircuit — dedicated payoff sequence that builds the startup
+         * showcase series circuit directly, bypassing all practice-UI machinery.
+         *
+         * Steps:
+         *   1. Guard: scene + renderer must exist (init() completed successfully).
+         *   2. clearAll() to start fresh.
+         *   3. Create Battery + 3 resistors in a square loop with 4 corner junctions.
+         *   4. Wire them in order: B+→TL→R1→TR→R2→BR→R3→BL→B−.
+         *   5. Force currentFlowStyle = 'solid' and notify React.
+         *   6. fitToScreen() then analyzeCircuit() to spawn particles.
+         *   7. setStatus() with a user-facing message.
+         */
+        function loadPayoffCircuit() {
+            if (!scene || !renderer) {
+                console.warn('[CT3D Payoff] loadPayoffCircuit: scene/renderer not ready — retrying in 800 ms (aligns with React retry at 480 ms + 1200 ms)');
+                window.setTimeout(loadPayoffCircuit, 800);
+                return;
+            }
+
+            try {
+                // ── Clear workspace ──────────────────────────────────────────
+                // Pass false to preserve camera position (no viewport reset).
+                clearAll(false);
+
+                // ── Components ───────────────────────────────────────────────
+                const battery = new Component('battery', new THREE.Vector3(-10, 0, 0));
+                battery.rotation = Math.PI / 2;
+                if (battery.mesh) battery.mesh.rotation.y = Math.PI / 2;
+                battery.updateProperties({ voltage: 9 });
+                components.push(battery);
+
+                const r1 = new Component('resistor', new THREE.Vector3(0, 0, 6));
+                r1.updateProperties({ resistance: 150 });
+                components.push(r1);
+
+                const r2 = new Component('resistor', new THREE.Vector3(10, 0, 0));
+                r2.rotation = Math.PI / 2;
+                if (r2.mesh) r2.mesh.rotation.y = Math.PI / 2;
+                r2.updateProperties({ resistance: 220 });
+                components.push(r2);
+
+                const r3 = new Component('resistor', new THREE.Vector3(0, 0, -6));
+                r3.updateProperties({ resistance: 270 });
+                components.push(r3);
+
+                // ── Junctions ────────────────────────────────────────────────
+                const jTL = new Junction(new THREE.Vector3(-10, 0, 6), { snapToGridPosition: false });
+                const jTR = new Junction(new THREE.Vector3(10, 0, 6), { snapToGridPosition: false });
+                const jBR = new Junction(new THREE.Vector3(10, 0, -6), { snapToGridPosition: false });
+                const jBL = new Junction(new THREE.Vector3(-10, 0, -6), { snapToGridPosition: false });
+                junctions.push(jTL, jTR, jBR, jBL);
+
+                // ── Wires ────────────────────────────────────────────────────
+                // Series loop: B+→TL→R1(L→R)→TR→R2(R→L)→BR→R3(R→L)→BL→B−
+                const wireSpecs = [
+                    [battery, 'positive',  jTL, 'center'],
+                    [jTL, 'center',        r1,  'left'  ],
+                    [r1,  'right',         jTR, 'center'],
+                    [jTR, 'center',        r2,  'right' ],
+                    [r2,  'left',          jBR, 'center'],
+                    [jBR, 'center',        r3,  'right' ],
+                    [r3,  'left',          jBL, 'center'],
+                    [jBL, 'center',        battery, 'negative'],
+                ];
+
+                wireSpecs.forEach(([startObj, startSide, endObj, endSide]) => {
+                    try {
+                        const wire = new Wire(startObj, startSide, endObj, endSide);
+                        wires.push(wire);
+                    } catch (e) {
+                        console.warn('[CT3D Payoff] Wire creation failed:', e);
+                    }
+                });
+
+                // ── Force solid current-flow style ───────────────────────────
+                if (currentFlowStyle !== 'solid') {
+                    currentFlowStyle = 'solid';
+                    const styleLabel = document.getElementById('flow-style-label');
+                    if (styleLabel) styleLabel.textContent = 'Current Flow';
+                    notifyParentModeState();
+                }
+
+                // ── Animate and display ──────────────────────────────────────
+                fitToScreen();
+                analyzeCircuit();
+                setStatus('⚡ CircuiTry3D — Current is flowing! Zoom in to explore all the way down to atomic scale.');
+                console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
+            } catch (err) {
+                console.error('[CT3D Payoff] loadPayoffCircuit error:', err);
+            }
+        }
+
+        /**
+         * runPayoffFlow — re-triggers the current-flow animation on whatever
+         * circuit is currently in the workspace.  Forces solid flow style,
+         * then calls analyzeCircuit().  Used as a reliability retry.
+         */
+        function runPayoffFlow() {
+            if (!scene || !renderer) return;
+            try {
+                if (currentFlowStyle !== 'solid') {
+                    currentFlowStyle = 'solid';
+                    const styleLabel = document.getElementById('flow-style-label');
+                    if (styleLabel) styleLabel.textContent = 'Current Flow';
+                    notifyParentModeState();
+                }
+                analyzeCircuit();
+                console.log('[CT3D Payoff] runPayoffFlow — flow state:', currentFlowState?.hasFlow, 'particles:', currentFlowParticles.length);
+            } catch (err) {
+                console.error('[CT3D Payoff] runPayoffFlow error:', err);
+            }
         }
 
         // Preset Circuit Library
