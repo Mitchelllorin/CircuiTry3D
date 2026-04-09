@@ -95,6 +95,59 @@ async function smoothZoomOut(page, steps = 6, delayMs = 150) {
 }
 
 /**
+ * Play a built-in CinematicController preset (or custom keyframe array) and
+ * wait for it to finish before returning.
+ *
+ * Built-in presets:
+ *   'orbit'   — full 360° orbit at current distance (~8 s)
+ *   'atom'    — macro zoom-in to atomic tier then pull back (~8 s)
+ *   'lattice' — lateral conductor-lattice traverse then pull back (~9 s)
+ *   'focus'   — push-in and orbit around the first component then pull back (~7 s)
+ *
+ * @param {object} page             - Playwright page object (legacy.html).
+ * @param {string|object[]} preset  - Preset name or custom keyframe array.
+ * @param {number} extraWaitMs      - Additional settling time after animation ends.
+ * @returns {Promise<void>}
+ */
+async function playCinematic(page, preset, extraWaitMs = 600) {
+  // Install a one-shot listener that sets a flag once the controller signals
+  // it has finished playing.  We track the "playing → stopped" transition so
+  // a pre-existing stopped state doesn't falsely resolve the wait.
+  await page.evaluate(() => {
+    window._circuitBot = window._circuitBot || {};
+    window._circuitBot.cinematicPlaying = false;
+    window._circuitBot.cinematicDone   = false;
+    const handler = (ev) => {
+      if (!ev.data || ev.data.type !== 'legacy:cinematic-state') return;
+      const p = ev.data.payload || {};
+      if (p.playing === true)  { window._circuitBot.cinematicPlaying = true; }
+      if (p.playing === false && window._circuitBot.cinematicPlaying) { window._circuitBot.cinematicDone = true; }
+    };
+    window._circuitBot.msgHandler = handler;
+    window.addEventListener('message', handler);
+  });
+
+  const data = typeof preset === 'string' ? { preset } : { keyframes: preset };
+  await sendAction(page, 'cinematic-play', data);
+
+  // Poll until the done flag is set (max 40 s covers the longest preset chain).
+  await page.waitForFunction(() => window._circuitBot && window._circuitBot.cinematicDone === true, {
+    timeout: 40_000,
+    polling: 250,
+  }).catch(() => {});
+
+  // Clean up listener and flags regardless of outcome.
+  await page.evaluate(() => {
+    if (window._circuitBot && window._circuitBot.msgHandler) {
+      window.removeEventListener('message', window._circuitBot.msgHandler);
+    }
+    delete window._circuitBot;
+  });
+
+  if (extraWaitMs > 0) await page.waitForTimeout(extraWaitMs);
+}
+
+/**
  * Navigate to legacy.html and wait for the 3-D canvas to be ready.
  * Dismisses any initial overlay via Escape.
  */
@@ -285,32 +338,25 @@ const SCENES = [
 
       // Fit the circuit neatly to the viewport
       await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(1000);
-
-      // Slow cinematic zoom in
-      await smoothZoomIn(page, 8, 200);
       await page.waitForTimeout(800);
+
+      // Opening cinematic: smooth 360° orbit reveals the full series topology
+      await playCinematic(page, 'orbit');
 
       // Trigger simulation — current starts flowing
       await sendAction(page, 'run-simulation');
       await verifyCanvas(page);
-      await page.waitForTimeout(2500);
-
-      // Zoom further in to show the electron cloud at a mid-range view
-      await smoothZoomIn(page, 6, 170);
-      await page.waitForTimeout(2000);
-
-      // Zoom into the atomic / quantum zoom tier
-      await smoothZoomIn(page, 10, 130);
-      await page.waitForTimeout(3000);
-
-      // Toggle between electron-flow and conventional-current views
-      await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(2500);
-
-      // Pull back out to the overview
-      await smoothZoomOut(page, 16, 140);
       await page.waitForTimeout(1500);
+
+      // Cinematic atom dive: interpolated push to atomic tier, back to overview
+      await playCinematic(page, 'atom');
+
+      // Flip to electron-flow convention mid-scene for visual contrast
+      await sendAction(page, 'toggle-current-flow');
+      await page.waitForTimeout(800);
+
+      // Closing orbit — conventional current streams visible across the loop
+      await playCinematic(page, 'orbit');
     },
   },
 
@@ -324,30 +370,29 @@ const SCENES = [
       await sendAction(page, 'load-preset', { preset: 'parallel_basic' });
       await page.waitForTimeout(1200);
       await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(1000);
-
-      // Wide cinematic pull-back, then slow push-in
-      await smoothZoomOut(page, 3, 250);
-      await page.waitForTimeout(600);
-      await smoothZoomIn(page, 10, 180);
       await page.waitForTimeout(800);
+
+      // Opening orbit — cinematic reveal of the branched topology
+      await playCinematic(page, 'orbit');
 
       // Simulate — parallel branch currents light up
       await sendAction(page, 'run-simulation');
       await verifyCanvas(page);
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1500);
 
-      // Dive into the atomic level to show three separate electron streams
-      await smoothZoomIn(page, 14, 130);
-      await page.waitForTimeout(3500);
+      // Lattice traverse — camera sweeps laterally through the conductor lattice
+      // showing the three separate electron streams side by side
+      await playCinematic(page, 'lattice');
+
+      // Atom dive — close-up of electron density inside a branch
+      await playCinematic(page, 'atom');
 
       // Flip flow direction for visual contrast
       await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(800);
 
-      // Pull back to overview
-      await smoothZoomOut(page, 14, 150);
-      await page.waitForTimeout(1500);
+      // Pull back to overview with a final orbit
+      await playCinematic(page, 'orbit');
     },
   },
 
@@ -364,26 +409,23 @@ const SCENES = [
       await sendAction(page, 'fit-screen');
       await page.waitForTimeout(800);
 
-      // Zoom in before starting so the viewer is close when things go wrong
-      await smoothZoomIn(page, 7, 190);
-      await page.waitForTimeout(600);
+      // Open wide orbit so the viewer sees the full circuit before it fails
+      await playCinematic(page, 'orbit');
 
       // Start simulation — current surges, thermal accumulation begins
       await sendAction(page, 'run-simulation');
       await verifyCanvas(page);
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1500);
 
-      // Continue zooming toward the resistor as heat builds
-      await smoothZoomIn(page, 6, 220);
-      await page.waitForTimeout(3000);
+      // Focus push: camera glides into the doomed resistor just as heat builds —
+      // the failure event fires during this move for dramatic effect
+      await playCinematic(page, 'focus');
 
-      // Go to atomic level — watch electrons slam through the overloaded resistor
-      await smoothZoomIn(page, 8, 160);
-      await page.waitForTimeout(4500);
+      // Atom dive — watch electrons slam through the overloaded lattice / aftermath
+      await playCinematic(page, 'atom');
 
-      // Pull back to show the aftermath
-      await smoothZoomOut(page, 12, 180);
-      await page.waitForTimeout(2000);
+      // Pull back to show the full scorched circuit
+      await playCinematic(page, 'orbit');
     },
   },
 
@@ -397,34 +439,34 @@ const SCENES = [
       await sendAction(page, 'load-preset', { preset: 'combination_advanced' });
       await page.waitForTimeout(1200);
       await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(1000);
-
-      // Reveal the complex topology with a slow zoom in
-      await smoothZoomIn(page, 6, 200);
       await page.waitForTimeout(800);
 
-      // Labels on to show component values while zooming
+      // Labels on — show component values in 3D space during the orbit reveal
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(600);
+
+      // Orbit reveal with labels floating in 3D
+      await playCinematic(page, 'orbit');
 
       // Simulate the advanced network
       await sendAction(page, 'run-simulation');
       await verifyCanvas(page);
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1500);
 
-      // Sweep from overview to atomic and back
-      await smoothZoomIn(page, 14, 130);
-      await page.waitForTimeout(3000);
+      // Lattice sweep — show current threading through the complex series-parallel topology
+      await playCinematic(page, 'lattice');
 
+      // Atom dive — electrons in the mixed network
+      await playCinematic(page, 'atom');
+
+      // Toggle conventional/electron current for a second visual burst
       await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(800);
 
-      await smoothZoomOut(page, 14, 150);
-      await page.waitForTimeout(1000);
-
-      // Turn labels back off for a clean outro
+      // Closing orbit with labels still on, then clean outro
+      await playCinematic(page, 'orbit');
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(600);
     },
   },
 
@@ -439,44 +481,39 @@ const SCENES = [
       await sendAction(page, 'load-preset', { preset: 'combination_advanced' });
       await page.waitForTimeout(1500);
       await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(1200);
-
-      // Labels on — show all component values in 3D space
-      await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(800);
-
-      // Wide cinematic pull-back to reveal the full 3D layout
-      await smoothZoomOut(page, 4, 220);
       await page.waitForTimeout(1000);
+
+      // Labels on — all component values floating in 3D during the fly-through
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Opening orbit — camera circles the full lit-up network
+      await playCinematic(page, 'orbit');
 
       // Run simulation — all electron streams light up simultaneously
       await sendAction(page, 'run-simulation');
       await verifyCanvas(page);
-      await page.waitForTimeout(2500);
-
-      // Slow push-in: macro → component view
-      await smoothZoomIn(page, 8, 200);
       await page.waitForTimeout(1500);
 
-      // Continue into atomic tier to show 3D electron clouds
-      await smoothZoomIn(page, 10, 150);
-      await page.waitForTimeout(3000);
+      // Focus push: glide into a single component for a hero close-up
+      await playCinematic(page, 'focus');
 
-      // Deep-atomic zoom — electrons spiral through the conductor lattice
-      await smoothZoomIn(page, 6, 180);
-      await page.waitForTimeout(3500);
+      // Lattice sweep: dolly laterally across the conductor lattice
+      await playCinematic(page, 'lattice');
+
+      // Atom dive: deep zoom into the electron cloud, then pull back
+      await playCinematic(page, 'atom');
 
       // Toggle conventional/electron current for a second visual burst
       await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(800);
 
-      // Pull all the way back to full overview — labels still on
-      await smoothZoomOut(page, 20, 130);
-      await page.waitForTimeout(2000);
+      // Final orbit — labels still on for the closing wide shot
+      await playCinematic(page, 'orbit');
 
-      // Labels off for a clean close
+      // Labels off for a clean fade-out
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(600);
     },
   },
 
@@ -539,44 +576,36 @@ const SCENES = [
       await sendAction(page, 'load-preset', { preset: 'relay_showcase' });
       await page.waitForTimeout(1200);
       await sendAction(page, 'fit-screen');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(800);
 
       // Labels on — show Relay (K), VR, and CB designators in 3D space
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(600);
 
-      // Slow wide-angle reveal
-      await smoothZoomOut(page, 3, 230);
-      await page.waitForTimeout(800);
-
-      // Zoom in to show the relay coil and VR body geometry
-      await smoothZoomIn(page, 7, 210);
-      await page.waitForTimeout(1000);
+      // Orbit reveal — camera circles the new component family
+      await playCinematic(page, 'orbit');
 
       // Start simulation — relay switches, VR regulates, CB trips
       await sendAction(page, 'run-simulation');
       await verifyCanvas(page);
-      await page.waitForTimeout(2500);
+      await page.waitForTimeout(1500);
 
-      // Dive into the relay coil / CB bimetallic strip region
-      await smoothZoomIn(page, 10, 160);
-      await page.waitForTimeout(3000);
+      // Focus push: glide into the relay coil / CB bimetallic strip
+      await playCinematic(page, 'focus');
+
+      // Atom dive — electrons through relay conductor geometry
+      await playCinematic(page, 'atom');
 
       // Toggle current flow to highlight the regulated output rail
       await sendAction(page, 'toggle-current-flow');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(800);
 
-      // Deep atomic zoom — electrons through relay conductor
-      await smoothZoomIn(page, 6, 180);
-      await page.waitForTimeout(3000);
-
-      // Pull back to full overview
-      await smoothZoomOut(page, 18, 140);
-      await page.waitForTimeout(1500);
+      // Closing orbit — labels still on, full component family in view
+      await playCinematic(page, 'orbit');
 
       // Labels off for a clean outro
       await sendAction(page, 'toggle-labels');
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(600);
     },
   },
 ];
