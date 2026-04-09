@@ -92,8 +92,10 @@ jobs:
           mkdir -p /tmp/promo-footage-deploy
           cp -r promo-footage/. /tmp/promo-footage-deploy/
 
-          # Switch to the promo-footage branch (create orphan if it doesn't exist)
-          git fetch origin promo-footage 2>/dev/null && \
+          # Switch to the promo-footage branch (create orphan if it doesn't exist).
+          # Use an explicit refspec to avoid git confusing the local promo-footage/
+          # directory with the remote branch name.
+          git fetch origin refs/heads/promo-footage:refs/remotes/origin/promo-footage 2>/dev/null && \
             git checkout promo-footage || \
             git checkout --orphan promo-footage
 
@@ -111,5 +113,5 @@ jobs:
             echo "No footage changes to commit."
           else
             git commit -m "chore: update promo footage [skip screenshots]"
-            git push origin promo-footage
+            git push --force origin promo-footage
           fi
