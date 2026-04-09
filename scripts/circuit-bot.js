@@ -33,7 +33,7 @@
 import { chromium } from 'playwright';
 import { mkdir, rename, writeFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
-import { dirname, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
@@ -293,11 +293,12 @@ async function concatWithFfmpeg(clipPaths, outputDir, portrait) {
   const tmpDir     = join(outputDir, '.tmp');
   await mkdir(tmpDir, { recursive: true });
 
-  // Write the concat manifest — double-quote paths to safely handle spaces.
-  // Paths are generated internally via path.join so they will not contain
-  // double-quotes; the manifest is only read by ffmpeg (not a shell).
+  // Write the concat manifest using paths relative to tmpDir.
+  // Relative paths avoid the FFmpeg 6.x issue where double-quoted absolute
+  // paths with -safe 0 are treated as relative (prepending the manifest dir).
+  // Since tmpDir is outputDir/.tmp, each clip is one level up: ../clip.webm.
   const concatFile = join(tmpDir, 'concat.txt');
-  const manifest   = clipPaths.map((p) => `file "${p}"`).join('\n');
+  const manifest   = clipPaths.map((p) => `file '../${basename(p)}'`).join('\n');
   await writeFile(concatFile, manifest, 'utf8');
 
   const suffix   = portrait ? '-portrait' : '';
