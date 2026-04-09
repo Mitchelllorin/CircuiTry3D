@@ -7878,14 +7878,6 @@ body.android-optimized .zoom-btn {
                 // stuck in its "loading / disabled" state, even when init()
                 // encounters a non-fatal error.
                 notifyParentReady();
-                // Auto-show the tutorial for first-time / new users.
-                // Uses a short delay so the 3D scene has painted before the
-                // modal appears.
-                setTimeout(function() {
-                    if (typeof maybeAutoShowTutorial === 'function') {
-                        maybeAutoShowTutorial();
-                    }
-                }, 800);
             }
         }
 
