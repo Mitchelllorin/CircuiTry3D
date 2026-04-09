@@ -6018,21 +6018,6 @@ body.android-optimized .zoom-btn {
             }
 
             addLeads(group) {
-                const segments = isMobile ? 8 : 12;
-                // Leads extend from ±0.2 (inside component body) to ±1.2 (connection sphere center)
-                // so there is no gap between the lead tip and the wire endpoint.
-                const leadGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.0, segments);
-                const leadMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.85, roughness: 0.22 });
-                
-                const leftLead = new THREE.Mesh(leadGeometry, leadMaterial);
-                leftLead.rotation.z = Math.PI / 2;
-                leftLead.position.x = -0.7;
-                group.add(leftLead);
-
-                const rightLead = new THREE.Mesh(leadGeometry, leadMaterial);
-                rightLead.rotation.z = Math.PI / 2;
-                rightLead.position.x = 0.7;
-                group.add(rightLead);
                 // Leads removed — connection node spheres float in space near component ends.
             }
 
@@ -7772,7 +7757,7 @@ body.android-optimized .zoom-btn {
                 
                 // Diagnostic overlay stays visible until manual dismiss
                 
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+                renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(_vw, _vh);
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -9272,6 +9257,7 @@ body.android-optimized .zoom-btn {
             if (w > 0 && h > 0) {
                 camera.aspect = w / h;
                 camera.updateProjectionMatrix();
+                renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(w, h);
             }
         }
