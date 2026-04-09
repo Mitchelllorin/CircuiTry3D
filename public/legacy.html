@@ -17547,6 +17547,14 @@ Made with ? for visual learners everywhere!
             console.log('[CT3D Flow] animateCurrentFlow called: hasFlow=' + flowState?.hasFlow +
                 ', currentValue=' + flowState?.currentValue +
                 ', wireSegments=' + (flowState?.wireSegments?.length ?? 'none'));
+            // Force world-matrix update before ANY wire-curve computation.
+            // On Android with local-bundle assets the page can load so fast that
+            // animateCurrentFlow is called before the first requestAnimationFrame fires,
+            // leaving every mesh.matrixWorld at identity (0,0,0).  Without this call
+            // all wire curves collapse to zero-length paths and particles are created at
+            // the scene origin, invisible to the user.  This is the same guard that was
+            // added to loadPayoffCircuit (PR #754) but generalised to every call site.
+            if (scene) scene.updateMatrixWorld(true);
             // Capture whether the circuit was already flowing BEFORE we update the state.
             // Used below to detect the no-flow → flow transition for FUSE thermal onset.
             const wasFlowing = Boolean(currentFlowState?.hasFlow);
@@ -19155,6 +19163,12 @@ Made with ? for visual learners everywhere!
             };
 
             if (Array.isArray(preset.wires)) {
+                // Ensure world matrices are current before computing wire start/end positions.
+                // Preset circuits can be loaded before the first render frame on fast
+                // local-bundle devices (Android AAB), so mesh.matrixWorld may still be the
+                // identity matrix from construction.  The explicit traversal here mirrors the
+                // fix that was already applied to loadPayoffCircuit.
+                if (scene) scene.updateMatrixWorld(true);
                 preset.wires.forEach((wireSpec) => {
                     const start = resolvePresetEndpoint(wireSpec.from);
                     const end = resolvePresetEndpoint(wireSpec.to);
