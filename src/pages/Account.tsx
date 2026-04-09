@@ -1,13 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import type { FormEvent } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import "../styles/account.css";
 
-type Mode = "signin" | "signup" | "profile" | "forgot-password";
+type Mode = "signin" | "signup" | "profile" | "forgot-password" | "pin";
+
+type PinSetupPhase =
+  | { active: false }
+  | { active: true; step: "enter" | "confirm"; first: string };
+
+function PinDots({ length }: { length: number }) {
+  return (
+    <div className="pin-dots" aria-hidden="true">
+      {[0, 1, 2, 3].map((i) => (
+        <span key={i} className={`pin-dot${length > i ? " is-filled" : ""}`} />
+      ))}
+    </div>
+  );
+}
+
+function PinPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBackspace: () => void }) {
+  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "⌫"] as const;
+  return (
+    <div className="pin-pad" role="group" aria-label="PIN keypad">
+      {keys.map((key, i) =>
+        key === "" ? (
+          <span key={i} className="pin-key-empty" aria-hidden="true" />
+        ) : key === "⌫" ? (
+          <button key={i} type="button" className="pin-key pin-key-back" onClick={onBackspace} aria-label="Delete last digit">
+            ⌫
+          </button>
+        ) : (
+          <button key={i} type="button" className="pin-key" onClick={() => onDigit(key)}>
+            {key}
+          </button>
+        )
+      )}
+    </div>
+  );
+}
 
 export default function Account() {
-  const { currentUser, loading, signIn, signUp, signOut, updateProfile, resetPassword } = useAuth();
+  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, setPIN, clearPIN, signInWithPIN } = useAuth();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
@@ -16,12 +51,128 @@ export default function Account() {
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // PIN sign-in state
+  const [pinEntry, setPinEntry] = useState("");
+  const [pinShake, setPinShake] = useState(false);
+
+  // PIN setup state (in profile)
+  const [pinSetup, setPinSetupPhase] = useState<PinSetupPhase>({ active: false });
+  const [pinSetupEntry, setPinSetupEntry] = useState("");
+
+  const hasSetInitialModeRef = useRef(false);
+
+  // After loading, auto-switch to PIN mode if applicable
+  useEffect(() => {
+    if (!loading && !hasSetInitialModeRef.current) {
+      hasSetInitialModeRef.current = true;
+      if (currentUser) {
+        setMode("profile");
+        setProfileForm({ displayName: currentUser.displayName, bio: currentUser.bio ?? "" });
+      } else if (hasPIN && lastSignedInUser) {
+        setMode("pin");
+      }
+    }
+  }, [loading, currentUser, hasPIN, lastSignedInUser]);
+
+  // When user becomes authenticated, go to profile
   useEffect(() => {
     if (currentUser) {
       setMode("profile");
       setProfileForm({ displayName: currentUser.displayName, bio: currentUser.bio ?? "" });
+      setPinEntry("");
+      setPinSetupPhase({ active: false });
+      setPinSetupEntry("");
     }
   }, [currentUser]);
+
+  const handlePinDigit = useCallback((digit: string) => {
+    setPinEntry((prev) => (prev.length < 4 ? prev + digit : prev));
+  }, []);
+
+  const handlePinSetupDigit = useCallback((digit: string) => {
+    setPinSetupEntry((prev) => (prev.length < 4 ? prev + digit : prev));
+  }, []);
+
+  // Keyboard support for PIN entry
+  useEffect(() => {
+    if (mode !== "pin" && !(mode === "profile" && pinSetup.active)) return;
+    const handler = (e: KeyboardEvent) => {
+      if (/^\d$/.test(e.key)) {
+        if (mode === "pin") {
+          handlePinDigit(e.key);
+        } else {
+          handlePinSetupDigit(e.key);
+        }
+      } else if (e.key === "Backspace") {
+        if (mode === "pin") {
+          setPinEntry((prev) => prev.slice(0, -1));
+        } else {
+          setPinSetupEntry((prev) => prev.slice(0, -1));
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [mode, pinSetup.active, handlePinDigit, handlePinSetupDigit]);
+
+  // Auto-submit PIN sign-in when 4 digits entered
+  useEffect(() => {
+    if (mode === "pin" && pinEntry.length === 4) {
+      const submit = async () => {
+        setIsSubmitting(true);
+        try {
+          const result = await signInWithPIN(pinEntry);
+          if (!result.ok) {
+            setPinShake(true);
+            setStatus({ type: "error", message: result.message });
+            setTimeout(() => {
+              setPinShake(false);
+              setPinEntry("");
+            }, 600);
+          }
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      submit();
+    }
+  }, [pinEntry, mode, signInWithPIN]);
+
+  // Auto-advance PIN setup when 4 digits entered
+  useEffect(() => {
+    if (mode === "profile" && pinSetup.active && pinSetupEntry.length === 4) {
+      if (pinSetup.step === "enter") {
+        const first = pinSetupEntry;
+        setPinSetupPhase({ active: true, step: "confirm", first });
+        setPinSetupEntry("");
+      } else if (pinSetup.step === "confirm") {
+        if (pinSetupEntry !== pinSetup.first) {
+          setStatus({ type: "error", message: "PINs didn't match. Try again." });
+          setPinSetupPhase({ active: true, step: "enter", first: "" });
+          setPinSetupEntry("");
+        } else {
+          const finish = async () => {
+            setIsSubmitting(true);
+            try {
+              const result = await setPIN(pinSetupEntry);
+              if (result.ok) {
+                setStatus({ type: "success", message: "PIN set! You can now unlock quickly next time." });
+                setPinSetupPhase({ active: false });
+                setPinSetupEntry("");
+              } else {
+                setStatus({ type: "error", message: result.message });
+                setPinSetupPhase({ active: false });
+                setPinSetupEntry("");
+              }
+            } finally {
+              setIsSubmitting(false);
+            }
+          };
+          finish();
+        }
+      }
+    }
+  }, [pinSetupEntry, pinSetup, mode, setPIN]);
 
   const handleSignIn = async (event: FormEvent) => {
     event.preventDefault();
@@ -82,13 +233,20 @@ export default function Account() {
 
   const handleSignOut = () => {
     signOut();
-    setMode("signin");
+    setMode(hasPIN && lastSignedInUser ? "pin" : "signin");
     setStatus({ type: "success", message: "Signed out." });
+    setPinEntry("");
   };
 
   const handleForgotStep1 = async (event: FormEvent) => {
     event.preventDefault();
     setStatus(null);
+    const emailNorm = forgotForm.email.trim().toLowerCase();
+    const emailExists = users.some((u) => u.email.toLowerCase() === emailNorm);
+    if (!emailExists) {
+      setStatus({ type: "error", message: "No account found with that email address." });
+      return;
+    }
     setForgotForm((previous) => ({ ...previous, step: 2 }));
   };
 
@@ -121,6 +279,21 @@ export default function Account() {
     setMode("signin");
   };
 
+  const handleClearPIN = async () => {
+    setStatus(null);
+    setIsSubmitting(true);
+    try {
+      const result = await clearPIN();
+      if (result.ok) {
+        setStatus({ type: "success", message: "PIN removed." });
+      } else {
+        setStatus({ type: "error", message: result.message });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const modeLabel = useMemo(() => {
     switch (mode) {
       case "signin":
@@ -131,6 +304,8 @@ export default function Account() {
         return "Your Account";
       case "forgot-password":
         return "Reset Password";
+      case "pin":
+        return "Quick Unlock";
       default:
         return "Account";
     }
@@ -147,19 +322,19 @@ export default function Account() {
         <div className="account-switcher" role="tablist" aria-label="Account modes">
           <button
             type="button"
-            className={mode === "signin" ? "tab-button is-active" : "tab-button"}
-            onClick={() => setMode("signin")}
-            disabled={isSubmitting}
+            className={mode === "signin" || mode === "pin" ? "tab-button is-active" : "tab-button"}
+            onClick={() => { setStatus(null); setPinEntry(""); setMode(hasPIN && lastSignedInUser ? "pin" : "signin"); }}
+            disabled={isSubmitting || Boolean(currentUser)}
             role="tab"
-            aria-selected={mode === "signin"}
+            aria-selected={mode === "signin" || mode === "pin"}
           >
             Sign In
           </button>
           <button
             type="button"
             className={mode === "signup" ? "tab-button is-active" : "tab-button"}
-            onClick={() => setMode("signup")}
-            disabled={isSubmitting}
+            onClick={() => { setStatus(null); setMode("signup"); }}
+            disabled={isSubmitting || Boolean(currentUser)}
             role="tab"
             aria-selected={mode === "signup"}
           >
@@ -188,6 +363,39 @@ export default function Account() {
         <p className="account-loading">Loading account state…</p>
       ) : (
         <div className="account-panels">
+          {mode === "pin" && lastSignedInUser && (
+            <div className="account-form pin-entry-wrap">
+              <div className="pin-welcome-card">
+                <div className="profile-avatar" style={{ backgroundColor: lastSignedInUser.avatarColor }} aria-hidden="true">
+                  {lastSignedInUser.displayName
+                    .split(" ")
+                    .map((s) => s.trim()[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <p className="pin-welcome-name">Welcome back,<br /><strong>{lastSignedInUser.displayName}</strong></p>
+              </div>
+              <p className="forgot-intro">Enter your 4-digit PIN to unlock.</p>
+              <div className={`pin-dots-wrap${pinShake ? " pin-shake" : ""}`}>
+                <PinDots length={pinEntry.length} />
+              </div>
+              <PinPad
+                onDigit={(d) => { if (!isSubmitting) handlePinDigit(d); }}
+                onBackspace={() => { if (!isSubmitting) setPinEntry((prev) => prev.slice(0, -1)); }}
+              />
+              <div className="account-hint-row">
+                <p className="account-hint">
+                  Not you? <button type="button" onClick={() => { setStatus(null); setPinEntry(""); setMode("signin"); }}>Sign in with a different account</button>
+                </p>
+                <p className="account-hint">
+                  <button type="button" onClick={() => { setStatus(null); setPinEntry(""); setMode("signin"); }}>Use password instead</button>
+                </p>
+              </div>
+            </div>
+          )}
+
           {mode === "signin" && (
             <form className="account-form" onSubmit={handleSignIn} aria-label="Sign in form">
               <label>
@@ -224,6 +432,11 @@ export default function Account() {
                   <button type="button" onClick={() => { setStatus(null); setMode("forgot-password"); }}>Forgot password?</button>
                 </p>
               </div>
+              {hasPIN && lastSignedInUser && (
+                <p className="account-hint" style={{ textAlign: "center" }}>
+                  <button type="button" onClick={() => { setStatus(null); setPinEntry(""); setMode("pin"); }}>← Back to PIN unlock</button>
+                </p>
+              )}
               <aside className="account-sample">
                 <strong>Sample accounts</strong>
                 <div>
@@ -408,6 +621,61 @@ export default function Account() {
                   {isSubmitting ? "Saving…" : "Save Changes"}
                 </button>
               </form>
+
+              {/* PIN management */}
+              <div className="account-form pin-management">
+                <h3>Quick Unlock PIN</h3>
+                <p className="forgot-intro">Set a 4-digit PIN so the app recognises you instantly — no password needed next time.</p>
+                {!pinSetup.active ? (
+                  <>
+                    {hasPIN ? (
+                      <div className="pin-status-row">
+                        <span className="pin-status-badge">🔐 PIN is active on this device</span>
+                        <div className="pin-status-actions">
+                          <button
+                            type="button"
+                            className="account-secondary"
+                            disabled={isSubmitting}
+                            onClick={() => { setStatus(null); setPinSetupPhase({ active: true, step: "enter", first: "" }); setPinSetupEntry(""); }}
+                          >
+                            Change PIN
+                          </button>
+                          <button type="button" className="account-secondary pin-remove-btn" disabled={isSubmitting} onClick={handleClearPIN}>
+                            Remove PIN
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="account-primary"
+                        disabled={isSubmitting}
+                        onClick={() => { setStatus(null); setPinSetupPhase({ active: true, step: "enter", first: "" }); setPinSetupEntry(""); }}
+                      >
+                        Set up PIN
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="pin-setup-inline">
+                    <p className="forgot-intro">
+                      {pinSetup.step === "enter" ? "Enter a new 4-digit PIN:" : "Confirm your PIN:"}
+                    </p>
+                    <div className="pin-dots-wrap">
+                      <PinDots length={pinSetupEntry.length} />
+                    </div>
+                    <PinPad
+                      onDigit={(d) => { if (!isSubmitting) handlePinSetupDigit(d); }}
+                      onBackspace={() => { if (!isSubmitting) setPinSetupEntry((prev) => prev.slice(0, -1)); }}
+                    />
+                    <p className="account-hint" style={{ textAlign: "center" }}>
+                      <button type="button" onClick={() => { setPinSetupPhase({ active: false }); setPinSetupEntry(""); setStatus(null); }}>
+                        Cancel
+                      </button>
+                    </p>
+                  </div>
+                )}
+              </div>
             </section>
           )}
         </div>

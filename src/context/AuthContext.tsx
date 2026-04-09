@@ -6,6 +6,7 @@ import { getStoredTier, setStoredTier } from "../utils/playStoreBilling";
 type AuthStorageSchema = {
   users: StoredUser[];
   currentUserId: string | null;
+  lastSignedInUserId: string | null;
 };
 
 export type StoredUser = {
@@ -15,10 +16,11 @@ export type StoredUser = {
   displayName: string;
   avatarColor: string;
   bio?: string;
+  pin?: string;
   createdAt: number;
 };
 
-export type AuthUser = Omit<StoredUser, "password">;
+export type AuthUser = Omit<StoredUser, "password" | "pin">;
 
 export type SignUpPayload = {
   email: string;
@@ -40,6 +42,8 @@ export type AuthResult =
 
 type AuthContextValue = {
   currentUser: AuthUser | null;
+  lastSignedInUser: AuthUser | null;
+  hasPIN: boolean;
   users: AuthUser[];
   loading: boolean;
   signUp: (payload: SignUpPayload) => Promise<AuthResult>;
@@ -48,6 +52,9 @@ type AuthContextValue = {
   updateProfile: (payload: UpdateProfilePayload) => Promise<AuthResult>;
   getUserById: (id: string) => AuthUser | null;
   resetPassword: (email: string, newPassword: string) => Promise<AuthResult>;
+  setPIN: (pin: string) => Promise<AuthResult>;
+  clearPIN: () => Promise<AuthResult>;
+  signInWithPIN: (pin: string) => Promise<AuthResult>;
 };
 
 const STORAGE_KEY = "circuiTry3d.auth.v1";
@@ -74,6 +81,7 @@ const DEFAULT_STORAGE: AuthStorageSchema = {
     },
   ],
   currentUserId: null,
+  lastSignedInUserId: null,
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -94,7 +102,8 @@ const readStorage = (): AuthStorageSchema => {
     }
     const users = Array.isArray(parsed.users) ? (parsed.users.filter((user): user is StoredUser => Boolean(user && user.id && user.email && user.password && user.displayName)) as StoredUser[]) : DEFAULT_STORAGE.users;
     const currentUserId = typeof parsed.currentUserId === "string" ? parsed.currentUserId : null;
-    return { users, currentUserId };
+    const lastSignedInUserId = typeof parsed.lastSignedInUserId === "string" ? parsed.lastSignedInUserId : null;
+    return { users, currentUserId, lastSignedInUserId };
   } catch (error) {
     console.warn("Auth storage read failed", error);
     return DEFAULT_STORAGE;
@@ -116,7 +125,7 @@ const buildAuthUser = (user: StoredUser | null | undefined): AuthUser | null => 
   if (!user) {
     return null;
   }
-  const { password: _password, ...rest } = user;
+  const { password: _password, pin: _pin, ...rest } = user;
   return rest;
 };
 
@@ -155,6 +164,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const currentUser = useMemo(() => buildAuthUser(state.users.find((user) => user.id === state.currentUserId)), [state.users, state.currentUserId]);
+
+  const lastSignedInUser = useMemo(() => buildAuthUser(state.users.find((user) => user.id === state.lastSignedInUserId)), [state.users, state.lastSignedInUserId]);
+
+  const hasPIN = useMemo(() => {
+    if (!state.lastSignedInUserId) return false;
+    const user = state.users.find((u) => u.id === state.lastSignedInUserId);
+    return Boolean(user?.pin);
+  }, [state.users, state.lastSignedInUserId]);
 
   const users = useMemo(() => state.users.map((user) => buildAuthUser(user)).filter((user): user is AuthUser => Boolean(user)), [state.users]);
 
@@ -211,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((previous) => ({
       users: [...previous.users, nextUser],
       currentUserId: nextUser.id,
+      lastSignedInUserId: nextUser.id,
     }));
 
     if (isLifetimeTester(email)) {
@@ -233,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((previous) => ({
       ...previous,
       currentUserId: match.id,
+      lastSignedInUserId: match.id,
     }));
 
     if (isLifetimeTester(email)) {
@@ -316,9 +335,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return resolvedUser ? { ok: true, user: buildAuthUser(resolvedUser)! } : { ok: false, reason: "unknown", message: "Unable to locate account." };
   }, []);
 
+  const setPIN = useCallback(async (pin: string): Promise<AuthResult> => {
+    await introduceLatency(150, 350);
+    const snapshot = stateSnapshotRef.current;
+    const { currentUserId } = snapshot;
+    if (!currentUserId) {
+      return { ok: false, reason: "no-session", message: "You need to be signed in to set a PIN." };
+    }
+    if (!/^\d{4}$/.test(pin)) {
+      return { ok: false, reason: "unknown", message: "PIN must be exactly 4 digits." };
+    }
+    let resolvedUser: StoredUser | null = null;
+    setState((previous) => {
+      const users = previous.users.map((user) => {
+        if (user.id !== currentUserId) return user;
+        const updated: StoredUser = { ...user, pin };
+        resolvedUser = updated;
+        return updated;
+      });
+      return { ...previous, users };
+    });
+    return resolvedUser ? { ok: true, user: buildAuthUser(resolvedUser)! } : { ok: false, reason: "unknown", message: "Unable to locate account." };
+  }, []);
+
+  const clearPIN = useCallback(async (): Promise<AuthResult> => {
+    await introduceLatency(150, 350);
+    const snapshot = stateSnapshotRef.current;
+    const { currentUserId } = snapshot;
+    if (!currentUserId) {
+      return { ok: false, reason: "no-session", message: "You need to be signed in to remove your PIN." };
+    }
+    let resolvedUser: StoredUser | null = null;
+    setState((previous) => {
+      const users = previous.users.map((user) => {
+        if (user.id !== currentUserId) return user;
+        const { pin: _pin, ...rest } = user;
+        const updated = rest as StoredUser;
+        resolvedUser = updated;
+        return updated;
+      });
+      return { ...previous, users };
+    });
+    return resolvedUser ? { ok: true, user: buildAuthUser(resolvedUser)! } : { ok: false, reason: "unknown", message: "Unable to locate account." };
+  }, []);
+
+  const signInWithPIN = useCallback(async (pin: string): Promise<AuthResult> => {
+    await introduceLatency(200, 450);
+    const snapshot = stateSnapshotRef.current;
+    const { lastSignedInUserId } = snapshot;
+    if (!lastSignedInUserId) {
+      return { ok: false, reason: "invalid-credentials", message: "No recent account found. Please sign in with your password." };
+    }
+    const user = snapshot.users.find((u) => u.id === lastSignedInUserId);
+    if (!user || !user.pin) {
+      return { ok: false, reason: "invalid-credentials", message: "No PIN is set for this account." };
+    }
+    if (user.pin !== pin) {
+      return { ok: false, reason: "invalid-credentials", message: "Incorrect PIN." };
+    }
+    setState((previous) => ({
+      ...previous,
+      currentUserId: user.id,
+      lastSignedInUserId: user.id,
+    }));
+    if (isLifetimeTester(user.email)) {
+      setStoredTier("lifetime");
+    }
+    return { ok: true, user: buildAuthUser(user)! };
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       currentUser,
+      lastSignedInUser,
+      hasPIN,
       users,
       loading,
       signUp,
@@ -327,8 +417,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       getUserById,
       resetPassword,
+      setPIN,
+      clearPIN,
+      signInWithPIN,
     }),
-    [currentUser, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword]
+    [currentUser, lastSignedInUser, hasPIN, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword, setPIN, clearPIN, signInWithPIN]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
