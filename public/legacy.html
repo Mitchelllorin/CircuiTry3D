@@ -18503,6 +18503,19 @@ Made with ? for visual learners everywhere!
                 const jBL = new Junction(new THREE.Vector3(-10, 0, -6), { snapToGridPosition: false });
                 junctions.push(jTL, jTR, jBR, jBL);
 
+                // ── Force world-matrix update before wire creation ────────────
+                // loadPayoffCircuit runs synchronously (typically before the first
+                // render frame), so every mesh's matrixWorld is still the identity
+                // from construction.  getWorldConnectionPoint() →
+                // getWorldPosition() uses parent.matrixWorld, so all terminal
+                // positions would collapse to the scene origin, producing
+                // zero-length (or incorrectly-placed) wires and invisible
+                // particles.  A single scene.updateMatrixWorld(true) traversal
+                // recomputes every local-→world matrix before we compute wire
+                // start/end positions, guaranteeing correct geometry on the
+                // first call regardless of whether a render frame has occurred.
+                scene.updateMatrixWorld(true);
+
                 // ── Wires ────────────────────────────────────────────────────
                 // Series loop: B+→TL→R1(L→R)→TR→R2(R→L)→BR→R3(R→L)→BL→B−
                 const wireSpecs = [
