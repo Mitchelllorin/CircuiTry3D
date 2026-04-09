@@ -60,27 +60,6 @@ jobs:
         # the latest merged web changes. Keep these paths in sync with build-android.sh.
         run: rm -rf android/app/src/main/assets/public android/app/src/main/assets/capacitor.config.json android/app/src/main/assets/capacitor.plugins.json
 
-      - name: Strip server.url from Capacitor config
-        # The committed capacitor.config.json includes server.url pointing to the
-        # live website (used during development to hit the Vercel deployment).
-        # For production AAB builds we must remove it so Capacitor serves the
-        # locally-bundled web assets instead of loading them over the network.
-        # androidScheme and every other field are preserved.
-        shell: bash
-        run: |
-          set -euo pipefail
-          node - <<'EOF'
-          const fs = require('fs');
-          const cfg = JSON.parse(fs.readFileSync('capacitor.config.json', 'utf8'));
-          if (cfg.server && cfg.server.url) {
-            delete cfg.server.url;
-            console.log('Removed server.url from capacitor.config.json for production build.');
-          } else {
-            console.log('No server.url present — nothing to strip.');
-          }
-          fs.writeFileSync('capacitor.config.json', JSON.stringify(cfg, null, 2) + '\n');
-          EOF
-
       - name: Sync Capacitor Android
         run: npx cap sync android
 
