@@ -15039,7 +15039,7 @@ Made with ? for visual learners everywhere!
 
             animateCurrentFlow(runtimeFlow);
 
-            const flowMeta = result.flow || sanitizeFlowState(runtimeFlow);
+            const flowMeta = sanitizeFlowState(result.flow || runtimeFlow);
 
             if (!flowMeta.hasFlow) {
                 if (flowMeta.reason === 'polarity') {
@@ -16468,7 +16468,7 @@ Made with ? for visual learners everywhere!
                     power: 0,
                     isComplete: false,
                     topology: 'open',
-                    flow: sanitizeFlowState(flowResult)
+                    flow: flowResult
                 };
             }
             
@@ -16510,7 +16510,7 @@ Made with ? for visual learners everywhere!
                         power: 0,
                         isComplete: false,
                         topology: 'incomplete',
-                        flow: sanitizeFlowState(flowResult)
+                        flow: flowResult
                     };
                 }
                 
@@ -16588,7 +16588,7 @@ Made with ? for visual learners everywhere!
                             power: totalVoltage * approxCurrent,
                             isComplete: true,
                             topology: topology?.type || 'simple',
-                            flow: sanitizeFlowState(flowResult)
+                            flow: flowResult
                         };
                     }
 
@@ -16608,7 +16608,7 @@ Made with ? for visual learners everywhere!
                         power: 0,
                         isComplete: false,
                         topology: topology?.type || 'blocked',
-                        flow: sanitizeFlowState(flowResult)
+                        flow: flowResult
                     };
                 }
                 
@@ -16691,7 +16691,7 @@ Made with ? for visual learners everywhere!
                     power: power,
                     isComplete: true,
                     topology: topology?.type || 'unknown',
-                    flow: sanitizeFlowState(flowResult)
+                    flow: flowResult
                 };
             } else {
                 const totalVoltage = batteries.reduce((sum, bat) => sum + bat.properties.voltage, 0);
@@ -16715,7 +16715,7 @@ Made with ? for visual learners everywhere!
                     power: 0,
                     isComplete: false,
                     topology: connectedComponents.size === 0 ? 'none' : 'incomplete',
-                    flow: sanitizeFlowState(flowResult)
+                    flow: flowResult
                 };
             }
         }
