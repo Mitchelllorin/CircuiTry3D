@@ -878,20 +878,23 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 97;
-            background: rgba(10, 10, 26, 0.82);
+            background: rgba(10, 10, 26, 0.88);
             color: #88ccff;
             font-size: 11px;
             font-family: 'SF Mono', 'Fira Code', monospace, sans-serif;
-            letter-spacing: 0.05em;
-            padding: 4px 12px;
+            letter-spacing: 0.04em;
+            padding: 5px 14px;
             border-radius: 14px;
             border: 1px solid rgba(136, 204, 255, 0.32);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
             pointer-events: none;
             white-space: nowrap;
             display: none;
-            transition: opacity 0.25s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.25s ease;
+            max-width: 90vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         #view-only-banner {
@@ -5025,6 +5028,7 @@ body.android-optimized .zoom-btn {
         const ZOOM_MAX = 100; // Increased for broad circuit overview
         const ATOMIC_ZOOM_THRESHOLD = 3.0; // Raised so atomic orbital rings are visible at a more comfortable zoom level
         const CLOSE_ZOOM_THRESHOLD = 8.0; // Raised so particle scaling begins earlier for smoother atomic visualization
+        const ZOOM_COMPONENT_VIEW = 20.0; // tier 4: component-scale view — individual components + bulk current visible
         const MAX_PARTICLE_SCALE = 20; // Increased for richer atomic-level particle visibility
         const ZOOM_STEP_PROPORTIONAL = 0.2;
         const ZOOM_IN_MIN_STEP = 0.1;
@@ -5041,9 +5045,26 @@ body.android-optimized .zoom-btn {
 
         // ── Multi-scale current-flow visualization constants ─────────────────
         // Zoom distance thresholds that control which visualization tier is active.
-        // ZOOM_DEEP_ATOMIC < ZOOM_ATOMIC < ZOOM_CLOSE  (all ≤ CLOSE_ZOOM_THRESHOLD)
+        // ZOOM_DEEP_ATOMIC < ZOOM_ATOMIC < ZOOM_CLOSE < ZOOM_COMPONENT_VIEW
+        // Tier 1: d ≤ ZOOM_DEEP_ATOMIC      — Quantum / Deep Atomic (probability clouds, p-orbitals)
+        // Tier 2: d ≤ ATOMIC_ZOOM_THRESHOLD  — Atomic Lattice (Cu²⁺ ions, orbital rings, thermal jitter)
+        // Tier 3: d ≤ CLOSE_ZOOM_THRESHOLD   — Charge Carrier Flow (comet trails, speed elongation)
+        // Tier 4: d ≤ ZOOM_COMPONENT_VIEW    — Component Scale (bulk current, component interaction)
+        // Tier 5: d >  ZOOM_COMPONENT_VIEW   — Circuit Overview (conventional + → − current paths)
         const ZOOM_DEEP_ATOMIC = 0.8;  // below this distance: full Bohr / probability cloud
         // (ZOOM_ATOMIC == ATOMIC_ZOOM_THRESHOLD == 3.0, ZOOM_CLOSE == CLOSE_ZOOM_THRESHOLD == 8.0)
+
+        // ── 5-Tier zoom visualization color palette ──────────────────────────
+        // Reference colors used for HUD badges and particle tinting per tier.
+        // Physics rationale: violet = quantum uncertainty; orange = thermal lattice;
+        //   cyan = mobile charge carriers; blue = bulk conductor current; amber = circuit-level conventional current.
+        const ZOOM_TIER_COLORS = {
+            t1_quantum:   { hex: '#cc66ff', threeHex: 0xcc66ff, label: '⚛ Tier 1 — Quantum / Deep Atomic',    sub: 'Electron orbitals & probability clouds' },
+            t2_lattice:   { hex: '#ff8844', threeHex: 0xff8844, label: '⚛ Tier 2 — Atomic Lattice',           sub: 'Cu²⁺ ions & free-electron drift (Drude model)' },
+            t3_carrier:   { hex: '#00ffcc', threeHex: 0x00ffcc, label: '⚡ Tier 3 — Charge Carrier Flow',      sub: 'Individual electrons moving through conductor' },
+            t4_component: { hex: '#4499ff', threeHex: 0x4499ff, label: '⚡ Tier 4 — Component Scale',         sub: 'Bulk current through components (Ohm\'s Law)' },
+            t5_circuit:   { hex: '#ffaa44', threeHex: 0xffaa44, label: '🔌 Tier 5 — Circuit Overview',        sub: 'Conventional current: positive → negative terminal' },
+        };
 
         // Wire energy-glow overlay (additive blending, all tiers)
         const WIRE_GLOW_RADIUS        = 0.30;   // tube radius (world units)
@@ -5102,6 +5123,16 @@ body.android-optimized .zoom-btn {
         // Layer-visibility update throttle thresholds
         const LAYER_VISIB_DIST_THRESHOLD  = 0.04;  // min camera-distance change to trigger mesh traversal
         const LAYER_OPACITY_CHANGE_THRESHOLD = 0.008; // min opacity delta to trigger material update
+
+        // Tier color-tint blend strengths (used in updateFlowParticles per-tier color lerp)
+        // Tiers 4 & 5 use a stronger blend so the color coding is clearly visible at
+        // circuit-overview distances where particles are small relative to the scene.
+        const TIER_BLEND_STRONG       = 0.40;   // tiers 4–5: component / circuit-overview scale
+        const TIER_BLEND_SUBTLE       = 0.22;   // tiers 1–3: atomic / carrier scale
+
+        // Ordered list of ZOOM_TIER_COLORS keys matching tiers 1-5.
+        // Must stay in sync with ZOOM_TIER_COLORS object definition.
+        const ZOOM_TIER_COLOR_KEYS = ['t1_quantum', 't2_lattice', 't3_carrier', 't4_component', 't5_circuit'];
 
         // Animation micro-constants
         const TANGENT_SAMPLE_DELTA    = 0.01;   // progress offset used to approximate wire tangent
@@ -8063,17 +8094,34 @@ body.android-optimized .zoom-btn {
                 }
             }
 
-            // ── Zoom-mode HUD badge ───────────────────────────────────────────
+            // ── Zoom-mode HUD badge (5-tier physics-accurate) ────────────────
             const hud = document.getElementById('zoom-mode-hud');
             if (hud) {
+                let tierData = null;
                 if (cameraDistance <= ZOOM_DEEP_ATOMIC) {
-                    hud.textContent = '⚛ Deep Atomic — Electron Orbital View';
-                    hud.style.display = 'block';
+                    tierData = ZOOM_TIER_COLORS.t1_quantum;
                 } else if (cameraDistance <= ATOMIC_ZOOM_THRESHOLD) {
-                    hud.textContent = '⚛ Atomic — Lattice & Current Flow';
-                    hud.style.display = 'block';
+                    tierData = ZOOM_TIER_COLORS.t2_lattice;
                 } else if (cameraDistance <= CLOSE_ZOOM_THRESHOLD) {
-                    hud.textContent = '⚡ Current Flow View';
+                    tierData = ZOOM_TIER_COLORS.t3_carrier;
+                } else if (cameraDistance <= ZOOM_COMPONENT_VIEW) {
+                    tierData = ZOOM_TIER_COLORS.t4_component;
+                } else if (currentFlowState?.hasFlow) {
+                    tierData = ZOOM_TIER_COLORS.t5_circuit;
+                }
+                if (tierData) {
+                    // Build HUD content with DOM manipulation (avoids innerHTML XSS risk)
+                    hud.textContent = '';
+                    const labelSpan = document.createElement('span');
+                    labelSpan.style.cssText = 'color:' + tierData.hex + ';font-weight:600';
+                    labelSpan.textContent = tierData.label;
+                    const subSpan = document.createElement('span');
+                    subSpan.style.cssText = 'color:rgba(180,200,255,0.65);font-size:9px;margin-left:7px';
+                    subSpan.textContent = tierData.sub;
+                    hud.appendChild(labelSpan);
+                    hud.appendChild(subSpan);
+                    hud.style.borderColor = tierData.hex + '66';
+                    hud.style.boxShadow   = '0 2px 12px ' + tierData.hex + '33';
                     hud.style.display = 'block';
                 } else {
                     hud.style.display = 'none';
@@ -8102,9 +8150,13 @@ body.android-optimized .zoom-btn {
             }
 
             // Determine zoom tier once per frame
-            const inAtomicZoom = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
-            const inCloseZoom  = cameraDistance < CLOSE_ZOOM_THRESHOLD;
-            const inDeepAtomic = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inAtomicZoom    = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const inCloseZoom     = cameraDistance < CLOSE_ZOOM_THRESHOLD;
+            const inDeepAtomic    = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inComponentView = cameraDistance < ZOOM_COMPONENT_VIEW;
+            // Active tier: 1=Quantum, 2=Atomic Lattice, 3=Charge Carrier, 4=Component Scale, 5=Circuit Overview
+            const activeZoomTier = inDeepAtomic ? 1 : inAtomicZoom ? 2 : inCloseZoom ? 3 : inComponentView ? 4 : 5;
+            const activeTierKey  = ZOOM_TIER_COLOR_KEYS[activeZoomTier - 1];
 
             // Iterate backwards when removing items to avoid index issues
             for (let i = currentFlowParticles.length - 1; i >= 0; i--) {
@@ -8180,6 +8232,30 @@ body.android-optimized .zoom-btn {
                         const flashBoost = activationBoost > 0 ? activationBoost : 0;
                         particle.material.opacity = Math.min(1, pulseOp);
                         particle.material.emissiveIntensity = wireData.baseEmissive + sinVal * 0.25 + flashBoost;
+
+                        // ── Per-tier particle color tinting ──────────────────
+                        // Tint particles toward the active tier's reference color when the
+                        // zoom tier changes.  Tiers 4 & 5 get a stronger blend so the color
+                        // coding is clearly visible at circuit-overview distances.
+                        if (wireData.activeTierKey !== activeTierKey) {
+                            wireData.activeTierKey = activeTierKey;
+                            const tierDef = ZOOM_TIER_COLORS[activeTierKey];
+                            if (tierDef) {
+                            const blendStrength = (activeZoomTier >= 4) ? TIER_BLEND_STRONG : TIER_BLEND_SUBTLE;
+                                const baseCol = new THREE.Color(wireData.baseColorHex || 0x00ccff);
+                                const blended = baseCol.clone().lerp(new THREE.Color(tierDef.threeHex), blendStrength);
+                                particle.material.color.set(blended);
+                                particle.material.emissive.set(blended.clone().multiplyScalar(0.55));
+                                // Propagate tint to trail meshes so they match the main particle
+                                if (wireData.trailMeshes) {
+                                    wireData.trailMeshes.forEach(trail => {
+                                        if (trail && trail.material) {
+                                            trail.material.color.set(blended);
+                                        }
+                                    });
+                                }
+                            }
+                        }
                     }
 
                     // ── Comet trails (close and atomic zoom) ─────────────────
@@ -17575,6 +17651,7 @@ Made with ? for visual learners everywhere!
             const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
             const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
+            const inComponentView   = cameraDistance < ZOOM_COMPONENT_VIEW;
             const intensity         = Math.min(1, currentValue / 0.5);
 
             segments.forEach((segment, segmentIndex) => {
@@ -17727,7 +17804,10 @@ Made with ? for visual learners everywhere!
                             trailMeshes,
                             pulsePhase:    Math.random() * Math.PI * 2,
                             baseOpacity,
-                            baseEmissive
+                            baseEmissive,
+                            // flowColor.hex is a numeric integer from THREE.Color.getHex()
+                            baseColorHex:  flowColor.hex,
+                            activeTierKey: null
                         };
 
                         scene.add(particle);
@@ -17766,6 +17846,8 @@ Made with ? for visual learners everywhere!
                             particle.userData.baseY = pos.y;
                             particle.userData.trailMeshes = [];
                             particle.userData.isFlowing = true;
+                            particle.userData.baseColorHex = 0x00ccff;
+                            particle.userData.activeTierKey = null;
                             scene.add(particle);
                             currentFlowParticles.push(particle);
                         } catch(e) { /* skip */ }
