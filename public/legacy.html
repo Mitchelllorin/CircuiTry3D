@@ -8231,7 +8231,7 @@ body.android-optimized .zoom-btn {
                         // Apply activation flash on top of pulse
                         const flashBoost = activationBoost > 0 ? activationBoost : 0;
                         particle.material.opacity = Math.min(1, pulseOp);
-                        particle.material.emissiveIntensity = wireData.baseEmissive + sinVal * 0.25 + flashBoost;
+                        particle.material.emissiveIntensity = (wireData.baseEmissive ?? 1.0) + sinVal * 0.25 + flashBoost;
 
                         // ── Per-tier particle color tinting ──────────────────
                         // Tint particles toward the active tier's reference color when the
@@ -17845,8 +17845,10 @@ Made with ? for visual learners everywhere!
                             particle.userData.isFlowing = true;
                             particle.userData.baseY = pos.y;
                             particle.userData.trailMeshes = [];
-                            particle.userData.isFlowing = true;
-                            particle.userData.baseColorHex = 0x00ccff;
+                            particle.userData.pulsePhase = Math.random() * Math.PI * 2;
+                            particle.userData.baseOpacity = 0.9;
+                            particle.userData.baseEmissive = 1.0;
+                            particle.userData.baseColorHex = 0xff6600;
                             particle.userData.activeTierKey = null;
                             scene.add(particle);
                             currentFlowParticles.push(particle);
