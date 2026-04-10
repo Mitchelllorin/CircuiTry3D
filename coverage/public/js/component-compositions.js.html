@@ -1,0 +1,1381 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for public/js/component-compositions.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">public/js</a> component-compositions.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">54.54% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>24/44</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">40.47% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>17/42</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">77.77% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>7/9</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">56.75% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>21/37</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line medium'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a>
+<a name='L342'></a><a href='#L342'>342</a>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a>
+<a name='L345'></a><a href='#L345'>345</a>
+<a name='L346'></a><a href='#L346'>346</a>
+<a name='L347'></a><a href='#L347'>347</a>
+<a name='L348'></a><a href='#L348'>348</a>
+<a name='L349'></a><a href='#L349'>349</a>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a>
+<a name='L352'></a><a href='#L352'>352</a>
+<a name='L353'></a><a href='#L353'>353</a>
+<a name='L354'></a><a href='#L354'>354</a>
+<a name='L355'></a><a href='#L355'>355</a>
+<a name='L356'></a><a href='#L356'>356</a>
+<a name='L357'></a><a href='#L357'>357</a>
+<a name='L358'></a><a href='#L358'>358</a>
+<a name='L359'></a><a href='#L359'>359</a>
+<a name='L360'></a><a href='#L360'>360</a>
+<a name='L361'></a><a href='#L361'>361</a>
+<a name='L362'></a><a href='#L362'>362</a>
+<a name='L363'></a><a href='#L363'>363</a>
+<a name='L364'></a><a href='#L364'>364</a>
+<a name='L365'></a><a href='#L365'>365</a>
+<a name='L366'></a><a href='#L366'>366</a>
+<a name='L367'></a><a href='#L367'>367</a>
+<a name='L368'></a><a href='#L368'>368</a>
+<a name='L369'></a><a href='#L369'>369</a>
+<a name='L370'></a><a href='#L370'>370</a>
+<a name='L371'></a><a href='#L371'>371</a>
+<a name='L372'></a><a href='#L372'>372</a>
+<a name='L373'></a><a href='#L373'>373</a>
+<a name='L374'></a><a href='#L374'>374</a>
+<a name='L375'></a><a href='#L375'>375</a>
+<a name='L376'></a><a href='#L376'>376</a>
+<a name='L377'></a><a href='#L377'>377</a>
+<a name='L378'></a><a href='#L378'>378</a>
+<a name='L379'></a><a href='#L379'>379</a>
+<a name='L380'></a><a href='#L380'>380</a>
+<a name='L381'></a><a href='#L381'>381</a>
+<a name='L382'></a><a href='#L382'>382</a>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a>
+<a name='L385'></a><a href='#L385'>385</a>
+<a name='L386'></a><a href='#L386'>386</a>
+<a name='L387'></a><a href='#L387'>387</a>
+<a name='L388'></a><a href='#L388'>388</a>
+<a name='L389'></a><a href='#L389'>389</a>
+<a name='L390'></a><a href='#L390'>390</a>
+<a name='L391'></a><a href='#L391'>391</a>
+<a name='L392'></a><a href='#L392'>392</a>
+<a name='L393'></a><a href='#L393'>393</a>
+<a name='L394'></a><a href='#L394'>394</a>
+<a name='L395'></a><a href='#L395'>395</a>
+<a name='L396'></a><a href='#L396'>396</a>
+<a name='L397'></a><a href='#L397'>397</a>
+<a name='L398'></a><a href='#L398'>398</a>
+<a name='L399'></a><a href='#L399'>399</a>
+<a name='L400'></a><a href='#L400'>400</a>
+<a name='L401'></a><a href='#L401'>401</a>
+<a name='L402'></a><a href='#L402'>402</a>
+<a name='L403'></a><a href='#L403'>403</a>
+<a name='L404'></a><a href='#L404'>404</a>
+<a name='L405'></a><a href='#L405'>405</a>
+<a name='L406'></a><a href='#L406'>406</a>
+<a name='L407'></a><a href='#L407'>407</a>
+<a name='L408'></a><a href='#L408'>408</a>
+<a name='L409'></a><a href='#L409'>409</a>
+<a name='L410'></a><a href='#L410'>410</a>
+<a name='L411'></a><a href='#L411'>411</a>
+<a name='L412'></a><a href='#L412'>412</a>
+<a name='L413'></a><a href='#L413'>413</a>
+<a name='L414'></a><a href='#L414'>414</a>
+<a name='L415'></a><a href='#L415'>415</a>
+<a name='L416'></a><a href='#L416'>416</a>
+<a name='L417'></a><a href='#L417'>417</a>
+<a name='L418'></a><a href='#L418'>418</a>
+<a name='L419'></a><a href='#L419'>419</a>
+<a name='L420'></a><a href='#L420'>420</a>
+<a name='L421'></a><a href='#L421'>421</a>
+<a name='L422'></a><a href='#L422'>422</a>
+<a name='L423'></a><a href='#L423'>423</a>
+<a name='L424'></a><a href='#L424'>424</a>
+<a name='L425'></a><a href='#L425'>425</a>
+<a name='L426'></a><a href='#L426'>426</a>
+<a name='L427'></a><a href='#L427'>427</a>
+<a name='L428'></a><a href='#L428'>428</a>
+<a name='L429'></a><a href='#L429'>429</a>
+<a name='L430'></a><a href='#L430'>430</a>
+<a name='L431'></a><a href='#L431'>431</a>
+<a name='L432'></a><a href='#L432'>432</a>
+<a name='L433'></a><a href='#L433'>433</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32x</span>
+<span class="cline-any cline-yes">32x</span>
+<span class="cline-any cline-yes">239x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * CircuiTry3D — Component Composition Library  (browser build)
+ *
+ * Zero-dependency browser version of src/data/componentCompositions.ts.
+ * Exports as window.ComponentCompositions so arena.html can call:
+ *
+ *   const { MATERIAL_LIBRARY, COMPONENT_COMPOSITIONS,
+ *           getComponentComposition, getCriticalOperatingLimitC } = window.ComponentCompositions;
+ *
+ * Also calls FailureEngine.loadCompositions() if FailureEngine is already loaded.
+ */
+(function (global) {
+  "use strict";
+&nbsp;
+  // ---------------------------------------------------------------------------
+  // Material Library
+  // ---------------------------------------------------------------------------
+  const MATERIAL_LIBRARY = {
+    silicon:            { name: "Silicon (Si)",                    density: 2.33,  thermalConductivity: 149,   specificHeat: 705,  meltingPoint: 1414, electricalResistivity: 6.40e2,  thermalExpansion: 2.6 },
+    silicon_dioxide:    { name: "Silicon Dioxide (SiO₂)",          density: 2.65,  thermalConductivity: 1.4,   specificHeat: 740,  meltingPoint: 1713, electricalResistivity: 1e14,     thermalExpansion: 0.5 },
+    gan_semiconductor:  { name: "Gallium Nitride (GaN)",            density: 6.15,  thermalConductivity: 130,   specificHeat: 490,  meltingPoint: 2500, electricalResistivity: 1e-4,     thermalExpansion: 5.6 },
+    gaas_semiconductor: { name: "Gallium Arsenide (GaAs)",          density: 5.32,  thermalConductivity: 46,    specificHeat: 350,  meltingPoint: 1238, electricalResistivity: 1e-3,     thermalExpansion: 5.7 },
+    copper:             { name: "Copper (Cu)",                      density: 8.96,  thermalConductivity: 385,   specificHeat: 384,  meltingPoint: 1085, electricalResistivity: 1.68e-8,  thermalExpansion: 17  },
+    gold:               { name: "Gold (Au) — Bond Wire",            density: 19.3,  thermalConductivity: 314,   specificHeat: 129,  meltingPoint: 1064, electricalResistivity: 2.44e-8,  thermalExpansion: 14.2},
+    aluminum:           { name: "Aluminum (Al)",                    density: 2.70,  thermalConductivity: 205,   specificHeat: 897,  meltingPoint: 660,  electricalResistivity: 2.65e-8,  thermalExpansion: 23.1},
+    aluminum_alloy_6061:{ name: "Aluminum Alloy 6061 (Heat Sink)",  density: 2.70,  thermalConductivity: 167,   specificHeat: 896,  meltingPoint: 652,  electricalResistivity: 3.99e-8,  thermalExpansion: 23.6},
+    nickel:             { name: "Nickel (Ni) — End Caps",           density: 8.90,  thermalConductivity: 90.9,  specificHeat: 444,  meltingPoint: 1455, electricalResistivity: 6.99e-8,  thermalExpansion: 13.4},
+    tin:                { name: "Tin (Sn) — Lead Plating",          density: 7.26,  thermalConductivity: 67,    specificHeat: 227,  meltingPoint: 232,  electricalResistivity: 1.09e-7,  thermalExpansion: 23  },
+    solder_lead_tin:    { name: "Pb-Sn Solder (63/37)",             density: 9.30,  thermalConductivity: 50,    specificHeat: 200,  meltingPoint: 183,  electricalResistivity: 1.45e-7,  thermalExpansion: 24.7},
+    silver_tin_eutectic:{ name: "Ag-Sn Eutectic Fuse Wire",         density: 7.40,  thermalConductivity: 58,    specificHeat: 235,  meltingPoint: 221,  electricalResistivity: 1.2e-7,   thermalExpansion: 19  },
+    steel:              { name: "Steel (Iron Alloy)",                density: 7.85,  thermalConductivity: 50,    specificHeat: 490,  meltingPoint: 1370, electricalResistivity: 1.43e-7,  thermalExpansion: 11.7},
+    stainless_steel:    { name: "Stainless Steel 304",               density: 8.00,  thermalConductivity: 16.2,  specificHeat: 500,  meltingPoint: 1400, electricalResistivity: 7.2e-7,   thermalExpansion: 17.2},
+    brass:              { name: "Brass (Cu-Zn Alloy)",               density: 8.50,  thermalConductivity: 109,   specificHeat: 380,  meltingPoint: 900,  electricalResistivity: 6.4e-8,   thermalExpansion: 19  },
+    zinc:               { name: "Zinc (Zn) — Battery Anode",         density: 7.14,  thermalConductivity: 116,   specificHeat: 388,  meltingPoint: 420,  electricalResistivity: 5.92e-8,  thermalExpansion: 30.2},
+    ag_cdo:             { name: "Silver-Cadmium Oxide (AgCdO)",       density: 9.10,  thermalConductivity: 38,    specificHeat: 230,  meltingPoint: 960,  electricalResistivity: 1.7e-8,   thermalExpansion: 13  },
+    nichrome:           { name: "Nichrome (NiCr)",                   density: 8.40,  thermalConductivity: 11.3,  specificHeat: 450,  meltingPoint: 1400, electricalResistivity: 1.10e-6,  thermalExpansion: 14  },
+    alumina:            { name: "Alumina (Al₂O₃)",                   density: 3.95,  thermalConductivity: 35,    specificHeat: 880,  meltingPoint: 2072, electricalResistivity: 1e14,     thermalExpansion: 6.5 },
+    carbon_film:        { name: "Carbon Film (Resistive Layer)",      density: 2.00,  thermalConductivity: 1.0,   specificHeat: 710,  meltingPoint: 500,  electricalResistivity: 3.5e-5,   thermalExpansion: 3   },
+    ferrite:            { name: "MnZn Ferrite",                       density: 4.80,  thermalConductivity: 5,     specificHeat: 700,  meltingPoint: 1200, electricalResistivity: 1e1,      thermalExpansion: 10  },
+    glass:              { name: "Borosilicate Glass",                  density: 2.23,  thermalConductivity: 1.0,   specificHeat: 840,  meltingPoint: 820,  electricalResistivity: 1e12,     thermalExpansion: 3.3 },
+    manganese_dioxide:  { name: "Manganese Dioxide (MnO₂)",           density: 5.03,  thermalConductivity: 2.0,   specificHeat: 540,  meltingPoint: 535,  electricalResistivity: 5e-3,     thermalExpansion: 9   },
+    epoxy_resin:        { name: "Epoxy Resin (Encapsulant)",           density: 1.20,  thermalConductivity: 0.20,  specificHeat: 1100, meltingPoint: 200,  electricalResistivity: 1e13,     thermalExpansion: 55  },
+    epoxy_mold_compound:{ name: "Epoxy Mold Compound (IC Package)",    density: 1.90,  thermalConductivity: 0.80,  specificHeat: 900,  meltingPoint: 240,  electricalResistivity: 1e14,     thermalExpansion: 18  },
+    polycarbonate:      { name: "Polycarbonate (PC) — Housing",        density: 1.20,  thermalConductivity: 0.20,  specificHeat: 1200, meltingPoint: 260,  electricalResistivity: 1e14,     thermalExpansion: 65  },
+    rubber:             { name: "Rubber / Elastomer — Capacitor Seal", density: 1.20,  thermalConductivity: 0.16,  specificHeat: 2000, meltingPoint: 170,  electricalResistivity: 1e13,     thermalExpansion: 200 },
+    kraft_paper:        { name: "Kraft Paper — Capacitor Separator",   density: 1.10,  thermalConductivity: 0.05,  specificHeat: 1300, meltingPoint: 150,  electricalResistivity: 1e10,     thermalExpansion: 30  },
+    electrolyte_etg:    { name: "Ethylene Glycol + Boric Acid Electrolyte", density: 1.11, thermalConductivity: 0.25, specificHeat: 2400, meltingPoint: 125, electricalResistivity: 0.01, thermalExpansion: 600 },
+    electrolyte_koh:    { name: "KOH Aqueous Electrolyte",             density: 1.30,  thermalConductivity: 0.60,  specificHeat: 3800, meltingPoint: 100,  electricalResistivity: 0.004,    thermalExpansion: 300 },
+    coil_insulation:    { name: "Enamel Wire Insulation (Polyimide)",   density: 1.40,  thermalConductivity: 0.20,  specificHeat: 1090, meltingPoint: 220,  electricalResistivity: 1e14,     thermalExpansion: 50  },
+    // Wire insulation jacket materials (meltingPoint = thermal degradation onset, not true melt)
+    pvc_jacket_80:      { name: "PVC Insulation Jacket (80 °C)",          density: 1.35,  thermalConductivity: 0.17,  specificHeat: 1050, meltingPoint: 80,   electricalResistivity: 1e14,     thermalExpansion: 80  },
+    xlpe_jacket_125:    { name: "XLPE Insulation Jacket (125 °C)",         density: 0.95,  thermalConductivity: 0.25,  specificHeat: 1900, meltingPoint: 125,  electricalResistivity: 1e15,     thermalExpansion: 150 },
+    silicone_jacket_200:{ name: "Silicone Rubber Jacket (200 °C)",         density: 1.20,  thermalConductivity: 0.25,  specificHeat: 1460, meltingPoint: 200,  electricalResistivity: 1e14,     thermalExpansion: 300 },
+    ptfe_jacket_260:    { name: "PTFE Jacket (260 °C)",                    density: 2.20,  thermalConductivity: 0.25,  specificHeat: 1000, meltingPoint: 260,  electricalResistivity: 1e18,     thermalExpansion: 135 },
+    epdm_jacket_150:    { name: "EPDM Rubber Jacket (150 °C)",             density: 0.86,  thermalConductivity: 0.25,  specificHeat: 2000, meltingPoint: 150,  electricalResistivity: 1e14,     thermalExpansion: 200 },
+    neoprene_jacket_90: { name: "Neoprene Jacket (90 °C)",                 density: 1.25,  thermalConductivity: 0.19,  specificHeat: 2090, meltingPoint: 90,   electricalResistivity: 1e13,     thermalExpansion: 190 },
+  };
+&nbsp;
+  // ---------------------------------------------------------------------------
+  // Component Compositions
+  // ---------------------------------------------------------------------------
+  const COMPONENT_COMPOSITIONS = [
+    {
+      componentType: "resistor",
+      aliases: ["res", "r"],
+      constructionNote: "Carbon film deposited on alumina ceramic rod; protective epoxy lacquer; axial tin-plated copper leads",
+      subComponents: [
+        { name: "Alumina Ceramic Substrate", materialKey: "alumina",      role: "Mechanical support / thermal base",  massFraction: 0.55 },
+        { name: "Carbon Film",               materialKey: "carbon_film",  role: "Resistive element",                  massFraction: 0.01, isCritical: true, operatingLimitC: 155 },
+        { name: "Nickel End Caps",           materialKey: "nickel",       role: "Terminal contact",                   massFraction: 0.12 },
+        { name: "Tin-Plated Copper Leads",  materialKey: "copper",       role: "PCB solder terminals",               massFraction: 0.15 },
+        { name: "Epoxy Lacquer Coating",    materialKey: "epoxy_resin",  role: "Environmental protection",            massFraction: 0.17 },
+      ],
+      internalLayers: [
+        { materialKey: "alumina",     label: "Al₂O₃ Substrate", type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.11,0.90,0.11], color: "#F5F0DC", opacity: 0.95 },
+        { materialKey: "carbon_film", label: "Carbon Film",     type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.13,0.88,0.13], color: "#1A1A1A", opacity: 0.55 },
+        { materialKey: "nickel",      label: "End Cap (−)",     type: "cylinder", position: [-0.45,0,0], rotation: [0,0,1.5708], scale: [0.16,0.07,0.16], color: "#9A9A9A", opacity: 0.90 },
+        { materialKey: "nickel",      label: "End Cap (+)",     type: "cylinder", position: [ 0.45,0,0], rotation: [0,0,1.5708], scale: [0.16,0.07,0.16], color: "#9A9A9A", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "capacitor",
+      aliases: ["cap", "electrolytic"],
+      constructionNote: "Etched aluminium anode foil with Al₂O₃ dielectric; wound with kraft paper and ethylene-glycol electrolyte; aluminium can with rubber vent seal",
+      subComponents: [
+        { name: "Aluminium Can",               materialKey: "aluminum",          role: "Housing and cathode",         massFraction: 0.20 },
+        { name: "Anode Foil + Al₂O₃ Dielectric", materialKey: "alumina",        role: "Dielectric layer",            massFraction: 0.12, isCritical: true, operatingLimitC: 105 },
+        { name: "Ethylene Glycol Electrolyte", materialKey: "electrolyte_etg",   role: "Ion transport medium",        massFraction: 0.28, isCritical: true, operatingLimitC: 105 },
+        { name: "Kraft Paper Separator",       materialKey: "kraft_paper",       role: "Electrode isolation",         massFraction: 0.10 },
+        { name: "Aluminium Cathode Foil",      materialKey: "aluminum",          role: "Second electrode",            massFraction: 0.15 },
+        { name: "Rubber Vent Seal",            materialKey: "rubber",            role: "Pressure relief",             massFraction: 0.05 },
+        { name: "Aluminium Leads",             materialKey: "aluminum",          role: "PCB terminals",               massFraction: 0.10 },
+      ],
+      internalLayers: [
+        { materialKey: "aluminum",        label: "Al Can (shell)",   type: "cylinder", position: [0,0,0],       scale: [0.55,1.20,0.55], color: "#C0C0C0", opacity: 0.25 },
+        { materialKey: "aluminum",        label: "Wound Foil",       type: "cylinder", position: [0,-0.05,0],   scale: [0.46,1.05,0.46], color: "#C8A020", opacity: 0.80 },
+        { materialKey: "electrolyte_etg", label: "Electrolyte",      type: "cylinder", position: [0,-0.05,0],   scale: [0.22,1.00,0.22], color: "#8B6914", opacity: 0.60 },
+        { materialKey: "rubber",          label: "Vent Seal",        type: "cylinder", position: [0,-0.58,0],   scale: [0.52,0.06,0.52], color: "#111111", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "led",
+      aliases: ["led-red", "led-blue", "led-green", "led-white"],
+      constructionNote: "GaN or GaAsP die on copper lead frame; gold bond wire; epoxy lens with optional phosphor",
+      subComponents: [
+        { name: "Epoxy Lens",         materialKey: "epoxy_resin",      role: "Optical encapsulant",          massFraction: 0.60 },
+        { name: "GaN/GaAsP Die",      materialKey: "gan_semiconductor", role: "Light-emitting PN junction",  massFraction: 0.02, isCritical: true, operatingLimitC: 125 },
+        { name: "Gold Bond Wire",     materialKey: "gold",             role: "Electrical die connection",    massFraction: 0.01 },
+        { name: "Copper Lead Frame",  materialKey: "copper",           role: "Heat spreader / electrode",    massFraction: 0.30 },
+        { name: "Ag-Sn Solder Attach", materialKey: "solder_lead_tin", role: "Die-to-leadframe attach",     massFraction: 0.07 },
+      ],
+      internalLayers: [
+        { materialKey: "epoxy_resin",       label: "Epoxy Lens",     type: "sphere",   position: [0,0.15,0],        scale: [0.38,0.38,0.38], color: "#FF6666", opacity: 0.25 },
+        { materialKey: "copper",            label: "Lead Frame Cup", type: "cylinder", position: [0,-0.15,0],       scale: [0.28,0.10,0.28], color: "#B87333", opacity: 0.85 },
+        { materialKey: "gan_semiconductor", label: "GaN Die",        type: "box",      position: [0,-0.10,0],       scale: [0.09,0.05,0.09], color: "#FFE040", opacity: 1.00 },
+        { materialKey: "gold",              label: "Bond Wire",      type: "cylinder", position: [0.03,-0.07,0], rotation: [0,0,0.4], scale: [0.01,0.08,0.01], color: "#FFD700", opacity: 1.00 },
+      ],
+    },
+    {
+      componentType: "diode",
+      aliases: ["diode-1n4007", "diode-1n4148", "rectifier", "schottky"],
+      constructionNote: "Silicon PN-junction die in glass DO-41 or epoxy body; Ag/Al bond wire; tin-plated copper leads",
+      subComponents: [
+        { name: "Borosilicate Glass Body", materialKey: "glass",   role: "Hermetic encapsulant",   massFraction: 0.40 },
+        { name: "Silicon Die (PN junction)", materialKey: "silicon", role: "Rectifying junction",  massFraction: 0.05, isCritical: true, operatingLimitC: 150 },
+        { name: "Silver Bond Wire",        materialKey: "nickel",  role: "Electrical connection",  massFraction: 0.02 },
+        { name: "Tin-Plated Copper Leads", materialKey: "copper",  role: "PCB terminals",          massFraction: 0.53 },
+      ],
+      internalLayers: [
+        { materialKey: "glass",   label: "Glass Body",  type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.12,0.80,0.12], color: "#DDEEFF", opacity: 0.30 },
+        { materialKey: "silicon", label: "Silicon Die", type: "box",      position: [0,0,0], scale: [0.08,0.10,0.08], color: "#606080", opacity: 0.90 },
+        { materialKey: "nickel",  label: "Bond Wire",   type: "cylinder", position: [0.04,0,0], rotation: [0,0,1.5708], scale: [0.01,0.08,0.01], color: "#C0C0C0", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "bjt",
+      aliases: ["bjt-npn", "bjt-pnp", "npn", "pnp", "2n2222a", "bc547"],
+      constructionNote: "Bipolar silicon die (triple-diffused NPN/PNP); gold bond wires; epoxy TO-92 or metal TO-18 package",
+      subComponents: [
+        { name: "Epoxy Package (TO-92)",  materialKey: "epoxy_mold_compound", role: "Housing",                      massFraction: 0.60 },
+        { name: "Silicon Die",            materialKey: "silicon",              role: "E/B/C active region",         massFraction: 0.05, isCritical: true, operatingLimitC: 150 },
+        { name: "Gold Bond Wires (×3)",   materialKey: "gold",                 role: "Die-to-leadframe connections", massFraction: 0.02 },
+        { name: "Copper Lead Frame",      materialKey: "copper",               role: "Current path / heat spreader", massFraction: 0.28 },
+        { name: "Tin-Plated Leads",       materialKey: "tin",                  role: "PCB terminals",                massFraction: 0.05 },
+      ],
+      internalLayers: [
+        { materialKey: "epoxy_mold_compound", label: "Epoxy Package", type: "cylinder", position: [0,0.05,0], scale: [0.35,0.75,0.35], color: "#1A1A1A", opacity: 0.20 },
+        { materialKey: "copper",              label: "Lead Frame",    type: "box",      position: [0,-0.10,0], scale: [0.25,0.04,0.20], color: "#B87333", opacity: 0.85 },
+        { materialKey: "silicon",             label: "Silicon Die",   type: "box",      position: [0,-0.05,0], scale: [0.12,0.08,0.12], color: "#606080", opacity: 0.95 },
+        { materialKey: "gold",                label: "Bond Wires",    type: "cylinder", position: [0,0.00,0],  scale: [0.01,0.14,0.01], color: "#FFD700", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "mosfet",
+      aliases: ["mosfet-irf540", "mosfet-2n7000", "irf540n", "nmos", "pmos"],
+      constructionNote: "Planar silicon MOSFET; SiO₂ gate oxide; Al source/drain metallisation; Al bond wires; copper lead frame; epoxy TO-220",
+      subComponents: [
+        { name: "Epoxy Mold Compound",     materialKey: "epoxy_mold_compound", role: "Package housing",              massFraction: 0.50 },
+        { name: "Silicon Die",             materialKey: "silicon",              role: "MOSFET active region",         massFraction: 0.05, isCritical: true, operatingLimitC: 150 },
+        { name: "SiO₂ Gate Oxide",         materialKey: "silicon_dioxide",      role: "Gate insulation",              massFraction: 0.005, isCritical: true, operatingLimitC: 150 },
+        { name: "Aluminium Metallisation", materialKey: "aluminum",             role: "Source/drain/gate contacts",   massFraction: 0.04 },
+        { name: "Aluminium Bond Wires",    materialKey: "aluminum",             role: "Die-to-leadframe connections", massFraction: 0.02 },
+        { name: "Copper Lead Frame",       materialKey: "copper",               role: "Drain tab / heat spreader",    massFraction: 0.25 },
+        { name: "Tin-Plated Leads",        materialKey: "tin",                  role: "PCB terminals",                massFraction: 0.125 },
+      ],
+      internalLayers: [
+        { materialKey: "epoxy_mold_compound", label: "Mold Compound",    type: "box",      position: [0,0.20,0],  scale: [0.80,0.80,0.30], color: "#111111", opacity: 0.20 },
+        { materialKey: "copper",              label: "Drain Tab",         type: "box",      position: [0,-0.05,0], scale: [0.70,0.60,0.08], color: "#B87333", opacity: 0.85 },
+        { materialKey: "silicon",             label: "Silicon Die",       type: "box",      position: [0, 0.05,0], scale: [0.45,0.45,0.06], color: "#505070", opacity: 0.95 },
+        { materialKey: "aluminum",            label: "Al Metallisation",  type: "box",      position: [0, 0.08,0], scale: [0.44,0.44,0.01], color: "#C8C8FF", opacity: 0.80 },
+        { materialKey: "aluminum",            label: "Bond Wires",        type: "cylinder", position: [0, 0.12,0], scale: [0.01,0.18,0.01], color: "#D0D0D0", opacity: 0.85 },
+      ],
+    },
+    {
+      componentType: "battery",
+      aliases: ["battery-9v"],
+      constructionNote: "6× AAAA carbon-zinc cells in series; MnO₂ cathode, zinc anode, NH₄Cl/ZnCl₂ electrolyte; steel casing",
+      subComponents: [
+        { name: "Steel Outer Casing",        materialKey: "steel",             role: "Housing / negative terminal", massFraction: 0.20 },
+        { name: "Zinc Anode (×6 cells)",     materialKey: "zinc",              role: "Negative electrode",          massFraction: 0.18 },
+        { name: "MnO₂ Cathode (×6 cells)",  materialKey: "manganese_dioxide",  role: "Positive electrode",         massFraction: 0.22 },
+        { name: "NH₄Cl Electrolyte",         materialKey: "electrolyte_koh",   role: "Ion transport",               massFraction: 0.15, isCritical: true, operatingLimitC: 60 },
+        { name: "Carbon Rod Collector",      materialKey: "carbon_film",       role: "Cathode current collector",   massFraction: 0.10 },
+        { name: "Paper Separator",           materialKey: "kraft_paper",       role: "Prevents internal short",     massFraction: 0.10 },
+        { name: "Plastic Top Cap",           materialKey: "polycarbonate",     role: "Terminal housing",            massFraction: 0.05 },
+      ],
+      internalLayers: [
+        { materialKey: "steel",            label: "Steel Casing",      type: "box",      position: [0,0,0],      scale: [0.80,1.60,0.55], color: "#888888", opacity: 0.20 },
+        { materialKey: "zinc",             label: "Zinc Anode Cells",  type: "cylinder", position: [0,0.10,0],   scale: [0.32,1.30,0.32], color: "#B0C030", opacity: 0.75 },
+        { materialKey: "manganese_dioxide", label: "MnO₂ Cathode",    type: "cylinder", position: [0,0.10,0],   scale: [0.22,1.28,0.22], color: "#4A3010", opacity: 0.80 },
+        { materialKey: "carbon_film",      label: "Carbon Collector",  type: "cylinder", position: [0,0.10,0],   scale: [0.06,1.26,0.06], color: "#222222", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "switch",
+      aliases: ["switch-basic", "spdt", "spst"],
+      constructionNote: "Silver-plated brass contacts on spring-steel actuator; polycarbonate housing; copper PCB terminals",
+      subComponents: [
+        { name: "Polycarbonate Housing",     materialKey: "polycarbonate",   role: "Structural enclosure",   massFraction: 0.50 },
+        { name: "Brass Contacts (Ag-plated)", materialKey: "brass",          role: "Switching contacts",     massFraction: 0.15, isCritical: true, operatingLimitC: 200 },
+        { name: "Spring Steel Actuator",     materialKey: "stainless_steel", role: "Mechanical return spring", massFraction: 0.10 },
+        { name: "Copper Terminals",          materialKey: "copper",          role: "PCB solder pins",         massFraction: 0.20 },
+        { name: "Nickel Actuator Plating",   materialKey: "nickel",          role: "Corrosion resistance",    massFraction: 0.05 },
+      ],
+      internalLayers: [
+        { materialKey: "polycarbonate",   label: "PC Housing",      type: "box",      position: [0,0,0],       scale: [0.70,0.55,0.55], color: "#2244AA", opacity: 0.20 },
+        { materialKey: "stainless_steel", label: "Spring Actuator", type: "box",      position: [0,0.12,0],    scale: [0.55,0.06,0.10], color: "#AAAAAA", opacity: 0.85 },
+        { materialKey: "brass",           label: "Contact Point",   type: "cylinder", position: [-0.12,-0.05,0], scale: [0.06,0.06,0.06], color: "#C8A020", opacity: 0.95 },
+        { materialKey: "brass",           label: "Contact Point",   type: "cylinder", position: [ 0.12,-0.05,0], scale: [0.06,0.06,0.06], color: "#C8A020", opacity: 0.95 },
+      ],
+    },
+    {
+      componentType: "fuse",
+      aliases: ["fuse-1a"],
+      constructionNote: "Ag-Sn eutectic fuse wire in borosilicate glass tube; brass end caps",
+      subComponents: [
+        { name: "Borosilicate Glass Tube",    materialKey: "glass",              role: "Hermetic housing",     massFraction: 0.30 },
+        { name: "Ag-Sn Fuse Wire",           materialKey: "silver_tin_eutectic", role: "Break element",       massFraction: 0.05, isCritical: true, operatingLimitC: 221 },
+        { name: "Brass End Caps",            materialKey: "brass",              role: "Terminal contacts",    massFraction: 0.30 },
+        { name: "Tin-Plated Copper Leads",  materialKey: "copper",             role: "PCB terminals",        massFraction: 0.35 },
+      ],
+      internalLayers: [
+        { materialKey: "glass",              label: "Glass Tube",  type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.10,0.90,0.10], color: "#DDEEFF", opacity: 0.30 },
+        { materialKey: "silver_tin_eutectic", label: "Fuse Wire", type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.015,0.85,0.015], color: "#E8E8E8", opacity: 0.95 },
+        { materialKey: "brass",              label: "End Cap",    type: "cylinder", position: [-0.46,0,0], rotation: [0,0,1.5708], scale: [0.12,0.06,0.12], color: "#C8A020", opacity: 0.90 },
+        { materialKey: "brass",              label: "End Cap",    type: "cylinder", position: [ 0.46,0,0], rotation: [0,0,1.5708], scale: [0.12,0.06,0.12], color: "#C8A020", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "heatsink",
+      aliases: ["heatsink-to220"],
+      constructionNote: "Extruded aluminium alloy 6061; anodised surface for improved emissivity; fin geometry maximises convective area",
+      subComponents: [
+        { name: "Aluminium Alloy 6061", materialKey: "aluminum_alloy_6061", role: "Heat conductor / dissipator", massFraction: 0.90, isCritical: true, operatingLimitC: 150 },
+        { name: "Anodised Al₂O₃ Surface", materialKey: "alumina",          role: "Corrosion protection / emissivity", massFraction: 0.10 },
+      ],
+      internalLayers: [
+        { materialKey: "aluminum_alloy_6061", label: "Aluminium Fins",   type: "box", position: [0,0.35,0],  scale: [0.80,0.50,0.08], color: "#A0A8B0", opacity: 0.85 },
+        { materialKey: "aluminum_alloy_6061", label: "Aluminium Base",   type: "box", position: [0,-0.10,0], scale: [0.80,0.15,0.30], color: "#9098A0", opacity: 0.90 },
+        { materialKey: "alumina",             label: "Anodised Surface", type: "box", position: [0, 0.35,0], scale: [0.82,0.52,0.10], color: "#5088CC", opacity: 0.25 },
+      ],
+    },
+    {
+      componentType: "opamp",
+      aliases: ["opamp-lm741", "lm741", "op-amp"],
+      constructionNote: "Bipolar silicon die; gold bond wires; copper lead frame; plastic or ceramic DIP-8 package",
+      subComponents: [
+        { name: "Plastic DIP-8 Package",    materialKey: "epoxy_mold_compound", role: "Housing",               massFraction: 0.63 },
+        { name: "Silicon Die",              materialKey: "silicon",              role: "Op-amp circuit",        massFraction: 0.05, isCritical: true, operatingLimitC: 150 },
+        { name: "SiO₂ Isolation",          materialKey: "silicon_dioxide",      role: "Inter-stage isolation", massFraction: 0.02 },
+        { name: "Aluminium Metallisation", materialKey: "aluminum",              role: "Internal wiring",       massFraction: 0.03 },
+        { name: "Gold Bond Wires",         materialKey: "gold",                  role: "Die connections",       massFraction: 0.02 },
+        { name: "Copper Lead Frame",       materialKey: "copper",                role: "PCB pins / heat path",  massFraction: 0.25 },
+      ],
+      internalLayers: [
+        { materialKey: "epoxy_mold_compound", label: "DIP-8 Package", type: "box", position: [0,0,0],        scale: [1.00,0.35,0.45], color: "#0A0A0A", opacity: 0.20 },
+        { materialKey: "copper",              label: "Lead Frame",    type: "box", position: [0,-0.05,0],    scale: [0.88,0.12,0.35], color: "#B87333", opacity: 0.80 },
+        { materialKey: "silicon",             label: "Silicon Die",   type: "box", position: [0, 0.05,0],    scale: [0.40,0.15,0.30], color: "#505070", opacity: 0.95 },
+        { materialKey: "gold",                label: "Bond Wires",    type: "cylinder", position: [0.12,0.10,0], scale: [0.01,0.14,0.01], color: "#FFD700", opacity: 0.90 },
+      ],
+    },
+    {
+      componentType: "voltage_regulator",
+      aliases: ["vreg-lm7805", "lm7805", "lm317", "ldo"],
+      constructionNote: "Silicon regulator die in TO-220 package; copper drain tab for heat-sinking; Tjmax 125 °C",
+      subComponents: [
+        { name: "Epoxy Mold Compound",     materialKey: "epoxy_mold_compound", role: "Package housing",        massFraction: 0.50 },
+        { name: "Silicon Die",             materialKey: "silicon",              role: "Regulator circuit",      massFraction: 0.05, isCritical: true, operatingLimitC: 125 },
+        { name: "Aluminium Metallisation", materialKey: "aluminum",             role: "Internal connections",   massFraction: 0.04 },
+        { name: "Copper Lead Frame + Tab", materialKey: "copper",               role: "Heat spreader",          massFraction: 0.24 },
+        { name: "Tin-Plated Leads",        materialKey: "tin",                  role: "PCB terminals",          massFraction: 0.17 },
+      ],
+      internalLayers: [
+        { materialKey: "epoxy_mold_compound", label: "Mold Compound", type: "box", position: [0,0.20,0], scale: [0.80,0.80,0.30], color: "#111111", opacity: 0.20 },
+        { materialKey: "copper",              label: "Copper Tab",    type: "box", position: [0,-0.05,0], scale: [0.70,0.60,0.08], color: "#B87333", opacity: 0.85 },
+        { materialKey: "silicon",             label: "Silicon Die",   type: "box", position: [0, 0.05,0], scale: [0.45,0.45,0.06], color: "#505070", opacity: 0.95 },
+      ],
+    },
+    {
+      componentType: "ic",
+      aliases: ["ic-ne555", "ne555", "ic"],
+      constructionNote: "Bipolar or CMOS silicon die; gold bond wires; plastic DIP-8 package; Tjmax 70 °C commercial / 125 °C industrial",
+      subComponents: [
+        { name: "Plastic DIP-8 Package", materialKey: "epoxy_mold_compound", role: "Housing",              massFraction: 0.68 },
+        { name: "Silicon Die",           materialKey: "silicon",              role: "Timer logic circuit",  massFraction: 0.05, isCritical: true, operatingLimitC: 70 },
+        { name: "SiO₂ Isolation",        materialKey: "silicon_dioxide",      role: "Inter-stage isolation", massFraction: 0.02 },
+        { name: "Gold Bond Wires",       materialKey: "gold",                 role: "Die connections",      massFraction: 0.02 },
+        { name: "Copper Lead Frame",     materialKey: "copper",               role: "PCB pins",             massFraction: 0.23 },
+      ],
+      internalLayers: [
+        { materialKey: "epoxy_mold_compound", label: "DIP-8 Package", type: "box", position: [0,0,0],     scale: [1.00,0.35,0.45], color: "#0A0A0A", opacity: 0.20 },
+        { materialKey: "copper",              label: "Lead Frame",    type: "box", position: [0,-0.05,0], scale: [0.88,0.12,0.35], color: "#B87333", opacity: 0.80 },
+        { materialKey: "silicon",             label: "Silicon Die",   type: "box", position: [0, 0.05,0], scale: [0.40,0.15,0.30], color: "#505070", opacity: 0.95 },
+      ],
+    },
+    {
+      componentType: "relay",
+      aliases: ["relay-5v"],
+      constructionNote: "Electromagnetic coil on iron core; steel armature; AgCdO contacts; polycarbonate housing",
+      subComponents: [
+        { name: "Polycarbonate Housing",    materialKey: "polycarbonate",   role: "Structural enclosure",   massFraction: 0.50 },
+        { name: "Copper Coil Winding",      materialKey: "copper",          role: "Electromagnetic actuator", massFraction: 0.12, isCritical: true, operatingLimitC: 130 },
+        { name: "Coil Enamel Insulation",   materialKey: "coil_insulation", role: "Wire insulation",         massFraction: 0.04, isCritical: true, operatingLimitC: 130 },
+        { name: "Iron / Steel Core",        materialKey: "steel",           role: "Magnetic flux path",     massFraction: 0.10 },
+        { name: "Steel Armature",           materialKey: "stainless_steel", role: "Mechanical actuator",    massFraction: 0.08 },
+        { name: "AgCdO Contacts",           materialKey: "ag_cdo",          role: "Switched contacts",      massFraction: 0.06 },
+        { name: "Copper PCB Terminals",     materialKey: "copper",          role: "Solder pins",            massFraction: 0.10 },
+      ],
+      internalLayers: [
+        { materialKey: "polycarbonate",   label: "Housing",         type: "box",      position: [0,0,0],         scale: [1.00,0.80,0.65], color: "#223388", opacity: 0.18 },
+        { materialKey: "steel",           label: "Iron Core",       type: "box",      position: [-0.10,-0.08,0], scale: [0.28,0.55,0.22], color: "#606060", opacity: 0.85 },
+        { materialKey: "copper",          label: "Coil Winding",    type: "torus",    position: [-0.10,-0.08,0], scale: [0.24,0.24,0.24], color: "#B87333", opacity: 0.80 },
+        { materialKey: "stainless_steel", label: "Armature",        type: "box",      position: [ 0.10, 0.10,0], scale: [0.55,0.06,0.18], color: "#9A9A9A", opacity: 0.85 },
+        { materialKey: "ag_cdo",          label: "Contact Points",  type: "cylinder", position: [ 0.25,-0.05,0], scale: [0.06,0.05,0.06], color: "#E0E0A0", opacity: 0.95 },
+      ],
+    },
+    {
+      componentType: "inductor",
+      aliases: ["coil", "choke", "ferrite"],
+      constructionNote: "Copper wire winding on MnZn ferrite core; phenolic or epoxy bobbin",
+      subComponents: [
+        { name: "Copper Winding",         materialKey: "copper",          role: "Inductive element",         massFraction: 0.40 },
+        { name: "Enamel Wire Insulation", materialKey: "coil_insulation", role: "Turn-to-turn isolation",    massFraction: 0.05, isCritical: true, operatingLimitC: 130 },
+        { name: "MnZn Ferrite Core",      materialKey: "ferrite",         role: "Magnetic flux concentrator", massFraction: 0.45 },
+        { name: "Epoxy Bobbin",           materialKey: "epoxy_resin",     role: "Winding support",           massFraction: 0.10 },
+      ],
+      internalLayers: [
+        { materialKey: "ferrite", label: "Ferrite Core", type: "cylinder", position: [0,0,0], scale: [0.18,0.80,0.18], color: "#444455", opacity: 0.85 },
+        { materialKey: "copper",  label: "Cu Winding",   type: "torus",    position: [0,0,0], scale: [0.32,0.32,0.32], color: "#B87333", opacity: 0.75 },
+      ],
+    },
+    {
+      componentType: "wire",
+      aliases: ["conductor", "hook-up-wire"],
+      constructionNote: "Stranded annealed-copper conductor with PVC insulation jacket (80 °C class); rated per NEC Table 310.16 ampacity. Represents the default 14 AWG chassis wire — select a specific wire spec from the Wire Guide for accurate insulation-class thresholds.",
+      subComponents: [
+        { name: "Stranded Copper Conductor", materialKey: "copper",         role: "Electrical current carrier",                      massFraction: 0.60 },
+        { name: "PVC Insulation Jacket",     materialKey: "pvc_jacket_80",  role: "Electrical isolation / mechanical protection",    massFraction: 0.40,
+          isCritical: true, operatingLimitC: 80 },
+      ],
+      internalLayers: [
+        { materialKey: "copper",       label: "Cu Conductor", type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.07,1.00,0.07], color: "#B87333", opacity: 0.95 },
+        { materialKey: "pvc_jacket_80", label: "PVC Jacket",  type: "cylinder", position: [0,0,0], rotation: [0,0,1.5708], scale: [0.14,1.00,0.14], color: "#888800", opacity: 0.40 },
+      ],
+    },
+  ];
+&nbsp;
+  // ---------------------------------------------------------------------------
+  // Lookup helpers (mirror of TypeScript version)
+  // ---------------------------------------------------------------------------
+  function getComponentComposition(typeOrAlias) {
+    const key = (typeOrAlias || <span class="branch-1 cbranch-no" title="branch not covered" >"")</span>.toLowerCase().trim();
+    return COMPONENT_COMPOSITIONS.find(
+      (c) =&gt; c.componentType === key || c.aliases.includes(key),
+    ) || null;
+  }
+&nbsp;
+  function getCriticalOperatingLimitC(typeOrAlias) {
+    const comp = getComponentComposition(typeOrAlias);
+    if (!comp) return null;
+    const critical = comp.subComponents.find((s) =&gt; s.isCritical);
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!critical) <span class="cstat-no" title="statement not covered" >return null;</span>
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (typeof critical.operatingLimitC === "number") return critical.operatingLimitC;
+    const mat = <span class="cstat-no" title="statement not covered" >MATERIAL_LIBRARY[critical.materialKey];</span>
+<span class="cstat-no" title="statement not covered" >    return mat ? mat.meltingPoint : null;</span>
+  }
+&nbsp;
+  function getComponentMaterials(typeOrAlias) {
+    const comp = getComponentComposition(typeOrAlias);
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!comp) <span class="cstat-no" title="statement not covered" >return [];</span>
+    return comp.subComponents.flatMap((sub) =&gt; {
+      const mat = MATERIAL_LIBRARY[sub.materialKey];
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (!mat) <span class="cstat-no" title="statement not covered" >return [];</span>
+      return [Object.assign({}, mat, { key: sub.materialKey, subComponentName: sub.name, isCritical: !!sub.isCritical, operatingLimitC: sub.operatingLimitC, massFraction: sub.massFraction })];
+    });
+  }
+&nbsp;
+  /**
+   * Register a custom or manufacturer-supplied composition at runtime.
+   * If a composition for the same componentType already exists it is replaced.
+   * Also re-registers compositions with FailureEngine if available.
+   *
+   * @param {Object} composition — must have componentType plus subComponents and/or internalLayers
+   */
+  function <span class="fstat-no" title="function not covered" >registerComposition(</span>composition) {
+<span class="cstat-no" title="statement not covered" >    if (!composition || typeof composition.componentType !== "string") {</span>
+<span class="cstat-no" title="statement not covered" >      if (typeof console !== "undefined") {</span>
+<span class="cstat-no" title="statement not covered" >        console.warn("ComponentCompositions.registerComposition: invalid argument — must have componentType string");</span>
+      }
+<span class="cstat-no" title="statement not covered" >      return false;</span>
+    }
+    const key = <span class="cstat-no" title="statement not covered" >composition.componentType.toLowerCase();</span>
+    const idx = <span class="cstat-no" title="statement not covered" >COMPONENT_COMPOSITIONS.findIndex(<span class="fstat-no" title="function not covered" >(c</span>) =&gt; <span class="cstat-no" title="statement not covered" >c.componentType === key)</span>;</span>
+<span class="cstat-no" title="statement not covered" >    if (idx &gt;= 0) {</span>
+<span class="cstat-no" title="statement not covered" >      COMPONENT_COMPOSITIONS[idx] = Object.assign({}, COMPONENT_COMPOSITIONS[idx], composition);</span>
+    } else {
+<span class="cstat-no" title="statement not covered" >      COMPONENT_COMPOSITIONS.push(Object.assign({ aliases: [], constructionNote: "", subComponents: [], internalLayers: [] }, composition));</span>
+    }
+    // Keep alias index fresh by rebuilding (re-require will refresh on next call)
+    // Re-register with FailureEngine
+<span class="cstat-no" title="statement not covered" >    if (typeof global.FailureEngine !== "undefined" &amp;&amp;</span>
+        typeof global.FailureEngine.loadCompositions === "function") {
+<span class="cstat-no" title="statement not covered" >      global.FailureEngine.loadCompositions(COMPONENT_COMPOSITIONS, MATERIAL_LIBRARY);</span>
+    }
+<span class="cstat-no" title="statement not covered" >    return true;</span>
+  }
+&nbsp;
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
+  const ComponentCompositions = {
+    MATERIAL_LIBRARY,
+    COMPONENT_COMPOSITIONS,
+    getComponentComposition,
+    getCriticalOperatingLimitC,
+    getComponentMaterials,
+    registerComposition,
+  };
+&nbsp;
+  // CommonJS (vitest/Node) or browser global
+  if (typeof module !== "undefined" &amp;&amp; module.exports) {
+    module.exports = ComponentCompositions;
+  } else <span class="missing-if-branch" title="else path not taken" >E</span>{
+<span class="cstat-no" title="statement not covered" >    global.ComponentCompositions = ComponentCompositions;</span>
+  }
+&nbsp;
+  // Auto-register with FailureEngine if already loaded
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (global.FailureEngine &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >typeof global.FailureEngine.loadCompositions === "function")</span> {
+<span class="cstat-no" title="statement not covered" >    global.FailureEngine.loadCompositions(COMPONENT_COMPOSITIONS, MATERIAL_LIBRARY);</span>
+  }
+&nbsp;
+}(typeof globalThis !== "undefined" ? globalThis : <span class="branch-1 cbranch-no" title="branch not covered" >typeof window !== "undefined" ? window : this)</span>);
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-04-10T17:42:19.258Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    
