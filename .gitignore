@@ -43,3 +43,6 @@ promo-footage/
 # Environment files
 *.env
 *.env.*
+
+# Coverage reports
+coverage/
