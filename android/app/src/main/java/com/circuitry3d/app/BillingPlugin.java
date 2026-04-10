@@ -46,15 +46,28 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
 
     @Override
     public void load() {
-        billingClient = BillingClient.newBuilder(getContext())
-                .setListener(this)
-                .enablePendingPurchases()
-                .build();
+        // Wrap in try/catch so that any error constructing the BillingClient
+        // (e.g. on devices without Google Play Services) does not propagate as
+        // an uncaught exception through Capacitor's plugin loader and crash the
+        // entire app before the WebView has rendered.
+        try {
+            billingClient = BillingClient.newBuilder(getContext())
+                    .setListener(this)
+                    .enablePendingPurchases()
+                    .build();
+        } catch (Exception e) {
+            android.util.Log.w("BillingPlugin", "Failed to create BillingClient - billing will be unavailable", e);
+            billingClient = null;
+        }
     }
 
     /** Connect the billing client. Must be called before any other method. */
     @PluginMethod
     public void initialize(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(BillingResult result) {
@@ -78,6 +91,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
      */
     @PluginMethod
     public void getProducts(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         JSArray skus = call.getArray("skus");
         if (skus == null || skus.length() == 0) {
             call.reject("skus array is required");
@@ -147,6 +164,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
      */
     @PluginMethod
     public void getInAppProducts(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         JSArray skus = call.getArray("skus");
         if (skus == null || skus.length() == 0) {
             call.reject("skus array is required");
@@ -208,6 +229,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
      */
     @PluginMethod
     public void purchase(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         String sku = call.getString("sku");
         if (sku == null || sku.isEmpty()) {
             call.reject("sku is required");
@@ -275,6 +300,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
      */
     @PluginMethod
     public void purchaseInApp(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         String sku = call.getString("sku");
         if (sku == null || sku.isEmpty()) {
             call.reject("sku is required");
@@ -329,6 +358,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
     /** Query all currently active subscriptions (for restoring purchases). */
     @PluginMethod
     public void restorePurchases(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         billingClient.queryPurchasesAsync(
                 QueryPurchasesParams.newBuilder()
                         .setProductType(BillingClient.ProductType.SUBS)
@@ -368,6 +401,10 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
     /** Query all previously purchased one-time in-app products (for restoring). */
     @PluginMethod
     public void restoreInAppPurchases(PluginCall call) {
+        if (billingClient == null) {
+            call.reject("Billing is not available on this device");
+            return;
+        }
         billingClient.queryPurchasesAsync(
                 QueryPurchasesParams.newBuilder()
                         .setProductType(BillingClient.ProductType.INAPP)
