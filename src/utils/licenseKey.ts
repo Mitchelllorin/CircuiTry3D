@@ -58,10 +58,7 @@ export async function importLicensePublicKey(
   algorithm: "RSASSA-PKCS1-v1_5" | "RSA-PSS" = "RSASSA-PKCS1-v1_5"
 ): Promise<CryptoKey> {
   const binaryStr = atob(LICENSE_PUBLIC_KEY_BASE64);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) {
-    bytes[i] = binaryStr.charCodeAt(i);
-  }
+  const bytes = Uint8Array.from(binaryStr, (c) => c.charCodeAt(0));
 
   return crypto.subtle.importKey(
     "spki",
@@ -75,23 +72,26 @@ export async function importLicensePublicKey(
 /**
  * Verify a license signature against the embedded public key.
  *
+ * The verification algorithm is derived automatically from the imported key,
+ * so the key and the verify call are always consistent.  For RSA-PSS keys a
+ * salt length of 32 bytes (matching SHA-256 output) is used.
+ *
  * @param key        - `CryptoKey` returned by `importLicensePublicKey`.
  * @param signature  - Raw signature bytes produced by the license server.
  * @param data       - The exact bytes that were signed (e.g. license payload).
- * @param algorithm  - Must match the algorithm used when importing the key.
  * @returns `true` if the signature is valid; `false` otherwise.
  */
 export async function verifyLicenseSignature(
   key: CryptoKey,
   signature: BufferSource,
-  data: BufferSource,
-  algorithm: "RSASSA-PKCS1-v1_5" | "RSA-PSS" = "RSASSA-PKCS1-v1_5"
+  data: BufferSource
 ): Promise<boolean> {
   try {
-    const algoParam =
-      algorithm === "RSA-PSS"
+    const keyAlgorithmName = (key.algorithm as RsaHashedKeyAlgorithm).name;
+    const algoParam: AlgorithmIdentifier | RsaPssParams =
+      keyAlgorithmName === "RSA-PSS"
         ? ({ name: "RSA-PSS", saltLength: 32 } as RsaPssParams)
-        : algorithm;
+        : keyAlgorithmName;
     return await crypto.subtle.verify(algoParam, key, signature, data);
   } catch {
     return false;
