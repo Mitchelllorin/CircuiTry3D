@@ -956,6 +956,10 @@ body.builder-body::before {
   cursor: not-allowed;
 }
 
+.circuit-zoom-btn--inactive {
+  opacity: 0.45;
+}
+
 /* ── Measurement Tools FAB ──────────────────────────────────────────────────
    Positioned at top-left corner, just below the action bar.
    One tap opens the Insights drawer (DMM, analysis).

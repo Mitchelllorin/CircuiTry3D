@@ -3922,6 +3922,17 @@ export default function Builder() {
           </button>
           <button
             type="button"
+            className={`circuit-zoom-btn${modeState.showLabels ? "" : " circuit-zoom-btn--inactive"}`}
+            onClick={() => triggerBuilderAction("toggle-labels")}
+            disabled={controlsDisabled}
+            aria-label={modeState.showLabels ? "Hide component metrics labels" : "Show component metrics labels"}
+            aria-pressed={modeState.showLabels}
+            title={modeState.showLabels ? "Hide metrics labels" : "Show metrics labels"}
+          >
+            🏷
+          </button>
+          <button
+            type="button"
             className={`cinematic-fab${isCinematicOpen ? " active" : ""}${cinematicIsRecording ? " cinematic-fab--recording" : ""}`}
             onClick={() => setIsCinematicOpen((prev) => !prev)}
             aria-label={isCinematicOpen ? "Close cinematic camera" : "Open cinematic camera"}
