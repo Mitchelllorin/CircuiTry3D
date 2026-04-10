@@ -1156,7 +1156,7 @@ function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonP
 const INTRO_WELCOME = {
   icon: "⚡",
   title: "Welcome to CircuiTry3D",
-  body: "Build interactive 3D electric circuits and watch current flow in real time — all the way down to the atomic level.\n\nDrop components, connect wires, and see Ohm's Law (E = I × R) come alive. Tap the ? button any time for guided tutorials and tips.",
+  body: "Build interactive 3D circuits and watch current flow in real time. Drop components, connect wires, and see Ohm's Law (E = I × R) come alive. Tap ? for tutorials.",
 };
 
 const GALLERY_TOAST_DURATION_MS = 6000;
