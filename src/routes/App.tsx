@@ -181,8 +181,8 @@ function AppLayout() {
       <main className={contentClass}>
         <Outlet />
       </main>
-      {/* Tips & facts ticker - shown on all pages except landing and promo */}
-      {!isLanding && !isAnyPromo && <TipsTicker />}
+      {/* Tips & facts ticker - workspace only */}
+      {isWorkspace && <TipsTicker />}
       {/* Site footer with legal links - shown on all pages except landing, workspace, arena & promo */}
       {!isLanding && !isWorkspace && !isArena && !isAnyPromo && (
         <footer className="app-footer">
