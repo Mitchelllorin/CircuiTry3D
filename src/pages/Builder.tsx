@@ -1153,60 +1153,11 @@ function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonP
   );
 }
 
-type IntroDialogStep = {
-  icon: string;
-  title: string;
-  body: string;
-  formula?: string;
-  analogy?: string;
+const INTRO_WELCOME = {
+  icon: "⚡",
+  title: "Welcome to CircuiTry3D",
+  body: "Build interactive 3D electric circuits and watch current flow in real time — all the way down to the atomic level.\n\nDrop components, connect wires, and see Ohm's Law (E = I × R) come alive. Tap the ? button any time for guided tutorials and tips.",
 };
-
-const INTRO_DIALOG_STEPS: IntroDialogStep[] = [
-  {
-    icon: "⚡",
-    title: "What is an Electric Circuit?",
-    body: "An electric circuit is a closed path through which electric charge (electrons) can flow continuously. Every working circuit needs three things: a voltage source (like a battery), at least one load (like a resistor or bulb), and conductors (wires) forming a complete, unbroken circuit.",
-    analogy:
-      "🔄 Think of it like a water circuit: a pump pushes water around a closed pipe system. If the pipe is broken anywhere, the flow stops — the same happens with electricity in an open circuit.",
-  },
-  {
-    icon: "🔋",
-    title: "Voltage (E) — The Electrical Push",
-    body: "Voltage, also called Electromotive Force (EMF) or potential difference, is the energy per unit charge that drives electrons through the circuit. It is measured in Volts (V).",
-    formula: "E  (Volts, V)",
-    analogy:
-      "💧 Imagine water pressure in a pipe. Higher pressure pushes more water through — higher voltage pushes more electrons through a conductor.",
-  },
-  {
-    icon: "➡️",
-    title: "Current (I) — The Flow of Electrons",
-    body: "Electric current is the rate at which electric charge flows past a point in a circuit. It is measured in Amperes (Amps, A). In a series circuit, the same current flows through every component.",
-    formula: "I  (Amperes, A)",
-    analogy:
-      "💧 Current is like the volume of water flowing through a pipe per second. A wider pipe (less resistance) allows more water (more current) to flow for the same pressure (voltage).",
-  },
-  {
-    icon: "🌀",
-    title: "Resistance (R) — Opposition to Flow",
-    body: "Resistance is the property of a material that opposes the flow of electric current. It converts electrical energy into heat or light. Resistance is measured in Ohms (Ω). Every real conductor and component has some resistance.",
-    formula: "R  (Ohms, Ω)",
-    analogy:
-      "💧 Resistance is like the narrowness of a pipe. A very narrow pipe (high resistance) restricts water flow even under high pressure. Resistors are deliberately added to control current.",
-  },
-  {
-    icon: "📐",
-    title: "Ohm's Law — The Fundamental Relationship",
-    body: "Ohm's Law states that the voltage across a conductor is directly proportional to the current flowing through it, with resistance as the constant of proportionality. This single equation lets you calculate any one of the three values if you know the other two.",
-    formula: "E = I × R",
-    analogy:
-      "🔧 Rearranged:\n  I = E ÷ R  →  more voltage or less resistance = more current\n  R = E ÷ I  →  knowing voltage and current reveals resistance",
-  },
-  {
-    icon: "🚀",
-    title: "You're Ready to Build!",
-    body: "CircuiTry3D lets you design interactive 3D circuits and instantly see how Ohm's Law plays out in real time. Add a battery, connect resistors, draw wires, and watch current flow — all the way down to the atomic level.\n\nUse the W.I.R.E. table (Watts · Current · Resistance · Voltage) to read every metric in your circuit.",
-  },
-];
 
 const GALLERY_TOAST_DURATION_MS = 6000;
 
@@ -1311,7 +1262,6 @@ export default function Builder() {
   const [isCurrentFlowPayoffRunning, setCurrentFlowPayoffRunning] =
     useState(false);
   const [isIntroDialogVisible, setIntroDialogVisible] = useState(false);
-  const [introDialogStep, setIntroDialogStep] = useState(0);
   // Junction tip starts hidden — it is shown the first time the user
   // explicitly uses the Junction button, not automatically on page load,
   // so that it never blocks the 3D canvas or grid on first visit.
@@ -2288,7 +2238,6 @@ export default function Builder() {
     }
 
     if (!hasSeenIntro) {
-      setIntroDialogStep(0);
       setIntroDialogVisible(true);
       setCircuitLocked(true);
     }
@@ -3089,97 +3038,32 @@ export default function Builder() {
             </button>
 
             <div className="builder-intro-dialog-kicker">
-              CircuiTry3D · Introduction
+              CircuiTry3D
             </div>
 
             <div
               className="builder-intro-dialog-step-icon"
               aria-hidden="true"
             >
-              {INTRO_DIALOG_STEPS[introDialogStep].icon}
+              {INTRO_WELCOME.icon}
             </div>
             <h2
               className="builder-intro-dialog-title"
               id="intro-dialog-title"
             >
-              {INTRO_DIALOG_STEPS[introDialogStep].title}
+              {INTRO_WELCOME.title}
             </h2>
             <p className="builder-intro-dialog-body">
-              {INTRO_DIALOG_STEPS[introDialogStep].body}
+              {INTRO_WELCOME.body}
             </p>
-            <div className="builder-intro-dialog-extras">
-              {INTRO_DIALOG_STEPS[introDialogStep].formula && (
-                <div className="builder-intro-dialog-formula">
-                  {INTRO_DIALOG_STEPS[introDialogStep].formula}
-                </div>
-              )}
-              {INTRO_DIALOG_STEPS[introDialogStep].analogy && (
-                <div className="builder-intro-dialog-analogy">
-                  {INTRO_DIALOG_STEPS[introDialogStep].analogy}
-                </div>
-              )}
-            </div>
-
-            <div
-              className="builder-intro-dialog-dots"
-              aria-hidden="true"
-            >
-              {INTRO_DIALOG_STEPS.map((_, i) => (
-                <span
-                  key={i}
-                  className={`builder-intro-dialog-dot${i === introDialogStep ? " is-active" : ""}`}
-                />
-              ))}
-            </div>
-
-            <div className="builder-intro-dialog-progress">
-              <div className="builder-intro-dialog-progress-bar">
-                <div
-                  className="builder-intro-dialog-progress-fill"
-                  style={{
-                    width: `${Math.round(((introDialogStep + 1) / INTRO_DIALOG_STEPS.length) * 100)}%`,
-                  }}
-                />
-              </div>
-              <div className="builder-intro-dialog-progress-text">
-                {introDialogStep + 1} / {INTRO_DIALOG_STEPS.length}
-              </div>
-            </div>
 
             <div className="builder-intro-dialog-actions">
               <button
                 type="button"
-                className="builder-intro-dialog-btn builder-intro-dialog-btn--secondary"
-                style={{
-                  visibility: introDialogStep === 0 ? "hidden" : "visible",
-                }}
-                onClick={() =>
-                  setIntroDialogStep((s) => s - 1)
-                }
-              >
-                Back
-              </button>
-              <button
-                type="button"
                 className="builder-intro-dialog-btn builder-intro-dialog-btn--primary"
-                onClick={() => {
-                  if (introDialogStep < INTRO_DIALOG_STEPS.length - 1) {
-                    setIntroDialogStep((s) => s + 1);
-                  } else {
-                    handleDismissIntroDialog();
-                  }
-                }}
-              >
-                {introDialogStep === INTRO_DIALOG_STEPS.length - 1
-                  ? "Start Building →"
-                  : "Next"}
-              </button>
-              <button
-                type="button"
-                className="builder-intro-dialog-btn--skip"
                 onClick={handleDismissIntroDialog}
               >
-                Skip intro
+                Start Building →
               </button>
             </div>
           </div>
