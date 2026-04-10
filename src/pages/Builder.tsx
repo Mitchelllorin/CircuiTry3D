@@ -73,7 +73,7 @@ import {
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
-import { isAndroidApp, purchasePremiumUnlock } from "../utils/playStoreBilling";
+import { isAndroidApp } from "../utils/playStoreBilling";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
 import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 import PricingSection from "../components/PricingSection";
@@ -1333,7 +1333,7 @@ export default function Builder() {
     };
   }, []);
 
-  // On Android, reload the app when the user completes the $4.99 in-app
+  // On Android, reload the app when the user completes the in-app
   // purchase so IS_DEMO_MODE (module-level constant) re-evaluates to false
   // and the full component library is immediately available.
   useEffect(() => {
@@ -3311,68 +3311,28 @@ export default function Builder() {
                 ))}
               </div>
               {IS_DEMO_MODE && (
-                isAndroidApp() ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      purchasePremiumUnlock().then((launched) => {
-                        if (!launched) {
-                          // Billing unavailable on this device — fall back to the Play Store page.
-                          window.open(
-                            "https://play.google.com/store/apps/details?id=com.circuitry3d.app",
-                            "_system"
-                          );
-                        }
-                        // On success the native billing sheet handles everything;
-                        // circuitry3d:premiumUnlocked fires → page reloads (see useEffect above).
-                      }).catch(() => {
-                        // Billing error — silently ignore; the native sheet shows its own error UI.
-                      });
-                    }}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      marginTop: "10px",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(136,204,255,0.35)",
-                      background: "rgba(136,204,255,0.10)",
-                      color: "rgba(170,210,255,0.9)",
-                      fontSize: "0.72rem",
-                      textAlign: "center",
-                      lineHeight: 1.4,
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    🔒 Unlock full component library
-                    <br />
-                    <span style={{ opacity: 0.7 }}>One-time purchase · $4.99</span>
-                  </button>
-                ) : (
-                  <a
-                    href="https://play.google.com/store/apps/details?id=com.circuitry3d.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "block",
-                      marginTop: "10px",
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(136,204,255,0.28)",
-                      background: "rgba(136,204,255,0.07)",
-                      color: "rgba(170,210,255,0.85)",
-                      fontSize: "0.72rem",
-                      textAlign: "center",
-                      textDecoration: "none",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    🔒 More components unlocked in the full version
-                    <br />
-                    <span style={{ opacity: 0.7 }}>Get it on Play Store →</span>
-                  </a>
-                )
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.circuitry3d.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    marginTop: "10px",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(136,204,255,0.28)",
+                    background: "rgba(136,204,255,0.07)",
+                    color: "rgba(170,210,255,0.85)",
+                    fontSize: "0.72rem",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  🔒 More components unlocked in the full version
+                  <br />
+                  <span style={{ opacity: 0.7 }}>Get it on Play Store →</span>
+                </a>
               )}
             </div>
           </div>

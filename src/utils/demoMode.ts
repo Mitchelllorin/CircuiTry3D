@@ -6,7 +6,7 @@
  *
  * Two unlock paths:
  *  1. Android AAB — user purchases the one-time "premium_unlock" in-app
- *     product ($4.99) via Google Play.  purchasePremiumUnlock() persists the
+ *     product via Google Play.  purchasePremiumUnlock() persists the
  *     purchase in localStorage; the app reloads so IS_DEMO_MODE re-evaluates.
  *  2. Web demo — owner enters the owner password in the DemoBanner dialog.
  *

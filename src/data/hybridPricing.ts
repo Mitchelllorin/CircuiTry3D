@@ -34,8 +34,10 @@ export interface ConsumerTier {
   icon: string;
   /** Optional badge label shown on the card (e.g. "Best Value"). */
   badge?: string;
-  /** Static fallback price shown when live BillingClient prices are unavailable. */
+  /** Static fallback price shown when live BillingClient prices are unavailable (monthly for Pro). */
   staticPriceFallback: string;
+  /** Static fallback yearly price (Pro only) when live BillingClient prices are unavailable. */
+  staticYearlyPriceFallback?: string;
   /** Play Store product SKU. Undefined for the Free tier. */
   sku?: string;
   /**
@@ -85,7 +87,8 @@ export const CONSUMER_TIERS: ConsumerTier[] = [
     name: "Pro Subscription",
     icon: "🚀",
     badge: "Best Value",
-    staticPriceFallback: "$2.49 / mo",
+    staticPriceFallback: "$1.50 / mo",
+    staticYearlyPriceFallback: "$14.99 / yr",
     skus: { monthly: SUB_MONTHLY_SKU, yearly: SUB_YEARLY_SKU },
     purchaseType: "subscription",
     features: [
