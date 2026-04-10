@@ -40,6 +40,10 @@ i18n
       caches: ["localStorage"],
       lookupLocalStorage: "circuitry3d_language",
     },
+  })
+  .catch((err: unknown) => {
+    // i18n init failures are non-fatal — the app still functions with default strings.
+    console.warn("[i18n] Initialization warning:", err);
   });
 
 export default i18n;

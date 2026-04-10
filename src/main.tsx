@@ -83,6 +83,16 @@ window.addEventListener("error", (event) => {
 
   const message = event.error instanceof Error ? event.error.message : event.message;
   const stack = event.error instanceof Error ? event.error.stack : undefined;
+
+  // If React has already mounted (root has children), do not destroy the app — the
+  // React ErrorBoundary will catch rendering errors and show a recovery UI.  Only
+  // show the full-screen fatal overlay when React has never rendered (blank screen).
+  const rootEl = document.getElementById("root");
+  if (rootEl && rootEl.childElementCount > 0) {
+    console.error("[App] Uncaught error:", message, stack);
+    return;
+  }
+
   renderFatalOverlay({
     title: "Application Error",
     message: message || "An unexpected error occurred.",
@@ -94,11 +104,11 @@ window.addEventListener("unhandledrejection", (event) => {
   const reason = (event as PromiseRejectionEvent).reason;
   const message = reason instanceof Error ? reason.message : String(reason);
   const stack = reason instanceof Error ? reason.stack : undefined;
-  renderFatalOverlay({
-    title: "Unhandled Promise Rejection",
-    message,
-    stack,
-  });
+
+  // Never replace a running React app with a full-screen overlay on a promise
+  // rejection.  Unhandled rejections from Capacitor plugins, billing, i18next,
+  // or transient network calls must not kill the UI.  Log only.
+  console.error("[App] Unhandled promise rejection:", message, stack);
 });
 
 const container = document.getElementById("root");
