@@ -1,20 +1,22 @@
 /**
  * Demo mode utilities.
  *
- * The GitHub Pages web build is a demo/preview version with a limited set of
- * components. The full component library is available in the Play Store release.
+ * VITE_DEMO_MODE=true at build time restricts the component palette to the 6
+ * free components (battery, resistor, LED, switch, ground, junction).
  *
- * Set VITE_DEMO_MODE=true at build time (see .env.production) to enable demo
- * mode. When the flag is absent or false the full component set is used.
+ * Two unlock paths:
+ *  1. Android AAB — user purchases the one-time "premium_unlock" in-app
+ *     product ($4.99) via Google Play.  purchasePremiumUnlock() persists the
+ *     purchase in localStorage; the app reloads so IS_DEMO_MODE re-evaluates.
+ *  2. Web demo — owner enters the owner password in the DemoBanner dialog.
  *
- * The owner can unlock the full version at runtime by entering their password
- * in the DemoBanner dialog.  The password is verified client-side against
- * VITE_OWNER_KEY_HASH (the SHA-256 hex digest of the owner password, injected
- * at build time from the OWNER_KEY_HASH GitHub Actions secret).  On success
- * the unlock flag is persisted in localStorage under OWNER_STORAGE_KEY.
+ * Build-time env vars:
+ *   VITE_DEMO_MODE=true      — enables demo mode (set in .env.capacitor and
+ *                               via Vercel env variables for the web preview).
+ *   VITE_OWNER_KEY_HASH=...  — SHA-256 hex digest of the owner password
+ *                               (Vercel / GitHub Actions secret; optional).
  *
- * To reset back to demo mode append ?demo_reset to any URL (e.g.
- * https://demo.circuitry3d.net/?demo_reset).
+ * To reset back to demo mode append ?demo_reset to any URL.
  */
 
 /** localStorage key that stores the owner-unlock flag. */
@@ -67,9 +69,36 @@ const BUILD_IS_DEMO: boolean = import.meta.env.VITE_DEMO_MODE === "true";
 
 /**
  * True when the app is running in demo/preview mode.
- * False when the build flag is off OR when the owner has authenticated.
+ *
+ * Returns false when any of the following is true:
+ *   - VITE_DEMO_MODE is not set to "true" at build time.
+ *   - The owner has authenticated via the DemoBanner password dialog
+ *     (web only; token stored in localStorage under OWNER_STORAGE_KEY).
+ *   - The user has purchased the one-time "premium_unlock" in-app product
+ *     on Android (token stored in localStorage under PREMIUM_UNLOCK_KEY from
+ *     playStoreBilling.ts).
+ *
+ * Note: this is a module-level constant, evaluated once on import.  After a
+ * purchase the app must reload (window.location.reload) for the change to
+ * take effect; Builder.tsx handles this on the circuitry3d:premiumUnlocked event.
  */
-export const IS_DEMO_MODE: boolean = BUILD_IS_DEMO && !isOwnerUnlocked();
+
+/** localStorage key for the one-time Premium Unlock purchase — mirrors the
+ *  PREMIUM_UNLOCK_KEY constant in playStoreBilling.ts.  Kept in sync here to
+ *  avoid importing the entire billing module at this early stage of
+ *  initialisation (demoMode.ts is loaded before React and Capacitor are ready). */
+const _PREMIUM_UNLOCK_KEY = "circuitry3d_premium_unlock";
+
+export const IS_DEMO_MODE: boolean = (() => {
+  if (!BUILD_IS_DEMO) return false;
+  if (isOwnerUnlocked()) return false;
+  try {
+    if (localStorage.getItem(_PREMIUM_UNLOCK_KEY) === "true") return false;
+  } catch {
+    // localStorage unavailable (e.g. SSR / private mode edge case)
+  }
+  return true;
+})();
 
 /**
  * Component IDs that are available in the demo version.
