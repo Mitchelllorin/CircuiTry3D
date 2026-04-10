@@ -3,6 +3,7 @@ import CIRCUIT_TIPS_FACTS from "../data/circuitTipsFacts";
 import { AskAboutTip } from "./AskAboutTip";
 
 const ROTATION_INTERVAL_MS = 12000;
+const STARTUP_DELAY_MS = 30000;
 const DISMISSED_STORAGE_KEY = "circuitry3d:tips-ticker:dismissed:v1";
 
 function getRandomIndex(length: number, exclude: number): number {
@@ -27,11 +28,23 @@ export function TipsTicker() {
     }
   });
 
+  const [ready, setReady] = useState(false);
+
   const [currentIndex, setCurrentIndex] = useState(() =>
     Math.floor(Math.random() * CIRCUIT_TIPS_FACTS.length),
   );
   const [visible, setVisible] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Delay initial appearance so the ticker doesn't pop up the moment the
+  // workspace loads, giving users time to orient themselves first.
+  useEffect(() => {
+    if (dismissed) {
+      return;
+    }
+    const timer = setTimeout(() => setReady(true), STARTUP_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [dismissed]);
 
   const advance = useCallback(() => {
     setVisible(false);
@@ -44,7 +57,7 @@ export function TipsTicker() {
   }, []);
 
   useEffect(() => {
-    if (dismissed) {
+    if (dismissed || !ready) {
       return;
     }
     intervalRef.current = setInterval(advance, ROTATION_INTERVAL_MS);
@@ -53,7 +66,7 @@ export function TipsTicker() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [dismissed, advance]);
+  }, [dismissed, ready, advance]);
 
   const handleDismiss = () => {
     setDismissed(true);
@@ -74,7 +87,7 @@ export function TipsTicker() {
     }
   };
 
-  if (dismissed || CIRCUIT_TIPS_FACTS.length === 0) {
+  if (dismissed || !ready || CIRCUIT_TIPS_FACTS.length === 0) {
     return null;
   }
 
