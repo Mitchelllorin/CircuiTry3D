@@ -5,6 +5,7 @@ import {
   OWNER_STORAGE_KEY,
   verifyOwnerPassword,
 } from "../utils/demoMode";
+import { isAndroidApp } from "../utils/playStoreBilling";
 
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
@@ -17,14 +18,14 @@ function getPasswordBorderColor(status: UnlockStatus): string {
 }
 
 /**
- * A fixed banner shown at the top of every page when the app is running in
- * demo mode (i.e. the GitHub Pages web deployment). Informs users that this
- * is a limited preview and directs them to the Play Store for the full release.
+ * A fixed banner shown at the top of every page when the web demo is running
+ * in demo mode (i.e. the Vercel / GitHub Pages deployment).  Informs users
+ * that this is a limited preview and directs them to the Play Store.
+ *
+ * NOT rendered inside the Android app — in the AAB the paywall is surfaced
+ * through the component library panel instead (no intrusive banner).
  *
  * The owner can click the subtle lock icon to enter their owner password.
- * The password is verified client-side against the VITE_OWNER_KEY_HASH build
- * constant (SHA-256 hex digest). On success the unlock flag is stored in
- * localStorage and the page reloads with full-access enabled.
  */
 export default function DemoBanner() {
   const [unlockOpen, setUnlockOpen] = useState(false);
@@ -32,7 +33,9 @@ export default function DemoBanner() {
   const [status, setStatus] = useState<UnlockStatus>("idle");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  if (!IS_DEMO_MODE) {
+  // Not in demo mode, or running inside the Android app — render nothing.
+  // The Android paywall is handled via the in-app billing flow in Builder.tsx.
+  if (!IS_DEMO_MODE || isAndroidApp()) {
     return null;
   }
 

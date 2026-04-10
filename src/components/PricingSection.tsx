@@ -126,7 +126,11 @@ export default function PricingSection() {
         if (cycle === "yearly") {
           const monthlyPrice = livePrices[tier.skus.monthly] ?? "";
           const yearlyPrice = livePrices[tier.skus.yearly];
-          return buildYearlyLabel(monthlyPrice || tier.staticPriceFallback, yearlyPrice);
+          // Prefer live BillingClient price → static yearly fallback → auto-compute from monthly.
+          return buildYearlyLabel(
+            monthlyPrice || tier.staticPriceFallback,
+            yearlyPrice ?? tier.staticYearlyPriceFallback
+          );
         }
         return livePrices[tier.skus.monthly] ?? tier.staticPriceFallback;
       }

@@ -73,6 +73,7 @@ import {
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
+import { isAndroidApp } from "../utils/playStoreBilling";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
 import wireStrippersIcon from "../assets/wire-strippers-icon.svg";
 import PricingSection from "../components/PricingSection";
@@ -1330,6 +1331,16 @@ export default function Builder() {
     return () => {
       globalModeContext.setIsInWorkspace(false);
     };
+  }, []);
+
+  // On Android, reload the app when the user completes the in-app
+  // purchase so IS_DEMO_MODE (module-level constant) re-evaluates to false
+  // and the full component library is immediately available.
+  useEffect(() => {
+    if (!IS_DEMO_MODE || !isAndroidApp()) return;
+    const onUnlocked = () => window.location.reload();
+    window.addEventListener("circuitry3d:premiumUnlocked", onUnlocked);
+    return () => window.removeEventListener("circuitry3d:premiumUnlocked", onUnlocked);
   }, []);
 
   // Track global mode changes for later processing
