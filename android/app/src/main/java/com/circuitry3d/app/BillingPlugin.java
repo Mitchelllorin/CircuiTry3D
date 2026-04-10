@@ -56,7 +56,7 @@ public class BillingPlugin extends Plugin implements PurchasesUpdatedListener {
                     .enablePendingPurchases()
                     .build();
         } catch (Exception e) {
-            android.util.Log.w("BillingPlugin", "Failed to create BillingClient — billing will be unavailable", e);
+            android.util.Log.w("BillingPlugin", "Failed to create BillingClient - billing will be unavailable", e);
             billingClient = null;
         }
     }
