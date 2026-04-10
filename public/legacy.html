@@ -1246,6 +1246,9 @@
             text-shadow:
                 0 0 2px rgba(0, 0, 0, 0.95),
                 0 0 8px rgba(0, 0, 0, 0.85);
+            /* Anchor point is bottom-centre of label so it always floats
+               completely above the 3D component — never on top of it. */
+            transform: translate(-50%, -100%);
         }
         
         .branding-overlay {
@@ -5690,12 +5693,15 @@ body.android-optimized .zoom-btn {
                 
                 const worldPos = new THREE.Vector3();
                 worldPos.setFromMatrixPosition(this.mesh.matrixWorld);
-                worldPos.y += 3; // Position above component
+                worldPos.y += 4; // Anchor point above component top
                 
                 const screenPos = worldToScreen(worldPos);
                 
-                this.labelDiv.style.left = (screenPos.x - (isMobile ? 40 : 30)) + 'px';
-                this.labelDiv.style.top = (screenPos.y - (isMobile ? 40 : 30)) + 'px';
+                // CSS transform: translate(-50%, -100%) centres the label
+                // horizontally and aligns its bottom to this anchor point,
+                // so the label always floats above the component, never over it.
+                this.labelDiv.style.left = screenPos.x + 'px';
+                this.labelDiv.style.top = screenPos.y + 'px';
                 
                 // Hide label if component is behind camera
                 this.labelDiv.style.display = screenPos.z > 1 ? 'none' : (showLabels ? 'block' : 'none');
