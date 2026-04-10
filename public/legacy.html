@@ -17694,7 +17694,13 @@ Made with ? for visual learners everywhere!
                             color:             flowColor.hex,
                             emissive:          flowColor.emissive,
                             shininess:         180,
-                            transparent:       true,
+                            // On Android WebView the transparent render pass is unreliable
+                            // across Adreno/Mali/PowerVR GPU drivers and can produce entirely
+                            // invisible geometry (same quirk documented for the canvas grid).
+                            // Force opaque rendering on Android so particles are always visible;
+                            // the high base opacity (0.88–0.98) means the visual difference is
+                            // negligible.
+                            transparent:       !isAndroid,
                             opacity:           baseOpacity,
                             emissiveIntensity: baseEmissive
                         });
@@ -17828,7 +17834,7 @@ Made with ? for visual learners everywhere!
                             var geom = new THREE.SphereGeometry(0.06, 6, 6);
                             var mat = new THREE.MeshPhongMaterial({
                                 color: 0xff6600, emissive: 0xff3300,
-                                emissiveIntensity: 0.8, transparent: true, opacity: 0.9
+                                emissiveIntensity: 0.8, transparent: !isAndroid, opacity: 0.9
                             });
                             var particle = new THREE.Mesh(geom, mat);
                             particle.position.copy(pos);
@@ -17913,7 +17919,10 @@ Made with ? for visual learners everywhere!
                 emissive:          ionColor.clone().multiplyScalar(0.3 + heatT * 0.6).getHex(),
                 emissiveIntensity: 0.7 + heatT * 1.5,
                 shininess:         280,
-                transparent:       true,
+                // Use opaque rendering on Android (transparent pass unreliable on
+                // Adreno/Mali/PowerVR drivers); opacity 0.92 is near-opaque so the
+                // visual difference is imperceptible.
+                transparent:       !isAndroid,
                 opacity:           0.92
             });
 
