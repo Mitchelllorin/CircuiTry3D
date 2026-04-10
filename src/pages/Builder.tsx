@@ -114,8 +114,11 @@ const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
 // animation after the 3D scene has rendered its first frame (~480 ms).
 // Second retry at 1.2 s covers slow devices and first-load jank where the
 // WebGL context initialises later than usual.
+// Third retry at 2.8 s is exclusively for Android (Capacitor) where the WebView
+// can be slow to stabilise GPU state on first launch; web builds skip this.
 const PAYOFF_FIRST_RETRY_MS = 480;
 const PAYOFF_SECOND_RETRY_MS = 1200;
+const PAYOFF_THIRD_RETRY_MS_ANDROID = 2800;
 
 const toWireProfileBridgePayload = (wireProfile: WireSpec | null) => {
   if (!wireProfile) {
@@ -2170,7 +2173,20 @@ export default function Builder() {
         setCurrentFlowPayoffRunning(false);
       }, PAYOFF_SECOND_RETRY_MS);
 
-      currentFlowPayoffTimersRef.current.push(retryTimer, followupTimer);
+      // Step 4: Third retry only on Android — the Capacitor WebView can be slow
+      // to stabilise GPU state on the very first launch, so particles may not
+      // appear after the first two retries on cold-start.
+      const thirdRetryTimer = isAndroidApp()
+        ? window.setTimeout(() => {
+            triggerBuilderAction("run-payoff-flow");
+          }, PAYOFF_THIRD_RETRY_MS_ANDROID)
+        : null;
+
+      currentFlowPayoffTimersRef.current.push(
+        retryTimer,
+        followupTimer,
+        ...(thirdRetryTimer !== null ? [thirdRetryTimer] : []),
+      );
     },
     [
       clearCurrentFlowPayoffTimers,

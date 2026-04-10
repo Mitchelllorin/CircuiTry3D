@@ -17724,11 +17724,23 @@ Made with ? for visual learners everywhere!
                             emissiveIntensity: baseEmissive
                         });
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                        // Always render particles regardless of frustum — on Android the
+                        // bounding-sphere check can incorrectly cull particles that sit
+                        // exactly on a frustum edge due to floating-point precision differences
+                        // between GPU drivers (Adreno / Mali / PowerVR).
+                        particle.frustumCulled = false;
 
                         const initialProgress = (i / dynamicCount) + (segmentIndex * 0.17);
                         const clampedProgress = ((initialProgress % 1) + 1) % 1;
 
                         const initialPosition = wire.curve.getPoint(clampedProgress);
+                        // Guard: skip particles whose initial curve position resolved to NaN.
+                        // This can happen on Android if the curve path contains a degenerate
+                        // segment (start === end) that slips past the 0.001 distance guard.
+                        if (!initialPosition || isNaN(initialPosition.x) || isNaN(initialPosition.y) || isNaN(initialPosition.z)) {
+                            console.warn('[CT3D Flow] Particle ' + i + ' on segment ' + segmentIndex + ': NaN initial position, skipping');
+                            continue;
+                        }
                         particle.position.copy(initialPosition);
 
                         // ── Orbital rings (atomic zoom only) ────────────────
@@ -17744,7 +17756,7 @@ Made with ? for visual learners everywhere!
                                 ORBITAL_RING_RADIAL_SEGMENTS,
                                 ORBITAL_RING_TUBULAR_SEGMENTS);
                             orbitalRing = new THREE.Mesh(r1Geom, new THREE.MeshBasicMaterial({
-                                color: flowColor.hex, transparent: true, opacity: 0.65,
+                                color: flowColor.hex, transparent: !isAndroid, opacity: 0.65,
                                 side: THREE.DoubleSide, depthWrite: false,
                                 blending: THREE.AdditiveBlending
                             }));
@@ -17758,7 +17770,7 @@ Made with ? for visual learners everywhere!
                                 ORBITAL_RING_RADIAL_SEGMENTS,
                                 ORBITAL_RING_TUBULAR_SEGMENTS);
                             orbitalRing2 = new THREE.Mesh(r2Geom, new THREE.MeshBasicMaterial({
-                                color: flowColor.hex, transparent: true, opacity: 0.40,
+                                color: flowColor.hex, transparent: !isAndroid, opacity: 0.40,
                                 side: THREE.DoubleSide, depthWrite: false,
                                 blending: THREE.AdditiveBlending
                             }));
@@ -17774,7 +17786,7 @@ Made with ? for visual learners everywhere!
                                     ORBITAL_RING_RADIAL_SEGMENTS,
                                     ORBITAL_RING_TUBULAR_SEGMENTS);
                                 orbitalRing3 = new THREE.Mesh(r3Geom, new THREE.MeshBasicMaterial({
-                                    color: 0xffffff, transparent: true, opacity: 0.22,
+                                    color: 0xffffff, transparent: !isAndroid, opacity: 0.22,
                                     side: THREE.DoubleSide, depthWrite: false,
                                     blending: THREE.AdditiveBlending
                                 }));
@@ -17794,7 +17806,10 @@ Made with ? for visual learners everywhere!
                                 const tMat  = new THREE.MeshPhongMaterial({
                                     color:       flowColor.hex,
                                     emissive:    flowColor.emissive,
-                                    transparent: true,
+                                    // Match the main particle transparency setting: force opaque
+                                    // on Android to avoid the transparent-pass rendering bug
+                                    // on Adreno/Mali/PowerVR drivers.
+                                    transparent: !isAndroid,
                                     opacity:     trailOpacity,
                                     shininess:   60,
                                     blending:    THREE.AdditiveBlending,
@@ -17856,6 +17871,7 @@ Made with ? for visual learners everywhere!
                                 emissiveIntensity: 0.8, transparent: !isAndroid, opacity: 0.9
                             });
                             var particle = new THREE.Mesh(geom, mat);
+                            particle.frustumCulled = false; // Never cull failsafe particles on Android
                             particle.position.copy(pos);
                             particle.userData.progress = progress;
                             particle.userData.speed = 0.003 * (1 + Math.random() * 0.3);
@@ -18654,6 +18670,13 @@ Made with ? for visual learners everywhere!
 
                 // ── Animate and display ──────────────────────────────────────
                 fitToScreen();
+                // Second matrix-world update: fitToScreen() may adjust cameraTarget
+                // but does not move meshes.  This belt-and-suspenders call ensures
+                // any mesh whose dirty flag was set during wire creation (e.g. the
+                // wireGroup added to the scene during createWireSegments) has a
+                // fully-resolved matrixWorld before animateCurrentFlow() computes
+                // particle positions along the wire curves.
+                scene.updateMatrixWorld(true);
                 analyzeCircuit();
                 setStatus('⚡ CircuiTry3D — Current is flowing! Zoom in to explore all the way down to atomic scale.');
                 console.log('[CT3D Payoff] Payoff circuit loaded — wires:', wires.length, 'flow:', currentFlowState?.hasFlow);
@@ -18678,6 +18701,21 @@ Made with ? for visual learners everywhere!
                 }
                 analyzeCircuit();
                 console.log('[CT3D Payoff] runPayoffFlow — flow state:', currentFlowState?.hasFlow, 'particles:', currentFlowParticles.length);
+                // Self-retry: on Android the first analyzeCircuit() can fire before the
+                // GPU has processed all queued draw calls (world-matrix race). If no
+                // particles exist after the first attempt, schedule one more analyzeCircuit()
+                // 600 ms later as a single additional attempt.
+                if (currentFlowState?.hasFlow && currentFlowParticles.length === 0 && wires.length > 0) {
+                    console.warn('[CT3D Payoff] runPayoffFlow: particles still empty — scheduling self-retry in 600 ms');
+                    window.setTimeout(function() {
+                        if (currentFlowParticles.length === 0) {
+                            console.log('[CT3D Payoff] self-retry: calling analyzeCircuit()');
+                            if (scene) scene.updateMatrixWorld(true);
+                            analyzeCircuit();
+                            console.log('[CT3D Payoff] self-retry done — particles:', currentFlowParticles.length);
+                        }
+                    }, 600);
+                }
             } catch (err) {
                 console.error('[CT3D Payoff] runPayoffFlow error:', err);
             }
