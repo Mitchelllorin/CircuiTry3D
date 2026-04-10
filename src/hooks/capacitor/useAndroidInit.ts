@@ -38,12 +38,10 @@ export async function initializeAndroid(options?: {
   try {
     // Configure status bar for Android
     if (isAndroid()) {
-      // Edge-to-edge: the WebView draws behind the system status bar so the
-      // app fills the full screen. CSS env(safe-area-inset-top) pushes
-      // interactive content below the bar — matching the web production build.
-      // This is consistent with overlaysWebView:true in capacitor.config.json
-      // and WindowCompat.setDecorFitsSystemWindows(false) in MainActivity.
-      await StatusBar.setOverlaysWebView({ overlay: true });
+      // EdgeToEdge.enable() in MainActivity already makes the WebView draw
+      // behind system bars. Only set the icon style here (light icons on the
+      // app's dark background). Avoid setOverlaysWebView / setBackgroundColor
+      // which use the deprecated Window.setStatusBarColor API on Android 15+.
       await StatusBar.show();
       // Style.Light → white/light icons visible on the app's dark background.
       await StatusBar.setStyle({ style: Style.Light });
