@@ -2260,6 +2260,18 @@ export default function Builder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
+  // Effect 1b — auto-dismiss the intro dialog after a short display so the
+  // user reaches the payoff 3D circuit without needing to tap anything.
+  useEffect(() => {
+    if (!isIntroDialogVisible) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      handleDismissIntroDialog();
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [isIntroDialogVisible, handleDismissIntroDialog]);
+
   // Effect 2 — once the iframe is ready, run the current-flow payoff demo.
   // Runs every session (once per mount) so the demo circuit is always pre-loaded
   // on startup, giving users immediate visual proof that current flow works.
