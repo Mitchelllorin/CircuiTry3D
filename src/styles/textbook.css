@@ -917,3 +917,49 @@
   background: rgba(148, 163, 184, 0.08);
   color: #f8fafc;
 }
+
+/* ── Copyright / Attribution ── */
+.tb-header-copyright {
+  font-size: 0.72rem;
+  color: rgba(248, 250, 252, 0.45);
+  margin: 0.4rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.tb-copyright-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--brand-primary, #6366f1);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tb-content-footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.tb-content-footer-disclaimer {
+  font-size: 0.72rem;
+  color: rgba(248, 250, 252, 0.38);
+  line-height: 1.65;
+  margin: 0 0 0.35rem;
+}
+
+.tb-content-footer-copy {
+  font-size: 0.68rem;
+  color: rgba(248, 250, 252, 0.28);
+  margin: 0;
+  font-style: italic;
+}
