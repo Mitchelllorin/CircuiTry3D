@@ -1057,12 +1057,18 @@ async function main() {
   const browser = await chromium.launch({
     headless: true,
     args: [
-      '--use-gl=egl',
+      // Use ANGLE/SwiftShader for software-rendered WebGL so the 3D canvas
+      // renders correctly on CI runners that have no hardware GPU.
+      // '--use-gl=egl' silently produces black frames on GPU-less hosts.
+      '--use-gl=angle',
+      '--use-angle=swiftshader',
       '--enable-webgl',
       '--ignore-gpu-blocklist',
       '--disable-gpu-sandbox',
       '--no-sandbox',
       '--disable-setuid-sandbox',
+      // Prevent crashes caused by the limited /dev/shm size on CI runners.
+      '--disable-dev-shm-usage',
     ],
   }).catch((err) => {
     console.error('❌  Could not launch Chromium.\n   Run: npx playwright install chromium');
