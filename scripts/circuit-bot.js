@@ -3,9 +3,10 @@
  * CircuiTry3D Circuit Bot
  * =======================
  * A Playwright-powered automation bot that builds and simulates circuits,
- * recording cinematic footage suitable for a promo video.
+ * recording cinematic footage suitable for a promo video and continuously
+ * stocking an educational scenario-driven footage library.
  *
- * Scenes recorded:
+ * Cinematic scenes (type: cinematic):
  *   scene-01-series.webm          — Series circuit: current flows successfully
  *   scene-02-parallel.webm        — Parallel circuit: multiple electron paths
  *   scene-03-overload.webm        — Overloaded resistor: thermal failure (FUSE engine)
@@ -14,13 +15,21 @@
  *   scene-06-arena.webm           — Arena: 3D component battle & FUSE failure analysis
  *   scene-07-new-components.webm  — Relay, Voltage Regulator & Circuit Breaker showcase
  *
+ * Educational scenes (type: educational):
+ *   scene-08-ohms-law.webm        — Ohm's Law: V=IR — three resistors, same voltage, different current
+ *   scene-09-voltage-divider.webm — Voltage Divider: series resistors create a mid-point voltage tap
+ *   scene-10-led-brightness.webm  — LED Brightness: resistor value controls current through an LED
+ *   scene-11-kirchhoff-voltage.webm — KVL: sum of voltage drops equals the source voltage
+ *   scene-12-kirchhoff-current.webm — KCL: sum of branch currents entering a node equals zero
+ *
  * Usage:
- *   npm run circuit-bot                    # production site (circuitry3d.app)
- *   npm run circuit-bot -- --local         # http://localhost:4173 (vite preview)
- *   npm run circuit-bot -- --url <URL>     # custom base URL
- *   npm run circuit-bot -- --scene <id>   # record a single scene by id
- *   npm run circuit-bot -- --portrait      # record at 412×915 (social / Reels)
- *   npm run circuit-bot -- --no-concat     # skip FFmpeg concatenation step
+ *   npm run circuit-bot                        # production site (circuitry3d.app)
+ *   npm run circuit-bot -- --local             # http://localhost:4173 (vite preview)
+ *   npm run circuit-bot -- --url <URL>         # custom base URL
+ *   npm run circuit-bot -- --scene <id>        # record a single scene by id
+ *   npm run circuit-bot -- --type <type>       # cinematic | educational | all (default: all)
+ *   npm run circuit-bot -- --portrait          # record at 412×915 (social / Reels)
+ *   npm run circuit-bot -- --no-concat         # skip FFmpeg concatenation step
  *
  * Prerequisites:
  *   npx playwright install chromium
@@ -51,6 +60,7 @@ const DEV_URL  = 'http://localhost:4173';
 
 let BASE_URL     = PROD_URL;
 let SCENE_FILTER = null;
+let FOOTAGE_TYPE = 'all'; // 'all' | 'cinematic' | 'educational'
 let PORTRAIT     = false;
 let NO_CONCAT    = false;
 
@@ -58,6 +68,7 @@ for (let i = 0; i < ARGS.length; i++) {
   if (ARGS[i] === '--local')             BASE_URL = DEV_URL;
   if (ARGS[i] === '--url'   && ARGS[i+1]) { BASE_URL = ARGS[i+1]; i++; }
   if (ARGS[i] === '--scene' && ARGS[i+1]) { SCENE_FILTER = ARGS[i+1]; i++; }
+  if (ARGS[i] === '--type'  && ARGS[i+1]) { FOOTAGE_TYPE = ARGS[i+1]; i++; }
   if (ARGS[i] === '--portrait')           PORTRAIT = true;
   if (ARGS[i] === '--no-concat')          NO_CONCAT = true;
 }
@@ -329,6 +340,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-01-series',
+    type: 'cinematic',
     title: 'Scene 01 — Series Circuit: Current Flows',
     async record(page) {
       await openBuilder(page);
@@ -364,6 +376,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-02-parallel',
+    type: 'cinematic',
     title: 'Scene 02 — Parallel Circuit: Multiple Paths',
     async record(page) {
       await openBuilder(page);
@@ -400,6 +413,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-03-overload',
+    type: 'cinematic',
     title: 'Scene 03 — Overloaded Resistor: Thermal Failure',
     async record(page) {
       await openBuilder(page);
@@ -433,6 +447,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-04-mixed',
+    type: 'cinematic',
     title: 'Scene 04 — Mixed Circuit: Series-Parallel Mastery',
     async record(page) {
       await openBuilder(page);
@@ -474,6 +489,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-05-3d-build',
+    type: 'cinematic',
     title: 'Scene 05 — 3D Builder: Cinematic Fly-Through',
     async record(page) {
       await openBuilder(page);
@@ -521,6 +537,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-06-arena',
+    type: 'cinematic',
     title: 'Scene 06 — Arena: 3D Component Battle',
     async record(page) {
       // Navigate directly to the Arena page (standalone 3D scene)
@@ -569,6 +586,7 @@ const SCENES = [
   // ──────────────────────────────────────────────────────────────────────────
   {
     id: 'scene-07-new-components',
+    type: 'cinematic',
     title: 'Scene 07 — New Components: Relay, Voltage Regulator & Circuit Breaker',
     async record(page) {
       await openBuilder(page);
@@ -605,6 +623,242 @@ const SCENES = [
       await playCinematic(page, 'orbit');
 
       // Labels off for a clean outro
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+    },
+  },
+
+  // ── Educational scenes ────────────────────────────────────────────────────
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-08-ohms-law',
+    type: 'educational',
+    title: "Scene 08 — Ohm's Law: V = I × R",
+    async record(page) {
+      await openBuilder(page);
+
+      // Load a preset with three parallel branches, each having a different
+      // resistor value so the viewer can see V=IR in action
+      await sendAction(page, 'load-preset', { preset: 'parallel_basic' });
+      await page.waitForTimeout(1200);
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(800);
+
+      // Labels on — shows V, I, and R annotations in 3D space
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Opening orbit — establish the scene before the concept is explained
+      await playCinematic(page, 'orbit');
+
+      // Run simulation — different currents light up each branch
+      await sendAction(page, 'run-simulation');
+      await verifyCanvas(page);
+      await page.waitForTimeout(2000);
+
+      // Focus push: camera glides into the resistor with the highest current
+      await playCinematic(page, 'focus');
+
+      // Atom dive — electrons moving through the low-resistance path at speed
+      await playCinematic(page, 'atom');
+
+      // Toggle flow convention to illustrate conventional vs. electron current
+      await sendAction(page, 'toggle-current-flow');
+      await page.waitForTimeout(800);
+
+      // Lattice sweep — lateral view of all three branches so viewer sees
+      // the current-density difference predicted by V=IR
+      await playCinematic(page, 'lattice');
+
+      // Closing orbit — all labels visible for the recap shot
+      await playCinematic(page, 'orbit');
+
+      // Labels off for clean outro
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-09-voltage-divider',
+    type: 'educational',
+    title: 'Scene 09 — Voltage Divider: Series Resistors Create a Voltage Tap',
+    async record(page) {
+      await openBuilder(page);
+
+      // Series preset creates a two-resistor chain ideal for showing Vout = Vin × R2/(R1+R2)
+      await sendAction(page, 'load-preset', { preset: 'series_basic' });
+      await page.waitForTimeout(1200);
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(800);
+
+      // Labels on — show resistor values and node voltages
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Orbit reveal — full series chain in view before current flows
+      await playCinematic(page, 'orbit');
+
+      // Run simulation — voltage drops appear at each junction
+      await sendAction(page, 'run-simulation');
+      await verifyCanvas(page);
+      await page.waitForTimeout(2000);
+
+      // Focus push: camera zooms into the mid-point junction (voltage tap)
+      await playCinematic(page, 'focus');
+
+      // Atom dive — electrons crossing the junction between the two resistors
+      await playCinematic(page, 'atom');
+
+      // Lattice sweep — wide view shows voltage gradient along the chain
+      await playCinematic(page, 'lattice');
+
+      // Closing orbit — labels still on so the Vout value is readable
+      await playCinematic(page, 'orbit');
+
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-10-led-brightness',
+    type: 'educational',
+    title: 'Scene 10 — LED Brightness: Resistor Limits Current Through an LED',
+    async record(page) {
+      await openBuilder(page);
+
+      // Series preset works as a stand-in for a resistor–LED series circuit
+      await sendAction(page, 'load-preset', { preset: 'series_basic' });
+      await page.waitForTimeout(1200);
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(800);
+
+      // Labels on — R and I values float beside each component
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Orbit — camera circles the simple series loop before simulation
+      await playCinematic(page, 'orbit');
+
+      // Simulate — current flows through the resistor then the LED element
+      await sendAction(page, 'run-simulation');
+      await verifyCanvas(page);
+      await page.waitForTimeout(2000);
+
+      // Focus push: hero shot on the LED / output component while current flows
+      await playCinematic(page, 'focus');
+
+      // Atom dive — electrons entering the light-emitting element
+      await playCinematic(page, 'atom');
+
+      // Toggle flow convention — show electron vs. conventional direction
+      await sendAction(page, 'toggle-current-flow');
+      await page.waitForTimeout(800);
+
+      // Lattice sweep — side view of the full loop showing current density
+      await playCinematic(page, 'lattice');
+
+      // Closing orbit — clean exit with labels
+      await playCinematic(page, 'orbit');
+
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-11-kirchhoff-voltage',
+    type: 'educational',
+    title: "Scene 11 — KVL: Sum of Voltage Drops Equals Source Voltage",
+    async record(page) {
+      await openBuilder(page);
+
+      // Advanced combination circuit has multiple loops — ideal for KVL demo
+      await sendAction(page, 'load-preset', { preset: 'combination_advanced' });
+      await page.waitForTimeout(1200);
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(800);
+
+      // Labels on — all node voltages visible in 3D
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Wide orbit — viewer sees every loop in the network before current flows
+      await playCinematic(page, 'orbit');
+
+      // Simulate — KVL voltages resolve across all components
+      await sendAction(page, 'run-simulation');
+      await verifyCanvas(page);
+      await page.waitForTimeout(2000);
+
+      // Lattice sweep — camera traverses one complete loop, voltage labels in frame
+      await playCinematic(page, 'lattice');
+
+      // Focus push: zoom into the source to show the supply voltage
+      await playCinematic(page, 'focus');
+
+      // Atom dive — electron flow that produces the voltage drop
+      await playCinematic(page, 'atom');
+
+      // Toggle flow for a second visual pass showing conventional current direction
+      await sendAction(page, 'toggle-current-flow');
+      await page.waitForTimeout(800);
+
+      // Closing orbit — all voltage labels still on for the recap
+      await playCinematic(page, 'orbit');
+
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-12-kirchhoff-current',
+    type: 'educational',
+    title: "Scene 12 — KCL: Currents Into a Node Sum to Zero",
+    async record(page) {
+      await openBuilder(page);
+
+      // Parallel topology has multiple branch currents meeting at nodes
+      await sendAction(page, 'load-preset', { preset: 'parallel_basic' });
+      await page.waitForTimeout(1200);
+      await sendAction(page, 'fit-screen');
+      await page.waitForTimeout(800);
+
+      // Labels on — show each branch current value in 3D
+      await sendAction(page, 'toggle-labels');
+      await page.waitForTimeout(600);
+
+      // Orbit — reveal all nodes before current flows
+      await playCinematic(page, 'orbit');
+
+      // Simulate — branch currents split and rejoin at the parallel nodes
+      await sendAction(page, 'run-simulation');
+      await verifyCanvas(page);
+      await page.waitForTimeout(2000);
+
+      // Focus push: camera dives toward the top junction node
+      await playCinematic(page, 'focus');
+
+      // Atom dive — electron streams splitting at the node
+      await playCinematic(page, 'atom');
+
+      // Lattice sweep — lateral view highlights all three parallel currents
+      await playCinematic(page, 'lattice');
+
+      // Toggle flow convention — electron → conventional, node currents unchanged
+      await sendAction(page, 'toggle-current-flow');
+      await page.waitForTimeout(800);
+
+      // Closing orbit — labels in frame for the KCL recap
+      await playCinematic(page, 'orbit');
+
       await sendAction(page, 'toggle-labels');
       await page.waitForTimeout(600);
     },
@@ -685,12 +939,27 @@ async function recordSceneWithRetry(browser, scene, outputDir, maxRetries = 2) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const scenes = SCENE_FILTER
-    ? SCENES.filter((s) => s.id === SCENE_FILTER || s.id.includes(SCENE_FILTER))
-    : SCENES;
+  // Validate --type flag
+  const VALID_TYPES = ['all', 'cinematic', 'educational'];
+  if (!VALID_TYPES.includes(FOOTAGE_TYPE)) {
+    console.error(`❌  Unknown footage type "${FOOTAGE_TYPE}". Valid options: ${VALID_TYPES.join(', ')}`);
+    process.exit(1);
+  }
+
+  let scenes = FOOTAGE_TYPE === 'all'
+    ? SCENES
+    : SCENES.filter((s) => s.type === FOOTAGE_TYPE);
+
+  if (SCENE_FILTER) {
+    scenes = scenes.filter((s) => s.id === SCENE_FILTER || s.id.includes(SCENE_FILTER));
+  }
 
   if (scenes.length === 0) {
-    console.error(`❌  No scene matched filter "${SCENE_FILTER}".`);
+    const filterDesc = [
+      FOOTAGE_TYPE !== 'all' && `type="${FOOTAGE_TYPE}"`,
+      SCENE_FILTER            && `scene="${SCENE_FILTER}"`,
+    ].filter(Boolean).join(', ') || `type="${FOOTAGE_TYPE}"`;
+    console.error(`❌  No scene matched filter: ${filterDesc}`);
     console.error(`   Available: ${SCENES.map((s) => s.id).join(', ')}`);
     process.exit(1);
   }
@@ -700,6 +969,7 @@ async function main() {
   console.log(`  Source   : ${BASE_URL}`);
   console.log(`  Output   : promo-footage/`);
   console.log(`  Viewport : ${VIEWPORT.width}×${VIEWPORT.height}${PORTRAIT ? ' (portrait)' : ''}`);
+  console.log(`  Type     : ${FOOTAGE_TYPE}`);
   console.log(`  Scenes   : ${scenes.map((s) => s.id).join(', ')}\n`);
 
   await mkdir(OUTPUT_DIR, { recursive: true });

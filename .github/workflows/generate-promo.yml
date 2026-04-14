@@ -1,6 +1,10 @@
 name: Generate Promo Footage
 
 on:
+  # Run every Monday at 02:00 UTC to keep the footage library fresh
+  schedule:
+    - cron: '0 2 * * 1'
+
   workflow_dispatch:
     inputs:
       portrait:
@@ -13,6 +17,16 @@ on:
         required: false
         default: ''
         type: string
+      footage_type:
+        description: 'Footage type to record: all | cinematic | educational'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - cinematic
+          - educational
+
   release:
     types: [published]
 
@@ -72,6 +86,11 @@ jobs:
           fi
           if [ -n "${{ inputs.scene }}" ]; then
             ARGS="$ARGS --scene ${{ inputs.scene }}"
+          fi
+          # footage_type defaults to 'all' for scheduled runs and release triggers
+          FOOTAGE_TYPE="${{ inputs.footage_type || 'all' }}"
+          if [ "$FOOTAGE_TYPE" != "all" ]; then
+            ARGS="$ARGS --type $FOOTAGE_TYPE"
           fi
           npm run circuit-bot -- $ARGS
 
