@@ -377,6 +377,10 @@ export default function Textbook() {
           <h1 className="tb-header-title">{textbook.title}</h1>
           <p className="tb-header-subtitle">{textbook.subtitle}</p>
           <p className="tb-header-edition">{textbook.edition}</p>
+          <p className="tb-header-copyright">
+            <span className="tb-copyright-badge">© CircuiTry3D</span>
+            {" "}Original content — aligned with, but not reproduced from, SkilledTradesBC / Red Seal curricula.
+          </p>
         </div>
         <div className="tb-year-tabs">
           {(["all", 1, 2] as const).map((year) => (
@@ -463,6 +467,10 @@ export default function Textbook() {
           ) : (
             <div className="tb-empty">Select a chapter from the sidebar to begin reading.</div>
           )}
+          <footer className="tb-content-footer">
+            <p className="tb-content-footer-disclaimer">{textbook.disclaimer}</p>
+            <p className="tb-content-footer-copy">{textbook.copyright}</p>
+          </footer>
         </main>
       </div>
     </div>

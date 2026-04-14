@@ -1,8 +1,15 @@
 /**
  * Electrical Studies Textbook Data
  *
- * Covers Year 1 (DC Fundamentals) and Year 2 (AC Theory & Devices) content
- * aligned with SkilledTradesBC / Red Seal electrical apprenticeship curricula.
+ * All content is original and authored by CircuiTry3D.
+ * Scientific formulas and electrical principles (Ohm's Law, Kirchhoff's Laws,
+ * atomic theory, etc.) are universal public-domain knowledge.
+ *
+ * This content is independently written and aligned with — but NOT reproduced
+ * from — SkilledTradesBC / Red Seal electrical apprenticeship curricula and
+ * IEEE educational standards.
+ *
+ * © CircuiTry3D. All rights reserved.
  * All formulas are enforced by the circuit simulator (dcSolver, circuitValidator).
  */
 
@@ -36,6 +43,9 @@ export type TextbookData = {
   title: string;
   subtitle: string;
   edition: string;
+  copyright: string;
+  authors: string;
+  disclaimer: string;
   chapters: TextbookChapter[];
 };
 
@@ -43,6 +53,13 @@ const textbook: TextbookData = {
   title: "Electrical Studies",
   subtitle: "Year 1 & Year 2 — DC Fundamentals to AC Theory",
   edition: "CircuiTry3D Reference Edition",
+  copyright: `© ${new Date().getFullYear()} CircuiTry3D. All rights reserved.`,
+  authors: "CircuiTry3D",
+  disclaimer:
+    "All textbook content is original to CircuiTry3D. Scientific formulas and principles " +
+    "(Ohm's Law, Kirchhoff's Laws, atomic theory, etc.) are universal knowledge in the public domain. " +
+    "This content is independently written and aligned with — but not reproduced from — " +
+    "SkilledTradesBC / Red Seal electrical apprenticeship curricula and IEEE educational standards.",
   chapters: [
     // ─────────────────────────────────────────────────────────────────────────
     //  YEAR 1 — DC FUNDAMENTALS
