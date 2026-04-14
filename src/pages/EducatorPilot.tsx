@@ -7,10 +7,16 @@ import "../styles/educator-pilot.css";
 function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
-    navigator.clipboard?.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {
+        // Clipboard write denied — silently ignore; user can still select text manually
+      },
+    );
   };
   return (
     <button type="button" className="pilot-copy-btn" onClick={handleCopy} aria-live="polite">
@@ -259,7 +265,7 @@ export default function EducatorPilot() {
             </div>
 
             <div className="pilot-template-field">
-              <label className="pilot-template-field-label">Subject</label>
+              <span className="pilot-template-field-label">Subject</span>
               <div className="pilot-template-subject">
                 <span>{template.subject}</span>
                 <CopyButton text={template.subject} label="Copy" />
@@ -267,7 +273,7 @@ export default function EducatorPilot() {
             </div>
 
             <div className="pilot-template-field">
-              <label className="pilot-template-field-label">Body</label>
+              <span className="pilot-template-field-label">Body</span>
               <pre className="pilot-template-body">{template.body}</pre>
             </div>
           </div>
