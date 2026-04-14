@@ -3,6 +3,66 @@ import type { ReactNode } from "react";
 import { isLifetimeTester } from "../utils/lifetimeTesterEmails";
 import { getStoredTier, setStoredTier } from "../utils/playStoreBilling";
 
+// ── Password hashing (PBKDF2-SHA256) ────────────────────────────────────────
+
+const HASH_PREFIX = "pbkdf2v1";
+const PBKDF2_ITERATIONS = 100_000;
+const PBKDF2_KEY_BITS = 256;
+
+const bytesToHex = (bytes: Uint8Array): string =>
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+const hexToBytes = (hex: string): Uint8Array =>
+  new Uint8Array((hex.match(/.{2}/g) ?? []).map((h) => parseInt(h, 16)));
+
+const hashPassword = async (password: string): Promise<string> => {
+  if (typeof crypto === "undefined" || !crypto.subtle) {
+    return password; // Fallback for non-HTTPS / test environments
+  }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PBKDF2_ITERATIONS },
+    keyMaterial,
+    PBKDF2_KEY_BITS
+  );
+  return `${HASH_PREFIX}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(bits))}`;
+};
+
+const verifyPassword = async (password: string, stored: string): Promise<boolean> => {
+  if (!stored.startsWith(`${HASH_PREFIX}$`)) {
+    return password === stored; // Legacy plaintext comparison
+  }
+  if (typeof crypto === "undefined" || !crypto.subtle) {
+    return false;
+  }
+  const parts = stored.split("$");
+  if (parts.length !== 3) return false;
+  const [, saltHex, expectedHex] = parts;
+  const salt = hexToBytes(saltHex);
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PBKDF2_ITERATIONS },
+    keyMaterial,
+    PBKDF2_KEY_BITS
+  );
+  return bytesToHex(new Uint8Array(bits)) === expectedHex;
+};
+
 type AuthStorageSchema = {
   users: StoredUser[];
   currentUserId: string | null;
@@ -52,6 +112,7 @@ type AuthContextValue = {
   updateProfile: (payload: UpdateProfilePayload) => Promise<AuthResult>;
   getUserById: (id: string) => AuthUser | null;
   resetPassword: (email: string, newPassword: string) => Promise<AuthResult>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
   setPIN: (pin: string) => Promise<AuthResult>;
   clearPIN: () => Promise<AuthResult>;
   signInWithPIN: (pin: string) => Promise<AuthResult>;
@@ -199,13 +260,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(async (payload: SignUpPayload): Promise<AuthResult> => {
-    await introduceLatency();
     const snapshot = stateSnapshotRef.current;
     const email = payload.email.trim().toLowerCase();
     const displayName = payload.displayName.trim();
+    const password = payload.password;
 
-    if (!email || !displayName || !payload.password.trim()) {
+    if (!email || !displayName || !password.trim()) {
       return { ok: false, reason: "unknown", message: "Please provide an email, password, and display name." };
+    }
+
+    if (password.length < 8) {
+      return { ok: false, reason: "unknown", message: "Password must be at least 8 characters." };
     }
 
     const emailTaken = snapshot.users.some((user) => user.email.toLowerCase() === email);
@@ -215,10 +280,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const id = typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto ? globalThis.crypto.randomUUID() : `user-${Date.now()}`;
 
+    const hashedPassword = await hashPassword(password);
+
     const nextUser: StoredUser = {
       id,
       email,
-      password: payload.password,
+      password: hashedPassword,
       displayName,
       bio: payload.bio?.trim() || undefined,
       avatarColor: generateAvatarColor(email),
@@ -239,17 +306,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (payload: SignInPayload): Promise<AuthResult> => {
-    await introduceLatency();
     const snapshot = stateSnapshotRef.current;
     const email = payload.email.trim().toLowerCase();
     const password = payload.password;
     const match = snapshot.users.find((user) => user.email.toLowerCase() === email);
-    if (!match || match.password !== password) {
+
+    // Always run a hash-equivalent operation regardless of whether the email exists,
+    // so response timing cannot reveal whether an account is registered.
+    let isValid = false;
+    if (match) {
+      isValid = await verifyPassword(password, match.password);
+    } else {
+      await hashPassword(password).catch(() => {}); // Dummy operation to equalise timing
+    }
+
+    if (!match || !isValid) {
       return { ok: false, reason: "invalid-credentials", message: "Incorrect email or password." };
+    }
+
+    // Transparently upgrade legacy plaintext password to hashed on successful sign-in
+    let finalPassword = match.password;
+    if (!match.password.startsWith(`${HASH_PREFIX}$`)) {
+      finalPassword = await hashPassword(password);
     }
 
     setState((previous) => ({
       ...previous,
+      users: previous.users.map((u) => (u.id === match.id ? { ...u, password: finalPassword } : u)),
       currentUserId: match.id,
       lastSignedInUserId: match.id,
     }));
@@ -269,7 +352,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetPassword = useCallback(async (email: string, newPassword: string): Promise<AuthResult> => {
-    await introduceLatency();
     const snapshot = stateSnapshotRef.current;
     const normalised = email.trim().toLowerCase();
 
@@ -277,22 +359,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: false, reason: "unknown", message: "Please provide your email address." };
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      return { ok: false, reason: "unknown", message: "New password must be at least 6 characters." };
+    if (!newPassword || newPassword.length < 8) {
+      return { ok: false, reason: "unknown", message: "New password must be at least 8 characters." };
     }
 
     const match = snapshot.users.find((user) => user.email.toLowerCase() === normalised);
     if (!match) {
+      await introduceLatency(400, 800);
       return { ok: false, reason: "invalid-credentials", message: "No account found with that email address." };
     }
 
+    const hashed = await hashPassword(newPassword);
     let updatedUser: StoredUser | null = null;
     setState((previous) => {
       const users = previous.users.map((user) => {
         if (user.id !== match.id) {
           return user;
         }
-        const next: StoredUser = { ...user, password: newPassword };
+        const next: StoredUser = { ...user, password: hashed };
+        updatedUser = next;
+        return next;
+      });
+      return { ...previous, users };
+    });
+
+    return updatedUser ? { ok: true, user: buildAuthUser(updatedUser)! } : { ok: false, reason: "unknown", message: "Unable to update password." };
+  }, []);
+
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
+    const snapshot = stateSnapshotRef.current;
+    const { currentUserId } = snapshot;
+    if (!currentUserId) {
+      return { ok: false, reason: "no-session", message: "You need to be signed in to change your password." };
+    }
+
+    const user = snapshot.users.find((u) => u.id === currentUserId);
+    if (!user) {
+      return { ok: false, reason: "unknown", message: "Unable to locate account." };
+    }
+
+    // Run verification and a minimum delay in parallel so response time is constant
+    // regardless of whether the current password is correct or incorrect.
+    const [isValid] = await Promise.all([
+      verifyPassword(currentPassword, user.password),
+      introduceLatency(300, 600),
+    ]);
+    if (!isValid) {
+      return { ok: false, reason: "invalid-credentials", message: "Current password is incorrect." };
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      return { ok: false, reason: "unknown", message: "New password must be at least 8 characters." };
+    }
+
+    const hashed = await hashPassword(newPassword);
+    let updatedUser: StoredUser | null = null;
+    setState((previous) => {
+      const users = previous.users.map((u) => {
+        if (u.id !== currentUserId) return u;
+        const next: StoredUser = { ...u, password: hashed };
         updatedUser = next;
         return next;
       });
@@ -417,11 +542,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       getUserById,
       resetPassword,
+      changePassword,
       setPIN,
       clearPIN,
       signInWithPIN,
     }),
-    [currentUser, lastSignedInUser, hasPIN, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword, setPIN, clearPIN, signInWithPIN]
+    [currentUser, lastSignedInUser, hasPIN, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
