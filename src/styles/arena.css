@@ -215,6 +215,18 @@ body.builder-body .arena-page {
   gap: 16px;
 }
 
+.arena-summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-analysis-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .arena-selectors-section {
   display: flex;
   flex-direction: column;
@@ -3845,6 +3857,12 @@ body.builder-body .arena-page {
 .arena-body--workspace-split .arena-battle-section {
   margin-left: 0;
   margin-right: 0;
+}
+
+/* Compact textarea in workspace panel */
+.arena-page--workspace .arena-import-textlabel textarea {
+  min-height: 80px;
+  max-height: 160px;
 }
 
 .arena-page--workspace .arena-card {
