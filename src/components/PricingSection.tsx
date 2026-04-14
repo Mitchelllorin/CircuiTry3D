@@ -447,6 +447,30 @@ export default function PricingSection() {
         </div>
       </div>
 
+      {/* ── Manufacturer placement callout ── */}
+      <div className="pricing-section-group pricing-section-group--placement">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker pricing-section-kicker--placement">Component Arena</span>
+          <h2 className="pricing-section-title">Manufacturer Placement</h2>
+          <p className="pricing-section-desc">
+            Get your real components in front of students and educators running live FUSE™ stress
+            tests. Packages start at <strong>$149 / mo</strong> — from a basic catalog listing
+            to a sponsored top-of-panel spotlight.
+          </p>
+        </div>
+        <div className="pricing-placement-callout">
+          <span className="pricing-placement-callout-icon" aria-hidden="true">🏭</span>
+          <div className="pricing-placement-callout-body">
+            <p className="pricing-placement-callout-text">
+              Standard Listing · Featured Placement · Sponsored Spotlight
+            </p>
+            <Link to="/partnerships#placement" className="pricing-cta pricing-cta--placement">
+              View Placement Packages →
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* ── Footer ── */}
       <footer className="pricing-footer">
         <p className="pricing-contact-help">
