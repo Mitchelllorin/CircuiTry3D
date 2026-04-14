@@ -14,6 +14,16 @@
  *   scene-05-3d-build.webm        — 3D cinematic builder tour: atomic zoom + fly-through
  *   scene-06-arena.webm           — Arena: 3D component battle & FUSE failure analysis
  *   scene-07-new-components.webm  — Relay, Voltage Regulator & Circuit Breaker showcase
+ * Scenes recorded:
+ *   scene-01-series.webm             — Series circuit: current flows successfully
+ *   scene-02-parallel.webm           — Parallel circuit: multiple electron paths
+ *   scene-03-overload.webm           — Overloaded resistor: thermal failure (FUSE engine)
+ *   scene-04-mixed.webm              — Mixed series-parallel: advanced mastery
+ *   scene-05-3d-build.webm           — 3D cinematic builder tour: atomic zoom + fly-through
+ *   scene-06-arena.webm              — Arena: 3D component battle & FUSE failure analysis
+ *   scene-07-new-components.webm     — Relay, Voltage Regulator & Circuit Breaker showcase
+ *   scene-08-component-showcase.webm — Cinematic promo: each component appears one-by-one
+ *                                       with its 3D label & metrics, then dissolves away
  *
  * Educational scenes (type: educational):
  *   scene-08-ohms-law.webm        — Ohm's Law: V=IR — three resistors, same voltage, different current
@@ -861,6 +871,76 @@ const SCENES = [
 
       await sendAction(page, 'toggle-labels');
       await page.waitForTimeout(600);
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'scene-08-component-showcase',
+    title: 'Scene 08 — Component Showcase: Cinematic Promo',
+    async record(page) {
+      await openBuilder(page);
+
+      /**
+       * Components to feature, ordered for visual variety.
+       * Component labels (identifier + value) are enabled by default in the
+       * builder (the `showLabels` variable initialises to `true` in legacy.html)
+       * and are not toggled off during this scene so every component's name
+       * and metrics float in 3D space during the cinematic push-in.
+       */
+      const SHOWCASE = [
+        { type: 'battery',           label: 'Battery'            },
+        { type: 'resistor',          label: 'Resistor'           },
+        { type: 'led',               label: 'LED'                },
+        { type: 'capacitor',         label: 'Capacitor'          },
+        { type: 'inductor',          label: 'Inductor'           },
+        { type: 'switch',            label: 'Switch'             },
+        { type: 'fuse',              label: 'Fuse'               },
+        { type: 'relay',             label: 'Relay'              },
+        { type: 'motor',             label: 'Motor'              },
+        { type: 'mosfet',            label: 'MOSFET'             },
+        { type: 'opamp',             label: 'Op-Amp'             },
+        { type: 'voltage-regulator', label: 'Voltage Regulator'  },
+      ];
+
+      for (const comp of SHOWCASE) {
+        // ── Disappear: clear the previous component ───────────────────────
+        await sendAction(page, 'clear-workspace');
+        await page.waitForTimeout(600);
+
+        // ── Appear: add this component into the workspace ─────────────────
+        // builder:add-component is handled as a top-level message type (not
+        // via invoke-action), so we post directly rather than via sendAction.
+        await page.evaluate((compType) => {
+          window.postMessage(
+            { type: 'builder:add-component', payload: { componentType: compType } },
+            '*',
+          );
+        }, comp.type);
+        await page.waitForTimeout(800);
+
+        // The component is in drag-mode after addComponent().
+        // A single click on the canvas fires handleMouseUp → handleRelease(),
+        // which snaps the component to grid and exits drag mode.
+        await page.mouse.click(
+          Math.round(VIEWPORT.width  / 2),
+          Math.round(VIEWPORT.height / 2),
+        );
+        await page.waitForTimeout(500);
+
+        // ── Frame: center the camera on the lone component ────────────────
+        await sendAction(page, 'fit-screen');
+        await page.waitForTimeout(800);
+
+        // ── Cinematic: push-in reveal with label + metrics, then pull back ─
+        // The 'focus' preset pushes toward cameraTarget (set to the
+        // component center by fit-screen) and pulls back — perfect for a
+        // per-component spotlight shot.
+        await playCinematic(page, 'focus');
+
+        // Brief hold at the end of pull-back before the next component appears
+        await page.waitForTimeout(400);
+      }
+
+      // ── Outro: final orbit on the last component before fade ──────────
+      await playCinematic(page, 'orbit');
     },
   },
 ];
