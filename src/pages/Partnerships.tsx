@@ -1,4 +1,8 @@
 import { Link } from "react-router-dom";
+import {
+  MANUFACTURER_PLACEMENT_TIERS,
+  MANUFACTURER_PLACEMENT_EMAIL,
+} from "../data/hybridPricing";
 
 const CONTACT = {
   schoolBoard: "info@circuitry3d.net?subject=School%20Board%20%2F%20District%20Partnership%20Inquiry",
@@ -122,6 +126,71 @@ export default function Partnerships() {
             a link to the relevant datasheets.
           </p>
         </div>
+      </div>
+
+      {/* ── Manufacturer Placement Pricing ── */}
+      <div id="placement" style={styles.placementSection}>
+        <div style={styles.placementHeader}>
+          <span style={styles.placementKicker}>Component Arena</span>
+          <h2 style={styles.sectionTitle}>Placement Packages</h2>
+          <p style={styles.placementDesc}>
+            Choose a tier that fits your go-to-market goals. All packages include
+            FUSE™-accurate simulation of your real datasheet values. Prices are
+            USD list rates — contact us for multi-quarter discounts or custom packages.
+          </p>
+        </div>
+
+        <div style={styles.placementGrid}>
+          {MANUFACTURER_PLACEMENT_TIERS.map((tier) => (
+            <div
+              key={tier.id}
+              style={{
+                ...styles.placementCard,
+                ...(tier.highlighted ? styles.placementCardHighlighted : {}),
+              }}
+            >
+              {tier.highlighted && (
+                <div style={styles.popularBanner}>Most Popular</div>
+              )}
+              <div style={styles.placementTierIcon}>{tier.icon}</div>
+              <div style={styles.placementBadge}>{tier.badge}</div>
+              <h3 style={styles.placementTierName}>{tier.name}</h3>
+
+              <div style={styles.placementPrice}>
+                <span style={styles.placementPriceAmount}>{tier.priceLabel}</span>
+                <span style={styles.placementPriceUnit}>/mo</span>
+              </div>
+              <p style={styles.placementBillingNote}>{tier.billingNote}</p>
+
+              <ul style={styles.placementFeatureList}>
+                {tier.features.map((f) => (
+                  <li key={f} style={styles.placementFeatureItem}>
+                    <span style={styles.checkmark} aria-hidden="true">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href={`mailto:${MANUFACTURER_PLACEMENT_EMAIL}?subject=${tier.mailtoSubject}`}
+                style={{
+                  ...styles.placementCta,
+                  ...(tier.highlighted ? styles.placementCtaHighlighted : {}),
+                }}
+              >
+                Get Started →
+              </a>
+            </div>
+          ))}
+        </div>
+
+        <p style={styles.placementFootnote}>
+          All tiers require onboarding with our team to map your datasheets to FUSE™.
+          Need a custom package or volume pricing?{" "}
+          <a href={`mailto:${CONTACT.manufacturer}`} style={styles.inlineLink}>
+            Contact us directly.
+          </a>
+        </p>
       </div>
 
       {/* ── Why partner ── */}
@@ -358,5 +427,175 @@ const styles: Record<string, React.CSSProperties> = {
   sep: {
     color: "rgba(148, 163, 184, 0.35)",
     fontSize: 13,
+  },
+  // ── Manufacturer Placement Pricing styles ──────────────────────────────────
+  placementSection: {
+    marginBottom: 64,
+  },
+  placementHeader: {
+    textAlign: "center" as const,
+    marginBottom: 36,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 10,
+  },
+  placementKicker: {
+    display: "inline-block",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.2em",
+    textTransform: "uppercase" as const,
+    color: "#39ffb7",
+    background: "rgba(57,255,183,0.1)",
+    border: "1px solid rgba(57,255,183,0.25)",
+    borderRadius: 999,
+    padding: "3px 12px",
+  },
+  placementDesc: {
+    maxWidth: 620,
+    fontSize: 14,
+    color: "rgba(148, 163, 184, 0.85)",
+    lineHeight: 1.65,
+    margin: 0,
+    textAlign: "center" as const,
+  },
+  placementGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: 20,
+    alignItems: "stretch",
+  },
+  placementCard: {
+    position: "relative" as const,
+    background: "rgba(8, 15, 30, 0.85)",
+    border: "1px solid rgba(136, 204, 255, 0.16)",
+    borderRadius: 18,
+    padding: "28px 24px 24px",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 10,
+  },
+  placementCardHighlighted: {
+    border: "1.5px solid rgba(57, 255, 183, 0.45)",
+    background: "rgba(5, 30, 22, 0.8)",
+    boxShadow: "0 0 0 1px rgba(57,255,183,0.12), 0 24px 48px rgba(0,0,0,0.4)",
+  },
+  popularBanner: {
+    position: "absolute" as const,
+    top: -13,
+    left: "50%",
+    transform: "translateX(-50%)",
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase" as const,
+    color: "#0f1228",
+    background: "linear-gradient(90deg, #39ffb7, #00c8ff)",
+    borderRadius: 999,
+    padding: "3px 14px",
+    whiteSpace: "nowrap" as const,
+  },
+  placementTierIcon: {
+    fontSize: 28,
+    lineHeight: 1,
+  },
+  placementBadge: {
+    display: "inline-block",
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase" as const,
+    color: "rgba(168, 216, 255, 0.85)",
+    background: "rgba(136, 204, 255, 0.1)",
+    border: "1px solid rgba(136, 204, 255, 0.2)",
+    borderRadius: 999,
+    padding: "2px 10px",
+    alignSelf: "flex-start" as const,
+  },
+  placementTierName: {
+    fontSize: 20,
+    fontWeight: 800,
+    margin: "4px 0 0",
+    color: "#f0f9ff",
+    letterSpacing: "-0.02em",
+  },
+  placementPrice: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 4,
+    marginTop: 4,
+  },
+  placementPriceAmount: {
+    fontSize: 36,
+    fontWeight: 900,
+    color: "#a8d8ff",
+    letterSpacing: "-0.03em",
+    lineHeight: 1,
+  },
+  placementPriceUnit: {
+    fontSize: 14,
+    color: "rgba(148, 163, 184, 0.7)",
+    fontWeight: 500,
+  },
+  placementBillingNote: {
+    fontSize: 11,
+    color: "rgba(148, 163, 184, 0.55)",
+    margin: 0,
+  },
+  placementFeatureList: {
+    listStyle: "none" as const,
+    padding: 0,
+    margin: "8px 0 0",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 7,
+    flex: 1,
+  },
+  placementFeatureItem: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+    fontSize: 13,
+    color: "rgba(203, 213, 225, 0.9)",
+    lineHeight: 1.5,
+  },
+  checkmark: {
+    color: "#39ffb7",
+    fontWeight: 700,
+    fontSize: 13,
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  placementCta: {
+    display: "block",
+    marginTop: 16,
+    padding: "12px 20px",
+    borderRadius: 12,
+    background: "rgba(136, 204, 255, 0.08)",
+    border: "1px solid rgba(136, 204, 255, 0.25)",
+    color: "#a8d8ff",
+    fontWeight: 700,
+    fontSize: 14,
+    textDecoration: "none",
+    letterSpacing: "0.02em",
+    textAlign: "center" as const,
+    transition: "background 0.18s",
+  },
+  placementCtaHighlighted: {
+    background: "rgba(57, 255, 183, 0.12)",
+    border: "1px solid rgba(57, 255, 183, 0.4)",
+    color: "#39ffb7",
+  },
+  placementFootnote: {
+    marginTop: 24,
+    textAlign: "center" as const,
+    fontSize: 12,
+    color: "rgba(148, 163, 184, 0.6)",
+    lineHeight: 1.65,
+  },
+  inlineLink: {
+    color: "#a8d8ff",
+    textDecoration: "underline",
   },
 };

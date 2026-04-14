@@ -161,6 +161,94 @@ export const ENTERPRISE_TIERS: EnterpriseTier[] = [
   },
 ];
 
+// ── Manufacturer placement tiers ─────────────────────────────────────────────
+
+/**
+ * Pricing tier for manufacturers who want product placement in the
+ * FUSE™ Component Arena's Featured Components panel.
+ * All tiers go through "Contact Sales" — prices shown are list rates.
+ */
+export interface ManufacturerPlacementTier {
+  id: "standard-listing" | "featured-placement" | "sponsored-spotlight";
+  name: string;
+  icon: string;
+  /** Short badge label displayed on the card. */
+  badge: string;
+  /** Whether this tier should be visually highlighted as most popular. */
+  highlighted?: boolean;
+  /** USD list price per month. */
+  pricePerMonth: number;
+  /** Human-readable price string shown on the card. */
+  priceLabel: string;
+  /** Billing cadence note shown beneath the price. */
+  billingNote: string;
+  /** Feature list shown on the pricing card. */
+  features: string[];
+  /** Subject line for the contact-sales mailto link. */
+  mailtoSubject: string;
+}
+
+export const MANUFACTURER_PLACEMENT_TIERS: ManufacturerPlacementTier[] = [
+  {
+    id: "standard-listing",
+    name: "Standard Listing",
+    icon: "📋",
+    badge: "Entry",
+    pricePerMonth: 149,
+    priceLabel: "$149",
+    billingNote: "per month, billed monthly",
+    features: [
+      "Catalog card with part number & manufacturer name",
+      "Datasheet-accurate specs in FUSE™ simulation",
+      "Discoverable via catalog search",
+      "Datasheet PDF link on component card",
+      "Up to 5 component SKUs listed",
+    ],
+    mailtoSubject: "Component%20Arena%20%E2%80%94%20Standard%20Listing%20Inquiry",
+  },
+  {
+    id: "featured-placement",
+    name: "Featured Placement",
+    icon: "⭐",
+    badge: "Popular",
+    highlighted: true,
+    pricePerMonth: 349,
+    priceLabel: "$349",
+    billingNote: "per month, billed monthly",
+    features: [
+      "Everything in Standard Listing",
+      "Priority placement in Featured Components panel",
+      "Highlighted card with branded accent",
+      "Up to 20 component SKUs listed",
+      "Direct link to your product page or distributor",
+      "Mention in CircuiTry3D partner docs",
+    ],
+    mailtoSubject: "Component%20Arena%20%E2%80%94%20Featured%20Placement%20Inquiry",
+  },
+  {
+    id: "sponsored-spotlight",
+    name: "Sponsored Spotlight",
+    icon: "🏆",
+    badge: "Premium",
+    pricePerMonth: 749,
+    priceLabel: "$749",
+    billingNote: "per month, billed monthly",
+    features: [
+      "Everything in Featured Placement",
+      "Top-of-panel anchor placement",
+      "Category-level sponsorship badge",
+      "Unlimited component SKUs",
+      "Monthly placement analytics report",
+      "Co-branded Arena promotion",
+      "Dedicated partner onboarding session",
+    ],
+    mailtoSubject: "Component%20Arena%20%E2%80%94%20Sponsored%20Spotlight%20Inquiry",
+  },
+];
+
+/** Base mailto address for manufacturer placement inquiries. */
+export const MANUFACTURER_PLACEMENT_EMAIL = "info@circuitry3d.net";
+
 // ── Feature comparison rows ───────────────────────────────────────────────────
 
 /** One row in the feature comparison table. */

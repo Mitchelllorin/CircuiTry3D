@@ -1009,3 +1009,81 @@
   opacity: 0.65;
   cursor: default;
 }
+
+/* ── Manufacturer placement callout (on Pricing page) ─────────────────────── */
+
+.pricing-section-group--placement {
+  margin-top: 0.5rem;
+}
+
+.pricing-section-kicker--placement {
+  color: #39ffb7;
+  background: rgba(57, 255, 183, 0.08);
+  border-color: rgba(57, 255, 183, 0.22);
+}
+
+.pricing-placement-callout {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(8, 15, 30, 0.85);
+  border: 1px solid rgba(57, 255, 183, 0.2);
+  border-radius: 16px;
+  padding: 24px 28px;
+  max-width: 44rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.pricing-placement-callout-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pricing-placement-callout-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.pricing-placement-callout-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--pricing-muted);
+  line-height: 1.5;
+}
+
+.pricing-cta--placement {
+  display: inline-block;
+  align-self: flex-start;
+  background: rgba(57, 255, 183, 0.1);
+  border: 1px solid rgba(57, 255, 183, 0.35);
+  color: #39ffb7;
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.pricing-cta--placement:hover,
+.pricing-cta--placement:focus-visible {
+  background: rgba(57, 255, 183, 0.18);
+  border-color: rgba(57, 255, 183, 0.6);
+}
+
+@media (max-width: 480px) {
+  .pricing-placement-callout {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .pricing-cta--placement {
+    align-self: center;
+  }
+}
