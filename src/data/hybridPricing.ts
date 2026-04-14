@@ -247,7 +247,7 @@ export const MANUFACTURER_PLACEMENT_TIERS: ManufacturerPlacementTier[] = [
 ];
 
 /** Base mailto address for manufacturer placement inquiries. */
-export const MANUFACTURER_PLACEMENT_EMAIL = "hello@circuitry3d.com";
+export const MANUFACTURER_PLACEMENT_EMAIL = "info@circuitry3d.net";
 
 // ── Feature comparison rows ───────────────────────────────────────────────────
 
