@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import practiceProblems from "../data/practiceProblems";
 import type { Classroom } from "../model/classroom";
 import { useClassroom } from "../context/ClassroomContext";
@@ -147,6 +148,19 @@ export default function Classroom() {
           {error}
         </div>
       )}
+
+      <div className="classroom-pilot-cta">
+        <div className="classroom-pilot-cta-content">
+          <span className="classroom-pilot-badge">New</span>
+          <div>
+            <strong>Educator Pilot Program</strong>
+            <p>Free 60-day access + bundled one-time unlock for qualifying teachers. Feedback is the only ask.</p>
+          </div>
+        </div>
+        <Link to="/educator-pilot" className="classroom-pilot-cta-link">
+          Learn more →
+        </Link>
+      </div>
 
       <div className="classroom-grid">
         <section className="classroom-panel">
