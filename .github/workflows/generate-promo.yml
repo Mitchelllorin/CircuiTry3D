@@ -9,7 +9,7 @@ on:
         default: false
         type: boolean
       scene:
-        description: 'Record a single scene by ID (leave blank for all scenes)'
+        description: 'Record a single scene by ID (leave blank for all scenes). Available: scene-01-series, scene-02-parallel, scene-03-overload, scene-04-mixed, scene-05-3d-build, scene-06-arena, scene-07-new-components, scene-08-component-showcase'
         required: false
         default: ''
         type: string
