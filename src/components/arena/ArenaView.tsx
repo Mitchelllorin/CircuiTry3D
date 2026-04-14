@@ -2502,35 +2502,163 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       <div className={`arena-body${isWorkspace ? " arena-body--workspace-split" : ""}`}>
 
         <section className="arena-import-section">
-          <div className="arena-card">
+          <div className={`arena-card arena-import-card${isDragActive ? " drag-active" : ""}`}>
             <div className="arena-card-header">
               <h2>Import Components</h2>
+              {recentImportSource && (
+                <span className="arena-sync-source">{recentImportSource}</span>
+              )}
             </div>
-            <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
-              <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
-                Pull from Builder
-              </button>
-              <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
-                Paste from Clipboard
-              </button>
-              {sampleImports.map((sample) => (
-                <button
-                  key={sample.id}
-                  className="arena-btn ghost"
-                  type="button"
-                  onClick={() => handleSampleImport(sample.payload)}
-                  disabled={importPending}
+            {importPayload?.generatedAt ? (
+              <p className="arena-import-intro">Last sync: {formatTimestamp(importPayload.generatedAt)}</p>
+            ) : null}
+            <div className="arena-import-grid">
+              <div className="arena-import-column">
+                <div className="arena-import-actions">
+                  <button className="arena-btn solid" type="button" onClick={handleSyncFromStorage} disabled={importPending}>
+                    <span aria-hidden="true">⬇</span> Pull from Builder
+                  </button>
+                  <button className="arena-btn outline" type="button" onClick={handleClipboardImport} disabled={importPending}>
+                    <span aria-hidden="true">📋</span> Paste from Clipboard
+                  </button>
+                </div>
+                <div
+                  className={`arena-import-dropzone${isDragActive ? " is-active" : ""}`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
                 >
-                  {sample.label}
-                </button>
-              ))}
+                  <div className="arena-import-dropcopy">
+                    <strong>{isDragActive ? "Drop to import" : "Drag & drop JSON"}</strong>
+                    <span className="arena-import-hint">
+                      or{" "}
+                      <button
+                        type="button"
+                        className="arena-import-browse"
+                        aria-label="Browse and upload a JSON file"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={importPending}
+                      >
+                        Browse file
+                      </button>
+                    </span>
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  style={{ display: "none" }}
+                  onChange={handleFileInputChange}
+                />
+              </div>
+              <div className="arena-import-column">
+                <div className="arena-import-samples">
+                  <span className="arena-import-subheading">Sample Datasets</span>
+                  <div className="arena-import-sample-buttons">
+                    {sampleImports.map((sample) => (
+                      <button
+                        key={sample.id}
+                        className="arena-sample-btn"
+                        type="button"
+                        onClick={() => handleSampleImport(sample.payload)}
+                        disabled={importPending}
+                      >
+                        <span className="sample-title">{sample.label}</span>
+                        <span className="sample-desc">{sample.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            {importError && <p className="arena-status-text arena-status-error" style={{marginTop: '12px'}}>{importError}</p>}
-            {recentImportSource && (
-              <p style={{marginTop: '12px', fontSize: '0.85rem', color: 'rgba(148, 163, 184, 0.9)'}}>Loaded: {recentImportSource}</p>
+            <div className="arena-import-textlabel" style={{ marginTop: "16px" }}>
+              <label className="arena-import-textlabel-heading" htmlFor="arena-json-paste">
+                Or paste JSON directly:
+              </label>
+              <textarea
+                  id="arena-json-paste"
+                  placeholder='{ "components": [...] }'
+                  value={manualImportText}
+                  onChange={(e) => setManualImportText(e.target.value)}
+                  rows={4}
+                />
+              <div className="arena-import-submit">
+                <button
+                  className="arena-btn outline"
+                  type="button"
+                  onClick={handleManualImportSubmit}
+                  disabled={importPending || !manualImportText.trim()}
+                >
+                  Import JSON
+                </button>
+              </div>
+            </div>
+            {importError && (
+              <p className="arena-status-text arena-status-error" style={{ marginTop: "12px" }}>{importError}</p>
+            )}
+            {!importError && bridgeStatus !== DEFAULT_STATUS && (
+              <p className="arena-status-text" style={{ marginTop: "12px", fontSize: "0.8rem" }}>{bridgeStatus}</p>
             )}
           </div>
         </section>
+
+        {importPayload && (componentProfiles.length > 0 || circuitTotals.length > 0) && (
+          <section className="arena-summary-section">
+            <div className="arena-card">
+              <div className="arena-card-header">
+                <h2>Circuit Snapshot</h2>
+              </div>
+              {circuitTotals.length > 0 && (
+                <div className="arena-total-grid" style={{ marginBottom: "18px" }}>
+                  {circuitTotals.map((total) => (
+                    <div key={total.label} className="arena-total">
+                      <span className="arena-total-label">{total.label}</span>
+                      <span className="arena-total-value">{total.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+                {roster.length > 0 && (
+                  <div>
+                    <h3 style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(148, 163, 184, 0.85)", margin: "0 0 10px" }}>
+                      Component Roster
+                    </h3>
+                    <ul className="arena-roster">
+                      {roster.map((item) => (
+                        <li key={item.id}>
+                          <span className="roster-name">{item.name}</span>
+                          <span className="roster-type">{item.type}</span>
+                          {item.details ? (
+                            <span className="roster-detail">{item.details}</span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {typeBreakdown.length > 0 && (
+                  <div>
+                    <h3 style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(148, 163, 184, 0.85)", margin: "0 0 10px" }}>
+                      By Type
+                    </h3>
+                    <ul className="arena-breakdown">
+                      {typeBreakdown.map(([type, count]) => (
+                        <li key={type}>
+                          <span className="breakdown-type">{type}</span>
+                          <span className="breakdown-count">{count}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="arena-selectors-section">
           <div className="arena-card">
@@ -2670,34 +2798,47 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             <div className="arena-card-header">
               <h2>Battle Stats</h2>
             </div>
-            {battleState === "complete" && battleScore && battleScore.totalRounds > 0 ? (
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
-                <div>
-                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Battle Result (A)</div>
-                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{formatShowdownRecord(battleScore.leftWins, battleScore.rightWins, battleScore.ties)}</div>
-                </div>
-                <div>
-                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Total Rounds</div>
-                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{battleScore.totalRounds}</div>
-                </div>
-                <div>
-                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Battle Result (B)</div>
-                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{formatShowdownRecord(battleScore.rightWins, battleScore.leftWins, battleScore.ties)}</div>
+            {(battleState === "complete" && battleScore && battleScore.totalRounds > 0) ? (
+              <div className="arena-showdown-scoreboard" style={{ marginBottom: 0 }}>
+                <div className="arena-scoreboard-totals">
+                  <div className={`score-chip team-a${battleScore.leftWins > battleScore.rightWins ? " leading" : ""}`}>
+                    <span className="score-name">{componentAProfile?.name ?? "Component A"}</span>
+                    <span className="score-value">{battleScore.leftWins}</span>
+                    <span className="score-record">{formatShowdownRecord(battleScore.leftWins, battleScore.rightWins, battleScore.ties)}</span>
+                  </div>
+                  <div className="score-divider">
+                    <span className="score-vs">VS</span>
+                    <span className="score-rounds">{battleScore.totalRounds} round{battleScore.totalRounds !== 1 ? "s" : ""}</span>
+                    {battleScore.ties > 0 && <span className="score-ties">{battleScore.ties} tied</span>}
+                  </div>
+                  <div className={`score-chip team-b${battleScore.rightWins > battleScore.leftWins ? " leading" : ""}`}>
+                    <span className="score-name">{componentBProfile?.name ?? "Component B"}</span>
+                    <span className="score-value">{battleScore.rightWins}</span>
+                    <span className="score-record">{formatShowdownRecord(battleScore.rightWins, battleScore.leftWins, battleScore.ties)}</span>
+                  </div>
                 </div>
               </div>
             ) : hasShowdown ? (
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '0.9rem'}}>
-                <div>
-                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component A Record</div>
-                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{leftRecord}</div>
-                </div>
-                <div>
-                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Total Rounds</div>
-                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{showdownScore.totalRounds}</div>
-                </div>
-                <div>
-                  <div style={{color: 'rgba(148, 163, 184, 0.8)', fontSize: '0.75rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Component B Record</div>
-                  <div style={{fontSize: '1.5rem', fontWeight: '600'}}>{rightRecord}</div>
+              <div className="arena-showdown-scoreboard" style={{ marginBottom: 0 }}>
+                <div className="arena-scoreboard-totals">
+                  <div className={`score-chip team-a${showdownScore.leftWins > showdownScore.rightWins ? " leading" : ""}`}>
+                    <span className="score-name">{componentAProfile?.name ?? "Component A"}</span>
+                    <span className="score-value">{showdownScore.leftWins}</span>
+                    <span className="score-record">{leftRecord}</span>
+                  </div>
+                  <div className="score-divider">
+                    <span className="score-vs">VS</span>
+                    <span className="score-rounds">{showdownScore.totalRounds} round{showdownScore.totalRounds !== 1 ? "s" : ""}</span>
+                    {showdownScore.ties > 0 && <span className="score-ties">{showdownScore.ties} tied</span>}
+                    {showdownScore.dominantMetric && (
+                      <span className="score-dominant">Key: {showdownScore.dominantMetric}</span>
+                    )}
+                  </div>
+                  <div className={`score-chip team-b${showdownScore.rightWins > showdownScore.leftWins ? " leading" : ""}`}>
+                    <span className="score-name">{componentBProfile?.name ?? "Component B"}</span>
+                    <span className="score-value">{showdownScore.rightWins}</span>
+                    <span className="score-record">{rightRecord}</span>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -2830,6 +2971,70 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             })}
           </div>
         </section>
+
+        {hasShowdown && (
+          <section className="arena-analysis-section">
+            <div className="arena-card">
+              <div className="arena-card-header">
+                <h2><span aria-hidden="true">⚡</span> Metric Analysis</h2>
+              </div>
+              {battleState === "complete" && !winnerDismissed && (
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "12px" }}>
+                  <button className="arena-btn ghost small" onClick={handleResetBattle} type="button">
+                    Reset Battle
+                  </button>
+                </div>
+              )}
+              {spotlightRounds.length > 0 && (
+                <ul className="arena-score-rounds">
+                  {spotlightRounds.map((round) => (
+                    <li key={round.key} className={`score-round win-${round.winner}`}>
+                      <span className="round-value round-value-a">{round.leftValue}</span>
+                      <div className="round-label">
+                        <span>{round.label}</span>
+                        {round.deltaLabel && <div className="round-delta">{round.deltaLabel}</div>}
+                        {round.shortSummary && (
+                          <div style={{ fontSize: "0.68rem", color: "rgba(148, 163, 184, 0.65)", marginTop: "2px" }}>{round.shortSummary}</div>
+                        )}
+                      </div>
+                      <span className="round-value round-value-b">{round.rightValue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {comparisonRows.length > 0 && (
+                <>
+                  <h3 style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "rgba(148, 163, 184, 0.85)", margin: "18px 0 10px" }}>
+                    Full Comparison
+                  </h3>
+                  <ul className="arena-showdown-table">
+                    {comparisonRows.map((row) => {
+                      const round = showdownRoundByKey.get(row.key);
+                      return (
+                        <li key={row.key}>
+                          <span className="arena-showdown-value value-a">{row.aValue}</span>
+                          <div className="arena-showdown-metric">
+                            <span className="metric-name">{row.label}</span>
+                            {row.deltaLabel && <span className="arena-showdown-delta">{row.deltaLabel}</span>}
+                            {round && (
+                              <span style={{ fontSize: "0.64rem", color: round.winner === "left" ? "rgba(59,130,246,0.85)" : round.winner === "right" ? "rgba(52,211,153,0.85)" : "rgba(148,163,184,0.65)", marginTop: "2px" }}>
+                                {round.winner === "tie" ? "↔ Even" : round.winner === "left" ? "◀ A leads" : "▶ B leads"}
+                              </span>
+                            )}
+                          </div>
+                          <span className="arena-showdown-value value-b">{row.bValue}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+              {spotlightRounds.length === 0 && comparisonRows.length === 0 && (
+                <p className="arena-empty">No comparable metrics found between the two components.</p>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       <div className="arena-frame-wrapper" style={{display: 'none'}}>
