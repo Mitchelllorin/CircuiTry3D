@@ -42,12 +42,14 @@ function PinPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBack
 }
 
 export default function Account() {
-  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, setPIN, clearPIN, signInWithPIN } = useAuth();
+  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN } = useAuth();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
   const [profileForm, setProfileForm] = useState({ displayName: currentUser?.displayName ?? "", bio: currentUser?.bio ?? "" });
   const [forgotForm, setForgotForm] = useState({ email: "", newPassword: "", confirmPassword: "", step: 1 as 1 | 2 });
+  const [changePasswordForm, setChangePasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -236,6 +238,8 @@ export default function Account() {
     setMode(hasPIN && lastSignedInUser ? "pin" : "signin");
     setStatus({ type: "success", message: "Signed out." });
     setPinEntry("");
+    setChangePasswordOpen(false);
+    setChangePasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
   };
 
   const handleForgotStep1 = async (event: FormEvent) => {
@@ -277,6 +281,28 @@ export default function Account() {
     setForgotForm({ email: "", newPassword: "", confirmPassword: "", step: 1 });
     setStatus(null);
     setMode("signin");
+  };
+
+  const handleChangePassword = async (event: FormEvent) => {
+    event.preventDefault();
+    setStatus(null);
+    if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
+      setStatus({ type: "error", message: "New passwords do not match." });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await changePassword(changePasswordForm.currentPassword, changePasswordForm.newPassword);
+      if (result.ok) {
+        setStatus({ type: "success", message: "Password changed successfully." });
+        setChangePasswordOpen(false);
+        setChangePasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        setStatus({ type: "error", message: result.message });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClearPIN = async () => {
@@ -479,10 +505,10 @@ export default function Account() {
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={signUpForm.password}
                   onChange={(event) => setSignUpForm({ ...signUpForm, password: event.target.value })}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                 />
               </label>
               <label>
@@ -533,10 +559,10 @@ export default function Account() {
                     <input
                       type="password"
                       required
-                      minLength={6}
+                      minLength={8}
                       value={forgotForm.newPassword}
                       onChange={(event) => setForgotForm((previous) => ({ ...previous, newPassword: event.target.value }))}
-                      placeholder="At least 6 characters"
+                      placeholder="At least 8 characters"
                     />
                   </label>
                   <label>
@@ -544,7 +570,7 @@ export default function Account() {
                     <input
                       type="password"
                       required
-                      minLength={6}
+                      minLength={8}
                       value={forgotForm.confirmPassword}
                       onChange={(event) => setForgotForm((previous) => ({ ...previous, confirmPassword: event.target.value }))}
                       placeholder="Repeat your new password"
@@ -621,6 +647,76 @@ export default function Account() {
                   {isSubmitting ? "Saving…" : "Save Changes"}
                 </button>
               </form>
+
+              {/* Change Password */}
+              <div className="account-form change-password-section">
+                <h3>Change Password</h3>
+                {!changePasswordOpen ? (
+                  <button
+                    type="button"
+                    className="account-secondary"
+                    onClick={() => { setStatus(null); setChangePasswordOpen(true); }}
+                    disabled={isSubmitting}
+                  >
+                    Change password
+                  </button>
+                ) : (
+                  <form onSubmit={handleChangePassword} aria-label="Change password form">
+                    <label>
+                      Current password
+                      <input
+                        type="password"
+                        required
+                        autoComplete="current-password"
+                        value={changePasswordForm.currentPassword}
+                        onChange={(event) => setChangePasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
+                        placeholder="Your current password"
+                      />
+                    </label>
+                    <label>
+                      New password
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        autoComplete="new-password"
+                        value={changePasswordForm.newPassword}
+                        onChange={(event) => setChangePasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+                        placeholder="At least 8 characters"
+                      />
+                    </label>
+                    <label>
+                      Confirm new password
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        autoComplete="new-password"
+                        value={changePasswordForm.confirmPassword}
+                        onChange={(event) => setChangePasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                        placeholder="Repeat your new password"
+                      />
+                    </label>
+                    <div className="change-password-actions">
+                      <button type="submit" className="account-primary" disabled={isSubmitting}>
+                        {isSubmitting ? "Saving…" : "Update Password"}
+                      </button>
+                      <button
+                        type="button"
+                        className="account-secondary"
+                        disabled={isSubmitting}
+                        onClick={() => {
+                          setChangePasswordOpen(false);
+                          setChangePasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                          setStatus(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
 
               {/* PIN management */}
               <div className="account-form pin-management">

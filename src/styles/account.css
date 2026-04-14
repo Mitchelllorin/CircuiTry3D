@@ -452,7 +452,18 @@
   gap: 14px;
 }
 
-/* ── Lifetime / Founding-Tester styles ─────────────────────────────────────── */
+/* ── Change Password ────────────────────────────────────────────────────────── */
+
+.change-password-section h3 {
+  margin: 0 0 6px;
+}
+
+.change-password-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 
 .lifetime-hint {
   font-size: 0.8rem;
