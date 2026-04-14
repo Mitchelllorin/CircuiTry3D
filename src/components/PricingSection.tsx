@@ -4,6 +4,8 @@ import BrandSignature from "./BrandSignature";
 import {
   initBilling,
   isAndroidApp,
+  openWebPayment,
+  WEB_PAYMENT_URL,
   purchasePremiumUnlock,
   purchaseProSubscription,
   restorePurchases,
@@ -144,19 +146,29 @@ export default function PricingSection() {
 
   /** Handle a tap on the Premium Unlock buy button. */
   const handlePurchasePremium = useCallback(async () => {
+    // On web with a payment URL configured, open the checkout page.
+    if (!isAndroidApp() && WEB_PAYMENT_URL) {
+      openWebPayment();
+      return;
+    }
     const launched = await purchasePremiumUnlock();
     if (!launched) {
-      window.location.href =
-        "mailto:hello@circuitry3d.com?subject=Premium%20Unlock%20Purchase";
+      // Billing unavailable on this device — nothing more we can do here;
+      // the billing plugin's purchaseFailed event handles UI feedback on Android.
+      console.warn("[Pricing] purchasePremiumUnlock: billing unavailable");
     }
   }, []);
 
   /** Handle a tap on the Pro Subscription buy button. */
   const handlePurchasePro = useCallback(async () => {
+    // On web with a payment URL configured, open the checkout page.
+    if (!isAndroidApp() && WEB_PAYMENT_URL) {
+      openWebPayment();
+      return;
+    }
     const launched = await purchaseProSubscription(proCycle);
     if (!launched) {
-      window.location.href =
-        "mailto:hello@circuitry3d.com?subject=Pro%20Subscription%20Purchase";
+      console.warn("[Pricing] purchaseProSubscription: billing unavailable");
     }
   }, [proCycle]);
 
