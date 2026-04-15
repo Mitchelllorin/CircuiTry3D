@@ -771,6 +771,91 @@
       padding: 2px 9px;
       white-space: nowrap;
     }
+
+    /* ═══════════════════════════════════════════════════════════════
+       UX ERGONOMICS — entrance animations, shimmer, card glows
+    ═══════════════════════════════════════════════════════════════ */
+
+    /* Staggered hero content fade-up on page load */
+    @keyframes heroFadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-content > * {
+      animation: heroFadeUp 0.55s cubic-bezier(0.34, 1.2, 0.64, 1) backwards;
+    }
+    .hero-content > *:nth-child(1) { animation-delay: 0.08s; }
+    .hero-content > *:nth-child(2) { animation-delay: 0.15s; }
+    .hero-content > *:nth-child(3) { animation-delay: 0.22s; }
+    .hero-content > *:nth-child(4) { animation-delay: 0.29s; }
+    .hero-content > *:nth-child(5) { animation-delay: 0.36s; }
+    .hero-content > *:nth-child(6) { animation-delay: 0.43s; }
+    .hero-content > *:nth-child(7) { animation-delay: 0.50s; }
+    .hero-content > *:nth-child(8) { animation-delay: 0.57s; }
+    .hero-content > *:nth-child(9) { animation-delay: 0.64s; }
+
+    /* CTA primary button — periodic shimmer sweep to draw the eye */
+    .btn-primary {
+      position: relative;
+      overflow: hidden;
+    }
+    @keyframes ctaShimmer {
+      0%   { transform: translateX(-120%) skewX(-18deg); }
+      100% { transform: translateX(280%) skewX(-18deg); }
+    }
+    .btn-primary::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 40%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.28),
+        transparent
+      );
+      animation: ctaShimmer 3.8s ease-in-out infinite;
+      animation-delay: 1.2s;
+      pointer-events: none;
+    }
+
+    /* Organic hover glows on feature / info cards */
+    .feat-card:hover {
+      border-color: rgba(136, 204, 255, 0.38);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 22px rgba(136, 204, 255, 0.12);
+    }
+    .ai-feat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.4), 0 0 18px rgba(136, 204, 255, 0.1);
+    }
+    .ai-feat-card--free:hover  { border-color: rgba(0, 255, 136, 0.4);   box-shadow: 0 8px 26px rgba(0,0,0,0.4), 0 0 18px rgba(0, 255, 136, 0.12); }
+    .ai-feat-card--pro:hover   { border-color: rgba(192, 132, 252, 0.42); box-shadow: 0 8px 26px rgba(0,0,0,0.4), 0 0 18px rgba(192, 132, 252, 0.12); }
+    .platform-card:hover {
+      border-color: rgba(136, 204, 255, 0.38);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 0 22px rgba(136, 204, 255, 0.12);
+    }
+    .fuse-card:hover {
+      border-color: rgba(136, 204, 255, 0.32);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(136, 204, 255, 0.08);
+    }
+    .wire-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(136, 204, 255, 0.32);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(136, 204, 255, 0.1);
+    }
+
+    /* Improved scroll-hint legibility */
+    .scroll-hint {
+      color: rgba(136, 204, 255, 0.52);
+    }
+
+    /* Reduced-motion: disable all new animations */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-content > * { animation: none; }
+      .btn-primary::after { display: none; }
+    }
   </style>
 </head>
 <body>

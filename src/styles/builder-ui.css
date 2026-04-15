@@ -250,7 +250,14 @@ body.builder-body::before {
   background: rgba(168, 216, 255, 0.18);
   color: var(--builder-cyan);
   border-color: var(--builder-border-strong);
-  box-shadow: 0 0 12px rgba(168, 216, 255, 0.32);
+  box-shadow:
+    0 0 12px rgba(168, 216, 255, 0.32),
+    inset 0 -2px 0 rgba(168, 216, 255, 0.65);
+}
+
+.mode-tab:focus-visible {
+  outline: 2px solid rgba(168, 216, 255, 0.65);
+  outline-offset: 2px;
 }
 
 .mode-icon {
@@ -396,26 +403,24 @@ body.builder-body::before {
   border-radius: 20px;
   backdrop-filter: blur(12px);
   box-shadow: 0 4px 16px rgba(3, 8, 28, 0.48);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Ghost-visible by default so users discover the buttons, fully opaque on hover */
+  opacity: 0.38;
+  transform: translateY(0);
+  transition: opacity 0.22s ease, background 0.2s ease;
 }
 
 .workspace-edge-actions:hover {
   opacity: 1;
   background: rgba(12, 10, 36, 0.88);
-  transform: translateY(0);
 }
 
 .workspace-edge-actions:focus-within {
   opacity: 1;
-  transform: translateY(0);
 }
 
 @media (hover: none) {
   .workspace-edge-actions {
     opacity: 1;
-    transform: none;
   }
 }
 
@@ -461,6 +466,11 @@ body.builder-body::before {
 
 .edge-action-btn:active:not(:disabled) {
   transform: scale(0.94);
+}
+
+.edge-action-btn:focus-visible {
+  outline: 2px solid rgba(168, 216, 255, 0.6);
+  outline-offset: 2px;
 }
 
 .edge-action-btn:disabled,
@@ -1259,6 +1269,11 @@ body.builder-body::before {
 
 .quick-add-btn:active:not(:disabled) {
   transform: scale(0.94);
+}
+
+.quick-add-btn:focus-visible {
+  outline: 2px solid rgba(168, 216, 255, 0.6);
+  outline-offset: 2px;
 }
 
 .quick-add-btn:disabled,
@@ -2151,6 +2166,26 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   flex-direction: column;
+}
+
+/* Subtle periodic hint pulse when the side panel is closed */
+@keyframes toggleHintPulse {
+  0%, 80%, 100% { border-color: var(--builder-border-strong); }
+  88% { border-color: rgba(168, 216, 255, 0.75); box-shadow: 0 0 16px rgba(168, 216, 255, 0.38); }
+}
+.builder-menu-stage-left:not(.open) .builder-menu-toggle-left {
+  animation: toggleHintPulse 6s ease-in-out infinite;
+}
+.builder-menu-stage-right:not(.open) .builder-menu-toggle-right {
+  animation: toggleHintPulse 6s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .builder-menu-stage-left:not(.open) .builder-menu-toggle-left,
+  .builder-menu-stage-right:not(.open) .builder-menu-toggle-right {
+    animation: none;
+  }
 }
 
 /* Left toggle is first in DOM with flex-direction:row — sits at x=0 (left edge) naturally */
