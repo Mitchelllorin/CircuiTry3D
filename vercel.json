@@ -5,7 +5,8 @@
   "installCommand": "npm ci",
   "env": {
     "VITE_DEMO_MODE": "true",
-    "VITE_DEMO_APP_URL": ""
+    "VITE_DEMO_APP_URL": "",
+    "VITE_PAYMENT_URL": "https://play.google.com/store/apps/details?id=com.circuitry3d.app"
   },
   "headers": [
     {
