@@ -115,37 +115,59 @@ export const DEMO_COMPONENT_IDS: readonly string[] = [
 
 /**
  * The SHA-256 hex digest of the owner password, embedded at build time.
- * Empty when the OWNER_KEY_HASH secret was not provided during the build.
+ * Empty when VITE_OWNER_KEY_HASH was not provided during the build.
  */
 const OWNER_KEY_HASH = (import.meta.env.VITE_OWNER_KEY_HASH ?? "").trim();
 
 /**
- * True when an owner key hash has been configured in this build.
- * Used by DemoBanner to decide whether to show the 🔑 unlock button.
+ * Plaintext owner password embedded at build time.
+ * Set VITE_OWNER_KEY in your .env.local (dev) or Vercel project settings
+ * (production) to the password you want to use — no hashing required.
+ * Takes precedence over VITE_OWNER_KEY_HASH when both are set.
  */
-export const OWNER_KEY_HASH_CONFIGURED: boolean = OWNER_KEY_HASH.length > 0;
+const OWNER_KEY_PLAIN = (import.meta.env.VITE_OWNER_KEY ?? "").trim();
 
 /**
- * Verifies the supplied owner password client-side by hashing it with
- * SHA-256 and comparing the result to the build-time VITE_OWNER_KEY_HASH.
+ * True when an owner key has been configured in this build (either as a
+ * plaintext password via VITE_OWNER_KEY or as a hash via VITE_OWNER_KEY_HASH).
+ * Used by DemoBanner to decide whether to show the 🔑 unlock button.
+ */
+export const OWNER_KEY_HASH_CONFIGURED: boolean =
+  OWNER_KEY_PLAIN.length > 0 || OWNER_KEY_HASH.length > 0;
+
+/**
+ * Verifies the supplied owner password client-side.
  *
- * Uses the Web Crypto API (available in all modern browsers and in the Vite
- * dev/preview server environment).  Returns false immediately when
- * OWNER_KEY_HASH is not configured in this build.
+ * When VITE_OWNER_KEY is set: compares the trimmed input directly against the
+ * embedded plaintext value — no hashing needed, just set VITE_OWNER_KEY in
+ * your Vercel project settings (or .env.local for dev).
+ *
+ * When only VITE_OWNER_KEY_HASH is set: hashes the input with SHA-256 and
+ * compares the hex digest against the embedded hash.
+ *
+ * Returns false immediately when neither env var is configured in this build.
  */
 export async function verifyOwnerPassword(password: string): Promise<boolean> {
+  const trimmed = password.trim();
+
+  // Plaintext check (VITE_OWNER_KEY) — simpler to configure.
+  if (OWNER_KEY_PLAIN) {
+    let diff = trimmed.length !== OWNER_KEY_PLAIN.length ? 1 : 0;
+    const len = Math.min(trimmed.length, OWNER_KEY_PLAIN.length);
+    for (let i = 0; i < len; i++) {
+      diff |= trimmed.charCodeAt(i) ^ OWNER_KEY_PLAIN.charCodeAt(i);
+    }
+    return diff === 0;
+  }
+
+  // Hash-based check (VITE_OWNER_KEY_HASH) — legacy / more obscured.
   if (!OWNER_KEY_HASH) return false;
   const enc = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest(
-    "SHA-256",
-    enc.encode(password.trim())
-  );
+  const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(trimmed));
   const hashHex = Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  // Constant-time comparison: XOR every character code and OR into diff.
-  // SHA-256 hex output is always 64 chars; if lengths somehow differ, fold
-  // the mismatch into diff without an early return to avoid leaking length.
+  // Constant-time comparison to avoid leaking length or early-exit timing.
   let diff = hashHex.length !== OWNER_KEY_HASH.length ? 1 : 0;
   const len = Math.min(hashHex.length, OWNER_KEY_HASH.length);
   for (let i = 0; i < len; i++) {
