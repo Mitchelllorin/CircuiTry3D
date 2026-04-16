@@ -51,15 +51,15 @@ interface CategoryTab {
 }
 
 const CATEGORY_TABS: CategoryTab[] = [
-  { id: "all",              label: "All",         shortLabel: "All"   },
-  { id: "favorites",        label: "Pinned",      shortLabel: "★"     },
-  { id: "power",            label: "Power",       shortLabel: "⚡"    },
-  { id: "passive",          label: "Passive",     shortLabel: "─||─"  },
-  { id: "semiconductor",    label: "Semi",        shortLabel: "🔬"    },
-  { id: "electromechanical",label: "Mech",        shortLabel: "⚙"    },
-  { id: "integrated",       label: "IC",          shortLabel: "▣"     },
-  { id: "sensor",           label: "Sensor",      shortLabel: "🌡"    },
-  { id: "connector",        label: "Node",        shortLabel: "●"     },
+  { id: "all",               label: "All",    shortLabel: "All"  },
+  { id: "favorites",         label: "Pinned", shortLabel: "★"    },
+  { id: "power",             label: "Power",  shortLabel: "⚡"   },
+  { id: "passive",           label: "Passive", shortLabel: "─||─" },
+  { id: "semiconductor",     label: "Semi",   shortLabel: "🔬"   },
+  { id: "electromechanical", label: "Mech",   shortLabel: "⚙"   },
+  { id: "integrated",        label: "IC",     shortLabel: "▣"    },
+  { id: "sensor",            label: "Sensor", shortLabel: "🌡"   },
+  { id: "connector",         label: "Node",   shortLabel: "●"    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -295,7 +295,7 @@ export function ScrollerMenu({
             {searchQuery
               ? "No matches"
               : activeCategory === "favorites"
-                ? "No pinned items yet — tap ☆ to pin"
+                ? "No pinned items yet — tap a star to pin"
                 : "No components"}
           </li>
         ) : (
