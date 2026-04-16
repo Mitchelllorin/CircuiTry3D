@@ -8,8 +8,18 @@ import {
 import type { ComponentAction } from "./types";
 import type { ComponentCategory } from "./types";
 import { getSchematicSymbol } from "../circuit/SchematicSymbols";
-import type { ComponentSymbol } from "../circuit/SchematicSymbols";
+import { useComponent3DThumbnail } from "./toolbars/useComponent3DThumbnail";
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../../utils/demoMode";
+
+// ---------------------------------------------------------------------------
+// Film-reel constants
+// ---------------------------------------------------------------------------
+
+/** Height of one film frame (card) in px — must match --film-card-h in CSS. */
+const CARD_H = 116;
+
+/** Number of cards visible in the reel viewport at one time. */
+const VISIBLE = 3;
 
 // ---------------------------------------------------------------------------
 // Favorites persistence
@@ -39,7 +49,7 @@ function saveFavorites(favorites: Set<string>): void {
 }
 
 // ---------------------------------------------------------------------------
-// Category tabs configuration
+// Category tabs
 // ---------------------------------------------------------------------------
 
 type CategoryFilter = ComponentCategory | "all" | "favorites";
@@ -63,14 +73,85 @@ const CATEGORY_TABS: CategoryTab[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Symbol resolution helper (mirrors ComponentLibraryCard logic)
+// FilmCard — one frame on the reel (separate component to allow hook per card)
 // ---------------------------------------------------------------------------
 
-function resolveSymbolKey(component: ComponentAction): ComponentSymbol {
-  const t = component.builderType ?? component.id;
-  if (t === "bjt-npn" || t === "bjt") return "transistor-npn" as ComponentSymbol;
-  if (t === "bjt-pnp") return "transistor-pnp" as ComponentSymbol;
-  return t as ComponentSymbol;
+type FilmCardProps = {
+  component: ComponentAction;
+  /** True when this card is in the center slot of the viewport. */
+  isCenter: boolean;
+  /** True when the panel is currently open (enables thumbnail loading). */
+  panelOpen: boolean;
+  /** Called when the user taps this card. */
+  onTap: (component: ComponentAction, wasCenter: boolean) => void;
+  disabled: boolean;
+};
+
+function FilmCard({ component, isCenter, panelOpen, onTap, disabled }: FilmCardProps) {
+  const kind = component.builderType ?? component.id;
+
+  // Only load + animate the 3D thumbnail when the panel is open.
+  // Animate (spin) only the center card — gives the "selected" feel.
+  const thumbSrc = useComponent3DThumbnail(
+    panelOpen ? kind : undefined,
+    { animated: isCenter && panelOpen },
+  );
+
+  const symbolKey = (() => {
+    if (kind === "bjt-npn" || kind === "bjt") return "transistor-npn";
+    if (kind === "bjt-pnp") return "transistor-pnp";
+    return kind;
+  })();
+
+  const Symbol = getSchematicSymbol(symbolKey as any);
+  const symbolRotation = symbolKey === "battery" ? -90 : 0;
+
+  return (
+    <div
+      role="button"
+      tabIndex={isCenter ? 0 : -1}
+      aria-label={
+        isCenter
+          ? `Add ${component.label} (centered)`
+          : `Scroll to ${component.label}`
+      }
+      aria-pressed={isCenter}
+      aria-disabled={disabled}
+      className={`film-card${isCenter ? " film-card--center" : ""}`}
+      onClick={() => onTap(component, isCenter)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onTap(component, isCenter);
+        }
+      }}
+      data-component-action={component.action}
+      data-tutorial-id={
+        component.id === "battery"
+          ? "tutorial-add-battery"
+          : component.id === "resistor"
+            ? "tutorial-add-resistor"
+            : undefined
+      }
+      title={isCenter ? (component.description || component.label) : component.label}
+    >
+      {/* 3D thumbnail — fills most of the card */}
+      <div className="film-card-thumb" aria-hidden="true">
+        {thumbSrc ? (
+          <img src={thumbSrc} alt="" />
+        ) : Symbol ? (
+          <svg viewBox="-40 -40 80 80" focusable="false">
+            <Symbol x={0} y={0} rotation={symbolRotation} scale={1} showLabel={false} />
+          </svg>
+        ) : (
+          <span className="film-card-icon-text">{component.icon}</span>
+        )}
+      </div>
+
+      {/* Component name */}
+      <div className="film-card-label">{component.label}</div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -80,16 +161,16 @@ function resolveSymbolKey(component: ComponentAction): ComponentSymbol {
 export type ScrollerMenuProps = {
   /** Full list of all available component actions. Demo-mode filtering is handled internally. */
   components: ComponentAction[];
-  /** Called when the user selects (taps/clicks) a component to add it to the workspace. */
+  /** Called when the user confirms adding a component to the workspace. */
   onSelect: (component: ComponentAction) => void;
-  /** When true, all add buttons are disabled (frame not ready or circuit locked). */
+  /** When true, all add interactions are disabled (frame not ready or circuit locked). */
   disabled: boolean;
-  /** Whether the parent panel is currently open — used to reset category to "all" on each open so tutorial targets are always visible. */
+  /** Whether the parent panel is currently open — enables thumbnail loading and resets state. */
   isOpen: boolean;
 };
 
 // ---------------------------------------------------------------------------
-// ScrollerMenu component
+// ScrollerMenu — film-strip / spindle-reel picker
 // ---------------------------------------------------------------------------
 
 export function ScrollerMenu({
@@ -102,48 +183,40 @@ export function ScrollerMenu({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
+  const [centerIndex, setCenterIndex] = useState(0);
 
+  const reelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
   const prevIsOpen = useRef(isOpen);
 
-  // Persist favorites to localStorage whenever they change
+  // Persist favorites
   useEffect(() => {
     saveFavorites(favorites);
   }, [favorites]);
 
-  // Reset to "all" each time the panel transitions to open, so tutorial
-  // targets (battery / resistor) are always visible in the DOM.
+  // Reset on panel open — ensures tutorial targets are always visible
   useEffect(() => {
     if (isOpen && !prevIsOpen.current) {
       setActiveCategory("all");
       setSearchQuery("");
       setSearchOpen(false);
+      setCenterIndex(0);
+      if (reelRef.current) {
+        reelRef.current.scrollTop = 0;
+      }
     }
     prevIsOpen.current = isOpen;
   }, [isOpen]);
 
-  // Focus the search input when it becomes visible
+  // Focus search on open
   useEffect(() => {
     if (searchOpen && searchRef.current) {
       searchRef.current.focus();
     }
   }, [searchOpen]);
 
-  const toggleFavorite = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
-
-  // Derive the list shown in the panel, respecting demo-mode limits
+  // Build filtered list
   const baseComponents = useMemo(
     () =>
       IS_DEMO_MODE
@@ -159,13 +232,11 @@ export function ScrollerMenu({
 
   const visibleComponents = useMemo(() => {
     let list = baseComponents;
-
     if (activeCategory === "favorites") {
       list = list.filter((c) => favorites.has(c.id));
     } else if (activeCategory !== "all") {
       list = list.filter((c) => c.metadata?.category === activeCategory);
     }
-
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       list = list.filter(
@@ -175,44 +246,94 @@ export function ScrollerMenu({
           c.id.toLowerCase().includes(q),
       );
     }
-
     return list;
   }, [baseComponents, activeCategory, favorites, searchQuery]);
 
-  // Keyboard navigation: ArrowUp / ArrowDown between item buttons
-  const handleListKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLUListElement>) => {
-      if (!listRef.current) return;
-      const items =
-        listRef.current.querySelectorAll<HTMLButtonElement>(".scroller-item-btn");
-      if (!items.length) return;
-
-      const focused = listRef.current.ownerDocument.activeElement;
-      const focusedIdx = Array.from(items).indexOf(
-        focused as HTMLButtonElement,
+  // Clamp centerIndex when list changes
+  useEffect(() => {
+    if (visibleComponents.length > 0) {
+      setCenterIndex((prev) =>
+        Math.max(0, Math.min(prev, visibleComponents.length - 1)),
       );
+    }
+  }, [visibleComponents]);
 
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        const next = focusedIdx < items.length - 1 ? focusedIdx + 1 : 0;
-        items[next]?.focus();
-        items[next]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        const prev = focusedIdx > 0 ? focusedIdx - 1 : items.length - 1;
-        items[prev]?.focus();
-        items[prev]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  // Sync scroll position when centerIndex changes programmatically
+  // (but not on every render — only when triggered by scrollToIndex)
+  const scrollToIndex = useCallback((idx: number, smooth = true) => {
+    if (!reelRef.current) return;
+    const target = idx * CARD_H;
+    if (smooth) {
+      reelRef.current.scrollTo({ top: target, behavior: "smooth" });
+    } else {
+      reelRef.current.scrollTop = target;
+    }
+    setCenterIndex(idx);
+  }, []);
+
+  // Track center index from scroll position
+  const handleScroll = useCallback(() => {
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+    }
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      if (!reelRef.current) return;
+      const idx = Math.round(reelRef.current.scrollTop / CARD_H);
+      setCenterIndex(Math.max(0, Math.min(idx, visibleComponents.length - 1)));
+    });
+  }, [visibleComponents.length]);
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, []);
+
+  // Card tap handler
+  const handleCardTap = useCallback(
+    (component: ComponentAction, wasCenter: boolean) => {
+      if (disabled) return;
+      const idx = visibleComponents.indexOf(component);
+      if (idx < 0) return;
+      if (wasCenter) {
+        // Already centered — confirm add
+        onSelect(component);
+      } else {
+        // Scroll it to center so the user can confirm
+        scrollToIndex(idx);
       }
     },
-    [],
+    [disabled, visibleComponents, onSelect, scrollToIndex],
+  );
+
+  // Keyboard: reel-level ArrowUp / ArrowDown to advance one frame
+  const handleReelKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = Math.min(centerIndex + 1, visibleComponents.length - 1);
+        scrollToIndex(next);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prev = Math.max(centerIndex - 1, 0);
+        scrollToIndex(prev);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (visibleComponents[centerIndex] && !disabled) {
+          onSelect(visibleComponents[centerIndex]);
+        }
+      }
+    },
+    [centerIndex, visibleComponents, scrollToIndex, disabled, onSelect],
   );
 
   const handleSearchToggle = useCallback(() => {
     setSearchOpen((v) => {
-      if (v) {
-        // closing — clear query too
-        setSearchQuery("");
-      }
+      if (v) setSearchQuery("");
       return !v;
     });
   }, []);
@@ -227,13 +348,33 @@ export function ScrollerMenu({
     [],
   );
 
+  const toggleFavorite = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [],
+  );
+
+  // Reel viewport height shows VISIBLE cards; padding adds half-reel on each side
+  const reelViewportH = VISIBLE * CARD_H;
+  // Padding inside the scroll container so first/last card can center-snap
+  const reelPadding = Math.floor((VISIBLE - 1) / 2) * CARD_H; // = 1 × CARD_H
+
   return (
-    <div className="scroller-menu" aria-label="Component scroller">
-      {/* Category filter tabs */}
+    <div className="scroller-menu" aria-label="Component film reel">
+      {/* ── Category filter tab strip ───────────────────────────────── */}
       <div className="scroller-tabs" role="tablist" aria-label="Filter by category">
         {CATEGORY_TABS.filter(
           (t) =>
-            t.id !== "favorites" || hasFavorites || activeCategory === "favorites",
+            t.id !== "favorites" ||
+            hasFavorites ||
+            activeCategory === "favorites",
         ).map((tab) => (
           <button
             key={tab.id}
@@ -245,6 +386,8 @@ export function ScrollerMenu({
               setActiveCategory(tab.id);
               setSearchQuery("");
               setSearchOpen(false);
+              setCenterIndex(0);
+              if (reelRef.current) reelRef.current.scrollTop = 0;
             }}
             title={tab.label}
           >
@@ -252,7 +395,6 @@ export function ScrollerMenu({
           </button>
         ))}
 
-        {/* Search toggle at the end of the tab row */}
         <button
           type="button"
           className={`scroller-tab scroller-tab--search${searchOpen || searchQuery ? " scroller-tab--active" : ""}`}
@@ -265,7 +407,7 @@ export function ScrollerMenu({
         </button>
       </div>
 
-      {/* Search input (visible only when search is open) */}
+      {/* ── Search input ─────────────────────────────────────────────── */}
       {searchOpen && (
         <div className="scroller-search-row">
           <input
@@ -283,94 +425,87 @@ export function ScrollerMenu({
         </div>
       )}
 
-      {/* Drum-scroll list */}
-      <ul
-        ref={listRef}
-        className="scroller-list"
-        onKeyDown={handleListKeyDown}
-        aria-label="Components"
+      {/* ── Film-reel wrapper (relative — holds the reel + the bezel overlay) ── */}
+      <div
+        className="film-reel-wrapper"
+        style={{ height: reelViewportH }}
+        role="listbox"
+        aria-label={
+          visibleComponents[centerIndex]
+            ? `Selected: ${visibleComponents[centerIndex].label}`
+            : "Component reel"
+        }
+        onKeyDown={handleReelKeyDown}
       >
-        {visibleComponents.length === 0 ? (
-          <li className="scroller-empty">
-            {searchQuery
-              ? "No matches"
-              : activeCategory === "favorites"
-                ? "No pinned items yet — tap a star to pin"
-                : "No components"}
-          </li>
-        ) : (
-          visibleComponents.map((component) => {
-            const isFav = favorites.has(component.id);
-            const symKey = resolveSymbolKey(component);
-            const SymbolComp = getSchematicSymbol(symKey);
-            const symRotation = symKey === "battery" ? -90 : 0;
+        {/* Selection bezel — fixed chrome over the center slot */}
+        <div className="film-bezel" aria-hidden="true">
+          <div className="film-bezel-inner" />
+        </div>
 
-            return (
-              <li key={component.id} className="scroller-item">
-                {/* Main add button */}
-                <button
-                  type="button"
-                  className="scroller-item-btn"
-                  onClick={() => onSelect(component)}
-                  disabled={disabled}
-                  aria-disabled={disabled}
-                  title={component.description || component.label}
-                  data-component-action={component.action}
-                  data-tutorial-id={
-                    component.id === "battery"
-                      ? "tutorial-add-battery"
-                      : component.id === "resistor"
-                        ? "tutorial-add-resistor"
-                        : undefined
-                  }
-                >
-                  {/* Schematic symbol */}
-                  <span className="scroller-item-symbol" aria-hidden="true">
-                    {SymbolComp ? (
-                      <svg
-                        viewBox="-40 -40 80 80"
-                        width="100%"
-                        height="100%"
-                        focusable="false"
-                      >
-                        <SymbolComp
-                          x={0}
-                          y={0}
-                          rotation={symRotation}
-                          scale={1}
-                          showLabel={false}
-                        />
-                      </svg>
-                    ) : (
-                      <span className="scroller-item-icon-text" aria-hidden="true">
-                        {component.icon}
-                      </span>
-                    )}
-                  </span>
+        {/* Scrollable film strip */}
+        <div
+          ref={reelRef}
+          className="film-reel"
+          onScroll={handleScroll}
+          aria-hidden="false"
+          style={{
+            paddingTop: reelPadding,
+            paddingBottom: reelPadding,
+          }}
+        >
+          {visibleComponents.length === 0 ? (
+            <div className="film-empty">
+              {searchQuery
+                ? "No matches"
+                : activeCategory === "favorites"
+                  ? "No pinned items yet"
+                  : "No components"}
+            </div>
+          ) : (
+            visibleComponents.map((component, idx) => (
+              <FilmCard
+                key={component.id}
+                component={component}
+                isCenter={idx === centerIndex}
+                panelOpen={isOpen}
+                onTap={handleCardTap}
+                disabled={disabled}
+              />
+            ))
+          )}
+        </div>
 
-                  {/* Component name */}
-                  <span className="scroller-item-name">{component.label}</span>
-                </button>
+        {/* Top / bottom fade curtains — the "projector gate" edges */}
+        <div className="film-curtain film-curtain--top" aria-hidden="true" />
+        <div className="film-curtain film-curtain--bottom" aria-hidden="true" />
+      </div>
 
-                {/* Pin/favourite toggle — separate button so it doesn't nest inside add button */}
-                <button
-                  type="button"
-                  className={`scroller-item-star${isFav ? " scroller-item-star--active" : ""}`}
-                  onClick={(e) => toggleFavorite(component.id, e)}
-                  aria-label={isFav ? `Unpin ${component.label}` : `Pin ${component.label}`}
-                  aria-pressed={isFav}
-                  title={isFav ? "Unpin" : "Pin to Pinned"}
-                  tabIndex={0}
-                >
-                  {isFav ? "★" : "☆"}
-                </button>
-              </li>
-            );
-          })
-        )}
-      </ul>
+      {/* ── Hint & star for the centered card ────────────────────────── */}
+      {visibleComponents.length > 0 && visibleComponents[centerIndex] && (
+        <div className="film-footer">
+          <span className="film-footer-hint">
+            tap center to add · scroll to browse
+          </span>
+          <button
+            type="button"
+            className={`film-footer-star${favorites.has(visibleComponents[centerIndex].id) ? " film-footer-star--active" : ""}`}
+            onClick={(e) =>
+              toggleFavorite(visibleComponents[centerIndex].id, e)
+            }
+            aria-label={
+              favorites.has(visibleComponents[centerIndex].id)
+                ? `Unpin ${visibleComponents[centerIndex].label}`
+                : `Pin ${visibleComponents[centerIndex].label}`
+            }
+            aria-pressed={favorites.has(visibleComponents[centerIndex].id)}
+            title="Pin/unpin"
+          >
+            {favorites.has(visibleComponents[centerIndex].id) ? "★" : "☆"}
+          </button>
+        </div>
+      )}
 
-      {/* Demo-mode upsell notice */}
+      {/* ── Demo-mode upsell ─────────────────────────────────────────── */}
       {IS_DEMO_MODE && (
         <a
           href="https://play.google.com/store/apps/details?id=com.circuitry3d.app"
