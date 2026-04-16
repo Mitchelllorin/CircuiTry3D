@@ -2925,6 +2925,7 @@ export default function Builder() {
               aria-pressed={modeState.isWireMode}
               aria-label={modeState.isWireMode ? "Exit wire mode" : "Enter wire mode"}
               title={modeState.isWireMode ? "Exit Wire Mode (W)" : "Wire Mode (W)"}
+              data-tutorial-id="tutorial-enable-wire"
             >
               <img src={wireStrippersIcon} alt="" className="edge-action-icon-svg" aria-hidden="true" />
               <span className="edge-action-label" aria-hidden="true">Wire</span>
@@ -2967,6 +2968,7 @@ export default function Builder() {
               data-pulse={isSimulatePulsing ? "true" : undefined}
               aria-label="Run simulation"
               title="Run the current circuit simulation"
+              data-tutorial-id="tutorial-run-simulation"
             >
               <IconPlay className="edge-action-icon-svg" />
               <span className="edge-action-label" aria-hidden="true">Run</span>
@@ -4177,6 +4179,7 @@ export default function Builder() {
         lastSimulationAt={lastSimulationAt}
         isLeftMenuOpen={isLeftMenuOpen}
         onRequestOpenLeftMenu={() => setLeftMenuOpen(true)}
+        onInvokeAction={triggerBuilderAction}
       />
 
       {/* Circuit AI helper — floating action button + sliding chat panel */}
