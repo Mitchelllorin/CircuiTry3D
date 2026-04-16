@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   IS_DEMO_MODE,
   OWNER_KEY_HASH_CONFIGURED,
@@ -46,11 +46,11 @@ export default function DemoBanner() {
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  const closeUnlock = () => {
+  const closeUnlock = useCallback(() => {
     setUnlockOpen(false);
     setPassword("");
     setStatus("idle");
-  };
+  }, []);
 
   // Dismiss unlock dialog on Escape
   useEffect(() => {
@@ -60,9 +60,7 @@ export default function DemoBanner() {
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  // closeUnlock is defined inline so exclude it; unlockOpen is the real gate
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unlockOpen]);
+  }, [unlockOpen, closeUnlock]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
