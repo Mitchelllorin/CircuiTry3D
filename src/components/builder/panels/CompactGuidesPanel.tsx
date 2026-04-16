@@ -31,50 +31,14 @@ type CompactGuidesPanelProps = {
 };
 
 const STORAGE_KEY = "circuitry3d.guides.workflow.v1";
-const GUIDE_ORDER: GuideWorkflowId[] = ["help", "tutorial", "wire-guide"];
+const GUIDE_ORDER: GuideWorkflowId[] = ["tutorial", "wire-guide"];
 
 const DEFAULT_PROGRESS: GuideProgressState = {
-  help: [],
   tutorial: [],
   "wire-guide": [],
 };
 
 const GUIDE_WORKFLOWS: Record<GuideWorkflowId, GuideWorkflowConfig> = {
-  help: {
-    label: "Help Guide",
-    description:
-      "Use this flow when you are getting started in a new workspace and need a clean setup path.",
-    completionSummary:
-      "You have completed the core help guide. Use Tutorial next for guided, hands-on practice.",
-    workspaceSyncCopy:
-      "These steps map directly to the live workspace. Keep this panel open while you build so the guide stays in lock-step.",
-    steps: [
-      {
-        id: "help-open-library",
-        title: "Open the Component Library",
-        detail:
-          "Expand the left Library rail so parts and quick actions stay visible while you build.",
-      },
-      {
-        id: "help-place-source-load",
-        title: "Place a source and a load",
-        detail:
-          "Drop at least one battery and one resistor before wiring to establish a basic circuit path.",
-      },
-      {
-        id: "help-enable-wire",
-        title: "Enable Wire Mode",
-        detail:
-          "Switch into wiring mode, choose a routing style, and connect terminals with clean runs.",
-      },
-      {
-        id: "help-run-sim",
-        title: "Run simulation and read W.I.R.E.",
-        detail:
-          "Use simulation to verify current flow, then check watts, current, resistance, and voltage.",
-      },
-    ],
-  },
   tutorial: {
     label: "Tutorial Guide",
     description:

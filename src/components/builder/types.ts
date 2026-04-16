@@ -216,7 +216,7 @@ export type WorkspaceMode =
   | "textbook"
   | "gallery";
 
-export type GuideWorkflowId = "help" | "tutorial" | "wire-guide";
+export type GuideWorkflowId = "tutorial" | "wire-guide";
 
 export type LegacyModeState = {
   isWireMode: boolean;
