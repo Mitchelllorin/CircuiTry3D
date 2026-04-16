@@ -21,15 +21,20 @@ import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../../utils/demoMode";
  * This value is written to the CSS custom property `--film-card-h` via a
  * style attribute on the film-reel-wrapper element, so the stylesheet always
  * derives its layout values from this single JS source of truth.  If you
- * need a different height for touch devices, adjust CARD_H_COARSE below
- * and the media-query `:root` override in scroller-menu.css is no longer
- * needed.
+ * need a different height for touch devices, adjust CARD_H_COARSE below —
+ * the JS picks it up automatically via `useIsCoarsePointer()`; no CSS
+ * override is needed.
  */
 const CARD_H = 116;
 /** Larger card height for touch / coarse-pointer devices (≥ 44 px thumb targets). */
 const CARD_H_COARSE = 128;
 
-/** Number of cards visible in the reel viewport at one time. */
+/**
+ * Number of cards visible inside the reel viewport at one time.
+ * The viewport height = VISIBLE × CARD_H.  Only the center card is
+ * highlighted; off-center cards peek in from above/below to create the
+ * "film strip passing a small window" depth effect.
+ */
 const VISIBLE = 3;
 
 // ---------------------------------------------------------------------------
@@ -243,7 +248,7 @@ export function ScrollerMenu({
       setSearchOpen(false);
       setCenterIndex(0);
       if (reelRef.current) {
-        reelRef.current.scrollTop = 0;
+        reelRef.current.scrollTo({ top: 0, behavior: "auto" });
       }
     }
     prevIsOpen.current = isOpen;
@@ -306,7 +311,7 @@ export function ScrollerMenu({
     if (smooth) {
       reelRef.current.scrollTo({ top: target, behavior: "smooth" });
     } else {
-      reelRef.current.scrollTop = target;
+      reelRef.current.scrollTo({ top: target, behavior: "auto" });
     }
     setCenterIndex(idx);
   }, [cardH]);
@@ -435,7 +440,7 @@ export function ScrollerMenu({
               setSearchQuery("");
               setSearchOpen(false);
               setCenterIndex(0);
-              if (reelRef.current) reelRef.current.scrollTop = 0;
+              if (reelRef.current) reelRef.current.scrollTo({ top: 0, behavior: "auto" });
             }}
             title={tab.label}
           >

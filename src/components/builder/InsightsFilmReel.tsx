@@ -99,7 +99,7 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
     if (smooth) {
       reelRef.current.scrollTo({ left: target, behavior: "smooth" });
     } else {
-      reelRef.current.scrollLeft = target;
+      reelRef.current.scrollTo({ left: target, behavior: "auto" });
     }
     setCenterIndex(idx);
   }, [cardW]);
@@ -137,8 +137,6 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
     [centerIndex, frames.length, scrollToIndex],
   );
 
-  // Viewport shows one full card; padding allows first/last to center-snap.
-  const padH = 0; // no extra padding needed — reel viewport === cardW
   const reelStyle = {
     "--insights-card-w": `${cardW}px`,
     width: cardW,
@@ -162,10 +160,6 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
         ref={reelRef}
         className="insights-reel"
         onScroll={handleScroll}
-        style={{
-          paddingLeft: padH,
-          paddingRight: padH,
-        }}
       >
         {frames.map((frame, idx) => {
           const f = frame as typeof frame & { sub?: string; isProfile?: boolean; isActive?: boolean };

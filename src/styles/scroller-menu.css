@@ -135,7 +135,10 @@
 
 /* ---------------------------------------------------------------------------
    Scrollable film strip — the "reel"
-   scroll-snap-type: y mandatory keeps exactly one card snapped in the center.
+   scroll-snap-type: y mandatory ensures one frame always sits at the snap
+   position.  The viewport (VISIBLE × card-height) shows three frames at a
+   time — the center frame is the selected/highlighted one; the frames above
+   and below peek in to give the depth illusion of a strip passing a window.
    --------------------------------------------------------------------------- */
 .film-reel {
   width: 100%;
