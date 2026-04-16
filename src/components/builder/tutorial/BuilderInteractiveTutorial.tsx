@@ -259,8 +259,11 @@ export function BuilderInteractiveTutorial(props: {
   const isComplete = Boolean(circuitState?.metrics.isComplete);
   const hasSimulationSinceTutorialOpened = (() => {
     if (!lastSimulationAt) return false;
-    const when = new Date(lastSimulationAt).getTime();
-    return Number.isFinite(when) && when >= tutorialOpenedAt;
+    const simulationTimestamp = new Date(lastSimulationAt).getTime();
+    return (
+      Number.isFinite(simulationTimestamp) &&
+      simulationTimestamp >= tutorialOpenedAt
+    );
   })();
 
   const objectives: TutorialObjective[] = (() => {
@@ -349,7 +352,9 @@ export function BuilderInteractiveTutorial(props: {
     }
   })();
 
-  const helperAction: { label: string; action: () => void } | null = (() => {
+  const helperAction:
+    | { label: string; action: () => void; disabled?: boolean }
+    | null = (() => {
     switch (activeStep.id) {
       case "battery":
       case "resistor":
@@ -361,6 +366,7 @@ export function BuilderInteractiveTutorial(props: {
       case "close-circuit":
         return {
           label: modeState.isWireMode ? "Wire Mode Enabled" : "Enable Wire Mode",
+          disabled: modeState.isWireMode,
           action: () => {
             if (!modeState.isWireMode) onInvokeAction("toggle-wire-mode");
           },
@@ -440,6 +446,7 @@ export function BuilderInteractiveTutorial(props: {
               type="button"
               className="builder-tutorial-helper-btn"
               onClick={helperAction.action}
+              disabled={helperAction.disabled}
             >
               {helperAction.label}
             </button>

@@ -143,6 +143,11 @@
   background: rgba(0, 255, 136, 0.16);
 }
 
+.builder-tutorial-helper-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .builder-tutorial-status {
   display: flex;
   flex-wrap: wrap;
