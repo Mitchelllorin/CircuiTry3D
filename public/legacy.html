@@ -3854,6 +3854,7 @@ body.android-optimized .zoom-btn {
                         layoutMode,
                         showGrid,
                         showLabels,
+                        labelVisibilityLevel,
                         gridBrightness,
                         gridLineWidth,
                         gridHue,
@@ -4144,7 +4145,7 @@ body.android-optimized .zoom-btn {
         let undoStack = [], redoStack = [];
         let clipboard = null;
         let selectedComponents = new Set();
-        let showGrid = true, showLabels = true;
+        let showGrid = true, showLabels = true, labelVisibilityLevel = 3;
         let gridBrightness = 45, gridLineWidth = 1, gridHue = 120;
         let currentAnalysisTab = 'wire';
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
@@ -5436,14 +5437,17 @@ body.android-optimized .zoom-btn {
             renderNameplateMarkup() {
                 const identifier = this.getComponentIdentifier();
                 const { text, color } = this.getValueTextAndColor();
-                const runtimeMarkup = this.getRuntimeMetricMarkup();
+                const showIdentifier = labelVisibilityLevel >= 1;
+                const showValueText = labelVisibilityLevel >= 2;
+                const showRuntimeMetrics = labelVisibilityLevel >= 3;
+                const runtimeMarkup = showRuntimeMetrics ? this.getRuntimeMetricMarkup() : '';
                 const failureBadge = this.getFailureBadgeMarkup ? this.getFailureBadgeMarkup() : '';
 
                 return `
-                    <div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>
-                    <div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>
+                    ${showIdentifier ? `<div style="color: white; font-size: ${isMobile ? '14px' : '12px'};">${identifier}</div>` : ''}
+                    ${showValueText ? `<div style="color: ${color}; font-size: ${isMobile ? '13px' : '11px'}; font-weight: bold;">${text}</div>` : ''}
                     ${runtimeMarkup}
-                    ${failureBadge}
+                    ${showIdentifier ? failureBadge : ''}
                 `;
             }
 
@@ -13782,14 +13786,25 @@ body.android-optimized .zoom-btn {
         }
 
         function toggleLabels() {
-            showLabels = !showLabels;
+            labelVisibilityLevel = Math.max(0, Math.min(3, Math.round(Number(labelVisibilityLevel) || 0)));
+            labelVisibilityLevel = labelVisibilityLevel <= 0 ? 3 : labelVisibilityLevel - 1;
+            showLabels = labelVisibilityLevel > 0;
             components.forEach(component => {
-                if (component.labelDiv) {
+                if (typeof component.updateLabels === 'function') {
+                    component.updateLabels();
+                } else if (component.labelDiv) {
                     component.labelDiv.style.display = showLabels ? 'block' : 'none';
                 }
             });
             notifyParentModeState();
-            setStatus(`⚡ ? Component labels ${showLabels ? 'enabled' : 'disabled'}`);
+            const labelStateMessage = labelVisibilityLevel >= 3
+                ? 'Full labels shown'
+                : labelVisibilityLevel === 2
+                    ? 'Wire metrics hidden'
+                    : labelVisibilityLevel === 1
+                        ? 'References only'
+                        : 'All labels hidden';
+            setStatus(`⚡ ? ${labelStateMessage}`);
         }
         
         // Toggle current flow visualization style

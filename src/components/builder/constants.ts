@@ -8,6 +8,10 @@ import type {
   PracticeScenario,
   BuilderLogoSettings,
 } from "./types";
+import {
+  getLabelVisibilityDescription,
+  resolveLabelVisibilityLevel,
+} from "./labelVisibility";
 
 export const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
 
@@ -737,8 +741,8 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
     label: "Component Labels",
     action: "toggle-labels",
     getDescription: (state) =>
-      state.showLabels ? "Labels shown" : "Labels hidden",
-    isActive: (state) => state.showLabels,
+      getLabelVisibilityDescription(resolveLabelVisibilityLevel(state)),
+    isActive: (state) => resolveLabelVisibilityLevel(state) > 0,
   },
 ];
 
