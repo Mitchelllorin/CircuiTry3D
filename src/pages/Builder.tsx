@@ -71,6 +71,7 @@ import {
   SETTINGS_ITEMS,
   WIRE_LEGEND,
   DEFAULT_LOGO_SETTINGS,
+  ENABLE_SCROLLER_MENU,
 } from "../components/builder/constants";
 import {
   clampLabelVisibilityLevel,
@@ -99,6 +100,9 @@ import { useGallery } from "../context/GalleryContext";
 import type { CinematicFramePayload, CinematicVideoPayload } from "../hooks/builder/useBuilderFrame";
 import "../styles/cinematic.css";
 import "../styles/circuit-explain.css";
+import "../styles/scroller-menu.css";
+import { ScrollerMenu } from "../components/builder/ScrollerMenu";
+import { InsightsFilmReel } from "../components/builder/InsightsFilmReel";
 
 type WorkspacePanelMode =
   | "arena"
@@ -115,6 +119,9 @@ const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
   "circuitry3d:onboarding:current-flow-payoff:v2";
 const INTRO_DIALOG_STORAGE_KEY = "circuitry3d:onboarding:v1";
 const JUNCTION_TIP_STORAGE_KEY = "circuitry3d:junction-tip-dismissed:v1";
+const ACTION_BAR_MODE_STORAGE_KEY = "ct3d.actionbar.mode";
+
+type ActionBarMode = "full" | "tools" | "hidden";
 
 // Payoff retry delays: first retry shows the banner and re-triggers the flow
 // animation after the 3D scene has rendered its first frame (~480 ms).
@@ -1597,6 +1604,24 @@ export default function Builder() {
   }, []);
   const shouldAnimateLibraryThumbnails = isLeftMenuOpen && !isCoarsePointer;
 
+  // Action bar visibility mode — persisted to localStorage
+  const [actionBarMode, setActionBarMode] = useState<ActionBarMode>(() => {
+    try {
+      const stored = localStorage.getItem(ACTION_BAR_MODE_STORAGE_KEY);
+      if (stored === "full" || stored === "tools" || stored === "hidden") {
+        return stored;
+      }
+    } catch { /* ignore */ }
+    return "full";
+  });
+
+  // Persist whenever mode changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACTION_BAR_MODE_STORAGE_KEY, actionBarMode);
+    } catch { /* ignore */ }
+  }, [actionBarMode]);
+
   // Circuit storage for save/load functionality
   const circuitStorage = useCircuitStorage();
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -2888,17 +2913,23 @@ export default function Builder() {
           quick-add-bar into a single horizontal strip below the ticker. */}
       {shouldShowEdgeActions && (
         <Fragment>
-          <div className="unified-action-bar" aria-label="Quick actions">
-            {/* Quick-add components */}
-            {QUICK_ADD_COMPONENTS.map((component) => (
-              <QuickAddButton
-                key={component.id}
-                component={component}
-                onClick={() => handleComponentAction(component)}
-                disabled={controlsDisabled}
-                title={component.description || component.label}
-              />
-            ))}
+          <div
+            className="unified-action-bar"
+            aria-label="Quick actions"
+            data-bar-mode={actionBarMode}
+          >
+            {/* Quick-add components — hidden when mode is 'tools' or 'hidden' */}
+            <div className="quick-add-btn-wrapper" aria-label="Component shortcuts">
+              {QUICK_ADD_COMPONENTS.map((component) => (
+                <QuickAddButton
+                  key={component.id}
+                  component={component}
+                  onClick={() => handleComponentAction(component)}
+                  disabled={controlsDisabled}
+                  title={component.description || component.label}
+                />
+              ))}
+            </div>
 
             <span className="unified-action-divider" aria-hidden="true" />
 
@@ -3054,6 +3085,39 @@ export default function Builder() {
               <IconRuler className="edge-action-icon-svg" />
               <span className="edge-action-label" aria-hidden="true">Measure</span>
             </button>
+
+            {/* 3-step visibility toggle — always visible, even when mode is hidden */}
+            <div
+              className="action-bar-toggle"
+              role="group"
+              aria-label="Action bar visibility"
+            >
+              {(
+                [
+                  { mode: "full",   icon: "⊞", label: "All"  },
+                  { mode: "tools",  icon: "⚙", label: "Tools" },
+                  { mode: "hidden", icon: "✕", label: "Hide"  },
+                ] as const
+              ).map(({ mode, icon, label }) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`action-bar-toggle-seg${actionBarMode === mode ? " action-bar-toggle-seg--active" : ""}`}
+                  onClick={() => setActionBarMode(mode)}
+                  aria-pressed={actionBarMode === mode}
+                  title={
+                    mode === "full"
+                      ? "Show all buttons"
+                      : mode === "tools"
+                        ? "Show tool buttons only (hide component shortcuts)"
+                        : "Hide action bar"
+                  }
+                >
+                  <span className="action-bar-toggle-seg-icon" aria-hidden="true">{icon}</span>
+                  <span className="action-bar-toggle-seg-label">{label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Junction info tip — shown until dismissed, explains the role
@@ -3224,6 +3288,14 @@ export default function Builder() {
           aria-label="Component and wiring controls"
         >
           <div className="builder-menu-scroll">
+            {ENABLE_SCROLLER_MENU ? (
+              <ScrollerMenu
+                components={COMPONENT_ACTIONS}
+                onSelect={handleComponentAction}
+                disabled={controlsDisabled}
+                isOpen={isLeftMenuOpen}
+              />
+            ) : (
             <div className="slider-section">
               <span className="slider-heading">Components</span>
               <div className="slider-stack slider-stack--bento">
@@ -3285,6 +3357,7 @@ export default function Builder() {
                 </a>
               )}
             </div>
+            )}
           </div>
         </nav>
       </div>
@@ -3546,32 +3619,18 @@ export default function Builder() {
           <div className="builder-menu-scroll builder-menu-scroll-bottom">
             <div className="slider-section">
               <span className="slider-heading">Analysis</span>
-              <div className="menu-track menu-track-metrics">
-                {wireMetrics.map((metric) => (
-                  <div key={metric.id} className="slider-metric">
-                    <span className="metric-letter">{metric.letter}</span>
-                    <span className="metric-value">{metric.value}</span>
-                    <span className="metric-label">{metric.label}</span>
-                  </div>
-                ))}
-                <div
-                  className={`wire-profile-summary${activeWireProfile ? " active" : ""}`}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <span className="wire-profile-summary-label">Wire Profile</span>
-                  <strong className="wire-profile-summary-value">
-                    {activeWireProfile
-                      ? activeWireProfile.gaugeLabel
-                      : "Default builder wire"}
-                  </strong>
-                  <span className="wire-profile-summary-meta">
-                    {activeWireProfile
-                      ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
-                      : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`}
-                  </span>
-                </div>
-              </div>
+              <InsightsFilmReel
+                metrics={wireMetrics}
+                wireProfile={{
+                  gaugeLabel: activeWireProfile
+                    ? activeWireProfile.gaugeLabel
+                    : "Default builder wire",
+                  resistancePer: activeWireProfile
+                    ? `${activeWireSegmentResistance.toFixed(4)} Ω/m`
+                    : `${DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM.toFixed(3)} Ω/m`,
+                  isActive: Boolean(activeWireProfile),
+                }}
+              />
             </div>
             <div className="slider-section">
               <span className="slider-heading">Environment</span>

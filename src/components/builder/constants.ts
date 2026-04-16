@@ -558,6 +558,13 @@ export const COMPONENT_ACTIONS: ComponentAction[] = [
 ];
 
 /**
+ * Phase-1 feature flag: replace the left component library 2-column bento
+ * grid with the compact rapid-scroller menu.
+ * Set to false to restore the legacy grid layout as a rollback option.
+ */
+export const ENABLE_SCROLLER_MENU = true;
+
+/**
  * The components shown in the always-visible centered quick-add bar
  * in the React Builder workspace: Battery, Resistor, LED, and Junction.
  * A Wire-mode toggle button is appended separately in the JSX.
