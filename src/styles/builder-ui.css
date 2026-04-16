@@ -1099,7 +1099,7 @@ body.builder-body::before {
 }
 .unified-action-bar .quick-add-btn-label {
   display: block;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1146,9 +1146,7 @@ body.builder-body::before {
 }
 
 .unified-action-bar .quick-add-btn {
-  min-width: 44px;
-  min-height: 42px;
-  padding: 4px 2px 3px;
+  padding: 3px 2px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1206,8 +1204,7 @@ body.builder-body::before {
 
 .unified-action-bar .quick-add-btn {
   width: 46px;
-  min-width: 46px;
-  min-height: 46px;
+  height: 46px;
 }
 
 /* On narrow phones: tighten gap so 2 rows fit neatly */
@@ -1216,24 +1213,22 @@ body.builder-body::before {
     gap: 2px;
     padding: 2px 3px;
   }
-  .unified-action-bar .edge-action-btn,
-  .unified-action-bar .quick-add-btn {
+  .unified-action-bar .edge-action-btn {
     width: 42px;
-    min-height: 42px;
     min-width: 42px;
+    min-height: 42px;
     padding: 4px 2px 3px;
     border-radius: 9px;
   }
   .unified-action-bar .quick-add-btn {
     width: 38px;
-    min-height: 38px;
-    min-width: 38px;
-    padding: 3px 1px 2px;
+    height: 38px;
+    padding: 2px 1px;
     border-radius: 8px;
   }
   .unified-action-bar .edge-action-label,
   .unified-action-bar .quick-add-btn-label {
-    font-size: 6px;
+    font-size: 7px;
   }
 }
 
@@ -1455,9 +1450,9 @@ body.builder-body::before {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
-  border: 0;
+  border: none;
 }
 
 .quick-add-btn-symbol-svg {
@@ -1498,7 +1493,7 @@ body.builder-body::before {
 }
 
 .quick-add-btn-label {
-  font-size: 8px;
+  font-size: 9px;
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.06em;
