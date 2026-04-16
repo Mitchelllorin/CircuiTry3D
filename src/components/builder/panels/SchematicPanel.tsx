@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { SymbolStandard } from "../../../schematic/standards";
 import { SYMBOL_STANDARD_OPTIONS } from "../../../schematic/standards";
 import { BuilderModeView } from "../../../pages/SchematicMode";
@@ -16,6 +17,15 @@ export function SchematicPanel({
   schematicStandard,
   onSchematicStandardChange,
 }: SchematicPanelProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
   const schematicStandardLabel =
     SYMBOL_STANDARD_OPTIONS.find((option) => option.key === schematicStandard)
       ?.label ?? "ANSI/IEEE";

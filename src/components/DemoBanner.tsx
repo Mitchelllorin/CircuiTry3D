@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   IS_DEMO_MODE,
   OWNER_KEY_HASH_CONFIGURED,
@@ -51,6 +51,18 @@ export default function DemoBanner() {
     setPassword("");
     setStatus("idle");
   };
+
+  // Dismiss unlock dialog on Escape
+  useEffect(() => {
+    if (!unlockOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeUnlock();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  // closeUnlock is defined inline so exclude it; unlockOpen is the real gate
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlockOpen]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();

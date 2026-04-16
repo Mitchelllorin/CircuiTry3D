@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import WireLibrary from "../../practice/WireLibrary";
 
 interface WireLibraryPanelProps {
@@ -6,6 +7,15 @@ interface WireLibraryPanelProps {
 }
 
 export function WireLibraryPanel({ isOpen, onClose }: WireLibraryPanelProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
   const handleOverlayClick = () => {
     onClose();
   };
@@ -26,6 +36,14 @@ export function WireLibraryPanel({ isOpen, onClose }: WireLibraryPanelProps) {
         className="builder-panel-shell builder-panel-shell--wire-library"
         onClick={handleShellClick}
       >
+        <button
+          type="button"
+          className="builder-panel-close"
+          onClick={onClose}
+          aria-label="Close wire library"
+        >
+          ×
+        </button>
         <div className="builder-panel-body builder-panel-body--wire-library">
           <WireLibrary />
         </div>
