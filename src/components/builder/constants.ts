@@ -736,9 +736,25 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
     id: "component-labels",
     label: "Component Labels",
     action: "toggle-labels",
-    getDescription: (state) =>
-      state.showLabels ? "Labels shown" : "Labels hidden",
-    isActive: (state) => state.showLabels,
+    getDescription: (state) => {
+      const level =
+        typeof state.labelVisibilityLevel === "number"
+          ? Math.max(0, Math.min(3, Math.round(state.labelVisibilityLevel)))
+          : state.showLabels
+            ? 3
+            : 0;
+
+      if (level >= 3) return "Full labels shown";
+      if (level === 2) return "Wire metrics hidden";
+      if (level === 1) return "References only";
+      return "Labels hidden";
+    },
+    isActive: (state) =>
+      (typeof state.labelVisibilityLevel === "number"
+        ? state.labelVisibilityLevel
+        : state.showLabels
+          ? 3
+          : 0) > 0,
   },
 ];
 

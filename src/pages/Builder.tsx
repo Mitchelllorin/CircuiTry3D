@@ -1186,6 +1186,7 @@ export default function Builder() {
     wireRoutingMode: "manhattan",
     showGrid: true,
     showLabels: true,
+    labelVisibilityLevel: 3,
     gridBrightness: 100,
     gridLineWidth: 1,
     gridHue: 240,
@@ -1311,6 +1312,11 @@ export default function Builder() {
     }
   }, [globalModeContext]);
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
+    const nextLabelVisibilityLevel =
+      typeof next.labelVisibilityLevel === "number"
+        ? Math.max(0, Math.min(3, Math.round(next.labelVisibilityLevel)))
+        : null;
+
     setModeState((previous) => ({
       ...previous,
       isWireMode:
@@ -1348,9 +1354,22 @@ export default function Builder() {
           ? next.showGrid
           : previous.showGrid,
       showLabels:
-        typeof next.showLabels === "boolean"
+        typeof nextLabelVisibilityLevel === "number"
+          ? nextLabelVisibilityLevel > 0
+          : typeof next.showLabels === "boolean"
           ? next.showLabels
           : previous.showLabels,
+      labelVisibilityLevel:
+        typeof nextLabelVisibilityLevel === "number"
+          ? nextLabelVisibilityLevel
+          : typeof next.showLabels === "boolean"
+            ? next.showLabels
+              ? (typeof previous.labelVisibilityLevel === "number" &&
+                  previous.labelVisibilityLevel > 0
+                  ? previous.labelVisibilityLevel
+                  : 3)
+              : 0
+            : previous.labelVisibilityLevel,
       gridBrightness:
         typeof next.gridBrightness === "number"
           ? next.gridBrightness
@@ -2585,6 +2604,28 @@ export default function Builder() {
     "Unknown";
   const currentFlowLabel =
     modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
+  const labelVisibilityLevel =
+    typeof modeState.labelVisibilityLevel === "number"
+      ? Math.max(0, Math.min(3, Math.round(modeState.labelVisibilityLevel)))
+      : modeState.showLabels
+        ? 3
+        : 0;
+  const labelVisibilityDescription =
+    labelVisibilityLevel >= 3
+      ? "Full labels shown"
+      : labelVisibilityLevel === 2
+        ? "Wire metrics hidden"
+        : labelVisibilityLevel === 1
+          ? "References only"
+          : "Labels hidden";
+  const labelToggleTitle =
+    labelVisibilityLevel >= 3
+      ? "Hide wire metrics"
+      : labelVisibilityLevel === 2
+        ? "Hide component values"
+        : labelVisibilityLevel === 1
+          ? "Hide all labels"
+          : "Show full labels";
   const isWireToolActive = modeState.isWireMode;
   const wireRoutingTitle = isWireToolActive
     ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
@@ -3346,7 +3387,7 @@ export default function Builder() {
                   const isLabelToggle = action.action === "toggle-labels";
                   const isActionActive =
                     (isGridToggle && modeState.showGrid) ||
-                    (isLabelToggle && modeState.showLabels);
+                    (isLabelToggle && labelVisibilityLevel > 0);
                   const description = (() => {
                     if (isGridToggle) {
                       return modeState.showGrid
@@ -3354,9 +3395,7 @@ export default function Builder() {
                         : "Grid hidden";
                     }
                     if (isLabelToggle) {
-                      return modeState.showLabels
-                        ? "Labels shown"
-                        : "Labels hidden";
+                      return labelVisibilityDescription;
                     }
                     return action.description;
                   })();
@@ -3746,7 +3785,7 @@ export default function Builder() {
             </span>
             <span className="ticker-separator">•</span>
             <span className="ticker-item">
-              {modeState.showLabels ? "Labels shown" : "Labels hidden"}
+              {labelVisibilityDescription}
             </span>
             <span className="ticker-separator">•</span>
             <span className="ticker-item">
@@ -3779,7 +3818,7 @@ export default function Builder() {
             </span>
             <span className="ticker-separator">•</span>
             <span className="ticker-item">
-              {modeState.showLabels ? "Labels shown" : "Labels hidden"}
+              {labelVisibilityDescription}
             </span>
           </div>
         </div>
@@ -3834,12 +3873,12 @@ export default function Builder() {
           </button>
           <button
             type="button"
-            className={`circuit-zoom-btn${modeState.showLabels ? "" : " circuit-zoom-btn--inactive"}`}
+            className={`circuit-zoom-btn${labelVisibilityLevel > 0 ? "" : " circuit-zoom-btn--inactive"}`}
             onClick={() => triggerBuilderAction("toggle-labels")}
             disabled={controlsDisabled}
-            aria-label={modeState.showLabels ? "Hide component metrics labels" : "Show component metrics labels"}
-            aria-pressed={modeState.showLabels}
-            title={modeState.showLabels ? "Hide metrics labels" : "Show metrics labels"}
+            aria-label={`Cycle component label detail (${labelVisibilityDescription})`}
+            aria-pressed={labelVisibilityLevel > 0}
+            title={labelToggleTitle}
           >
             🏷
           </button>

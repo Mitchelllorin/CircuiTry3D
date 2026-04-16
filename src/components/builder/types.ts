@@ -228,6 +228,7 @@ export type LegacyModeState = {
   wireRoutingMode: string;
   showGrid: boolean;
   showLabels: boolean;
+  labelVisibilityLevel?: number;
   gridBrightness: number;
   gridLineWidth: number;
   gridHue: number;
