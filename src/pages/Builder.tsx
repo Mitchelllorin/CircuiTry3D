@@ -71,6 +71,7 @@ import {
   SETTINGS_ITEMS,
   WIRE_LEGEND,
   DEFAULT_LOGO_SETTINGS,
+  ENABLE_SCROLLER_MENU,
 } from "../components/builder/constants";
 import {
   clampLabelVisibilityLevel,
@@ -99,6 +100,8 @@ import { useGallery } from "../context/GalleryContext";
 import type { CinematicFramePayload, CinematicVideoPayload } from "../hooks/builder/useBuilderFrame";
 import "../styles/cinematic.css";
 import "../styles/circuit-explain.css";
+import "../styles/scroller-menu.css";
+import { ScrollerMenu } from "../components/builder/ScrollerMenu";
 
 type WorkspacePanelMode =
   | "arena"
@@ -3225,6 +3228,14 @@ export default function Builder() {
           aria-label="Component and wiring controls"
         >
           <div className="builder-menu-scroll">
+            {ENABLE_SCROLLER_MENU ? (
+              <ScrollerMenu
+                components={COMPONENT_ACTIONS}
+                onSelect={handleComponentAction}
+                disabled={controlsDisabled}
+                isOpen={isLeftMenuOpen}
+              />
+            ) : (
             <div className="slider-section">
               <span className="slider-heading">Components</span>
               <div className="slider-stack slider-stack--bento">
@@ -3286,6 +3297,7 @@ export default function Builder() {
                 </a>
               )}
             </div>
+            )}
           </div>
         </nav>
       </div>

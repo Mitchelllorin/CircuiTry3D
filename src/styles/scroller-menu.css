@@ -1,0 +1,413 @@
+/* ==========================================================================
+   Rapid Scroller Menu — compact component library widget
+   Replaces the legacy 2-column bento grid in the left Library panel.
+   Design tokens are sourced from builder-ui.css (:root).
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Outer container — fills the builder-menu-scroll flex column
+   --------------------------------------------------------------------------- */
+.scroller-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Category filter tab strip
+   Horizontal-scrolling row of pill buttons.
+   --------------------------------------------------------------------------- */
+.scroller-tabs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 0 0 2px;
+  flex-shrink: 0;
+}
+
+.scroller-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.scroller-tab {
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 13px;
+  border: 1px solid var(--builder-border);
+  background: rgba(14, 12, 40, 0.7);
+  color: var(--builder-muted-soft);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.scroller-tab:hover:not(.scroller-tab--active) {
+  background: rgba(168, 216, 255, 0.08);
+  color: var(--builder-text);
+}
+
+.scroller-tab--active {
+  border-color: rgba(168, 216, 255, 0.6);
+  background: rgba(168, 216, 255, 0.14);
+  color: var(--builder-cyan);
+}
+
+.scroller-tab:focus-visible {
+  outline: none;
+  border-color: rgba(168, 216, 255, 0.8);
+}
+
+/* The search toggle lives in the same row as the tabs */
+.scroller-tab--search {
+  margin-left: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Search input row (visible only when search is open)
+   --------------------------------------------------------------------------- */
+.scroller-search-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.scroller-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--builder-border);
+  background: rgba(14, 12, 40, 0.85);
+  color: var(--builder-text);
+  font-size: 11px;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.scroller-search-input::placeholder {
+  color: var(--builder-muted-soft);
+  opacity: 0.7;
+}
+
+.scroller-search-input:focus {
+  border-color: rgba(168, 216, 255, 0.55);
+  background: rgba(14, 12, 40, 0.95);
+}
+
+/* ---------------------------------------------------------------------------
+   Drum-scroll list — the main rapid-flick scroller
+   --------------------------------------------------------------------------- */
+.scroller-list {
+  flex: 1 1 auto;
+  min-height: 80px;
+  list-style: none;
+  margin: 0;
+  padding: 2px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y proximity;
+  /* Gradient mask creates the "drum" depth effect — items fade at the edges */
+  --scroller-mask-size: 18px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--scroller-mask-size),
+    black calc(100% - var(--scroller-mask-size)),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--scroller-mask-size),
+    black calc(100% - var(--scroller-mask-size)),
+    transparent
+  );
+}
+
+.scroller-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.scroller-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.3);
+  border-radius: 999px;
+}
+
+/* ---------------------------------------------------------------------------
+   Individual item row
+   --------------------------------------------------------------------------- */
+.scroller-item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* The main "add component" button — occupies most of the row */
+.scroller-item-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(14, 12, 40, 0.55);
+  color: var(--builder-text);
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: left;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.scroller-item-btn:hover:not([disabled]) {
+  background: rgba(20, 18, 60, 0.92);
+  border-color: rgba(0, 255, 136, 0.4);
+  transform: translateX(3px);
+}
+
+.scroller-item-btn:active:not([disabled]) {
+  transform: scale(0.96);
+  transition-duration: 0.07s;
+}
+
+.scroller-item-btn[disabled],
+.scroller-item-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.scroller-item-btn:focus-visible {
+  outline: none;
+  border-color: rgba(168, 216, 255, 0.7);
+  background: rgba(20, 18, 60, 0.9);
+}
+
+/* Tutorial highlight integration — matches the existing .tutorial-highlight rule */
+.scroller-item-btn.tutorial-highlight {
+  border-color: var(--builder-cyan);
+  box-shadow: 0 0 0 2px rgba(168, 216, 255, 0.35);
+  animation: builderQuickPulse 1.1s ease-out infinite;
+}
+
+/* Schematic symbol area */
+.scroller-item-symbol {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 255, 136, 0.07);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.scroller-item-icon-text {
+  font-size: 8px;
+  font-family: "Courier New", "Consolas", monospace;
+  font-weight: 700;
+  color: rgba(0, 255, 136, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 30px;
+  text-overflow: clip;
+  display: block;
+  text-align: center;
+}
+
+/* Component name label */
+.scroller-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: var(--builder-text);
+}
+
+/* Pin / favourite star button — sits outside the main add button */
+.scroller-item-star {
+  flex-shrink: 0;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgba(168, 216, 255, 0.22);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 5px;
+  padding: 0;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.scroller-item-star:hover {
+  color: rgba(255, 208, 56, 0.85);
+  background: rgba(255, 208, 56, 0.1);
+}
+
+.scroller-item-star--active {
+  color: rgb(255, 208, 56);
+}
+
+.scroller-item-star:focus-visible {
+  outline: none;
+  background: rgba(168, 216, 255, 0.12);
+}
+
+/* ---------------------------------------------------------------------------
+   Empty state
+   --------------------------------------------------------------------------- */
+.scroller-empty {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 8px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--builder-muted-soft);
+  font-style: italic;
+  list-style: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Demo-mode upsell footer link
+   --------------------------------------------------------------------------- */
+.scroller-demo-lock {
+  flex-shrink: 0;
+  display: block;
+  font-size: 9px;
+  color: rgba(168, 216, 255, 0.55);
+  text-align: center;
+  padding: 6px 4px;
+  border-top: 1px solid rgba(168, 216, 255, 0.1);
+  margin-top: 2px;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.scroller-demo-lock:hover {
+  color: rgba(168, 216, 255, 0.8);
+}
+
+.scroller-demo-lock-sub {
+  opacity: 0.65;
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced-motion override — disable all transitions and the drum mask
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .scroller-tab,
+  .scroller-item-btn,
+  .scroller-item-star,
+  .scroller-search-input {
+    transition: none !important;
+  }
+
+  .scroller-item-btn:hover:not([disabled]) {
+    transform: none;
+  }
+
+  .scroller-list {
+    scroll-snap-type: none;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch / coarse-pointer — larger hit targets
+   --------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .scroller-tab {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .scroller-item-btn {
+    min-height: 48px;
+  }
+
+  .scroller-item-star {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .scroller-search-input {
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Portrait phone (≤ 480 px) — slightly tighter spacing
+   --------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .scroller-tab {
+    font-size: 9px;
+    height: 24px;
+    padding: 0 7px;
+  }
+
+  .scroller-item-btn {
+    gap: 5px;
+    padding: 4px 6px;
+  }
+
+  .scroller-item-symbol {
+    width: 26px;
+    height: 26px;
+  }
+
+  .scroller-item-name {
+    font-size: 10px;
+  }
+}
