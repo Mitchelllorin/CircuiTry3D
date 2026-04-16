@@ -42,6 +42,17 @@ function safeParseInt(value: string | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isSimulationAfterTutorialOpen(
+  lastSimulationAt: string | null,
+  tutorialOpenedAt: number,
+) {
+  if (!lastSimulationAt) return false;
+  const simulationTimestamp = new Date(lastSimulationAt).getTime();
+  return (
+    Number.isFinite(simulationTimestamp) && simulationTimestamp >= tutorialOpenedAt
+  );
+}
+
 export function BuilderInteractiveTutorial(props: {
   isOpen: boolean;
   onClose: () => void;
@@ -257,14 +268,10 @@ export function BuilderInteractiveTutorial(props: {
   const wireCount = circuitState?.counts.wires ?? 0;
   const junctionCount = circuitState?.counts.junctions ?? 0;
   const isComplete = Boolean(circuitState?.metrics.isComplete);
-  const hasSimulationSinceTutorialOpened = (() => {
-    if (!lastSimulationAt) return false;
-    const simulationTimestamp = new Date(lastSimulationAt).getTime();
-    return (
-      Number.isFinite(simulationTimestamp) &&
-      simulationTimestamp >= tutorialOpenedAt
-    );
-  })();
+  const hasSimulationSinceTutorialOpened = isSimulationAfterTutorialOpen(
+    lastSimulationAt,
+    tutorialOpenedAt,
+  );
 
   const objectives: TutorialObjective[] = (() => {
     switch (activeStep.id) {
@@ -318,12 +325,16 @@ export function BuilderInteractiveTutorial(props: {
           {
             id: "live-current",
             label: "Observe current (I) update in W.I.R.E.",
-            done: Number.isFinite(circuitState?.metrics.current ?? NaN),
+            done:
+              circuitState?.metrics.current != null &&
+              Number.isFinite(circuitState.metrics.current),
           },
           {
             id: "live-voltage",
             label: "Observe voltage (E) update in W.I.R.E.",
-            done: Number.isFinite(circuitState?.metrics.voltage ?? NaN),
+            done:
+              circuitState?.metrics.voltage != null &&
+              Number.isFinite(circuitState.metrics.voltage),
           },
         ];
       case "junction-intro":
