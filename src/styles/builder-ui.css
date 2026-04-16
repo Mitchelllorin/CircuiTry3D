@@ -899,6 +899,7 @@ body.builder-body::before {
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(48px + var(--builder-safe-area-bottom, 0px));
+  right: calc(var(--builder-edge-actions-gap) + env(safe-area-inset-right, 0px));
   right: calc(4px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
