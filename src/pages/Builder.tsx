@@ -1258,7 +1258,7 @@ export default function Builder() {
   const [isGuidesWorkspaceMode, setGuidesWorkspaceMode] = useState(false);
   const [isGuidesPanelOpen, setGuidesPanelOpen] = useState(false);
   const [activeGuideWorkflow, setActiveGuideWorkflow] =
-    useState<GuideWorkflowId>("help");
+    useState<GuideWorkflowId>("tutorial");
   const [isCircuitLocked, setCircuitLocked] = useState(false);
   // Tracks whether the circuit is locked specifically for the onboarding payoff
   // sequence. Used to distinguish onboarding lock from practice/troubleshoot lock
@@ -1778,7 +1778,7 @@ export default function Builder() {
   );
 
   const openGuidesWorkspace = useCallback(
-    (workflow: GuideWorkflowId = "help") => {
+    (workflow: GuideWorkflowId = "tutorial") => {
       setActiveGuideWorkflow(workflow);
       setWorkspaceModeWithGlobalSync("help");
       resetWorkspaceSurfaces();
@@ -1791,8 +1791,7 @@ export default function Builder() {
   const openHelpCenter = useCallback(
     (view: HelpModalView = "overview", _sectionTitle?: string) => {
       if (view === "overview" || view === "tutorial" || view === "wire-guide") {
-        const workflow: GuideWorkflowId =
-          view === "tutorial" || view === "wire-guide" ? view : "help";
+        const workflow: GuideWorkflowId = view === "wire-guide" ? view : "tutorial";
         openGuidesWorkspace(workflow);
         return;
       }
@@ -1894,7 +1893,7 @@ export default function Builder() {
       } else if (pendingMode === "arena") {
         openArenaWorkspace({ forceSync: true });
       } else if (pendingMode === "help") {
-        openGuidesWorkspace("help");
+        openGuidesWorkspace("tutorial");
       } else if (pendingMode === "wire-guide") {
         openWorkspacePanelMode("wire-guide");
       } else if (
@@ -1936,7 +1935,7 @@ export default function Builder() {
         return;
       }
       if (action.action === "practice-help") {
-        openHelpCenter("overview");
+        openHelpCenter("wire-guide");
         return;
       }
       if (action.action === "generate-practice") {
@@ -3661,19 +3660,6 @@ export default function Builder() {
             <div className="slider-section">
               <span className="slider-heading">Guides</span>
               <div className="menu-track menu-track-chips">
-                <button
-                  type="button"
-                  className="slider-chip"
-                  onClick={() => openGuidesWorkspace("help")}
-                  data-active={
-                    isGuidesWorkspaceMode && activeGuideWorkflow === "help"
-                      ? "true"
-                      : undefined
-                  }
-                  title="Open the Help guide aligned with the standard section model."
-                >
-                  <span className="slider-chip-label">Help Guide</span>
-                </button>
                 <button
                   type="button"
                   className="slider-chip"
