@@ -308,7 +308,7 @@ export function BuilderInteractiveTutorial(props: {
           },
           {
             id: "closed-loop",
-            label: "Create a closed loop (not open)",
+            label: "Connect components to close the circuit",
             done: isComplete,
           },
         ];
@@ -477,7 +477,7 @@ export function BuilderInteractiveTutorial(props: {
               Junctions: <strong>{junctionCount}</strong>
             </span>
             <span className="builder-tutorial-status-item">
-              Loop: <strong>{isComplete ? "Closed" : "Open"}</strong>
+              Circuit: <strong>{isComplete ? "Closed" : "Open"}</strong>
             </span>
           </div>
 

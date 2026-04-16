@@ -143,11 +143,11 @@ function buildLocalExplanation(circuit: LegacyCircuitState): ExplainResult {
       "The workspace is empty. Add a battery and at least one component, then connect them with wires to build a circuit.";
   } else if (topology === "open") {
     const reason = metrics.reason ?? "incomplete wiring";
-    summary = `The circuit is currently open (${reason}). Current cannot flow until all components are connected in a closed loop with a voltage source.`;
+    summary = `The circuit is currently open (${reason}). Current cannot flow until all components are connected in a closed circuit with a voltage source.`;
   } else if (topology === "series") {
     summary =
       `This is a series circuit with ${counts.components} component${counts.components !== 1 ? "s" : ""} ` +
-      `connected end-to-end in a single loop. The same current flows through every element, and voltage drops ` +
+      `connected end-to-end in a series circuit. The same current flows through every element, and voltage drops ` +
       `are distributed across them proportionally.`;
   } else if (topology === "parallel") {
     summary =
@@ -167,7 +167,7 @@ function buildLocalExplanation(circuit: LegacyCircuitState): ExplainResult {
     currentFlow = "No current — the workspace is empty.";
   } else if (topology === "open") {
     currentFlow =
-      "No current flows because the circuit loop is not closed. " +
+      "No current flows because the circuit is not closed. " +
       (hasBattery
         ? "Check that every component is connected with wires forming a complete path back to the battery."
         : "A voltage source (battery) is required to drive current.");
