@@ -139,7 +139,6 @@ export function InsightsFilmReel({ metrics, wireProfile }: InsightsFilmReelProps
 
   const reelStyle = {
     "--insights-card-w": `${cardW}px`,
-    width: cardW,
   } as React.CSSProperties;
 
   return (

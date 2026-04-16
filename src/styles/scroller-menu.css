@@ -473,11 +473,18 @@
 .insights-reel-wrapper {
   position: relative;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(168, 216, 255, 0.14);
-  background: rgba(8, 6, 28, 0.72);
-  /* height is intrinsic to the cards */
+  /* Prominent glass-panel container — matches the component-library reel */
+  border: 1px solid rgba(168, 216, 255, 0.36);
+  background: rgba(8, 6, 28, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 1px rgba(168, 216, 255, 0.06),
+    0 4px 24px rgba(0, 0, 0, 0.45),
+    0 0 18px rgba(168, 216, 255, 0.08) inset;
+  width: 100%;
 }
 
 /* Scrollable horizontal strip */
@@ -491,6 +498,10 @@
   scrollbar-width: none;
   display: flex;
   flex-direction: row;
+  /* Center-snap padding: leaves half a container's width on each side so
+     the first and last cards can sit at the center snap position */
+  scroll-padding-inline: calc((100% - var(--insights-card-w, 160px)) / 2);
+  padding-inline: calc((100% - var(--insights-card-w, 160px)) / 2);
 }
 
 .insights-reel::-webkit-scrollbar { display: none; }
@@ -500,7 +511,7 @@
    --------------------------------------------------------------------------- */
 .insights-card {
   scroll-snap-align: center;
-  scroll-snap-stop: always;
+  /* scroll-snap-stop removed — lets fast flicks glide past multiple cards */
   flex: 0 0 var(--insights-card-w, 160px);
   width: var(--insights-card-w, 160px);
   min-height: 96px;
@@ -511,7 +522,7 @@
   gap: 3px;
   padding: 10px 8px 12px;
   cursor: pointer;
-  touch-action: manipulation;
+  touch-action: pan-x;
   user-select: none;
   -webkit-user-select: none;
   /* Off-center: dimmed + slightly scaled */
@@ -615,7 +626,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: calc(var(--insights-card-w, 160px) * 0.7);
+  /* Fixed width — wider container means more room to fade; ~40% of a card */
+  width: calc(var(--insights-card-w, 160px) * 0.5);
   pointer-events: none;
   z-index: 3;
 }
