@@ -1146,16 +1146,16 @@ body.builder-body::before {
 }
 
 .unified-action-bar .quick-add-btn {
-  min-width: 48px;
-  min-height: 46px;
-  padding: 5px 3px 4px;
+  min-width: 44px;
+  min-height: 42px;
+  padding: 4px 2px 3px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   background: rgba(12, 10, 36, 0.78);
   border: 1px solid rgba(168, 216, 255, 0.22);
-  border-radius: 14px;
+  border-radius: 12px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition:
@@ -1198,11 +1198,16 @@ body.builder-body::before {
 }
 
 /* Consistent button size for all action bar buttons */
-.unified-action-bar .edge-action-btn,
-.unified-action-bar .quick-add-btn {
+.unified-action-bar .edge-action-btn {
   width: 52px;
   min-width: 52px;
   min-height: 52px;
+}
+
+.unified-action-bar .quick-add-btn {
+  width: 46px;
+  min-width: 46px;
+  min-height: 46px;
 }
 
 /* On narrow phones: tighten gap so 2 rows fit neatly */
@@ -1218,6 +1223,13 @@ body.builder-body::before {
     min-width: 42px;
     padding: 4px 2px 3px;
     border-radius: 9px;
+  }
+  .unified-action-bar .quick-add-btn {
+    width: 38px;
+    min-height: 38px;
+    min-width: 38px;
+    padding: 3px 1px 2px;
+    border-radius: 8px;
   }
   .unified-action-bar .edge-action-label,
   .unified-action-bar .quick-add-btn-label {
@@ -1289,11 +1301,6 @@ body.builder-body::before {
   background: rgba(255, 170, 0, 0.14);
   color: #ffe566;
   animation: junction-btn-glow 2.8s ease-in-out infinite;
-}
-
-.quick-add-btn--junction .quick-add-btn-symbol {
-  border-color: rgba(255, 200, 0, 0.4);
-  background: rgba(255, 160, 0, 0.18);
 }
 
 .quick-add-btn--junction .quick-add-btn-label {
@@ -1445,18 +1452,17 @@ body.builder-body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
-  border-radius: 6px;
-  overflow: hidden;
-  background: rgba(8, 18, 40, 0.75);
-  border: 1px solid rgba(168, 216, 255, 0.18);
+  overflow: visible;
+  background: transparent;
+  border: 0;
 }
 
 .quick-add-btn-symbol-svg {
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   overflow: visible;
 }
 
@@ -1492,7 +1498,7 @@ body.builder-body::before {
 }
 
 .quick-add-btn-label {
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.06em;
