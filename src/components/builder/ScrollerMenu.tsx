@@ -7,7 +7,7 @@ import {
 } from "react";
 import type { ComponentAction } from "./types";
 import type { ComponentCategory } from "./types";
-import { getSchematicSymbol } from "../circuit/SchematicSymbols";
+import { getSchematicSymbol, type ComponentSymbol } from "../circuit/SchematicSymbols";
 import { useComponent3DThumbnail } from "./toolbars/useComponent3DThumbnail";
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../../utils/demoMode";
 
@@ -15,11 +15,47 @@ import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../../utils/demoMode";
 // Film-reel constants
 // ---------------------------------------------------------------------------
 
-/** Height of one film frame (card) in px — must match --film-card-h in CSS. */
+/**
+ * Height of one film frame (card) in pixels for fine-pointer (mouse) devices.
+ *
+ * This value is written to the CSS custom property `--film-card-h` via a
+ * style attribute on the film-reel-wrapper element, so the stylesheet always
+ * derives its layout values from this single JS source of truth.  If you
+ * need a different height for touch devices, adjust CARD_H_COARSE below
+ * and the media-query `:root` override in scroller-menu.css is no longer
+ * needed.
+ */
 const CARD_H = 116;
+/** Larger card height for touch / coarse-pointer devices (≥ 44 px thumb targets). */
+const CARD_H_COARSE = 128;
 
 /** Number of cards visible in the reel viewport at one time. */
 const VISIBLE = 3;
+
+// ---------------------------------------------------------------------------
+// Coarse-pointer detection (touch screens)
+// ---------------------------------------------------------------------------
+
+function useIsCoarsePointer(): boolean {
+  const [coarse, setCoarse] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(pointer: coarse)").matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(pointer: coarse)");
+    const handler = () => setCoarse(mq.matches);
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", handler);
+      return () => mq.removeEventListener("change", handler);
+    }
+    mq.addListener(handler);
+    return () => mq.removeListener(handler);
+  }, []);
+
+  return coarse;
+}
 
 // ---------------------------------------------------------------------------
 // Favorites persistence
@@ -103,7 +139,7 @@ function FilmCard({ component, isCenter, panelOpen, onTap, disabled }: FilmCardP
     return kind;
   })();
 
-  const Symbol = getSchematicSymbol(symbolKey as any);
+  const Symbol = getSchematicSymbol(symbolKey as ComponentSymbol);
   const symbolRotation = symbolKey === "battery" ? -90 : 0;
 
   return (
@@ -179,6 +215,10 @@ export function ScrollerMenu({
   disabled,
   isOpen,
 }: ScrollerMenuProps) {
+  const isCoarse = useIsCoarsePointer();
+  // Use the larger card height on touch devices so thumbnails are easy to tap.
+  const cardH = isCoarse ? CARD_H_COARSE : CARD_H;
+
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -262,14 +302,14 @@ export function ScrollerMenu({
   // (but not on every render — only when triggered by scrollToIndex)
   const scrollToIndex = useCallback((idx: number, smooth = true) => {
     if (!reelRef.current) return;
-    const target = idx * CARD_H;
+    const target = idx * cardH;
     if (smooth) {
       reelRef.current.scrollTo({ top: target, behavior: "smooth" });
     } else {
       reelRef.current.scrollTop = target;
     }
     setCenterIndex(idx);
-  }, []);
+  }, [cardH]);
 
   // Track center index from scroll position
   const handleScroll = useCallback(() => {
@@ -279,10 +319,10 @@ export function ScrollerMenu({
     scrollRafRef.current = requestAnimationFrame(() => {
       scrollRafRef.current = null;
       if (!reelRef.current) return;
-      const idx = Math.round(reelRef.current.scrollTop / CARD_H);
+      const idx = Math.round(reelRef.current.scrollTop / cardH);
       setCenterIndex(Math.max(0, Math.min(idx, visibleComponents.length - 1)));
     });
-  }, [visibleComponents.length]);
+  }, [cardH, visibleComponents.length]);
 
   // Cleanup RAF on unmount
   useEffect(() => {
@@ -362,9 +402,17 @@ export function ScrollerMenu({
   );
 
   // Reel viewport height shows VISIBLE cards; padding adds half-reel on each side
-  const reelViewportH = VISIBLE * CARD_H;
-  // Padding inside the scroll container so first/last card can center-snap
-  const reelPadding = Math.floor((VISIBLE - 1) / 2) * CARD_H; // = 1 × CARD_H
+  const reelViewportH = VISIBLE * cardH;
+  // Padding inside the scroll container so the first/last card can reach the
+  // center snap position. Formula: floor((VISIBLE - 1) / 2) × cardH
+  const reelPadding = Math.floor((VISIBLE - 1) / 2) * cardH;
+
+  // Inject cardH as the CSS custom property --film-card-h so the stylesheet
+  // always derives its layout values from this single JS source of truth.
+  const reelStyle = {
+    "--film-card-h": `${cardH}px`,
+    height: reelViewportH,
+  } as React.CSSProperties;
 
   return (
     <div className="scroller-menu" aria-label="Component film reel">
@@ -428,7 +476,7 @@ export function ScrollerMenu({
       {/* ── Film-reel wrapper (relative — holds the reel + the bezel overlay) ── */}
       <div
         className="film-reel-wrapper"
-        style={{ height: reelViewportH }}
+        style={reelStyle}
         role="listbox"
         aria-label={
           visibleComponents[centerIndex]
