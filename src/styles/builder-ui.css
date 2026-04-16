@@ -1078,6 +1078,15 @@ body.builder-body::before {
   pointer-events: all;
 }
 
+/* quick-add-btn-wrapper — flex row containing the QuickAddButtons */
+.quick-add-btn-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+}
+
 /* Dividers removed — no container to divide inside */
 .unified-action-divider {
   display: none;
