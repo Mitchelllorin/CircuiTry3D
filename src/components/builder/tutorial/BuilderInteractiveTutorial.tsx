@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LegacyCircuitState, LegacyModeState } from "../types";
+import type {
+  BuilderInvokeAction,
+  LegacyCircuitState,
+  LegacyModeState,
+} from "../types";
 
 type TutorialStep = {
   id: string;
@@ -17,12 +21,36 @@ type TutorialStep = {
   }) => boolean;
 };
 
+type TutorialProgressState = {
+  circuit: LegacyCircuitState | null;
+  mode: LegacyModeState;
+  lastSimulationAt: string | null;
+  tutorialOpenedAt: number;
+};
+
+type TutorialObjective = {
+  id: string;
+  label: string;
+  done: boolean;
+};
+
 const STORAGE_KEY = "circuitry3d:tutorial:basic-circuits:v1";
 
 function safeParseInt(value: string | null) {
   if (!value) return null;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isSimulationAfterTutorialOpen(
+  lastSimulationAt: string | null,
+  tutorialOpenedAt: number,
+) {
+  if (!lastSimulationAt) return false;
+  const simulationTimestamp = new Date(lastSimulationAt).getTime();
+  return (
+    Number.isFinite(simulationTimestamp) && simulationTimestamp >= tutorialOpenedAt
+  );
 }
 
 export function BuilderInteractiveTutorial(props: {
@@ -33,6 +61,7 @@ export function BuilderInteractiveTutorial(props: {
   lastSimulationAt: string | null;
   isLeftMenuOpen: boolean;
   onRequestOpenLeftMenu: () => void;
+  onInvokeAction: (action: BuilderInvokeAction) => void;
 }) {
   const {
     isOpen,
@@ -42,6 +71,7 @@ export function BuilderInteractiveTutorial(props: {
     lastSimulationAt,
     isLeftMenuOpen,
     onRequestOpenLeftMenu,
+    onInvokeAction,
   } = props;
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -88,7 +118,7 @@ export function BuilderInteractiveTutorial(props: {
         id: "close-circuit",
         title: "Step 4 — Close the circuit so current can flow",
         body:
-          "Draw wires between the battery terminals and the resistor terminals until the simulator reports a **complete circuit** (current can flow).",
+          "Draw wires between the battery terminals and the resistor terminals until the simulator reports a complete circuit (current can flow).",
         canSkipRequirement: false,
         isComplete: ({ circuit }) => Boolean(circuit?.metrics.isComplete),
       },
@@ -150,12 +180,13 @@ export function BuilderInteractiveTutorial(props: {
   );
 
   const activeStep = steps[Math.min(stepIndex, steps.length - 1)];
-  const completion = activeStep.isComplete({
+  const progressState: TutorialProgressState = {
     circuit: circuitState,
     mode: modeState,
     lastSimulationAt,
     tutorialOpenedAt,
-  });
+  };
+  const completion = activeStep.isComplete(progressState);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -237,6 +268,135 @@ export function BuilderInteractiveTutorial(props: {
   const wireCount = circuitState?.counts.wires ?? 0;
   const junctionCount = circuitState?.counts.junctions ?? 0;
   const isComplete = Boolean(circuitState?.metrics.isComplete);
+  const hasSimulationSinceTutorialOpened = isSimulationAfterTutorialOpen(
+    lastSimulationAt,
+    tutorialOpenedAt,
+  );
+
+  const objectives: TutorialObjective[] = (() => {
+    switch (activeStep.id) {
+      case "battery":
+        return [
+          {
+            id: "battery-count",
+            label: "Place at least 1 Battery",
+            done: batteryCount > 0,
+          },
+        ];
+      case "resistor":
+        return [
+          {
+            id: "resistor-count",
+            label: "Place at least 1 Resistor",
+            done: resistorCount > 0,
+          },
+        ];
+      case "wire-mode":
+        return [
+          {
+            id: "wire-mode-on",
+            label: "Turn Wire Mode on",
+            done: modeState.isWireMode,
+          },
+        ];
+      case "close-circuit":
+        return [
+          {
+            id: "min-wires",
+            label: "Place at least 2 wires",
+            done: wireCount >= 2,
+          },
+          {
+            id: "closed-loop",
+            label: "Connect components to close the circuit",
+            done: isComplete,
+          },
+        ];
+      case "simulate":
+        return [
+          {
+            id: "simulation-run",
+            label: "Run simulation after opening this tutorial",
+            done: hasSimulationSinceTutorialOpened,
+          },
+        ];
+      case "wire-metrics":
+        return [
+          {
+            id: "live-current",
+            label: "Observe current (I) update in W.I.R.E.",
+            done:
+              circuitState?.metrics.current != null &&
+              Number.isFinite(circuitState.metrics.current),
+          },
+          {
+            id: "live-voltage",
+            label: "Observe voltage (E) update in W.I.R.E.",
+            done:
+              circuitState?.metrics.voltage != null &&
+              Number.isFinite(circuitState.metrics.voltage),
+          },
+        ];
+      case "junction-intro":
+        return [
+          {
+            id: "one-junction",
+            label: "Add at least 1 junction",
+            done: junctionCount > 0,
+          },
+        ];
+      case "junction-parallel":
+        return [
+          {
+            id: "two-junctions",
+            label: "Add 2+ junctions for branch anchors",
+            done: junctionCount >= 2,
+          },
+          {
+            id: "second-resistor",
+            label: "Add a second resistor for a parallel branch",
+            done: resistorCount >= 2,
+          },
+        ];
+      default:
+        return [];
+    }
+  })();
+
+  const helperAction:
+    | { label: string; action: () => void; disabled?: boolean }
+    | null = (() => {
+    switch (activeStep.id) {
+      case "battery":
+      case "resistor":
+        return {
+          label: "Open Library",
+          action: onRequestOpenLeftMenu,
+        };
+      case "wire-mode":
+      case "close-circuit":
+        return {
+          label: modeState.isWireMode ? "Wire Mode Enabled" : "Enable Wire Mode",
+          disabled: modeState.isWireMode,
+          action: () => {
+            if (!modeState.isWireMode) onInvokeAction("toggle-wire-mode");
+          },
+        };
+      case "simulate":
+        return {
+          label: "Run Simulation",
+          action: () => onInvokeAction("run-simulation"),
+        };
+      case "junction-intro":
+      case "junction-parallel":
+        return {
+          label: "Add Junction",
+          action: () => onInvokeAction("add-junction"),
+        };
+      default:
+        return null;
+    }
+  })();
 
   return (
     <div className="builder-tutorial-layer" aria-live="polite">
@@ -272,6 +432,37 @@ export function BuilderInteractiveTutorial(props: {
           <h3 className="builder-tutorial-title">{activeStep.title}</h3>
           <p className="builder-tutorial-text">{activeStep.body}</p>
 
+          {objectives.length > 0 && (
+            <div className="builder-tutorial-objectives" aria-live="polite">
+              {objectives.map((objective) => (
+                <div
+                  key={objective.id}
+                  className="builder-tutorial-objective"
+                  data-done={objective.done ? "true" : undefined}
+                >
+                  <span
+                    className="builder-tutorial-objective-icon"
+                    aria-hidden="true"
+                  >
+                    {objective.done ? "✓" : "○"}
+                  </span>
+                  <span>{objective.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {helperAction && (
+            <button
+              type="button"
+              className="builder-tutorial-helper-btn"
+              onClick={helperAction.action}
+              disabled={helperAction.disabled}
+            >
+              {helperAction.label}
+            </button>
+          )}
+
           <div className="builder-tutorial-status">
             <span className="builder-tutorial-status-item">
               Battery: <strong>{batteryCount}</strong>
@@ -286,7 +477,7 @@ export function BuilderInteractiveTutorial(props: {
               Junctions: <strong>{junctionCount}</strong>
             </span>
             <span className="builder-tutorial-status-item">
-              Loop: <strong>{isComplete ? "Closed" : "Open"}</strong>
+              Circuit: <strong>{isComplete ? "Closed" : "Open"}</strong>
             </span>
           </div>
 
@@ -340,4 +531,3 @@ export function BuilderInteractiveTutorial(props: {
     </div>
   );
 }
-

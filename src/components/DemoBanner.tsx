@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   IS_DEMO_MODE,
   OWNER_KEY_HASH_CONFIGURED,
@@ -46,11 +46,21 @@ export default function DemoBanner() {
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
-  const closeUnlock = () => {
+  const closeUnlock = useCallback(() => {
     setUnlockOpen(false);
     setPassword("");
     setStatus("idle");
-  };
+  }, []);
+
+  // Dismiss unlock dialog on Escape
+  useEffect(() => {
+    if (!unlockOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeUnlock();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [unlockOpen, closeUnlock]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();

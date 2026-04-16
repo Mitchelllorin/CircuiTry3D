@@ -34,6 +34,16 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     };
   }, []);
 
+  // Dismiss on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
+
   // Reset status whenever the modal reopens
   useEffect(() => {
     if (open) setStatus("idle");
