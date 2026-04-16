@@ -1,0 +1,813 @@
+/* ==========================================================================
+   Film-reel component picker — replaces the 2-column bento grid.
+   
+   Visual metaphor: a strip of 35mm film on a spindle pulled through a
+   projector gate. Three frames visible at a time; the center frame is the
+   "selected" slot. Tap center → add component. Scroll / flick → browse.
+   
+   Design tokens from builder-ui.css (:root).
+   ========================================================================== */
+
+/* Spring timing shared with the rest of the builder UI. */
+:root {
+  --scroller-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /*
+   * --film-card-h is intentionally NOT set here.
+   * ScrollerMenu.tsx injects it via an inline style on the .film-reel-wrapper
+   * element so the JS constant CARD_H is always the single source of truth.
+   * All CSS rules that reference --film-card-h inherit the value from there.
+   */
+}
+
+/* ---------------------------------------------------------------------------
+   Outer scroller-menu shell
+   --------------------------------------------------------------------------- */
+.scroller-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Category filter tabs — horizontal-scrolling pill row
+   --------------------------------------------------------------------------- */
+.scroller-tabs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 0 0 2px;
+  flex-shrink: 0;
+}
+
+.scroller-tabs::-webkit-scrollbar { display: none; }
+
+.scroller-tab {
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 13px;
+  border: 1px solid var(--builder-border);
+  background: rgba(14, 12, 40, 0.7);
+  color: var(--builder-muted-soft);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.scroller-tab:hover:not(.scroller-tab--active) {
+  background: rgba(168, 216, 255, 0.08);
+  color: var(--builder-text);
+}
+
+.scroller-tab--active {
+  border-color: rgba(168, 216, 255, 0.6);
+  background: rgba(168, 216, 255, 0.14);
+  color: var(--builder-cyan);
+}
+
+.scroller-tab:focus-visible {
+  outline: none;
+  border-color: rgba(168, 216, 255, 0.8);
+}
+
+.scroller-tab--search { margin-left: auto; }
+
+/* ---------------------------------------------------------------------------
+   Search input row
+   --------------------------------------------------------------------------- */
+.scroller-search-row {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.scroller-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--builder-border);
+  background: rgba(14, 12, 40, 0.85);
+  color: var(--builder-text);
+  font-size: 11px;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.scroller-search-input::placeholder {
+  color: var(--builder-muted-soft);
+  opacity: 0.7;
+}
+
+.scroller-search-input:focus {
+  border-color: rgba(168, 216, 255, 0.55);
+  background: rgba(14, 12, 40, 0.95);
+}
+
+/* ---------------------------------------------------------------------------
+   Film-reel wrapper — the projector housing
+   The wrapper is position:relative so the bezel overlay and curtains can
+   be absolutely positioned over the reel.
+   --------------------------------------------------------------------------- */
+.film-reel-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Thin outer border gives the projector housing feel */
+  border: 1px solid rgba(168, 216, 255, 0.14);
+  background: rgba(8, 6, 28, 0.72);
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollable film strip — the "reel"
+   scroll-snap-type: y mandatory ensures one frame always sits at the snap
+   position.  The viewport (VISIBLE × card-height) shows three frames at a
+   time — the center frame is the selected/highlighted one; the frames above
+   and below peek in to give the depth illusion of a strip passing a window.
+   --------------------------------------------------------------------------- */
+.film-reel {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+  /* Hide the scrollbar — the curtain fade hints at scrollability */
+  scrollbar-width: none;
+}
+
+.film-reel::-webkit-scrollbar { display: none; }
+
+/* ---------------------------------------------------------------------------
+   Film card — one frame on the strip
+   --------------------------------------------------------------------------- */
+.film-card {
+  /* Each card snaps to center when scrolled */
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+
+  position: relative;
+  height: var(--film-card-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  padding: 6px 6px 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* Non-center cards are de-emphasized */
+  opacity: 0.42;
+  transform: scale(0.88);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s var(--scroller-spring),
+    background 0.15s ease;
+}
+
+.film-card:focus-visible {
+  outline: none;
+}
+
+/* Disabled state */
+.film-card[aria-disabled="true"] {
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.22 !important;
+}
+
+/* Center / active card is full-size and fully opaque */
+.film-card--center {
+  opacity: 1;
+  transform: scale(1);
+  cursor: pointer;
+}
+
+.film-card--center:hover {
+  background: rgba(168, 216, 255, 0.06);
+}
+
+.film-card--center:active {
+  transform: scale(0.96);
+  transition-duration: 0.07s;
+}
+
+/* Tutorial highlight — stays compatible with existing .tutorial-highlight system */
+.film-card--center.tutorial-highlight {
+  background: rgba(168, 216, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(168, 216, 255, 0.35) inset;
+  animation: builderQuickPulse 1.1s ease-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+   Thumbnail area — the recognizable 3D image
+   --------------------------------------------------------------------------- */
+.film-card-thumb {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.film-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.film-card-thumb svg {
+  width: 80%;
+  height: 80%;
+  overflow: visible;
+}
+
+.film-card-icon-text {
+  font-family: "Courier New", "Consolas", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(0, 255, 136, 0.65);
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Component name label — below the thumbnail
+   --------------------------------------------------------------------------- */
+.film-card-label {
+  flex-shrink: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  color: var(--builder-text);
+  line-height: 1.2;
+  margin-top: 4px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
+/* Non-center label is dimmer */
+.film-card:not(.film-card--center) .film-card-label {
+  color: var(--builder-muted-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Selection bezel — the glowing "projector gate" frame
+   Overlaid on the center slot as a fixed chrome element.
+   --------------------------------------------------------------------------- */
+.film-bezel {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  height: var(--film-card-h);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.film-bezel-inner {
+  position: absolute;
+  inset: 4px 5px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(168, 216, 255, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(168, 216, 255, 0.12),
+    0 0 14px rgba(168, 216, 255, 0.18),
+    inset 0 0 10px rgba(168, 216, 255, 0.06);
+  animation: filmBezelPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes filmBezelPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(168,216,255,0.12), 0 0 14px rgba(168,216,255,0.18), inset 0 0 10px rgba(168,216,255,0.06); }
+  50%       { box-shadow: 0 0 0 1px rgba(168,216,255,0.18), 0 0 22px rgba(168,216,255,0.30), inset 0 0 14px rgba(168,216,255,0.10); }
+}
+
+/* ---------------------------------------------------------------------------
+   Projector curtains — fade the edges of the reel to imply depth
+   --------------------------------------------------------------------------- */
+.film-curtain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(var(--film-card-h) * 0.9);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.film-curtain--top {
+  top: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(8, 6, 28, 0.92) 0%,
+    rgba(8, 6, 28, 0.55) 40%,
+    transparent 100%
+  );
+}
+
+.film-curtain--bottom {
+  bottom: 0;
+  background: linear-gradient(
+    to top,
+    rgba(8, 6, 28, 0.92) 0%,
+    rgba(8, 6, 28, 0.55) 40%,
+    transparent 100%
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Empty state inside the reel
+   --------------------------------------------------------------------------- */
+.film-empty {
+  height: var(--film-card-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--builder-muted-soft);
+  font-style: italic;
+  text-align: center;
+  padding: 0 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   Footer row — hint text + pin star for the centered card
+   --------------------------------------------------------------------------- */
+.film-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 0 2px;
+  gap: 4px;
+}
+
+.film-footer-hint {
+  font-size: 8px;
+  color: var(--builder-muted-soft);
+  opacity: 0.7;
+  font-style: italic;
+  line-height: 1.3;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.film-footer-star {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgba(168, 216, 255, 0.22);
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 5px;
+  padding: 0;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.film-footer-star:hover { color: rgba(255, 208, 56, 0.85); background: rgba(255, 208, 56, 0.1); }
+.film-footer-star--active { color: rgb(255, 208, 56); }
+.film-footer-star:focus-visible { outline: none; background: rgba(168, 216, 255, 0.12); }
+
+/* ---------------------------------------------------------------------------
+   Demo-mode upsell footer link
+   --------------------------------------------------------------------------- */
+.scroller-demo-lock {
+  flex-shrink: 0;
+  display: block;
+  font-size: 9px;
+  color: rgba(168, 216, 255, 0.55);
+  text-align: center;
+  padding: 5px 4px;
+  border-top: 1px solid rgba(168, 216, 255, 0.1);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.scroller-demo-lock:hover { color: rgba(168, 216, 255, 0.8); }
+.scroller-demo-lock-sub { opacity: 0.65; }
+
+/* ---------------------------------------------------------------------------
+   Reduced-motion — no transitions, no bezel pulse, no curtain
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .scroller-tab,
+  .film-card,
+  .film-footer-star,
+  .scroller-search-input {
+    transition: none !important;
+  }
+
+  .film-card { transform: none !important; }
+  .film-bezel-inner { animation: none; }
+  .film-reel { scroll-snap-type: none; }
+  .film-curtain { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch / coarse-pointer — wider hit targets and bigger text
+   --------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .scroller-tab {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .film-card-label { font-size: 11px; }
+  .scroller-search-input { height: 32px; font-size: 12px; }
+  .film-footer-star { width: 32px; height: 32px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Portrait phone (≤ 480 px) — compact tabs
+   --------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .scroller-tab {
+    font-size: 9px;
+    height: 24px;
+    padding: 0 6px;
+  }
+}
+
+/* ==========================================================================
+   Insights Film Reel — horizontal strip for W/I/R/E + wire-profile metrics
+   Uses the same projector-gate visual metaphor as the vertical film reel.
+   --insights-card-w is injected by InsightsFilmReel.tsx (single JS source).
+   ========================================================================== */
+
+.insights-reel-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  /* Prominent glass-panel container — matches the component-library reel */
+  border: 1px solid rgba(168, 216, 255, 0.36);
+  background: rgba(8, 6, 28, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 1px rgba(168, 216, 255, 0.06),
+    0 4px 24px rgba(0, 0, 0, 0.45),
+    0 0 18px rgba(168, 216, 255, 0.08) inset;
+  width: 100%;
+}
+
+/* Scrollable horizontal strip */
+.insights-reel {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: row;
+  /* Center-snap padding: leaves half a container's width on each side so
+     the first and last cards can sit at the center snap position */
+  scroll-padding-inline: calc((100% - var(--insights-card-w, 160px)) / 2);
+  padding-inline: calc((100% - var(--insights-card-w, 160px)) / 2);
+}
+
+.insights-reel::-webkit-scrollbar { display: none; }
+
+/* ---------------------------------------------------------------------------
+   Individual metric card — one frame on the horizontal strip
+   --------------------------------------------------------------------------- */
+.insights-card {
+  scroll-snap-align: center;
+  /* scroll-snap-stop removed — lets fast flicks glide past multiple cards */
+  flex: 0 0 var(--insights-card-w, 160px);
+  width: var(--insights-card-w, 160px);
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 8px 12px;
+  cursor: pointer;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Off-center: dimmed + slightly scaled */
+  opacity: 0.4;
+  transform: scale(0.86);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s var(--scroller-spring, cubic-bezier(0.34,1.56,0.64,1));
+}
+
+.insights-card--center {
+  opacity: 1;
+  transform: scale(1);
+  cursor: default;
+}
+
+.insights-card--center:active { transform: scale(0.97); }
+
+/* Wire-profile card when a custom profile is active */
+.insights-card--profile-active {
+  /* The color highlight is handled by the letter/value already */
+}
+
+/* ---------------------------------------------------------------------------
+   Card typography
+   --------------------------------------------------------------------------- */
+.insights-card-letter {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--builder-cyan, #a8d8ff);
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  /* Non-center cards inherit the dimmed opacity from parent */
+}
+
+.insights-card--center .insights-card-letter {
+  text-shadow: 0 0 10px rgba(168, 216, 255, 0.45);
+}
+
+.insights-card-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--builder-text, #ffffff);
+  line-height: 1.1;
+  text-align: center;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  word-break: break-all;
+}
+
+.insights-card-sub {
+  font-size: 9px;
+  color: rgba(188, 228, 255, 0.72);
+  line-height: 1.2;
+  text-align: center;
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+}
+
+.insights-card-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(168, 216, 255, 0.55);
+  font-family: "DM Sans", "Inter", system-ui, sans-serif;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Projector-gate bezel (vertically centered on the single card)
+   --------------------------------------------------------------------------- */
+.insights-reel-bezel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--insights-card-w, 160px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.insights-reel-bezel-inner {
+  position: absolute;
+  inset: 4px 5px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(168, 216, 255, 0.50);
+  box-shadow:
+    0 0 0 1px rgba(168, 216, 255, 0.10),
+    0 0 12px rgba(168, 216, 255, 0.16),
+    inset 0 0 8px rgba(168, 216, 255, 0.05);
+  animation: filmBezelPulse 2.8s ease-in-out infinite;
+}
+
+/* Reuses the filmBezelPulse keyframe defined for the vertical reel above */
+
+/* ---------------------------------------------------------------------------
+   Left/right depth curtains
+   --------------------------------------------------------------------------- */
+.insights-curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Fixed width — wider container means more room to fade; ~40% of a card */
+  width: calc(var(--insights-card-w, 160px) * 0.5);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.insights-curtain--left {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    rgba(8, 6, 28, 0.90) 0%,
+    rgba(8, 6, 28, 0.50) 40%,
+    transparent 100%
+  );
+}
+
+.insights-curtain--right {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    rgba(8, 6, 28, 0.90) 0%,
+    rgba(8, 6, 28, 0.50) 40%,
+    transparent 100%
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Navigation dots — one per metric, sits below the reel
+   --------------------------------------------------------------------------- */
+.insights-reel-dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 0 3px;
+  width: 100%;
+}
+
+.insights-reel-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(168, 216, 255, 0.22);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.insights-reel-dot--active {
+  background: var(--builder-cyan, #a8d8ff);
+  transform: scale(1.4);
+}
+
+.insights-reel-dot:hover:not(.insights-reel-dot--active) {
+  background: rgba(168, 216, 255, 0.5);
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced-motion overrides for insights reel
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .insights-card {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .insights-reel-bezel-inner { animation: none; }
+  .insights-curtain { display: none; }
+  .insights-reel { scroll-snap-type: none; }
+  .insights-reel-dot { transition: none; }
+}
+
+/* ==========================================================================
+   Action-bar 3-step visibility toggle
+   A small 3-segment pill at the end of the unified-action-bar.
+   Cycles: full → tools → hidden → full
+   ========================================================================== */
+
+.action-bar-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 216, 255, 0.28);
+  background: rgba(12, 10, 36, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden;
+  flex-shrink: 0;
+  /* Always on top of the action bar */
+  position: relative;
+  z-index: 1;
+}
+
+.action-bar-toggle-seg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 46px;
+  border: none;
+  background: transparent;
+  color: rgba(168, 216, 255, 0.38);
+  font-size: 13px;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  position: relative;
+}
+
+/* Vertical dividers between segments */
+.action-bar-toggle-seg + .action-bar-toggle-seg::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 1px;
+  background: rgba(168, 216, 255, 0.14);
+}
+
+.action-bar-toggle-seg:hover {
+  background: rgba(168, 216, 255, 0.08);
+  color: rgba(168, 216, 255, 0.70);
+}
+
+.action-bar-toggle-seg--active {
+  background: rgba(168, 216, 255, 0.16);
+  color: var(--builder-cyan, #a8d8ff);
+}
+
+.action-bar-toggle-seg--active:hover {
+  background: rgba(168, 216, 255, 0.22);
+}
+
+.action-bar-toggle-seg:focus-visible {
+  outline: none;
+  background: rgba(168, 216, 255, 0.12);
+}
+
+.action-bar-toggle-seg-icon {
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.action-bar-toggle-seg-label {
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-top: 2px;
+  pointer-events: none;
+  white-space: nowrap;
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   When mode = 'hidden', keep ONLY the toggle floating at the right end of
+   where the action bar would normally be.
+   The .unified-action-bar gets data-bar-mode="hidden" and hides all children
+   except .action-bar-toggle.
+   --------------------------------------------------------------------------- */
+.unified-action-bar[data-bar-mode="hidden"] > *:not(.action-bar-toggle) {
+  display: none !important;
+}
+
+/* When mode = 'tools', hide only the quick-add component buttons */
+.unified-action-bar[data-bar-mode="tools"] > .quick-add-btn-wrapper {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced-motion: no transitions on toggle
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .action-bar-toggle-seg { transition: none !important; }
+}

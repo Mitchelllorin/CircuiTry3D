@@ -900,6 +900,7 @@ body.builder-body::before {
   position: fixed;
   bottom: calc(48px + var(--builder-safe-area-bottom, 0px));
   right: calc(var(--builder-edge-actions-gap) + env(safe-area-inset-right, 0px));
+  right: calc(4px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
   transform: none;
@@ -1076,6 +1077,15 @@ body.builder-body::before {
 /* Re-enable pointer events for the actual buttons */
 .unified-action-bar > * {
   pointer-events: all;
+}
+
+/* quick-add-btn-wrapper — flex row containing the QuickAddButtons */
+.quick-add-btn-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
 }
 
 /* Dividers removed — no container to divide inside */

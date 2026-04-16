@@ -5015,6 +5015,7 @@ body.android-optimized .zoom-btn {
         let _layerVisibTargetX = 0;   // Last cameraTarget.x processed
         let _layerVisibTargetY = 0;   // Last cameraTarget.y processed
         let _layerVisibTargetZ = 0;   // Last cameraTarget.z processed
+        const _layerWorldPosTmp = new THREE.Vector3();
 
         // Mobile detection
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -5051,6 +5052,11 @@ body.android-optimized .zoom-btn {
         const ZOOM_IN_MIN_STEP = 0.1;
         const ZOOM_OUT_MIN_STEP = 0.5;
         const ZOOM_WHEEL_REFERENCE_DISTANCE = 15; // Reference camera distance for proportional wheel-zoom sensitivity
+        // Hysteresis around atomic threshold prevents rapid mode thrashing when zoom hovers near 3.0.
+        const ATOMIC_MODE_ENTER_HYSTERESIS_BELOW = 0.22;
+        const ATOMIC_MODE_EXIT_HYSTERESIS_ABOVE  = 0.30;
+        const ATOMIC_MODE_ENTER_THRESHOLD = ATOMIC_ZOOM_THRESHOLD - ATOMIC_MODE_ENTER_HYSTERESIS_BELOW; // enter atomic mode
+        const ATOMIC_MODE_EXIT_THRESHOLD  = ATOMIC_ZOOM_THRESHOLD + ATOMIC_MODE_EXIT_HYSTERESIS_ABOVE; // exit atomic mode
         const ORBITAL_RING_RADIUS_FACTOR = 2.8;
         const ORBITAL_RING_TUBE_FACTOR = 0.35;
         const ORBITAL_RING_RADIAL_SEGMENTS = 6;
@@ -5120,10 +5126,22 @@ body.android-optimized .zoom-btn {
 
         // Thermal jitter on electrons (atomic zoom)
         const THERMAL_JITTER          = 0.018;  // max random displacement per axis
+        const THERMAL_JITTER_SPEED    = 0.095;  // coherent jitter oscillation speed
+        // Harmonic blend ratio between primary and secondary oscillators (70/30 tuned visually).
+        const THERMAL_JITTER_AXIS_BLEND_PRIMARY = 0.70;
+        const THERMAL_JITTER_AXIS_BLEND_SECONDARY = 0.30;
+        const THERMAL_JITTER_X_PRIMARY_FREQ = 1.00;
+        const THERMAL_JITTER_X_SECONDARY_FREQ = 0.54;
+        const THERMAL_JITTER_Y_PRIMARY_FREQ = 0.81;
+        const THERMAL_JITTER_Y_SECONDARY_FREQ = 0.37;
+        const THERMAL_JITTER_Z_PRIMARY_FREQ = 1.09;
+        const THERMAL_JITTER_Z_SECONDARY_FREQ = 0.43;
 
         // Perspective-consistent zoom fade (proximity to camera target)
         const MIN_ATTENTION_RADIUS    = 1.5;    // smallest attention radius at deepest zoom (world units)
         const ATTENTION_RADIUS_SCALE  = 2.2;    // multiplier: attentionRadius = cameraDistance × this
+        const PROXIMITY_FADE_START    = 0.55;   // start fading at 55% of attention radius
+        const PROXIMITY_FADE_END      = 1.45;   // fully hidden at 145% of attention radius
 
         // Electron probability-cloud (deep atomic zoom, d < ZOOM_DEEP_ATOMIC)
         const PROB_CLOUD_RADIUS       = 0.22;   // haze cylinder radius
@@ -5154,6 +5172,24 @@ body.android-optimized .zoom-btn {
         // Animation micro-constants
         const TANGENT_SAMPLE_DELTA    = 0.01;   // progress offset used to approximate wire tangent
         const GOLDEN_ANGLE_RAD        = 137.5 * (Math.PI / 180); // golden angle in radians (lattice packing)
+
+        function _smoothstep(min, max, v) {
+            if (max <= min) return v >= max ? 1 : 0;
+            const t = Math.max(0, Math.min(1, (v - min) / (max - min)));
+            return t * t * (3 - 2 * t);
+        }
+
+        function _resolveAtomicMode(distance, wasAtomic) {
+            if (wasAtomic) return distance <= ATOMIC_MODE_EXIT_THRESHOLD;
+            return distance <= ATOMIC_MODE_ENTER_THRESHOLD;
+        }
+
+        function _computeAxisJitter(jitterTime, primaryFreq, secondaryFreq, phase, amplitude) {
+            return (
+                Math.sin(jitterTime * primaryFreq + phase) * THERMAL_JITTER_AXIS_BLEND_PRIMARY +
+                Math.sin(jitterTime * secondaryFreq + phase) * THERMAL_JITTER_AXIS_BLEND_SECONDARY
+            ) * amplitude;
+        }
 
         // Junction class
         class Junction {
@@ -7996,14 +8032,12 @@ body.android-optimized .zoom-btn {
             if (cameraDistance >= CLOSE_ZOOM_THRESHOLD) {
                 targetOpacity = 1.0;
             } else if (cameraDistance >= ATOMIC_ZOOM_THRESHOLD) {
-                // Fade 1.0 → 0.12 across the close-zoom band (8.0 → 3.0)
-                const t = (cameraDistance - ATOMIC_ZOOM_THRESHOLD) /
-                          (CLOSE_ZOOM_THRESHOLD - ATOMIC_ZOOM_THRESHOLD);
+                // Smoothly fade 1.0 → 0.12 across the close-zoom band (8.0 → 3.0)
+                const t = _smoothstep(ATOMIC_ZOOM_THRESHOLD, CLOSE_ZOOM_THRESHOLD, cameraDistance);
                 targetOpacity = 0.12 + t * 0.88;
             } else if (cameraDistance >= ZOOM_DEEP_ATOMIC) {
-                // Fade 0.12 → 0 across the atomic band (3.0 → 0.8)
-                const t = (cameraDistance - ZOOM_DEEP_ATOMIC) /
-                          (ATOMIC_ZOOM_THRESHOLD - ZOOM_DEEP_ATOMIC);
+                // Smoothly fade 0.12 → 0 across the atomic band (3.0 → 0.8)
+                const t = _smoothstep(ZOOM_DEEP_ATOMIC, ATOMIC_ZOOM_THRESHOLD, cameraDistance);
                 targetOpacity = t * 0.12;
             } else {
                 targetOpacity = 0.0;
@@ -8026,10 +8060,12 @@ body.android-optimized .zoom-btn {
             function _getProximityOpacity(worldPos) {
                 if (!useProximityFade) return targetOpacity;
                 const dist = worldPos.distanceTo(cameraTarget);
-                // Objects within attentionRadius get full tier opacity;
-                // linear fade to 0 at 2 × attentionRadius.
-                const proxT = Math.max(0, Math.min(1, (dist - attentionRadius) / attentionRadius));
-                return targetOpacity * (1.0 - proxT);
+                // Preserve local context detail while aggressively hiding far-away geometry.
+                const fadeStart = attentionRadius * PROXIMITY_FADE_START;
+                const fadeEnd = attentionRadius * PROXIMITY_FADE_END;
+                if (dist <= fadeStart) return targetOpacity;
+                if (dist >= fadeEnd) return 0;
+                return targetOpacity * (1 - _smoothstep(fadeStart, fadeEnd, dist));
             }
 
             // Helper: apply scaled opacity to one Three.js material.
@@ -8069,7 +8105,8 @@ body.android-optimized .zoom-btn {
             for (let i = 0; i < cLen; i++) {
                 const c = components[i];
                 if (!c.mesh) continue;
-                const finalOpacity = _getProximityOpacity(c.mesh.position);
+                c.mesh.getWorldPosition(_layerWorldPosTmp);
+                const finalOpacity = _getProximityOpacity(_layerWorldPosTmp);
                 if (finalOpacity < 0.01) {
                     c.mesh.visible = false;
                 } else {
@@ -8139,7 +8176,7 @@ body.android-optimized .zoom-btn {
 
         function updateFlowParticles(currentTime) {
             // Re-create particles if atomic mode has changed (threshold crossing)
-            const atomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            const atomicMode = _resolveAtomicMode(cameraDistance, lastAtomicMode);
             if (atomicMode !== lastAtomicMode && currentFlowState) {
                 lastAtomicMode = atomicMode;
                 animateCurrentFlow(currentFlowState);
@@ -8195,9 +8232,11 @@ body.android-optimized .zoom-btn {
 
                     // ── Thermal jitter in atomic zoom ────────────────────────
                     if (inAtomicZoom) {
-                        position.x += (Math.random() - 0.5) * THERMAL_JITTER;
-                        position.y += (Math.random() - 0.5) * THERMAL_JITTER;
-                        position.z += (Math.random() - 0.5) * THERMAL_JITTER;
+                        const effectiveJitterAmp = THERMAL_JITTER * (wireData.jitterAmp || 1);
+                        const jitterTime = globalFlowTime * THERMAL_JITTER_SPEED;
+                        position.x += _computeAxisJitter(jitterTime, THERMAL_JITTER_X_PRIMARY_FREQ, THERMAL_JITTER_X_SECONDARY_FREQ, (wireData.jitterPhaseX || 0), effectiveJitterAmp);
+                        position.y += _computeAxisJitter(jitterTime, THERMAL_JITTER_Y_PRIMARY_FREQ, THERMAL_JITTER_Y_SECONDARY_FREQ, (wireData.jitterPhaseY || 0), effectiveJitterAmp);
+                        position.z += _computeAxisJitter(jitterTime, THERMAL_JITTER_Z_PRIMARY_FREQ, THERMAL_JITTER_Z_SECONDARY_FREQ, (wireData.jitterPhaseZ || 0), effectiveJitterAmp);
                     }
                     particle.position.copy(position);
 
@@ -17593,7 +17632,7 @@ Made with ? for visual learners everywhere!
             clearLatticeAtoms();
 
             // Sync atomic mode flag so updateFlowParticles doesn't immediately re-trigger
-            lastAtomicMode = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
+            lastAtomicMode = _resolveAtomicMode(cameraDistance, lastAtomicMode);
 
             currentFlowState = flowState || null;
 
@@ -17854,6 +17893,10 @@ Made with ? for visual learners everywhere!
                             pulsePhase:    Math.random() * Math.PI * 2,
                             baseOpacity,
                             baseEmissive,
+                            jitterAmp:     0.65 + Math.random() * 0.45,
+                            jitterPhaseX:  Math.random() * Math.PI * 2,
+                            jitterPhaseY:  Math.random() * Math.PI * 2,
+                            jitterPhaseZ:  Math.random() * Math.PI * 2,
                             // flowColor.hex is a numeric integer from THREE.Color.getHex()
                             baseColorHex:  flowColor.hex,
                             activeTierKey: null
@@ -17898,6 +17941,10 @@ Made with ? for visual learners everywhere!
                             particle.userData.pulsePhase = Math.random() * Math.PI * 2;
                             particle.userData.baseOpacity = 0.9;
                             particle.userData.baseEmissive = 1.0;
+                            particle.userData.jitterAmp = 0.65 + Math.random() * 0.45;
+                            particle.userData.jitterPhaseX = Math.random() * Math.PI * 2;
+                            particle.userData.jitterPhaseY = Math.random() * Math.PI * 2;
+                            particle.userData.jitterPhaseZ = Math.random() * Math.PI * 2;
                             particle.userData.baseColorHex = 0xff6600;
                             particle.userData.activeTierKey = null;
                             scene.add(particle);
