@@ -13786,6 +13786,7 @@ body.android-optimized .zoom-btn {
         }
 
         function toggleLabels() {
+            labelVisibilityLevel = Math.max(0, Math.min(3, Math.round(Number(labelVisibilityLevel) || 0)));
             labelVisibilityLevel = labelVisibilityLevel <= 0 ? 3 : labelVisibilityLevel - 1;
             showLabels = labelVisibilityLevel > 0;
             components.forEach(component => {

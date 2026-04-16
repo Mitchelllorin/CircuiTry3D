@@ -8,6 +8,10 @@ import type {
   PracticeScenario,
   BuilderLogoSettings,
 } from "./types";
+import {
+  getLabelVisibilityDescription,
+  resolveLabelVisibilityLevel,
+} from "./labelVisibility";
 
 export const LOGO_SETTINGS_STORAGE_KEY = "builder:logo-motion";
 
@@ -736,25 +740,9 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
     id: "component-labels",
     label: "Component Labels",
     action: "toggle-labels",
-    getDescription: (state) => {
-      const level =
-        typeof state.labelVisibilityLevel === "number"
-          ? Math.max(0, Math.min(3, Math.round(state.labelVisibilityLevel)))
-          : state.showLabels
-            ? 3
-            : 0;
-
-      if (level >= 3) return "Full labels shown";
-      if (level === 2) return "Wire metrics hidden";
-      if (level === 1) return "References only";
-      return "Labels hidden";
-    },
-    isActive: (state) =>
-      (typeof state.labelVisibilityLevel === "number"
-        ? state.labelVisibilityLevel
-        : state.showLabels
-          ? 3
-          : 0) > 0,
+    getDescription: (state) =>
+      getLabelVisibilityDescription(resolveLabelVisibilityLevel(state)),
+    isActive: (state) => resolveLabelVisibilityLevel(state) > 0,
   },
 ];
 

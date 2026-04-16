@@ -72,6 +72,12 @@ import {
   WIRE_LEGEND,
   DEFAULT_LOGO_SETTINGS,
 } from "../components/builder/constants";
+import {
+  clampLabelVisibilityLevel,
+  getLabelVisibilityDescription,
+  getNextLabelToggleTitle,
+  resolveLabelVisibilityLevel,
+} from "../components/builder/labelVisibility";
 import { IS_DEMO_MODE, DEMO_COMPONENT_IDS } from "../utils/demoMode";
 import { isAndroidApp } from "../utils/playStoreBilling";
 import { useComponent3DThumbnail } from "../components/builder/toolbars/useComponent3DThumbnail";
@@ -1164,6 +1170,18 @@ const INTRO_WELCOME = {
 
 const GALLERY_TOAST_DURATION_MS = 6000;
 
+function deriveLabelVisibilityFromShowLabels(
+  showLabels: boolean,
+  previousLevel: number | undefined,
+): number {
+  if (showLabels) {
+    return typeof previousLevel === "number" && previousLevel > 0
+      ? previousLevel
+      : 3;
+  }
+  return 0;
+}
+
 export default function Builder() {
   const practiceProblemRef = useRef<string | null>(
     DEFAULT_PRACTICE_PROBLEM?.id ?? null,
@@ -1314,7 +1332,7 @@ export default function Builder() {
   const handleModeStateChange = useCallback((next: Partial<LegacyModeState>) => {
     const nextLabelVisibilityLevel =
       typeof next.labelVisibilityLevel === "number"
-        ? Math.max(0, Math.min(3, Math.round(next.labelVisibilityLevel)))
+        ? clampLabelVisibilityLevel(next.labelVisibilityLevel)
         : null;
 
     setModeState((previous) => ({
@@ -1363,12 +1381,10 @@ export default function Builder() {
         typeof nextLabelVisibilityLevel === "number"
           ? nextLabelVisibilityLevel
           : typeof next.showLabels === "boolean"
-            ? next.showLabels
-              ? (typeof previous.labelVisibilityLevel === "number" &&
-                  previous.labelVisibilityLevel > 0
-                  ? previous.labelVisibilityLevel
-                  : 3)
-              : 0
+            ? deriveLabelVisibilityFromShowLabels(
+                next.showLabels,
+                previous.labelVisibilityLevel,
+              )
             : previous.labelVisibilityLevel,
       gridBrightness:
         typeof next.gridBrightness === "number"
@@ -2604,28 +2620,10 @@ export default function Builder() {
     "Unknown";
   const currentFlowLabel =
     modeState.currentFlowStyle === "solid" ? "Current Flow" : "Electron Flow";
-  const labelVisibilityLevel =
-    typeof modeState.labelVisibilityLevel === "number"
-      ? Math.max(0, Math.min(3, Math.round(modeState.labelVisibilityLevel)))
-      : modeState.showLabels
-        ? 3
-        : 0;
+  const labelVisibilityLevel = resolveLabelVisibilityLevel(modeState);
   const labelVisibilityDescription =
-    labelVisibilityLevel >= 3
-      ? "Full labels shown"
-      : labelVisibilityLevel === 2
-        ? "Wire metrics hidden"
-        : labelVisibilityLevel === 1
-          ? "References only"
-          : "Labels hidden";
-  const labelToggleTitle =
-    labelVisibilityLevel >= 3
-      ? "Hide wire metrics"
-      : labelVisibilityLevel === 2
-        ? "Hide component values"
-        : labelVisibilityLevel === 1
-          ? "Hide all labels"
-          : "Show full labels";
+    getLabelVisibilityDescription(labelVisibilityLevel);
+  const labelToggleTitle = getNextLabelToggleTitle(labelVisibilityLevel);
   const isWireToolActive = modeState.isWireMode;
   const wireRoutingTitle = isWireToolActive
     ? `Wire tool active - routing style set to ${wireRoutingLabel}.`
