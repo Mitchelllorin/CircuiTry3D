@@ -444,7 +444,13 @@ export default function PricingSection() {
               </header>
 
               <div className="plan-price">
-                <span className="plan-price-amount plan-price-amount--enterprise">Contact Sales</span>
+                {tier.startingPrice ? (
+                  <span className="plan-price-amount plan-price-amount--enterprise">
+                    {tier.startingPrice}
+                  </span>
+                ) : (
+                  <span className="plan-price-amount plan-price-amount--enterprise">Contact Sales</span>
+                )}
               </div>
 
               <ul className="plan-features">
@@ -478,6 +484,30 @@ export default function PricingSection() {
             </p>
             <Link to="/partnerships#placement" className="pricing-cta pricing-cta--placement">
               View Placement Packages →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Education license callout ── */}
+      <div className="pricing-section-group pricing-section-group--placement">
+        <div className="pricing-section-label">
+          <span className="pricing-section-kicker pricing-section-kicker--enterprise">Education Arena</span>
+          <h2 className="pricing-section-title">Education Licenses</h2>
+          <p className="pricing-section-desc">
+            Affordable licensing for teachers and schools. Plans start at <strong>$9 / mo</strong> for
+            a solo educator with up to 30 students — scaling to a full campus license at
+            <strong> $49 / mo</strong>. No overcharging, no hidden fees.
+          </p>
+        </div>
+        <div className="pricing-placement-callout">
+          <span className="pricing-placement-callout-icon" aria-hidden="true">🏫</span>
+          <div className="pricing-placement-callout-body">
+            <p className="pricing-placement-callout-text">
+              Educator Solo · Multi-Class · Campus License
+            </p>
+            <Link to="/partnerships#education" className="pricing-cta pricing-cta--enterprise">
+              View Education Plans →
             </Link>
           </div>
         </div>

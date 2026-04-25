@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import {
   MANUFACTURER_PLACEMENT_TIERS,
   MANUFACTURER_PLACEMENT_EMAIL,
+  EDUCATION_TIERS,
+  EDUCATION_LICENSE_EMAIL,
 } from "../data/hybridPricing";
 
 const CONTACT = {
@@ -172,7 +174,7 @@ export default function Partnerships() {
               </ul>
 
               <a
-                href={`mailto:${MANUFACTURER_PLACEMENT_EMAIL}?subject=${tier.mailtoSubject}`}
+                href={`mailto:${MANUFACTURER_PLACEMENT_EMAIL}?subject=${encodeURIComponent(tier.mailtoSubject)}`}
                 style={{
                   ...styles.placementCta,
                   ...(tier.highlighted ? styles.placementCtaHighlighted : {}),
@@ -190,6 +192,71 @@ export default function Partnerships() {
           <a href={`mailto:${CONTACT.manufacturer}`} style={styles.inlineLink}>
             Contact us directly.
           </a>
+        </p>
+      </div>
+
+      {/* ── Education License Pricing ── */}
+      <div id="education" style={styles.placementSection}>
+        <div style={styles.placementHeader}>
+          <span style={{ ...styles.placementKicker, ...styles.educationKicker }}>Education Arena</span>
+          <h2 style={styles.sectionTitle}>Education Licenses</h2>
+          <p style={styles.placementDesc}>
+            Affordable licenses for teachers and schools — because great learning tools
+            shouldn't break the budget. Every tier includes the full circuit builder and
+            the FUSE™ Component Arena.
+          </p>
+        </div>
+
+        <div style={styles.placementGrid}>
+          {EDUCATION_TIERS.map((tier) => (
+            <div
+              key={tier.id}
+              style={{
+                ...styles.placementCard,
+                ...(tier.highlighted ? styles.educationCardHighlighted : {}),
+              }}
+            >
+              {tier.highlighted && (
+                <div style={{ ...styles.popularBanner, ...styles.educationBanner }}>Most Popular</div>
+              )}
+              <div style={styles.placementTierIcon}>{tier.icon}</div>
+              <div style={{ ...styles.placementBadge, ...styles.educationBadge }}>{tier.badge}</div>
+              <h3 style={styles.placementTierName}>{tier.name}</h3>
+
+              <div style={styles.placementPrice}>
+                <span style={{ ...styles.placementPriceAmount, ...styles.educationPriceAmount }}>{tier.priceLabel}</span>
+                <span style={styles.placementPriceUnit}>/mo</span>
+              </div>
+              <p style={styles.placementBillingNote}>{tier.billingNote}</p>
+
+              <ul style={styles.placementFeatureList}>
+                {tier.features.map((f) => (
+                  <li key={f} style={styles.placementFeatureItem}>
+                    <span style={{ ...styles.checkmark, ...styles.educationCheckmark }} aria-hidden="true">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href={`mailto:${EDUCATION_LICENSE_EMAIL}?subject=${encodeURIComponent(tier.mailtoSubject)}`}
+                style={{
+                  ...styles.placementCta,
+                  ...(tier.highlighted ? styles.educationCtaHighlighted : styles.educationCta),
+                }}
+              >
+                Get Started →
+              </a>
+            </div>
+          ))}
+        </div>
+
+        <p style={styles.placementFootnote}>
+          Need a multi-campus or district-wide quote?{" "}
+          <a href={`mailto:${CONTACT.schoolBoard}`} style={styles.inlineLink}>
+            Contact us directly
+          </a>{" "}
+          — we'll put together a formal proposal suitable for school board approval.
         </p>
       </div>
 
@@ -597,5 +664,40 @@ const styles: Record<string, React.CSSProperties> = {
   inlineLink: {
     color: "#a8d8ff",
     textDecoration: "underline",
+  },
+  // ── Education pricing styles ───────────────────────────────────────────────
+  educationKicker: {
+    color: "#a78bfa",
+    background: "rgba(167, 139, 250, 0.1)",
+    border: "1px solid rgba(167, 139, 250, 0.25)",
+  },
+  educationCardHighlighted: {
+    border: "1.5px solid rgba(167, 139, 250, 0.5)",
+    background: "rgba(15, 10, 35, 0.85)",
+    boxShadow: "0 0 0 1px rgba(167,139,250,0.12), 0 24px 48px rgba(0,0,0,0.4)",
+  },
+  educationBanner: {
+    background: "linear-gradient(90deg, #a78bfa, #818cf8)",
+  },
+  educationBadge: {
+    color: "rgba(196, 181, 253, 0.9)",
+    background: "rgba(167, 139, 250, 0.1)",
+    border: "1px solid rgba(167, 139, 250, 0.25)",
+  },
+  educationPriceAmount: {
+    color: "#c4b5fd",
+  },
+  educationCheckmark: {
+    color: "#a78bfa",
+  },
+  educationCta: {
+    background: "rgba(167, 139, 250, 0.08)",
+    border: "1px solid rgba(167, 139, 250, 0.3)",
+    color: "#c4b5fd",
+  },
+  educationCtaHighlighted: {
+    background: "rgba(167, 139, 250, 0.15)",
+    border: "1px solid rgba(167, 139, 250, 0.5)",
+    color: "#a78bfa",
   },
 };
