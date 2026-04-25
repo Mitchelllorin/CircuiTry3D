@@ -41,6 +41,7 @@
     "purchaseFailed": "Achat échoué. Veuillez réessayer.",
     "purchaseCancelled": "Achat annulé.",
     "notAvailableOnWeb": "Achat disponible sur Android uniquement. Visitez le Play Store pour obtenir l'application.",
+    "getOnPlayStore": "Obtenir sur Google Play",
     "features": {
       "title": "Fonctionnalités Pro",
       "saves": "Sauvegardes de circuits illimitées",

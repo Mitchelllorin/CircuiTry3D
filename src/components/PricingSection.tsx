@@ -6,6 +6,7 @@ import {
   isAndroidApp,
   openWebPayment,
   WEB_PAYMENT_URL,
+  PLAY_STORE_URL,
   purchasePremiumUnlock,
   purchaseProSubscription,
   restorePurchases,
@@ -151,6 +152,11 @@ export default function PricingSection() {
       openWebPayment();
       return;
     }
+    // On web without a payment URL, redirect to the Play Store listing.
+    if (!isAndroidApp()) {
+      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
+      return;
+    }
     const launched = await purchasePremiumUnlock();
     if (!launched) {
       // Billing unavailable on this device — nothing more we can do here;
@@ -164,6 +170,11 @@ export default function PricingSection() {
     // On web with a payment URL configured, open the checkout page.
     if (!isAndroidApp() && WEB_PAYMENT_URL) {
       openWebPayment();
+      return;
+    }
+    // On web without a payment URL, redirect to the Play Store listing.
+    if (!isAndroidApp()) {
+      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
       return;
     }
     const launched = await purchaseProSubscription(proCycle);

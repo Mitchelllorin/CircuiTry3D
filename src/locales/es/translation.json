@@ -41,6 +41,7 @@
     "purchaseFailed": "Compra fallida. Por favor, inténtalo de nuevo.",
     "purchaseCancelled": "Compra cancelada.",
     "notAvailableOnWeb": "Compra disponible solo en Android. Visita Play Store para obtener la aplicación.",
+    "getOnPlayStore": "Consíguelo en Google Play",
     "features": {
       "title": "Funciones Pro",
       "saves": "Guardados ilimitados de circuitos",

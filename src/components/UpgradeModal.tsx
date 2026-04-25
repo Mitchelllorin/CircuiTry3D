@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasPro, purchaseProUnlock, isAndroidApp, openWebPayment, WEB_PAYMENT_URL } from "../utils/playStoreBilling";
+import { userHasPro, purchaseProUnlock, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
 
 interface UpgradeModalProps {
   /** Whether the modal is currently visible. */
@@ -127,7 +127,14 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
                 {t("upgrade.purchaseButton")}
               </button>
             ) : (
-              <p style={infoStyle}>{t("upgrade.notAvailableOnWeb")}</p>
+              <a
+                style={purchaseButtonStyle}
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("upgrade.getOnPlayStore")}
+              </a>
             )}
           </>
         )}
@@ -269,14 +276,4 @@ const cancelledStyle: React.CSSProperties = {
   fontSize: "0.875rem",
 };
 
-const infoStyle: React.CSSProperties = {
-  textAlign: "center",
-  padding: "10px",
-  marginBottom: "10px",
-  background: "rgba(136,204,255,0.05)",
-  border: "1px solid rgba(136,204,255,0.15)",
-  borderRadius: "8px",
-  color: "rgba(226,232,240,0.7)",
-  fontSize: "0.85rem",
-  lineHeight: 1.5,
-};
+

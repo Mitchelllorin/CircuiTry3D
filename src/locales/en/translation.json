@@ -41,6 +41,7 @@
     "purchaseFailed": "Purchase failed. Please try again.",
     "purchaseCancelled": "Purchase cancelled.",
     "notAvailableOnWeb": "Purchase available on Android only. Visit the Play Store to get the app.",
+    "getOnPlayStore": "Get it on Google Play",
     "features": {
       "title": "Pro Features",
       "saves": "Unlimited circuit saves",
