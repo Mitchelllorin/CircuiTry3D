@@ -718,8 +718,8 @@
           visual: "char",
           physicalDescription:
             "Resistive element collapses under sustained heat. Leads pull away from the body and end caps may dislodge. The component is permanently open-circuit.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 155,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 130) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 155,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 130) / 30, 3),
         },
       },
     },
@@ -739,8 +739,16 @@
           visual: "burst",
           physicalDescription:
             "Electrolyte boils inside the sealed can. Gas pressure forces the relief vent open — or the capacitor bursts at the weld seam. The top dome bulges noticeably before rupture.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 125,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 125,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 100) / 30, 3),
+        },
+        humidity_leakage: {
+          name: "Humidity-Induced Electrolyte Absorption",
+          visual: "smoke",
+          physicalDescription:
+            "High ambient humidity accelerates moisture absorption into the electrolytic capacitor seal. Elevated leakage current degrades capacitance and raises ESR. Prolonged exposure causes the aluminium oxide dielectric to dissolve, ultimately leading to seal failure and electrolyte seepage.",
+          trigger: (metrics) => (metrics.humidity ?? 0) > 75,
+          severity: (metrics) => Math.min(((metrics.humidity ?? 0) - 75) / 20, 3),
         },
       },
     },
@@ -760,8 +768,8 @@
           visual: "char",
           physicalDescription:
             "Die temperature exceeds junction limit. Phosphor layer disintegrates and emission drops sharply. The lens yellows and may crack from thermal stress.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 125,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 125,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 100) / 30, 3),
         },
       },
     },
@@ -790,8 +798,8 @@
           visual: "melt",
           physicalDescription:
             "Second breakdown occurs — a current filament concentrates heat in a microscopic region. Silicon melts at 1,414 °C. The package discolors from silver to brown to black. Leads may pull loose. Device opens or shorts permanently.",
-          trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 175),
-          severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 150) / 30, 3),
+          trigger: (metrics, props) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > (props.maxTempC ?? 175),
+          severity: (metrics, props) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 150) / 30, 3),
         },
       },
     },
@@ -811,8 +819,8 @@
           visual: "vent",
           physicalDescription:
             "Separator melts, causing an internal short. Rapid exothermic reaction builds pressure. The cell vents violently — electrolyte spray, intense heat, potential fire or explosion.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 60,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 50) / 20, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 60,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 50) / 20, 3),
         },
       },
     },
@@ -832,8 +840,8 @@
           visual: "melt",
           physicalDescription:
             "Excessive current heats the contact mass. Contact material fuses together — the switch is permanently closed. The housing may deform or melt at the contact entry points.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 120,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 120,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 100) / 30, 3),
         },
       },
     },
@@ -844,8 +852,8 @@
           visual: "smoke",
           physicalDescription:
             "Enamel insulation on copper windings softens and carbonizes above ~180 °C. Turn-to-turn shorts develop, inductance collapses, and current spikes. Smoke with a characteristic burnt-plastic odor is emitted.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 130,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 40, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 130,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 100) / 40, 3),
         },
       },
     },
@@ -856,8 +864,8 @@
           visual: "glow",
           physicalDescription:
             "Fin temperature exceeds design limits. Aluminum oxidizes — fins discolor from silver to dark gray. Thermal compound between component and sink degrades and dries out, dramatically increasing interface resistance. Attached components overheat.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 150,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 100, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 150,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 100) / 100, 3),
         },
       },
     },
@@ -886,8 +894,8 @@
           visual: "melt",
           physicalDescription:
             "Junction temperature rises above 150 °C — leakage current increases, which raises power dissipation further. Positive-feedback loop destroys the junction. Silicon melts at 1,414 °C locally. Device becomes permanently short-circuit.",
-          trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 150),
-          severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 120) / 35, 3),
+          trigger: (metrics, props) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > (props.maxTempC ?? 150),
+          severity: (metrics, props) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 120) / 35, 3),
         },
       },
     },
@@ -942,8 +950,8 @@
           visual: "melt",
           physicalDescription:
             "Output transistors dissipate excess power under short-circuit or overload. Junction temperature climbs past 150 °C — thermal protection may trip or the output stage fails permanently. Package surface discolors and may blister.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 130,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 100) / 35, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 130,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 100) / 35, 3),
         },
       },
     },
@@ -954,8 +962,8 @@
           visual: "melt",
           physicalDescription:
             "Input-output voltage difference times load current exceeds package rating. Internal thermal shutdown trips repeatedly. If heat sinking is inadequate, junction temperature exceeds 150 °C — the pass transistor melts through. Output voltage collapses and input is shorted to output permanently.",
-          trigger: (metrics, props) => 25 + metrics.thermalRise > (props.maxTempC ?? 150),
-          severity: (metrics, props) => Math.min(((25 + metrics.thermalRise) - 120) / 35, 3),
+          trigger: (metrics, props) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > (props.maxTempC ?? 150),
+          severity: (metrics, props) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 120) / 35, 3),
         },
         overcurrent: {
           name: "Current Limit Latch-Off",
@@ -984,8 +992,16 @@
           visual: "melt",
           physicalDescription:
             "Tj exceeds absolute maximum — metal interconnect migrates (electromigration). Aluminum traces thin and open, or copper pillars crack. Logic function fails non-recoverable. Package may blister; die bond pads pull away.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 110,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 85) / 35, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 110,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 85) / 35, 3),
+        },
+        humidity_surface_leakage: {
+          name: "Surface Leakage / Dendritic Growth",
+          visual: "arc",
+          physicalDescription:
+            "At very high humidity, condensation forms on the IC package surface. Ionic contamination enables electrochemical migration between adjacent pins — metallic dendrites grow across the substrate and can short I/O pads together. Erratic logic operation precedes permanent failure.",
+          trigger: (metrics) => (metrics.humidity ?? 0) > 85,
+          severity: (metrics) => Math.min(((metrics.humidity ?? 0) - 85) / 12, 3),
         },
       },
     },
@@ -1062,8 +1078,8 @@
           visual: "char",
           physicalDescription:
             "Sustained overtemperature degrades bearing lubricant. Metal-to-metal contact increases friction, raises temperature further. Bearing races deform and the shaft seizes — rotor locks up. Continuing to apply voltage drives winding burnout.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 100,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 80) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 100,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 80) / 30, 3),
         },
       },
     },
@@ -1074,8 +1090,8 @@
           visual: "glow",
           physicalDescription:
             "NTC thermistor body temperature rises significantly above ambient due to self-heating (I²R). Measured resistance now reflects sensor body temperature rather than ambient — readings are inaccurate. At extreme temperatures the ceramic substrate can crack, permanently shifting or opening the element.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 80,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 60) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 80,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 60) / 30, 3),
         },
       },
     },
@@ -1086,8 +1102,8 @@
           visual: "smoke",
           physicalDescription:
             "Sustained overload heats primary or secondary winding past insulation class limit. Class B insulation fails above 130 °C; Class F above 155 °C. Inter-winding arc-over may occur. The transformer hums louder, draws high no-load current, and eventually shorts the supply.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 110,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 85) / 35, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 110,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 85) / 35, 3),
         },
       },
     },
@@ -1145,7 +1161,7 @@
             if (props.insulationClass === 'bare1200') return false;
             const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
             const limitC = props.insulationMaxTempC ?? insulSpec?.thermalLimitC ?? 80;
-            return (25 + metrics.thermalRise) > limitC;
+            return ((metrics.ambientTemperature ?? 25) + metrics.thermalRise) > limitC;
           },
           // Severity ramps from 0 at the insulation limit up to 3 at limit+60 °C —
           // matching the narrow window between first degradation (charring, cracking)
@@ -1153,7 +1169,7 @@
           severity: (metrics, props) => {
             const insulSpec = props.insulationClass ? WIRE_INSULATION_SPECS[props.insulationClass] : null;
             const limitC = props.insulationMaxTempC ?? insulSpec?.thermalLimitC ?? 80;
-            const temp = 25 + metrics.thermalRise;
+            const temp = (metrics.ambientTemperature ?? 25) + metrics.thermalRise;
             return Math.min((temp - limitC) / 60, 3);
           },
         },
@@ -1186,8 +1202,8 @@
           visual: "char",
           physicalDescription:
             "Component temperature exceeds material limits. Insulation chars, bonding compounds melt, and contacts oxidize. The component may open-circuit, short-circuit, or degrade in performance depending on its construction.",
-          trigger: (metrics) => 25 + metrics.thermalRise > 100,
-          severity: (metrics) => Math.min(((25 + metrics.thermalRise) - 80) / 30, 3),
+          trigger: (metrics) => (metrics.ambientTemperature ?? 25) + metrics.thermalRise > 100,
+          severity: (metrics) => Math.min((((metrics.ambientTemperature ?? 25) + metrics.thermalRise) - 80) / 30, 3),
         },
         overpower: {
           name: "Power Dissipation Limit",
@@ -1476,7 +1492,7 @@
 
     if (!thresholds) return result;
 
-    const currentTempC = 25 + (metrics.thermalRise || 0);
+    const currentTempC = (metrics.ambientTemperature ?? 25) + (metrics.thermalRise || 0);
 
     // If a critical limit exists from composition and the current temperature
     // exceeds it — even if the base engine did not detect a failure — surface

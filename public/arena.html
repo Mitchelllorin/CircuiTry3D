@@ -2179,6 +2179,13 @@
 
       <!-- ── Tab: Test Setup ─────────────────────────── -->
       <div class="panel-tab-pane" id="tab-test" role="tabpanel">
+        <!-- Run CTA at the top — always visible, no scrolling required -->
+        <section class="panel-section">
+          <button class="tab-cta-btn run-cta" id="btn-run-in-panel" aria-label="Run simulation test">
+            ▶ Run Test
+          </button>
+        </section>
+
         <section class="panel-section">
           <div class="section-heading">Test Preset</div>
           <div class="preset-row">
@@ -2242,13 +2249,6 @@
             <div class="fuse-calc-result" id="fuse-calc-result" aria-live="polite" aria-atomic="true">Enter load current and click Calculate.</div>
             <div class="fuse-wire-coord" id="fuse-wire-coord" aria-live="polite"></div>
           </div>
-        </section>
-
-        <!-- In-panel run CTA -->
-        <section class="panel-section">
-          <button class="tab-cta-btn run-cta" id="btn-run-in-panel" aria-label="Run simulation test">
-            ▶ Run Test
-          </button>
         </section>
       </div>
 
@@ -2578,6 +2578,164 @@
           type: "fuse",
           properties: { ratedCurrentA: 1, meltingI2t: 1, resistance: 0.02, thermalResistance: 40 },
           metadata: { displayName: "F1", source: "Reference Library" },
+        },
+        // ── Additional real-world commodity components ──────────────────────────
+        // All specs are from publicly-available datasheets for standard, widely-
+        // stocked jellybean parts.  These are the "open source" building-blocks
+        // of virtually every hobbyist and professional electronics design.
+        {
+          id: "bjt-2n3904",
+          name: "2N3904 NPN BJT",
+          type: "bjt",
+          properties: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
+          metadata: { displayName: "Q5", partNumber: "2N3904", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "bjt-2n3906",
+          name: "2N3906 PNP BJT",
+          type: "bjt-pnp",
+          properties: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
+          metadata: { displayName: "Q6", partNumber: "2N3906", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "bjt-tip31c",
+          name: "TIP31C NPN Power BJT",
+          type: "bjt",
+          properties: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
+          metadata: { displayName: "Q7", partNumber: "TIP31C", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "bjt-tip32c",
+          name: "TIP32C PNP Power BJT",
+          type: "bjt-pnp",
+          properties: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
+          metadata: { displayName: "Q8", partNumber: "TIP32C", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "diode-1n5819",
+          name: "1N5819 Schottky Diode",
+          type: "diode",
+          properties: { forwardVoltage: 0.34, maxCurrent: 1, reverseVoltage: 40, thermalResistance: 50, powerRating: 2.5 },
+          metadata: { displayName: "D3", partNumber: "1N5819", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "diode-bat43",
+          name: "BAT43 Schottky Diode",
+          type: "diode",
+          properties: { forwardVoltage: 0.25, maxCurrent: 0.2, reverseVoltage: 30, thermalResistance: 300, powerRating: 0.25 },
+          metadata: { displayName: "D4", partNumber: "BAT43", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "zener-3v3",
+          name: "BZX55C3V3 Zener 3.3V",
+          type: "zener_diode",
+          properties: { zenerVoltage: 3.3, maxCurrent: 0.075, powerRating: 0.5, thermalResistance: 250 },
+          metadata: { displayName: "Z1", partNumber: "BZX55C3V3", vendor: "Various", source: "Reference Library" },
+        },
+        {
+          id: "cap-100uf",
+          name: "Electrolytic Cap 100µF 25V",
+          type: "capacitor",
+          properties: { capacitance: 100e-6, maxVoltage: 25, esr: 0.3, thermalResistance: 35 },
+          metadata: { displayName: "C2", partNumber: "EEU-FM1E101", vendor: "Panasonic", source: "Reference Library" },
+        },
+        {
+          id: "cap-10uf",
+          name: "Electrolytic Cap 10µF 50V",
+          type: "capacitor",
+          properties: { capacitance: 10e-6, maxVoltage: 50, esr: 0.8, thermalResistance: 60 },
+          metadata: { displayName: "C3", partNumber: "EEU-FC1H100", vendor: "Panasonic", source: "Reference Library" },
+        },
+        {
+          id: "inductor-47uh",
+          name: "Inductor 47µH",
+          type: "inductor",
+          properties: { inductance: 47e-6, dcResistance: 0.22, saturationCurrentA: 0.7, powerRating: 0.5, thermalResistance: 55 },
+          metadata: { displayName: "L1", partNumber: "CDRH4D28-470", vendor: "Sumida", source: "Reference Library" },
+        },
+        {
+          id: "opamp-lm358",
+          name: "LM358 Dual Op-Amp",
+          type: "opamp",
+          properties: { supplyVoltage: 32, slewRate: 0.6, gainBandwidth: 1e6, powerRating: 0.68, thermalResistance: 100 },
+          metadata: { displayName: "U4", partNumber: "LM358N", vendor: "Texas Instruments", source: "Reference Library" },
+        },
+        {
+          id: "vreg-lm317",
+          name: "LM317 Adjustable Regulator",
+          type: "voltage_regulator",
+          properties: { outputVoltage: 5, dropoutVoltage: 3, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+          metadata: { displayName: "U5", partNumber: "LM317T", vendor: "Texas Instruments", source: "Reference Library" },
+        },
+        {
+          id: "ic-cd4011",
+          name: "CD4011 NAND Gate",
+          type: "ic",
+          properties: { supplyVoltage: 18, maxCurrent: 0.01, powerRating: 0.5, thermalResistance: 100 },
+          metadata: { displayName: "U6", partNumber: "CD4011BE", vendor: "Texas Instruments", source: "Reference Library" },
+        },
+        {
+          id: "ic-74hc595",
+          name: "74HC595 Shift Register",
+          type: "ic",
+          properties: { supplyVoltage: 6, maxCurrent: 0.07, powerRating: 0.5, thermalResistance: 75 },
+          metadata: { displayName: "U7", partNumber: "SN74HC595N", vendor: "Texas Instruments", source: "Reference Library" },
+        },
+        {
+          id: "resistor-10r",
+          name: "Resistor 10 Ohm ¼W",
+          type: "resistor",
+          properties: { resistance: 10, powerRating: 0.25, tolerance: 0.05, thermalResistance: 70 },
+          metadata: { displayName: "R3", source: "Reference Library" },
+        },
+        {
+          id: "resistor-1k",
+          name: "Resistor 1kΩ ¼W",
+          type: "resistor",
+          properties: { resistance: 1000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+          metadata: { displayName: "R4", source: "Reference Library" },
+        },
+        {
+          id: "resistor-10k",
+          name: "Resistor 10kΩ ¼W",
+          type: "resistor",
+          properties: { resistance: 10000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+          metadata: { displayName: "R5", source: "Reference Library" },
+        },
+        {
+          id: "fuse-500ma",
+          name: "Fuse 500mA Fast Blow",
+          type: "fuse",
+          properties: { ratedCurrentA: 0.5, meltingI2t: 0.25, resistance: 0.04, thermalResistance: 40 },
+          metadata: { displayName: "F2", source: "Reference Library" },
+        },
+        {
+          id: "fuse-5a",
+          name: "Fuse 5A (ATO blade)",
+          type: "fuse",
+          properties: { ratedCurrentA: 5, meltingI2t: 25, resistance: 0.006, thermalResistance: 30 },
+          metadata: { displayName: "F3", source: "Reference Library" },
+        },
+        {
+          id: "crystal-16mhz",
+          name: "Crystal 16 MHz",
+          type: "crystal",
+          properties: { frequencyHz: 16e6, seriesResistance: 10, thermalResistance: 200 },
+          metadata: { displayName: "Y1", partNumber: "ABLS-16.000MHZ-B4H-T", vendor: "Abracon", source: "Reference Library" },
+        },
+        {
+          id: "led-white",
+          name: "LED White 3.2V",
+          type: "led",
+          properties: { forwardVoltage: 3.2, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.35, thermalResistance: 110 },
+          metadata: { displayName: "D5", source: "Reference Library" },
+        },
+        {
+          id: "thermistor-10k",
+          name: "NTC Thermistor 10kΩ B3950",
+          type: "thermistor",
+          properties: { resistance: 10000, beta: 3950, tempCoeff: -0.04, thermalResistance: 120 },
+          metadata: { displayName: "TH1", partNumber: "NTCLE100E3103JB0", vendor: "Vishay", source: "Reference Library" },
         },
       ];
 
@@ -4575,16 +4733,36 @@
 
       /**
        * Show the full-screen compare result overlay briefly, then auto-dismiss.
+       * @param {string} winner     — "A", "B", or "tie"
+       * @param {string} nameA      — display name of Component A
+       * @param {string} nameB      — display name of Component B
+       * @param {Object} failureA   — detectFailure result for A (may be null)
+       * @param {Object} failureB   — detectFailure result for B (may be null)
        */
-      function showBattleResultOverlay(winner, nameA, nameB) {
+      function showBattleResultOverlay(winner, nameA, nameB, failureA, failureB) {
         const overlay = document.getElementById("battle-result-overlay");
         if (!overlay) return;
+
+        /** Map numeric severity → human-readable outcome label */
+        function severityLabel(failure) {
+          if (!failure || failure.severity <= 0) return "✅ Nominal (within ratings)";
+          if (failure.severity >= 2.5) return "💀 Destroyed";
+          if (failure.severity >= 1.8) return "🔴 Critical failure";
+          if (failure.severity >= 1.0) return "🟠 Warning — significant stress";
+          return "🟡 Stressed — mild overstress";
+        }
+
+        /** One-line summary of the mode that fired, or a safe fallback. */
+        function modeLabel(failure) {
+          if (!failure || failure.severity <= 0) return null;
+          return failure.name || failure.mode || null;
+        }
 
         overlay.innerHTML = "";
 
         const trophy = document.createElement("div");
         trophy.className = "battle-result-trophy";
-        trophy.textContent = winner === "tie" ? "🤝" : "📊";
+        trophy.textContent = winner === "tie" ? "🤝" : "🏆";
 
         const title = document.createElement("div");
         title.className = "battle-result-title" + (winner === "tie" ? " tie" : "");
@@ -4596,20 +4774,28 @@
         loserLine.className = "battle-result-loser-line";
 
         if (winner === "tie") {
-          title.textContent = "Draw";
-          winnerName.textContent = "Both components performed equally.";
-          loserLine.textContent = nameA + " vs " + nameB;
+          const sevA = failureA ? failureA.severity : 0;
+          const sevB = failureB ? failureB.severity : 0;
+          title.textContent = sevA <= 0 && sevB <= 0 ? "Both Survived" : "Draw";
+          winnerName.textContent = "Both components performed equally under these conditions.";
+          loserLine.textContent = severityLabel(failureA);
         } else {
+          const winFailure = winner === "A" ? failureA : failureB;
+          const loseFailure = winner === "A" ? failureB : failureA;
           const winName = winner === "A" ? nameA : nameB;
           const loseName = winner === "A" ? nameB : nameA;
-          title.textContent = "Comparison complete";
-          winnerName.textContent = winName + " performed better";
-          loserLine.textContent = loseName + " showed higher stress.";
+          const loseStatus = severityLabel(loseFailure);
+          const loseModeStr = modeLabel(loseFailure);
+          title.textContent = winFailure && winFailure.severity > 0
+            ? "⚠ Both stressed — A performed better"
+            : winName + " survived";
+          winnerName.textContent = winName + " — " + (winFailure && winFailure.severity > 0 ? severityLabel(winFailure) : "✅ Nominal");
+          loserLine.textContent = loseName + " — " + loseStatus + (loseModeStr ? " (" + loseModeStr + ")" : "");
         }
 
         const hint = document.createElement("div");
         hint.className = "battle-result-tap-hint";
-        hint.textContent = "Tap anywhere to see FUSE™ analysis →";
+        hint.textContent = "Tap anywhere to see full FUSE™ analysis →";
 
         overlay.appendChild(trophy);
         overlay.appendChild(title);
@@ -4628,6 +4814,9 @@
           // Switch to FUSE tab to show winner/loser analysis
           const fuseTabBtn = document.querySelector('.panel-tab-btn[data-tab="fuse"]');
           if (fuseTabBtn) fuseTabBtn.click();
+          // Scroll panel to top so results are immediately visible without scrolling
+          const panelScroll = document.querySelector(".panel-scroll");
+          if (panelScroll) panelScroll.scrollTop = 0;
           // Open bottom sheet on mobile
           const panel = document.getElementById("arena-panel");
           if (panel) panel.classList.add("sheet-open");
@@ -5878,11 +6067,14 @@
           const nameB = componentB.name || componentB.id || "Component B";
           const winner = determineWinner(failureA, failureB);
           renderBattleResult(winner, nameA, nameB, failureA, failureB);
-          showBattleResultOverlay(winner, nameA, nameB);
+          showBattleResultOverlay(winner, nameA, nameB, failureA, failureB);
         } else {
           // Auto-switch to Metrics tab for single-component tests
           const metricsTabBtn = document.querySelector('.panel-tab-btn[data-tab="metrics"]');
           if (metricsTabBtn) metricsTabBtn.click();
+          // Scroll panel to top so metrics are immediately visible
+          const panelScroll = document.querySelector(".panel-scroll");
+          if (panelScroll) panelScroll.scrollTop = 0;
         }
         // Show notification badges
         const metricsBadge = document.getElementById("badge-metrics");
@@ -6099,7 +6291,15 @@
         const storedEnergy = storedEnergyCap + storedEnergyInd;
         const phaseAngle = Math.atan2(netReactance, effectiveResistance);
         const thermalResistance = props.thermalResistance ?? profile.defaultProperties?.thermalResistance ?? 60;
-        const thermalRise = thermalResistance ? (power * thermalResistance) / 1000 : 0;
+        let thermalRise = thermalResistance ? (power * thermalResistance) / 1000 : 0;
+
+        // High humidity impairs convective cooling by increasing air viscosity and
+        // reducing the thermal gradient to ambient — apply a derating multiplier above 70 % RH.
+        // At 100 % RH the effective thermal rise is ~15 % higher than in dry air (45 % RH baseline).
+        const humidity = variables.ambientHumidityPercent ?? 45;
+        if (humidity > 70) {
+          thermalRise *= 1 + (humidity - 70) * 0.005;
+        }
 
         let efficiency = props.efficiency;
         if (!Number.isFinite(efficiency)) {
@@ -7174,6 +7374,7 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
       "use strict";
 
       const FEATURED_COMPONENTS = [
+        // ── Resistors ──────────────────────────────────────────────────────────
         {
           id: "vishay-crcw0402-100r",
           mfr: "Vishay",
@@ -7183,6 +7384,15 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           props: { resistance: 100, powerRating: 0.063, tolerance: 0.01, thermalResistance: 300 },
         },
         {
+          id: "yageo-cfr-1k",
+          mfr: "Yageo",
+          name: "CFR-25JB-52-1K",
+          spec: "axial · 1kΩ · 5% · 250mW",
+          type: "resistor",
+          props: { resistance: 1000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+        },
+        // ── Capacitors ────────────────────────────────────────────────────────
+        {
           id: "murata-gcj-1uf",
           mfr: "Murata",
           name: "GCJ316R71H105KA12D",
@@ -7191,36 +7401,131 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           props: { capacitance: 1e-6, maxVoltage: 50, esr: 0.05, thermalResistance: 45 },
         },
         {
-          id: "ti-lm7805",
-          mfr: "Texas Instruments",
-          name: "LM7805",
-          spec: "5V reg · 1A · TO-220",
-          type: "voltage_regulator",
-          props: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+          id: "panasonic-eeufm-100uf",
+          mfr: "Panasonic",
+          name: "EEU-FM1E101",
+          spec: "radial · 100µF · 25V · 105°C",
+          type: "capacitor",
+          props: { capacitance: 100e-6, maxVoltage: 25, esr: 0.3, thermalResistance: 35 },
         },
+        // ── Diodes ────────────────────────────────────────────────────────────
         {
           id: "on-semi-1n4148",
           mfr: "ON Semiconductor",
           name: "1N4148",
-          spec: "100V · 300mA · signal diode",
+          spec: "DO-35 · 100V · 300mA · signal",
           type: "diode",
           props: { forwardVoltage: 0.72, maxCurrent: 0.3, reverseVoltage: 100, thermalResistance: 250, powerRating: 0.5 },
         },
         {
-          id: "infineon-irf540n",
-          mfr: "Infineon",
-          name: "IRF540N",
-          spec: "N-MOSFET · 100V · 33A",
-          type: "mosfet",
-          props: { vth: 4, rds_on: 0.044, id_max: 33, vds_max: 100, vgs_max: 20, powerRating: 130, thermalResistance: 0.92, maxTempC: 175 },
+          id: "on-semi-1n4007",
+          mfr: "ON Semiconductor",
+          name: "1N4007",
+          spec: "DO-41 · 1000V · 1A · rectifier",
+          type: "diode",
+          props: { forwardVoltage: 0.7, maxCurrent: 1, reverseVoltage: 1000, thermalResistance: 60, powerRating: 3 },
         },
+        {
+          id: "nxp-bat43",
+          mfr: "NXP",
+          name: "BAT43",
+          spec: "DO-35 · 30V · 200mA · Schottky",
+          type: "diode",
+          props: { forwardVoltage: 0.25, maxCurrent: 0.2, reverseVoltage: 30, thermalResistance: 300, powerRating: 0.25 },
+        },
+        // ── Zener Diodes ──────────────────────────────────────────────────────
         {
           id: "vishay-bzx84c-5v1",
           mfr: "Vishay",
           name: "BZX84C5V1",
-          spec: "Zener · 5.1V · 300mW",
+          spec: "SOT-23 · 5.1V · 300mW",
           type: "zener_diode",
           props: { zenerVoltage: 5.1, maxCurrent: 0.059, powerRating: 0.3, thermalResistance: 500 },
+        },
+        // ── BJTs ──────────────────────────────────────────────────────────────
+        {
+          id: "on-semi-2n3904",
+          mfr: "ON Semiconductor",
+          name: "2N3904",
+          spec: "TO-92 · NPN · 40V · 200mA",
+          type: "bjt",
+          props: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
+        },
+        {
+          id: "on-semi-2n3906",
+          mfr: "ON Semiconductor",
+          name: "2N3906",
+          spec: "TO-92 · PNP · 40V · 200mA",
+          type: "bjt-pnp",
+          props: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
+        },
+        {
+          id: "on-semi-tip31c",
+          mfr: "ON Semiconductor",
+          name: "TIP31C",
+          spec: "TO-220 · NPN · 100V · 3A · 40W",
+          type: "bjt",
+          props: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
+        },
+        // ── MOSFETs ───────────────────────────────────────────────────────────
+        {
+          id: "infineon-irf540n",
+          mfr: "Infineon",
+          name: "IRF540N",
+          spec: "TO-220 · N-MOSFET · 100V · 33A",
+          type: "mosfet",
+          props: { vth: 4, rds_on: 0.044, id_max: 33, vds_max: 100, vgs_max: 20, powerRating: 130, thermalResistance: 0.92, maxTempC: 175 },
+        },
+        {
+          id: "vishay-si2302ads",
+          mfr: "Vishay",
+          name: "SI2302ADS",
+          spec: "SOT-23 · N-MOSFET · 20V · 2.3A",
+          type: "mosfet",
+          props: { vth: 1.0, rds_on: 0.08, id_max: 2.3, vds_max: 20, vgs_max: 12, powerRating: 0.9, thermalResistance: 138, maxTempC: 150 },
+        },
+        // ── Voltage Regulators ────────────────────────────────────────────────
+        {
+          id: "ti-lm7805",
+          mfr: "Texas Instruments",
+          name: "LM7805",
+          spec: "TO-220 · 5V · 1.5A",
+          type: "voltage_regulator",
+          props: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
+          id: "ti-lm317",
+          mfr: "Texas Instruments",
+          name: "LM317T",
+          spec: "TO-220 · adj 1.2–37V · 1.5A",
+          type: "voltage_regulator",
+          props: { outputVoltage: 5, dropoutVoltage: 3, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        // ── Op-Amps ───────────────────────────────────────────────────────────
+        {
+          id: "ti-lm358",
+          mfr: "Texas Instruments",
+          name: "LM358N",
+          spec: "DIP-8 · dual op-amp · 32V supply",
+          type: "opamp",
+          props: { supplyVoltage: 32, slewRate: 0.6, gainBandwidth: 1e6, powerRating: 0.68, thermalResistance: 100 },
+        },
+        // ── ICs ───────────────────────────────────────────────────────────────
+        {
+          id: "ti-ne555",
+          mfr: "Texas Instruments",
+          name: "NE555P",
+          spec: "DIP-8 · timer · 4.5–16V",
+          type: "ic",
+          props: { supplyVoltage: 16, maxCurrent: 0.2, powerRating: 0.6, thermalResistance: 70 },
+        },
+        {
+          id: "ti-74hc595",
+          mfr: "Texas Instruments",
+          name: "SN74HC595N",
+          spec: "DIP-16 · 8-bit shift register",
+          type: "ic",
+          props: { supplyVoltage: 6, maxCurrent: 0.07, powerRating: 0.5, thermalResistance: 75 },
         },
       ];
 
@@ -7246,14 +7551,13 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
         // If the component type isn't in the select yet, add it
         if (optionValue === null) {
           // Register with FailureEngine so detectFailure works.
-          // An empty modes object is intentional here: the featured component
-          // inherits failure profiles from its resolved family (fc.type) via
-          // resolveComponentFamily(), so no custom modes need to be provided.
+          // Pass { family: fc.type } so that resolveComponentFamily(fc.id) returns
+          // the correct canonical family and its failure profiles apply automatically.
           if (typeof FailureEngine !== "undefined" && FailureEngine.registerComponentType) {
-            FailureEngine.registerComponentType(fc.id, fc.type);
-            if (FailureEngine.registerFailureProfile) {
-              FailureEngine.registerFailureProfile(fc.id, {});
-            }
+            FailureEngine.registerComponentType(fc.id, {
+              family: fc.type,
+              defaultProperties: Object.assign({}, fc.props),
+            });
           }
 
           const opt = document.createElement("option");
@@ -7268,26 +7572,74 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
         selectA.value = optionValue;
         selectA.dispatchEvent(new Event("change", { bubbles: true }));
 
-        // Update active card highlight
+        // Update active card highlight (re-renders current page to reflect selection)
         activeId = fc.id;
-        document.querySelectorAll(".featured-component-card").forEach((el) => {
-          el.classList.toggle("selected", el.dataset.fcId === fc.id);
+        renderPage();
+      }
+
+      const ITEMS_PER_PAGE = 8;
+      let currentPage = 0;
+      let searchQuery = "";
+
+      function filteredComponents() {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return FEATURED_COMPONENTS;
+        return FEATURED_COMPONENTS.filter((fc) =>
+          fc.mfr.toLowerCase().includes(q) ||
+          fc.name.toLowerCase().includes(q) ||
+          fc.spec.toLowerCase().includes(q) ||
+          fc.type.toLowerCase().includes(q)
+        );
+      }
+
+      function renderPage() {
+        grid.innerHTML = "";
+        const items = filteredComponents();
+        const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+        if (currentPage >= totalPages) currentPage = 0;
+        const start = currentPage * ITEMS_PER_PAGE;
+        const page = items.slice(start, start + ITEMS_PER_PAGE);
+
+        page.forEach((fc) => {
+          const card = document.createElement("div");
+          card.className = "featured-component-card";
+          card.dataset.fcId = fc.id;
+          card.title = `Load ${fc.mfr} ${fc.name} into Component A`;
+          card.innerHTML = `
+            <div class="featured-component-mfr">${fc.mfr}</div>
+            <div class="featured-component-name">${fc.name}</div>
+            <div class="featured-component-spec">${fc.spec}</div>
+          `;
+          card.classList.toggle("selected", fc.id === activeId);
+          card.addEventListener("click", () => loadFeaturedComponent(fc));
+          grid.appendChild(card);
+        });
+
+        const pageInfo = document.getElementById("catalog-page-info");
+        const prevBtn = document.getElementById("catalog-prev");
+        const nextBtn = document.getElementById("catalog-next");
+        if (pageInfo) pageInfo.textContent = `${currentPage + 1} / ${totalPages}`;
+        if (prevBtn) prevBtn.disabled = currentPage === 0;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+      }
+
+      // Wire up search
+      const searchInput = document.getElementById("catalog-search");
+      if (searchInput) {
+        searchInput.addEventListener("input", () => {
+          searchQuery = searchInput.value;
+          currentPage = 0;
+          renderPage();
         });
       }
 
-      FEATURED_COMPONENTS.forEach((fc) => {
-        const card = document.createElement("div");
-        card.className = "featured-component-card";
-        card.dataset.fcId = fc.id;
-        card.title = `Load ${fc.mfr} ${fc.name} into Component A`;
-        card.innerHTML = `
-          <div class="featured-component-mfr">${fc.mfr}</div>
-          <div class="featured-component-name">${fc.name}</div>
-          <div class="featured-component-spec">${fc.spec}</div>
-        `;
-        card.addEventListener("click", () => loadFeaturedComponent(fc));
-        grid.appendChild(card);
-      });
+      // Wire up pagination
+      const prevBtn = document.getElementById("catalog-prev");
+      const nextBtn = document.getElementById("catalog-next");
+      if (prevBtn) prevBtn.addEventListener("click", () => { currentPage--; renderPage(); });
+      if (nextBtn) nextBtn.addEventListener("click", () => { currentPage++; renderPage(); });
+
+      renderPage();
     })();
   </script>
   <!-- Stress Timeline Strip -->
