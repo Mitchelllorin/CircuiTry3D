@@ -145,43 +145,40 @@ export default function PricingSection() {
 
   // ── Purchase handlers ──────────────────────────────────────────────────────
 
+  /**
+   * Handle web-only purchase routing: open the configured checkout URL or fall
+   * back to the Play Store listing.  Returns true when a redirect was performed
+   * so callers can skip the native billing flow.
+   */
+  const handleWebPurchase = useCallback((): boolean => {
+    if (isAndroidApp()) return false;
+    if (WEB_PAYMENT_URL) {
+      openWebPayment();
+    } else {
+      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
+    }
+    return true;
+  }, []);
+
   /** Handle a tap on the Premium Unlock buy button. */
   const handlePurchasePremium = useCallback(async () => {
-    // On web with a payment URL configured, open the checkout page.
-    if (!isAndroidApp() && WEB_PAYMENT_URL) {
-      openWebPayment();
-      return;
-    }
-    // On web without a payment URL, redirect to the Play Store listing.
-    if (!isAndroidApp()) {
-      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
-      return;
-    }
+    if (handleWebPurchase()) return;
     const launched = await purchasePremiumUnlock();
     if (!launched) {
       // Billing unavailable on this device — nothing more we can do here;
       // the billing plugin's purchaseFailed event handles UI feedback on Android.
       console.warn("[Pricing] purchasePremiumUnlock: billing unavailable");
     }
-  }, []);
+  }, [handleWebPurchase]);
 
   /** Handle a tap on the Pro Subscription buy button. */
   const handlePurchasePro = useCallback(async () => {
-    // On web with a payment URL configured, open the checkout page.
-    if (!isAndroidApp() && WEB_PAYMENT_URL) {
-      openWebPayment();
-      return;
-    }
-    // On web without a payment URL, redirect to the Play Store listing.
-    if (!isAndroidApp()) {
-      window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
-      return;
-    }
+    if (handleWebPurchase()) return;
     const launched = await purchaseProSubscription(proCycle);
     if (!launched) {
       console.warn("[Pricing] purchaseProSubscription: billing unavailable");
     }
-  }, [proCycle]);
+  }, [handleWebPurchase, proCycle]);
 
   /** Restore all consumer purchases (subscriptions + one-time). */
   const handleRestorePurchases = useCallback(async () => {
