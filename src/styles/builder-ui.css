@@ -895,12 +895,13 @@ body.builder-body::before {
 }
 
 /* Zoom controls — bottom-right perimeter corner, stacked vertically.
-   No container box — just the three bare symbol buttons. */
+   No container box — just the three bare symbol buttons.
+   Offset by the toggle tab width so the Controls panel toggle (32px wide at right:0)
+   never obscures the zoom buttons. */
 .circuit-zoom-controls {
   position: fixed;
   bottom: calc(48px + var(--builder-safe-area-bottom, 0px));
-  right: calc(var(--builder-edge-actions-gap) + env(safe-area-inset-right, 0px));
-  right: calc(4px + env(safe-area-inset-right, 0px));
+  right: calc(var(--builder-menu-toggle-width) + 4px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
   transform: none;
