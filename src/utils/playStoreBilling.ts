@@ -495,6 +495,13 @@ export async function getConsumerProductPrices(): Promise<Record<string, string>
 export const WEB_PAYMENT_URL: string = (import.meta.env.VITE_PAYMENT_URL ?? "").trim();
 
 /**
+ * Google Play Store listing URL for the CircuiTry3D Android app.
+ * Used as a fallback CTA on web when no VITE_PAYMENT_URL is configured.
+ */
+export const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
+
+/**
  * Open the web payment page in a new tab.
  *
  * @returns true if a payment URL was configured and the tab was opened,

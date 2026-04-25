@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasPro, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, WEB_PAYMENT_URL } from "../utils/playStoreBilling";
+import { userHasPro, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
 import i18n from "../i18n";
 
 type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed" | "cancelled";
@@ -114,7 +114,14 @@ export default function Upgrade() {
                   {t("upgrade.purchaseButton")}
                 </button>
               ) : (
-                <p style={infoStyle}>{t("upgrade.notAvailableOnWeb")}</p>
+                <a
+                  style={primaryButtonStyle}
+                  href={PLAY_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("upgrade.getOnPlayStore")}
+                </a>
               )
             ) : (
               <>
@@ -299,17 +306,6 @@ const warnStyle: React.CSSProperties = {
   borderRadius: "8px",
   color: "#fbbf24",
   fontSize: "0.875rem",
-  textAlign: "center",
-};
-
-const infoStyle: React.CSSProperties = {
-  padding: "14px",
-  background: "rgba(136,204,255,0.05)",
-  border: "1px solid rgba(136,204,255,0.15)",
-  borderRadius: "10px",
-  color: "rgba(226,232,240,0.7)",
-  fontSize: "0.875rem",
-  lineHeight: 1.6,
   textAlign: "center",
 };
 
