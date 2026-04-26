@@ -1207,7 +1207,7 @@
   </footer>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       NAVIGATION BRIDGE (postMessage → React Router)
+       NAVIGATION BRIDGE (hash navigation → React Router)
   ═══════════════════════════════════════════════════════════════ -->
   <script>
     (function () {
@@ -1228,6 +1228,21 @@
 
       var sendNavigationMessage = function (pathTarget) {
         if (!pathTarget) return false;
+        // Primary: directly set the top-level page's hash.  This is more
+        // reliable than postMessage because it does not depend on the parent
+        // correctly identifying event.source (which some browsers report as
+        // null for sandboxed iframes even when allow-same-origin is set).
+        // Requires allow-top-navigation-by-user-activation in the sandbox.
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.hash = pathTarget;
+            return true;
+          }
+        } catch (_) {
+          // Direct access blocked — fall back to postMessage bridge.
+        }
+        // Fallback: postMessage for environments where direct hash navigation
+        // is unavailable (e.g. cross-origin deployment or stricter sandboxing).
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: "landing:navigate", path: pathTarget }, "*");
