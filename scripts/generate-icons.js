@@ -267,11 +267,30 @@ async function main() {
   await writeFile(join(PUBLIC_DIR, 'apple-touch-icon.png'), apple180);
 
   // PWA icons (filenames referenced by manifest.json)
-  const pwaSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+  const pwaSizes = [44, 70, 72, 96, 128, 144, 150, 152, 192, 310, 384, 512];
   for (const size of pwaSizes) {
     const png = await renderPng(size, { fitRatio: size >= 192 ? 0.84 : 0.88 });
     await writeFile(join(PUBLIC_ICONS_DIR, `icon-${size}.png`), png);
   }
+
+  // Windows wide tile icon (310×150 – non-square)
+  await page.setViewportSize({ width: 310, height: 150 });
+  await page.setContent(
+    makeIconHtml({
+      svg: logoSvg,
+      size: 150,
+      fitRatio: 0.82,
+      aspectRatio: logoAspectRatio,
+      backgroundColor: BG,
+      frameColor: BG,
+    }).replace(
+      `body { background: ${BG}; display: grid; place-items: center; }`,
+      `body { background: ${BG}; width: 310px; height: 150px; display: grid; place-items: center; }`
+    )
+  );
+  await page.waitForTimeout(80);
+  const wideTile = await page.screenshot({ type: 'png' });
+  await writeFile(join(PUBLIC_ICONS_DIR, 'icon-wide-310x150.png'), wideTile);
 
   // Android launcher icons
   for (const { folder, launcherSize, foregroundSize } of ANDROID_MIPMAPS) {
@@ -305,7 +324,8 @@ async function main() {
   console.log('  - public/favicon.svg');
   console.log('  - public/favicon-16x16.png / favicon-32x32.png / favicon-48x48.png');
   console.log('  - public/apple-touch-icon.png');
-  console.log('  - public/icons/icon-{72,96,128,144,152,192,384,512}.png');
+  console.log('  - public/icons/icon-{44,70,72,96,128,144,150,152,192,310,384,512}.png');
+  console.log('  - public/icons/icon-wide-310x150.png  (Windows wide tile)');
   console.log('  - android/app/src/main/res/mipmap-*/ic_launcher*.png');
 }
 
