@@ -193,7 +193,7 @@
       touch-action: manipulation;
       letter-spacing: 0.01em;
       font-size: 13px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, border-color 0.2s ease;
       box-shadow: 0 0 0 rgba(34, 211, 238, 0);
     }
 
@@ -400,6 +400,8 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
     }
 
     .summary-list li {
@@ -1520,11 +1522,11 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.82);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
+  will-change: opacity;
 }
 .battle-result-overlay.active {
   opacity: 1;
@@ -2256,7 +2258,7 @@
         <!-- Catalog browser -->
         <section class="panel-section" id="featured-section">
           <div class="panel-header">
-            <div class="section-heading">Featured Components</div>
+            <div class="section-heading">Featured Components <span class="section-subtext" style="font-size:10px;font-weight:400;color:rgba(148,163,184,0.6);margin-left:4px;">— real manufacturer parts</span></div>
             <span class="chip-btn" style="cursor:default;pointer-events:none;">Real-World Specs</span>
           </div>
           <div class="catalog-search-row">
@@ -4321,22 +4323,30 @@
         // Debris fragments burst
         createFailureParticles(group, "explosion");
 
-        // DOM radial flash overlay
+        // DOM radial flash overlay — ramp opacity up over a few frames so it
+        // doesn't cause a jarring instant full-screen flash, then fade out.
         const flashEl = document.getElementById("explosion-dom-flash");
         if (flashEl) {
-          const peak = Math.min(intensity * 0.88, 0.88);
-          flashEl.style.transition = "none";
-          flashEl.style.opacity = String(peak);
+          const peak = Math.min(intensity * 0.65, 0.65);
+          let rampFrame = 0;
+          const RAMP_DURATION_FRAMES = 3; // ~50 ms at 60 fps — brief visible rise
+          const DECAY_START_SECONDS = 0.05; // hold at peak for 50 ms then decay
           const startMs = performance.now();
           function fadeFlash(now) {
+            rampFrame++;
             const elapsed = (now - startMs) / 1000;
-            if (elapsed < 0.7) {
-              flashEl.style.opacity = String(Math.max(0, peak * (1 - elapsed / 0.55)));
+            const rampFactor = Math.min(rampFrame / RAMP_DURATION_FRAMES, 1);
+            if (elapsed < DECAY_START_SECONDS) {
+              flashEl.style.opacity = String(peak * rampFactor);
+              requestAnimationFrame(fadeFlash);
+            } else if (elapsed < DECAY_START_SECONDS + 0.55) {
+              flashEl.style.opacity = String(Math.max(0, peak * (1 - (elapsed - DECAY_START_SECONDS) / 0.55)));
               requestAnimationFrame(fadeFlash);
             } else {
               flashEl.style.opacity = "0";
             }
           }
+          flashEl.style.opacity = "0";
           requestAnimationFrame(fadeFlash);
         }
       }
@@ -4876,7 +4886,7 @@
         /** One-line summary of the mode that fired, or a safe fallback. */
         function modeLabel(failure) {
           if (!failure || failure.severity <= 0) return null;
-          return failure.name || failure.mode || null;
+          return failure.name || (failure.mode && typeof failure.mode === "object" ? failure.mode.name : failure.mode) || null;
         }
 
         overlay.innerHTML = "";
@@ -4908,7 +4918,7 @@
           const loseStatus = severityLabel(loseFailure);
           const loseModeStr = modeLabel(loseFailure);
           title.textContent = winFailure && winFailure.severity > 0
-            ? "⚠ Both stressed — A performed better"
+            ? "⚠ Both stressed — " + winName + " performed better"
             : winName + " survived";
           winnerName.textContent = winName + " — " + (winFailure && winFailure.severity > 0 ? severityLabel(winFailure) : "✅ Nominal");
           loserLine.textContent = loseName + " — " + loseStatus + (loseModeStr ? " (" + loseModeStr + ")" : "");
@@ -6194,13 +6204,13 @@
             efficiency: metricsA.efficiency,
           },
         });
-        if (failureA && failureA.severity && failureA.severity !== "ok") {
-          const severityMap = { stressed: "warn", warning: "warn", critical: "critical", failed: "critical" };
+        if (failureA && failureA.severity > 0) {
+          const alertLevel = failureA.severity >= 2 ? "critical" : "warn";
           postToReact({
             type: "arena:fuse-event",
-            severity: severityMap[failureA.severity] || "warn",
+            severity: alertLevel,
             componentId: componentA.id,
-            failureModes: (failureA.modes || []).map((m) => m.name || m.mode || String(m)),
+            failureModes: failureA.mode ? [failureA.name || (typeof failureA.mode === "object" ? failureA.mode.name : "") || ""] : [],
           });
         }
         postToReact({ type: "arena:status", message: "Test complete.", testRunning: false, componentCount: state.components.length });
@@ -6592,7 +6602,7 @@
           entries.push({ label: "Current Delta", value: formatPercent(metrics.currentDeltaPercent) });
           entries.push({ label: "Impedance Delta", value: formatPercent(metrics.impedanceDeltaPercent) });
           entries.push({ label: "Thermal Delta", value: formatWithUnit(metrics.thermalDelta, "C") });
-          entries.push({ label: "Efficiency Delta", value: formatPercent(metrics.efficiencyDelta) });
+          entries.push({ label: "Efficiency Delta", value: formatPercent(fractionToPercent(metrics.efficiencyDelta)) });
           entries.push({ label: "Energy Delta", value: formatWithUnit(metrics.energyDelta, "J") });
         } else {
           entries.push({ label: "Voltage", value: formatWithUnit(metrics.operatingVoltage, "V") });
@@ -6603,7 +6613,7 @@
           entries.push({ label: "Stored Energy", value: formatWithUnit(metrics.storedEnergy, "J") });
           entries.push({ label: "Delivered Energy", value: formatWithUnit(metrics.energyDelivered, "J") });
           entries.push({ label: "Thermal Rise", value: formatWithUnit(metrics.thermalRise, "C") });
-          entries.push({ label: "Efficiency", value: formatPercent(metrics.efficiency) });
+          entries.push({ label: "Efficiency", value: formatPercent(fractionToPercent(metrics.efficiency)) });
           if (metrics.timeToBlow !== null && metrics.timeToBlow !== undefined) {
             entries.push({ label: "Time to Blow", value: formatWithUnit(metrics.timeToBlow, "s"), detail: "At current operating level" });
           }
@@ -6614,7 +6624,7 @@
             entries.push({ label: "Junction Temp", value: formatWithUnit(metrics.junctionTemperature, "C"), detail: `Ambient ${formatWithUnit(metrics.ambientTemperature, "C")} + ΔT ${formatWithUnit(metrics.thermalRise, "C")}` });
           }
           if (metrics.voltageDerating !== null && metrics.voltageDerating !== undefined) {
-            entries.push({ label: "Voltage Derating", value: formatPercent(metrics.voltageDerating), detail: metrics.voltageDerating < 1 ? "⚠ Operating near thermal limit" : "Within safe thermal range" });
+            entries.push({ label: "Voltage Derating", value: formatPercent(fractionToPercent(metrics.voltageDerating)), detail: metrics.voltageDerating < 1 ? "⚠ Operating near thermal limit" : "Within safe thermal range" });
           }
         }
 
@@ -6828,6 +6838,12 @@
         const rounded = value.toFixed(1);
         const sign = value > 0 ? "+" : "";
         return `${sign}${rounded} %`;
+      }
+
+      // Converts a 0–1 fraction to a percentage value for formatPercent.
+      // Returns null for non-numeric inputs so formatPercent shows "?".
+      function fractionToPercent(value) {
+        return typeof value === "number" ? value * 100 : null;
       }
 
       function formatAngle(value) {
@@ -7598,13 +7614,13 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
     } : null,
     metrics: state.lastRun.metrics.A,
     fuseAnalysis: {
-      severity: failureA?.severity || "ok",
-      failureModes: (failureA?.modes || []).map((m) => ({
-        name: m.name || m.mode || String(m),
-        visual: m.visual || null,
-        description: m.description || null,
-      })),
-      recommendedDerating: failureA && failureA.severity !== "ok" ? 0.8 : 1.0,
+      severity: failureA?.severity || 0,
+      failureModes: failureA?.mode ? [{
+        name: failureA.name || (typeof failureA.mode === "object" ? failureA.mode.name : String(failureA.mode)) || "",
+        visual: failureA.visual || null,
+        description: failureA.description || null,
+      }] : [],
+      recommendedDerating: failureA && failureA.severity > 0 ? 0.8 : 1.0,
       timeToFailureEstimateS: (() => {
         if (!compA || compA.family !== "fuse") return null;
         const i2t = compA.properties?.meltingI2t;
