@@ -433,8 +433,8 @@ body {
 
 /* In workspace, the ticker must clear all builder chrome (--z-builder-top: 1300)
    and compact panels (max --z-builder-top: 1300), so 1310 places it just above.
-   Bottom: 56px gives 8px clearance above the zoom-controls cluster whose base is
-   at 48px (see .circuit-zoom-controls bottom: 48px in builder-ui.css). */
+   Bottom: 56px gives 20px clearance above the zoom-controls cluster whose base is
+   at 36px (see .circuit-zoom-controls bottom: 36px in builder-ui.css). */
 .app-shell.is-workspace .tips-ticker {
   z-index: 1310;
   bottom: calc(var(--app-safe-area-bottom) + 56px);

@@ -900,7 +900,7 @@ body.builder-body::before {
    never obscures the zoom buttons. */
 .circuit-zoom-controls {
   position: fixed;
-  bottom: calc(48px + var(--builder-safe-area-bottom, 0px));
+  bottom: calc(36px + var(--builder-safe-area-bottom, 0px));
   right: calc(var(--builder-menu-toggle-width) + 4px + env(safe-area-inset-right, 0px));
   top: auto;
   left: auto;
@@ -1701,7 +1701,7 @@ body.builder-body::before {
    (mirrors Controls: nav at its screen edge, toggle adjacent on the inside). */
 .builder-menu-stage-left {
   left: 0;
-  top: 50%;
+  top: 44%;
   bottom: auto;
   /* row-reverse: nav is the leftmost child (at screen-left when open),
      toggle is the rightmost child (at the toggle-width peek position when closed) */
@@ -1724,7 +1724,7 @@ body.builder-body::before {
 .builder-menu-stage-right {
   right: 0;
   left: auto;
-  top: 50%;
+  top: 44%;
   bottom: auto;
   flex-direction: row; /* in row at right:0 — toggle fills the stage width when closed */
   width: var(--builder-menu-toggle-width); /* closed: only the toggle tab is visible */
