@@ -4329,18 +4329,18 @@
         if (flashEl) {
           const peak = Math.min(intensity * 0.65, 0.65);
           let rampFrame = 0;
-          const rampFrames = 3; // ~50 ms at 60 fps — brief visible rise
+          const RAMP_DURATION_FRAMES = 3; // ~50 ms at 60 fps — brief visible rise
+          const DECAY_START_SECONDS = 0.05; // hold at peak for 50 ms then decay
           const startMs = performance.now();
           function fadeFlash(now) {
             rampFrame++;
             const elapsed = (now - startMs) / 1000;
-            const rampFactor = Math.min(rampFrame / rampFrames, 1);
-            const decayStart = 0.05; // start decaying after 50 ms
-            if (elapsed < decayStart) {
+            const rampFactor = Math.min(rampFrame / RAMP_DURATION_FRAMES, 1);
+            if (elapsed < DECAY_START_SECONDS) {
               flashEl.style.opacity = String(peak * rampFactor);
               requestAnimationFrame(fadeFlash);
-            } else if (elapsed < decayStart + 0.55) {
-              flashEl.style.opacity = String(Math.max(0, peak * (1 - (elapsed - decayStart) / 0.55)));
+            } else if (elapsed < DECAY_START_SECONDS + 0.55) {
+              flashEl.style.opacity = String(Math.max(0, peak * (1 - (elapsed - DECAY_START_SECONDS) / 0.55)));
               requestAnimationFrame(fadeFlash);
             } else {
               flashEl.style.opacity = "0";
@@ -6602,7 +6602,7 @@
           entries.push({ label: "Current Delta", value: formatPercent(metrics.currentDeltaPercent) });
           entries.push({ label: "Impedance Delta", value: formatPercent(metrics.impedanceDeltaPercent) });
           entries.push({ label: "Thermal Delta", value: formatWithUnit(metrics.thermalDelta, "C") });
-          entries.push({ label: "Efficiency Delta", value: formatPercent(typeof metrics.efficiencyDelta === "number" ? metrics.efficiencyDelta * 100 : null) });
+          entries.push({ label: "Efficiency Delta", value: formatPercent(fractionToPercent(metrics.efficiencyDelta)) });
           entries.push({ label: "Energy Delta", value: formatWithUnit(metrics.energyDelta, "J") });
         } else {
           entries.push({ label: "Voltage", value: formatWithUnit(metrics.operatingVoltage, "V") });
@@ -6613,7 +6613,7 @@
           entries.push({ label: "Stored Energy", value: formatWithUnit(metrics.storedEnergy, "J") });
           entries.push({ label: "Delivered Energy", value: formatWithUnit(metrics.energyDelivered, "J") });
           entries.push({ label: "Thermal Rise", value: formatWithUnit(metrics.thermalRise, "C") });
-          entries.push({ label: "Efficiency", value: formatPercent(typeof metrics.efficiency === "number" ? metrics.efficiency * 100 : null) });
+          entries.push({ label: "Efficiency", value: formatPercent(fractionToPercent(metrics.efficiency)) });
           if (metrics.timeToBlow !== null && metrics.timeToBlow !== undefined) {
             entries.push({ label: "Time to Blow", value: formatWithUnit(metrics.timeToBlow, "s"), detail: "At current operating level" });
           }
@@ -6624,7 +6624,7 @@
             entries.push({ label: "Junction Temp", value: formatWithUnit(metrics.junctionTemperature, "C"), detail: `Ambient ${formatWithUnit(metrics.ambientTemperature, "C")} + ΔT ${formatWithUnit(metrics.thermalRise, "C")}` });
           }
           if (metrics.voltageDerating !== null && metrics.voltageDerating !== undefined) {
-            entries.push({ label: "Voltage Derating", value: formatPercent(typeof metrics.voltageDerating === "number" ? metrics.voltageDerating * 100 : null), detail: metrics.voltageDerating < 1 ? "⚠ Operating near thermal limit" : "Within safe thermal range" });
+            entries.push({ label: "Voltage Derating", value: formatPercent(fractionToPercent(metrics.voltageDerating)), detail: metrics.voltageDerating < 1 ? "⚠ Operating near thermal limit" : "Within safe thermal range" });
           }
         }
 
@@ -6838,6 +6838,12 @@
         const rounded = value.toFixed(1);
         const sign = value > 0 ? "+" : "";
         return `${sign}${rounded} %`;
+      }
+
+      // Converts a 0–1 fraction to a percentage value for formatPercent.
+      // Returns null for non-numeric inputs so formatPercent shows "?".
+      function fractionToPercent(value) {
+        return typeof value === "number" ? value * 100 : null;
       }
 
       function formatAngle(value) {
