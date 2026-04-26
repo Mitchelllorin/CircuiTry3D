@@ -4343,7 +4343,8 @@ body.android-optimized .zoom-btn {
             const MAX_TWO_DIGIT         = 99;  // Largest valid two-digit significand
 
             const r = (typeof resistance === 'number' && isFinite(resistance) && resistance > 0)
-                ? resistance : DEFAULT_RESISTANCE;
+                ? resistance
+                : (console.warn(`getResistorColorBands: invalid resistance value (${resistance}), falling back to ${DEFAULT_RESISTANCE} Ω`), DEFAULT_RESISTANCE);
 
             // Express value as two significant digits × a power-of-10 multiplier.
             // multiplierExp is clamped to the range supported by the 4-band code (-2 … 7).
