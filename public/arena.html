@@ -6899,7 +6899,7 @@
         try {
           const savedHistory = JSON.parse(localStorage.getItem("arena.v1.runHistory") || "[]");
           if (Array.isArray(savedHistory)) state.runHistory = savedHistory.slice(0, 20);
-        } catch (e) { /* storage unavailable */ }
+        } catch (e) { console.warn("Arena: could not restore run history", e); }
         renderRunHistory();
 
         const loadedFromUrl = loadSessionFromUrl();
@@ -7041,8 +7041,10 @@
           time.className = "history-item-time";
           try {
             const d = new Date(run.timestamp);
-            time.textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-            time.title = d.toLocaleString();
+            if (!isNaN(d.getTime())) {
+              time.textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              time.title = d.toLocaleString();
+            }
           } catch (e) { /* ignore */ }
 
           header.appendChild(name);
@@ -7924,12 +7926,13 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
         if (currentPage >= totalPages) currentPage = 0;
         const start = currentPage * ITEMS_PER_PAGE;
         const page = items.slice(start, start + ITEMS_PER_PAGE);
+        const renderTarget = catalogTarget; // capture at render time; renderPage() is re-called on every setTarget() change
 
         page.forEach((fc) => {
           const card = document.createElement("div");
           card.className = "featured-component-card";
           card.dataset.fcId = fc.id;
-          card.title = `Load ${fc.mfr} ${fc.name} into Component ${catalogTarget}`;
+          card.title = `Load ${fc.mfr} ${fc.name} into Component ${renderTarget}`;
           card.innerHTML = `
             <div class="featured-component-mfr">${fc.mfr}</div>
             <div class="featured-component-name">${fc.name}</div>
