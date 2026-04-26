@@ -20,9 +20,13 @@ export default function Home() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<LandingMessage>) => {
-      // Only accept messages from the same origin (landing.html is served from
-      // the same origin as the host app).
-      if (event.origin !== window.location.origin) {
+      // Only accept messages from the landing page iframe.  Checking
+      // event.source is more reliable than event.origin because some
+      // browsers/environments report a sandboxed iframe's origin as "null"
+      // even when allow-same-origin is set, which would silently block the
+      // message while event.preventDefault() has already suppressed the
+      // fallback link navigation.
+      if (event.source !== iframeRef.current?.contentWindow) {
         return;
       }
 
