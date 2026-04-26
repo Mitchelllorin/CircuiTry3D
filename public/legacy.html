@@ -8027,18 +8027,17 @@ body.android-optimized .zoom-btn {
             _layerVisibTargetY = cameraTarget.y;
             _layerVisibTargetZ = cameraTarget.z;
 
-            // Map distance → [0, 1] macro-object opacity
+            // Map distance → [0, 1] macro-object opacity.
+            // Components stay fully opaque through tiers 3–5 (d >= ATOMIC_ZOOM_THRESHOLD).
+            // They fade only once entering the true atomic / quantum tiers.
             let targetOpacity;
-            if (cameraDistance >= CLOSE_ZOOM_THRESHOLD) {
+            if (cameraDistance >= ATOMIC_ZOOM_THRESHOLD) {
+                // Tiers 3, 4, 5 — fully opaque at all "normal" zoomed-in views.
                 targetOpacity = 1.0;
-            } else if (cameraDistance >= ATOMIC_ZOOM_THRESHOLD) {
-                // Smoothly fade 1.0 → 0.12 across the close-zoom band (8.0 → 3.0)
-                const t = _smoothstep(ATOMIC_ZOOM_THRESHOLD, CLOSE_ZOOM_THRESHOLD, cameraDistance);
-                targetOpacity = 0.12 + t * 0.88;
             } else if (cameraDistance >= ZOOM_DEEP_ATOMIC) {
-                // Smoothly fade 0.12 → 0 across the atomic band (3.0 → 0.8)
+                // Smoothly fade 1.0 → 0 across the atomic band (3.0 → 0.8)
                 const t = _smoothstep(ZOOM_DEEP_ATOMIC, ATOMIC_ZOOM_THRESHOLD, cameraDistance);
-                targetOpacity = t * 0.12;
+                targetOpacity = t;
             } else {
                 targetOpacity = 0.0;
             }
@@ -8052,7 +8051,7 @@ body.android-optimized .zoom-btn {
             // Perspective-consistent fade: when zoomed in, objects far from the
             // camera target fade out so you can't see a resistor in perfect clarity
             // while looking at an atomic-scale wire elsewhere.
-            const useProximityFade = !fullyVisible && cameraDistance < CLOSE_ZOOM_THRESHOLD;
+            const useProximityFade = !fullyVisible && cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             // Attention radius shrinks as you zoom deeper — at macro zoom it covers
             // the whole scene; at deep atomic zoom it collapses to ~1.5 world units.
             const attentionRadius = Math.max(MIN_ATTENTION_RADIUS, cameraDistance * ATTENTION_RADIUS_SCALE);
