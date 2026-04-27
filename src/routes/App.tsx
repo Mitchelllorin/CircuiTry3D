@@ -42,6 +42,7 @@ const Upgrade = lazy(() => import("../pages/Upgrade"));
 const ContactSales = lazy(() => import("../pages/ContactSales"));
 const Gallery = lazy(() => import("../pages/Gallery"));
 const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
+const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/educator-pilot" element={<EducatorPilot />} />
           </Route>
+          <Route path="/owner" element={<OwnerAccess />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
