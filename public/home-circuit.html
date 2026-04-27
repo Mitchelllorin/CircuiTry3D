@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Circuit Simulator — CircuiTry3D</title>
+<style>
+/* ── Reset & base ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #07071a;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #e2e8f0;
+}
+
+#canvas-container { position: fixed; inset: 0; }
+
+/* ── Info panel (top-left) ── */
+#info-panel {
+  position: fixed; top: 14px; left: 14px;
+  background: rgba(5, 5, 22, 0.88);
+  border: 1px solid rgba(136, 204, 255, 0.22);
+  border-radius: 10px;
+  padding: 13px 16px;
+  min-width: 200px;
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  transition: opacity 0.3s, transform 0.3s;
+}
+#info-panel.hidden { opacity: 0; pointer-events: none; transform: translateX(-8px); }
+
+#info-panel h3 {
+  color: #88ccff;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(136, 204, 255, 0.12);
+}
+
+.info-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; }
+.info-label { font-size: 11px; color: #4a5568; }
+.info-value { font-size: 12px; font-weight: 600; color: #94a3b8; }
+
+.info-value.live    { color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,0.4); }
+.info-value.off     { color: #4a5568; }
+.info-value.tripped { color: #ff4444; animation: blink 0.5s infinite; }
+
+@keyframes blink { 0%,100%{ opacity:1 } 50%{ opacity:0.35 } }
+
+/* ── Component panel (bottom-right) ── */
+#comp-panel {
+  position: fixed; bottom: 72px; right: 14px;
+  background: rgba(5, 5, 22, 0.92);
+  border: 1px solid rgba(136, 204, 255, 0.18);
+  border-radius: 10px;
+  padding: 13px 16px;
+  width: 245px;
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.22s, transform 0.22s;
+  pointer-events: none;
+}
+#comp-panel.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+#cp-name { color: #ff9966; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+#cp-type { color: #88ccff; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 9px; }
+#cp-desc { font-size: 11px; color: #64748b; line-height: 1.65; margin-bottom: 8px; }
+#cp-rating { font-size: 11px; color: #00ff88; font-weight: 600; }
+
+/* ── Controls (bottom-center) ── */
+#controls {
+  position: fixed; bottom: 14px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 8px;
+  z-index: 100;
+  flex-wrap: wrap; justify-content: center;
+}
+
+.ctrl-btn {
+  background: rgba(5, 5, 22, 0.88);
+  border: 1px solid rgba(136, 204, 255, 0.28);
+  border-radius: 7px;
+  color: #88ccff;
+  padding: 8px 14px;
+  font-size: 12px; font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  backdrop-filter: blur(8px);
+  white-space: nowrap; user-select: none;
+}
+.ctrl-btn:hover  { background: rgba(136,204,255,0.11); border-color: #88ccff; transform: translateY(-1px); }
+.ctrl-btn:active { transform: translateY(0); }
+.ctrl-btn.on     { background: rgba(0,255,136,0.1); border-color: #00ff88; color: #00ff88; }
+.ctrl-btn.danger:hover { background: rgba(255,68,68,0.1); border-color: #ff4444; color: #ff4444; }
+
+/* ── Overload overlay ── */
+#overload-overlay {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(160, 8, 8, 0.95);
+  border: 2px solid #ff3333;
+  border-radius: 12px;
+  padding: 24px 38px;
+  text-align: center;
+  z-index: 300;
+  display: none;
+  animation: ov-pulse 0.4s ease-in-out infinite alternate;
+}
+#overload-overlay.show { display: block; }
+#overload-overlay h2 { font-size: 20px; color: #fff; margin-bottom: 6px; }
+#overload-overlay p  { font-size: 13px; color: #ffbbbb; }
+
+@keyframes ov-pulse {
+  from { box-shadow: 0 0 20px rgba(255,0,0,0.4); }
+  to   { box-shadow: 0 0 60px rgba(255,0,0,0.85); }
+}
+
+/* ── Hover tooltip ── */
+#tooltip {
+  position: fixed;
+  background: rgba(5,5,22,0.92);
+  border: 1px solid rgba(136,204,255,0.35);
+  border-radius: 5px;
+  padding: 4px 9px;
+  font-size: 11px; color: #88ccff;
+  pointer-events: none;
+  z-index: 200; display: none;
+  white-space: nowrap;
+}
+
+/* ── Help hint ── */
+#help-hint {
+  position: fixed; bottom: 52px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px; color: #252a3d;
+  pointer-events: none; z-index: 50;
+  letter-spacing: 0.5px; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- Info panel -->
+<div id="info-panel">
+  <h3>⚡ Circuit Monitor</h3>
+  <div class="info-row">
+    <span class="info-label">Status</span>
+    <span class="info-value off" id="ip-status">STANDBY</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Voltage</span>
+    <span class="info-value" id="ip-voltage">120 V AC</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Current</span>
+    <span class="info-value" id="ip-current">0.00 A</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Power</span>
+    <span class="info-value" id="ip-power">0 W</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Branch</span>
+    <span class="info-value" style="color:#88ccff;font-size:10px;">Lighting — 15 A</span>
+  </div>
+</div>
+
+<!-- Component panel -->
+<div id="comp-panel">
+  <div id="cp-name">—</div>
+  <div id="cp-type">Select a component</div>
+  <div id="cp-desc">Click any electrical component in the room to see its details here.</div>
+  <div id="cp-rating"></div>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="ctrl-btn" id="btn-light"  onclick="toggleLight()">🔦 Toggle Light</button>
+  <button class="ctrl-btn danger"           onclick="triggerOverload()">⚡ Overload Demo</button>
+  <button class="ctrl-btn" id="btn-info"   onclick="toggleInfoPanel()">ℹ Info</button>
+</div>
+
+<!-- Overload overlay -->
+<div id="overload-overlay">
+  <h2>⚡ Breaker Tripped!</h2>
+  <p>15 A limit exceeded — Circuit interrupted</p>
+</div>
+
+<div id="tooltip"></div>
+<div id="help-hint">Drag to orbit &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; Click components for details</div>
+
+<!-- Three.js r128 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// =============================================================
+//  HOME CIRCUIT SIMULATOR  —  CircuiTry3D
+//  Self-contained 3D interactive home electrical circuit
+// =============================================================
+
+// ── Circuit state ─────────────────────────────────────────────
+var state = {
+  lightOn:        false,
+  overloadActive: false,
+  infoPanelOn:    true,
+  voltage:        120,
+  lightWatts:     100,
+  get current()   { return this.lightOn && !this.overloadActive ? this.lightWatts / this.voltage : 0; },
+  get power()     { return this.lightOn && !this.overloadActive ? this.lightWatts : 0; }
+};
+
+// ── Three.js globals ──────────────────────────────────────────
+var scene, camera, renderer, raycaster;
+var mouse         = new THREE.Vector2(-99, -99);
+var clickables    = [];   // meshes tested by raycaster
+var hoveredMesh   = null;
+
+// Key scene objects
+var ceilingBulb, ceilingGlow, roomPointLight;
+var panelIndicators = [];  // green/red indicator meshes on breaker
+var switchLever;           // toggles position when light is on/off
+
+// Wire mesh arrays (so we can recolor on state change)
+var hotWires  = [];   // lighting circuit hot wires
+var neutWires = [];   // lighting circuit neutral wires
+
+// Particle system (current-flow dots)
+var particleSys, particleOffsets, particlePos;
+var PARTICLE_COUNT = 38;
+var PARTICLE_PATH  = [];   // full Vector3 loop for the lighting circuit
+
+// Spark system (overload effect)
+var sparkSys, sparkVel;
+
+// ── Camera orbit state ────────────────────────────────────────
+var cam = {
+  theta:  -25,   // horizontal angle, degrees (negative = look from front-right)
+  phi:     50,   // elevation, degrees
+  radius:  21,
+  target:  new THREE.Vector3(0, 0.8, 0),
+  isDrag:  false,
+  prevX: 0, prevY: 0,
+  moved:  false  // did mouse move enough during this drag?
+};
+
+function repositionCamera() {
+  var t = THREE.MathUtils.degToRad(cam.theta);
+  var p = THREE.MathUtils.degToRad(cam.phi);
+  camera.position.set(
+    cam.target.x + cam.radius * Math.sin(p) * Math.sin(t),
+    cam.target.y + cam.radius * Math.cos(p),
+    cam.target.z + cam.radius * Math.sin(p) * Math.cos(t)
+  );
+  camera.lookAt(cam.target);
+}
+
+// ── Wire paths (key coordinates) ─────────────────────────────
+//
+// Room:  x ∈ [-5, 5],  z ∈ [-5, 5],  y ∈ [0, 3.5]
+// Walls: left x=-5, right x=5, back z=-5, front z=5
+// Components:
+//   Breaker panel : left wall  x=-4.94  z=-3   y=1.7
+//   Light switch  : left wall  x=-4.94  z= 2   y=1.2  (same wall, easy to wire)
+//   Outlet 1      : right wall x= 4.94  z=-2   y=0.4
+//   GFCI outlet   : right wall x= 4.94  z= 2   y=0.4
+//   Ceiling light : center     x=0      z=0    y=3.3
+//
+// All wires run along wall/ceiling surfaces as surface-mount conduit.
+// Hot wires y=2.2 on left wall, y=3.4 on ceiling.
+// Neutral wires y=1.5, outlet wires y=1.4.
+// Ground wire y=0.12 (baseboard level).
+
+// Lighting hot: panel → (left wall, going toward front) → switch
+var PATH_LIGHT_HOT = [
+  v3(-4.85,  2.2,  -3.0),   // exits panel box
+  v3(-4.85,  2.2,   1.6),   // runs along left wall toward switch
+  v3(-4.85,  1.3,   2.0)    // drops down to switch height
+];
+
+// Switch → ceiling → light
+var PATH_SWITCH_TO_LIGHT = [
+  v3(-4.85,  1.3,   2.0),   // from switch
+  v3(-4.85,  2.2,   1.6),   // back up to conduit height
+  v3(-4.85,  3.4,   1.6),   // rises to ceiling along left wall
+  v3(-4.85,  3.4,   0.0),   // crosses ceiling (left edge)
+  v3( 0.0,   3.4,   0.0),   // to ceiling light position
+  v3( 0.0,   3.32,  0.0)    // enters light canopy
+];
+
+// Light → neutral return → panel  (grey neutral wire)
+var PATH_LIGHT_NEUTRAL = [
+  v3( 0.0,   3.4,   0.0),    // from light up
+  v3( 0.0,   3.4,  -4.85),   // back along ceiling toward back wall
+  v3(-4.85,  3.4,  -4.85),   // across back ceiling to left corner
+  v3(-4.85,  2.2,  -4.85),   // down back-left corner
+  v3(-4.85,  2.2,  -3.0)     // along left wall back to panel
+];
+
+// Outlet circuit: panel → back wall → right wall → outlet 1 → GFCI
+var PATH_OUTLET = [
+  v3(-4.85,  1.4,  -3.0),    // from panel (lower lug)
+  v3(-4.85,  1.4,  -4.85),   // to back-left corner
+  v3( 4.85,  1.4,  -4.85),   // across back wall
+  v3( 4.85,  1.4,  -2.0),    // down right wall to outlet 1
+  v3( 4.85,  1.4,   2.0)     // continue to GFCI
+];
+
+// Ground (green, baseboard level, complete loop)
+var PATH_GROUND = [
+  v3(-4.85,  0.12, -3.0),
+  v3(-4.85,  0.12, -4.85),
+  v3( 4.85,  0.12, -4.85),
+  v3( 4.85,  0.12,  4.85),
+  v3(-4.85,  0.12,  4.85),
+  v3(-4.85,  0.12, -3.0)
+];
+
+function v3(x, y, z) { return new THREE.Vector3(x, y, z); }
+
+// ── Init ──────────────────────────────────────────────────────
+function init() {
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x07071a);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  // Scene & camera
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x07071a, 30, 58);
+  camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
+  repositionCamera();
+
+  raycaster = new THREE.Raycaster();
+
+  // Build scene
+  addSceneLighting();
+  buildRoom();
+  placeBreaker();
+  placeOutlets();
+  placeSwitch();
+  placeCeilingLight();
+  buildWires();
+  buildParticleSystem();
+
+  // Events
+  window.addEventListener('resize', onResize);
+  renderer.domElement.addEventListener('mousedown',  onMouseDown);
+  window.addEventListener('mouseup',   onMouseUp);
+  window.addEventListener('mousemove', onMouseMove);
+  renderer.domElement.addEventListener('click',  onClick);
+  renderer.domElement.addEventListener('wheel',  onWheel, { passive: false });
+  renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+  renderer.domElement.addEventListener('touchmove',  onTouchMove,  { passive: false });
+  renderer.domElement.addEventListener('touchend',   onTouchEnd);
+
+  animate();
+}
+
+// ── Scene lighting ────────────────────────────────────────────
+function addSceneLighting() {
+  scene.add(new THREE.AmbientLight(0x16182e, 1.0));
+
+  var sun = new THREE.DirectionalLight(0x3a4a70, 0.5);
+  sun.position.set(6, 12, 5);
+  sun.castShadow = true;
+  sun.shadow.camera.left  = -8;  sun.shadow.camera.right  = 8;
+  sun.shadow.camera.top   =  8;  sun.shadow.camera.bottom = -8;
+  sun.shadow.mapSize.set(1024, 1024);
+  scene.add(sun);
+
+  // Room light from ceiling fixture – off until switch on
+  roomPointLight = new THREE.PointLight(0xffdd88, 0, 12, 1.6);
+  roomPointLight.position.set(0, 3.1, 0);
+  scene.add(roomPointLight);
+}
+
+// ── Room geometry ─────────────────────────────────────────────
+function buildRoom() {
+  var DS = THREE.DoubleSide;
+
+  // Floor
+  var floorMat = new THREE.MeshLambertMaterial({ color: 0x13172a });
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Floor grid
+  var grid = new THREE.GridHelper(10, 25, 0x1a1e38, 0x181c34);
+  grid.position.y = 0.006;
+  scene.add(grid);
+
+  // Ceiling – semi-transparent so we can look down in
+  var ceilMat = new THREE.MeshBasicMaterial({ color: 0x0c0f1e, transparent: true, opacity: 0.20, side: DS });
+  var ceil = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), ceilMat);
+  ceil.rotation.x = Math.PI / 2;
+  ceil.position.y = 3.5;
+  scene.add(ceil);
+
+  // Walls – DoubleSide so they render from any camera angle
+  var wallData = [
+    // [geometry WxH, position, rotationY]
+    [10, 3.5,  -5, 1.75,  0,   0      ],   // back
+    [10, 3.5,   0, 1.75,  5,   Math.PI],   // front (with door gap handled separately)
+    [10, 3.5, -5,  1.75,  0,   Math.PI / 2,  true  ],  // left  (x=-5)
+    [10, 3.5,  5,  1.75,  0,  -Math.PI / 2,  false ]   // right (x=+5)
+  ];
+  // Build individually for clarity
+  function makeWall(w, h, px, py, pz, ry, col) {
+    var m = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, h),
+      new THREE.MeshLambertMaterial({ color: col || 0x1a1e32, side: DS })
+    );
+    m.position.set(px, py, pz);
+    m.rotation.y = ry;
+    m.receiveShadow = true;
+    scene.add(m);
+    return m;
+  }
+
+  makeWall(10, 3.5,  0,  1.75, -5,  0,              0x181c30);  // back
+  makeWall(10, 3.5, -5,  1.75,  0,  Math.PI / 2,    0x1c2035);  // left
+  makeWall(10, 3.5,  5,  1.75,  0, -Math.PI / 2,    0x1a1e32);  // right
+
+  // Front wall – two sections flanking a door gap (x ∈ [0.5, 2.5])
+  makeWall(3.5, 3.5, -3.25, 1.75, 5,  Math.PI, 0x1c2035);  // left of door
+  makeWall(3.0, 3.5,  3.5,  1.75, 5,  Math.PI, 0x1c2035);  // right of door
+
+  // Door frame trim
+  var trimMat = new THREE.MeshLambertMaterial({ color: 0x1e2438 });
+  [[0.5, 1.425, Math.PI], [2.5, 1.425, Math.PI]].forEach(function(d) {
+    var p = new THREE.Mesh(new THREE.BoxGeometry(0.07, 2.85, 0.10), trimMat.clone());
+    p.position.set(d[0], d[1], 5.0);
+    scene.add(p);
+  });
+  var lintel = new THREE.Mesh(new THREE.BoxGeometry(2.14, 0.07, 0.10), trimMat.clone());
+  lintel.position.set(1.5, 2.85, 5.0);
+  scene.add(lintel);
+
+  // Corner posts
+  var postMat = new THREE.MeshLambertMaterial({ color: 0x111428 });
+  [[-5,-5],[-5,5],[5,-5],[5,5]].forEach(function(xz) {
+    var post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.5, 0.14), postMat.clone());
+    post.position.set(xz[0], 1.75, xz[1]);
+    scene.add(post);
+  });
+
+  // Baseboard strip on left wall (matches wire ground conduit)
+  var bbMat = new THREE.MeshBasicMaterial({ color: 0x12162a });
+  var bb = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 10), bbMat);
+  bb.position.set(-4.97, 0.09, 0);
+  scene.add(bb);
+}
+
+// ── Helper: tube wire along piecewise-linear path ─────────────
+function makeTubeWire(points, radius, color) {
+  var curvePath = new THREE.CurvePath();
+  for (var i = 0; i < points.length - 1; i++) {
+    curvePath.add(new THREE.LineCurve3(points[i], points[i + 1]));
+  }
+  var segs = Math.max(points.length * 4, 12);
+  var geo  = new THREE.TubeGeometry(curvePath, segs, radius, 6, false);
+  var mat  = new THREE.MeshBasicMaterial({ color: color });
+  var mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.baseColor = color;
+  scene.add(mesh);
+  return mesh;
+}
+
+// ── Register clickable component ──────────────────────────────
+function registerComponent(mesh, info) {
+  mesh.userData.isComp = true;
+  mesh.userData.info   = info;
+  clickables.push(mesh);
+}
+
+// ── Circuit breaker panel (left wall) ─────────────────────────
+function placeBreaker() {
+  var group = new THREE.Group();
+  group.position.set(-4.94, 1.7, -3.0);
+
+  // Main box
+  var boxMat = new THREE.MeshLambertMaterial({ color: 0x252840 });
+  var box = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.45, 1.02), boxMat);
+  group.add(box);
+
+  // Panel door (flush front face)
+  var doorMat = new THREE.MeshLambertMaterial({ color: 0x333657 });
+  var door = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.28, 0.88), doorMat);
+  door.position.set(0.04, 0, 0);
+  group.add(door);
+
+  // Breaker rows
+  var colors = [0x00ff88, 0x00ff88, 0x00ff88, 0x334455, 0x334455, 0x334455];
+  for (var i = 0; i < 6; i++) {
+    var ind = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.07, 0.28),
+      new THREE.MeshBasicMaterial({ color: colors[i] })
+    );
+    ind.position.set(0.06, 0.42 - i * 0.17, 0);
+    group.add(ind);
+    if (i < 3) panelIndicators.push(ind); // first 3 are active circuits
+  }
+
+  // Label strip
+  var lblMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.55 });
+  var lbl = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.10, 0.55), lblMat);
+  lbl.position.set(0.06, -0.55, 0);
+  group.add(lbl);
+
+  // Subtle glow halo (additive, back-side)
+  var haloMat = new THREE.MeshBasicMaterial({
+    color: 0x88ccff, transparent: true, opacity: 0.06, side: THREE.BackSide
+  });
+  var halo = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.65, 1.22), haloMat);
+  group.add(halo);
+
+  scene.add(group);
+  panelMesh = group;
+
+  // Make box and door clickable
+  var info = {
+    name:   'Main Circuit Breaker Panel',
+    type:   'Service Equipment',
+    rating: '200 A Service / 15 A Branch Circuits',
+    desc:   'Distributes 120/240 V power to all branch circuits. Each breaker protects against overcurrent faults on that circuit.'
+  };
+  [box, door].forEach(function(m) {
+    m.userData.worldGroup = group;
+    registerComponent(m, info);
+  });
+}
+
+// ── Wall outlet helper ────────────────────────────────────────
+function makeOutlet(x, y, z, ry, info, isGFCI) {
+  var group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = ry;
+
+  var h = isGFCI ? 0.48 : 0.34;
+
+  // Face plate
+  var plateMat = new THREE.MeshLambertMaterial({ color: 0x23273e });
+  var plate = new THREE.Mesh(new THREE.BoxGeometry(0.06, h, 0.26), plateMat);
+  group.add(plate);
+
+  // Slot pairs (upper and lower duplex)
+  var holeMat = new THREE.MeshBasicMaterial({ color: 0x080b14 });
+  var slotOffsets = isGFCI ? [[-0.09, -0.05], [0.09, -0.05]] : [[-0.07, 0], [0.07, 0]];
+  slotOffsets.forEach(function(yo_zo) {
+    var yOff = yo_zo[0], zOff = yo_zo[1];
+    [-0.055, 0.055].forEach(function(zs) {
+      var slot = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.035, 0.027), holeMat.clone());
+      slot.position.set(0.02, yOff, zs + zOff);
+      group.add(slot);
+    });
+  });
+
+  if (isGFCI) {
+    // TEST button (red) and RESET button (grey)
+    var testMat  = new THREE.MeshBasicMaterial({ color: 0xcc3333 });
+    var resetMat = new THREE.MeshBasicMaterial({ color: 0x445566 });
+    var testBtn  = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.09), testMat);
+    testBtn.position.set(0.02, 0.09, 0);
+    group.add(testBtn);
+    var resetBtn = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.09), resetMat);
+    resetBtn.position.set(0.02, -0.09, 0);
+    group.add(resetBtn);
+  }
+
+  // Glow halo
+  var haloColor = isGFCI ? 0xff9966 : 0x88ccff;
+  var haloMat = new THREE.MeshBasicMaterial({
+    color: haloColor, transparent: true, opacity: 0.10, side: THREE.BackSide
+  });
+  var halo = new THREE.Mesh(new THREE.BoxGeometry(0.12, h + 0.16, 0.40), haloMat);
+  group.add(halo);
+
+  scene.add(group);
+  registerComponent(plate, info);
+}
+
+function placeOutlets() {
+  makeOutlet(4.94, 0.40, -2.0, -Math.PI / 2, {
+    name:   'Duplex Wall Outlet',
+    type:   'General-Purpose Receptacle',
+    rating: '15 A  ·  125 V',
+    desc:   'Standard duplex receptacle. Always live when the main breaker is on. Suitable for general-purpose loads.'
+  }, false);
+
+  makeOutlet(4.94, 0.40, 2.0, -Math.PI / 2, {
+    name:   'GFCI Outlet',
+    type:   'Ground Fault Circuit Interrupter',
+    rating: '15 A  ·  125 V',
+    desc:   'Detects leakage ≥5 mA and trips within 1/40 s. Protects downstream outlets. Required near water sources (NEC 210.8).'
+  }, true);
+}
+
+// ── Light switch (left wall, same wall as panel) ───────────────
+function placeSwitch() {
+  var group = new THREE.Group();
+  group.position.set(-4.94, 1.22, 2.0);
+  group.rotation.y = Math.PI / 2;
+
+  // Face plate
+  var plateMat = new THREE.MeshLambertMaterial({ color: 0x22263c });
+  var plate = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.24, 0.16), plateMat);
+  group.add(plate);
+
+  // Toggle lever
+  var leverMat = new THREE.MeshLambertMaterial({ color: 0x363a58 });
+  var lever = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.11, 0.06), leverMat);
+  lever.position.set(0.01, -0.025, 0);   // starts in OFF (down) position
+  group.add(lever);
+  switchLever = lever;
+
+  // Status LED dot
+  var ledMat = new THREE.MeshBasicMaterial({ color: 0x334455 });
+  var led = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 6), ledMat);
+  led.position.set(0.02, 0.085, 0);
+  group.add(led);
+
+  // Glow halo
+  var haloMat = new THREE.MeshBasicMaterial({
+    color: 0x88ccff, transparent: true, opacity: 0.12, side: THREE.BackSide
+  });
+  var halo = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.36, 0.28), haloMat);
+  group.add(halo);
+
+  scene.add(group);
+
+  var info = {
+    name:   'Single-Pole Light Switch',
+    type:   'Control Device',
+    rating: '15 A  ·  120 V AC',
+    desc:   'Opens and closes the hot wire to the ceiling light. Click it (or press Toggle Light) to flip the switch.'
+  };
+  registerComponent(plate,  info);
+  registerComponent(lever,  info);
+}
+
+// ── Ceiling light fixture ─────────────────────────────────────
+function placeCeilingLight() {
+  // Canopy at ceiling
+  var canopyMat = new THREE.MeshLambertMaterial({ color: 0x28304a });
+  var canopy = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.055, 16), canopyMat);
+  canopy.position.set(0, 3.445, 0);
+  scene.add(canopy);
+
+  // Drop rod
+  var rodMat = new THREE.MeshLambertMaterial({ color: 0x383c56 });
+  var rod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.32, 8), rodMat);
+  rod.position.set(0, 3.18, 0);
+  scene.add(rod);
+
+  // Shade / housing (flared cylinder)
+  var shadeMat = new THREE.MeshLambertMaterial({ color: 0x2a2e48, transparent: true, opacity: 0.9 });
+  var shade = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.24, 0.30, 16), shadeMat);
+  shade.position.set(0, 2.87, 0);
+  scene.add(shade);
+
+  // Bulb sphere (off = dark, on = warm)
+  var bulbMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e });
+  ceilingBulb = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 8), bulbMat);
+  ceilingBulb.position.set(0, 2.76, 0);
+  scene.add(ceilingBulb);
+
+  // Glow sphere (soft bloom proxy, hidden when off)
+  var glowMat = new THREE.MeshBasicMaterial({
+    color: 0xffdd66, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  ceilingGlow = new THREE.Mesh(new THREE.SphereGeometry(0.40, 14, 10), glowMat);
+  ceilingGlow.position.set(0, 2.76, 0);
+  scene.add(ceilingGlow);
+
+  // Clickable info
+  var info = {
+    name:   'Ceiling Light Fixture',
+    type:   'Luminaire',
+    rating: '100 W Max  ·  120 V',
+    desc:   'At 100 W draws 0.83 A (P = V × I). Controlled by the single-pole switch on the left wall. Click the switch to toggle.'
+  };
+  [shade, canopy, ceilingBulb].forEach(function(m) { registerComponent(m, info); });
+}
+
+// ── Wire network ──────────────────────────────────────────────
+function buildWires() {
+  // Lighting hot (blue) — panel to switch, switch to ceiling light
+  hotWires.push(makeTubeWire(PATH_LIGHT_HOT,        0.018, 0x003377));
+  hotWires.push(makeTubeWire(PATH_SWITCH_TO_LIGHT,  0.018, 0x003377));
+
+  // Lighting neutral (darker grey/slate)
+  neutWires.push(makeTubeWire(PATH_LIGHT_NEUTRAL,   0.015, 0x1e2640));
+
+  // Outlet circuit – always live, steady colour
+  makeTubeWire(PATH_OUTLET, 0.018, 0x004488);
+
+  // Ground – green at baseboard level
+  makeTubeWire(PATH_GROUND, 0.011, 0x003322);
+
+  // Junction dot where neutral wire meets back ceiling corner
+  addJunctionDot(-4.85, 3.4, -4.85, 0x334466);
+  addJunctionDot( 0.0,  3.4,  0.0,  0x334466);  // at ceiling light
+  addJunctionDot(-4.85, 2.2, -3.0,  0x334466);  // at panel
+}
+
+function addJunctionDot(x, y, z, col) {
+  var dot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.035, 8, 6),
+    new THREE.MeshBasicMaterial({ color: col })
+  );
+  dot.position.set(x, y, z);
+  scene.add(dot);
+}
+
+// ── Particle system (current flow dots along circuit) ─────────
+function buildParticleSystem() {
+  // Full circuit path: hot → switch-to-light → neutral return (a loop)
+  PARTICLE_PATH = PATH_LIGHT_HOT.concat(
+    PATH_SWITCH_TO_LIGHT.slice(1),
+    PATH_LIGHT_NEUTRAL.slice(1)
+  );
+
+  var geo  = new THREE.BufferGeometry();
+  var pos  = new Float32Array(PARTICLE_COUNT * 3);
+  particlePos     = pos;
+  particleOffsets = new Float32Array(PARTICLE_COUNT);
+
+  // Spread particles evenly around the loop
+  for (var i = 0; i < PARTICLE_COUNT; i++) {
+    particleOffsets[i] = i / PARTICLE_COUNT;
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+
+  var mat = new THREE.PointsMaterial({
+    color: 0x44aaff,
+    size:  0.13,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.92,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  particleSys = new THREE.Points(geo, mat);
+  particleSys.visible = false;
+  scene.add(particleSys);
+}
+
+// Returns a Vector3 at fractional position t∈[0,1] along a piecewise path
+function pointOnPath(path, t) {
+  if (path.length < 2) return path[0].clone();
+
+  // Compute segment lengths and total
+  var segLengths = [], total = 0;
+  for (var i = 0; i < path.length - 1; i++) {
+    var d = path[i].distanceTo(path[i + 1]);
+    segLengths.push(d);
+    total += d;
+  }
+
+  var target = ((t % 1) + 1) % 1 * total;
+  var accum  = 0;
+  for (var i = 0; i < segLengths.length; i++) {
+    if (accum + segLengths[i] >= target) {
+      var segT = (target - accum) / segLengths[i];
+      return new THREE.Vector3().lerpVectors(path[i], path[i + 1], segT);
+    }
+    accum += segLengths[i];
+  }
+  return path[path.length - 1].clone();
+}
+
+function updateParticles(delta) {
+  if (!particleSys || !state.lightOn || state.overloadActive) return;
+
+  // Speed ~ 0.28 path-lengths per second at 100 W / 120 V
+  var speed = 0.0048 * (delta / 16.667);
+
+  for (var i = 0; i < PARTICLE_COUNT; i++) {
+    particleOffsets[i] = (particleOffsets[i] + speed) % 1.0;
+    var p = pointOnPath(PARTICLE_PATH, particleOffsets[i]);
+    particlePos[i * 3]     = p.x;
+    particlePos[i * 3 + 1] = p.y;
+    particlePos[i * 3 + 2] = p.z;
+  }
+  particleSys.geometry.attributes.position.needsUpdate = true;
+}
+
+// ── Light-state visual update ─────────────────────────────────
+function applyLightState() {
+  var on = state.lightOn && !state.overloadActive;
+
+  // Ceiling bulb color
+  ceilingBulb.material.color.setHex(on ? 0xffee88 : 0x1a1a2e);
+  ceilingBulb.material.emissive = ceilingBulb.material.emissive || new THREE.Color(0);
+  ceilingBulb.material.emissive.setHex(on ? 0x664400 : 0x000000);
+
+  // Glow opacity
+  ceilingGlow.material.opacity = on ? 0.38 : 0;
+
+  // Room point-light intensity
+  roomPointLight.intensity = on ? 1.85 : 0;
+
+  // Particles
+  particleSys.visible = on;
+
+  // Switch lever visual position (up = ON, down = OFF)
+  if (switchLever) {
+    switchLever.position.y = on ? 0.028 : -0.028;
+    switchLever.material.color.setHex(on ? 0x5566aa : 0x363a58);
+  }
+
+  // Hot wires glow brighter when live
+  hotWires.forEach(function(w) {
+    w.material.color.setHex(on ? 0x0077dd : 0x002255);
+  });
+  neutWires.forEach(function(w) {
+    w.material.color.setHex(on ? 0x3a4e6e : 0x1e2640);
+  });
+
+  // Panel indicators – all green when OK, first one red when tripped
+  panelIndicators.forEach(function(ind, idx) {
+    if (state.overloadActive) {
+      ind.material.color.setHex(idx === 0 ? 0xff2222 : 0x334455);
+    } else {
+      ind.material.color.setHex(on ? 0x00ff88 : 0x00aa55);
+    }
+  });
+
+  updateInfoPanel();
+}
+
+// ── Info panel DOM update ─────────────────────────────────────
+function updateInfoPanel() {
+  var statusEl  = document.getElementById('ip-status');
+  var currentEl = document.getElementById('ip-current');
+  var powerEl   = document.getElementById('ip-power');
+
+  if (state.overloadActive) {
+    statusEl.textContent  = 'TRIPPED';
+    statusEl.className    = 'info-value tripped';
+    currentEl.textContent = '15 A+';
+    powerEl.textContent   = '— W';
+  } else if (state.lightOn) {
+    statusEl.textContent  = 'LIVE';
+    statusEl.className    = 'info-value live';
+    currentEl.textContent = state.current.toFixed(2) + ' A';
+    powerEl.textContent   = state.power + ' W';
+  } else {
+    statusEl.textContent  = 'STANDBY';
+    statusEl.className    = 'info-value off';
+    currentEl.textContent = '0.00 A';
+    powerEl.textContent   = '0 W';
+  }
+}
+
+// ── Control: toggle light ─────────────────────────────────────
+function toggleLight() {
+  if (state.overloadActive) return;
+  state.lightOn = !state.lightOn;
+  var btn = document.getElementById('btn-light');
+  btn.classList.toggle('on', state.lightOn);
+  btn.textContent = state.lightOn ? '🔦 Light ON' : '🔦 Toggle Light';
+  applyLightState();
+}
+
+// ── Control: overload demo ────────────────────────────────────
+function triggerOverload() {
+  if (state.overloadActive) return;
+  state.overloadActive = true;
+  state.lightOn        = false;
+  applyLightState();
+
+  // Panel flashes red
+  panelMesh.traverse(function(child) {
+    if (child.isMesh && child.material) {
+      child.userData._savedColor = child.material.color ? child.material.color.getHex() : null;
+      if (child.material.color) child.material.color.setHex(0x8b0000);
+    }
+  });
+
+  // Spark particles near panel
+  createSparks();
+
+  // Show overlay
+  document.getElementById('overload-overlay').classList.add('show');
+
+  setTimeout(function() {
+    // Reset
+    state.overloadActive = false;
+    panelMesh.traverse(function(child) {
+      if (child.isMesh && child.material && child.material.color &&
+          child.userData._savedColor !== null && child.userData._savedColor !== undefined) {
+        child.material.color.setHex(child.userData._savedColor);
+      }
+    });
+    document.getElementById('overload-overlay').classList.remove('show');
+    document.getElementById('btn-light').classList.remove('on');
+    document.getElementById('btn-light').textContent = '🔦 Toggle Light';
+    removeSparks();
+    applyLightState();
+  }, 2600);
+}
+
+// ── Spark particle effect ─────────────────────────────────────
+function createSparks() {
+  var count = 70;
+  var geo   = new THREE.BufferGeometry();
+  var pos   = new Float32Array(count * 3);
+  sparkVel  = new Float32Array(count * 3);
+
+  for (var i = 0; i < count; i++) {
+    pos[i*3]   = -4.9  + (Math.random() - 0.5) * 0.25;
+    pos[i*3+1] =  1.7  + (Math.random() - 0.5) * 0.40;
+    pos[i*3+2] = -3.0  + (Math.random() - 0.5) * 0.40;
+
+    sparkVel[i*3]   = (Math.random() - 0.5) * 0.12;
+    sparkVel[i*3+1] = Math.random() * 0.09 + 0.02;
+    sparkVel[i*3+2] = (Math.random() - 0.5) * 0.12;
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  var mat = new THREE.PointsMaterial({
+    color: 0xff8800,
+    size:  0.11,
+    transparent: true, opacity: 1.0,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+
+  sparkSys = new THREE.Points(geo, mat);
+  scene.add(sparkSys);
+}
+
+function updateSparks(delta) {
+  if (!sparkSys) return;
+  var pos  = sparkSys.geometry.attributes.position.array;
+  var grav = 0.0025;
+
+  for (var i = 0; i < pos.length / 3; i++) {
+    pos[i*3]   += sparkVel[i*3];
+    pos[i*3+1] += sparkVel[i*3+1];
+    pos[i*3+2] += sparkVel[i*3+2];
+    sparkVel[i*3+1] -= grav;
+  }
+
+  sparkSys.geometry.attributes.position.needsUpdate = true;
+  sparkSys.material.opacity = Math.max(0, sparkSys.material.opacity - 0.009);
+}
+
+function removeSparks() {
+  if (sparkSys) {
+    scene.remove(sparkSys);
+    sparkSys.geometry.dispose();
+    sparkSys.material.dispose();
+    sparkSys = null;
+  }
+}
+
+// ── Control: info panel toggle ────────────────────────────────
+function toggleInfoPanel() {
+  state.infoPanelOn = !state.infoPanelOn;
+  document.getElementById('info-panel').classList.toggle('hidden', !state.infoPanelOn);
+  document.getElementById('btn-info').classList.toggle('on', state.infoPanelOn);
+}
+
+// ── Raycaster hover / click ───────────────────────────────────
+function doRaycast(clientX, clientY) {
+  var rect = renderer.domElement.getBoundingClientRect();
+  mouse.x  = ((clientX - rect.left) / rect.width)  * 2 - 1;
+  mouse.y  = -((clientY - rect.top)  / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  return raycaster.intersectObjects(clickables, false);
+}
+
+function onMouseMove(e) {
+  // Camera orbit
+  if (cam.isDrag) {
+    var dx = e.clientX - cam.prevX;
+    var dy = e.clientY - cam.prevY;
+    if (Math.abs(dx) + Math.abs(dy) > 2) cam.moved = true;
+    cam.theta -= dx * 0.38;
+    cam.phi    = Math.max(12, Math.min(82, cam.phi - dy * 0.28));
+    cam.prevX  = e.clientX;
+    cam.prevY  = e.clientY;
+    repositionCamera();
+  }
+
+  // Hover detection
+  var hits   = doRaycast(e.clientX, e.clientY);
+  var tip    = document.getElementById('tooltip');
+  var newHov = (hits.length > 0 && hits[0].object.userData.isComp) ? hits[0].object : null;
+
+  if (newHov !== hoveredMesh) {
+    if (hoveredMesh) clearHover(hoveredMesh);
+    hoveredMesh = newHov;
+    if (hoveredMesh) applyHover(hoveredMesh);
+  }
+
+  if (hoveredMesh) {
+    tip.style.display = 'block';
+    tip.style.left    = (e.clientX + 13) + 'px';
+    tip.style.top     = (e.clientY - 22) + 'px';
+    tip.textContent   = hoveredMesh.userData.info.name;
+    renderer.domElement.style.cursor = 'pointer';
+  } else {
+    tip.style.display = 'none';
+    renderer.domElement.style.cursor = '';
+  }
+}
+
+function applyHover(mesh) {
+  if (!mesh.material) return;
+  mesh.userData._hoverSavedEmissive = mesh.material.emissive ? mesh.material.emissive.getHex() : null;
+  if (mesh.material.emissive) mesh.material.emissive.setHex(0x1a2a3a);
+  mesh.userData._hoverSavedScale = mesh.scale.clone();
+  mesh.scale.multiplyScalar(1.06);
+}
+
+function clearHover(mesh) {
+  if (!mesh.material) return;
+  if (mesh.material.emissive && mesh.userData._hoverSavedEmissive !== null) {
+    mesh.material.emissive.setHex(mesh.userData._hoverSavedEmissive);
+  }
+  if (mesh.userData._hoverSavedScale) {
+    mesh.scale.copy(mesh.userData._hoverSavedScale);
+  }
+}
+
+function onClick(e) {
+  if (cam.moved) return; // ignore clicks that were actually drag-ends
+
+  var hits = doRaycast(e.clientX, e.clientY);
+  if (!hits.length || !hits[0].object.userData.isComp) {
+    // Clicked empty space – hide comp panel
+    document.getElementById('comp-panel').classList.remove('visible');
+    return;
+  }
+
+  var info = hits[0].object.userData.info;
+  document.getElementById('cp-name').textContent   = info.name;
+  document.getElementById('cp-type').textContent   = info.type;
+  document.getElementById('cp-desc').textContent   = info.desc;
+  document.getElementById('cp-rating').textContent = info.rating ? ('⚡ ' + info.rating) : '';
+  document.getElementById('comp-panel').classList.add('visible');
+
+  // Clicking the switch also toggles the light
+  if (info.name === 'Single-Pole Light Switch') toggleLight();
+}
+
+function onMouseDown(e) {
+  cam.isDrag = true;
+  cam.moved  = false;
+  cam.prevX  = e.clientX;
+  cam.prevY  = e.clientY;
+}
+function onMouseUp() { cam.isDrag = false; }
+
+function onWheel(e) {
+  e.preventDefault();
+  cam.radius = Math.max(7, Math.min(40, cam.radius + e.deltaY * 0.022));
+  repositionCamera();
+}
+
+// ── Touch support ─────────────────────────────────────────────
+var _touch1 = null, _touchDist = null;
+
+function onTouchStart(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    _touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    cam.prevX = _touch1.x; cam.prevY = _touch1.y;
+    cam.isDrag = true; cam.moved = false;
+  } else if (e.touches.length === 2) {
+    _touchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  if (e.touches.length === 1 && cam.isDrag) {
+    var dx = e.touches[0].clientX - cam.prevX;
+    var dy = e.touches[0].clientY - cam.prevY;
+    if (Math.abs(dx) + Math.abs(dy) > 4) cam.moved = true;
+    cam.theta -= dx * 0.38;
+    cam.phi    = Math.max(12, Math.min(82, cam.phi - dy * 0.28));
+    cam.prevX  = e.touches[0].clientX;
+    cam.prevY  = e.touches[0].clientY;
+    repositionCamera();
+  } else if (e.touches.length === 2 && _touchDist !== null) {
+    var d = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    cam.radius = Math.max(7, Math.min(40, cam.radius - (d - _touchDist) * 0.06));
+    _touchDist = d;
+    repositionCamera();
+  }
+}
+
+function onTouchEnd(e) {
+  cam.isDrag = false;
+  _touchDist = null;
+  // Single-tap triggers click
+  if (!cam.moved && e.changedTouches.length === 1) {
+    var t = e.changedTouches[0];
+    var hits = doRaycast(t.clientX, t.clientY);
+    if (hits.length && hits[0].object.userData.isComp) {
+      var info = hits[0].object.userData.info;
+      document.getElementById('cp-name').textContent   = info.name;
+      document.getElementById('cp-type').textContent   = info.type;
+      document.getElementById('cp-desc').textContent   = info.desc;
+      document.getElementById('cp-rating').textContent = info.rating ? ('⚡ ' + info.rating) : '';
+      document.getElementById('comp-panel').classList.add('visible');
+      if (info.name === 'Single-Pole Light Switch') toggleLight();
+    }
+  }
+}
+
+// ── Resize ────────────────────────────────────────────────────
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ── Animation loop ────────────────────────────────────────────
+var lastTime = 0;
+
+function animate(time) {
+  requestAnimationFrame(animate);
+  var delta = time - lastTime;
+  lastTime  = time;
+
+  updateParticles(delta);
+  if (sparkSys) updateSparks(delta);
+
+  // Subtle warm flicker when light is on
+  if (state.lightOn && !state.overloadActive) {
+    var flicker = 1.85 + Math.sin(time * 0.011) * 0.04 + Math.sin(time * 0.037) * 0.02;
+    roomPointLight.intensity = flicker;
+    ceilingGlow.material.opacity = 0.36 + Math.sin(time * 0.009) * 0.018;
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
