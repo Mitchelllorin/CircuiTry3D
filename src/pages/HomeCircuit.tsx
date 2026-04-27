@@ -31,7 +31,7 @@ export default function HomeCircuit() {
   const neutralWireMatRef = useRef<any>(null);
   const particlePositionsRef = useRef<Float32Array | null>(null);
   const particleGeoRef = useRef<any>(null);
-  const particleOffsetsRef = useRef<Float32Array>(new Float32Array(20).fill(0).map((_, i) => i / 20));
+  const particleOffsetsRef = useRef<Float32Array | null>(null);
   const overloadLightRef = useRef<any>(null);
   const overloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -76,6 +76,9 @@ export default function HomeCircuit() {
 
     import('three').then((THREE) => {
       if (!isMounted || !canvas) return;
+
+      // Initialize particle offsets (evenly spaced around the wire curve)
+      particleOffsetsRef.current = new Float32Array(20).map((_, i) => i / 20);
 
       const width = canvas.clientWidth || 400;
       const height = canvas.clientHeight || 400;
