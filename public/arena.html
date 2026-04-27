@@ -1799,8 +1799,6 @@
 /* ── Component name labels over 3D scene ─────────────────────────────── */
 .scene-label {
   position: fixed;
-  left: 0;
-  top: 0;
   z-index: 2;
   pointer-events: none;
   will-change: transform;
@@ -3064,7 +3062,7 @@
 
       // Pre-allocated scratch vectors for updateSceneLabels – reused every frame
       // to avoid creating garbage that triggers GC pauses (which appear as stutter/flash).
-      // These are initialised lazily once THREE is available.
+      // These are initialized lazily once THREE is available.
       let _labelWorldPos = null;
       let _labelProjPos  = null;
 
@@ -5744,7 +5742,7 @@
       function updateSceneLabels() {
         if (!camera || !renderer) return;
 
-        // Lazily initialise scratch vectors once THREE is available.
+        // Lazily initialize scratch vectors once THREE is available.
         if (!_labelWorldPos) {
           _labelWorldPos = new THREE.Vector3();
           _labelProjPos  = new THREE.Vector3();
@@ -5786,7 +5784,12 @@
 
           el.classList.remove("hidden");
           // Use GPU-composited transform instead of layout-triggering left/top.
-          el.style.transform = `translate(calc(${screenX}px - 50%), calc(${screenY}px - 100%))`;
+          // Subtract half the label width (~60px) and full label height (~54px)
+          // so the label is centred horizontally and sits above the component.
+          // Pre-computing these offsets avoids a calc() on every frame.
+          const tx = Math.round(screenX - 60);
+          const ty = Math.round(screenY - 54);
+          el.style.transform = `translate(${tx}px,${ty}px)`;
           if (nameEl && comp) {
             const displayName = comp.metadata?.displayName || comp.name || comp.id || "";
             if (nameEl.textContent !== displayName) nameEl.textContent = displayName;
@@ -8168,7 +8171,7 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           }
 
           fcs.forEach((fc) => {
-            const meta = TYPE_META[fc.type === "bjt-pnp" ? "bjt" : fc.type] || { icon: "🔩" };
+            const meta = TYPE_META[fc.type] || { icon: "🔩" };
             const row = document.createElement("div");
             row.className = "featured-component-row" + (fc.id === activeId ? " selected" : "");
             row.setAttribute("role", "listitem");
