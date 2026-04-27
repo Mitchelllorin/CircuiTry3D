@@ -66,10 +66,17 @@ export default function CarCircuit() {
     }, 500);
   };
 
+  // Clean up horn timer on unmount
+  useEffect(() => () => {
+    if (hornTimerRef.current) {
+      clearTimeout(hornTimerRef.current);
+      hornTimerRef.current = null;
+    }
+  }, []);
+
   const handleFuseToggle = () => {
     setFuseBlown((v) => {
       const next = !v;
-      fuseBlownRef.current = next;
       if (next) setHeadlightsOn(false);
       return next;
     });

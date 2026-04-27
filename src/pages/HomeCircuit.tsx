@@ -33,6 +33,7 @@ export default function HomeCircuit() {
   const particleGeoRef = useRef<any>(null);
   const particleOffsetsRef = useRef<Float32Array>(new Float32Array(20).fill(0).map((_, i) => i / 20));
   const overloadLightRef = useRef<any>(null);
+  const overloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Wire curve for particle travel
   const wireCurveRef = useRef<any>(null);
@@ -48,9 +49,10 @@ export default function HomeCircuit() {
   const handleOverload = () => {
     if (overloadingRef.current) return;
     setOverloading(true);
-    // The scene effect will detect overloadingRef and add the red light;
+    // The scene effect detects overloadingRef and adds the red light;
     // we store the light on a ref for removal
-    setTimeout(() => {
+    overloadTimerRef.current = setTimeout(() => {
+      overloadTimerRef.current = null;
       if (overloadLightRef.current && sceneRef.current) {
         sceneRef.current.remove(overloadLightRef.current);
         overloadLightRef.current = null;
@@ -58,6 +60,14 @@ export default function HomeCircuit() {
       setOverloading(false);
     }, 2000);
   };
+
+  // Clean up overload timer on unmount
+  useEffect(() => () => {
+    if (overloadTimerRef.current) {
+      clearTimeout(overloadTimerRef.current);
+      overloadTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!canvasRef.current || typeof window === 'undefined') return;
@@ -204,7 +214,6 @@ export default function HomeCircuit() {
       // ── Current-flow particles ─────────────────────────────────────────────
       const particleCount = 20;
       const positions = new Float32Array(particleCount * 3);
-      particleOffsetsRef.current = new Float32Array(particleCount).fill(0).map((_, i) => i / particleCount);
       particlePositionsRef.current = positions;
 
       const particleGeo = new THREE.BufferGeometry();
