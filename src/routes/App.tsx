@@ -42,8 +42,6 @@ const Upgrade = lazy(() => import("../pages/Upgrade"));
 const ContactSales = lazy(() => import("../pages/ContactSales"));
 const Gallery = lazy(() => import("../pages/Gallery"));
 const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
-const HomeCircuit = lazy(() => import("../pages/HomeCircuit"));
-const CarCircuit = lazy(() => import("../pages/CarCircuit"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -92,8 +90,6 @@ export default function App() {
             <Route path="/contact-sales" element={<ContactSales />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/educator-pilot" element={<EducatorPilot />} />
-            <Route path="/home-circuit" element={<HomeCircuit />} />
-            <Route path="/car-circuit" element={<CarCircuit />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

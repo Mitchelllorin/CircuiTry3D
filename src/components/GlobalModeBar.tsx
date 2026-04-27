@@ -78,17 +78,9 @@ export function GlobalModeBar() {
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
-      // Gallery, Home Circuit, and Car Circuit each have their own standalone page.
+      // Gallery has its own standalone page; navigate directly.
       if (mode === "gallery") {
         navigate("/gallery");
-        return;
-      }
-      if (mode === "home-circuit") {
-        navigate("/home-circuit");
-        return;
-      }
-      if (mode === "car-circuit") {
-        navigate("/car-circuit");
         return;
       }
       // Keep all top-nav workflows anchored to the main workspace shell.
