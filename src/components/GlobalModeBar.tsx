@@ -32,6 +32,8 @@ const NAV_TABS: TabConfig[] = [
   { mode: "classroom",    icon: "🎓", label: "Classroom",   title: "Classroom" },
   { mode: "community",    icon: "🌐", label: "Community",   title: "Community" },
   { mode: "gallery",      icon: "🎬", label: "Gallery",     title: "Cinematic gallery — your captured shots and fly-throughs" },
+  { mode: "home-circuit", icon: "🏠", label: "Home",        title: "Home electrical circuits — 3D room wiring simulator" },
+  { mode: "car-circuit",  icon: "🚗", label: "Car",         title: "Automotive circuits — 3D vehicle electrical simulator" },
   { mode: "account",      icon: "👤", label: "Account",     title: "Account" },
 ];
 
@@ -76,9 +78,17 @@ export function GlobalModeBar() {
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
-      // Gallery has its own standalone page; navigate directly.
+      // Gallery, Home Circuit, and Car Circuit each have their own standalone page.
       if (mode === "gallery") {
         navigate("/gallery");
+        return;
+      }
+      if (mode === "home-circuit") {
+        navigate("/home-circuit");
+        return;
+      }
+      if (mode === "car-circuit") {
+        navigate("/car-circuit");
         return;
       }
       // Keep all top-nav workflows anchored to the main workspace shell.

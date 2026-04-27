@@ -199,7 +199,9 @@ html, body {
 <div id="help-hint">Drag to orbit &nbsp;·&nbsp; Scroll to zoom &nbsp;·&nbsp; Click components for details</div>
 
 <!-- Three.js r128 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+        integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+        crossorigin="anonymous"></script>
 <script>
 // =============================================================
 //  HOME CIRCUIT SIMULATOR  —  CircuiTry3D
@@ -773,7 +775,7 @@ function pointOnPath(path, t) {
     total += d;
   }
 
-  var target = ((t % 1) + 1) % 1 * total;
+  var target = (((t % 1) + 1) % 1) * total;
   var accum  = 0;
   for (var i = 0; i < segLengths.length; i++) {
     if (accum + segLengths[i] >= target) {

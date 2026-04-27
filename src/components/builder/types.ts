@@ -214,7 +214,9 @@ export type WorkspaceMode =
   | "account"
   | "pricing"
   | "textbook"
-  | "gallery";
+  | "gallery"
+  | "home-circuit"
+  | "car-circuit";
 
 export type GuideWorkflowId = "tutorial" | "wire-guide";
 
