@@ -601,6 +601,35 @@ Mitchell began CircuiTry3D after watching students struggle to connect textbook 
 
 ---
 
+## 📋 Changelog
+
+### [2026-04-26] — Dynamic Resistor Color Bands (IEC 60062)
+
+**Feature:** 3D resistor models in the circuit builder now display accurate, real-world color bands that update dynamically based on each resistor's resistance value.
+
+Previously all resistors rendered with the same hardcoded band colors regardless of their resistance value. Real resistors encode their value visually using the industry-standard **IEC 60062 4-band color code** — and the builder now matches that.
+
+**What changed:**
+- Added `getResistorColorBands(resistance)` — a helper that converts any resistance value (Ω) to the correct four-band color sequence using the standard digit/multiplier/tolerance encoding
+- Band 1 & 2 represent the two most-significant digits using the standard 10-color palette (Black = 0 through White = 9)
+- Band 3 encodes the power-of-10 multiplier (Black ×1 → Violet ×10 M, plus Gold ×0.1 and Silver ×0.01)
+- Band 4 is the tolerance ring — Gold (±5%) for values ≥ 1 Ω, Silver (±10%) for sub-ohm values
+- Band colors update in real time when a resistor's resistance is edited via the properties panel — no mesh rebuild needed
+
+**Example mappings:**
+
+| Resistance | Band 1 | Band 2 | Band 3 | Band 4 |
+|---|---|---|---|---|
+| 100 Ω | Brown | Black | Brown | Gold |
+| 220 Ω | Red | Red | Brown | Gold |
+| 4.7 kΩ | Yellow | Violet | Red | Gold |
+| 47 kΩ | Yellow | Violet | Orange | Gold |
+| 1 MΩ | Brown | Black | Green | Gold |
+
+**Files modified:** `public/legacy.html`
+
+---
+
 ## 📄 License
 
 [ISC](https://opensource.org/licenses/ISC)

@@ -515,6 +515,89 @@
     .platform-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
 
     /* ═══════════════════════════════════════════════════════════════
+       WHAT'S NEW — TIMELINE
+    ═══════════════════════════════════════════════════════════════ */
+    .updates-section { background: var(--bg2); }
+    .updates-timeline {
+      margin-top: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+    .updates-timeline::before {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 18px;
+      width: 2px;
+      background: linear-gradient(180deg, rgba(136,204,255,.0) 0%, rgba(136,204,255,.3) 8%, rgba(136,204,255,.3) 92%, rgba(136,204,255,.0) 100%);
+      border-radius: 999px;
+    }
+    .timeline-entry {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 0 20px;
+      padding-bottom: 36px;
+    }
+    .timeline-entry:last-child { padding-bottom: 0; }
+    .timeline-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 10px 3px rgba(136,204,255,.35);
+      margin-top: 4px;
+      justify-self: center;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .timeline-dot.dot-green  { background: var(--green);  box-shadow: 0 0 10px 3px rgba(0,255,136,.35); }
+    .timeline-dot.dot-orange { background: var(--orange); box-shadow: 0 0 10px 3px rgba(255,136,68,.35); }
+    .timeline-dot.dot-purple { background: var(--purple); box-shadow: 0 0 10px 3px rgba(192,132,252,.35); }
+    .timeline-body { min-width: 0; }
+    .timeline-date {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .timeline-heading {
+      font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .timeline-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+    .timeline-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .timeline-tag {
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(136,204,255,.22);
+      color: rgba(136,204,255,.75);
+      background: rgba(136,204,255,.06);
+    }
+    .timeline-tag.tag-green  { border-color: rgba(0,255,136,.22);  color: rgba(0,255,136,.75);  background: rgba(0,255,136,.06); }
+    .timeline-tag.tag-orange { border-color: rgba(255,136,68,.22); color: rgba(255,136,68,.75); background: rgba(255,136,68,.06); }
+
+    /* ═══════════════════════════════════════════════════════════════
        FINAL CTA
     ═══════════════════════════════════════════════════════════════ */
     .cta-section {
@@ -1154,6 +1237,46 @@
           <div class="platform-name">Android App</div>
           <div class="platform-desc">Full mobile experience — build and simulate on the go. The same powerful engine, optimized for touch.</div>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       WHAT'S NEW — TIMELINE
+  ═══════════════════════════════════════════════════════════════ -->
+  <section class="section updates-section" id="updates" aria-labelledby="updates-title">
+    <div class="section-inner">
+      <p class="section-eyebrow">Platform updates</p>
+      <h2 class="section-title" id="updates-title">
+        What's <span class="c-green">new</span>
+      </h2>
+      <p class="section-subtitle">
+        CircuiTry3D is continuously updated. Here's a running timeline of recent improvements.
+      </p>
+
+      <div class="updates-timeline" role="list">
+
+        <!-- ── 2026-04-26 ────────────────────────────────────────── -->
+        <div class="timeline-entry" role="listitem">
+          <div class="timeline-dot dot-green" aria-hidden="true"></div>
+          <div class="timeline-body">
+            <div class="timeline-date">April 26, 2026</div>
+            <div class="timeline-heading">Dynamic Resistor Color Bands (IEC 60062)</div>
+            <p class="timeline-desc">
+              3D resistor models in the circuit builder now display accurate, real-world color bands that update
+              automatically based on each resistor's resistance value. The four-band IEC 60062 color code
+              (digit 1, digit 2, multiplier, tolerance) is computed from the component's actual ohm value,
+              so every resistor looks exactly as it would on a real bench — and the bands change in real time when
+              you edit the resistance in the properties panel.
+            </p>
+            <div class="timeline-tags">
+              <span class="timeline-tag tag-green">3D Builder</span>
+              <span class="timeline-tag">Simulation Accuracy</span>
+              <span class="timeline-tag">IEC 60062</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>

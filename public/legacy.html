@@ -4305,6 +4305,80 @@ body.android-optimized .zoom-btn {
             return opts.includeUnit === false ? formatted : `${formatted} ohm`;
         }
 
+        // Maps a resistance value (Ω) to the standard IEC 60062 4-band color code.
+        // Returns an array of four THREE.js-compatible hex integers:
+        //   [band1 (1st digit), band2 (2nd digit), band3 (multiplier), band4 (tolerance)]
+        function getResistorColorBands(resistance) {
+            // Standard resistor color-code palette (index = digit value 0–9)
+            const DIGIT_COLORS = [
+                0x1a1a1a, // 0 – Black
+                0x8B4513, // 1 – Brown
+                0xff2200, // 2 – Red
+                0xff7f00, // 3 – Orange
+                0xffee00, // 4 – Yellow
+                0x00aa00, // 5 – Green
+                0x4488ff, // 6 – Blue
+                0x9b59b6, // 7 – Violet
+                0x888888, // 8 – Grey
+                0xffffff, // 9 – White
+            ];
+            const MULTIPLIER_COLORS = [
+                0x1a1a1a, // ×1        – Black
+                0x8B4513, // ×10       – Brown
+                0xff2200, // ×100      – Red
+                0xff7f00, // ×1 k      – Orange
+                0xffee00, // ×10 k     – Yellow
+                0x00aa00, // ×100 k    – Green
+                0x4488ff, // ×1 M      – Blue
+                0x9b59b6, // ×10 M     – Violet
+                0xffd700, // ×0.1      – Gold
+                0xc0c0c0, // ×0.01     – Silver
+            ];
+            const TOLERANCE_GOLD   = 0xffd700; // ±5 %
+            const TOLERANCE_SILVER = 0xc0c0c0; // ±10 %
+            const DEFAULT_RESISTANCE    = 100; // Fallback Ω when value is invalid
+            const MIN_MULTIPLIER_EXP    = -2;  // Lowest 4-band multiplier exponent (Silver ×0.01)
+            const MAX_MULTIPLIER_EXP    =  7;  // Highest 4-band multiplier exponent (×10 M)
+            const MIN_TWO_DIGIT         = 10;  // Smallest valid two-digit significand
+            const MAX_TWO_DIGIT         = 99;  // Largest valid two-digit significand
+
+            const r = (typeof resistance === 'number' && isFinite(resistance) && resistance > 0)
+                ? resistance
+                : (console.warn(`getResistorColorBands: invalid resistance value (${resistance}), falling back to ${DEFAULT_RESISTANCE} Ω`), DEFAULT_RESISTANCE);
+
+            // Express value as two significant digits × a power-of-10 multiplier.
+            // multiplierExp is clamped to the range supported by the 4-band code (-2 … 7).
+            const exp = Math.floor(Math.log10(r)) - 1;
+            const clampedExp = Math.max(MIN_MULTIPLIER_EXP, Math.min(MAX_MULTIPLIER_EXP, exp));
+            const twoDigitValue = Math.round(r / Math.pow(10, clampedExp));
+
+            // Clamp digit pair to [10, 99] in case of rounding edge-cases.
+            const clampedValue = Math.max(MIN_TWO_DIGIT, Math.min(MAX_TWO_DIGIT, twoDigitValue));
+            const digit1 = Math.floor(clampedValue / 10);
+            const digit2 = clampedValue % 10;
+
+            // Map multiplier exponent to its MULTIPLIER_COLORS index.
+            // Exponents 0-7 → indices 0-7; -1 → index 8 (Gold); -2 → index 9 (Silver).
+            let multiplierIdx;
+            if (clampedExp >= 0) {
+                multiplierIdx = clampedExp;         // 0–7
+            } else if (clampedExp === -1) {
+                multiplierIdx = 8;                  // Gold (×0.1)
+            } else {
+                multiplierIdx = 9;                  // Silver (×0.01)
+            }
+
+            // Tolerance: gold (±5 %) for most values; silver (±10 %) for very small (<1 Ω) values.
+            const tolerance = (r < 1) ? TOLERANCE_SILVER : TOLERANCE_GOLD;
+
+            return [
+                DIGIT_COLORS[digit1],
+                DIGIT_COLORS[digit2],
+                MULTIPLIER_COLORS[multiplierIdx],
+                tolerance,
+            ];
+        }
+
         function formatPower(value, options) {
             const opts = options || {};
             if (!isFinite(value)) {
@@ -6014,15 +6088,19 @@ body.android-optimized .zoom-btn {
                 body.rotation.z = Math.PI / 2;
                 group.add(body);
 
-                // Color bands
-                for(let i = 0; i < 4; i++) {
+                // Compute 4-band color code from resistance value
+                const bandColors = getResistorColorBands(this.properties.resistance);
+
+                // Color bands – store refs so resistance edits can update them live
+                this.colorBandMeshes = [];
+                for (let i = 0; i < 4; i++) {
                     const bandGeometry = new THREE.CylinderGeometry(0.16, 0.16, 0.1, segments);
-                    const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffd700];
-                    const bandMaterial = new THREE.MeshStandardMaterial({ color: colors[i], metalness: 0.0, roughness: 0.7 });
+                    const bandMaterial = new THREE.MeshStandardMaterial({ color: bandColors[i], metalness: 0.0, roughness: 0.7 });
                     const band = new THREE.Mesh(bandGeometry, bandMaterial);
                     band.rotation.z = Math.PI / 2;
                     band.position.x = -0.3 + i * 0.2;
                     group.add(band);
+                    this.colorBandMeshes.push(band);
                 }
 
                 this.addLeads(group);
@@ -7315,6 +7393,14 @@ body.android-optimized .zoom-btn {
                 if (this.type === 'switch' && this.leverMesh) {
                     this.leverMesh.material.color.setHex(this.properties.isOn ? 0x00ff00 : 0xff0000);
                     this.leverMesh.rotation.z = this.properties.isOn ? 0 : Math.PI / 6;
+                }
+
+                // Refresh color bands whenever the resistance of a resistor changes
+                if (this.type === 'resistor' && this.colorBandMeshes && newProperties.resistance !== undefined) {
+                    const bandColors = getResistorColorBands(this.properties.resistance);
+                    this.colorBandMeshes.forEach((band, i) => {
+                        band.material.color.setHex(bandColors[i]);
+                    });
                 }
                 
                 // Update the labels with new values
