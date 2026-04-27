@@ -1801,7 +1801,7 @@
   position: fixed;
   z-index: 2;
   pointer-events: none;
-  transform: translate(-50%, -100%);
+  will-change: transform;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2130,6 +2130,148 @@
   transition: color 0.15s;
 }
 .history-clear-btn:hover { color: #f87171; }
+
+/* ── Catalog type-filter pills ───────────────────────────────────────── */
+.catalog-type-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
+  margin-bottom: 4px;
+}
+.catalog-type-filters::-webkit-scrollbar { display: none; }
+.catalog-type-pill {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(57,255,183,0.22);
+  background: transparent;
+  color: rgba(148,163,184,0.7);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.catalog-type-pill:hover {
+  border-color: rgba(57,255,183,0.5);
+  color: #e2e8f0;
+}
+.catalog-type-pill.active {
+  background: rgba(57,255,183,0.12);
+  border-color: rgba(57,255,183,0.6);
+  color: #39ffb7;
+}
+/* Catalog full scrollable list (replaces paginated grid) */
+.featured-component-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 380px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(57,255,183,0.25) transparent;
+  padding-right: 2px;
+}
+.featured-component-list::-webkit-scrollbar { width: 4px; }
+.featured-component-list::-webkit-scrollbar-track { background: transparent; }
+.featured-component-list::-webkit-scrollbar-thumb { background: rgba(57,255,183,0.25); border-radius: 4px; }
+/* Category group header inside the list */
+.catalog-category-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(148,163,184,0.45);
+  padding: 6px 2px 2px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 4px;
+}
+.catalog-category-label:first-child { border-top: none; margin-top: 0; }
+/* Compact featured component row */
+.featured-component-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(51,65,85,0.55);
+  background: rgba(8,15,28,0.5);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+.featured-component-row:hover {
+  border-color: rgba(57,255,183,0.4);
+  background: rgba(57,255,183,0.05);
+}
+.featured-component-row.selected {
+  border-color: rgba(57,255,183,0.7);
+  background: rgba(57,255,183,0.1);
+}
+.fcrw-type-badge {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(57,255,183,0.08);
+  border: 1px solid rgba(57,255,183,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.fcrw-info { flex: 1; min-width: 0; }
+.fcrw-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(224,242,254,0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fcrw-mfr {
+  font-size: 10px;
+  color: rgba(148,163,184,0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fcrw-spec {
+  font-size: 9px;
+  color: rgba(100,116,139,0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fcrw-load-btns {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+}
+.fcrw-slot-btn {
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(57,255,183,0.3);
+  background: rgba(57,255,183,0.06);
+  color: #39ffb7;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.fcrw-slot-btn:hover { background: rgba(57,255,183,0.15); border-color: rgba(57,255,183,0.6); }
+.fcrw-slot-btn.slot-b {
+  border-color: rgba(251,191,36,0.3);
+  background: rgba(251,191,36,0.06);
+  color: #fbbf24;
+}
+.fcrw-slot-btn.slot-b:hover { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.6); }
   </style>
 </head>
 <body>
@@ -2258,22 +2400,24 @@
         <!-- Catalog browser -->
         <section class="panel-section" id="featured-section">
           <div class="panel-header">
-            <div class="section-heading">Featured Components <span class="section-subtext" style="font-size:10px;font-weight:400;color:rgba(148,163,184,0.6);margin-left:4px;">— real manufacturer parts</span></div>
+            <div class="section-heading">⚡ Component Library <span class="section-subtext" style="font-size:10px;font-weight:400;color:rgba(148,163,184,0.6);margin-left:4px;">— real manufacturer parts</span></div>
             <span class="chip-btn" style="cursor:default;pointer-events:none;">Real-World Specs</span>
           </div>
           <div class="catalog-search-row">
-            <input type="search" id="catalog-search" class="catalog-search-input" placeholder="Search parts or manufacturer…" aria-label="Search catalog" />
+            <input type="search" id="catalog-search" class="catalog-search-input" placeholder="Search parts, type, or manufacturer…" aria-label="Search catalog" />
           </div>
-          <div class="catalog-target-row" id="catalog-target-row" aria-label="Choose which slot to load into">
-            Load as:
-            <button class="catalog-target-btn active" id="catalog-target-a" data-target="A" aria-pressed="true" aria-label="Load into Component A">A</button>
-            <button class="catalog-target-btn" id="catalog-target-b" data-target="B" aria-pressed="false" aria-label="Load into Component B">B</button>
-          </div>
-          <div class="featured-component-grid" id="featured-component-grid" role="list" aria-label="Featured components"></div>
-          <div class="catalog-pagination">
-            <button class="catalog-page-btn" id="catalog-prev" aria-label="Previous page" disabled>‹</button>
+          <!-- Type filter pills -->
+          <div class="catalog-type-filters" id="catalog-type-filters" role="group" aria-label="Filter by component type"></div>
+          <!-- Scrollable component list (no pagination) -->
+          <div class="featured-component-list" id="featured-component-grid" role="list" aria-label="Featured components"></div>
+          <!-- Hidden pagination elements kept for JS compatibility -->
+          <div style="display:none">
+            <button id="catalog-prev">‹</button>
             <span id="catalog-page-info">1 / 1</span>
-            <button class="catalog-page-btn" id="catalog-next" aria-label="Next page" disabled>›</button>
+            <button id="catalog-next">›</button>
+          </div>
+          <div class="catalog-target-row" id="catalog-target-row" style="margin-top:8px;" aria-label="Default slot for component cards">
+            <span style="font-size:10px;color:rgba(148,163,184,0.55);">Click a card to load, or use A / B buttons</span>
           </div>
           <div class="partner-cta">
             <span class="partner-cta-text">Have a component you'd like featured here?</span>
@@ -2915,6 +3059,12 @@
       const failureParticleSystems = [];
       const shockwaves = [];        // Expanding shockwave ring meshes
       const explosionFlashes = [];  // One-time point-light flash objects
+
+      // Pre-allocated scratch vectors for updateSceneLabels – reused every frame
+      // to avoid creating garbage that triggers GC pauses (which appear as stutter/flash).
+      // These are initialized lazily once THREE is available.
+      let _labelWorldPos = null;
+      let _labelProjPos  = null;
 
       function initThree() {
         const canvas = document.getElementById("arena");
@@ -5021,6 +5171,9 @@
         banner.appendChild(icon);
         banner.appendChild(btitle);
         banner.appendChild(bdesc);
+        // Explicitly show the banner — the compare-only CSS class rule has `display:none`
+        // and updateCompareVisibility() may not have run since we added that class.
+        banner.style.display = "flex";
       }
 
       /**
@@ -5036,6 +5189,7 @@
         const banner = document.getElementById("battle-result-banner");
         if (banner) {
           banner.className = "battle-result-banner";
+          banner.style.display = "";
           banner.innerHTML = "";
         }
       }
@@ -5428,11 +5582,6 @@
           });
         }
 
-        const resetBtn = document.getElementById("btn-reset");
-        if (resetBtn) {
-          resetBtn.addEventListener("click", resetArena);
-        }
-
         const jsonInput = document.getElementById("input-import-json");
         if (jsonInput) {
           jsonInput.addEventListener("change", handleFileImport, false);
@@ -5593,6 +5742,12 @@
       function updateSceneLabels() {
         if (!camera || !renderer) return;
 
+        // Lazily initialize scratch vectors once THREE is available.
+        if (!_labelWorldPos) {
+          _labelWorldPos = new THREE.Vector3();
+          _labelProjPos  = new THREE.Vector3();
+        }
+
         const labels = [
           { id: "scene-label-a", nameId: "scene-label-a-name", group: componentGroupA, comp: state.selectedA, visible: !!state.selectedA },
           { id: "scene-label-b", nameId: "scene-label-b-name", group: componentGroupB, comp: state.selectedB, visible: state.mode === "compare" && !!state.selectedB },
@@ -5612,24 +5767,29 @@
             return;
           }
 
-          // Project group world position (slightly above it) to screen
-          const worldPos = new THREE.Vector3();
-          group.getWorldPosition(worldPos);
-          worldPos.y += 2.2; // offset above component
+          // Project group world position (slightly above it) to screen.
+          // Re-use pre-allocated vectors to avoid per-frame GC pressure.
+          group.getWorldPosition(_labelWorldPos);
+          _labelWorldPos.y += 2.2; // offset above component
 
-          const projected = worldPos.clone().project(camera);
-          const screenX = (projected.x * halfW) + halfW;
-          const screenY = -(projected.y * halfH) + halfH;
+          _labelProjPos.copy(_labelWorldPos).project(camera);
+          const screenX = (_labelProjPos.x * halfW) + halfW;
+          const screenY = -(_labelProjPos.y * halfH) + halfH;
 
           // Hide if behind camera
-          if (projected.z > 1) {
+          if (_labelProjPos.z > 1) {
             el.classList.add("hidden");
             return;
           }
 
           el.classList.remove("hidden");
-          el.style.left = `${screenX}px`;
-          el.style.top = `${screenY}px`;
+          // Use GPU-composited transform instead of layout-triggering left/top.
+          // Subtract half the label width (~60px) and full label height (~54px)
+          // so the label is centred horizontally and sits above the component.
+          // Pre-computing these offsets avoids a calc() on every frame.
+          const tx = Math.round(screenX - 60);
+          const ty = Math.round(screenY - 54);
+          el.style.transform = `translate(${tx}px,${ty}px)`;
           if (nameEl && comp) {
             const displayName = comp.metadata?.displayName || comp.name || comp.id || "";
             if (nameEl.textContent !== displayName) nameEl.textContent = displayName;
@@ -7556,6 +7716,16 @@ function applyMetricHealthColors(elementId, metrics, component) {
       } else {
         card.classList.add("health-safe");
       }
+
+      // Fill the utilisation bar — the CSS transition animates it from 0% to target.
+      const utilFill = card.querySelector(".metric-util-fill");
+      if (utilFill) {
+        const pct = Math.min(100, Math.round(Math.abs(ratio) * 100));
+        const fillCls = ratio >= 1.0 ? "util-critical" : ratio >= 0.75 ? "util-warn" : "util-safe";
+        utilFill.className = "metric-util-fill " + fillCls;
+        // Schedule in the next paint so the CSS transition fires from 0% → pct.
+        requestAnimationFrame(() => { utilFill.style.width = pct + "%"; });
+      }
     }
   });
 
@@ -7866,7 +8036,10 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
       let activeId = null;
       let catalogTarget = "A"; // which slot (A or B) catalog cards load into
 
-      function loadFeaturedComponent(fc) {
+      function loadFeaturedComponent(fc, slotTarget) {
+        // Use the explicitly-passed slot or fall back to the current default.
+        const target = slotTarget || catalogTarget;
+
         // 1. Register the component with the main arena state via the public bridge.
         //    This fixes the bug where components added to the DOM <select> were never
         //    added to state.components, causing state.selectedA to end up null.
@@ -7903,7 +8076,7 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
 
         // 2. Load into the correct slot (A or B) via the bridge.
         if (window.ArenaAPI && typeof window.ArenaAPI.loadComponent === "function") {
-          window.ArenaAPI.loadComponent(fc.id, catalogTarget);
+          window.ArenaAPI.loadComponent(fc.id, target);
         }
 
         // 3. Persist so the component survives a page reload.
@@ -7920,85 +8093,176 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
         renderPage();
       }
 
-      const ITEMS_PER_PAGE = 8;
-      let currentPage = 0;
+      // ── Type metadata for pills and icons ─────────────────────────────────
+      const TYPE_META = {
+        resistor:          { label: "Resistors",    icon: "🟫" },
+        capacitor:         { label: "Capacitors",   icon: "⚡" },
+        diode:             { label: "Diodes",        icon: "🔺" },
+        zener_diode:       { label: "Zener",         icon: "⚡" },
+        bjt:               { label: "BJTs",          icon: "🔌" },
+        "bjt-pnp":         { label: "BJTs",          icon: "🔌" },
+        mosfet:            { label: "MOSFETs",       icon: "🔋" },
+        voltage_regulator: { label: "Regulators",   icon: "🔧" },
+        opamp:             { label: "Op-Amps",       icon: "📡" },
+        ic:                { label: "ICs",           icon: "💡" },
+      };
+
+      // Derive ordered unique category labels from the component list.
+      function resolveCategory(type) {
+        // Merge bjt / bjt-pnp into same bucket
+        const t = type === "bjt-pnp" ? "bjt" : type;
+        return TYPE_META[t] ? TYPE_META[t].label : type.replace(/_/g, " ");
+      }
+
+      const ALL_CATEGORIES = (() => {
+        const seen = new Set();
+        const ordered = [];
+        FEATURED_COMPONENTS.forEach((fc) => {
+          const cat = resolveCategory(fc.type);
+          if (!seen.has(cat)) { seen.add(cat); ordered.push(cat); }
+        });
+        return ordered;
+      })();
+
+      let activeTypeFilter = null; // null = All
       let searchQuery = "";
 
       function filteredComponents() {
         const q = searchQuery.trim().toLowerCase();
-        if (!q) return FEATURED_COMPONENTS;
-        return FEATURED_COMPONENTS.filter((fc) =>
-          fc.mfr.toLowerCase().includes(q) ||
-          fc.name.toLowerCase().includes(q) ||
-          fc.spec.toLowerCase().includes(q) ||
-          fc.type.toLowerCase().includes(q)
-        );
+        return FEATURED_COMPONENTS.filter((fc) => {
+          const matchesType = !activeTypeFilter || resolveCategory(fc.type) === activeTypeFilter;
+          const matchesSearch = !q ||
+            fc.mfr.toLowerCase().includes(q) ||
+            fc.name.toLowerCase().includes(q) ||
+            fc.spec.toLowerCase().includes(q) ||
+            fc.type.toLowerCase().includes(q);
+          return matchesType && matchesSearch;
+        });
       }
 
+      // ── Render the scrollable component list ──────────────────────────────
       function renderPage() {
         grid.innerHTML = "";
         const items = filteredComponents();
-        const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-        if (currentPage >= totalPages) currentPage = 0;
-        const start = currentPage * ITEMS_PER_PAGE;
-        const page = items.slice(start, start + ITEMS_PER_PAGE);
-        const renderTarget = catalogTarget; // capture at render time; renderPage() is re-called on every setTarget() change
 
-        page.forEach((fc) => {
-          const card = document.createElement("div");
-          card.className = "featured-component-card";
-          card.dataset.fcId = fc.id;
-          card.title = `Load ${fc.mfr} ${fc.name} into Component ${renderTarget}`;
-          card.innerHTML = `
-            <div class="featured-component-mfr">${fc.mfr}</div>
-            <div class="featured-component-name">${fc.name}</div>
-            <div class="featured-component-spec">${fc.spec}</div>
-          `;
-          card.classList.toggle("selected", fc.id === activeId);
-          card.addEventListener("click", () => loadFeaturedComponent(fc));
-          grid.appendChild(card);
+        if (!items.length) {
+          const empty = document.createElement("div");
+          empty.style.cssText = "padding:12px;text-align:center;color:rgba(148,163,184,0.5);font-size:11px;";
+          empty.textContent = "No components match your search.";
+          grid.appendChild(empty);
+          return;
+        }
+
+        // Group by category for section headers
+        const grouped = new Map();
+        items.forEach((fc) => {
+          const cat = resolveCategory(fc.type);
+          if (!grouped.has(cat)) grouped.set(cat, []);
+          grouped.get(cat).push(fc);
         });
 
-        const pageInfo = document.getElementById("catalog-page-info");
-        const prevBtn = document.getElementById("catalog-prev");
-        const nextBtn = document.getElementById("catalog-next");
-        if (pageInfo) pageInfo.textContent = `${currentPage + 1} / ${totalPages}`;
-        if (prevBtn) prevBtn.disabled = currentPage === 0;
-        if (nextBtn) nextBtn.disabled = currentPage >= totalPages - 1;
+        grouped.forEach((fcs, cat) => {
+          // Only show category header when not filtered to one type
+          if (!activeTypeFilter) {
+            const catHeader = document.createElement("div");
+            catHeader.className = "catalog-category-label";
+            catHeader.textContent = cat;
+            grid.appendChild(catHeader);
+          }
+
+          fcs.forEach((fc) => {
+            const meta = TYPE_META[fc.type] || { icon: "🔩" };
+            const row = document.createElement("div");
+            row.className = "featured-component-row" + (fc.id === activeId ? " selected" : "");
+            row.setAttribute("role", "listitem");
+            row.setAttribute("tabindex", "0");
+
+            const badge = document.createElement("div");
+            badge.className = "fcrw-type-badge";
+            badge.textContent = meta.icon;
+            badge.setAttribute("aria-hidden", "true");
+
+            const info = document.createElement("div");
+            info.className = "fcrw-info";
+
+            const nameEl = document.createElement("div");
+            nameEl.className = "fcrw-name";
+            nameEl.textContent = fc.name;
+
+            const mfrEl = document.createElement("div");
+            mfrEl.className = "fcrw-mfr";
+            mfrEl.textContent = fc.mfr;
+
+            const specEl = document.createElement("div");
+            specEl.className = "fcrw-spec";
+            specEl.textContent = fc.spec;
+
+            info.appendChild(nameEl);
+            info.appendChild(mfrEl);
+            info.appendChild(specEl);
+
+            // Slot A / B quick-load buttons
+            const btnWrap = document.createElement("div");
+            btnWrap.className = "fcrw-load-btns";
+
+            const btnA = document.createElement("button");
+            btnA.className = "fcrw-slot-btn";
+            btnA.textContent = "A";
+            btnA.title = `Load ${fc.mfr} ${fc.name} into Component A`;
+            btnA.addEventListener("click", (e) => { e.stopPropagation(); loadFeaturedComponent(fc, "A"); });
+
+            const btnB = document.createElement("button");
+            btnB.className = "fcrw-slot-btn slot-b";
+            btnB.textContent = "B";
+            btnB.title = `Load ${fc.mfr} ${fc.name} into Component B`;
+            btnB.addEventListener("click", (e) => { e.stopPropagation(); loadFeaturedComponent(fc, "B"); });
+
+            btnWrap.appendChild(btnA);
+            btnWrap.appendChild(btnB);
+
+            row.appendChild(badge);
+            row.appendChild(info);
+            row.appendChild(btnWrap);
+
+            // Clicking the row itself loads into the current default slot
+            row.addEventListener("click", () => loadFeaturedComponent(fc, catalogTarget));
+            row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); loadFeaturedComponent(fc, catalogTarget); } });
+            grid.appendChild(row);
+          });
+        });
       }
 
-      // Wire up search
+      // ── Build type-filter pills ────────────────────────────────────────────
+      const filtersContainer = document.getElementById("catalog-type-filters");
+      function renderTypePills() {
+        if (!filtersContainer) return;
+        filtersContainer.innerHTML = "";
+
+        const allPill = document.createElement("button");
+        allPill.className = "catalog-type-pill" + (!activeTypeFilter ? " active" : "");
+        allPill.textContent = "All";
+        allPill.addEventListener("click", () => { activeTypeFilter = null; renderTypePills(); renderPage(); });
+        filtersContainer.appendChild(allPill);
+
+        ALL_CATEGORIES.forEach((cat) => {
+          const pill = document.createElement("button");
+          pill.className = "catalog-type-pill" + (activeTypeFilter === cat ? " active" : "");
+          pill.textContent = cat;
+          pill.addEventListener("click", () => { activeTypeFilter = activeTypeFilter === cat ? null : cat; renderTypePills(); renderPage(); });
+          filtersContainer.appendChild(pill);
+        });
+      }
+
+      // ── Wire up search ─────────────────────────────────────────────────────
       const searchInput = document.getElementById("catalog-search");
       if (searchInput) {
         searchInput.addEventListener("input", () => {
           searchQuery = searchInput.value;
-          currentPage = 0;
           renderPage();
         });
       }
 
-      // Wire up pagination
-      const prevBtn = document.getElementById("catalog-prev");
-      const nextBtn = document.getElementById("catalog-next");
-      if (prevBtn) prevBtn.addEventListener("click", () => { currentPage--; renderPage(); });
-      if (nextBtn) nextBtn.addEventListener("click", () => { currentPage++; renderPage(); });
-
-      // ── Target selector (Load as A / B) ───────────────────────────────────
-      const targetBtnA = document.getElementById("catalog-target-a");
-      const targetBtnB = document.getElementById("catalog-target-b");
-      if (targetBtnA && targetBtnB) {
-        function setTarget(t) {
-          catalogTarget = t;
-          targetBtnA.classList.toggle("active", t === "A");
-          targetBtnA.setAttribute("aria-pressed", String(t === "A"));
-          targetBtnB.classList.toggle("active", t === "B");
-          targetBtnB.setAttribute("aria-pressed", String(t === "B"));
-          renderPage(); // refresh card tooltips
-        }
-        targetBtnA.addEventListener("click", () => setTarget("A"));
-        targetBtnB.addEventListener("click", () => setTarget("B"));
-      }
-
+      renderTypePills();
       renderPage();
 
       // ── Restore featured components saved in previous sessions ─────────────
