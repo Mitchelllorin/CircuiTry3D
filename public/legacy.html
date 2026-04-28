@@ -7902,7 +7902,11 @@ body.android-optimized .zoom-btn {
                 
                 // Diagnostic overlay stays visible until manual dismiss
                 
-                renderer.setPixelRatio(window.devicePixelRatio);
+                // Cap pixel ratio on mobile to 2× — high-DPR Android devices (e.g. Pixel,
+                // Galaxy) report DPR 2.6–3.0, creating a render-buffer 3× the screen area.
+                // This exhausts GPU VRAM on constrained devices, triggering WebGL context
+                // loss and making particles invisible.  2× retains full retina sharpness.
+                renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio);
                 renderer.setSize(_vw, _vh);
                 renderer.setClearColor(0x0a0a1a, 1);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -7926,6 +7930,15 @@ body.android-optimized .zoom-btn {
                     // render call after context restore; just trigger a fresh frame.
                     if (renderer) {
                         try { renderer.render(scene, camera); } catch (e) { /* ignore */ }
+                    }
+                    // Re-create flow particles after context restoration.  GPU resources
+                    // (geometry buffers, material programs) are invalidated when the
+                    // context is lost; calling animateCurrentFlow() rebuilds them from
+                    // scratch so particles become visible again on the next render.
+                    if (currentFlowState && currentFlowState.hasFlow && scene && wires.length > 0) {
+                        setTimeout(function() {
+                            try { animateCurrentFlow(currentFlowState); } catch (e) { /* ignore */ }
+                        }, 150);
                     }
                 }, false);
                 
@@ -8047,6 +8060,10 @@ body.android-optimized .zoom-btn {
         const TARGET_FRAME_INTERVAL = 1000 / 60; // Target 60fps
         let labelUpdateCounter = 0;
         const LABEL_UPDATE_INTERVAL = 3; // Update labels every 3 frames to reduce overhead
+        // Watchdog: tracks how many consecutive frames the flow is active but particles are absent.
+        // Used to detect and recover from silent particle-creation failures on Android.
+        let _flowWatchdogFrames = 0;
+        let _flowWatchdogAttempts = 0;
 
         function animate(currentTime) {
             requestAnimationFrame(animate);
@@ -8068,6 +8085,33 @@ body.android-optimized .zoom-btn {
             updateWorkspaceCameraShake();
             updateWorkspaceFlashLights();
             _updateLayerVisibility();  // Fade components/wires based on zoom level
+
+            // ── Flow watchdog ─────────────────────────────────────────────────
+            // If the circuit should be flowing but all particles are gone (WebGL
+            // context loss, degenerate-curve removal, or any other silent failure),
+            // re-create them.  Fires aggressively in the first 10 s after the
+            // circuit completes (every 60 frames ≈ 1 s), then backs off to every
+            // 300 frames (≈ 5 s) for long-running sessions.  Capped at 5 retries
+            // to prevent infinite loops when a wire's curve is persistently broken.
+            if (currentFlowState && currentFlowState.hasFlow &&
+                    currentFlowParticles.length === 0 && scene && wires.length > 0) {
+                _flowWatchdogFrames++;
+                const interval = _flowWatchdogFrames <= 600 ? 60 : 300;
+                if (_flowWatchdogFrames % interval === 1 && _flowWatchdogAttempts < 5) {
+                    _flowWatchdogAttempts++;
+                    console.warn('[CT3D Flow] Watchdog attempt ' + _flowWatchdogAttempts + ': recreating missing particles');
+                    try { animateCurrentFlow(currentFlowState); } catch (e) { /* guard */ }
+                }
+            } else {
+                // Reset whenever flow stops or particles are present — ensures the
+                // watchdog clock and attempt counter start fresh for the next flow cycle.
+                if (!currentFlowState || !currentFlowState.hasFlow) {
+                    _flowWatchdogFrames  = 0;
+                    _flowWatchdogAttempts = 0;
+                } else if (currentFlowParticles.length > 0) {
+                    _flowWatchdogFrames = 0;
+                }
+            }
 
             // Only update labels every few frames to reduce DOM manipulation overhead
             labelUpdateCounter++;
@@ -9404,7 +9448,7 @@ body.android-optimized .zoom-btn {
             if (w > 0 && h > 0) {
                 camera.aspect = w / h;
                 camera.updateProjectionMatrix();
-                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio);
                 renderer.setSize(w, h);
             }
         }
@@ -17699,6 +17743,12 @@ Made with ? for visual learners everywhere!
             // the scene origin, invisible to the user.  This is the same guard that was
             // added to loadPayoffCircuit (PR #754) but generalised to every call site.
             if (scene) scene.updateMatrixWorld(true);
+            // Reset the watchdog frame counter and attempt counter so the watchdog
+            // clock restarts fresh for each new flow activation (including FUSE-timer
+            // re-analyses).  Resetting attempts here means a successful re-creation
+            // (even via the watchdog itself) restores the full 5-attempt budget.
+            _flowWatchdogFrames   = 0;
+            _flowWatchdogAttempts = 0;
             // Capture whether the circuit was already flowing BEFORE we update the state.
             // Used below to detect the no-flow → flow transition for FUSE thermal onset.
             const wasFlowing = Boolean(currentFlowState?.hasFlow);
@@ -17815,6 +17865,13 @@ Made with ? for visual learners everywhere!
                 console.log('[CT3D Flow] Segment ' + segmentIndex + ': processing wire ' + (wire.id || 'no-id'));
 
                 // Always recreate the curve to ensure it uses current terminal positions.
+                // Refresh world matrices immediately before each createCurve() call so
+                // the connection-point positions are always current, regardless of whether
+                // the render loop has ticked since the last component move or wire addition.
+                // This is the per-segment counterpart to the scene-wide updateMatrixWorld
+                // at the top of animateCurrentFlow and is particularly important on Android
+                // where the JS→render pipeline can be out of sync during rapid interactions.
+                if (scene) scene.updateMatrixWorld(true);
                 try { wire.createCurve(); console.log('[CT3D Flow] Segment ' + segmentIndex + ': curve created OK'); } catch (e) {
                     console.error('[CT3D Flow] Segment ' + segmentIndex + ': createCurve FAILED:', e); console.warn('Could not create wire curve:', e); }
                 if (!wire.curve) return;
