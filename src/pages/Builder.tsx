@@ -1778,8 +1778,6 @@ export default function Builder() {
         const forwarded = new KeyboardEvent(event.type, {
           key: event.key,
           code: event.code,
-          keyCode: event.keyCode,
-          which: event.which,
           ctrlKey: event.ctrlKey,
           metaKey: event.metaKey,
           altKey: event.altKey,
