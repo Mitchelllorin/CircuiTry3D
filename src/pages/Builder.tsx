@@ -1731,6 +1731,72 @@ export default function Builder() {
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [circuitStorage, currentCircuitState, triggerBuilderAction]);
 
+  // Forward keyboard events to the iframe when focus is on the parent page.
+  // The iframe's own handleKeyDown only fires while the iframe is focused, so
+  // any interaction with React UI elements causes shortcuts to stop working.
+  // Re-dispatching the event on the iframe's contentDocument restores them.
+  useEffect(() => {
+    if (!isFrameReady) {
+      return;
+    }
+
+    const handleKeyboardForward = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Don't forward if the event already originates from inside the iframe.
+      const iframe = iframeRef.current;
+      if (!iframe) {
+        return;
+      }
+      try {
+        if (iframe.contentDocument && iframe.contentDocument.contains(target)) {
+          return;
+        }
+      } catch {
+        // Cross-origin access would throw; skip forwarding in that case.
+        return;
+      }
+
+      // Don't forward when the user is typing in an input control.
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        (target as HTMLElement).isContentEditable
+      ) {
+        return;
+      }
+
+      // Don't forward shortcuts that the parent page handles itself
+      // (Ctrl/Cmd + S / O / N) to avoid double-processing.
+      const ctrl = event.ctrlKey || event.metaKey;
+      if (ctrl && ["s", "o", "n"].includes(event.key.toLowerCase())) {
+        return;
+      }
+
+      try {
+        const forwarded = new KeyboardEvent(event.type, {
+          key: event.key,
+          code: event.code,
+          keyCode: event.keyCode,
+          which: event.which,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+          altKey: event.altKey,
+          shiftKey: event.shiftKey,
+          bubbles: true,
+          cancelable: true,
+        });
+        iframe.contentDocument?.dispatchEvent(forwarded);
+      } catch {
+        // Swallow errors from cross-origin or detached documents.
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyboardForward);
+    return () => window.removeEventListener("keydown", handleKeyboardForward);
+  }, [isFrameReady, iframeRef]);
+
   useEffect(() => {
     if (!activeWorkspacePanelMode || !isWorkspacePanelOpen) {
       return;
