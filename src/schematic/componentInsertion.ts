@@ -89,14 +89,14 @@ export interface InsertionOptions {
 
 // ─── Geometry helpers (schematic Vec2 uses {x, z}) ───────────────────────────
 
-function dist2(a: Vec2, b: Vec2): number {
+function euclideanDistance(a: Vec2, b: Vec2): number {
   const dx = a.x - b.x;
   const dz = a.z - b.z;
   return Math.sqrt(dx * dx + dz * dz);
 }
 
 function pointsNear(a: Vec2, b: Vec2, tolerance: number): boolean {
-  return dist2(a, b) <= tolerance;
+  return euclideanDistance(a, b) <= tolerance;
 }
 
 /**
@@ -135,7 +135,7 @@ function projectPointOnPath(
 
   for (let i = 0; i < path.length - 1; i++) {
     const { point, t } = projectOnSegment(pos, path[i], path[i + 1]);
-    const d = dist2(pos, point);
+    const d = euclideanDistance(pos, point);
     if (best === null || d < best.distance) {
       best = { segIndex: i, snapped: point, param: t, distance: d };
     }
