@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   IS_DEMO_MODE,
   OWNER_KEY_HASH_CONFIGURED,
-  OWNER_STORAGE_KEY,
   verifyOwnerPassword,
 } from "../utils/demoMode";
+import { grantOwnerAccess } from "../utils/ownerAccess";
 import { isAndroidApp } from "../utils/playStoreBilling";
 
 const PLAY_STORE_URL =
@@ -69,7 +69,7 @@ export default function DemoBanner() {
     try {
       const ok = await verifyOwnerPassword(password);
       if (ok) {
-        localStorage.setItem(OWNER_STORAGE_KEY, "true");
+        grantOwnerAccess();
         window.location.reload();
       } else {
         setStatus("error");
