@@ -22,6 +22,8 @@ CircuiTry3D is a **complete electrical education ecosystem.**  The circuit build
 | **3D Circuit Builder** | Build and simulate DC circuits in a real-time 3D sandbox with live W.I.R.E. analysis |
 | **Multi-Scale Current Flow Visualization** | Watch electrons move — from macro wire flow all the way to atomic crystal lattices and quantum probability clouds |
 | **FUSE™ Failure Engine** | See what actually happens when a component is pushed past its limits — smoke, arcs, explosions, and plain-language explanations of the physics |
+| **🏠 Home Circuit Simulator** | Wire up a 3D room — breaker panel, outlets, ceiling lights, and switches — with live current flow and FUSE™ overload protection |
+| **🚗 Automotive Circuit Simulator** | Build and test 12 V automotive systems — battery, fuse box, headlights, starter, horn, and alternator — in a 3D vehicle chassis view |
 | **Circuit AI Assistant** | Free in-app AI chat covering 40+ electrical topics — Ohm's Law, KCL/KVL, component guides, troubleshooting, and app tutorials |
 | **AI Circuit Explanation** | Pro-tier engine that analyzes your live circuit and returns a structured 5-section report: Summary, Current Flow, Component Roles, Expected Behavior, and Common Mistakes |
 | **Component Arena** | Stress-test any component against configurable voltage, temperature, humidity, and duty-cycle parameters without touching real hardware |
@@ -199,6 +201,8 @@ Without these the classroom feature still works but saves to browser localStorag
 | `/delete-account` | Account deletion request |
 | `/gallery` | Circuit gallery — browse and share saved circuits |
 | `/partnerships` | Manufacturer & partnership information |
+| `/home-circuit` | 🏠 Home electrical circuit simulator — 3D room wiring |
+| `/car-circuit` | 🚗 Automotive circuit simulator — 3D vehicle electrical systems |
 
 ---
 
@@ -383,6 +387,35 @@ Each chapter includes:
 ### 📐 Schematic Mode
 A dedicated schematic view renders the same circuit as a clean 2D schematic diagram alongside the 3D builder, making it easy to compare real-world wiring with standard notation. Supports both American and IEC symbol standards.
 
+### 🏠 Home Electrical Circuit Simulator (`/home-circuit`)
+
+A 3D interactive room where students build and simulate **residential wiring** — the same circuits found in every home, school, and workplace.
+
+| Feature | Details |
+|---|---|
+| **3D room environment** | Floor, walls, ceiling with pre-placed breaker panel, outlets, GFCI, switch, and ceiling fixture |
+| **Toggle light switch** | Closes or opens the lighting branch circuit; ceiling light glows and current-flow particles animate along the hot/neutral/ground wires |
+| **Live circuit metrics** | Real-time voltage (120 V AC mains), current (A), and power (W) for the active branch |
+| **Overload Demo** | Simulates a 15 A breaker trip with a FUSE™-style arc/spark effect and plain-language explanation |
+| **Component detail panel** | Click any component to see its name, type, rating, and wiring description |
+
+Accessible from the **🏠 Home** tab in the global navigation bar.
+
+### 🚗 Automotive Circuit Simulator (`/car-circuit`)
+
+A 3D interactive vehicle chassis where students build and test **12 V automotive electrical systems** — from headlights and horn to the starter motor and alternator charging loop.
+
+| Feature | Details |
+|---|---|
+| **3D car chassis** | Top-down/3/4 view with engine bay, firewall, cabin, dashboard, and wheel arches |
+| **9 pre-placed components** | Battery, Alternator, Fuse Box, Headlights (L/R), Starter Motor, Horn, Ignition Switch, Interior Light |
+| **5 switchable circuits** | Headlights, Ignition, Horn, Starter Crank, Alternator Charging — with correct dependencies (starter requires ignition) |
+| **Fuse box panel** | Individual fuses per circuit; blow a fuse via Overload Demo and use the "Fix Fuse" button to repair |
+| **Voltage modes** | 12.6 V battery-only → 13.8 V when alternator is charging after a crank |
+| **Current-flow particles** | Animated along positive, ground, and alternator wire paths when circuits are live |
+
+Accessible from the **🚗 Car** tab in the global navigation bar.
+
 ---
 
 ## 🎓 For Educators
@@ -399,6 +432,7 @@ CircuiTry3D was built from the ground up to solve a problem every electronics te
 | Coordinating assignments across a class is cumbersome | Classroom Mode with roster management, join codes, and per-student analytics from a single teacher dashboard |
 | Sourcing a good textbook is expensive and often incomplete | The full Year 1 + Year 2 electrical curriculum is built into the app with worked examples and interactive practice — no separate purchase required |
 | Students disengage from dry formula drills | Gamification, Arcade Mode, and adaptive practice with XP and badges keep students engaged while reinforcing core concepts |
+| Abstract circuits feel disconnected from real life | **Home & Car Circuit Simulators** anchor theory to the circuits students encounter every day — residential wiring and automotive electrical systems — in immersive 3D |
 
 ### Supported Grade Levels & Programs
 

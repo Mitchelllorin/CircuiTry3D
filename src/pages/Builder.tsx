@@ -91,6 +91,8 @@ import Account from "./Account";
 import Classroom from "./Classroom";
 import Arcade from "./Arcade";
 import Textbook from "./Textbook";
+import HomeCircuit from "./HomeCircuit";
+import CarCircuit from "./CarCircuit";
 import WireLibrary from "../components/practice/WireLibrary";
 import { AIHelperPanel } from "../components/builder/AIHelperPanel";
 import { CircuitExplainPanel } from "../components/builder/CircuitExplainPanel";
@@ -112,7 +114,9 @@ type WorkspacePanelMode =
   | "account"
   | "pricing"
   | "wire-guide"
-  | "textbook";
+  | "textbook"
+  | "home-circuit"
+  | "car-circuit";
 
 const DEFAULT_WIRE_SEGMENT_RESISTANCE_OHM = 0.01;
 const CURRENT_FLOW_PAYOFF_STORAGE_KEY =
@@ -1928,7 +1932,9 @@ export default function Builder() {
         pendingMode === "gallery" ||
         pendingMode === "account" ||
         pendingMode === "pricing" ||
-        pendingMode === "textbook"
+        pendingMode === "textbook" ||
+        pendingMode === "home-circuit" ||
+        pendingMode === "car-circuit"
       ) {
         openWorkspacePanelMode(pendingMode);
       } else if (pendingMode === "troubleshoot") {
@@ -2827,6 +2833,16 @@ export default function Builder() {
           title: "Textbook",
           subtitle: "Year 1 & Year 2 Electrical Studies — formulas, rules, and safety",
         };
+      case "home-circuit":
+        return {
+          title: "Home Circuit",
+          subtitle: "Residential wiring simulator — 3D room with breaker panel, outlets, and lighting",
+        };
+      case "car-circuit":
+        return {
+          title: "Car Circuit",
+          subtitle: "Automotive electrical simulator — 3D vehicle chassis with battery, fuses, and loads",
+        };
       default:
         return null;
     }
@@ -2883,6 +2899,10 @@ export default function Builder() {
         return <Arcade />;
       case "textbook":
         return <Textbook />;
+      case "home-circuit":
+        return <HomeCircuit />;
+      case "car-circuit":
+        return <CarCircuit />;
       default:
         return null;
     }
