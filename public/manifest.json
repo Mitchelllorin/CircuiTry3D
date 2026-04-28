@@ -1,14 +1,28 @@
 {
+  "id": "/",
   "name": "CircuiTry3D",
   "short_name": "CircuiTry3D",
   "description": "3D Interactive Electric Circuit Builder - Illuminating Electricity for Education",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "orientation": "any",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "categories": ["education", "utilities"],
   "icons": [
+    {
+      "src": "icons/icon-44.png",
+      "sizes": "44x44",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-70.png",
+      "sizes": "70x70",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "icons/icon-72.png",
       "sizes": "72x72",
@@ -34,6 +48,12 @@
       "purpose": "any"
     },
     {
+      "src": "icons/icon-150.png",
+      "sizes": "150x150",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "icons/icon-152.png",
       "sizes": "152x152",
       "type": "image/png",
@@ -46,6 +66,12 @@
       "purpose": "any maskable"
     },
     {
+      "src": "icons/icon-310.png",
+      "sizes": "310x310",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "icons/icon-384.png",
       "sizes": "384x384",
       "type": "image/png",
@@ -56,6 +82,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-wide-310x150.png",
+      "sizes": "310x150",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "screenshots": [
@@ -63,13 +95,57 @@
       "src": "screenshots/phone-screenshot-1.png",
       "sizes": "1080x1920",
       "type": "image/png",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "label": "CircuiTry3D – Build and simulate circuits"
     },
     {
-      "src": "screenshots/tablet-screenshot-1.png",
-      "sizes": "2048x2732",
+      "src": "screenshots/phone-screenshot-2.png",
+      "sizes": "1080x1920",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "narrow",
+      "label": "CircuiTry3D – FUSE™ Failure Simulation"
+    },
+    {
+      "src": "screenshots/chromebook-screenshot-1.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "CircuiTry3D – Desktop circuit builder"
+    },
+    {
+      "src": "screenshots/chromebook-screenshot-2.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "CircuiTry3D – 3D visualization on desktop"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Launch Circuit Builder",
+      "short_name": "Builder",
+      "description": "Open the 3D circuit builder",
+      "url": "./index.html#/app",
+      "icons": [
+        {
+          "src": "icons/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Practice Circuits",
+      "short_name": "Practice",
+      "description": "Practice building circuits",
+      "url": "./index.html#/practice",
+      "icons": [
+        {
+          "src": "icons/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "related_applications": [
