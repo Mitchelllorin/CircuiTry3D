@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
-  OWNER_ACCESS_CONFIGURED,
   hasOwnerAccess,
   verifyOwnerPassword,
   grantOwnerAccess,
@@ -84,13 +83,6 @@ export default function OwnerAccess() {
             role="status"
           >
             {status.message}
-          </div>
-        )}
-
-        {!OWNER_ACCESS_CONFIGURED && (
-          <div style={{ ...styles.statusBox, background: "rgba(251,191,36,0.1)", borderColor: "rgba(251,191,36,0.3)", color: "#fbbf24" }} role="alert">
-            Owner access is not configured for this build. Set the{" "}
-            <code style={styles.code}>VITE_OWNER_KEY</code> (or <code style={styles.code}>VITE_OWNER_KEY_HASH</code>) environment variable and redeploy.
           </div>
         )}
 

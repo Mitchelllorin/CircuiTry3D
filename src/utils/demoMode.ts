@@ -114,43 +114,54 @@ export const DEMO_COMPONENT_IDS: readonly string[] = [
 ] as const;
 
 /**
- * The SHA-256 hex digest of the owner password, embedded at build time.
- * Empty when VITE_OWNER_KEY_HASH was not provided during the build.
+ * Hardcoded SHA-256 hex digest of the owner password.
+ *
+ * ── HOW TO CHANGE YOUR PASSWORD ───────────────────────────────────────────────
+ * 1. Choose your new password.
+ * 2. Compute its SHA-256 hex digest:
+ *      macOS / Linux:  echo -n "YourNewPassword" | sha256sum
+ *      Windows PowerShell:
+ *        [System.BitConverter]::ToString(
+ *          [System.Security.Cryptography.SHA256]::Create()
+ *            .ComputeHash([System.Text.Encoding]::UTF8.GetBytes("YourNewPassword"))
+ *        ).Replace("-","").ToLower()
+ * 3. Replace the string below with the 64-character hex output.
+ * 4. Push the change — Vercel will redeploy automatically.
+ *
+ * No environment variables are needed. The hash is baked directly into the
+ * build so it works on every deployment platform (Vercel, GitHub Pages,
+ * Android) without any additional configuration.
+ *
+ * Current password: CircuiTry3D-Owner-2024
  */
-const OWNER_KEY_HASH = (import.meta.env.VITE_OWNER_KEY_HASH ?? "").trim();
+const HARDCODED_OWNER_HASH = "dc45fee1a9aa11406ece932cef43ea500347ec3c49a145b425d0842be0b8d6c6";
 
 /**
- * Plaintext owner password embedded at build time.
- * Set VITE_OWNER_KEY in your .env.local (dev) or Vercel project settings
- * (production) to the password you want to use — no hashing required.
- * Takes precedence over VITE_OWNER_KEY_HASH when both are set.
+ * Optional env-var overrides — only used when explicitly set.
+ * VITE_OWNER_KEY (plaintext) takes precedence; VITE_OWNER_KEY_HASH (SHA-256
+ * hex) overrides the hardcoded hash.  Leave both unset to use the hash above.
  */
+const OWNER_KEY_HASH = ((import.meta.env.VITE_OWNER_KEY_HASH ?? "").trim() || HARDCODED_OWNER_HASH);
 const OWNER_KEY_PLAIN = (import.meta.env.VITE_OWNER_KEY ?? "").trim();
 
 /**
- * True when an owner key has been configured in this build (either as a
- * plaintext password via VITE_OWNER_KEY or as a hash via VITE_OWNER_KEY_HASH).
+ * Always true — the hash is hardcoded so owner access is always configured.
  * Used by DemoBanner to decide whether to show the 🔑 unlock button.
  */
-export const OWNER_KEY_HASH_CONFIGURED: boolean =
-  OWNER_KEY_PLAIN.length > 0 || OWNER_KEY_HASH.length > 0;
+export const OWNER_KEY_HASH_CONFIGURED: boolean = true;
 
 /**
  * Verifies the supplied owner password client-side.
  *
- * When VITE_OWNER_KEY is set: compares the trimmed input directly against the
- * embedded plaintext value — no hashing needed, just set VITE_OWNER_KEY in
- * your Vercel project settings (or .env.local for dev).
- *
- * When only VITE_OWNER_KEY_HASH is set: hashes the input with SHA-256 and
- * compares the hex digest against the embedded hash.
- *
- * Returns false immediately when neither env var is configured in this build.
+ * Priority:
+ *   1. VITE_OWNER_KEY (plaintext env var) — if set, compared directly.
+ *   2. VITE_OWNER_KEY_HASH (SHA-256 env var) — if set, used instead of hardcoded hash.
+ *   3. Hardcoded hash (HARDCODED_OWNER_HASH above) — always present as fallback.
  */
 export async function verifyOwnerPassword(password: string): Promise<boolean> {
   const trimmed = password.trim();
 
-  // Plaintext check (VITE_OWNER_KEY) — simpler to configure.
+  // Plaintext check (VITE_OWNER_KEY env var, if set).
   if (OWNER_KEY_PLAIN) {
     let diff = trimmed.length !== OWNER_KEY_PLAIN.length ? 1 : 0;
     const len = Math.min(trimmed.length, OWNER_KEY_PLAIN.length);
@@ -160,8 +171,7 @@ export async function verifyOwnerPassword(password: string): Promise<boolean> {
     return diff === 0;
   }
 
-  // Hash-based check (VITE_OWNER_KEY_HASH) — legacy / more obscured.
-  if (!OWNER_KEY_HASH) return false;
+  // Hash-based check — uses env-var override or hardcoded hash.
   const enc = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(trimmed));
   const hashHex = Array.from(new Uint8Array(hashBuffer))
