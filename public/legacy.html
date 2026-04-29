@@ -5229,6 +5229,18 @@ body.android-optimized .zoom-btn {
         const PROB_LOBE_SEG_W         = isMobile ? 5 : 7;  // widthSegments for lobe sphere
         const PROB_LOBE_SEG_H         = isMobile ? 3 : 5;  // heightSegments for lobe sphere
 
+        // Streaming flow — organic lateral oscillation (applied at all zoom tiers).
+        // Three frequencies are chosen to have no small-integer ratios between them,
+        // producing a long aperiodic beat that avoids obvious looping and looks natural.
+        const STREAM_WIGGLE_AMP    = 0.052;  // peak lateral displacement from wire axis (world units)
+        const STREAM_WIGGLE_SPEED  = 0.078;  // primary oscillation speed (rad per globalFlowTime tick)
+        const STREAM_WIGGLE_SPEED2 = 0.029;  // secondary — ratio 0.029/0.078 ≈ 0.372 (no simple fraction)
+        const STREAM_WIGGLE_SPEED3 = 0.051;  // tertiary  — ratio 0.051/0.078 ≈ 0.654 (no simple fraction)
+        // Wire energy-stream inner-core tube (tight glowing channel added alongside the outer haze)
+        const WIRE_STREAM_CORE_RADIUS  = 0.11;  // inner-core tube radius
+        const WIRE_STREAM_CORE_OPACITY = 0.18;  // inner-core base opacity (brighter than haze)
+        const WIRE_STREAM_PATH_SEGS    = isMobile ? 14 : 26; // curve samples for TubeGeometry
+
         // Layer-visibility update throttle thresholds
         const LAYER_VISIB_DIST_THRESHOLD  = 0.04;  // min camera-distance change to trigger mesh traversal
         const LAYER_OPACITY_CHANGE_THRESHOLD = 0.008; // min opacity delta to trigger material update
@@ -8367,6 +8379,25 @@ body.android-optimized .zoom-btn {
 
                     const position = wire.curve.getPoint(wireData.progress);
                     if (!position || !position.isVector3) continue;
+
+                    // ── Organic stream oscillation (all zoom tiers) ──────────
+                    // Each particle oscillates laterally around the wire axis using
+                    // three harmonically-unrelated sine waves.  The unique per-particle
+                    // phases (jitterPhaseX/Y/Z) ensure every electron oscillates at a
+                    // slightly different moment in its cycle, so the ensemble looks like
+                    // a continuous streaming fluid rather than beads bouncing in lockstep.
+                    // jitterPhaseY encodes the particle's unique radial angle around the
+                    // wire axis so particles spread in all directions (not just one plane).
+                    {
+                        const wt  = globalFlowTime * STREAM_WIGGLE_SPEED  + (wireData.jitterPhaseX || 0);
+                        const wt2 = globalFlowTime * STREAM_WIGGLE_SPEED2 + (wireData.jitterPhaseZ || 0);
+                        const wt3 = globalFlowTime * STREAM_WIGGLE_SPEED3 + (wireData.jitterPhaseX || 0) * 0.5;
+                        const wiggle = (Math.sin(wt) * 0.55 + Math.sin(wt2) * 0.30 + Math.sin(wt3) * 0.15)
+                                       * STREAM_WIGGLE_AMP;
+                        const radialAngle = wireData.jitterPhaseY || 0;
+                        position.x += Math.cos(radialAngle) * wiggle;
+                        position.z += Math.sin(radialAngle) * wiggle;
+                    }
 
                     // ── Thermal jitter in atomic zoom ────────────────────────
                     if (inAtomicZoom) {
@@ -17905,8 +17936,8 @@ Made with ? for visual learners everywhere!
             if (!segments.length) return;
 
             const baseSpeed        = calculateFlowSpeed(currentValue);
-            const baseParticleCount = isMobile ? 4 : 6;
-            const maxParticles      = isMobile ? 14 : 22;
+            const baseParticleCount = isMobile ? 6 : 10;
+            const maxParticles      = isMobile ? 20 : 35;
             const inAtomicZoom      = cameraDistance < ATOMIC_ZOOM_THRESHOLD;
             const inCloseZoom       = cameraDistance < CLOSE_ZOOM_THRESHOLD;
             const inDeepAtomic      = cameraDistance < ZOOM_DEEP_ATOMIC;
@@ -17937,7 +17968,7 @@ Made with ? for visual learners everywhere!
                 const flowColor          = calculateCurrentColor(flowState, segment.speedFactor);
                 const directionMultiplier = ((segment.direction >= 0 ? 1 : -1) * (currentFlowStyle === 'misty' ? -1 : 1));
 
-                let dynamicCount = Math.floor((currentValue * (isMobile ? 20 : 28)) * (segment.speedFactor || 1));
+                let dynamicCount = Math.floor((currentValue * (isMobile ? 24 : 42)) * (segment.speedFactor || 1));
                 dynamicCount = Math.max(baseParticleCount, Math.min(maxParticles, dynamicCount));
 
                 // ── Copper lattice atoms (atomic zoom only) ──────────────────
@@ -17950,19 +17981,80 @@ Made with ? for visual learners everywhere!
                     _spawnProbabilityCloud(wire, flowColor);
                 }
 
+                // ── Energy-stream glow tubes (non-Android, all tiers) ────────
+                // Populate the currentWireGlows array with two concentric additive-
+                // blended TubeGeometry meshes per wire: a tight bright inner core
+                // and a wider diffuse outer haze.  Together they create the glowing
+                // "energy channel" that makes electrons look like they are streaming
+                // inside a luminous conductor rather than floating in empty space.
+                if (!isAndroid && wire.curve) {
+                    // Inner core — narrow, bright, gives the stream a hot-wire look
+                    try {
+                        const coreGeom = new THREE.TubeGeometry(
+                            wire.curve, WIRE_STREAM_PATH_SEGS,
+                            WIRE_STREAM_CORE_RADIUS, WIRE_GLOW_RADIAL_SEGS, false);
+                        const coreMat = new THREE.MeshBasicMaterial({
+                            color:       flowColor.hex,
+                            transparent: true,
+                            opacity:     WIRE_STREAM_CORE_OPACITY,
+                            blending:    THREE.AdditiveBlending,
+                            depthWrite:  false,
+                            side:        THREE.FrontSide
+                        });
+                        const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+                        coreMesh.frustumCulled = false;
+                        scene.add(coreMesh);
+                        currentWireGlows.push({
+                            mesh:        coreMesh,
+                            phase:       Math.random() * Math.PI * 2,
+                            baseOpacity: WIRE_STREAM_CORE_OPACITY
+                        });
+                    } catch (e) { /* skip if curve is degenerate */ }
+
+                    // Outer haze — wider, more diffuse, softens the stream edges
+                    try {
+                        const hazeGeom = new THREE.TubeGeometry(
+                            wire.curve, WIRE_STREAM_PATH_SEGS,
+                            WIRE_GLOW_RADIUS, WIRE_GLOW_RADIAL_SEGS, false);
+                        const hazeMat = new THREE.MeshBasicMaterial({
+                            color:       flowColor.hex,
+                            transparent: true,
+                            opacity:     WIRE_GLOW_BASE_OPACITY,
+                            blending:    THREE.AdditiveBlending,
+                            depthWrite:  false,
+                            side:        THREE.FrontSide
+                        });
+                        const hazeMesh = new THREE.Mesh(hazeGeom, hazeMat);
+                        hazeMesh.frustumCulled = false;
+                        scene.add(hazeMesh);
+                        currentWireGlows.push({
+                            mesh:        hazeMesh,
+                            phase:       Math.random() * Math.PI * 2 + 1,
+                            baseOpacity: WIRE_GLOW_BASE_OPACITY
+                        });
+                    } catch (e) { /* skip if curve is degenerate */ }
+                }
+
                 // ── Electron particles ───────────────────────────────────────
                 for (let i = 0; i < dynamicCount; i++) {
                     try {
-                        // On Android increase particle radius by 40% so particles are large
-                        // enough to be seen on high-DPI screens and won't be lost behind wire
-                        // geometry due to sub-pixel rendering artifacts.
-                        const particleSize = (0.09 + (intensity * 0.07)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
+                        // Smaller particles combined with additive blending and higher density
+                        // make individual spheres merge visually into a continuous glowing stream.
+                        const particleSize = (0.062 + (intensity * 0.040)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
                         const particleGeometry = new THREE.SphereGeometry(
-                            particleSize, isMobile ? 8 : 14, isMobile ? 6 : 10);
+                            // Fewer segments on both mobile and desktop to compensate for the
+                            // higher particle count: with 1.5–2× more particles in the scene,
+                            // keeping the original segment counts would proportionally increase
+                            // GPU draw-call cost.  The smaller radius also means the reduced
+                            // segment counts (mobile 6×4, desktop 10×7) are still round enough
+                            // to look smooth at the new smaller size.
+                            particleSize, isMobile ? 6 : 10, isMobile ? 4 : 7);
 
                         const isMisty = currentFlowStyle === 'misty';
-                        const baseOpacity   = isMisty ? 0.40 + intensity * 0.30
-                                                       : 0.88 + intensity * 0.10;
+                        // Lower per-particle opacity compensates for more particles + additive
+                        // blending: individually dim particles accumulate into a bright stream.
+                        const baseOpacity   = isMisty ? 0.32 + intensity * 0.22
+                                                       : 0.50 + intensity * 0.22;
                         const baseEmissive  = isMisty ? 0.95 : 1.45;
                         // On Android boost emissive intensity to guarantee particles glow
                         // even when the GPU's colour-space conversion compresses bright values.
@@ -17971,21 +18063,29 @@ Made with ? for visual learners everywhere!
                         const particleMaterial = new THREE.MeshPhongMaterial({
                             color:             flowColor.hex,
                             emissive:          flowColor.emissive,
+                            // Softer shininess on desktop: sharp specular highlights look harsh
+                            // with additive blending; a lower value gives a smooth, glowing orb.
                             // Lower shininess on Android: high shininess (180) triggers
                             // expensive specular calculations that can produce mediump
                             // float precision errors on Adreno/Mali, making the pixel
                             // output NaN/zero → effectively invisible.  ANDROID_SHININESS
                             // gives a visible specular highlight with far simpler maths.
-                            shininess:         isAndroid ? ANDROID_SHININESS : 180,
+                            shininess:         isAndroid ? ANDROID_SHININESS : 80,
                             // On Android WebView the transparent render pass is unreliable
                             // across Adreno/Mali/PowerVR GPU drivers and can produce entirely
                             // invisible geometry (same quirk documented for the canvas grid).
-                            // Force opaque rendering on Android so particles are always visible;
-                            // the high base opacity (0.88–0.98) means the visual difference is
-                            // negligible.
+                            // Force opaque rendering on Android so particles are always visible.
                             transparent:       !isAndroid,
                             opacity:           baseOpacity,
                             emissiveIntensity: effectiveEmissive,
+                            // Additive blending (desktop only) makes overlapping particles
+                            // accumulate brightness rather than occlude each other, so many
+                            // small dim electrons merge into a single continuous luminous stream.
+                            blending:          isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
+                            // depthWrite must be false with additive blending to prevent
+                            // transparent particle geometry from incorrectly occluding objects
+                            // drawn later in the render order.
+                            depthWrite:        false,
                             // On Android disable the depth test so particles always render
                             // regardless of depth precision differences between GPU drivers
                             // (a particle sitting 1 ULP behind a wire segment would normally
