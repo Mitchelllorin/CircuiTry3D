@@ -97,7 +97,7 @@ CircuiTry3D/
 ├── src/
 │   ├── components/       # Shared UI components
 │   ├── context/          # React context providers (Auth, Gamification, Classroom, …)
-│   ├── pages/            # Route-level page components
+│   ├── pages/            # Route-level page components (incl. HomeCircuit.tsx, CarCircuit.tsx)
 │   ├── routes/           # App.tsx — React Router configuration
 │   ├── sim/              # Circuit simulation engine
 │   ├── schematic/        # Schematic rendering logic
@@ -107,6 +107,7 @@ CircuiTry3D/
 │   ├── landing.html      # Landing page
 │   ├── legacy.html       # Circuit builder canvas (legacy)
 │   └── arena.html        # Component testing arena
+│   └── floor-plan-3d.html # 3D home electrical floor-plan demo
 ├── android/              # Capacitor Android project
 ├── play-store-assets/    # Google Play Store graphics & metadata
 ├── tests/                # Vitest unit & integration tests
@@ -636,6 +637,33 @@ Mitchell began CircuiTry3D after watching students struggle to connect textbook 
 ---
 
 ## 📋 Changelog
+
+### [2026-04-29] — Home & Car Circuit Visualizers
+
+**Features:** Two new 3D interactive circuit simulators accessible from the global navigation bar.
+
+#### 🏠 Home Electrical Circuit Simulator (`/home-circuit`)
+A 3D room scene built with Three.js that simulates residential 120 V AC wiring.
+
+- Pre-placed breaker panel, wall outlets, GFCI, light switch, and ceiling fixture rendered in a Three.js room environment
+- Toggle the light switch to open/close the lighting branch circuit — ceiling light glows and current-flow particles animate along the hot/neutral wires
+- Live circuit metrics overlay showing voltage (120 V AC), current (A), and power (W)
+- **Overload Demo** — trips the 15 A breaker with a FUSE™-style red-flash effect at the panel
+
+**Files added:** `src/pages/HomeCircuit.tsx`
+
+#### 🚗 Automotive Circuit Simulator (`/car-circuit`)
+A 3D top-down vehicle chassis built with Three.js that simulates a 12 V automotive electrical system.
+
+- Pre-placed battery, alternator, fuse box, headlights (L/R), starter motor, horn, ignition switch, and interior light rendered in a Three.js chassis view
+- Four independently switchable circuits: Headlights, Ignition (interior light), Horn, and Alternator Charging — with correct dependencies
+- Fuse box emissive feedback — blow a fuse via **Blow Fuse** button to disable headlights; repair with **Fix Fuse**
+- Voltage toggles between 12.6 V (battery only) and 13.8 V (alternator charging when ignition is on)
+- Current-flow particles animated along positive headlight wires and the alternator charging loop
+
+**Files added:** `src/pages/CarCircuit.tsx`
+
+---
 
 ### [2026-04-26] — Dynamic Resistor Color Bands (IEC 60062)
 
