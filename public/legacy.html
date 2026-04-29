@@ -5230,12 +5230,12 @@ body.android-optimized .zoom-btn {
         const PROB_LOBE_SEG_H         = isMobile ? 3 : 5;  // heightSegments for lobe sphere
 
         // Streaming flow — organic lateral oscillation (applied at all zoom tiers).
-        // Three harmonically-unrelated frequencies produce a natural, aperiodic undulation
-        // that makes the electron stream look alive rather than mechanical.
+        // Three frequencies are chosen to have no small-integer ratios between them,
+        // producing a long aperiodic beat that avoids obvious looping and looks natural.
         const STREAM_WIGGLE_AMP    = 0.052;  // peak lateral displacement from wire axis (world units)
         const STREAM_WIGGLE_SPEED  = 0.078;  // primary oscillation speed (rad per globalFlowTime tick)
-        const STREAM_WIGGLE_SPEED2 = 0.029;  // secondary harmonic (irrational ratio → aperiodic drift)
-        const STREAM_WIGGLE_SPEED3 = 0.051;  // tertiary harmonic (golden-ratio-like beat)
+        const STREAM_WIGGLE_SPEED2 = 0.029;  // secondary — ratio 0.029/0.078 ≈ 0.372 (no simple fraction)
+        const STREAM_WIGGLE_SPEED3 = 0.051;  // tertiary  — ratio 0.051/0.078 ≈ 0.654 (no simple fraction)
         // Wire energy-stream inner-core tube (tight glowing channel added alongside the outer haze)
         const WIRE_STREAM_CORE_RADIUS  = 0.11;  // inner-core tube radius
         const WIRE_STREAM_CORE_OPACITY = 0.18;  // inner-core base opacity (brighter than haze)
@@ -18042,6 +18042,12 @@ Made with ? for visual learners everywhere!
                         // make individual spheres merge visually into a continuous glowing stream.
                         const particleSize = (0.062 + (intensity * 0.040)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
                         const particleGeometry = new THREE.SphereGeometry(
+                            // Fewer segments on both mobile and desktop to compensate for the
+                            // higher particle count: with 1.5–2× more particles in the scene,
+                            // keeping the original segment counts would proportionally increase
+                            // GPU draw-call cost.  The smaller radius also means the reduced
+                            // segment counts (mobile 6×4, desktop 10×7) are still round enough
+                            // to look smooth at the new smaller size.
                             particleSize, isMobile ? 6 : 10, isMobile ? 4 : 7);
 
                         const isMisty = currentFlowStyle === 'misty';
