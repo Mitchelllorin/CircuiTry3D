@@ -115,6 +115,42 @@
   --z-storage-modal: 10000;
 }
 
+/* ── Light mode overrides ────────────────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg-dark: #eef2f7;
+  --bg-darker: #e4eaf3;
+  --bg-surface: rgba(255, 255, 255, 0.92);
+  --bg-overlay: rgba(236, 241, 248, 0.94);
+
+  --text-primary: #0f172a;
+  --text-secondary: #1e293b;
+  --text-muted: rgba(30, 41, 59, 0.65);
+
+  --border-subtle: rgba(80, 130, 190, 0.22);
+  --border-emphasis: rgba(60, 110, 170, 0.5);
+
+  /* Slightly deeper brand colours for contrast on light backgrounds */
+  --brand-blue: #1a6fc4;
+  --brand-orange: #c4560e;
+  --brand-green: #097a45;
+
+  --brand-primary: #1a6fc4;
+  --brand-secondary: #c4560e;
+  --brand-accent: #097a45;
+
+  --brand-blue-dim: rgba(26, 111, 196, 0.12);
+  --brand-blue-glow: rgba(26, 111, 196, 0.3);
+  --brand-orange-dim: rgba(196, 86, 14, 0.12);
+  --brand-orange-glow: rgba(196, 86, 14, 0.3);
+  --brand-green-dim: rgba(9, 122, 69, 0.12);
+  --brand-green-glow: rgba(9, 122, 69, 0.28);
+
+  --brand-primary-dim: rgba(26, 111, 196, 0.12);
+  --brand-primary-glow: rgba(26, 111, 196, 0.3);
+  --brand-secondary-dim: rgba(196, 86, 14, 0.12);
+  --brand-secondary-glow: rgba(196, 86, 14, 0.3);
+}
+
 body {
   margin: 0;
   background: var(--bg-darker);
@@ -219,8 +255,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(8, 11, 20, 0.85);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
@@ -860,4 +896,47 @@ body {
   .app-content > * {
     padding: 12px 16px;
   }
+}
+
+/* ── Theme toggle button in the global mode bar ──────────────────────────── */
+.mode-tab--theme-toggle {
+  margin-left: auto;
+  border-left: 1px solid var(--border-subtle);
+  border-radius: 0 12px 12px 0;
+  padding-left: 14px;
+}
+
+/* ── Light-mode overrides for mode-bar & surfaces ────────────────────────── */
+html[data-theme="light"] .workspace-mode-bar {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(80, 130, 190, 0.3);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme="light"] .mode-tab {
+  color: #334155;
+}
+
+html[data-theme="light"] .mode-tab:hover {
+  background: rgba(26, 111, 196, 0.1);
+  color: var(--brand-blue);
+  border-color: rgba(26, 111, 196, 0.28);
+}
+
+html[data-theme="light"] .mode-tab[data-active="true"] {
+  background: rgba(26, 111, 196, 0.15);
+  color: var(--brand-blue);
+  border-color: rgba(26, 111, 196, 0.45);
+  box-shadow: 0 0 10px rgba(26, 111, 196, 0.22);
+}
+
+html[data-theme="light"] .app-shell {
+  background: radial-gradient(circle at top, var(--brand-primary-dim), transparent 55%), var(--bg-darker);
+}
+
+html[data-theme="light"] .tips-ticker {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(80, 130, 190, 0.25);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  color: var(--text-secondary);
 }
