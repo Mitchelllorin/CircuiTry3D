@@ -20,8 +20,8 @@
   --wire-i: #ffaa33;
   --wire-r: #00cc66;
   --wire-e: #ff4444;
-  --brand-blue-dim: rgba(168, 216, 255, 0.18);
-  --brand-blue-glow: rgba(168, 216, 255, 0.42);
+  --brand-blue-dim: rgba(168, 216, 255, 0.22);
+  --brand-blue-glow: rgba(168, 216, 255, 0.52);
   --brand-orange-dim: rgba(255, 153, 102, 0.18);
   --brand-orange-glow: rgba(255, 153, 102, 0.42);
   --brand-green-dim: rgba(0, 255, 136, 0.18);
@@ -42,10 +42,10 @@
   
   --text-primary: #f3f8ff;
   --text-secondary: #e2e8f0;
-  --text-muted: rgba(226, 232, 240, 0.7);
+  --text-muted: rgba(226, 232, 240, 0.82);
   
-  --border-subtle: rgba(136, 204, 255, 0.22);
-  --border-emphasis: rgba(136, 204, 255, 0.56);
+  --border-subtle: rgba(136, 204, 255, 0.28);
+  --border-emphasis: rgba(136, 204, 255, 0.65);
 
   /* Safe-area insets (iOS notch/status bar, etc.) */
   --app-safe-area-top: env(safe-area-inset-top, 0px);
