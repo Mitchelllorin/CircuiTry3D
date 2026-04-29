@@ -7909,8 +7909,14 @@ body.android-optimized .zoom-btn {
                 renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio);
                 renderer.setSize(_vw, _vh);
                 renderer.setClearColor(0x0a0a1a, 1);
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.1;
+                // Android System WebView (Capacitor) may have older GLSL compiler that
+                // misprecises or fails to compile the ACES tone-mapping fragment shader,
+                // resulting in invisible / black materials (including current-flow particles).
+                // LinearToneMapping is trivially simple (color *= exposure) and compiles
+                // correctly on every GPU/driver combination — use it on Android to guarantee
+                // current-flow particles are always visible.
+                renderer.toneMapping = isAndroid ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = isAndroid ? 1.0 : 1.1;
                 // sRGB encoding removed: Three.js r128 does not support
                 // renderer.outputColorSpace.  Setting it was a no-op but caused
                 // confusion across multiple fix cycles.  If upgrading to r152+,
@@ -8091,15 +8097,18 @@ body.android-optimized .zoom-btn {
             // context loss, degenerate-curve removal, or any other silent failure),
             // re-create them.  Fires aggressively in the first 10 s after the
             // circuit completes (every 60 frames ≈ 1 s), then backs off to every
-            // 300 frames (≈ 5 s) for long-running sessions.  Capped at 5 retries
-            // to prevent infinite loops when a wire's curve is persistently broken.
+            // 300 frames (≈ 5 s) for long-running sessions.
+            // On Android the limit is raised to 15 retries (vs 5 on desktop) because
+            // the System WebView may need several attempts before world matrices are
+            // committed and particle positions resolve to non-zero values.
             if (currentFlowState && currentFlowState.hasFlow &&
                     currentFlowParticles.length === 0 && scene && wires.length > 0) {
                 _flowWatchdogFrames++;
                 const interval = _flowWatchdogFrames <= 600 ? 60 : 300;
-                if (_flowWatchdogFrames % interval === 1 && _flowWatchdogAttempts < 5) {
+                const maxAttempts = isAndroid ? 15 : 5;
+                if (_flowWatchdogFrames % interval === 1 && _flowWatchdogAttempts < maxAttempts) {
                     _flowWatchdogAttempts++;
-                    console.warn('[CT3D Flow] Watchdog attempt ' + _flowWatchdogAttempts + ': recreating missing particles');
+                    console.warn('[CT3D Flow] Watchdog attempt ' + _flowWatchdogAttempts + '/' + maxAttempts + ': recreating missing particles');
                     try { animateCurrentFlow(currentFlowState); } catch (e) { /* guard */ }
                 }
             } else {
@@ -15303,6 +15312,23 @@ Made with ? for visual learners everywhere!
 
             animateCurrentFlow(runtimeFlow);
 
+            // On Android, world matrices may not be fully committed at the time
+            // animateCurrentFlow() first runs (System WebView layout cycle timing is
+            // less predictable than Chrome).  Schedule a second call 300 ms later to
+            // rebuild any particles whose curve resolved to a degenerate (zero-length)
+            // path on the first attempt.  The watchdog in animate() catches further
+            // failures, but this early retry avoids the 60-frame (~1 s) watchdog delay.
+            if (isAndroid && runtimeFlow && runtimeFlow.hasFlow) {
+                setTimeout(function() {
+                    try {
+                        if (currentFlowParticles.length === 0 && scene && wires.length > 0) {
+                            console.log('[CT3D Flow] Android post-analysis retry: recreating particles');
+                            animateCurrentFlow(runtimeFlow);
+                        }
+                    } catch (e) { /* guard */ }
+                }, 300);
+            }
+
             const flowMeta = sanitizeFlowState(result.flow || runtimeFlow);
 
             if (!flowMeta.hasFlow) {
@@ -17731,6 +17757,37 @@ Made with ? for visual learners everywhere!
         // Emissive strength multiplier for particle glow — increased for richer atomic visuals.
         const PARTICLE_EMISSIVE_MULTIPLIER = 0.85;
 
+        // ── Android-specific rendering constants ────────────────────────────────
+        // Android System WebView runs on various GPU drivers (Adreno, Mali, PowerVR)
+        // that each have different precision limits and shader quirks.  These constants
+        // tune particle rendering to guarantee visibility on every Android device.
+
+        // Maximum emissive intensity on Android.  3.0 is the practical ceiling before
+        // colour accuracy is lost but particles are guaranteed to glow even on drivers
+        // that apply aggressive gamma / colour-space compression to fragment outputs.
+        const ANDROID_MAX_EMISSIVE = 3.0;
+        // Emissive boost multiplier applied to the base emissive value on Android to
+        // compensate for the reduced HDR range available with LinearToneMapping.
+        const ANDROID_EMISSIVE_MULTIPLIER = 2.0;
+        // Particle radius scale factor on Android — 1.4× so particles are large enough
+        // to survive sub-pixel rounding on high-DPI screens (DPR 2.6–3.0 on Pixel/Galaxy).
+        const ANDROID_PARTICLE_SIZE_SCALE = 1.4;
+        // shininess value for MeshPhongMaterial on Android.  High shininess (180+) triggers
+        // complex specular maths that can produce mediump float precision errors → black/NaN
+        // pixels on Adreno/Mali.  40 gives a visible specular highlight safely.
+        const ANDROID_SHININESS = 40;
+        // Failsafe particle count / radius scaling on Android so the backup orange dots are
+        // impossible to miss even if the main particle path degenerates.
+        const ANDROID_FAILSAFE_PARTICLE_MULTIPLIER = 10;
+        const ANDROID_FAILSAFE_MIN_PARTICLES       = 6;
+        const ANDROID_FAILSAFE_PARTICLE_RADIUS     = 0.12;
+        const ANDROID_FAILSAFE_EMISSIVE            = 2.5;
+        // Desktop/web failsafe defaults kept as named constants for symmetry.
+        const DEFAULT_FAILSAFE_PARTICLE_MULTIPLIER = 6;
+        const DEFAULT_FAILSAFE_MIN_PARTICLES       = 3;
+        const DEFAULT_FAILSAFE_PARTICLE_RADIUS     = 0.06;
+        const DEFAULT_FAILSAFE_EMISSIVE            = 1.0;
+
         function animateCurrentFlow(flowState) {
             console.log('[CT3D Flow] animateCurrentFlow called: hasFlow=' + flowState?.hasFlow +
                 ', currentValue=' + flowState?.currentValue +
@@ -17896,7 +17953,10 @@ Made with ? for visual learners everywhere!
                 // ── Electron particles ───────────────────────────────────────
                 for (let i = 0; i < dynamicCount; i++) {
                     try {
-                        const particleSize = 0.09 + (intensity * 0.07);
+                        // On Android increase particle radius by 40% so particles are large
+                        // enough to be seen on high-DPI screens and won't be lost behind wire
+                        // geometry due to sub-pixel rendering artifacts.
+                        const particleSize = (0.09 + (intensity * 0.07)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
                         const particleGeometry = new THREE.SphereGeometry(
                             particleSize, isMobile ? 8 : 14, isMobile ? 6 : 10);
 
@@ -17904,11 +17964,19 @@ Made with ? for visual learners everywhere!
                         const baseOpacity   = isMisty ? 0.40 + intensity * 0.30
                                                        : 0.88 + intensity * 0.10;
                         const baseEmissive  = isMisty ? 0.95 : 1.45;
+                        // On Android boost emissive intensity to guarantee particles glow
+                        // even when the GPU's colour-space conversion compresses bright values.
+                        const effectiveEmissive = isAndroid ? Math.min(ANDROID_MAX_EMISSIVE, baseEmissive * ANDROID_EMISSIVE_MULTIPLIER) : baseEmissive;
 
                         const particleMaterial = new THREE.MeshPhongMaterial({
                             color:             flowColor.hex,
                             emissive:          flowColor.emissive,
-                            shininess:         180,
+                            // Lower shininess on Android: high shininess (180) triggers
+                            // expensive specular calculations that can produce mediump
+                            // float precision errors on Adreno/Mali, making the pixel
+                            // output NaN/zero → effectively invisible.  ANDROID_SHININESS
+                            // gives a visible specular highlight with far simpler maths.
+                            shininess:         isAndroid ? ANDROID_SHININESS : 180,
                             // On Android WebView the transparent render pass is unreliable
                             // across Adreno/Mali/PowerVR GPU drivers and can produce entirely
                             // invisible geometry (same quirk documented for the canvas grid).
@@ -17917,7 +17985,12 @@ Made with ? for visual learners everywhere!
                             // negligible.
                             transparent:       !isAndroid,
                             opacity:           baseOpacity,
-                            emissiveIntensity: baseEmissive
+                            emissiveIntensity: effectiveEmissive,
+                            // On Android disable the depth test so particles always render
+                            // regardless of depth precision differences between GPU drivers
+                            // (a particle sitting 1 ULP behind a wire segment would normally
+                            // fail the depth test and become invisible on Mali/Adreno).
+                            depthTest:         !isAndroid
                         });
                         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
                         // Always render particles regardless of frustum — on Android the
@@ -17954,8 +18027,11 @@ Made with ? for visual learners everywhere!
                             orbitalRing = new THREE.Mesh(r1Geom, new THREE.MeshBasicMaterial({
                                 color: flowColor.hex, transparent: !isAndroid, opacity: 0.65,
                                 side: THREE.DoubleSide, depthWrite: false,
-                                blending: THREE.AdditiveBlending
+                                // AdditiveBlending with transparent:false crashes/disappears on
+                                // Android GPU drivers; NormalBlending is safe on all hardware.
+                                blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending
                             }));
+                            orbitalRing.frustumCulled = false;
                             orbitalRing.rotation.x = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
                             particle.add(orbitalRing);
 
@@ -17968,8 +18044,9 @@ Made with ? for visual learners everywhere!
                             orbitalRing2 = new THREE.Mesh(r2Geom, new THREE.MeshBasicMaterial({
                                 color: flowColor.hex, transparent: !isAndroid, opacity: 0.40,
                                 side: THREE.DoubleSide, depthWrite: false,
-                                blending: THREE.AdditiveBlending
+                                blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending
                             }));
+                            orbitalRing2.frustumCulled = false;
                             orbitalRing2.rotation.y = ORBITAL_RING_BASE_ROTATION + (i % 3) * ORBITAL_RING_ROTATION_OFFSET;
                             orbitalRing2.rotation.z = Math.PI / 4;
                             particle.add(orbitalRing2);
@@ -17984,8 +18061,9 @@ Made with ? for visual learners everywhere!
                                 orbitalRing3 = new THREE.Mesh(r3Geom, new THREE.MeshBasicMaterial({
                                     color: 0xffffff, transparent: !isAndroid, opacity: 0.22,
                                     side: THREE.DoubleSide, depthWrite: false,
-                                    blending: THREE.AdditiveBlending
+                                    blending: isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending
                                 }));
+                                orbitalRing3.frustumCulled = false;
                                 orbitalRing3.rotation.z = ORBITAL_RING_BASE_ROTATION * 0.5 + (i % 2) * Math.PI * 0.5;
                                 orbitalRing3.rotation.x = Math.PI * 0.25 + (i % 3) * 0.3;
                                 particle.add(orbitalRing3);
@@ -18007,11 +18085,17 @@ Made with ? for visual learners everywhere!
                                     // on Adreno/Mali/PowerVR drivers.
                                     transparent: !isAndroid,
                                     opacity:     trailOpacity,
-                                    shininess:   60,
-                                    blending:    THREE.AdditiveBlending,
-                                    depthWrite:  false
+                                    shininess:   isAndroid ? ANDROID_SHININESS : 60,
+                                    // AdditiveBlending combined with transparent:false creates
+                                    // undefined behaviour on several Android GPU drivers —
+                                    // NormalBlending with the same opacity is safe everywhere
+                                    // and still produces the comet-tail fade-out effect.
+                                    blending:    isAndroid ? THREE.NormalBlending : THREE.AdditiveBlending,
+                                    depthWrite:  false,
+                                    depthTest:   !isAndroid
                                 });
                                 const tMesh = new THREE.Mesh(tGeom, tMat);
+                                tMesh.frustumCulled = false;
                                 tMesh.position.copy(initialPosition);
                                 scene.add(tMesh);
                                 trailMeshes.push(tMesh);
@@ -18034,7 +18118,7 @@ Made with ? for visual learners everywhere!
                             trailMeshes,
                             pulsePhase:    Math.random() * Math.PI * 2,
                             baseOpacity,
-                            baseEmissive,
+                            baseEmissive:  effectiveEmissive,
                             jitterAmp:     0.65 + Math.random() * 0.45,
                             jitterPhaseX:  Math.random() * Math.PI * 2,
                             jitterPhaseY:  Math.random() * Math.PI * 2,
@@ -18059,16 +18143,23 @@ Made with ? for visual learners everywhere!
                     if (!wire || !wire.wireGroup) return;
                     try { wire.createCurve(); } catch(e) { return; }
                     if (!wire.curve) return;
-                    var pCount = Math.max(3, Math.floor(6 * (wire.wireLength || 1)));
+                    // On Android increase failsafe particle count and size for guaranteed visibility
+                    var pCount = isAndroid
+                        ? Math.max(ANDROID_FAILSAFE_MIN_PARTICLES, Math.floor(ANDROID_FAILSAFE_PARTICLE_MULTIPLIER * (wire.wireLength || 1)))
+                        : Math.max(DEFAULT_FAILSAFE_MIN_PARTICLES, Math.floor(DEFAULT_FAILSAFE_PARTICLE_MULTIPLIER  * (wire.wireLength || 1)));
                     for (var pi = 0; pi < pCount; pi++) {
                         var progress = pi / pCount;
                         try {
                             var pos = wire.curve.getPoint(progress);
                             if (!pos || isNaN(pos.x) || isNaN(pos.y) || isNaN(pos.z)) continue;
-                            var geom = new THREE.SphereGeometry(0.06, 6, 6);
+                            // Larger particles on Android so they're impossible to miss
+                            var geom = new THREE.SphereGeometry(isAndroid ? ANDROID_FAILSAFE_PARTICLE_RADIUS : DEFAULT_FAILSAFE_PARTICLE_RADIUS, 6, 6);
                             var mat = new THREE.MeshPhongMaterial({
                                 color: 0xff6600, emissive: 0xff3300,
-                                emissiveIntensity: 0.8, transparent: !isAndroid, opacity: 0.9
+                                shininess: isAndroid ? ANDROID_SHININESS : 80,
+                                emissiveIntensity: isAndroid ? ANDROID_FAILSAFE_EMISSIVE : DEFAULT_FAILSAFE_EMISSIVE,
+                                transparent: !isAndroid, opacity: 0.9,
+                                depthTest: !isAndroid
                             });
                             var particle = new THREE.Mesh(geom, mat);
                             particle.frustumCulled = false; // Never cull failsafe particles on Android
@@ -18082,7 +18173,7 @@ Made with ? for visual learners everywhere!
                             particle.userData.trailMeshes = [];
                             particle.userData.pulsePhase = Math.random() * Math.PI * 2;
                             particle.userData.baseOpacity = 0.9;
-                            particle.userData.baseEmissive = 1.0;
+                            particle.userData.baseEmissive = isAndroid ? ANDROID_FAILSAFE_EMISSIVE : DEFAULT_FAILSAFE_EMISSIVE;
                             particle.userData.jitterAmp = 0.65 + Math.random() * 0.45;
                             particle.userData.jitterPhaseX = Math.random() * Math.PI * 2;
                             particle.userData.jitterPhaseY = Math.random() * Math.PI * 2;
