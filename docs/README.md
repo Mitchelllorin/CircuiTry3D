@@ -75,6 +75,8 @@ These documents define schematic appearance and layout:
 | `src/services/circuitExplainService.ts` | **AI Circuit Explanation** — 5-section structured report engine (summary, current flow, component roles, expected behavior, common mistakes); remote AI endpoint with local deterministic fallback |
 | `src/components/builder/AIHelperPanel.tsx` | **Circuit AI panel** — floating chat UI with suggested questions, minimize/maximize controls, and live circuit context |
 | `src/components/builder/CircuitExplainPanel.tsx` | **Explain Circuit panel** — Pro-gated analysis panel with loading states, AI/local source badge, and regenerate action |
+| `src/pages/HomeCircuit.tsx` | **Home Circuit Simulator** — Three.js 3D room scene with breaker panel, outlets, switch, ceiling light, current-flow particles, and FUSE™ overload demo (120 V AC) |
+| `src/pages/CarCircuit.tsx` | **Automotive Circuit Simulator** — Three.js 3D vehicle chassis with battery, alternator, fuse box, headlights, starter, horn, and ignition; 12 V / 13.8 V modes with per-circuit particle animation |
 
 ---
 
@@ -128,4 +130,5 @@ When implementing new features or modifying simulation:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-04 | Added HomeCircuit.tsx and CarCircuit.tsx to source code references |
 | 1.0.0 | 2025-01 | Initial documentation index with integrated theory references |
