@@ -17757,6 +17757,37 @@ Made with ? for visual learners everywhere!
         // Emissive strength multiplier for particle glow — increased for richer atomic visuals.
         const PARTICLE_EMISSIVE_MULTIPLIER = 0.85;
 
+        // ── Android-specific rendering constants ────────────────────────────────
+        // Android System WebView runs on various GPU drivers (Adreno, Mali, PowerVR)
+        // that each have different precision limits and shader quirks.  These constants
+        // tune particle rendering to guarantee visibility on every Android device.
+
+        // Maximum emissive intensity on Android.  3.0 is the practical ceiling before
+        // colour accuracy is lost but particles are guaranteed to glow even on drivers
+        // that apply aggressive gamma / colour-space compression to fragment outputs.
+        const ANDROID_MAX_EMISSIVE = 3.0;
+        // Emissive boost multiplier applied to the base emissive value on Android to
+        // compensate for the reduced HDR range available with LinearToneMapping.
+        const ANDROID_EMISSIVE_MULTIPLIER = 2.0;
+        // Particle radius scale factor on Android — 1.4× so particles are large enough
+        // to survive sub-pixel rounding on high-DPI screens (DPR 2.6–3.0 on Pixel/Galaxy).
+        const ANDROID_PARTICLE_SIZE_SCALE = 1.4;
+        // shininess value for MeshPhongMaterial on Android.  High shininess (180+) triggers
+        // complex specular maths that can produce mediump float precision errors → black/NaN
+        // pixels on Adreno/Mali.  40 gives a visible specular highlight safely.
+        const ANDROID_SHININESS = 40;
+        // Failsafe particle count / radius scaling on Android so the backup orange dots are
+        // impossible to miss even if the main particle path degenerates.
+        const ANDROID_FAILSAFE_PARTICLE_MULTIPLIER = 10;
+        const ANDROID_FAILSAFE_MIN_PARTICLES       = 6;
+        const ANDROID_FAILSAFE_PARTICLE_RADIUS     = 0.12;
+        const ANDROID_FAILSAFE_EMISSIVE            = 2.5;
+        // Desktop/web failsafe defaults kept as named constants for symmetry.
+        const DEFAULT_FAILSAFE_PARTICLE_MULTIPLIER = 6;
+        const DEFAULT_FAILSAFE_MIN_PARTICLES       = 3;
+        const DEFAULT_FAILSAFE_PARTICLE_RADIUS     = 0.06;
+        const DEFAULT_FAILSAFE_EMISSIVE            = 1.0;
+
         function animateCurrentFlow(flowState) {
             console.log('[CT3D Flow] animateCurrentFlow called: hasFlow=' + flowState?.hasFlow +
                 ', currentValue=' + flowState?.currentValue +
@@ -17925,7 +17956,7 @@ Made with ? for visual learners everywhere!
                         // On Android increase particle radius by 40% so particles are large
                         // enough to be seen on high-DPI screens and won't be lost behind wire
                         // geometry due to sub-pixel rendering artifacts.
-                        const particleSize = (0.09 + (intensity * 0.07)) * (isAndroid ? 1.4 : 1.0);
+                        const particleSize = (0.09 + (intensity * 0.07)) * (isAndroid ? ANDROID_PARTICLE_SIZE_SCALE : 1.0);
                         const particleGeometry = new THREE.SphereGeometry(
                             particleSize, isMobile ? 8 : 14, isMobile ? 6 : 10);
 
@@ -17935,7 +17966,7 @@ Made with ? for visual learners everywhere!
                         const baseEmissive  = isMisty ? 0.95 : 1.45;
                         // On Android boost emissive intensity to guarantee particles glow
                         // even when the GPU's colour-space conversion compresses bright values.
-                        const effectiveEmissive = isAndroid ? Math.min(3.0, baseEmissive * 2.0) : baseEmissive;
+                        const effectiveEmissive = isAndroid ? Math.min(ANDROID_MAX_EMISSIVE, baseEmissive * ANDROID_EMISSIVE_MULTIPLIER) : baseEmissive;
 
                         const particleMaterial = new THREE.MeshPhongMaterial({
                             color:             flowColor.hex,
@@ -17943,9 +17974,9 @@ Made with ? for visual learners everywhere!
                             // Lower shininess on Android: high shininess (180) triggers
                             // expensive specular calculations that can produce mediump
                             // float precision errors on Adreno/Mali, making the pixel
-                            // output NaN/zero → effectively invisible.  40 gives a
-                            // visible specular highlight with far simpler maths.
-                            shininess:         isAndroid ? 40 : 180,
+                            // output NaN/zero → effectively invisible.  ANDROID_SHININESS
+                            // gives a visible specular highlight with far simpler maths.
+                            shininess:         isAndroid ? ANDROID_SHININESS : 180,
                             // On Android WebView the transparent render pass is unreliable
                             // across Adreno/Mali/PowerVR GPU drivers and can produce entirely
                             // invisible geometry (same quirk documented for the canvas grid).
@@ -18054,7 +18085,7 @@ Made with ? for visual learners everywhere!
                                     // on Adreno/Mali/PowerVR drivers.
                                     transparent: !isAndroid,
                                     opacity:     trailOpacity,
-                                    shininess:   isAndroid ? 20 : 60,
+                                    shininess:   isAndroid ? ANDROID_SHININESS : 60,
                                     // AdditiveBlending combined with transparent:false creates
                                     // undefined behaviour on several Android GPU drivers —
                                     // NormalBlending with the same opacity is safe everywhere
@@ -18114,19 +18145,19 @@ Made with ? for visual learners everywhere!
                     if (!wire.curve) return;
                     // On Android increase failsafe particle count and size for guaranteed visibility
                     var pCount = isAndroid
-                        ? Math.max(6, Math.floor(10 * (wire.wireLength || 1)))
-                        : Math.max(3, Math.floor(6  * (wire.wireLength || 1)));
+                        ? Math.max(ANDROID_FAILSAFE_MIN_PARTICLES, Math.floor(ANDROID_FAILSAFE_PARTICLE_MULTIPLIER * (wire.wireLength || 1)))
+                        : Math.max(DEFAULT_FAILSAFE_MIN_PARTICLES, Math.floor(DEFAULT_FAILSAFE_PARTICLE_MULTIPLIER  * (wire.wireLength || 1)));
                     for (var pi = 0; pi < pCount; pi++) {
                         var progress = pi / pCount;
                         try {
                             var pos = wire.curve.getPoint(progress);
                             if (!pos || isNaN(pos.x) || isNaN(pos.y) || isNaN(pos.z)) continue;
                             // Larger particles on Android so they're impossible to miss
-                            var geom = new THREE.SphereGeometry(isAndroid ? 0.12 : 0.06, 6, 6);
+                            var geom = new THREE.SphereGeometry(isAndroid ? ANDROID_FAILSAFE_PARTICLE_RADIUS : DEFAULT_FAILSAFE_PARTICLE_RADIUS, 6, 6);
                             var mat = new THREE.MeshPhongMaterial({
                                 color: 0xff6600, emissive: 0xff3300,
-                                shininess: isAndroid ? 30 : 80,
-                                emissiveIntensity: isAndroid ? 2.5 : 0.8,
+                                shininess: isAndroid ? ANDROID_SHININESS : 80,
+                                emissiveIntensity: isAndroid ? ANDROID_FAILSAFE_EMISSIVE : DEFAULT_FAILSAFE_EMISSIVE,
                                 transparent: !isAndroid, opacity: 0.9,
                                 depthTest: !isAndroid
                             });
@@ -18142,7 +18173,7 @@ Made with ? for visual learners everywhere!
                             particle.userData.trailMeshes = [];
                             particle.userData.pulsePhase = Math.random() * Math.PI * 2;
                             particle.userData.baseOpacity = 0.9;
-                            particle.userData.baseEmissive = isAndroid ? 2.5 : 1.0;
+                            particle.userData.baseEmissive = isAndroid ? ANDROID_FAILSAFE_EMISSIVE : DEFAULT_FAILSAFE_EMISSIVE;
                             particle.userData.jitterAmp = 0.65 + Math.random() * 0.45;
                             particle.userData.jitterPhaseX = Math.random() * Math.PI * 2;
                             particle.userData.jitterPhaseY = Math.random() * Math.PI * 2;
