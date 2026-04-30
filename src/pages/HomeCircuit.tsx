@@ -104,10 +104,10 @@ export default function HomeCircuit() {
 
       // Scene
       const scene = new THREE.Scene();
-      const bgColor = new THREE.Color(0x06060e);
+      const bgColor = new THREE.Color(0x1e2235);
       scene.background = bgColor;
       bgColorRef.current = bgColor;
-      scene.fog = new THREE.Fog(0x06060e, 14, 28);
+      scene.fog = new THREE.Fog(0x1e2235, 20, 40);
       sceneRef.current = scene;
 
       // Camera
@@ -134,8 +134,12 @@ export default function HomeCircuit() {
       controls.update();
       controlsRef.current = controls;
 
-      // Very dim ambient — room is genuinely dark without the ceiling light
-      scene.add(new THREE.AmbientLight(0x223366, 0.06));
+      // Comfortably-lit ambient so room geometry is always readable
+      scene.add(new THREE.AmbientLight(0x9aaabb, 0.55));
+      // Additional directional fill so walls catch light from above
+      const fillDir = new THREE.DirectionalLight(0xaabbcc, 0.45);
+      fillDir.position.set(2, 8, 4);
+      scene.add(fillDir);
 
       // Helper: add a box, return {mesh, mat}
       const mkBox = (
@@ -154,13 +158,13 @@ export default function HomeCircuit() {
       };
 
       // ── Room ─────────────────────────────────────────────────────────────
-      // Walls / floor / ceiling in warm mid-tone so light visibly illuminates them
-      mkBox(8, 0.14, 8, 0x252535, 0, 0, 0);               // floor
-      mkBox(0.12, 3.1, 8, 0x2a2a42, -4, 1.55, 0);          // left wall
-      mkBox(0.12, 3.1, 8, 0x2a2a42, 4, 1.55, 0);           // right wall
-      mkBox(8, 3.1, 0.12, 0x2a2a42, 0, 1.55, -4);          // back wall
-      mkBox(8, 3.1, 0.12, 0x1e1e30, 0, 1.55, 4);           // front wall (faint)
-      mkBox(8, 0.12, 8, 0x1a1a2c, 0, 3.06, 0);             // ceiling
+      // Walls / floor / ceiling — mid tones so they receive light visibly
+      mkBox(8, 0.14, 8, 0x3a3a50, 0, 0, 0);               // floor
+      mkBox(0.12, 3.1, 8, 0x404060, -4, 1.55, 0);          // left wall
+      mkBox(0.12, 3.1, 8, 0x404060, 4, 1.55, 0);           // right wall
+      mkBox(8, 3.1, 0.12, 0x404060, 0, 1.55, -4);          // back wall
+      mkBox(8, 3.1, 0.12, 0x35354e, 0, 1.55, 4);           // front wall
+      mkBox(8, 0.12, 8, 0x2a2a40, 0, 3.06, 0);             // ceiling
 
       // Skirting boards
       mkBox(8, 0.1, 0.06, 0x1c2c3c, 0, 0.05, -3.97);
@@ -169,7 +173,7 @@ export default function HomeCircuit() {
       mkBox(0.06, 0.1, 8, 0x1c2c3c, 3.97, 0.05, 0);
 
       // Subtle grid on floor
-      const grid = new THREE.GridHelper(8, 8, 0x1a2840, 0x0f1830);
+      const grid = new THREE.GridHelper(8, 8, 0x334466, 0x222244);
       grid.position.y = 0.08;
       scene.add(grid);
 
@@ -200,14 +204,14 @@ export default function HomeCircuit() {
       scene.add(bulb);
       bulbMatRef.current = bulbMat;
 
-      // Main point light — HIGH intensity so it genuinely illuminates the room
-      const ceilingPt = new THREE.PointLight(0xfff5cc, 0, 14);
+      // Main point light — toggles to illuminate the whole room
+      const ceilingPt = new THREE.PointLight(0xfff5cc, 0, 18);
       ceilingPt.position.set(0, 2.9, 0);
       ceilingPt.castShadow = true;
       ceilingPt.shadow.mapSize.width  = 1024;
       ceilingPt.shadow.mapSize.height = 1024;
       ceilingPt.shadow.camera.near = 0.1;
-      ceilingPt.shadow.camera.far  = 15;
+      ceilingPt.shadow.camera.far  = 18;
       scene.add(ceilingPt);
       ceilingLightRef.current = ceilingPt;
 
@@ -256,17 +260,17 @@ export default function HomeCircuit() {
       );
 
       const mkWire = (curve: any, color: number, emissive: number) => {
-        const geo = new THREE.TubeGeometry(curve, 24, 0.018, 6, false);
+        const geo = new THREE.TubeGeometry(curve, 24, 0.030, 8, false);
         const mat = new THREE.MeshStandardMaterial({
           color,
           emissive: new THREE.Color(emissive),
-          emissiveIntensity: 1,
+          emissiveIntensity: 1.8,
         });
         scene.add(new THREE.Mesh(geo, mat));
         return mat;
       };
-      hotWireMatRef.current     = mkWire(hotCurve, 0x3366dd, 0x001133);
-      neutralWireMatRef.current = mkWire(neuCurve,  0x445566, 0x000811);
+      hotWireMatRef.current     = mkWire(hotCurve, 0x4488ff, 0x002266);
+      neutralWireMatRef.current = mkWire(neuCurve,  0x667788, 0x223344);
 
       // Current-flow particles
       const pPos = new Float32Array(20 * 3);
@@ -275,7 +279,7 @@ export default function HomeCircuit() {
       pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
       pGeoRef.current = pGeo;
       scene.add(new THREE.Points(pGeo,
-        new THREE.PointsMaterial({ color: 0x88ccff, size: 0.06, sizeAttenuation: true }),
+        new THREE.PointsMaterial({ color: 0xaaddff, size: 0.09, sizeAttenuation: true }),
       ));
 
       // ── Add-on: CEILING FAN ───────────────────────────────────────────────
@@ -381,8 +385,8 @@ export default function HomeCircuit() {
 
       // ── Animation loop ────────────────────────────────────────────────────
       let lastTime = -1;
-      const bgOff = new THREE.Color(0x06060e);
-      const bgOn  = new THREE.Color(0x161630);
+      const bgOff = new THREE.Color(0x1e2235);
+      const bgOn  = new THREE.Color(0x2a2e50);
 
       const animate = (now: number) => {
         if (!alive) return;
@@ -407,9 +411,9 @@ export default function HomeCircuit() {
           switchLeverRef.current.rotation.x += (tgt - switchLeverRef.current.rotation.x) * 0.15;
         }
 
-        // Ceiling light — smooth fade in/out to 5.8 intensity
+        // Ceiling light — smooth fade to 7.0 so it dramatically illuminates the room
         if (ceilingLightRef.current) {
-          const tgt = on ? 5.8 : 0;
+          const tgt = on ? 7.0 : 0;
           ceilingLightRef.current.intensity += (tgt - ceilingLightRef.current.intensity) * 0.10;
         }
 
@@ -419,9 +423,9 @@ export default function HomeCircuit() {
           bulbMatRef.current.emissiveIntensity = on ? 3.5 : 0.3;
         }
 
-        // Wire glow
-        if (hotWireMatRef.current)     hotWireMatRef.current.emissive.set(on ? 0x0055cc : 0x001133);
-        if (neutralWireMatRef.current) neutralWireMatRef.current.emissive.set(on ? 0x223355 : 0x000811);
+        // Wire glow — always visibly bright, pulse brighter when circuit is live
+        if (hotWireMatRef.current)     hotWireMatRef.current.emissive.set(on ? 0x0077ff : 0x002266);
+        if (neutralWireMatRef.current) neutralWireMatRef.current.emissive.set(on ? 0x336688 : 0x223344);
 
         // Overload flash
         if (overloadRef.current && !overloadLightRef.current && sceneRef.current) {
@@ -527,7 +531,7 @@ export default function HomeCircuit() {
   const power = currentA * voltage;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative', background: '#06060e' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative', background: '#1e2235' }}>
       <canvas ref={canvasRef} style={{ flex: 1, minHeight: 0, display: 'block', width: '100%' }} />
 
       {/* Telemetry overlay */}

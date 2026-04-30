@@ -12,11 +12,11 @@ const BTN: React.CSSProperties = {
 };
 
 // ── Colours ─────────────────────────────────────────────────────────────────
-const CAR   = 0x1c3870;   // body blue
-const DARK  = 0x0d1c3d;   // trim / pillars
-const GLASS = 0x1a3355;   // window tint
-const TI    = 0x0c0c0c;   // rubber tyre
-const RIM   = 0x8899aa;   // alloy rim
+const CAR   = 0x2b52a8;   // body blue (lighter)
+const DARK  = 0x1a3055;   // trim / pillars
+const GLASS = 0x2a4f7a;   // window tint
+const TI    = 0x181818;   // rubber tyre
+const RIM   = 0xaabbcc;   // alloy rim (brighter)
 
 export default function CarCircuit() {
   // ── Core ─────────────────────────────────────────────────────────────────
@@ -101,10 +101,10 @@ export default function CarCircuit() {
       const W = canvas.clientWidth  || canvas.offsetWidth  || 400;
       const H = canvas.clientHeight || canvas.offsetHeight || 400;
 
-      // Scene — night parking-lot feel
+      // Scene — well-lit day/dusk parking lot
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x080810);
-      scene.fog = new THREE.FogExp2(0x080810, 0.022);
+      scene.background = new THREE.Color(0x1e2a3e);
+      scene.fog = new THREE.Fog(0x1e2a3e, 30, 60);
       sceneRef.current = scene;
 
       // Camera — 3/4 view from front-right
@@ -131,14 +131,18 @@ export default function CarCircuit() {
       controls.update();
       controlsRef.current = controls;
 
-      // Lights
-      scene.add(new THREE.AmbientLight(0x223366, 0.25));
-      const moon = new THREE.DirectionalLight(0x8899cc, 0.4);
+      // Lights — bright ambient so the whole car is readable
+      scene.add(new THREE.AmbientLight(0x88aacc, 0.75));
+      const moon = new THREE.DirectionalLight(0xccddee, 1.3);
       moon.position.set(-6, 10, 4);
       moon.castShadow = true;
       moon.shadow.mapSize.width = 2048;
       moon.shadow.mapSize.height = 2048;
       scene.add(moon);
+      // Second fill from opposite side for the engine bay
+      const fill = new THREE.DirectionalLight(0x9aabbb, 0.5);
+      fill.position.set(4, 5, -6);
+      scene.add(fill);
 
       // Helper — returns {mesh, mat}
       const mkBox = (
@@ -157,10 +161,10 @@ export default function CarCircuit() {
       };
 
       // ── GROUND / PARKING LOT ─────────────────────────────────────────────
-      mkBox(18, 0.12, 26, 0x0d0d16, 0, -0.08, 0);
+      mkBox(18, 0.12, 26, 0x2a2e3e, 0, -0.08, 0);
       // Lane markings
-      mkBox(0.08, 0.01, 5.2, 0x445566, -2.8, 0.03, 0);
-      mkBox(0.08, 0.01, 5.2, 0x445566,  2.8, 0.03, 0);
+      mkBox(0.08, 0.01, 5.2, 0x8899aa, -2.8, 0.03, 0);
+      mkBox(0.08, 0.01, 5.2, 0x8899aa,  2.8, 0.03, 0);
 
       // ── CAR BODY ─────────────────────────────────────────────────────────
       // Front of car = -Z, rear = +Z, ground = y=0, wheelbase y=0.37
@@ -378,12 +382,14 @@ export default function CarCircuit() {
       scene.add(tlRL); tlRLightRef.current = tlRL;
 
       // ── WIRING ───────────────────────────────────────────────────────────
-      const mkWire = (pts: any[], color: number) => {
+      const mkWire = (pts: any[], color: number, emissiveSeed = 0x221100) => {
         const curve = new THREE.CatmullRomCurve3(pts);
         const mat   = new THREE.MeshStandardMaterial({
-          color, emissive: new THREE.Color(0x110000), emissiveIntensity: 1,
+          color,
+          emissive: new THREE.Color(emissiveSeed),
+          emissiveIntensity: 2.0,
         });
-        scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.014, 6, false), mat));
+        scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.025, 8, false), mat));
         return { curve, mat };
       };
 
@@ -392,14 +398,14 @@ export default function CarCircuit() {
         new THREE.Vector3(-0.64, 0.94, -1.50),
         new THREE.Vector3(-0.30, 0.72, -1.20),
         new THREE.Vector3(0, 0.72, -0.96),
-      ], 0xff3333);
+      ], 0xff5555, 0x661111);
 
       // Fuse → headlight L
       const { curve: hcL, mat: hcLMat } = mkWire([
         new THREE.Vector3(0, 0.72, -0.96),
         new THREE.Vector3(-0.50, 0.68, -1.70),
         new THREE.Vector3(-0.76, 0.68, -2.36),
-      ], 0xff4444);
+      ], 0xff5555, 0x441100);
       hlWireL.current = hcLMat;
 
       // Fuse → headlight R
@@ -407,7 +413,7 @@ export default function CarCircuit() {
         new THREE.Vector3(0, 0.72, -0.96),
         new THREE.Vector3(0.50, 0.68, -1.70),
         new THREE.Vector3(0.76, 0.68, -2.36),
-      ], 0xff4444);
+      ], 0xff5555, 0x441100);
       hlWireR.current = hcRMat;
 
       // Alternator → battery (charging)
@@ -415,15 +421,15 @@ export default function CarCircuit() {
         new THREE.Vector3(0.56, 0.94, -1.50),
         new THREE.Vector3(0.0,  0.94, -1.50),
         new THREE.Vector3(-0.64, 0.94, -1.50),
-      ], 0xffaa00);
+      ], 0xffcc00, 0x664400);
       chargeWire.current = ccMat;
 
-      // Ground (static)
+      // Ground (static, always dark grey)
       mkWire([
         new THREE.Vector3(-0.64, 0.20, -1.50),
         new THREE.Vector3(-0.64, 0.08, -1.50),
         new THREE.Vector3(0, 0.06, 0),
-      ], 0x333333);
+      ], 0x556677, 0x223344);
 
       // ── PARTICLES ────────────────────────────────────────────────────────
       const mkPS = (curve: any, n: number) => {
@@ -432,7 +438,7 @@ export default function CarCircuit() {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         scene.add(new THREE.Points(geo,
-          new THREE.PointsMaterial({ color: 0x88ccff, size: 0.05, sizeAttenuation: true })));
+          new THREE.PointsMaterial({ color: 0xffcc88, size: 0.08, sizeAttenuation: true })));
         return { offsets, positions, geo, curve };
       };
       pSetsRef.current = [mkPS(hcL, 8), mkPS(hcR, 8), mkPS(cc, 6)];
@@ -455,26 +461,26 @@ export default function CarCircuit() {
         const fuze = fuseRef.current;
 
         // Headlights
-        if (hlLMatRef.current) hlLMatRef.current.emissive.set(hl ? 0xffffcc : 0x111111);
-        if (hlRMatRef.current) hlRMatRef.current.emissive.set(hl ? 0xffffcc : 0x111111);
+        if (hlLMatRef.current) hlLMatRef.current.emissive.set(hl ? 0xffffff : 0x223344);
+        if (hlRMatRef.current) hlRMatRef.current.emissive.set(hl ? 0xffffff : 0x223344);
         if (hlLLightRef.current) {
-          const t = hl ? 1.8 : 0;
+          const t = hl ? 3.5 : 0;
           hlLLightRef.current.intensity += (t - hlLLightRef.current.intensity) * 0.12;
         }
         if (hlRLightRef.current) {
-          const t = hl ? 1.8 : 0;
+          const t = hl ? 3.5 : 0;
           hlRLightRef.current.intensity += (t - hlRLightRef.current.intensity) * 0.12;
         }
 
         // Tail lights
-        if (tlLMatRef.current) tlLMatRef.current.emissive.set(tl ? 0xff2200 : 0x330000);
-        if (tlRMatRef.current) tlRMatRef.current.emissive.set(tl ? 0xff2200 : 0x330000);
+        if (tlLMatRef.current) tlLMatRef.current.emissive.set(tl ? 0xff3300 : 0x440000);
+        if (tlRMatRef.current) tlRMatRef.current.emissive.set(tl ? 0xff3300 : 0x440000);
         if (tlLLightRef.current) {
-          const t = tl ? 0.8 : 0;
+          const t = tl ? 2.0 : 0;
           tlLLightRef.current.intensity += (t - tlLLightRef.current.intensity) * 0.12;
         }
         if (tlRLightRef.current) {
-          const t = tl ? 0.8 : 0;
+          const t = tl ? 2.0 : 0;
           tlRLightRef.current.intensity += (t - tlRLightRef.current.intensity) * 0.12;
         }
 
@@ -495,10 +501,10 @@ export default function CarCircuit() {
         // Fuse box
         if (fuseMatRef.current) fuseMatRef.current.emissive.set(fuze ? 0xff2200 : 0x000000);
 
-        // Wire glow
-        if (hlWireL.current) hlWireL.current.emissive.set(hl ? 0x661100 : 0x110000);
-        if (hlWireR.current) hlWireR.current.emissive.set(hl ? 0x661100 : 0x110000);
-        if (chargeWire.current) chargeWire.current.emissive.set(ign ? 0x664400 : 0x110000);
+        // Wire glow — always visible, pulse bright when active
+        if (hlWireL.current) hlWireL.current.emissive.set(hl ? 0xff3311 : 0x441100);
+        if (hlWireR.current) hlWireR.current.emissive.set(hl ? 0xff3311 : 0x441100);
+        if (chargeWire.current) chargeWire.current.emissive.set(ign ? 0xff9900 : 0x664400);
 
         // Current-flow particles
         const pActive = [hl, hl, ign];
@@ -573,7 +579,7 @@ export default function CarCircuit() {
   ].filter(Boolean);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative', background: '#080810' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative', background: '#1e2a3e' }}>
       <canvas ref={canvasRef} style={{ flex: 1, minHeight: 0, display: 'block', width: '100%' }} />
 
       {/* Telemetry */}
