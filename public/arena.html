@@ -21,6 +21,11 @@
   <!-- Non-blocking font load: print media loads asynchronously, onload switches to all -->
   <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700;800&display=swap">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700;800&display=swap"></noscript>
+  <!-- Immediately detect iframe embedding before first paint so the native header
+       never flashes on top of the React shell's GlobalModeBar ("hidden UI" fix). -->
+  <script>
+    try { if (window.self !== window.top) document.documentElement.classList.add('is-embedded'); } catch (e) {}
+  </script>
   <style>
     .arena-header {
       position: fixed;
@@ -168,6 +173,22 @@
       height: 100%;
       display: block;
       z-index: 1;
+    }
+
+    /* ── Embedded-in-React-shell mode ────────────────────────────────── */
+    /* The is-embedded class is applied immediately by the <head> script   */
+    /* so there is no flash of the native header over the GlobalModeBar.   */
+    html.is-embedded .arena-header {
+      display: none !important;
+    }
+    /* Pull the HUD and panel up to sit just below the React GlobalModeBar.
+       --parent-clearance is set via arena:init once the shell measures its bar. */
+    html.is-embedded .hud {
+      top: calc(var(--parent-clearance, 70px) + var(--safe-top));
+    }
+    html.is-embedded .panel {
+      top: calc(var(--parent-clearance, 70px) + 68px + var(--safe-top));
+      max-height: calc(100vh - var(--parent-clearance, 70px) - 98px - var(--safe-top) - var(--safe-bottom));
     }
 
     .hud {
@@ -5123,9 +5144,9 @@
           if (winner === "tie") {
             cls = "outcome-tie"; label = "🤝 Draw";
           } else if (winner === side) {
-            cls = "outcome-badge outcome-better"; label = "✅ Performed Better";
+            cls = "outcome-winner"; label = "✅ Performed Better";
           } else {
-            cls = "outcome-badge outcome-higher-stress"; label = "📈 Higher Stress";
+            cls = "outcome-loser"; label = "📈 Higher Stress";
           }
           const badge = document.createElement("span");
           badge.className = "outcome-badge " + cls;
@@ -7045,10 +7066,18 @@
       }
 
       function renderInitialMetrics() {
-        renderMetricGrid("metrics-a", null);
-        renderMetricGrid("metrics-b", null);
-        renderMetricGrid("metrics-delta", null);
-        renderFailureAnalysis(null, null);
+        // Just clear the metric containers. The static #metrics-empty-state and
+        // #fuse-empty-state elements already show the "no test yet" placeholder —
+        // calling renderMetricGrid/renderFailureAnalysis with null would add a
+        // second, redundant inline empty-state element inside each container.
+        ["metrics-a", "metrics-b", "metrics-delta"].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = "";
+        });
+        const failureA = document.getElementById("failure-a");
+        const failureB = document.getElementById("failure-b");
+        if (failureA) failureA.innerHTML = "";
+        if (failureB) failureB.innerHTML = "";
       }
 
       function bootstrap() {
@@ -7118,8 +7147,14 @@
             _trustedOrigin = event.origin;
           }
           if (data.hideNativeHeader === true) {
+            // Belt-and-suspenders: also set via JS in case CSS was cached
+            document.documentElement.classList.add("is-embedded");
             const header = document.querySelector(".arena-header");
             if (header) header.style.display = "none";
+          }
+          // Refine the HUD/panel position to sit just below the React GlobalModeBar
+          if (typeof data.parentTopBarClearance === "number" && data.parentTopBarClearance > 0) {
+            document.documentElement.style.setProperty("--parent-clearance", data.parentTopBarClearance + "px");
           }
         }
       });
