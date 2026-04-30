@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const BTN_STYLE: React.CSSProperties = {
   background: 'rgba(10,20,40,0.85)',
@@ -18,7 +19,7 @@ export default function CarCircuit() {
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const handleResizeRef = useRef<(() => void) | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControlsType | null>(null);
 
   // Live refs — animation loop reads these, no stale closures
   const headlightsOnRef = useRef(false);

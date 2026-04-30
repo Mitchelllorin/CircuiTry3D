@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const BTN_STYLE: React.CSSProperties = {
   background: 'rgba(10,20,40,0.85)',
@@ -18,9 +19,7 @@ export default function HomeCircuit() {
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const handleResizeRef = useRef<(() => void) | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const controlsRef = useRef<any>(null);
-
-  // Live refs read by animation loop — avoids stale closure
+  const controlsRef = useRef<OrbitControlsType | null>(null);
   const lightOnRef = useRef(false);
   const overloadingRef = useRef(false);
 
