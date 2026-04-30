@@ -247,7 +247,8 @@ export default function CarCircuit() {
       // ── WHEELS ───────────────────────────────────────────────────────────
       // rotation.z = PI/2 → cylinder axis runs left-right (X), correct for wheels
       const wheelY = 0.37;
-      ([ [-1.10, -1.40], [1.10, -1.40], [-1.10, 1.50], [1.10, 1.50] ] as [number,number][])
+      const wheelCoords: [number, number][] = [ [-1.10, -1.40], [1.10, -1.40], [-1.10, 1.50], [1.10, 1.50] ];
+      wheelCoords
         .forEach(([wx, wz]) => {
           // Tyre
           const tGeo = new THREE.CylinderGeometry(0.37, 0.37, 0.26, 22);

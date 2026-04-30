@@ -432,8 +432,8 @@ export default function HomeCircuit() {
         }
 
         // Current-flow particles
-        if (pPosRef.current && wireCurveRef.current && pGeoRef.current) {
-          const offs = pOffsRef.current!;
+        if (pPosRef.current && wireCurveRef.current && pGeoRef.current && pOffsRef.current) {
+          const offs = pOffsRef.current;
           const pos  = pPosRef.current;
           for (let i = 0; i < 20; i++) {
             if (on) offs[i] = (offs[i] + dt * 0.18) % 1.0;
