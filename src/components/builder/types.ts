@@ -244,6 +244,8 @@ export type QuickAction = {
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
   tool?: BuilderToolId;
+  icon?: string;
+  color?: string;
 };
 
 export type HelpSection = {
@@ -280,6 +282,8 @@ export type PanelAction = {
   description: string;
   action: BuilderInvokeAction;
   data?: Record<string, unknown>;
+  icon?: string;
+  color?: string;
 };
 
 export type SettingsItem = {
