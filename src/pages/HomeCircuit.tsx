@@ -18,6 +18,7 @@ export default function HomeCircuit() {
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const handleResizeRef = useRef<(() => void) | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controlsRef = useRef<any>(null);
 
   // Live refs read by animation loop — avoids stale closure
   const lightOnRef = useRef(false);
@@ -74,14 +75,17 @@ export default function HomeCircuit() {
     let isMounted = true;
     const canvas = canvasRef.current;
 
-    import('three').then((THREE) => {
+    Promise.all([
+      import('three'),
+      import('three/examples/jsm/controls/OrbitControls.js'),
+    ]).then(([THREE, { OrbitControls }]) => {
       if (!isMounted || !canvas) return;
 
       // Initialize particle offsets (evenly spaced around the wire curve)
       particleOffsetsRef.current = new Float32Array(20).map((_, i) => i / 20);
 
-      const width = canvas.clientWidth || 400;
-      const height = canvas.clientHeight || 400;
+      const width = canvas.clientWidth || canvas.offsetWidth || 400;
+      const height = canvas.clientHeight || canvas.offsetHeight || 400;
 
       // ── Scene ──────────────────────────────────────────────────────────────
       const scene = new THREE.Scene();
@@ -100,6 +104,15 @@ export default function HomeCircuit() {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height);
       rendererRef.current = renderer;
+
+      // ── Orbit Controls ─────────────────────────────────────────────────────
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.minDistance = 3;
+      controls.maxDistance = 25;
+      controls.maxPolarAngle = Math.PI / 2 + 0.1;
+      controlsRef.current = controls;
 
       // ── Lights ─────────────────────────────────────────────────────────────
       scene.add(new THREE.AmbientLight(0x88ccff, 0.35));
@@ -236,6 +249,8 @@ export default function HomeCircuit() {
         const dt = Math.min((now - lastTime) / 1000, 0.05);
         lastTime = now;
 
+        if (controlsRef.current) controlsRef.current.update();
+
         const on = lightOnRef.current;
 
         // Switch lever rotation
@@ -291,8 +306,8 @@ export default function HomeCircuit() {
       // ── Resize ─────────────────────────────────────────────────────────────
       const handleResize = () => {
         if (!isMounted || !canvas) return;
-        const w = canvas.clientWidth || 400;
-        const h = canvas.clientHeight || 400;
+        const w = canvas.clientWidth || canvas.offsetWidth || 400;
+        const h = canvas.clientHeight || canvas.offsetHeight || 400;
         if (w > 0 && h > 0) {
           camera.aspect = w / h;
           camera.updateProjectionMatrix();
@@ -316,6 +331,7 @@ export default function HomeCircuit() {
       if (handleResizeRef.current) { window.removeEventListener('resize', handleResizeRef.current); handleResizeRef.current = null; }
       if (resizeObserverRef.current) { resizeObserverRef.current.disconnect(); resizeObserverRef.current = null; }
       if (animationIdRef.current !== null) { cancelAnimationFrame(animationIdRef.current); animationIdRef.current = null; }
+      if (controlsRef.current) { controlsRef.current.dispose(); controlsRef.current = null; }
       if (rendererRef.current) { rendererRef.current.dispose(); rendererRef.current = null; }
       if (sceneRef.current) {
         sceneRef.current.traverse((obj: any) => {
@@ -336,7 +352,7 @@ export default function HomeCircuit() {
   const power = lightOn ? 100 : 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: '#07071a' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative', background: '#07071a' }}>
       <canvas
         ref={canvasRef}
         style={{ flex: 1, minHeight: 0, display: 'block', width: '100%' }}
@@ -356,6 +372,20 @@ export default function HomeCircuit() {
         <div>Current: <span style={{ color: '#fff' }}>{current.toFixed(2)} A</span></div>
         <div>Power:   <span style={{ color: '#fff' }}>{power} W</span></div>
         {overloading && <div style={{ color: '#ff4444', marginTop: 4 }}>⚠ Overload!</div>}
+      </div>
+
+      {/* Orbit hint — top-right */}
+      <div style={{
+        position: 'absolute', top: 12, right: 12,
+        background: 'rgba(7,7,26,0.7)',
+        border: '1px solid rgba(136,204,255,0.18)',
+        borderRadius: 8, padding: '6px 10px',
+        color: 'rgba(136,204,255,0.7)', fontSize: '0.7rem', lineHeight: 1.5,
+        pointerEvents: 'none',
+      }}>
+        <div>🖱 Drag to orbit</div>
+        <div>🔍 Scroll to zoom</div>
+        <div>⇧ Right-drag to pan</div>
       </div>
 
       {/* Controls overlay — bottom */}
