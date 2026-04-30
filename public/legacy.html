@@ -1265,6 +1265,7 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             text-align: center;
             line-height: 1;
+            opacity: 0.05;
             animation: brandingFloat 6s ease-in-out infinite;
         }
         
@@ -1286,11 +1287,9 @@
         @keyframes brandingFloat {
             0%, 100% { 
                 transform: translateX(-50%) translateY(0px);
-                opacity: 0.8;
             }
             50% { 
                 transform: translateX(-50%) translateY(-10px);
-                opacity: 1;
             }
         }
         
@@ -1311,6 +1310,33 @@
             75% { 
                 transform: translateX(-50%) translateY(-10px);
             }
+        }
+
+        .logo-opacity-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0 4px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            margin-top: 8px;
+        }
+        .logo-opacity-row label {
+            font-size: 11px;
+            color: rgba(148,163,184,0.85);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .logo-opacity-row input[type="range"] {
+            flex: 1;
+            accent-color: #00ff88;
+            cursor: pointer;
+        }
+        .logo-opacity-value {
+            font-size: 11px;
+            color: rgba(148,163,184,0.75);
+            width: 32px;
+            text-align: right;
+            flex-shrink: 0;
         }
         
         .polarity-indicator {
@@ -3020,6 +3046,11 @@
         <span class="fuse-watermark-sub">Failure Understanding Simulation Engine</span>
     </div>
 
+    <!-- CircuiTry3D floating workspace logo (near-invisible watermark by default) -->
+    <div id="branding-overlay" class="branding-overlay" aria-hidden="true">
+        <span class="logo-circui">Circui</span><span class="logo-try">Try</span><span class="logo-3d">3D</span>
+    </div>
+
     <!-- AC/DC conflict hazard warning panel -->
     <div id="hazard-warning" role="alertdialog" aria-modal="true" aria-labelledby="hazard-warning-title" aria-describedby="hazard-warning-body">
         <div class="hazard-box">
@@ -3362,6 +3393,12 @@
                         <span class="step-formula">W = I × E</span>
                         <span class="step-value" id="calc-power">0.00W</span>
                     </div>
+                </div>
+                <div class="logo-opacity-row">
+                    <label for="branding-opacity-slider">Logo opacity</label>
+                    <input type="range" id="branding-opacity-slider" min="0" max="1" step="0.01" value="0.05"
+                           oninput="setBrandingOpacity(parseFloat(this.value))">
+                    <span class="logo-opacity-value" id="branding-opacity-display">5%</span>
                 </div>
             </div>
         </div>
@@ -12973,6 +13010,23 @@ body.android-optimized .zoom-btn {
             setupSubscriptionPricing();
         }
 
+        // Restore saved branding opacity preference (defaults to 0.05 if not set)
+        (function restoreBrandingOpacity() {
+            function apply() {
+                try {
+                    const saved = localStorage.getItem('circuitry3d_branding_opacity');
+                    setBrandingOpacity(saved !== null ? parseFloat(saved) : 0.05);
+                } catch(e) {
+                    setBrandingOpacity(0.05);
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', apply, { once: true });
+            } else {
+                apply();
+            }
+        })();
+
         // Pre-initialize the Play Store billing client on Android so it is
         // ready by the time the user reaches the pricing overlay.
         if (typeof window.Capacitor !== 'undefined' &&
@@ -14120,6 +14174,20 @@ body.android-optimized .zoom-btn {
                     setStatus('✓ CircuiTry3D branding hidden');
                 }
             }
+        }
+
+        // Set branding overlay opacity (0 = invisible, 1 = fully opaque)
+        function setBrandingOpacity(value) {
+            const v = Math.max(0, Math.min(1, value));
+            const brandingEl = document.getElementById('branding-overlay');
+            if (brandingEl) {
+                brandingEl.style.opacity = v;
+            }
+            const slider = document.getElementById('branding-opacity-slider');
+            if (slider) slider.value = v;
+            const display = document.getElementById('branding-opacity-display');
+            if (display) display.textContent = Math.round(v * 100) + '%';
+            try { localStorage.setItem('circuitry3d_branding_opacity', v); } catch(e) {}
         }
         
         // Cycle through layout modes
