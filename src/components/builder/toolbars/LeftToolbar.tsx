@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import type {
   ComponentAction,
   QuickAction,
@@ -266,7 +267,7 @@ export function LeftToolbar({
                     }
                     style={
                       action.color
-                        ? ({ "--action-color": action.color } as React.CSSProperties)
+                        ? ({ "--action-color": action.color } as CSSProperties)
                         : undefined
                     }
                   >
@@ -327,7 +328,7 @@ export function LeftToolbar({
                     }
                     style={
                       action.color
-                        ? ({ "--action-color": action.color } as React.CSSProperties)
+                        ? ({ "--action-color": action.color } as CSSProperties)
                         : undefined
                     }
                   >
