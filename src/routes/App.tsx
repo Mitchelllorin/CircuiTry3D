@@ -9,6 +9,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import DemoBanner from "../components/DemoBanner";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
 import { ArenaProvider } from "../context/ArenaContext";
+import { ThemeProvider } from "../context/ThemeContext";
 import { IS_DEMO_MODE } from "../utils/demoMode";
 import "../styles/layout.css";
 
@@ -55,6 +56,7 @@ function PageFallback() {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <WorkspaceModeProvider>
       <ArenaProvider>
       <ErrorBoundary>
@@ -99,6 +101,7 @@ export default function App() {
       </ErrorBoundary>
       </ArenaProvider>
     </WorkspaceModeProvider>
+    </ThemeProvider>
   );
 }
 

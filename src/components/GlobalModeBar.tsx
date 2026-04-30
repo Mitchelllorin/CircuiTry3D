@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useWorkspaceMode } from "../context/WorkspaceModeContext";
+import { useTheme } from "../context/ThemeContext";
 import type { WorkspaceMode } from "./builder/types";
 import BrandMark from "./BrandMark";
 import "../styles/builder-ui.css";
@@ -41,6 +42,7 @@ export function GlobalModeBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { workspaceMode, setWorkspaceMode } = useWorkspaceMode();
+  const { theme, toggleTheme } = useTheme();
   const modeBarRef = useRef<HTMLDivElement>(null);
   const [modeBarScrollState, setModeBarScrollState] = useState<ModeBarScrollState>({
     canScrollLeft: false,
@@ -143,6 +145,18 @@ export function GlobalModeBar() {
             <span className="scroll-indicator-arrow">›</span>
           </div>
         )}
+
+        {/* Theme toggle — pinned to the right end of the bar */}
+        <button
+          type="button"
+          className="mode-tab mode-tab--theme-toggle"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          <span className="mode-icon" aria-hidden="true">{theme === "dark" ? "☀️" : "🌙"}</span>
+          <span className="mode-label">{theme === "dark" ? "Light" : "Dark"}</span>
+        </button>
       </div>
     </>
   );
