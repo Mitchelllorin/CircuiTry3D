@@ -24,9 +24,10 @@ export default function Arena() {
     // and pass theme / feature-flag context.
     // Measure the GlobalModeBar's bottom edge so the arena can position
     // its HUD/panel flush below it instead of using a fixed 100px offset.
+    const MODE_BAR_GAP = 8; // pixels of breathing room between the mode bar and the HUD
     const modeBar = document.querySelector<HTMLElement>(".workspace-mode-bar--global");
     const parentTopBarClearance = modeBar
-      ? Math.ceil(modeBar.getBoundingClientRect().bottom) + 8
+      ? Math.ceil(modeBar.getBoundingClientRect().bottom) + MODE_BAR_GAP
       : 0;
     postToArena({
       type: "arena:init",

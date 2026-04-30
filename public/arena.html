@@ -24,7 +24,13 @@
   <!-- Immediately detect iframe embedding before first paint so the native header
        never flashes on top of the React shell's GlobalModeBar ("hidden UI" fix). -->
   <script>
-    try { if (window.self !== window.top) document.documentElement.classList.add('is-embedded'); } catch (e) {}
+    try {
+      if (window.self !== window.top) document.documentElement.classList.add('is-embedded');
+    } catch (e) {
+      // Cross-origin access guard — treat as embedded if we can't compare windows
+      console.warn('arena: iframe detection error', e);
+      document.documentElement.classList.add('is-embedded');
+    }
   </script>
   <style>
     .arena-header {
@@ -182,7 +188,10 @@
       display: none !important;
     }
     /* Pull the HUD and panel up to sit just below the React GlobalModeBar.
-       --parent-clearance is set via arena:init once the shell measures its bar. */
+       --parent-clearance is set via arena:init once the shell measures its bar.
+       Default 70px covers the typical GlobalModeBar height (~44px) + 12px top offset.
+       68px ≈ HUD button height (44px) + 16px gap below HUD before panel top.
+       98px = 68px (HUD block) + 30px bottom padding for the panel max-height calc. */
     html.is-embedded .hud {
       top: calc(var(--parent-clearance, 70px) + var(--safe-top));
     }
