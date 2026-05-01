@@ -105,6 +105,7 @@ import "../styles/circuit-explain.css";
 import "../styles/scroller-menu.css";
 import { ScrollerMenu } from "../components/builder/ScrollerMenu";
 import { InsightsFilmReel } from "../components/builder/InsightsFilmReel";
+import CurrentFlowAnimation from '../components/CurrentFlowAnimation';
 
 type WorkspacePanelMode =
   | "arena"
@@ -2990,6 +2991,8 @@ export default function Builder() {
       data-right-menu-open={isRightMenuOpen ? "true" : "false"}
       data-bottom-menu-open={isBottomMenuOpen ? "true" : "false"}
     >
+    <CurrentFlowAnimation />
+
       {/* Mode bar is now rendered globally in AppLayout */}
 
       {/* ── Unified top action bar ─────────────────────────────────────────

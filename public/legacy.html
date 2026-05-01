@@ -5091,9 +5091,16 @@ body.android-optimized .zoom-btn {
         let _layerVisibTargetZ = 0;   // Last cameraTarget.z processed
         const _layerWorldPosTmp = new THREE.Vector3();
 
-        // Mobile detection
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isAndroid = /Android/i.test(navigator.userAgent);
+        // Mobile / Android detection
+        // IMPORTANT: keep Android detection aligned with isAndroidDevice above.
+        // Some Play Store / System WebView variants can report unexpected UA
+        // strings, so we include Capacitor platform detection as the source of truth.
+        const userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+        const hasMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+        const hasAndroidUA = /Android/i.test(userAgent);
+        const isAndroid = Boolean(isAndroidDevice || hasAndroidUA);
+        const isMobile = Boolean(isAndroid || hasMobileUA ||
+            (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
 
         // Adjust settings for mobile
         if (isMobile) {
