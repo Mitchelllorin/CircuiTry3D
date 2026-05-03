@@ -5781,3 +5781,12 @@ body.builder-body .builder-panel-overlay--arena .arena-body {
     transform: translateX(-50%);
   }
 }
+/* === Current Flow Animation === */
+@keyframes flow {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
