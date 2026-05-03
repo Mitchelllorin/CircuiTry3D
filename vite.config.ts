@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => ({
   // Use relative paths only for Capacitor builds (app:// scheme).
   // Vercel serves from the root, so '/' is correct for all web deployments.
-  base: mode === 'capacitor' ? './' : '/',
+  base: '/CircuiTry3D/',
   plugins: [react()],
   build: {
     outDir: 'dist',
