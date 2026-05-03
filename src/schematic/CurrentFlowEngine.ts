@@ -54,5 +54,17 @@ export function setCurrent(amps: number) {
 export function tick(deltaTime: number) {
   if (!flowSystem || !renderer || !scene || !camera) return;
   flowSystem.update(deltaTime);
+  // Update shader material for each wire
+for (const wire of flowSystem.wires) {
+    if (!wire.currentFlowMaterial) continue;
+
+    updateCurrentFlowMaterial(
+        wire.currentFlowMaterial,
+        wire.liveValues,
+        wire.catalogProfile,
+        flowSystem.time // or deltaTime if no time property exists
+    );
+}
+
   renderer.render(scene, camera);
 }
