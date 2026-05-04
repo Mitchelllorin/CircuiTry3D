@@ -1,49 +1,29 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, View, StyleSheet } from 'react-native';
+import React from 'react';
+
+const keyframes = `
+@keyframes flow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+`;
 
 export default function CurrentFlowAnimation({ width = 200, height = 10 }) {
-  const flow = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(flow, {
-        toValue: 1,
-        duration: 1200,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
-
-  const translateX = flow.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-width, width],
-  });
-
   return (
-    <View style={[styles.container, { width, height }]}>
-      <Animated.View
-        style={[
-          styles.flow,
-          {
-            transform: [{ translateX }],
-          },
-        ]}
+    <>
+      <style>{keyframes}</style>
+      <div
+        style={{
+          width,
+          height,
+          overflow: 'hidden',
+          backgroundColor: '#222',
+          borderRadius: 4,
+          background: 'linear-gradient(90deg, #222, #00eaff, #222)',
+          backgroundSize: '200% 100%',
+          animation: 'flow 1.2s linear infinite',
+          opacity: 0.9,
+        }}
       />
-    </View>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-    backgroundColor: '#222',
-    borderRadius: 4,
-  },
-  flow: {
-    width: '50%',
-    height: '100%',
-    backgroundColor: '#00eaff',
-    opacity: 0.8,
-  },
-});
