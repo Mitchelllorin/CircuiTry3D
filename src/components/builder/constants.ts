@@ -628,7 +628,7 @@ export const WIRE_TOOL_ACTIONS: PanelAction[] = [
     description:
       "Switch into wiring mode to pick freeform, Manhattan (90-deg), square outside, offset, arc, simple, perimeter, A* auto-routing, diagonal (45°), stepped (staircase), or S-Curve paths.",
     action: "toggle-wire-mode",
-    icon: "〰",
+    icon: "~",
     color: "#44aaff",
   },
   {
