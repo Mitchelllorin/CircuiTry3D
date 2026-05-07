@@ -44,6 +44,7 @@ const ContactSales = lazy(() => import("../pages/ContactSales"));
 const Gallery = lazy(() => import("../pages/Gallery"));
 const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
 const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
+const TermsOfService = lazy(() => import("../pages/TermsOfService"));
 
 function PageFallback() {
   const { t } = useTranslation();
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="/contact-sales" element={<ContactSales />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/educator-pilot" element={<EducatorPilot />} />
+            <Route path="/terms" element={<TermsOfService />} />
           </Route>
           <Route path="/owner" element={<OwnerAccess />} />
           <Route path="*" element={<NotFound />} />
@@ -204,6 +206,8 @@ function AppLayout() {
           <Link to="/delete-account" className="app-footer-link">{t("footer.deleteAccount")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>
           <Link to="/partnerships" className="app-footer-link">{t("footer.partnerships")}</Link>
+          <span className="app-footer-sep" aria-hidden="true">·</span>
+          <Link to="/terms" className="app-footer-link">{t("footer.terms")}</Link>
         </footer>
       )}
     </div>
