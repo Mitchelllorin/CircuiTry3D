@@ -21,11 +21,19 @@ export default function Arena() {
 
   const sendInitMessage = useCallback(() => {
     // Tell the arena to hide its native header (React shell provides nav)
-    // and pass theme / feature-flag context
+    // and pass theme / feature-flag context.
+    // Measure the GlobalModeBar's bottom edge so the arena can position
+    // its HUD/panel flush below it instead of using a fixed 100px offset.
+    const MODE_BAR_GAP = 8; // pixels of breathing room between the mode bar and the HUD
+    const modeBar = document.querySelector<HTMLElement>(".workspace-mode-bar--global");
+    const parentTopBarClearance = modeBar
+      ? Math.ceil(modeBar.getBoundingClientRect().bottom) + MODE_BAR_GAP
+      : 0;
     postToArena({
       type: "arena:init",
       hideNativeHeader: true,
       theme: "dark",
+      ...(parentTopBarClearance > 0 ? { parentTopBarClearance } : {}),
     });
   }, [postToArena]);
 
@@ -72,7 +80,7 @@ export default function Arena() {
         src={iframeSrc}
         onLoad={handleIframeLoad}
         style={{ width: "100%", height: "100%", border: 0 }}
-        sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation-by-user-activation"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-modals allow-top-navigation-by-user-activation"
       />
     </div>
   );
