@@ -331,6 +331,7 @@ export default function Account() {
         setDeleteAccountOpen(false);
         setMode("signin");
         setStatus({ type: "success", message: "Your account has been permanently deleted." });
+        setTimeout(() => setStatus(null), 6000);
       } else {
         setStatus({ type: "error", message: result.message });
       }

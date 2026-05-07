@@ -544,7 +544,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((previous) => ({
       users: previous.users.filter((u) => u.id !== currentUserId),
       currentUserId: null,
-      lastSignedInUserId: previous.lastSignedInUserId === currentUserId ? null : previous.lastSignedInUserId,
+      lastSignedInUserId: null,
     }));
     return { ok: true, user: buildAuthUser(user)! };
   }, []);
