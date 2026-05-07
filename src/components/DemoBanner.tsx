@@ -19,7 +19,7 @@ function getPasswordBorderColor(status: UnlockStatus): string {
 
 /**
  * A fixed banner shown at the top of every page when the web demo is running
- * in demo mode (i.e. the Vercel / GitHub Pages deployment).  Informs users
+ * in demo mode (i.e. the public web deployment or PR preview). Informs users
  * that this is a limited preview and directs them to the Play Store.
  *
  * NOT rendered inside the Android app — in the AAB the paywall is surfaced

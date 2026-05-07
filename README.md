@@ -7,7 +7,7 @@
 
 CircuiTry3D is founded and led by **Mitchell Lorin McKnight**, who built the platform to make circuit theory accessible and intuitive for everyone — because visual learning increases retention for all kinds of learners.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://www.circuitry3d.net)
+[![Deploys to GitHub Pages](https://img.shields.io/badge/Deploys%20to-GitHub%20Pages-222?logo=github)](https://github.com/Mitchelllorin/CircuiTry3D/actions/workflows/deploy.yml)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
@@ -70,7 +70,7 @@ You don't need an engineering background to use CircuiTry3D.
 
 | Platform | Details |
 |---|---|
-| **Web App** | React 19 + Vite 7, deployed on Vercel |
+| **Web App** | React 19 + Vite 7, deployed on GitHub Pages |
 | **Android App** | Native app via Capacitor, available on Google Play Store |
 
 ---
@@ -85,7 +85,7 @@ You don't need an engineering background to use CircuiTry3D.
 | Mobile | Capacitor 7 |
 | Routing | React Router DOM 7 |
 | Backend/API | GitHub Actions + Upstash Redis |
-| Deployment | Vercel (web), Google Play Store (Android) |
+| Deployment | GitHub Pages (web + PR previews), Google Play Store (Android) |
 | Testing | Vitest + Playwright |
 
 ---
@@ -156,6 +156,31 @@ npm run test:watch
 
 All secrets are set as **GitHub repository secrets** (Settings → Secrets and variables → Actions).
 
+## 🌐 Web deployment
+
+The repository now publishes the web app with **GitHub Actions + GitHub Pages**:
+
+- Pushes to `main` deploy the production site from the `gh-pages` branch root
+- Pull requests deploy previews to `gh-pages/pr-preview/pr-<number>/`
+- Closing a pull request removes its preview
+
+### Required GitHub configuration
+
+1. Go to **Settings → Pages**
+2. Set **Build and deployment** to **Deploy from a branch**
+3. Choose the **`gh-pages`** branch and the **`/ (root)`** folder
+4. Save
+
+### Optional repository variables
+
+Set these in **Settings → Secrets and variables → Actions → Variables** if you need a custom domain:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PAGES_BASE_PATH` | `/<repo>/` | Vite base path for the deployed site. Use `/` for a custom domain. |
+| `PAGES_ORIGIN` | `https://<owner>.github.io` | Public site origin used when preview URLs are posted back to pull requests. |
+| `PAGES_CNAME` | _(unset)_ | Optional custom domain written to `dist/CNAME` during production deploys. |
+
 ### Unlocking the full version (owner preview)
 
 The web build runs in **demo mode** by default (limited component library). To preview your full changes:
@@ -163,13 +188,13 @@ The web build runs in **demo mode** by default (limited component library). To p
 1. Go to **GitHub → your repository → Settings → Secrets and variables → Actions**
 2. Click **New repository secret**
 3. Enter:
-   - **Name:** `OWNER_SECRET`
+   - **Name:** `VITE_OWNER_KEY` (or `VITE_OWNER_KEY_HASH` if you prefer to store the SHA-256 hash instead)
    - **Value:** any password you choose (e.g. `MySecret123`)
 4. Click **Add secret**
 5. Trigger a new deployment (push a commit)
 6. Open the deployed site — tap the 🔑 icon in the demo banner and enter your password
 
-> The password is never exposed in the client bundle — it lives only on the server.
+> `VITE_OWNER_KEY` is injected at build time. If you prefer not to provide plaintext, store the SHA-256 digest in `VITE_OWNER_KEY_HASH` instead.
 
 ### Optional: Classroom cloud sync
 
@@ -704,4 +729,3 @@ Pull requests are welcome! Please open an issue first to discuss what you'd like
 
 - **GitHub Issues:** https://github.com/Mitchelllorin/CircuiTry3D/issues
 - **Email:** info@circuitry3d.net
-

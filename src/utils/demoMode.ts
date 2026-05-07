@@ -12,9 +12,9 @@
  *
  * Build-time env vars:
  *   VITE_DEMO_MODE=true      — enables demo mode (set in .env.capacitor and
- *                               via Vercel env variables for the web preview).
+ *                               via CI variables for the web preview build).
  *   VITE_OWNER_KEY_HASH=...  — SHA-256 hex digest of the owner password
- *                               (Vercel / GitHub Actions secret; optional).
+ *                               (GitHub Actions secret; optional).
  *
  * To reset back to demo mode append ?demo_reset to any URL.
  */
@@ -126,7 +126,7 @@ export const DEMO_COMPONENT_IDS: readonly string[] = [
  *            .ComputeHash([System.Text.Encoding]::UTF8.GetBytes("YourNewPassword"))
  *        ).Replace("-","").ToLower()
  * 3. Replace the string below with the 64-character hex output.
- * 4. Push the change — Vercel will redeploy automatically.
+ * 4. Push the change — the deployment workflow will rebuild automatically.
  *
  * No environment variables are needed. The hash is baked directly into the
  * build so it works on every deployment platform (Vercel, GitHub Pages,

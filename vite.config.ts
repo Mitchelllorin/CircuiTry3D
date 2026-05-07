@@ -1,11 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+function normalizeBasePath(value?: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return '/CircuiTry3D/';
+  }
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
+}
+
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  // Use relative paths only for Capacitor builds (app:// scheme).
-  // Vercel serves from the root, so '/' is correct for all web deployments.
-  base: '/CircuiTry3D/',
+export default defineConfig(() => ({
+  // Default to the repository Pages path, but allow CI to override it for
+  // custom domains and PR preview subpaths.
+  base: normalizeBasePath(process.env.VITE_BASE_PATH),
   plugins: [react()],
   build: {
     outDir: 'dist',
