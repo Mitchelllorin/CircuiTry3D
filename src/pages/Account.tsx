@@ -42,7 +42,7 @@ function PinPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBack
 }
 
 export default function Account() {
-  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN } = useAuth();
+  const { currentUser, lastSignedInUser, hasPIN, loading, users, signIn, signUp, signOut, updateProfile, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN, deleteAccount } = useAuth();
   const [mode, setMode] = useState<Mode>(currentUser ? "profile" : "signin");
   const [signInForm, setSignInForm] = useState({ email: "", password: "" });
   const [signUpForm, setSignUpForm] = useState({ email: "", password: "", displayName: "", bio: "" });
@@ -52,6 +52,7 @@ export default function Account() {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   // PIN sign-in state
   const [pinEntry, setPinEntry] = useState("");
@@ -240,6 +241,7 @@ export default function Account() {
     setPinEntry("");
     setChangePasswordOpen(false);
     setChangePasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setDeleteAccountOpen(false);
   };
 
   const handleForgotStep1 = async (event: FormEvent) => {
@@ -312,6 +314,23 @@ export default function Account() {
       const result = await clearPIN();
       if (result.ok) {
         setStatus({ type: "success", message: "PIN removed." });
+      } else {
+        setStatus({ type: "error", message: result.message });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setStatus(null);
+    setIsSubmitting(true);
+    try {
+      const result = await deleteAccount();
+      if (result.ok) {
+        setDeleteAccountOpen(false);
+        setMode("signin");
+        setStatus({ type: "success", message: "Your account has been permanently deleted." });
       } else {
         setStatus({ type: "error", message: result.message });
       }
@@ -769,6 +788,48 @@ export default function Account() {
                         Cancel
                       </button>
                     </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Delete Account */}
+              <div className="account-form delete-account-section">
+                <h3>Delete Account</h3>
+                <p className="forgot-intro">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                {!deleteAccountOpen ? (
+                  <button
+                    type="button"
+                    className="account-secondary delete-account-btn-profile"
+                    onClick={() => { setStatus(null); setDeleteAccountOpen(true); }}
+                    disabled={isSubmitting}
+                  >
+                    Delete Account
+                  </button>
+                ) : (
+                  <div className="delete-account-confirm">
+                    <p className="delete-account-warning-inline">
+                      ⚠ This will permanently delete your account, saved circuits, and all associated data. This cannot be undone.
+                    </p>
+                    <div className="delete-account-actions">
+                      <button
+                        type="button"
+                        className="account-secondary delete-account-confirm-btn"
+                        onClick={handleDeleteAccount}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "Deleting…" : "Yes, Delete My Account"}
+                      </button>
+                      <button
+                        type="button"
+                        className="account-secondary"
+                        onClick={() => { setDeleteAccountOpen(false); setStatus(null); }}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

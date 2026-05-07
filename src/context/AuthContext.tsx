@@ -116,6 +116,7 @@ type AuthContextValue = {
   setPIN: (pin: string) => Promise<AuthResult>;
   clearPIN: () => Promise<AuthResult>;
   signInWithPIN: (pin: string) => Promise<AuthResult>;
+  deleteAccount: () => Promise<AuthResult>;
 };
 
 const STORAGE_KEY = "circuiTry3d.auth.v1";
@@ -529,6 +530,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true, user: buildAuthUser(user)! };
   }, []);
 
+  const deleteAccount = useCallback(async (): Promise<AuthResult> => {
+    await introduceLatency(200, 450);
+    const snapshot = stateSnapshotRef.current;
+    const { currentUserId } = snapshot;
+    if (!currentUserId) {
+      return { ok: false, reason: "no-session", message: "You need to be signed in to delete your account." };
+    }
+    const user = snapshot.users.find((u) => u.id === currentUserId);
+    if (!user) {
+      return { ok: false, reason: "unknown", message: "Unable to locate account." };
+    }
+    setState((previous) => ({
+      users: previous.users.filter((u) => u.id !== currentUserId),
+      currentUserId: null,
+      lastSignedInUserId: previous.lastSignedInUserId === currentUserId ? null : previous.lastSignedInUserId,
+    }));
+    return { ok: true, user: buildAuthUser(user)! };
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       currentUser,
@@ -546,8 +566,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPIN,
       clearPIN,
       signInWithPIN,
+      deleteAccount,
     }),
-    [currentUser, lastSignedInUser, hasPIN, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN]
+    [currentUser, lastSignedInUser, hasPIN, users, loading, signUp, signIn, signOut, updateProfile, getUserById, resetPassword, changePassword, setPIN, clearPIN, signInWithPIN, deleteAccount]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
