@@ -4045,7 +4045,13 @@ export default function Builder() {
           subtitle={workspacePanelMeta.subtitle}
           isOpen={isWorkspacePanelOpen}
           onToggle={() => setWorkspacePanelOpen((open) => !open)}
-          className={activeWorkspacePanelMode === "arena" ? "workspace-mode-panel--arena" : undefined}
+          className={
+            activeWorkspacePanelMode === "arena"
+              ? "workspace-mode-panel--arena"
+              : activeWorkspacePanelMode === "home-circuit" || activeWorkspacePanelMode === "car-circuit"
+                ? "workspace-mode-panel--circuit"
+                : undefined
+          }
         >
           {workspacePanelContent}
         </WorkspaceModePanel>

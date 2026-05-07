@@ -79,6 +79,20 @@
   padding: 0;
 }
 
+/* ── Circuit 3D mode: canvas must fill the panel body ── */
+.workspace-mode-panel--circuit .workspace-mode-panel-body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-mode-panel--circuit .workspace-mode-panel-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Arena mode: steel sword styling on the title ── */
 .workspace-mode-panel--arena .toggle-label {
   font-size: 15px;
