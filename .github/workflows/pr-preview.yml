@@ -113,8 +113,7 @@ jobs:
         with:
           script: |
             const marker = '<!-- github-pages-preview -->';
-            const body = `${marker}
-            🚀 Preview ready: ${process.env.PREVIEW_URL}`;
+            const body = `${marker}\n🚀 Preview ready: ${process.env.PREVIEW_URL}`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -186,8 +185,7 @@ jobs:
         with:
           script: |
             const marker = '<!-- github-pages-preview -->';
-            const body = `${marker}
-            🧹 Preview removed because this pull request was closed.`;
+            const body = `${marker}\n🧹 Preview removed because this pull request was closed.`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
