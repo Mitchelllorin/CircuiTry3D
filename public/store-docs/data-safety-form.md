@@ -200,9 +200,9 @@ Users can request data deletion by:
 **Data Protection Officer:**  
 Mitchell Lorin McKnight  
 Email: info@circuitry3d.net  
-Privacy Policy: https://www.circuitry3d.net/privacy  
-Data Safety: https://www.circuitry3d.net/data-safety  
-Google Play Listing: https://play.google.com/store/apps/details?id=com.circuitry3d.app  
+Privacy Policy URL: https://www.circuitry3d.net/privacy  
+Data Safety URL: https://www.circuitry3d.net/data-safety  
+Play Listing URL: https://play.google.com/store/apps/details?id=com.circuitry3d.app  
 
 **Response Time:**  
 We respond to privacy requests within 48 hours (2 business days)

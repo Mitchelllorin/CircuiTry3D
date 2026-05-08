@@ -103,9 +103,7 @@ export default function DataSafety() {
 
         <h2>Official Google Play Listing</h2>
         <p>
-          Use this listing URL in Play Console notes, support replies, and policy review threads:
-          {" "}
-          <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">{PLAY_STORE_URL}</a>
+          Use this listing URL in Play Console notes, support replies, and policy review threads: <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">{PLAY_STORE_URL}</a>
         </p>
 
         <h2>Does CircuiTry3D collect user data?</h2>
