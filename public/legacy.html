@@ -3630,7 +3630,7 @@
         let _nodeHighlightTimer = null; // Auto-dim timer for lit terminal nodes after wire-placement procedure
         let currentFlowParticles = [];
         let currentWireGlows    = []; // additive-blended glow tubes around active wires
-        let currentLatticeAtoms = []; // Cu⁺ lattice ion spheres (atomic zoom)
+        let currentLatticeAtoms = []; // Cu²⁺ lattice ion spheres (atomic zoom)
         let currentProbabilityClouds = []; // electron probability-cloud hazes (atomic zoom)
         let flowActivationTime  = 0;  // performance.now() when flow last activated
         /** Default first-order thermal time constant (s) for small components with no explicit τ. */
@@ -5266,6 +5266,22 @@ body.android-optimized .zoom-btn {
         const LATTICE_ION_JITTER       = 0.013;  // base vibration amplitude at room temperature (world units)
         const LATTICE_JITTER_SPEED     = 0.042;  // phonon oscillation speed (rad per globalFlowTime tick)
         const LATTICE_JITTER_HEAT_MULT = 3.5;    // amplitude multiplier at maximum current/heat
+        // Phonon oscillator axis-frequency ratios — irrational values prevent visible periodicity.
+        // Y-axis uses 0.79 (≈ 4/5) and Z-axis uses 1.13 (≈ 9/8 × 1) relative to the X-axis base.
+        // Phase offsets spread each atom's oscillation uniquely around the 2π cycle.
+        const LATTICE_PHONON_FREQ_Y    = 0.79;   // Y-axis oscillator frequency relative to base
+        const LATTICE_PHONON_FREQ_Z    = 1.13;   // Z-axis oscillator frequency relative to base
+        const LATTICE_PHONON_PHASE_Y   = 1.30;   // Y phase offset (rad) — ~2π/5 separation from X
+        const LATTICE_PHONON_PHASE_Z   = 2.60;   // Z phase offset (rad) — ~2π/2.4 separation from Y
+        // Per-atom phase spread: 2.399 ≈ 3/(φ²) where φ = golden ratio ≈ 1.618.
+        // Multiplying by golden-ratio-derived constant distributes atom phases uniformly
+        // without any two atoms sharing a phase period (maximally incommensurate spread).
+        const LATTICE_ATOM_PHASE_SPREAD = 2.399;
+
+        // Free-electron gas cloud: blend ratio between free-electron blue and ion copper colour.
+        // 0.25 gives a bluish-copper hue that reads as "sea of delocalized electrons" while
+        // still being visually tied to the copper conductor colour.
+        const FREE_ELEC_COLOR_BLEND    = 0.25;   // lerp weight toward ionColor from electron blue
 
         // Quantum probability cloud pulsation (Tier 1 only)
         // The ψ² probability density oscillates in time, representing the time-dependent
@@ -8651,7 +8667,7 @@ body.android-optimized .zoom-btn {
 
         /**
          * Animate lattice-ion thermal (phonon) vibrations each frame.
-         * Each Cu⁺ ion oscillates around its FCC equilibrium position with a small
+         * Each Cu²⁺ ion oscillates around its FCC equilibrium position with a small
          * amplitude proportional to temperature (approximated via current magnitude).
          * Three independent frequencies per axis ensure aperiodic, realistic motion.
          * Throttled to every 2 frames for performance on mobile.
@@ -8672,13 +8688,13 @@ body.android-optimized .zoom-btn {
                 for (let i = 0; i < mesh.count; i++) {
                     const eq = eqPos[i];
                     if (!eq) continue;
-                    // Three independent oscillators per axis — irrational frequency ratios prevent
-                    // visible periodicity (same technique as electron stream wiggle).
-                    const phase = i * 2.399; // golden-ratio-ish phase spread per atom
+                    // Per-atom phase offset using LATTICE_ATOM_PHASE_SPREAD (≈ 3/φ²) so
+                    // no two atoms are in phase and the ensemble looks thermally disordered.
+                    const phase = i * LATTICE_ATOM_PHASE_SPREAD;
                     dummy.position.set(
-                        eq.x + Math.sin(t * 1.00 + phase)        * amp,
-                        eq.y + Math.sin(t * 0.79 + phase + 1.30) * amp,
-                        eq.z + Math.sin(t * 1.13 + phase + 2.60) * amp
+                        eq.x + Math.sin(t                              + phase) * amp,
+                        eq.y + Math.sin(t * LATTICE_PHONON_FREQ_Y + phase + LATTICE_PHONON_PHASE_Y) * amp,
+                        eq.z + Math.sin(t * LATTICE_PHONON_FREQ_Z + phase + LATTICE_PHONON_PHASE_Z) * amp
                     );
                     dummy.updateMatrix();
                     mesh.setMatrixAt(i, dummy.matrix);
@@ -18589,7 +18605,7 @@ Made with ? for visual learners everywhere!
                         false
                     );
                     const freeElecMat = new THREE.MeshBasicMaterial({
-                        color:       new THREE.Color(0x88ccff).lerp(ionColor, 0.25).getHex(),
+                        color:       new THREE.Color(0x88ccff).lerp(ionColor, FREE_ELEC_COLOR_BLEND).getHex(),
                         transparent: true,
                         opacity:     0.035 + heatT * 0.018,
                         blending:    THREE.AdditiveBlending,
