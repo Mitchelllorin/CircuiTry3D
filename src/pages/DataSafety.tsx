@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import "../styles/legal.css";
 
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
+
 type DataRow = {
   type: string;
   collected: boolean;
@@ -97,6 +99,13 @@ export default function DataSafety() {
         <p>
           This page describes exactly what data CircuiTry3D collects, why it is collected, and how it is handled.
           We believe in full transparency so you can make an informed decision about using the app.
+        </p>
+
+        <h2>Official Google Play Listing</h2>
+        <p>
+          Use this listing URL in Play Console notes, support replies, and policy review threads:
+          {" "}
+          <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">{PLAY_STORE_URL}</a>
         </p>
 
         <h2>Does CircuiTry3D collect user data?</h2>

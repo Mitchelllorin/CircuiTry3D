@@ -260,6 +260,10 @@ CircuiTry3D
     - ✅ All data encrypted in transit and at rest
     - ✅ Users can request deletion
     - ❌ No location, contacts, photos, etc.
+    - 🔗 URLs to keep handy:
+      - Privacy policy: `https://www.circuitry3d.net/privacy`
+      - Data safety page: `https://www.circuitry3d.net/data-safety`
+      - Google Play listing: `https://play.google.com/store/apps/details?id=com.circuitry3d.app`
     
 12. **Review and Submit Data Safety:**
     - Carefully review all answers
