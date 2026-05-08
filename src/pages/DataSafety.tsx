@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
+import { PLAY_STORE_URL } from "../constants/urls";
 import "../styles/legal.css";
-
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
 
 type DataRow = {
   type: string;

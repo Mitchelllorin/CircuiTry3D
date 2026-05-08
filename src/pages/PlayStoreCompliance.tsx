@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { PLAY_STORE_URL, SITE_ORIGIN } from "../constants/urls";
 import "../styles/legal.css";
-
-const SITE_ORIGIN = "https://www.circuitry3d.net";
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
 
 type ConsoleUrl = { label: string; field: string; url: string };
 
