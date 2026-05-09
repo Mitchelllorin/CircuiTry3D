@@ -13015,7 +13015,8 @@ body.android-optimized .zoom-btn {
             function apply() {
                 try {
                     const saved = localStorage.getItem('circuitry3d_branding_opacity');
-                    setBrandingOpacity(saved !== null ? parseFloat(saved) : 0.05);
+                    const parsed = saved !== null ? parseFloat(saved) : NaN;
+                    setBrandingOpacity(Number.isFinite(parsed) ? parsed : 0.05);
                 } catch(e) {
                     setBrandingOpacity(0.05);
                 }
@@ -14178,7 +14179,10 @@ body.android-optimized .zoom-btn {
 
         // Set branding overlay opacity (0 = invisible, 1 = fully opaque)
         function setBrandingOpacity(value) {
-            const v = Math.max(0, Math.min(1, value));
+            const numericValue = Number(value);
+            const v = Number.isFinite(numericValue)
+                ? Math.max(0, Math.min(1, numericValue))
+                : 0.05;
             const brandingEl = document.getElementById('branding-overlay');
             if (brandingEl) {
                 brandingEl.style.opacity = v;
