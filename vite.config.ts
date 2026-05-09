@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Use relative paths only for Capacitor builds (app:// scheme).
-  // Vercel serves from the root, so '/' is correct for all web deployments.
-  base: '/CircuiTry3D/',
+  // VITE_BASE_PATH is set by CI workflows so each deployment (production or
+  // PR preview) gets the correct sub-path. Defaults to root for the
+  // production custom domain (www.circuitry3d.net).
+  base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [react()],
   build: {
     outDir: 'dist',
