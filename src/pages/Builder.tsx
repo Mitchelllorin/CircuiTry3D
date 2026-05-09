@@ -1182,6 +1182,97 @@ const INTRO_WELCOME = {
 
 const GALLERY_TOAST_DURATION_MS = 6000;
 
+/** Real-world branded components available in the main workspace library. */
+type RealPart = {
+  id: string;
+  mfr: string;
+  name: string;
+  spec: string;
+  builderType: string;
+  props: Record<string, number>;
+};
+
+const REAL_PARTS_CATALOG: RealPart[] = [
+  // ── Batteries ─────────────────────────────────────────────────────────
+  { id: "energizer-522-9v", mfr: "Energizer", name: "522 9V", spec: "9V · 565mAh", builderType: "battery", props: { voltage: 9 } },
+  { id: "panasonic-lr6-aa", mfr: "Panasonic", name: "LR6 AA", spec: "1.5V · 2850mAh", builderType: "battery", props: { voltage: 1.5 } },
+  // ── Resistors ──────────────────────────────────────────────────────────
+  { id: "vishay-crcw0402-100r", mfr: "Vishay", name: "CRCW0402 100Ω", spec: "0402 · 1% · 63mW", builderType: "resistor", props: { resistance: 100 } },
+  { id: "vishay-crcw0603-330r", mfr: "Vishay", name: "CRCW0603 330Ω", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 330 } },
+  { id: "vishay-crcw0603-1k", mfr: "Vishay", name: "CRCW0603 1kΩ", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 1000 } },
+  { id: "vishay-crcw0603-10k", mfr: "Vishay", name: "CRCW0603 10kΩ", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 10000 } },
+  { id: "yageo-cfr-1k", mfr: "Yageo", name: "CFR-25JB 1kΩ", spec: "axial · 5% · 250mW", builderType: "resistor", props: { resistance: 1000 } },
+  { id: "yageo-cfr-10k", mfr: "Yageo", name: "CFR-25JB 10kΩ", spec: "axial · 5% · 250mW", builderType: "resistor", props: { resistance: 10000 } },
+  { id: "bourns-cr0603-100k", mfr: "Bourns", name: "CR0603 100kΩ", spec: "0603 · 1% · 100mW", builderType: "resistor", props: { resistance: 100000 } },
+  // ── Capacitors ────────────────────────────────────────────────────────
+  { id: "murata-gcj-1uf", mfr: "Murata", name: "GCJ316R71H 1µF", spec: "0805 · 50V · X7R", builderType: "capacitor", props: { capacitance: 1 } },
+  { id: "panasonic-eeufm-100uf", mfr: "Panasonic", name: "EEU-FM1E101 100µF", spec: "radial · 25V · 105°C", builderType: "capacitor", props: { capacitance: 100 } },
+  { id: "nichicon-ufw-470uf", mfr: "Nichicon", name: "UFW1C471 470µF", spec: "radial · 16V · 105°C", builderType: "capacitor", props: { capacitance: 470 } },
+  // ── LEDs ──────────────────────────────────────────────────────────────
+  { id: "vishay-tlhr5400-red", mfr: "Vishay", name: "TLHR5400 Red", spec: "T-1 3/4 · 2.0V · 630nm", builderType: "led", props: { resistance: 10 } },
+  { id: "wurth-led-green", mfr: "Würth", name: "151031VS Green", spec: "SMD · 2.1V · 525nm", builderType: "led", props: { resistance: 10 } },
+  { id: "osram-lb-d47b-blue", mfr: "Osram", name: "LB D47B Blue", spec: "SMD · 3.0V · 470nm", builderType: "led", props: { resistance: 10 } },
+  { id: "cree-c503b-white", mfr: "Cree", name: "C503B White", spec: "T-1 3/4 · 3.2V · 6000K", builderType: "led", props: { resistance: 10 } },
+  // ── Diodes ────────────────────────────────────────────────────────────
+  { id: "on-semi-1n4148", mfr: "ON Semi", name: "1N4148", spec: "DO-35 · 100V · 300mA", builderType: "diode", props: { forwardVoltage: 0.72 } },
+  { id: "on-semi-1n4007", mfr: "ON Semi", name: "1N4007", spec: "DO-41 · 1000V · 1A", builderType: "diode", props: { forwardVoltage: 0.7 } },
+  { id: "vishay-1n5819", mfr: "Vishay", name: "1N5819 Schottky", spec: "DO-41 · 40V · 1A", builderType: "diode", props: { forwardVoltage: 0.34 } },
+  // ── BJTs ──────────────────────────────────────────────────────────────
+  { id: "on-semi-2n2222a", mfr: "ON Semi", name: "2N2222A NPN", spec: "TO-18 · 40V · 600mA", builderType: "bjt", props: { gain: 100 } },
+  { id: "on-semi-2n3904", mfr: "ON Semi", name: "2N3904 NPN", spec: "TO-92 · 40V · 200mA", builderType: "bjt", props: { gain: 100 } },
+  { id: "on-semi-2n3906", mfr: "ON Semi", name: "2N3906 PNP", spec: "TO-92 · 40V · 200mA", builderType: "bjt-pnp", props: { gain: 100 } },
+  { id: "stmicro-bc547", mfr: "STMicro", name: "BC547 NPN", spec: "TO-92 · 45V · 100mA", builderType: "bjt", props: { gain: 110 } },
+  { id: "on-semi-tip31c", mfr: "ON Semi", name: "TIP31C NPN", spec: "TO-220 · 100V · 3A · 40W", builderType: "bjt", props: { gain: 25 } },
+  // ── MOSFETs ───────────────────────────────────────────────────────────
+  { id: "infineon-irf540n", mfr: "Infineon", name: "IRF540N N-MOS", spec: "TO-220 · 100V · 33A", builderType: "mosfet", props: { threshold: 4 } },
+  { id: "on-semi-2n7000", mfr: "ON Semi", name: "2N7000 N-MOS", spec: "TO-92 · 60V · 200mA", builderType: "mosfet", props: { threshold: 2.1 } },
+  // ── Voltage Regulators ────────────────────────────────────────────────
+  { id: "ti-lm7805", mfr: "Texas Instruments", name: "LM7805 5V", spec: "TO-220 · 5V · 1.5A", builderType: "voltage-regulator", props: { outputVoltage: 5, maxCurrent: 1.5 } },
+  { id: "ti-lm7812", mfr: "Texas Instruments", name: "LM7812 12V", spec: "TO-220 · 12V · 1.5A", builderType: "voltage-regulator", props: { outputVoltage: 12, maxCurrent: 1.5 } },
+  { id: "ti-lm317", mfr: "Texas Instruments", name: "LM317T Adj", spec: "TO-220 · 1.2–37V · 1.5A", builderType: "voltage-regulator", props: { outputVoltage: 5, maxCurrent: 1.5 } },
+  // ── Op-Amps ───────────────────────────────────────────────────────────
+  { id: "ti-lm358", mfr: "Texas Instruments", name: "LM358N", spec: "DIP-8 · dual · 32V", builderType: "opamp", props: { gain: 100000 } },
+  { id: "ti-lm741", mfr: "Texas Instruments", name: "LM741CN", spec: "DIP-8 · single · 18V", builderType: "opamp", props: { gain: 100000 } },
+  // ── ICs ───────────────────────────────────────────────────────────────
+  { id: "ti-ne555", mfr: "Texas Instruments", name: "NE555P Timer", spec: "DIP-8 · 4.5–16V", builderType: "ic", props: {} },
+  { id: "ti-74hc595", mfr: "Texas Instruments", name: "SN74HC595N", spec: "DIP-16 · shift register", builderType: "ic", props: {} },
+  { id: "ti-cd4011be", mfr: "Texas Instruments", name: "CD4011BE NAND", spec: "DIP-14 · 3–18V", builderType: "ic", props: {} },
+  // ── Inductors ─────────────────────────────────────────────────────────
+  { id: "sumida-cdrh4d28-47uh", mfr: "Sumida", name: "CDRH4D28 47µH", spec: "SMD · 700mA sat", builderType: "inductor", props: { inductance: 47 } },
+  { id: "bourns-srr1260-100uh", mfr: "Bourns", name: "SRR1260 100µH", spec: "SMD · 2.1A sat", builderType: "inductor", props: { inductance: 100 } },
+  // ── Crystals ──────────────────────────────────────────────────────────
+  { id: "abracon-abls-16mhz", mfr: "Abracon", name: "ABLS 16MHz", spec: "HC-49/US · 18pF · ±20ppm", builderType: "crystal", props: { frequency: 16000000 } },
+  { id: "ecs-8mhz", mfr: "ECS", name: "ECS-80 8MHz", spec: "HC-49/US · 20pF · ±30ppm", builderType: "crystal", props: { frequency: 8000000 } },
+  // ── Thermistors ───────────────────────────────────────────────────────
+  { id: "vishay-ntcle100-10k", mfr: "Vishay", name: "NTCLE100 10kΩ", spec: "B=3950K · 5% · NTC", builderType: "thermistor", props: { resistance: 10000 } },
+  // ── Fuses ─────────────────────────────────────────────────────────────
+  { id: "littelfuse-251001", mfr: "Littelfuse", name: "251001 1A", spec: "250V · fast blow · glass", builderType: "fuse", props: { current: 1 } },
+  { id: "littelfuse-250500", mfr: "Littelfuse", name: "250500 500mA", spec: "250V · fast blow · glass", builderType: "fuse", props: { current: 0.5 } },
+  { id: "schurter-ato-5a", mfr: "Schurter", name: "ATO Blade 5A", spec: "32V · automotive", builderType: "fuse", props: { current: 5 } },
+];
+
+const REAL_PARTS_CATEGORIES = (() => {
+  const order = ["Batteries", "Resistors", "Capacitors", "LEDs", "Diodes", "BJTs", "MOSFETs", "Regulators", "Op-Amps", "ICs", "Inductors", "Crystals", "Thermistors", "Fuses"];
+  const categoryMap: Record<string, string> = {
+    battery: "Batteries", resistor: "Resistors", capacitor: "Capacitors",
+    led: "LEDs", diode: "Diodes",
+    bjt: "BJTs", "bjt-pnp": "BJTs", "bjt-npn": "BJTs",
+    mosfet: "MOSFETs", "voltage-regulator": "Regulators",
+    opamp: "Op-Amps", ic: "ICs",
+    inductor: "Inductors", crystal: "Crystals", thermistor: "Thermistors", fuse: "Fuses",
+  };
+  const grouped = new Map<string, RealPart[]>();
+  order.forEach((cat) => grouped.set(cat, []));
+  REAL_PARTS_CATALOG.forEach((p) => {
+    const cat = categoryMap[p.builderType] ?? p.builderType;
+    if (!grouped.has(cat)) grouped.set(cat, []);
+    grouped.get(cat)!.push(p);
+  });
+  // Remove empty categories
+  for (const [k, v] of grouped) { if (!v.length) grouped.delete(k); }
+  return grouped;
+})();
+
 function deriveLabelVisibilityFromShowLabels(
   showLabels: boolean,
   previousLevel: number | undefined,
@@ -2111,6 +2202,20 @@ export default function Builder() {
       postToBuilder({
         type: "builder:add-component",
         payload: { componentType: component.builderType },
+      });
+    },
+    [postToBuilder],
+  );
+
+  const handleRealPartAdd = useCallback(
+    (part: RealPart) => {
+      if (!part?.builderType) return;
+      postToBuilder({
+        type: "builder:add-component",
+        payload: {
+          componentType: part.builderType,
+          initialProperties: Object.keys(part.props).length > 0 ? part.props : undefined,
+        },
       });
     },
     [postToBuilder],
@@ -3447,6 +3552,53 @@ export default function Builder() {
               )}
             </div>
             )}
+            {/* Real Parts Library — real branded components with manufacturer specs */}
+            <div className="slider-section" style={{ marginTop: 16 }}>
+              <span className="slider-heading">⚡ Real Parts Library</span>
+              <p style={{ fontSize: "0.68rem", color: "rgba(148,163,184,0.7)", margin: "0 0 6px", lineHeight: 1.4 }}>
+                Real manufacturer parts with datasheet specs
+              </p>
+              {Array.from(REAL_PARTS_CATEGORIES.entries()).map(([category, parts]) => (
+                <div key={category} style={{ marginBottom: 8 }}>
+                  <div style={{
+                    fontSize: "0.6rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "rgba(100,200,255,0.5)",
+                    padding: "4px 0 2px",
+                    borderTop: "1px solid rgba(100,180,255,0.1)",
+                    marginBottom: 4,
+                  }}>
+                    {category}
+                  </div>
+                  <div className="slider-stack">
+                    {parts.map((part) => (
+                      <button
+                        key={part.id}
+                        type="button"
+                        className="slider-btn"
+                        onClick={() => handleRealPartAdd(part)}
+                        disabled={controlsDisabled}
+                        aria-disabled={controlsDisabled}
+                        title={controlsDisabled ? controlDisabledTitle : `Add ${part.mfr} ${part.name} — ${part.spec}`}
+                        style={{ padding: "6px 10px", gap: 2 }}
+                      >
+                        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(220,240,255,0.92)", lineHeight: 1.3 }}>
+                          {part.name}
+                        </span>
+                        <span style={{ fontSize: "0.6rem", color: "rgba(100,160,220,0.75)", lineHeight: 1.3 }}>
+                          {part.mfr}
+                        </span>
+                        <span style={{ fontSize: "0.6rem", color: "rgba(148,163,184,0.6)", lineHeight: 1.3 }}>
+                          {part.spec}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </nav>
       </div>
