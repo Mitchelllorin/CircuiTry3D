@@ -1,7 +1,7 @@
 # Builds and deploys a live preview of every PR to GitHub Pages, then posts
 # the URL as a PR comment.  Cleans up the preview when the PR is closed.
 #
-# Preview URL: https://www.circuitry3d.net/pr-preview/pr-<number>/
+# Preview URL: https://<owner>.github.io/CircuiTry3D/pr-preview/pr-<number>/
 #
 # Required repo settings (one-time, done in GitHub UI):
 #   Settings → Pages → Source: "Deploy from a branch" → branch: gh-pages, folder: / (root)
@@ -49,7 +49,7 @@ jobs:
       - name: Build (PR-scoped base path)
         run: npm run build
         env:
-          VITE_BASE_PATH: /pr-preview/pr-${{ env.PR_NUMBER }}/
+          VITE_BASE_PATH: /CircuiTry3D/pr-preview/pr-${{ env.PR_NUMBER }}/
 
       - name: Deploy preview to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
@@ -81,7 +81,7 @@ jobs:
 
             | | |
             |---|---|
-            | **Preview URL** | https://www.circuitry3d.net/pr-preview/pr-${{ env.PR_NUMBER }}/ |
+            | **Preview URL** | https://mitchelllorin.github.io/CircuiTry3D/pr-preview/pr-${{ env.PR_NUMBER }}/ |
             | **Commit** | ${{ github.event.pull_request.head.sha }} |
 
             > Preview updates automatically on every push to this PR.
