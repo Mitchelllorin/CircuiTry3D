@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // VITE_BASE_PATH is set by CI workflows so each deployment (production or
-  // PR preview) gets the correct sub-path.  Defaults to the GitHub Pages repo
-  // root path so local dev and manual builds work without any extra env setup.
-  base: process.env.VITE_BASE_PATH ?? '/CircuiTry3D/',
+  // PR preview) gets the correct sub-path. Defaults to root for the
+  // production custom domain (www.circuitry3d.net).
+  base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [react()],
   build: {
     outDir: 'dist',

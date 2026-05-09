@@ -42,8 +42,10 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Production site lives at https://<owner>.github.io/CircuiTry3D/
-          VITE_BASE_PATH: /CircuiTry3D/
+          VITE_BASE_PATH: /
+
+      - name: Set custom domain
+        run: echo "www.circuitry3d.net" > dist/CNAME
 
       - name: Deploy to gh-pages branch
         uses: JamesIves/github-pages-deploy-action@v4
@@ -54,4 +56,3 @@ jobs:
           # production deployment.
           clean-exclude: pr-preview
           single-commit: true
-
