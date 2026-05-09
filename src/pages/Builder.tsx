@@ -1238,8 +1238,9 @@ const REAL_PARTS_CATALOG: RealPart[] = [
   { id: "ti-74hc595", mfr: "Texas Instruments", name: "SN74HC595N", spec: "DIP-16 · shift register", builderType: "ic", props: {} },
   { id: "ti-cd4011be", mfr: "Texas Instruments", name: "CD4011BE NAND", spec: "DIP-14 · 3–18V", builderType: "ic", props: {} },
   // ── Inductors ─────────────────────────────────────────────────────────
-  { id: "sumida-cdrh4d28-47uh", mfr: "Sumida", name: "CDRH4D28 47µH", spec: "SMD · 700mA sat", builderType: "inductor", props: { inductance: 47 } },
-  { id: "bourns-srr1260-100uh", mfr: "Bourns", name: "SRR1260 100µH", spec: "SMD · 2.1A sat", builderType: "inductor", props: { inductance: 100 } },
+  // inductance is in mH in the workspace (47µH = 0.047mH, 100µH = 0.1mH)
+  { id: "sumida-cdrh4d28-47uh", mfr: "Sumida", name: "CDRH4D28 47µH", spec: "SMD · 700mA sat", builderType: "inductor", props: { inductance: 0.047 } },
+  { id: "bourns-srr1260-100uh", mfr: "Bourns", name: "SRR1260 100µH", spec: "SMD · 2.1A sat", builderType: "inductor", props: { inductance: 0.1 } },
   // ── Crystals ──────────────────────────────────────────────────────────
   { id: "abracon-abls-16mhz", mfr: "Abracon", name: "ABLS 16MHz", spec: "HC-49/US · 18pF · ±20ppm", builderType: "crystal", props: { frequency: 16000000 } },
   { id: "ecs-8mhz", mfr: "ECS", name: "ECS-80 8MHz", spec: "HC-49/US · 20pF · ±30ppm", builderType: "crystal", props: { frequency: 8000000 } },
