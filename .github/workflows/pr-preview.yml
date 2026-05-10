@@ -25,7 +25,7 @@ jobs:
 
     env:
       NODE_VERSION: '20.19.0'
-      # 18 * 10s = 180s total wait for external preview providers to report back.
+      # 18 * 10000ms = 180000ms (180s) total wait for external preview providers to report back.
       PREVIEW_POLL_ATTEMPTS: '18'
       PREVIEW_POLL_INTERVAL_MS: '10000'
 
@@ -95,8 +95,13 @@ jobs:
                   deployment_id: previewDeployment.id,
                   per_page: 20
                 });
+                const toTimestamp = (value) => {
+                  if (!value) return Number.NEGATIVE_INFINITY;
+                  const parsed = Date.parse(value);
+                  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+                };
                 const statuses = [...statusesResponse.data].sort(
-                  (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+                  (a, b) => toTimestamp(b.created_at) - toTimestamp(a.created_at)
                 );
 
                 const status = statuses.find((entry) =>
@@ -137,7 +142,7 @@ jobs:
               "## PR Preview",
               button,
               "",
-              "_One click from this PR page. This comment automatically updates on new commits._"
+              "_One click preview from this PR page. This comment automatically updates on new commits._"
             ].join("\n");
 
             const comments = await github.paginate(github.rest.issues.listComments, {
