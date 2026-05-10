@@ -133,6 +133,34 @@ jobs:
               core.warning(`No successful deployment URL found after ${MAX_ATTEMPTS} attempts (${TOTAL_WAIT_SECONDS}s).`);
             }
 
+            const BODY_START = "<!-- pr-preview-start -->";
+            const BODY_END = "<!-- pr-preview-end -->";
+
+            const previewSection = previewUrl
+              ? `${BODY_START}\n> 🚀 **[Open PR Preview](${previewUrl})**\n${BODY_END}`
+              : `${BODY_START}\n> ⏳ Preview is deploying — check back in a moment.\n${BODY_END}`;
+
+            // Embed preview button at the top of the PR description so it is
+            // immediately visible without scrolling through comments.
+            const prResponse = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            const existingBody = prResponse.data.body || "";
+            const startIdx = existingBody.indexOf(BODY_START);
+            const endIdx   = existingBody.indexOf(BODY_END);
+
+            let newBody;
+            if (startIdx !== -1 && endIdx !== -1) {
+              newBody =
+                existingBody.slice(0, startIdx) +
+                previewSection +
+                existingBody.slice(endIdx + BODY_END.length);
+            } else {
+              newBody = previewSection + "\n\n" + existingBody;
+            }
+
+            await github.rest.pulls.update({ owner, repo, pull_number: issue_number, body: newBody });
+            core.info(`Updated PR description with preview button.`);
+
+            // Also keep a sticky comment as a secondary reference.
             const button = previewUrl
               ? `[![PR Preview](https://img.shields.io/badge/PR%20Preview-Open-6f42c1?style=for-the-badge)](${previewUrl})`
               : "Preview deployment is still in progress. Please check back in a few moments.";
