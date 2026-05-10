@@ -68,9 +68,8 @@ jobs:
                 sha,
                 per_page: 20
               });
-              const deployments = deploymentsResponse.data;
-
-              for (const deployment of deployments) {
+              const deployment = deploymentsResponse.data[0];
+              if (deployment) {
                 const statusesResponse = await github.rest.repos.listDeploymentStatuses({
                   owner,
                   repo,
@@ -86,7 +85,6 @@ jobs:
 
                 if (status) {
                   previewUrl = status.environment_url || status.target_url;
-                  break;
                 }
               }
 
