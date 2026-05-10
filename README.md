@@ -140,6 +140,8 @@ npm run build
 npm run preview
 ```
 
+To test the PR preview workflow, open a pull request from any branch with changes so `.github/workflows/pr-preview.yml` can run.
+
 ### Run Tests
 
 ```bash
@@ -704,4 +706,3 @@ Pull requests are welcome! Please open an issue first to discuss what you'd like
 
 - **GitHub Issues:** https://github.com/Mitchelllorin/CircuiTry3D/issues
 - **Email:** info@circuitry3d.net
-

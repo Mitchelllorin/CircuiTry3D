@@ -1,17 +1,17 @@
-# PR preview deployments are handled automatically by Vercel's GitHub integration.
-# This workflow runs a build-only CI check to catch compile errors before merge.
-# Vercel posts its own preview URL comment on the PR.
+# PR preview deployments are provided by external deployment integrations.
+# This workflow only upserts the one-click preview button on the PR page.
 
 name: PR Preview
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
   deployments: read
   pull-requests: write
+  issues: write
 
 # Cancel any in-progress build for the same PR so the latest push always wins.
 concurrency:
@@ -19,32 +19,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  upsert-preview-button:
+    name: Upsert PR preview button
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.id == github.event.repository.id && github.event.pull_request.head.repo.owner.id == github.event.repository.owner.id
 
     env:
-      NODE_VERSION: '20.19.0'
       # 18 * 10000ms = 180000ms (180s) total wait for external preview providers to report back.
       PREVIEW_POLL_ATTEMPTS: '18'
       PREVIEW_POLL_INTERVAL_MS: '10000'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
       - name: Upsert PR preview button comment
         uses: actions/github-script@v7
         env:
