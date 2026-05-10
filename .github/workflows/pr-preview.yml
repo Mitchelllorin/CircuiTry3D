@@ -68,13 +68,15 @@ jobs:
                 sha,
                 per_page: 20
               });
-              const sortedDeployments = [...deploymentsResponse.data].sort(
-                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-              );
-              const deployment = sortedDeployments.find((entry) =>
+              const deployments = deploymentsResponse.data;
+              const previewDeployment = deployments.find((entry) =>
                 (entry.environment || "").toLowerCase().includes("preview")
-              ) || sortedDeployments[0];
+              );
+              const deployment = previewDeployment || deployments[0];
               if (deployment) {
+                if (!previewDeployment) {
+                  core.warning(`No preview deployment matched; falling back to deployment ${deployment.id} (${deployment.environment || "unknown environment"}).`);
+                }
                 const statusesResponse = await github.rest.repos.listDeploymentStatuses({
                   owner,
                   repo,
@@ -101,6 +103,10 @@ jobs:
                 core.info(`Preview deployment URL not found yet (attempt ${attempt}/${maxAttempts}); waiting ${waitMs / 1000}s...`);
                 await sleep(waitMs);
               }
+            }
+
+            if (!previewUrl) {
+              core.warning(`No successful deployment URL found after ${maxAttempts} attempts.`);
             }
 
             const button = previewUrl
