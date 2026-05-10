@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  deployments: read
+  pull-requests: write
 
 # Cancel any in-progress build for the same PR so the latest push always wins.
 concurrency:
@@ -23,6 +25,9 @@ jobs:
 
     env:
       NODE_VERSION: '20.19.0'
+      # 18 * 10000ms = 180000ms (180s) total wait for external preview providers to report back.
+      PREVIEW_POLL_ATTEMPTS: '18'
+      PREVIEW_POLL_INTERVAL_MS: '10000'
 
     steps:
       - name: Checkout
@@ -40,3 +45,129 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Upsert PR preview button comment
+        uses: actions/github-script@v7
+        env:
+          MARKER: "<!-- pr-preview-button -->"
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha;
+            const marker = process.env.MARKER;
+            const MAX_ATTEMPTS = Number(process.env.PREVIEW_POLL_ATTEMPTS || "18");
+            const POLL_INTERVAL_MS = Number(process.env.PREVIEW_POLL_INTERVAL_MS || "10000");
+            const TOTAL_WAIT_SECONDS = (MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000;
+            const ALLOWED_HOST_SUFFIXES = ["vercel.app", "circuitry3d.net", "github.io"];
+            const isAllowedPreviewUrl = (value) => {
+              try {
+                const parsed = new URL(value);
+                if (parsed.protocol !== "https:") return false;
+                return ALLOWED_HOST_SUFFIXES.some((suffix) =>
+                  parsed.hostname === suffix || parsed.hostname.endsWith(`.${suffix}`)
+                );
+              } catch {
+                return false;
+              }
+            };
+
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            // Poll up to 3 minutes (18 x 10s) because external preview deployments
+            // can appear shortly after this workflow starts.
+            let previewUrl = null;
+
+            for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+              const deploymentsResponse = await github.rest.repos.listDeployments({
+                owner,
+                repo,
+                sha,
+                per_page: 20
+              });
+              const deployments = deploymentsResponse.data;
+              const previewDeployment = deployments.find((entry) =>
+                /^preview\b/i.test(entry.environment || "")
+              );
+              if (previewDeployment) {
+                const statusesResponse = await github.rest.repos.listDeploymentStatuses({
+                  owner,
+                  repo,
+                  deployment_id: previewDeployment.id,
+                  per_page: 20
+                });
+                const toTimestamp = (value) => {
+                  if (!value) return Number.NEGATIVE_INFINITY;
+                  const parsed = Date.parse(value);
+                  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+                };
+                const statuses = [...statusesResponse.data].sort(
+                  (a, b) => toTimestamp(b.created_at) - toTimestamp(a.created_at)
+                );
+
+                const status = statuses.find((entry) =>
+                  entry.state === "success" &&
+                  (entry.environment_url || entry.target_url)
+                );
+
+                if (status) {
+                  const candidateUrl = status.environment_url || status.target_url;
+                  if (candidateUrl && isAllowedPreviewUrl(candidateUrl)) {
+                    previewUrl = candidateUrl;
+                  } else {
+                    core.warning(`Ignoring unexpected preview URL host: ${candidateUrl || "empty URL"}.`);
+                  }
+                }
+              }
+
+              if (previewUrl) {
+                break;
+              }
+
+              if (attempt < MAX_ATTEMPTS) {
+                core.info(`Preview deployment URL not found yet (attempt ${attempt}/${MAX_ATTEMPTS}); waiting ${POLL_INTERVAL_MS / 1000}s...`);
+                await sleep(POLL_INTERVAL_MS);
+              }
+            }
+
+            if (!previewUrl) {
+              core.warning(`No successful deployment URL found after ${MAX_ATTEMPTS} attempts (${TOTAL_WAIT_SECONDS}s).`);
+            }
+
+            const button = previewUrl
+              ? `[![PR Preview](https://img.shields.io/badge/PR%20Preview-Open-6f42c1?style=for-the-badge)](${previewUrl})`
+              : "Preview deployment is still in progress. Please check back in a few moments.";
+
+            const body = [
+              marker,
+              "## PR Preview",
+              button,
+              "",
+              "_One click preview from this PR page. This comment automatically updates on new commits._"
+            ].join("\n");
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated preview comment #${existing.id}.`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+              core.info(`Created preview comment #${created.data.id}.`);
+            }
