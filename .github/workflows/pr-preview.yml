@@ -25,6 +25,8 @@ jobs:
 
     env:
       NODE_VERSION: '20.19.0'
+      PREVIEW_POLL_ATTEMPTS: '18'
+      PREVIEW_POLL_INTERVAL_MS: '10000'
 
     steps:
       - name: Checkout
@@ -53,8 +55,8 @@ jobs:
             const issue_number = context.payload.pull_request.number;
             const sha = context.payload.pull_request.head.sha;
             const marker = process.env.MARKER;
-            const MAX_ATTEMPTS = 18;
-            const POLL_INTERVAL_MS = 10000;
+            const MAX_ATTEMPTS = Number(process.env.PREVIEW_POLL_ATTEMPTS || "18");
+            const POLL_INTERVAL_MS = Number(process.env.PREVIEW_POLL_INTERVAL_MS || "10000");
             const TOTAL_WAIT_SECONDS = (MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000;
 
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -73,15 +75,11 @@ jobs:
               const previewDeployment = deployments.find((entry) =>
                 /^preview\b/i.test(entry.environment || "")
               );
-              const deployment = previewDeployment || deployments[0];
-              if (deployment) {
-                if (!previewDeployment) {
-                  core.warning(`No preview deployment matched; falling back to deployment ${deployment.id} (${deployment.environment || "unknown environment"}).`);
-                }
+              if (previewDeployment) {
                 const statusesResponse = await github.rest.repos.listDeploymentStatuses({
                   owner,
                   repo,
-                  deployment_id: deployment.id,
+                  deployment_id: previewDeployment.id,
                   per_page: 20
                 });
                 const statuses = statusesResponse.data;
