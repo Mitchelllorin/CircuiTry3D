@@ -22,7 +22,7 @@ jobs:
   upsert-preview-button:
     name: Upsert PR preview button
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.head.repo.id == github.event.repository.id && github.event.pull_request.head.repo.owner.id == github.event.repository.owner.id }}
+    if: github.event.pull_request.head.repo.id == github.event.repository.id && github.event.pull_request.head.repo.owner.id == github.event.repository.owner.id
 
     env:
       # 18 * 10000ms = 180000ms (180s) total wait for external preview providers to report back.
