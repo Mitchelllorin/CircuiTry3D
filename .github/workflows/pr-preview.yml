@@ -55,25 +55,29 @@ jobs:
             const marker = process.env.MARKER;
 
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            // Poll up to 3 minutes (18 x 10s) because external preview deployments
+            // can appear shortly after this workflow starts.
             const maxAttempts = 18;
             const waitMs = 10000;
             let previewUrl = null;
 
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-              const deployments = await github.paginate(github.rest.repos.listDeployments, {
+              const deploymentsResponse = await github.rest.repos.listDeployments({
                 owner,
                 repo,
                 sha,
-                per_page: 100
+                per_page: 20
               });
+              const deployments = deploymentsResponse.data;
 
               for (const deployment of deployments) {
-                const statuses = await github.paginate(github.rest.repos.listDeploymentStatuses, {
+                const statusesResponse = await github.rest.repos.listDeploymentStatuses({
                   owner,
                   repo,
                   deployment_id: deployment.id,
-                  per_page: 100
+                  per_page: 20
                 });
+                const statuses = statusesResponse.data;
 
                 const status = statuses.find((entry) =>
                   entry.state === "success" && (entry.environment_url || entry.target_url)
@@ -97,7 +101,7 @@ jobs:
 
             const button = previewUrl
               ? `[![PR Preview](https://img.shields.io/badge/PR%20Preview-Open-6f42c1?style=for-the-badge)](${previewUrl})`
-              : "Preview URL is not available yet. Push a new commit or re-run this workflow in a few moments.";
+              : "Preview deployment is still in progress. Please check back in a few moments.";
 
             const body = [
               marker,
