@@ -6,10 +6,12 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
+  deployments: read
+  pull-requests: write
 
 # Cancel any in-progress build for the same PR so the latest push always wins.
 concurrency:
@@ -40,3 +42,94 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Upsert PR preview button comment
+        uses: actions/github-script@v7
+        env:
+          MARKER: "<!-- pr-preview-button -->"
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha;
+            const marker = process.env.MARKER;
+
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const maxAttempts = 18;
+            const waitMs = 10000;
+            let previewUrl = null;
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              const deployments = await github.paginate(github.rest.repos.listDeployments, {
+                owner,
+                repo,
+                sha,
+                per_page: 100
+              });
+
+              for (const deployment of deployments) {
+                const statuses = await github.paginate(github.rest.repos.listDeploymentStatuses, {
+                  owner,
+                  repo,
+                  deployment_id: deployment.id,
+                  per_page: 100
+                });
+
+                const status = statuses.find((entry) =>
+                  entry.state === "success" && (entry.environment_url || entry.target_url)
+                );
+
+                if (status) {
+                  previewUrl = status.environment_url || status.target_url;
+                  break;
+                }
+              }
+
+              if (previewUrl) {
+                break;
+              }
+
+              if (attempt < maxAttempts) {
+                core.info(`Preview deployment URL not found yet (attempt ${attempt}/${maxAttempts}); waiting ${waitMs / 1000}s...`);
+                await sleep(waitMs);
+              }
+            }
+
+            const button = previewUrl
+              ? `[![PR Preview](https://img.shields.io/badge/PR%20Preview-Open-6f42c1?style=for-the-badge)](${previewUrl})`
+              : "Preview URL is not available yet. Push a new commit or re-run this workflow in a few moments.";
+
+            const body = [
+              marker,
+              "## PR Preview",
+              button,
+              "",
+              "_One click from this PR page. This comment auto-updates on new commits._"
+            ].join("\n");
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated preview comment #${existing.id}.`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+              core.info(`Created preview comment #${created.data.id}.`);
+            }
