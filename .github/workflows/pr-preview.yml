@@ -80,7 +80,8 @@ jobs:
                 const statuses = statusesResponse.data;
 
                 const status = statuses.find((entry) =>
-                  entry.state === "success" && (entry.environment_url || entry.target_url)
+                  entry.state === "success" &&
+                  (entry.environment_url?.trim() || entry.target_url?.trim())
                 );
 
                 if (status) {
@@ -108,7 +109,7 @@ jobs:
               "## PR Preview",
               button,
               "",
-              "_One click from this PR page. This comment auto-updates on new commits._"
+              "_One click from this PR page. This comment automatically updates on new commits._"
             ].join("\n");
 
             const comments = await github.paginate(github.rest.issues.listComments, {
