@@ -25,6 +25,7 @@ jobs:
 
     env:
       NODE_VERSION: '20.19.0'
+      # 18 * 10s = 180s total wait for external preview providers to report back.
       PREVIEW_POLL_ATTEMPTS: '18'
       PREVIEW_POLL_INTERVAL_MS: '10000'
 
@@ -58,6 +59,18 @@ jobs:
             const MAX_ATTEMPTS = Number(process.env.PREVIEW_POLL_ATTEMPTS || "18");
             const POLL_INTERVAL_MS = Number(process.env.PREVIEW_POLL_INTERVAL_MS || "10000");
             const TOTAL_WAIT_SECONDS = (MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000;
+            const ALLOWED_HOST_SUFFIXES = ["vercel.app", "circuitry3d.net", "github.io"];
+            const isAllowedPreviewUrl = (value) => {
+              try {
+                const parsed = new URL(value);
+                if (parsed.protocol !== "https:") return false;
+                return ALLOWED_HOST_SUFFIXES.some((suffix) =>
+                  parsed.hostname === suffix || parsed.hostname.endsWith(`.${suffix}`)
+                );
+              } catch {
+                return false;
+              }
+            };
 
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
             // Poll up to 3 minutes (18 x 10s) because external preview deployments
@@ -82,7 +95,9 @@ jobs:
                   deployment_id: previewDeployment.id,
                   per_page: 20
                 });
-                const statuses = statusesResponse.data;
+                const statuses = [...statusesResponse.data].sort(
+                  (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+                );
 
                 const status = statuses.find((entry) =>
                   entry.state === "success" &&
@@ -90,7 +105,12 @@ jobs:
                 );
 
                 if (status) {
-                  previewUrl = status.environment_url || status.target_url;
+                  const candidateUrl = status.environment_url || status.target_url;
+                  if (candidateUrl && isAllowedPreviewUrl(candidateUrl)) {
+                    previewUrl = candidateUrl;
+                  } else {
+                    core.warning(`Ignoring unexpected preview URL host: ${candidateUrl || "empty URL"}.`);
+                  }
                 }
               }
 
