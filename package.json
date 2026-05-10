@@ -22,10 +22,9 @@
     "circuit-bot:portrait": "node scripts/circuit-bot.js --portrait",
     "circuit-bot:portrait:local": "node scripts/circuit-bot.js --local --portrait",
     "component-showcase": "node scripts/capture-component-showcase.js",
-    "component-showcase:local": "node scripts/capture-component-showcase.js --local"
+    "component-showcase:local": "node scripts/capture-component-showcase.js --local",
     "predeploy": "npm run build",
-"deploy": "gh-pages -d dist"
-
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
@@ -54,7 +53,7 @@
     "@vitest/ui": "^4.0.4",
     "playwright": "^1.56.1",
     "typescript": "^5.9.3",
-    "vite": "^7.1.10",
+    "vite": "^7.3.2",
     "vitest": "^4.0.4"
   },
   "dependencies": {
