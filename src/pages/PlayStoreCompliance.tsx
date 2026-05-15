@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { PLAY_STORE_URL, SITE_ORIGIN } from "../constants/urls";
 import "../styles/legal.css";
-
-const SITE_ORIGIN = "https://www.circuitry3d.net";
 
 type ConsoleUrl = { label: string; field: string; url: string };
 
 const CONSOLE_URLS: ConsoleUrl[] = [
   { label: "Privacy Policy", field: "Store listing → Privacy policy", url: `${SITE_ORIGIN}/privacy` },
   { label: "Data Safety", field: "Data safety → Privacy policy link", url: `${SITE_ORIGIN}/data-safety` },
+  { label: "Google Play Listing", field: "Public app URL (review/share)", url: PLAY_STORE_URL },
   { label: "Delete Account", field: "Data safety → Account deletion URL", url: `${SITE_ORIGIN}/delete-account` },
   { label: "App Access", field: "App content → App access", url: `${SITE_ORIGIN}/app-access` },
 ];
