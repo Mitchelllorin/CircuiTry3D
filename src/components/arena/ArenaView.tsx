@@ -53,7 +53,26 @@ type ArenaPayload = {
 
 type ArenaBridgeMessage =
   | { type: "arena:import"; payload: ArenaPayload }
-  | { type: "arena:command"; payload: { command: string } };
+  | { type: "arena:command"; payload: { command: string } }
+  | { type: "arena:init"; hideNativeHeader: boolean };
+
+// ── FUSE inbound message types (posted from hidden arena.html iframe) ─────────
+
+type FuseAlertLevel = "none" | "warn" | "critical";
+
+type FuseFailureEvent = {
+  severity: "warn" | "critical";
+  componentId: string;
+  failureModes: string[];
+};
+
+type FusePhysicsMetrics = {
+  powerDissipation: number;
+  currentRms: number;
+  thermalRise: number;
+  impedance: number;
+  efficiency: number | null;
+};
 
 function parseArenaPayload(value: string | null): ArenaPayload | null {
   if (!value) {
@@ -1416,6 +1435,12 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const [recentImportSource, setRecentImportSource] = useState<string | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [importPending, setImportPending] = useState(false);
+  // ── F.U.S.E.™ state (analysis results from hidden arena.html iframe) ─────────
+  const [fuseEvents, setFuseEvents] = useState<FuseFailureEvent[]>([]);
+  const [fusePhysicsMetrics, setFusePhysicsMetrics] = useState<FusePhysicsMetrics | null>(null);
+  const [fuseAnalysisReady, setFuseAnalysisReady] = useState(false);
+  const [fuseRunning, setFuseRunning] = useState(false);
+  const [fuseAlertLevel, setFuseAlertLevel] = useState<FuseAlertLevel>("none");
   const [showdownSelection, setShowdownSelection] = useState<{ left: string | null; right: string | null }>({
     left: null,
     right: null
@@ -1731,12 +1756,79 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     return () => window.removeEventListener("storage", handleStorage);
   }, [applyResolvedPayload]);
 
+  // ── F.U.S.E.™ message listener — receives analysis results from the hidden arena iframe ──
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleFuseMessage = (event: MessageEvent) => {
+      // Only accept messages from the hidden arena iframe (same origin)
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+      const { data } = event;
+      if (!data || typeof data !== "object" || typeof data.type !== "string") {
+        return;
+      }
+
+      if (data.type === "arena:fuse-event") {
+        const incoming: FuseAlertLevel = data.severity === "critical" ? "critical" : "warn";
+        setFuseAlertLevel((prev) => {
+          const order: FuseAlertLevel[] = ["none", "warn", "critical"];
+          return order.indexOf(incoming) > order.indexOf(prev) ? incoming : prev;
+        });
+        setFuseEvents((prev) => [
+          ...prev,
+          {
+            severity: data.severity as "warn" | "critical",
+            componentId: String(data.componentId ?? ""),
+            failureModes: Array.isArray(data.failureModes) ? (data.failureModes as string[]) : [],
+          },
+        ]);
+      } else if (data.type === "arena:metrics-update") {
+        const m = data.metrics;
+        if (m && typeof m === "object") {
+          setFusePhysicsMetrics({
+            powerDissipation: typeof m.powerDissipation === "number" ? m.powerDissipation : 0,
+            currentRms: typeof m.currentRms === "number" ? m.currentRms : 0,
+            thermalRise: typeof m.thermalRise === "number" ? m.thermalRise : 0,
+            impedance: typeof m.impedance === "number" ? m.impedance : 0,
+            efficiency: typeof m.efficiency === "number" ? m.efficiency : null,
+          });
+        }
+      } else if (data.type === "arena:status") {
+        const running = Boolean(data.testRunning);
+        setFuseRunning(running);
+        if (!running && typeof data.message === "string" && data.message.toLowerCase().includes("complete")) {
+          setFuseAnalysisReady(true);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleFuseMessage);
+    return () => window.removeEventListener("message", handleFuseMessage);
+  }, []);
+
   useEffect(() => {
     if (!frameReady || !importPayload) {
       return;
     }
 
+    // Reset F.U.S.E. state whenever a new import arrives
+    setFuseEvents([]);
+    setFusePhysicsMetrics(null);
+    setFuseAnalysisReady(false);
+    setFuseRunning(false);
+    setFuseAlertLevel("none");
+
     sendArenaMessage({ type: "arena:import", payload: importPayload });
+
+    // After the hidden arena processes the import, auto-trigger a FUSE analysis run
+    const timer = window.setTimeout(() => {
+      sendArenaMessage({ type: "arena:command", payload: { command: "run-test" } });
+    }, 700);
+    return () => window.clearTimeout(timer);
   }, [frameReady, importPayload, sendArenaMessage]);
 
   const sampleImports = useMemo(() => SAMPLE_IMPORTS, []);
@@ -3037,6 +3129,103 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         )}
       </div>
 
+      {/* ── F.U.S.E.™ Analysis Section ─────────────────────────────────── */}
+      {(fuseAnalysisReady || fuseRunning || fuseEvents.length > 0) && (
+        <section className="arena-fuse-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>
+                <span className="fuse-brand-label" aria-label="Failure Understanding Simulation Engine">
+                  🔥 F.U.S.E.™
+                </span>
+                {" "}Failure Analysis
+                {fuseRunning && <span className="fuse-running-badge">Analyzing…</span>}
+                {fuseAnalysisReady && !fuseRunning && (
+                  <span className={`fuse-alert-badge fuse-alert-${fuseAlertLevel}`}>
+                    {fuseAlertLevel === "critical" ? "⚠ Critical" : fuseAlertLevel === "warn" ? "⚡ Warning" : "✓ Safe"}
+                  </span>
+                )}
+              </h2>
+              <p className="fuse-subtitle">
+                Physics-accurate failure detection — powered by F.U.S.E.™ v2.0
+              </p>
+            </div>
+
+            {fuseRunning && (
+              <div className="fuse-running-indicator">
+                <span className="fuse-pulse-dot" />
+                Running failure simulation…
+              </div>
+            )}
+
+            {fusePhysicsMetrics && !fuseRunning && (
+              <div className="fuse-metrics-grid">
+                <div className="fuse-metric-card">
+                  <span className="fuse-metric-icon">⚡</span>
+                  <span className="fuse-metric-label">Current RMS</span>
+                  <span className="fuse-metric-value">{fusePhysicsMetrics.currentRms.toFixed(3)} A</span>
+                </div>
+                <div className="fuse-metric-card">
+                  <span className="fuse-metric-icon">💥</span>
+                  <span className="fuse-metric-label">Power Dissipated</span>
+                  <span className="fuse-metric-value">{fusePhysicsMetrics.powerDissipation.toFixed(3)} W</span>
+                </div>
+                <div className="fuse-metric-card">
+                  <span className="fuse-metric-icon">🌡️</span>
+                  <span className="fuse-metric-label">Thermal Rise</span>
+                  <span className="fuse-metric-value">{fusePhysicsMetrics.thermalRise.toFixed(1)} °C</span>
+                </div>
+                <div className="fuse-metric-card">
+                  <span className="fuse-metric-icon">〰️</span>
+                  <span className="fuse-metric-label">Impedance</span>
+                  <span className="fuse-metric-value">{fusePhysicsMetrics.impedance.toFixed(2)} Ω</span>
+                </div>
+                {fusePhysicsMetrics.efficiency !== null && (
+                  <div className="fuse-metric-card">
+                    <span className="fuse-metric-icon">🎯</span>
+                    <span className="fuse-metric-label">Efficiency</span>
+                    <span className="fuse-metric-value">{(fusePhysicsMetrics.efficiency * 100).toFixed(1)} %</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {fuseAnalysisReady && !fuseRunning && fuseEvents.length === 0 && (
+              <div className="fuse-ok-state">
+                <span className="fuse-ok-icon">✅</span>
+                <div>
+                  <div className="fuse-ok-title">All systems nominal</div>
+                  <div className="fuse-ok-desc">No failure modes detected under current operating conditions.</div>
+                </div>
+              </div>
+            )}
+
+            {fuseEvents.length > 0 && !fuseRunning && (
+              <ul className="fuse-event-list">
+                {fuseEvents.map((evt, idx) => (
+                  <li key={idx} className={`fuse-event fuse-event-${evt.severity}`}>
+                    <span className="fuse-event-icon">{evt.severity === "critical" ? "🔴" : "🟡"}</span>
+                    <div className="fuse-event-body">
+                      <div className="fuse-event-severity">
+                        {evt.severity === "critical" ? "Critical Failure" : "Stress Warning"}
+                        {evt.componentId && <span className="fuse-event-component"> · {evt.componentId}</span>}
+                      </div>
+                      {evt.failureModes.length > 0 && (
+                        <ul className="fuse-event-modes">
+                          {evt.failureModes.filter(Boolean).map((mode, mIdx) => (
+                            <li key={mIdx}>{mode}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      )}
+
       <div className="arena-frame-wrapper" style={{display: 'none'}}>
         <iframe
           ref={iframeRef}
@@ -3045,6 +3234,8 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
           src="arena.html"
           sandbox="allow-scripts allow-same-origin allow-popups"
           onLoad={() => {
+            // Send arena:init so the hidden iframe sets the trusted origin for postToReact
+            sendArenaMessage({ type: "arena:init", hideNativeHeader: true });
             setFrameReady(true);
             if (importPayload) {
               sendArenaMessage({ type: "arena:import", payload: importPayload });
