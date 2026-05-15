@@ -241,6 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (currentUser && isLifetimeTester(currentUser.email) && getStoredTier() !== "lifetime") {
       setStoredTier("lifetime");
+      window.dispatchEvent(new Event("circuitry3d:tierChanged"));
     }
   }, [currentUser]);
 
@@ -301,6 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (isLifetimeTester(email)) {
       setStoredTier("lifetime");
+      window.dispatchEvent(new Event("circuitry3d:tierChanged"));
     }
 
     return { ok: true, user: buildAuthUser(nextUser)! };
@@ -340,6 +342,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (isLifetimeTester(email)) {
       setStoredTier("lifetime");
+      window.dispatchEvent(new Event("circuitry3d:tierChanged"));
     }
 
     return { ok: true, user: buildAuthUser(match)! };
@@ -526,6 +529,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }));
     if (isLifetimeTester(user.email)) {
       setStoredTier("lifetime");
+      window.dispatchEvent(new Event("circuitry3d:tierChanged"));
     }
     return { ok: true, user: buildAuthUser(user)! };
   }, []);

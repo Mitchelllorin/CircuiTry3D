@@ -236,6 +236,27 @@ export function setPremiumPurchased(purchased: boolean): void {
   }
 }
 
+/**
+ * Returns true when the current user has pro-level access or above.
+ * This covers:
+ *  - the "lifetime" stored tier (founding testers / owner access)
+ *  - the "pro" stored tier (active Play Store subscription)
+ *  - the legacy "pro_unlock" one-time purchase flag
+ */
+export function userHasProAccess(): boolean {
+  const tier = getStoredTier();
+  return tier === "pro" || tier === "lifetime" || userHasPro();
+}
+
+/**
+ * Returns true when the current user has premium-level access or above.
+ * This covers lifetime and pro tiers in addition to the one-time premium purchase.
+ */
+export function userHasPremiumAccess(): boolean {
+  const tier = getStoredTier();
+  return tier === "premium" || tier === "pro" || tier === "lifetime" || userHasPremium();
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const TIER_ORDER: SubscriptionTier[] = ["free", "premium", "pro", "student", "educator", "institutional", "lifetime"];
