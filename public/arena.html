@@ -7916,6 +7916,31 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
       "use strict";
 
       const FEATURED_COMPONENTS = [
+        // ── Batteries ─────────────────────────────────────────────────────────
+        {
+          id: "energizer-522-9v",
+          mfr: "Energizer",
+          name: "522 9V Alkaline",
+          spec: "PP3 · 9V · 565mAh · alkaline",
+          type: "battery",
+          props: { voltage: 9, internalResistance: 0.5, capacityMah: 565 },
+        },
+        {
+          id: "duracell-mn1604-9v",
+          mfr: "Duracell",
+          name: "MN1604 9V",
+          spec: "PP3 · 9V · 550mAh · alkaline",
+          type: "battery",
+          props: { voltage: 9, internalResistance: 0.5, capacityMah: 550 },
+        },
+        {
+          id: "panasonic-lr6-aa",
+          mfr: "Panasonic",
+          name: "LR6 AA Alkaline",
+          spec: "AA · 1.5V · 2850mAh · alkaline",
+          type: "battery",
+          props: { voltage: 1.5, internalResistance: 0.15, capacityMah: 2850 },
+        },
         // ── Resistors ──────────────────────────────────────────────────────────
         {
           id: "vishay-crcw0402-100r",
@@ -7926,12 +7951,52 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           props: { resistance: 100, powerRating: 0.063, tolerance: 0.01, thermalResistance: 300 },
         },
         {
+          id: "vishay-crcw0603-330r",
+          mfr: "Vishay",
+          name: "CRCW0603 330Ω",
+          spec: "0603 · 330Ω · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 330, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        {
+          id: "vishay-crcw0603-1k",
+          mfr: "Vishay",
+          name: "CRCW0603 1kΩ",
+          spec: "0603 · 1kΩ · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 1000, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        {
+          id: "vishay-crcw0603-10k",
+          mfr: "Vishay",
+          name: "CRCW0603 10kΩ",
+          spec: "0603 · 10kΩ · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 10000, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
+        },
+        {
           id: "yageo-cfr-1k",
           mfr: "Yageo",
           name: "CFR-25JB-52-1K",
           spec: "axial · 1kΩ · 5% · 250mW",
           type: "resistor",
           props: { resistance: 1000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+        },
+        {
+          id: "yageo-cfr-10k",
+          mfr: "Yageo",
+          name: "CFR-25JB-52-10K",
+          spec: "axial · 10kΩ · 5% · 250mW",
+          type: "resistor",
+          props: { resistance: 10000, powerRating: 0.25, tolerance: 0.05, thermalResistance: 80 },
+        },
+        {
+          id: "bourns-cr0603-100k",
+          mfr: "Bourns",
+          name: "CR0603-FX-1003ELF",
+          spec: "0603 · 100kΩ · 1% · 100mW",
+          type: "resistor",
+          props: { resistance: 100000, powerRating: 0.1, tolerance: 0.01, thermalResistance: 200 },
         },
         // ── Capacitors ────────────────────────────────────────────────────────
         {
@@ -7943,12 +8008,69 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           props: { capacitance: 1e-6, maxVoltage: 50, esr: 0.05, thermalResistance: 45 },
         },
         {
+          id: "tdk-c3225x5r-10uf",
+          mfr: "TDK",
+          name: "C3225X5R1C106K",
+          spec: "1210 · 10µF · 16V · X5R",
+          type: "capacitor",
+          props: { capacitance: 10e-6, maxVoltage: 16, esr: 0.02, thermalResistance: 40 },
+        },
+        {
           id: "panasonic-eeufm-100uf",
           mfr: "Panasonic",
           name: "EEU-FM1E101",
           spec: "radial · 100µF · 25V · 105°C",
           type: "capacitor",
           props: { capacitance: 100e-6, maxVoltage: 25, esr: 0.3, thermalResistance: 35 },
+        },
+        {
+          id: "nichicon-ufw-470uf",
+          mfr: "Nichicon",
+          name: "UFW1C471MED",
+          spec: "radial · 470µF · 16V · 105°C",
+          type: "capacitor",
+          props: { capacitance: 470e-6, maxVoltage: 16, esr: 0.12, thermalResistance: 28 },
+        },
+        // ── LEDs ──────────────────────────────────────────────────────────────
+        {
+          id: "vishay-tlhr5400-red",
+          mfr: "Vishay",
+          name: "TLHR5400",
+          spec: "T-1 3/4 · red · 2.0V · 20mA · 630nm",
+          type: "led",
+          props: { forwardVoltage: 2.0, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.30, thermalResistance: 120 },
+        },
+        {
+          id: "wurth-led-green",
+          mfr: "Würth Elektronik",
+          name: "151031VS06000",
+          spec: "SMD · green · 2.1V · 20mA · 525nm",
+          type: "led",
+          props: { forwardVoltage: 2.1, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.35, thermalResistance: 110 },
+        },
+        {
+          id: "osram-lb-d47b-blue",
+          mfr: "Osram",
+          name: "LB D47B-R2T1-35",
+          spec: "SMD · blue · 3.0V · 20mA · 470nm",
+          type: "led",
+          props: { forwardVoltage: 3.0, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.33, thermalResistance: 110 },
+        },
+        {
+          id: "cree-c503b-wan-white",
+          mfr: "Cree",
+          name: "C503B-WAN-CB0F0251",
+          spec: "T-1 3/4 · white · 3.2V · 20mA · 6000K",
+          type: "led",
+          props: { forwardVoltage: 3.2, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.40, thermalResistance: 100 },
+        },
+        {
+          id: "lumileds-lxhl-mw1d-yellow",
+          mfr: "Lumileds",
+          name: "LXHL-MM01 Yellow",
+          spec: "T-1 3/4 · yellow · 2.1V · 20mA · 585nm",
+          type: "led",
+          props: { forwardVoltage: 2.1, maxCurrent: 0.02, seriesResistance: 0, efficiency: 0.28, thermalResistance: 115 },
         },
         // ── Diodes ────────────────────────────────────────────────────────────
         {
@@ -7975,6 +8097,14 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           type: "diode",
           props: { forwardVoltage: 0.25, maxCurrent: 0.2, reverseVoltage: 30, thermalResistance: 300, powerRating: 0.25 },
         },
+        {
+          id: "vishay-1n5819",
+          mfr: "Vishay",
+          name: "1N5819",
+          spec: "DO-41 · 40V · 1A · Schottky",
+          type: "diode",
+          props: { forwardVoltage: 0.34, maxCurrent: 1, reverseVoltage: 40, thermalResistance: 50, powerRating: 2.5 },
+        },
         // ── Zener Diodes ──────────────────────────────────────────────────────
         {
           id: "vishay-bzx84c-5v1",
@@ -7984,7 +8114,23 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           type: "zener_diode",
           props: { zenerVoltage: 5.1, maxCurrent: 0.059, powerRating: 0.3, thermalResistance: 500 },
         },
+        {
+          id: "on-semi-bzx55c3v3",
+          mfr: "ON Semiconductor",
+          name: "BZX55C3V3",
+          spec: "DO-35 · 3.3V · 500mW",
+          type: "zener_diode",
+          props: { zenerVoltage: 3.3, maxCurrent: 0.075, powerRating: 0.5, thermalResistance: 250 },
+        },
         // ── BJTs ──────────────────────────────────────────────────────────────
+        {
+          id: "on-semi-2n2222a",
+          mfr: "ON Semiconductor",
+          name: "2N2222A",
+          spec: "TO-18 · NPN · 40V · 600mA · 625mW",
+          type: "bjt",
+          props: { vce_max: 40, ic_max: 0.6, hfe: 100, vbe: 0.7, powerRating: 0.625, thermalResistance: 200 },
+        },
         {
           id: "on-semi-2n3904",
           mfr: "ON Semiconductor",
@@ -8002,11 +8148,27 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           props: { vce_max: 40, ic_max: 0.2, hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 },
         },
         {
+          id: "stmicro-bc547",
+          mfr: "STMicroelectronics",
+          name: "BC547",
+          spec: "TO-92 · NPN · 45V · 100mA · 500mW",
+          type: "bjt",
+          props: { vce_max: 45, ic_max: 0.1, hfe: 110, vbe: 0.7, powerRating: 0.5, thermalResistance: 250 },
+        },
+        {
           id: "on-semi-tip31c",
           mfr: "ON Semiconductor",
           name: "TIP31C",
           spec: "TO-220 · NPN · 100V · 3A · 40W",
           type: "bjt",
+          props: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
+        },
+        {
+          id: "on-semi-tip32c",
+          mfr: "ON Semiconductor",
+          name: "TIP32C",
+          spec: "TO-220 · PNP · 100V · 3A · 40W",
+          type: "bjt-pnp",
           props: { vce_max: 100, ic_max: 3, hfe: 25, vbe: 0.7, powerRating: 40, thermalResistance: 3.125, maxTempC: 150 },
         },
         // ── MOSFETs ───────────────────────────────────────────────────────────
@@ -8026,6 +8188,14 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           type: "mosfet",
           props: { vth: 1.0, rds_on: 0.08, id_max: 2.3, vds_max: 20, vgs_max: 12, powerRating: 0.9, thermalResistance: 138, maxTempC: 150 },
         },
+        {
+          id: "on-semi-2n7000",
+          mfr: "ON Semiconductor",
+          name: "2N7000",
+          spec: "TO-92 · N-MOSFET · 60V · 200mA",
+          type: "mosfet",
+          props: { vth: 2.1, rds_on: 5, id_max: 0.2, vds_max: 60, vgs_max: 20, powerRating: 0.4, thermalResistance: 62.5 },
+        },
         // ── Voltage Regulators ────────────────────────────────────────────────
         {
           id: "ti-lm7805",
@@ -8036,12 +8206,28 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           props: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
         },
         {
+          id: "ti-lm7812",
+          mfr: "Texas Instruments",
+          name: "LM7812",
+          spec: "TO-220 · 12V · 1.5A",
+          type: "voltage_regulator",
+          props: { outputVoltage: 12, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
           id: "ti-lm317",
           mfr: "Texas Instruments",
           name: "LM317T",
           spec: "TO-220 · adj 1.2–37V · 1.5A",
           type: "voltage_regulator",
           props: { outputVoltage: 5, dropoutVoltage: 3, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5, maxTempC: 125 },
+        },
+        {
+          id: "microchip-mcp1700-3v3",
+          mfr: "Microchip",
+          name: "MCP1700-3302E/TO",
+          spec: "TO-92 · 3.3V · 250mA · LDO",
+          type: "voltage_regulator",
+          props: { outputVoltage: 3.3, dropoutVoltage: 0.178, maxCurrent: 0.25, powerRating: 1, thermalResistance: 250, maxTempC: 125 },
         },
         // ── Op-Amps ───────────────────────────────────────────────────────────
         {
@@ -8051,6 +8237,22 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           spec: "DIP-8 · dual op-amp · 32V supply",
           type: "opamp",
           props: { supplyVoltage: 32, slewRate: 0.6, gainBandwidth: 1e6, powerRating: 0.68, thermalResistance: 100 },
+        },
+        {
+          id: "ti-lm741",
+          mfr: "Texas Instruments",
+          name: "LM741CN",
+          spec: "DIP-8 · single op-amp · 18V supply",
+          type: "opamp",
+          props: { supplyVoltage: 18, slewRate: 0.5, gainBandwidth: 1e6, powerRating: 0.5, thermalResistance: 100 },
+        },
+        {
+          id: "analog-devices-op07",
+          mfr: "Analog Devices",
+          name: "OP07CP",
+          spec: "DIP-8 · ultra-low offset · 22V supply",
+          type: "opamp",
+          props: { supplyVoltage: 22, slewRate: 0.3, gainBandwidth: 0.6e6, powerRating: 0.5, thermalResistance: 100 },
         },
         // ── ICs ───────────────────────────────────────────────────────────────
         {
@@ -8068,6 +8270,114 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
           spec: "DIP-16 · 8-bit shift register",
           type: "ic",
           props: { supplyVoltage: 6, maxCurrent: 0.07, powerRating: 0.5, thermalResistance: 75 },
+        },
+        {
+          id: "ti-cd4011be",
+          mfr: "Texas Instruments",
+          name: "CD4011BE",
+          spec: "DIP-14 · quad 2-input NAND · 3–18V",
+          type: "ic",
+          props: { supplyVoltage: 18, maxCurrent: 0.01, powerRating: 0.5, thermalResistance: 100 },
+        },
+        {
+          id: "microchip-pic12f675",
+          mfr: "Microchip",
+          name: "PIC12F675-I/P",
+          spec: "DIP-8 · 8-bit MCU · 4MHz · 3.5–5.5V",
+          type: "ic",
+          props: { supplyVoltage: 5.5, maxCurrent: 0.025, powerRating: 0.3, thermalResistance: 125 },
+        },
+        // ── Inductors ─────────────────────────────────────────────────────────
+        {
+          id: "sumida-cdrh4d28-470",
+          mfr: "Sumida",
+          name: "CDRH4D28-470",
+          spec: "SMD shielded · 47µH · 700mA sat · 0.22Ω DCR",
+          type: "inductor",
+          props: { inductance: 47e-6, dcResistance: 0.22, saturationCurrentA: 0.7, powerRating: 0.5, thermalResistance: 55 },
+        },
+        {
+          id: "bourns-srr1260-101y",
+          mfr: "Bourns",
+          name: "SRR1260-101Y",
+          spec: "SMD shielded · 100µH · 2.1A sat · 0.061Ω DCR",
+          type: "inductor",
+          props: { inductance: 100e-6, dcResistance: 0.061, saturationCurrentA: 2.1, powerRating: 1, thermalResistance: 35 },
+        },
+        {
+          id: "vishay-ihlp2020-10uh",
+          mfr: "Vishay",
+          name: "IHLP2020BZER100M5A",
+          spec: "SMD shielded · 10µH · 4.6A sat · 0.023Ω DCR",
+          type: "inductor",
+          props: { inductance: 10e-6, dcResistance: 0.023, saturationCurrentA: 4.6, powerRating: 1.5, thermalResistance: 25 },
+        },
+        // ── Crystals ──────────────────────────────────────────────────────────
+        {
+          id: "abracon-abls-16mhz",
+          mfr: "Abracon",
+          name: "ABLS-16.000MHZ-B4H-T",
+          spec: "HC-49/US · 16MHz · 18pF · ±20ppm",
+          type: "crystal",
+          props: { frequencyHz: 16e6, seriesResistance: 25, loadCapacitancePf: 18, thermalResistance: 200 },
+        },
+        {
+          id: "ecs-8mhz",
+          mfr: "ECS",
+          name: "ECS-80-20-4X",
+          spec: "HC-49/US · 8MHz · 20pF · ±30ppm",
+          type: "crystal",
+          props: { frequencyHz: 8e6, seriesResistance: 30, loadCapacitancePf: 20, thermalResistance: 200 },
+        },
+        {
+          id: "txc-32768hz",
+          mfr: "TXC",
+          name: "7V-32.768KDZB-T",
+          spec: "tuning fork · 32.768kHz · 12.5pF · ±20ppm",
+          type: "crystal",
+          props: { frequencyHz: 32768, seriesResistance: 70000, loadCapacitancePf: 12.5, thermalResistance: 300 },
+        },
+        // ── Thermistors ───────────────────────────────────────────────────────
+        {
+          id: "vishay-ntcle100-10k",
+          mfr: "Vishay",
+          name: "NTCLE100E3103JB0",
+          spec: "radial · 10kΩ @ 25°C · B=3950K · 5%",
+          type: "thermistor",
+          props: { resistance: 10000, beta: 3950, tempCoeff: -0.04, thermalResistance: 120 },
+        },
+        {
+          id: "murata-ncp15wb473-47k",
+          mfr: "Murata",
+          name: "NCP15WB473J03RC",
+          spec: "0402 · 47kΩ @ 25°C · B=4050K",
+          type: "thermistor",
+          props: { resistance: 47000, beta: 4050, tempCoeff: -0.04, thermalResistance: 300 },
+        },
+        // ── Fuses ─────────────────────────────────────────────────────────────
+        {
+          id: "littelfuse-251001",
+          mfr: "Littelfuse",
+          name: "251001",
+          spec: "axial · 1A · 250V · fast blow · glass",
+          type: "fuse",
+          props: { ratedCurrentA: 1, meltingI2t: 1, resistance: 0.02, thermalResistance: 40 },
+        },
+        {
+          id: "littelfuse-251-500ma",
+          mfr: "Littelfuse",
+          name: "250500",
+          spec: "axial · 500mA · 250V · fast blow · glass",
+          type: "fuse",
+          props: { ratedCurrentA: 0.5, meltingI2t: 0.25, resistance: 0.04, thermalResistance: 40 },
+        },
+        {
+          id: "schurter-ato-5a",
+          mfr: "Schurter",
+          name: "0034.3512",
+          spec: "ATO blade · 5A · 32V · automotive",
+          type: "fuse",
+          props: { ratedCurrentA: 5, meltingI2t: 25, resistance: 0.006, thermalResistance: 30 },
         },
       ];
 
@@ -8139,22 +8449,29 @@ document.getElementById("btn-export-fuse")?.addEventListener("click", () => {
 
       // ── Type metadata for pills and icons ─────────────────────────────────
       const TYPE_META = {
+        battery:           { label: "Batteries",    icon: "🔋" },
         resistor:          { label: "Resistors",    icon: "🟫" },
         capacitor:         { label: "Capacitors",   icon: "⚡" },
+        led:               { label: "LEDs",          icon: "💡" },
         diode:             { label: "Diodes",        icon: "🔺" },
         zener_diode:       { label: "Zener",         icon: "⚡" },
         bjt:               { label: "BJTs",          icon: "🔌" },
+        "bjt-npn":         { label: "BJTs",          icon: "🔌" },
         "bjt-pnp":         { label: "BJTs",          icon: "🔌" },
         mosfet:            { label: "MOSFETs",       icon: "🔋" },
         voltage_regulator: { label: "Regulators",   icon: "🔧" },
         opamp:             { label: "Op-Amps",       icon: "📡" },
         ic:                { label: "ICs",           icon: "💡" },
+        inductor:          { label: "Inductors",     icon: "〰️" },
+        crystal:           { label: "Crystals",      icon: "🔷" },
+        thermistor:        { label: "Thermistors",   icon: "🌡️" },
+        fuse:              { label: "Fuses",          icon: "🔗" },
       };
 
       // Derive ordered unique category labels from the component list.
       function resolveCategory(type) {
-        // Merge bjt / bjt-pnp into same bucket
-        const t = type === "bjt-pnp" ? "bjt" : type;
+        // Merge bjt / bjt-npn / bjt-pnp into same bucket
+        const t = (type === "bjt-pnp" || type === "bjt-npn") ? "bjt" : type;
         return TYPE_META[t] ? TYPE_META[t].label : type.replace(/_/g, " ");
       }
 

@@ -3921,8 +3921,11 @@ body.android-optimized .zoom-btn {
             switch (type) {
                 case 'builder:add-component': {
                     const componentType = payload?.componentType;
+                    const initialProperties = (payload?.initialProperties && typeof payload.initialProperties === 'object')
+                        ? payload.initialProperties
+                        : null;
                     if (typeof componentType === 'string' && typeof addComponent === 'function') {
-                        addComponent(componentType);
+                        addComponent(componentType, 0, initialProperties);
                     }
                     break;
                 }
@@ -14603,7 +14606,7 @@ Made with ? for visual learners everywhere!
         }
 
         // UI Functions
-        function addComponent(type, _retryCount) {
+        function addComponent(type, _retryCount, initialProperties) {
             console.log('[CT3D-DIAG] addComponent called:', { type, _retryCount, sceneExists: !!scene, rendererExists: !!renderer, canvasOk: !!(renderer && renderer.domElement) });
             try { window.parent.postMessage({ type: 'legacy:diag', msg: 'addComponent', detail: { compType: type, sceneOk: !!scene, rendererOk: !!renderer } }, '*'); } catch(e) {}
             var retries = _retryCount || 0;
@@ -14624,7 +14627,7 @@ Made with ? for visual learners everywhere!
                 if (!scene || !renderer) {
                     if (retries < MAX_RETRIES) {
                         console.warn('[Builder] addComponent: retry ' + (retries + 1) + '/' + MAX_RETRIES + ' in 500ms for', type);
-                        setTimeout(function() { addComponent(type, retries + 1); }, 500);
+                        setTimeout(function() { addComponent(type, retries + 1, initialProperties); }, 500);
                     } else {
                         console.error('[Builder] addComponent: scene STILL null after ' + MAX_RETRIES + ' retries — cannot add', type);
                         try {
@@ -14670,6 +14673,10 @@ Made with ? for visual learners everywhere!
             }
 
             const component = new Component(type, position);
+            // Apply real-world branded component properties if provided
+            if (initialProperties && typeof initialProperties === 'object') {
+                component.updateProperties(Object.assign({}, component.properties, initialProperties));
+            }
             components.push(component);
             _layerVisibDist = -999; // Force layer-visibility re-evaluation for new component
             _layerVisibTargetX = -999;
