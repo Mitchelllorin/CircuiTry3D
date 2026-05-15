@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasPro, purchaseProUnlock, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
+import { userHasPro, getStoredTier, purchaseProUnlock, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
 
 interface UpgradeModalProps {
   /** Whether the modal is currently visible. */
@@ -50,7 +50,8 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   }, [open]);
 
   const handlePurchase = useCallback(async () => {
-    if (userHasPro()) {
+    const tier = getStoredTier();
+    if (userHasPro() || tier === "pro" || tier === "lifetime") {
       setStatus("success");
       return;
     }
@@ -72,7 +73,8 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   if (!open) return null;
 
   const isAndroid = isAndroidApp();
-  const alreadyPro = userHasPro();
+  const storedTier = getStoredTier();
+  const alreadyPro = userHasPro() || storedTier === "pro" || storedTier === "lifetime";
 
   return (
     <div

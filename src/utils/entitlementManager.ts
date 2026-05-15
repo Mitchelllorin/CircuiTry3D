@@ -56,9 +56,11 @@ export interface EntitlementState {
  */
 export function useEntitlements(): EntitlementState {
   const [tier, setTier] = useState<SubscriptionTier>(getStoredTier);
-  const [hasPremium, setHasPremium] = useState<boolean>(userHasPremium);
+  const [hasPremium, setHasPremium] = useState<boolean>(
+    () => userHasPremium() || getStoredTier() === "lifetime"
+  );
   const [hasPro, setHasPro] = useState<boolean>(
-    () => getStoredTier() === "pro" || userHasPro()
+    () => getStoredTier() === "pro" || getStoredTier() === "lifetime" || userHasPro()
   );
 
   useEffect(() => {
@@ -66,8 +68,8 @@ export function useEntitlements(): EntitlementState {
     const refresh = () => {
       const t = getStoredTier();
       setTier(t);
-      setHasPremium(userHasPremium());
-      setHasPro(t === "pro" || userHasPro());
+      setHasPremium(userHasPremium() || t === "lifetime");
+      setHasPro(t === "pro" || t === "lifetime" || userHasPro());
     };
 
     window.addEventListener("circuitry3d:tierChanged", refresh);
