@@ -51,6 +51,10 @@ type ArenaPayload = {
   state?: ArenaState;
 };
 
+// Delay (ms) between sending arena:import to the hidden iframe and triggering the
+// FUSE run-test command, giving arena.html time to normalize and select components.
+const FUSE_AUTO_TRIGGER_DELAY_MS = 700;
+
 type ArenaBridgeMessage =
   | { type: "arena:import"; payload: ArenaPayload }
   | { type: "arena:command"; payload: { command: string } }
@@ -1773,7 +1777,12 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
       }
 
       if (data.type === "arena:fuse-event") {
-        const incoming: FuseAlertLevel = data.severity === "critical" ? "critical" : "warn";
+        const rawSeverity = data.severity;
+        // Validate severity to avoid processing unexpected values
+        if (rawSeverity !== "warn" && rawSeverity !== "critical") {
+          return;
+        }
+        const incoming: FuseAlertLevel = rawSeverity;
         setFuseAlertLevel((prev) => {
           const order: FuseAlertLevel[] = ["none", "warn", "critical"];
           return order.indexOf(incoming) > order.indexOf(prev) ? incoming : prev;
@@ -1781,7 +1790,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         setFuseEvents((prev) => [
           ...prev,
           {
-            severity: data.severity as "warn" | "critical",
+            severity: rawSeverity,
             componentId: String(data.componentId ?? ""),
             failureModes: Array.isArray(data.failureModes) ? (data.failureModes as string[]) : [],
           },
@@ -1827,7 +1836,7 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     // After the hidden arena processes the import, auto-trigger a FUSE analysis run
     const timer = window.setTimeout(() => {
       sendArenaMessage({ type: "arena:command", payload: { command: "run-test" } });
-    }, 700);
+    }, FUSE_AUTO_TRIGGER_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [frameReady, importPayload, sendArenaMessage]);
 
