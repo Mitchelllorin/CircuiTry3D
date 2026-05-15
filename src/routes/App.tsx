@@ -8,7 +8,6 @@ import TipsTicker from "../components/TipsTicker";
 import ErrorBoundary from "../components/ErrorBoundary";
 import DemoBanner from "../components/DemoBanner";
 import { WorkspaceModeProvider } from "../context/WorkspaceModeContext";
-import { ArenaProvider } from "../context/ArenaContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { IS_DEMO_MODE } from "../utils/demoMode";
 import "../styles/layout.css";
@@ -17,7 +16,6 @@ import "../styles/layout.css";
 // This drastically reduces the initial JS bundle size — the Builder page
 // alone pulls in Three.js, the schematic engine, wire routing, etc.
 const Builder = lazy(() => import("../pages/Builder"));
-const Arena = lazy(() => import("../pages/Arena"));
 const Practice = lazy(() => import("../pages/Practice"));
 const Pricing = lazy(() => import("../pages/Pricing"));
 const Community = lazy(() => import("../pages/Community"));
@@ -59,7 +57,6 @@ export default function App() {
   return (
     <ThemeProvider>
     <WorkspaceModeProvider>
-      <ArenaProvider>
       <ErrorBoundary>
       {/* Fixed demo-version banner – rendered above the entire app shell */}
       <DemoBanner />
@@ -68,7 +65,6 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/app" element={<Builder />} />
-            <Route path="/arena" element={<Arena />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
@@ -101,7 +97,6 @@ export default function App() {
         </Routes>
       </Suspense>
       </ErrorBoundary>
-      </ArenaProvider>
     </WorkspaceModeProvider>
     </ThemeProvider>
   );
@@ -126,7 +121,6 @@ function AppLayout() {
   const { t } = useTranslation();
   const isLanding = location.pathname === "/";
   const isWorkspace = location.pathname === "/app";
-  const isArena = location.pathname === "/arena";
   const isPromo = location.pathname === "/promo";
   const isPromo2 = location.pathname === "/promo2";
   const isPromo3 = location.pathname === "/promo3";
@@ -141,7 +135,6 @@ function AppLayout() {
     "app-shell",
     isLanding && "is-landing",
     isWorkspace && "is-workspace",
-    isArena && "is-arena",
     isPromo && "is-promo",
     isPromo2 && "is-promo2",
     isPromo3 && "is-promo3",
@@ -150,7 +143,7 @@ function AppLayout() {
     isPromo7 && "is-promo7",
     isPromo9 && "is-promo9",
   ].filter(Boolean).join(" ");
-  const contentClass = isLanding || isArena || isAnyPromo ? "app-content is-landing" : "app-content";
+  const contentClass = isLanding || isAnyPromo ? "app-content is-landing" : "app-content";
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
@@ -192,8 +185,8 @@ function AppLayout() {
       </main>
       {/* Tips & facts ticker - workspace only */}
       {isWorkspace && <TipsTicker />}
-      {/* Site footer with legal links - shown on all pages except landing, workspace, arena & promo */}
-      {!isLanding && !isWorkspace && !isArena && !isAnyPromo && (
+      {/* Site footer with legal links - shown on all pages except landing, workspace & promo */}
+      {!isLanding && !isWorkspace && !isAnyPromo && (
         <footer className="app-footer">
           <Link to="/privacy" className="app-footer-link">{t("footer.privacyPolicy")}</Link>
           <span className="app-footer-sep" aria-hidden="true">·</span>

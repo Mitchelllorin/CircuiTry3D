@@ -50,7 +50,6 @@ export function GlobalModeBar() {
   });
 
   const isWorkspacePage = location.pathname === "/app";
-  const isArenaPage = location.pathname === "/arena";
   const isLandingPage = location.pathname === "/";
 
   const checkModeBarScroll = useCallback(() => {
@@ -81,11 +80,7 @@ export function GlobalModeBar() {
   const handleModeClick = useCallback(
     (mode: WorkspaceMode) => {
       setWorkspaceMode(mode);
-      // Arena and Gallery have their own standalone pages; navigate directly.
-      if (mode === "arena") {
-        navigate("/arena");
-        return;
-      }
+      // Gallery has its own standalone page; navigate directly.
       if (mode === "gallery") {
         navigate("/gallery");
         return;
@@ -126,7 +121,7 @@ export function GlobalModeBar() {
             key={tab.mode}
             type="button"
             className="mode-tab"
-            data-active={(workspaceMode === tab.mode || (tab.mode === "arena" && isArenaPage)) ? "true" : undefined}
+            data-active={workspaceMode === tab.mode ? "true" : undefined}
             onClick={() => handleModeClick(tab.mode)}
             aria-label={`${tab.label} mode`}
             title={tab.title}

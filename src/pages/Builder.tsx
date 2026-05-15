@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
 import { useBuilderFrame } from "../hooks/builder/useBuilderFrame";
 import { useLogoAnimation } from "../hooks/builder/useLogoAnimation";
 import { useHelpModal } from "../hooks/builder/useHelpModal";
@@ -1400,7 +1399,6 @@ export default function Builder() {
   // Global workspace mode context - sync with local state
   const globalModeContext = useWorkspaceMode();
   const pendingModeChangeRef = useRef<WorkspaceMode | null>(null);
-  const navigateTo = useNavigate();
 
   // Sync local workspaceMode with global context on mount and when global changes
   useEffect(() => {
@@ -2079,7 +2077,7 @@ export default function Builder() {
       } else if (pendingMode === "practice") {
         openPracticeWorkspace();
       } else if (pendingMode === "arena") {
-        navigateTo("/arena");
+        openArenaWorkspace({ forceSync: true });
       } else if (pendingMode === "help") {
         openGuidesWorkspace("tutorial");
       } else if (pendingMode === "wire-guide") {
