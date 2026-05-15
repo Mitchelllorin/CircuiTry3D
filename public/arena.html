@@ -851,6 +851,8 @@
       50%       { opacity: 0.45; transform: scale(0.7); }
     }
 
+    .live-badge.hidden-badge { display: none; }
+
     /* ── Metric card live-update flash ───────────────────────────────────── */
     @keyframes metric-live-flash {
       0%   { background: rgba(52, 211, 153, 0.16); box-shadow: 0 0 10px rgba(52, 211, 153, 0.25); }
@@ -920,6 +922,13 @@
     .push-fail-result.result-warn    { border-color: rgba(251, 191, 36, 0.35); color: #fde68a; }
     .push-fail-result.result-fail    { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; background: rgba(22, 6, 6, 0.7); }
     .push-fail-result.result-destroyed { border-color: rgba(220, 38, 38, 0.7); color: #fef2f2; background: rgba(35, 4, 4, 0.88); animation: pulse-failed 1.4s ease-in-out infinite; }
+
+    .push-fail-btn.push-fail-btn-b {
+      border-color: rgba(168, 85, 247, 0.55);
+      color: #d8b4fe;
+      background: rgba(10, 6, 20, 0.88);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.12);
+    }
 
     /* ── Composition Panel ─────────────────────────────────────────────── */
     .composition-label {
@@ -2651,12 +2660,12 @@
           </button>
         </div>
         <section class="panel-section">
-          <div class="section-heading" id="metrics-heading-a">Component A — Metrics<span class="live-badge" id="live-badge-a" style="display:none;" aria-label="Metrics updating live">Live</span></div>
+          <div class="section-heading" id="metrics-heading-a">Component A — Metrics<span class="live-badge hidden-badge" id="live-badge-a" aria-label="Metrics updating live">Live</span></div>
           <div class="abs-max-banner" id="abs-max-banner-a" role="alert">⚠ Absolute Maximum Rating exceeded</div>
           <div id="metrics-a" class="metric-grid" aria-live="polite" aria-label="Component A metrics"></div>
         </section>
         <section class="panel-section compare-only">
-          <div class="section-heading" id="metrics-heading-b">Component B — Metrics<span class="live-badge" id="live-badge-b" style="display:none;" aria-label="Metrics updating live">Live</span></div>
+          <div class="section-heading" id="metrics-heading-b">Component B — Metrics<span class="live-badge hidden-badge" id="live-badge-b" aria-label="Metrics updating live">Live</span></div>
           <div class="abs-max-banner" id="abs-max-banner-b" role="alert">⚠ Absolute Maximum Rating exceeded</div>
           <div id="metrics-b" class="metric-grid" aria-live="polite" aria-label="Component B metrics"></div>
         </section>
@@ -2721,7 +2730,7 @@
               <button class="push-fail-btn" id="btn-push-fail-a" aria-label="Push Component A to failure" disabled>
                 🔴 Push A to Fail
               </button>
-              <button class="push-fail-btn compare-only" id="btn-push-fail-b" aria-label="Push Component B to failure" disabled style="border-color:rgba(168,85,247,0.55);color:#d8b4fe;background:rgba(10,6,20,0.88);box-shadow:0 0 12px rgba(168,85,247,0.12);">
+              <button class="push-fail-btn push-fail-btn-b compare-only" id="btn-push-fail-b" aria-label="Push Component B to failure" disabled>
                 🟣 Push B to Fail
               </button>
             </div>
@@ -6175,8 +6184,8 @@
         // Show live badges
         const badgeA = document.getElementById("live-badge-a");
         const badgeB = document.getElementById("live-badge-b");
-        if (badgeA) badgeA.style.display = "";
-        if (badgeB && state.mode === "compare") badgeB.style.display = "";
+        if (badgeA) badgeA.classList.remove("hidden-badge");
+        if (badgeB && state.mode === "compare") badgeB.classList.remove("hidden-badge");
 
         // Hide empty state if metrics are now populated
         const metricsEmpty = document.getElementById("metrics-empty-state");
@@ -6212,22 +6221,29 @@
         let triggerVoltage = BASE.voltage;
         let triggerTempC   = BASE.temperatureC;
 
-        outerLoop:
-        for (const vMul of voltageMultipliers) {
-          for (const tOff of tempOffsets) {
-            const testVars = Object.assign({}, BASE, {
-              voltage: BASE.voltage * vMul,
-              temperatureC: (BASE.temperatureC || 25) + tOff,
-            });
-            const metrics = computeComponentMetrics(component, testVars);
-            const failure = detectFailure(component, metrics);
-            if (failure && failure.severity >= 0.5) {
-              failureResult  = failure;
-              triggerVoltage = testVars.voltage;
-              triggerTempC   = testVars.temperatureC;
-              break outerLoop;
+        // Walk through stress levels until a failure mode triggers
+        const findFailureStress = () => {
+          for (const vMul of voltageMultipliers) {
+            for (const tOff of tempOffsets) {
+              const testVars = Object.assign({}, BASE, {
+                voltage: BASE.voltage * vMul,
+                temperatureC: (BASE.temperatureC || 25) + tOff,
+              });
+              const metrics = computeComponentMetrics(component, testVars);
+              const failure = detectFailure(component, metrics);
+              if (failure && failure.severity >= 0.5) {
+                return { failure, voltage: testVars.voltage, tempC: testVars.temperatureC };
+              }
             }
           }
+          return null;
+        };
+
+        const stressResult = findFailureStress();
+        if (stressResult) {
+          failureResult  = stressResult.failure;
+          triggerVoltage = stressResult.voltage;
+          triggerTempC   = stressResult.tempC;
         }
 
         // Animate the 3D mesh
@@ -6278,6 +6294,8 @@
           ? "failure at " + triggerVoltage.toFixed(1) + "V / " + triggerTempC.toFixed(0) + "°C"
           : "component survived all stress levels."));
       }
+
+      function setImportStatus(message) {
         const element = document.getElementById("import-status");
         if (!element) {
           return;
