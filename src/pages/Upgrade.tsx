@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasPro, getStoredTier, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
+import { userHasProAccess, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
 import i18n from "../i18n";
 
 type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed" | "cancelled";
@@ -13,10 +13,7 @@ type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed"
 export default function Upgrade() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<PurchaseStatus>("idle");
-  const [hasPro, setHasPro] = useState(() => {
-    const tier = getStoredTier();
-    return userHasPro() || tier === "pro" || tier === "lifetime";
-  });
+  const [hasPro, setHasPro] = useState(userHasProAccess);
   const isAndroid = isAndroidApp();
 
   // Keep hasPro in sync with native purchase events

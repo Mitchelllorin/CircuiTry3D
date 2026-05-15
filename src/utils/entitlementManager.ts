@@ -20,8 +20,8 @@
 import { useEffect, useState } from "react";
 import {
   getStoredTier,
-  userHasPremium,
-  userHasPro,
+  userHasProAccess,
+  userHasPremiumAccess,
   type SubscriptionTier,
 } from "./playStoreBilling";
 
@@ -56,20 +56,16 @@ export interface EntitlementState {
  */
 export function useEntitlements(): EntitlementState {
   const [tier, setTier] = useState<SubscriptionTier>(getStoredTier);
-  const [hasPremium, setHasPremium] = useState<boolean>(
-    () => userHasPremium() || getStoredTier() === "lifetime"
-  );
-  const [hasPro, setHasPro] = useState<boolean>(
-    () => getStoredTier() === "pro" || getStoredTier() === "lifetime" || userHasPro()
-  );
+  const [hasPremium, setHasPremium] = useState<boolean>(userHasPremiumAccess);
+  const [hasPro, setHasPro] = useState<boolean>(userHasProAccess);
 
   useEffect(() => {
     /** Re-read all entitlement state after any billing event. */
     const refresh = () => {
       const t = getStoredTier();
       setTier(t);
-      setHasPremium(userHasPremium() || t === "lifetime");
-      setHasPro(t === "pro" || t === "lifetime" || userHasPro());
+      setHasPremium(userHasPremiumAccess());
+      setHasPro(userHasProAccess());
     };
 
     window.addEventListener("circuitry3d:tierChanged", refresh);
