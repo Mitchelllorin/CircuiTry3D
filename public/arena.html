@@ -2383,9 +2383,11 @@ html.is-embedded .lib-toggle {
 
 /* Mobile: hide toggle button (use bottom-sheet drag handle instead) */
 @media (max-width: 700px), (pointer: coarse) {
-  .lib-toggle { display: none; }
-  .panel.lib-hidden {
-    transform: translateY(calc(100% - 52px));
+  .lib-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    /* Keep visible — users need it to open the panel */
   }
 }
 
@@ -7511,18 +7513,9 @@ html.is-embedded .lib-toggle {
   const tip      = toggle ? toggle.querySelector(".lib-toggle-tip") : null;
   if (!panel || !toggle) return;
 
-  // Matches the @media breakpoint in the CSS (.lib-toggle hidden, panel uses sheet)
-  const MOBILE_BREAKPOINT_PX = 700;
-
-  /** Read --safe-left from the root element, falling back to 0. */
-  function getSafeLeftPx() {
-    return parseInt(getComputedStyle(document.documentElement)
-      .getPropertyValue("--safe-left") || "0") || 0;
-  }
-
-  // Detect if we should start open (desktop) or closed (mobile/touch)
-  const startOpen = !window.matchMedia("(pointer: coarse)").matches &&
-                    window.innerWidth > MOBILE_BREAKPOINT_PX;
+  // Panel always starts open so the component library is immediately visible.
+  // The toggle button lets users close it whenever they want.
+  const startOpen = true;
 
   function applyState(open, animate) {
     if (!animate) {
