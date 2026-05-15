@@ -4002,3 +4002,332 @@ body.builder-body .arena-page {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── Component Library ──────────────────────────────────────────────────────── */
+
+.arena-library-section {
+  margin-top: 20px;
+}
+
+.arena-library-search-row {
+  margin-bottom: 10px;
+}
+
+.arena-library-search {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  background: rgba(8, 15, 28, 0.92);
+  color: var(--text-primary, #f1f5f9);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.arena-library-search:focus {
+  border-color: rgba(59, 130, 246, 0.7);
+}
+
+.arena-library-type-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.arena-type-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  background: rgba(15, 23, 42, 0.8);
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-transform: capitalize;
+}
+
+.arena-type-pill:hover {
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--text-primary, #f1f5f9);
+}
+
+.arena-type-pill.active {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.7);
+  color: #93c5fd;
+}
+
+.arena-library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.arena-library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.arena-library-item:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.arena-library-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.arena-library-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arena-library-item-part {
+  font-size: 10px;
+  font-family: monospace;
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.arena-library-item-vendor {
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.55);
+}
+
+.arena-library-item-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.arena-library-slot-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  background: rgba(15, 23, 42, 0.9);
+  color: rgba(148, 163, 184, 0.9);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.arena-library-slot-btn.slot-a:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.7);
+  color: #93c5fd;
+}
+
+.arena-library-slot-btn.slot-b:hover {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: rgba(52, 211, 153, 0.6);
+  color: #6ee7b7;
+}
+
+/* ── FUSE™ Analysis ─────────────────────────────────────────────────────────── */
+
+.arena-fuse-section,
+.arena-fuse-calc-section {
+  margin-top: 20px;
+}
+
+.arena-fuse-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.arena-fuse-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: default;
+}
+
+.arena-fuse-legend-item.fuse-safe      { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.3);  color: #6ee7b7; }
+.arena-fuse-legend-item.fuse-stressed  { background: rgba(251,191,36,0.12); border-color: rgba(251,191,36,0.3);  color: #fde68a; }
+.arena-fuse-legend-item.fuse-warning   { background: rgba(251,146,60,0.12); border-color: rgba(251,146,60,0.35); color: #fdba74; }
+.arena-fuse-legend-item.fuse-critical  { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.4); color: #fca5a5; }
+.arena-fuse-legend-item.fuse-destroyed { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); color: #e2e8f0; }
+
+.fuse-legend-label { font-size: 11px; }
+
+.arena-fuse-empty {
+  text-align: center;
+  padding: 32px 0 20px;
+}
+
+.arena-fuse-empty-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+.arena-fuse-empty-text { font-size: 13px; color: rgba(148,163,184,0.65); }
+
+.arena-fuse-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.arena-fuse-result-card {
+  border-radius: 12px;
+  border: 1px solid rgba(51,65,85,0.6);
+  padding: 14px;
+  background: rgba(15,23,42,0.8);
+}
+
+.arena-fuse-result-card.fuse-card-safe      { border-color: rgba(52,211,153,0.3);  background: rgba(16,44,36,0.4); }
+.arena-fuse-result-card.fuse-card-stressed  { border-color: rgba(251,191,36,0.3);  background: rgba(40,36,10,0.4); }
+.arena-fuse-result-card.fuse-card-warning   { border-color: rgba(251,146,60,0.35); background: rgba(40,24,8,0.4); }
+.arena-fuse-result-card.fuse-card-critical  { border-color: rgba(248,113,113,0.4); background: rgba(40,10,10,0.4); }
+.arena-fuse-result-card.fuse-card-destroyed { border-color: rgba(255,255,255,0.2); background: rgba(10,10,10,0.5); }
+
+.arena-fuse-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.arena-fuse-result-slot {
+  font-size: 11px;
+  font-weight: 700;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59,130,246,0.2);
+  border: 1px solid rgba(59,130,246,0.4);
+  color: #93c5fd;
+  flex-shrink: 0;
+}
+
+.arena-fuse-result-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-fuse-result-badge {
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.arena-fuse-hot-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.arena-fuse-hot-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+}
+
+.fuse-hot-icon { flex-shrink: 0; }
+.fuse-hot-label { color: rgba(148,163,184,0.9); flex: 1; }
+.fuse-hot-value { font-family: monospace; font-size: 11px; color: var(--text-primary, #f1f5f9); }
+
+.fuse-hot-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.fuse-hot-badge.fuse-warning  { background: rgba(251,146,60,0.2);  color: #fdba74; }
+.fuse-hot-badge.fuse-critical { background: rgba(248,113,113,0.2); color: #fca5a5; }
+
+.arena-fuse-result-ok {
+  font-size: 12px;
+  color: rgba(52,211,153,0.85);
+  margin: 0;
+}
+
+/* ── Fuse Sizing Calculator ─────────────────────────────────────────────────── */
+
+.arena-fuse-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .arena-fuse-calc-grid { grid-template-columns: 1fr; }
+}
+
+.arena-fuse-calc-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: rgba(148,163,184,0.85);
+}
+
+.arena-fuse-calc-input {
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(51,65,85,0.9);
+  background: rgba(8,15,28,0.92);
+  color: var(--text-primary, #f1f5f9);
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.arena-fuse-calc-input:focus {
+  border-color: rgba(59,130,246,0.7);
+}
+
+.arena-fuse-calc-result {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.35);
+  color: #93c5fd;
+  font-size: 13px;
+  font-weight: 600;
+}

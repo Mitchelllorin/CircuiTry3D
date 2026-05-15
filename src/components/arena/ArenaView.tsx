@@ -51,9 +51,6 @@ type ArenaPayload = {
   state?: ArenaState;
 };
 
-type ArenaBridgeMessage =
-  | { type: "arena:import"; payload: ArenaPayload }
-  | { type: "arena:command"; payload: { command: string } };
 
 function parseArenaPayload(value: string | null): ArenaPayload | null {
   if (!value) {
@@ -1389,6 +1386,112 @@ function formatTimestamp(timestamp?: number): string {
   }
 }
 
+// ── FUSE™ severity levels ─────────────────────────────────────────────────────
+
+type FuseSeverityLevel = "safe" | "stressed" | "warning" | "critical" | "destroyed";
+
+const FUSE_SEVERITY_LEVELS: { level: FuseSeverityLevel; emoji: string; label: string; color: string; description: string }[] = [
+  { level: "safe",      emoji: "🟢", label: "Safe",      color: "#34d399", description: "Operating within all ratings. No risk detected." },
+  { level: "stressed",  emoji: "🟡", label: "Stressed",  color: "#fbbf24", description: "Exceeding comfortable operating margins. Consider derating." },
+  { level: "warning",   emoji: "🟠", label: "Warning",   color: "#fb923c", description: "Significant overstress. Risk of accelerated degradation." },
+  { level: "critical",  emoji: "🔴", label: "Critical",  color: "#f87171", description: "Severe overstress. Failure imminent or in progress." },
+  { level: "destroyed", emoji: "💀", label: "Destroyed", color: "#fef2f2", description: "Component has been simulated to failure. Replace it." },
+];
+
+function telemetryToFuseSeverity(severity: "normal" | "warning" | "critical", telemetry: ComponentTelemetryEntry[]): FuseSeverityLevel {
+  if (severity === "critical") {
+    // Check if any value is extremely over threshold → destroyed
+    const hasExtreme = telemetry.some((e) => {
+      const preset = TELEMETRY_PRESETS.find((p) => p.id === e.id);
+      if (!preset || e.metric?.numericValue == null) return false;
+      const magnitude = Math.abs(e.metric.numericValue);
+      return magnitude >= preset.thresholds.critical * 1.8;
+    });
+    return hasExtreme ? "destroyed" : "critical";
+  }
+  if (severity === "warning") {
+    const hasStressed = telemetry.some((e) => {
+      const preset = TELEMETRY_PRESETS.find((p) => p.id === e.id);
+      if (!preset || e.metric?.numericValue == null) return false;
+      const magnitude = Math.abs(e.metric.numericValue);
+      return magnitude >= preset.thresholds.warning * 0.75 && magnitude < preset.thresholds.warning;
+    });
+    return hasStressed ? "stressed" : "warning";
+  }
+  return "safe";
+}
+
+function getWorstFuseSeverity(telemetry: ComponentTelemetryEntry[]): FuseSeverityLevel {
+  if (telemetry.length === 0) return "safe";
+  const severities = telemetry.map((e) => e.severity);
+  if (severities.includes("critical")) return telemetryToFuseSeverity("critical", telemetry);
+  if (severities.includes("warning")) return telemetryToFuseSeverity("warning", telemetry);
+  return "safe";
+}
+
+// ── Component Library catalog ─────────────────────────────────────────────────
+
+type CatalogEntry = {
+  id: string;
+  name: string;
+  type: string;
+  partNumber?: string;
+  vendor?: string;
+  properties: Record<string, number | string | boolean>;
+};
+
+const MANUFACTURER_CATALOG: CatalogEntry[] = [
+  { id: "r-100", name: "Resistor 100 Ω", type: "resistor", properties: { resistance: 100, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 70 } },
+  { id: "r-330", name: "Resistor 330 Ω", type: "resistor", properties: { resistance: 330, tempCoeff: 0.0005, tolerance: 0.05, thermalResistance: 80 } },
+  { id: "r-1k",  name: "Resistor 1 kΩ",  type: "resistor", properties: { resistance: 1000, tempCoeff: 0.0004, tolerance: 0.01, thermalResistance: 90 } },
+  { id: "r-10k", name: "Resistor 10 kΩ", type: "resistor", properties: { resistance: 10000, tempCoeff: 0.0003, tolerance: 0.01, thermalResistance: 95 } },
+  { id: "c-100n", name: "Capacitor 100 nF", type: "capacitor", properties: { capacitance: 1e-7, esr: 0.5, tempCoeff: 0.0003 } },
+  { id: "c-1u",   name: "Capacitor 1 µF",  type: "capacitor", properties: { capacitance: 1e-6, esr: 0.12, tempCoeff: 0.0002, thermalResistance: 45 } },
+  { id: "c-100u", name: "Capacitor 100 µF", type: "capacitor", properties: { capacitance: 1e-4, esr: 0.05, tempCoeff: 0.0001, thermalResistance: 35 } },
+  { id: "led-red",   name: "LED Red 2 V",    type: "led", properties: { forwardVoltage: 2,   seriesResistance: 120, efficiency: 0.32, thermalResistance: 110 } },
+  { id: "led-green", name: "LED Green 2.1 V", type: "led", properties: { forwardVoltage: 2.1, seriesResistance: 100, efficiency: 0.38, thermalResistance: 105 } },
+  { id: "led-blue",  name: "LED Blue 3.2 V",  type: "led", properties: { forwardVoltage: 3.2, seriesResistance: 68,  efficiency: 0.44, thermalResistance: 95 } },
+  { id: "bat-9v",   name: "Battery 9 V",    type: "battery", properties: { voltage: 9,   internalResistance: 0.18, capacityMah: 1200, thermalResistance: 35 } },
+  { id: "bat-3v7",  name: "Li-Ion 3.7 V",   type: "battery", properties: { voltage: 3.7, internalResistance: 0.09, capacityMah: 2000, maxDischargeCurrent: 2, thermalResistance: 28 } },
+  { id: "bat-12v",  name: "Lead-Acid 12 V", type: "battery", properties: { voltage: 12,  internalResistance: 0.05, capacityMah: 7000, thermalResistance: 22 } },
+  { id: "sw-basic",   name: "Toggle Switch",  type: "switch", properties: { onResistance: 0.05, offResistance: 1000000, transitionTimeMs: 1.5 } },
+  { id: "q-irf540",   name: "MOSFET IRF540N", type: "mosfet", partNumber: "IRF540N",   vendor: "Vishay",          properties: { vth: 4, rds_on: 0.044, id_max: 33,  vds_max: 100, powerRating: 130, thermalResistance: 0.92 } },
+  { id: "q-2n7000",   name: "MOSFET 2N7000",  type: "mosfet", partNumber: "2N7000",    vendor: "Various",         properties: { vth: 2.1, rds_on: 5,   id_max: 0.2, vds_max: 60,  powerRating: 0.4, thermalResistance: 62.5 } },
+  { id: "q-2n2222a",  name: "NPN BJT 2N2222A", type: "bjt",   partNumber: "2N2222A",   vendor: "ON Semiconductor", properties: { vce_max: 40, ic_max: 0.6,  hfe: 100, vbe: 0.7, powerRating: 0.625, thermalResistance: 200 } },
+  { id: "q-bc547",    name: "NPN BJT BC547",   type: "bjt",   partNumber: "BC547",     vendor: "Various",          properties: { vce_max: 45, ic_max: 0.1,  hfe: 110, vbe: 0.7, powerRating: 0.5,   thermalResistance: 250 } },
+  { id: "q-2n3904",   name: "NPN BJT 2N3904",  type: "bjt",   partNumber: "2N3904",    vendor: "Various",          properties: { vce_max: 40, ic_max: 0.2,  hfe: 100, vbe: 0.65, powerRating: 0.625, thermalResistance: 200 } },
+  { id: "d-1n4007",   name: "Rectifier 1N4007", type: "diode", partNumber: "1N4007",   vendor: "Various",          properties: { forwardVoltage: 0.7, maxCurrent: 1,   reverseVoltage: 1000, thermalResistance: 60, powerRating: 3 } },
+  { id: "d-1n4148",   name: "Signal Diode 1N4148", type: "diode", partNumber: "1N4148", vendor: "Various",         properties: { forwardVoltage: 0.72, maxCurrent: 0.3, reverseVoltage: 75,   thermalResistance: 150, powerRating: 0.5 } },
+  { id: "u-lm741",    name: "Op-Amp LM741",     type: "opamp",  partNumber: "LM741",    vendor: "Texas Instruments", properties: { supplyVoltage: 15, slewRate: 0.5, gainBandwidth: 1e6, powerRating: 0.5, thermalResistance: 100 } },
+  { id: "u-lm7805",   name: "5 V Reg LM7805",   type: "voltage_regulator", partNumber: "LM7805", vendor: "Texas Instruments", properties: { outputVoltage: 5, dropoutVoltage: 2, maxCurrent: 1.5, powerRating: 15, thermalResistance: 5 } },
+  { id: "u-ne555",    name: "Timer NE555",       type: "ic",     partNumber: "NE555",    vendor: "Various",           properties: { supplyVoltage: 5, maxCurrent: 0.2, powerRating: 0.6, thermalResistance: 70 } },
+  { id: "f-1a",       name: "Fuse 1 A",          type: "fuse",   properties: { ratedCurrentA: 1,   meltingI2t: 1, resistance: 0.02, thermalResistance: 40 } },
+  { id: "f-5a",       name: "Fuse 5 A",          type: "fuse",   properties: { ratedCurrentA: 5,   meltingI2t: 25, resistance: 0.01, thermalResistance: 35 } },
+  { id: "f-10a",      name: "Fuse 10 A",         type: "fuse",   properties: { ratedCurrentA: 10,  meltingI2t: 100, resistance: 0.008, thermalResistance: 30 } },
+  { id: "ind-10u",    name: "Inductor 10 µH",    type: "inductor", properties: { inductance: 1e-5, resistance: 0.08, currentRating: 1.2, thermalResistance: 55 } },
+  { id: "ind-100u",   name: "Inductor 100 µH",   type: "inductor", properties: { inductance: 1e-4, resistance: 0.25, currentRating: 0.6, thermalResistance: 65 } },
+  { id: "rly-5v",     name: "Relay 5 V",         type: "relay",  properties: { coilVoltage: 5, coilResistance: 72, maxSwitchCurrent: 5, maxSwitchVoltage: 250, thermalResistance: 80 } },
+  { id: "pot-10k",    name: "Potentiometer 10 kΩ", type: "potentiometer", properties: { resistance: 10000, tolerance: 0.1, thermalResistance: 90 } },
+  { id: "lamp-12v",   name: "Lamp 12 V / 5 W",   type: "lamp",   properties: { voltage: 12, power: 5, thermalResistance: 20 } },
+];
+
+const CATALOG_TYPES = [...new Set(MANUFACTURER_CATALOG.map((e) => e.type))].sort();
+
+// Wire gauge guidance keyed to fuse rating (NEC 310.15 ampacity approximation for copper conductors)
+function getWireNote(ratingA: number): string {
+  if (ratingA <= 0.5) return "30 AWG or heavier";
+  if (ratingA <= 1)   return "28 AWG or heavier";
+  if (ratingA <= 2)   return "26 AWG or heavier";
+  if (ratingA <= 5)   return "24 AWG or heavier";
+  if (ratingA <= 10)  return "20 AWG or heavier";
+  if (ratingA <= 15)  return "18 AWG or heavier";
+  if (ratingA <= 20)  return "16 AWG or heavier";
+  if (ratingA <= 25)  return "14 AWG or heavier";
+  return "12 AWG or heavier";
+}
+
+
+
 export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuilder }: ArenaViewProps) {
   const isEmbedded = variant === "embedded";
   const isWorkspace = variant === "workspace";
@@ -1404,12 +1507,10 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   }, [onOpenBuilder]);
   const showOpenBuilderButton =
     typeof onOpenBuilder === "function" && !isWorkspace;
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sampleFallbackAppliedRef = useRef(false);
 
   const [importPayload, setImportPayload] = useState<ArenaPayload | null>(null);
-  const [frameReady, setFrameReady] = useState(false);
   const [bridgeStatus, setBridgeStatus] = useState(DEFAULT_STATUS);
   const [manualImportText, setManualImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
@@ -1439,6 +1540,15 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const [nameplateTick, setNameplateTick] = useState(0);
   const battleSeedRef = useRef<number>(0);
 
+  // FUSE™ Sizing Calculator state
+  const [fuseSizingLoad, setFuseSizingLoad] = useState<string>("1");
+  const [fuseSizingInrush, setFuseSizingInrush] = useState<string>("3");
+  const [fuseSizingResult, setFuseSizingResult] = useState<string | null>(null);
+
+  // Component Library catalog state
+  const [catalogSearch, setCatalogSearch] = useState<string>("");
+  const [catalogTypeFilter, setCatalogTypeFilter] = useState<string | null>(null);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -1449,21 +1559,6 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     return () => {
       window.clearInterval(intervalId);
     };
-  }, []);
-
-  const sendArenaMessage = useCallback((message: ArenaBridgeMessage) => {
-    const frameWindow = iframeRef.current?.contentWindow;
-    if (!frameWindow) {
-      return false;
-    }
-
-    try {
-      frameWindow.postMessage(message, "*");
-      return true;
-    } catch (error) {
-      console.warn("Arena bridge message failed", error);
-      return false;
-    }
   }, []);
 
   const applyResolvedPayload = useCallback(
@@ -1488,12 +1583,8 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
           console.warn("Arena: unable to persist import payload", error);
         }
       }
-
-      if (frameReady) {
-        sendArenaMessage({ type: "arena:import", payload: enriched });
-      }
     },
-    [frameReady, sendArenaMessage]
+    []
   );
 
   const readLatestPayload = useCallback(() => {
@@ -1730,14 +1821,6 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, [applyResolvedPayload]);
-
-  useEffect(() => {
-    if (!frameReady || !importPayload) {
-      return;
-    }
-
-    sendArenaMessage({ type: "arena:import", payload: importPayload });
-  }, [frameReady, importPayload, sendArenaMessage]);
 
   const sampleImports = useMemo(() => SAMPLE_IMPORTS, []);
 
@@ -2015,21 +2098,76 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     }
   }, [applyResolvedPayload, readLatestPayload]);
 
-  const handleCommand = useCallback(
-    (command: "reset" | "run-test" | "export") => {
-      const success = sendArenaMessage({ type: "arena:command", payload: { command } });
-      setBridgeStatus(
-        success ?
-          (command === "reset"
-            ? "Arena reset command sent."
-            : command === "run-test"
-            ? "Triggered quick test inside the arena."
-            : "Requested arena export.")
-          : "Unable to reach arena frame."
-      );
-    },
-    [sendArenaMessage]
-  );
+  // Fuse Sizing Calculator handler
+  const handleFuseSizingCalculate = useCallback(() => {
+    const loadA = parseFloat(fuseSizingLoad);
+    const inrush = parseFloat(fuseSizingInrush);
+    if (!Number.isFinite(loadA) || loadA <= 0) {
+      setFuseSizingResult("⚠ Enter a valid load current > 0 A.");
+      return;
+    }
+    if (!Number.isFinite(inrush) || inrush < 1) {
+      setFuseSizingResult("⚠ Inrush factor must be ≥ 1.");
+      return;
+    }
+    const peakCurrent = loadA * inrush;
+    // Standard fuse ratings (A): 0.5, 1, 1.5, 2, 3, 4, 5, 7.5, 10, 15, 20, 25, 30
+    const STANDARD_RATINGS = [0.5, 1, 1.5, 2, 3, 4, 5, 7.5, 10, 15, 20, 25, 30];
+    // Fuse must be ≥125% of steady-state load (NEC derating) AND survive inrush
+    // without nuisance-tripping. Using 85% of peak ensures the fuse rating
+    // is above the blow-before-open threshold for typical fast-acting fuses.
+    const minRating = loadA * 1.25;
+    const recommended = STANDARD_RATINGS.find((r) => r >= minRating && r >= peakCurrent * 0.85) ?? STANDARD_RATINGS[STANDARD_RATINGS.length - 1];
+    // Wire gauge guidance keyed to fuse rating (NEC 310.15 ampacity approximation)
+    const wireNote = getWireNote(recommended);
+    setFuseSizingResult(`Recommended: ${recommended} A fuse · Min wire: ${wireNote}`);
+  }, [fuseSizingLoad, fuseSizingInrush]);
+
+  // Load a catalog entry as component A or B
+  const handleCatalogLoad = useCallback((entry: CatalogEntry, slot: "left" | "right") => {
+    const component: ArenaComponent = {
+      id: entry.id,
+      name: entry.name,
+      type: entry.type,
+      componentNumber: entry.partNumber,
+      properties: entry.properties as Record<string, unknown>
+    };
+    const payload: ArenaPayload = {
+      source: entry.vendor ?? "Catalog",
+      label: entry.name,
+      generatedAt: Date.now(),
+      state: { components: [component] }
+    };
+    // Merge with existing import payload instead of replacing all components
+    setImportPayload((prev) => {
+      const existingComponents = prev?.state?.components ?? [];
+      // Replace/add the catalog entry at the appropriate slot index
+      const slotIndex = slot === "left" ? 0 : 1;
+      const components = [...existingComponents];
+      components[slotIndex] = component;
+      const merged: ArenaPayload = {
+        ...(prev ?? payload),
+        source: "Catalog",
+        label: prev?.label ?? entry.name,
+        generatedAt: Date.now(),
+        state: { ...prev?.state, components }
+      };
+      // Persist
+      try {
+        window.localStorage?.setItem(ARENA_STORAGE_KEY, JSON.stringify(merged));
+      } catch (error) {
+        console.warn("Arena: unable to persist catalog load to localStorage", error);
+      }
+      return merged;
+    });
+    setShowdownSelection((prev) => ({
+      left: slot === "left" ? entry.id : prev.left,
+      right: slot === "right" ? entry.id : prev.right
+    }));
+    setBridgeStatus(`Loaded ${entry.name} into slot ${slot === "left" ? "A" : "B"}.`);
+    setImportError(null);
+    setRecentImportSource(`Catalog · ${entry.name}`);
+  }, []);
 
   const applyScenarioModifiers = useCallback((telemetry: ComponentTelemetryEntry[], scenarioId: string): ComponentTelemetryEntry[] => {
     const scenario = ENVIRONMENTAL_SCENARIOS.find(s => s.id === scenarioId);
@@ -2260,6 +2398,61 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
   const currentScenario = useMemo(() => {
     return ENVIRONMENTAL_SCENARIOS.find(s => s.id === selectedScenario) ?? ENVIRONMENTAL_SCENARIOS[0];
   }, [selectedScenario]);
+
+  // ── FUSE™ Analysis derived state ────────────────────────────────────────────
+
+  const fuseAnalysisA = useMemo(() => {
+    if (!componentAProfile || componentATelemetry.length === 0) return null;
+    const worst = getWorstFuseSeverity(componentATelemetry);
+    const level = FUSE_SEVERITY_LEVELS.find((l) => l.level === worst) ?? FUSE_SEVERITY_LEVELS[0];
+    const hotEntries = componentATelemetry.filter((e) => e.severity !== "normal");
+    return { level, hotEntries, profile: componentAProfile };
+  }, [componentAProfile, componentATelemetry]);
+
+  const fuseAnalysisB = useMemo(() => {
+    if (!componentBProfile || componentBTelemetry.length === 0) return null;
+    const worst = getWorstFuseSeverity(componentBTelemetry);
+    const level = FUSE_SEVERITY_LEVELS.find((l) => l.level === worst) ?? FUSE_SEVERITY_LEVELS[0];
+    const hotEntries = componentBTelemetry.filter((e) => e.severity !== "normal");
+    return { level, hotEntries, profile: componentBProfile };
+  }, [componentBProfile, componentBTelemetry]);
+
+  const handleFuseReportExport = useCallback(() => {
+    const report = {
+      version: "2.0",
+      generatedAt: new Date().toISOString(),
+      scenario: selectedScenario,
+      components: [fuseAnalysisA, fuseAnalysisB].filter(Boolean).map((a) => ({
+        name: a!.profile.name,
+        type: a!.profile.type,
+        severity: a!.level.level,
+        hotMetrics: a!.hotEntries.map((e) => ({ id: e.id, label: e.label, value: e.displayValue, severity: e.severity }))
+      }))
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fuse-report-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [fuseAnalysisA, fuseAnalysisB, selectedScenario]);
+
+  // ── Component Library filtered catalog ──────────────────────────────────────
+
+  const filteredCatalog = useMemo(() => {
+    const query = catalogSearch.trim().toLowerCase();
+    return MANUFACTURER_CATALOG.filter((entry) => {
+      if (catalogTypeFilter && entry.type !== catalogTypeFilter) return false;
+      if (!query) return true;
+      return (
+        entry.name.toLowerCase().includes(query) ||
+        entry.type.toLowerCase().includes(query) ||
+        (entry.partNumber?.toLowerCase().includes(query) ?? false) ||
+        (entry.vendor?.toLowerCase().includes(query) ?? false)
+      );
+    });
+  }, [catalogSearch, catalogTypeFilter]);
 
   const renderBattlePanel = (
     side: "left" | "right",
@@ -2660,6 +2853,67 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
           </section>
         )}
 
+        <section className="arena-library-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>⚡ Component Library</h2>
+              <span style={{ fontSize: "0.75rem", color: "rgba(148,163,184,0.7)" }}>Real-world specs</span>
+            </div>
+            <div className="arena-library-search-row">
+              <input
+                type="search"
+                className="arena-library-search"
+                placeholder="Search parts, type, or manufacturer…"
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                aria-label="Search component library"
+              />
+            </div>
+            <div className="arena-library-type-filters" role="group" aria-label="Filter by type">
+              <button
+                className={`arena-type-pill${catalogTypeFilter === null ? " active" : ""}`}
+                type="button"
+                onClick={() => setCatalogTypeFilter(null)}
+              >All</button>
+              {CATALOG_TYPES.map((type) => (
+                <button
+                  key={type}
+                  className={`arena-type-pill${catalogTypeFilter === type ? " active" : ""}`}
+                  type="button"
+                  onClick={() => setCatalogTypeFilter(type === catalogTypeFilter ? null : type)}
+                >{type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, " ")}</button>
+              ))}
+            </div>
+            <div className="arena-library-list" role="list">
+              {filteredCatalog.length === 0 ? (
+                <p className="arena-empty">No parts match your search.</p>
+              ) : filteredCatalog.map((entry) => (
+                <div key={entry.id} className="arena-library-item" role="listitem">
+                  <div className="arena-library-item-info">
+                    <span className="arena-library-item-name">{entry.name}</span>
+                    {entry.partNumber && <span className="arena-library-item-part">{entry.partNumber}</span>}
+                    {entry.vendor && <span className="arena-library-item-vendor">{entry.vendor}</span>}
+                  </div>
+                  <div className="arena-library-item-actions">
+                    <button
+                      className="arena-library-slot-btn slot-a"
+                      type="button"
+                      title={`Load as Component A`}
+                      onClick={() => handleCatalogLoad(entry, "left")}
+                    >A</button>
+                    <button
+                      className="arena-library-slot-btn slot-b"
+                      type="button"
+                      title={`Load as Component B`}
+                      onClick={() => handleCatalogLoad(entry, "right")}
+                    >B</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="arena-selectors-section">
           <div className="arena-card">
             <div className="arena-card-header">
@@ -3035,22 +3289,115 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
             </div>
           </section>
         )}
-      </div>
 
-      <div className="arena-frame-wrapper" style={{display: 'none'}}>
-        <iframe
-          ref={iframeRef}
-          className="arena-frame"
-          title="Component Arena"
-          src="arena.html"
-          sandbox="allow-scripts allow-same-origin allow-popups"
-          onLoad={() => {
-            setFrameReady(true);
-            if (importPayload) {
-              sendArenaMessage({ type: "arena:import", payload: importPayload });
-            }
-          }}
-        />
+        {/* ── FUSE™ Analysis ───────────────────────────────────────────────── */}
+        <section className="arena-fuse-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>🔥 FUSE™ Analysis <span style={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.1em", color: "rgba(251,146,60,0.9)", marginLeft: 6 }}>Failure Understanding Simulation Engine</span></h2>
+            </div>
+
+            {/* Severity legend */}
+            <div className="arena-fuse-legend" role="note" aria-label="FUSE severity levels">
+              {FUSE_SEVERITY_LEVELS.map((lv) => (
+                <div key={lv.level} className={`arena-fuse-legend-item fuse-${lv.level}`} title={lv.description}>
+                  <span>{lv.emoji}</span>
+                  <span className="fuse-legend-label">{lv.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Per-component analysis */}
+            {!fuseAnalysisA && !fuseAnalysisB ? (
+              <div className="arena-fuse-empty">
+                <span className="arena-fuse-empty-icon">🔬</span>
+                <p className="arena-fuse-empty-text">Load components and run a battle to see FUSE™ failure analysis.</p>
+              </div>
+            ) : (
+              <div className="arena-fuse-results">
+                {[fuseAnalysisA, fuseAnalysisB].filter(Boolean).map((analysis, idx) => (
+                  <div key={idx} className={`arena-fuse-result-card fuse-card-${analysis!.level.level}`}>
+                    <div className="arena-fuse-result-header">
+                      <span className="arena-fuse-result-slot">{idx === 0 ? "A" : "B"}</span>
+                      <span className="arena-fuse-result-name">{analysis!.profile.name}</span>
+                      <span className="arena-fuse-result-badge" style={{ color: analysis!.level.color }}>
+                        {analysis!.level.emoji} {analysis!.level.label}
+                      </span>
+                    </div>
+                    {analysis!.hotEntries.length > 0 ? (
+                      <ul className="arena-fuse-hot-list">
+                        {analysis!.hotEntries.map((entry) => (
+                          <li key={entry.id} className={`arena-fuse-hot-entry severity-${entry.severity}`}>
+                            <span className="fuse-hot-icon">{entry.icon}</span>
+                            <span className="fuse-hot-label">{entry.label}</span>
+                            <span className="fuse-hot-value">{entry.displayValue}</span>
+                            <span className={`fuse-hot-badge fuse-${entry.severity}`}>{entry.severity}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="arena-fuse-result-ok">✅ All metrics within safe operating limits.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* FUSE Report export */}
+            {(fuseAnalysisA || fuseAnalysisB) && (
+              <div style={{ marginTop: "16px" }}>
+                <button className="arena-btn outline" type="button" onClick={handleFuseReportExport}>
+                  ⬇ Export FUSE™ Report
+                </button>
+                <p style={{ marginTop: 6, fontSize: "0.75rem", color: "rgba(148,163,184,0.7)" }}>
+                  Exports a structured JSON report with failure modes and severity levels.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Fuse Sizing Calculator ──────────────────────────────────────── */}
+        <section className="arena-fuse-calc-section">
+          <div className="arena-card">
+            <div className="arena-card-header">
+              <h2>⚡ Fuse Sizing Calculator</h2>
+            </div>
+            <div className="arena-fuse-calc-grid">
+              <label className="arena-fuse-calc-label">
+                <span>Load Current (A)</span>
+                <input
+                  type="number"
+                  className="arena-fuse-calc-input"
+                  value={fuseSizingLoad}
+                  min="0"
+                  step="0.1"
+                  aria-label="Load current for fuse sizing"
+                  onChange={(e) => { setFuseSizingLoad(e.target.value); setFuseSizingResult(null); }}
+                />
+              </label>
+              <label className="arena-fuse-calc-label">
+                <span>Inrush Factor (×)</span>
+                <input
+                  type="number"
+                  className="arena-fuse-calc-input"
+                  value={fuseSizingInrush}
+                  min="1"
+                  step="0.5"
+                  aria-label="Inrush current factor"
+                  onChange={(e) => { setFuseSizingInrush(e.target.value); setFuseSizingResult(null); }}
+                />
+              </label>
+            </div>
+            <button className="arena-btn solid" type="button" onClick={handleFuseSizingCalculate} style={{ marginTop: "12px" }}>
+              Calculate
+            </button>
+            {fuseSizingResult && (
+              <p className="arena-fuse-calc-result" aria-live="polite">{fuseSizingResult}</p>
+            )}
+          </div>
+        </section>
+
       </div>
     </div>
   );
