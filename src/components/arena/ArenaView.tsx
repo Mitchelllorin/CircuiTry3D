@@ -1477,6 +1477,19 @@ const MANUFACTURER_CATALOG: CatalogEntry[] = [
 
 const CATALOG_TYPES = [...new Set(MANUFACTURER_CATALOG.map((e) => e.type))].sort();
 
+// Wire gauge guidance keyed to fuse rating (NEC 310.15 ampacity approximation for copper conductors)
+function getWireNote(ratingA: number): string {
+  if (ratingA <= 0.5) return "30 AWG or heavier";
+  if (ratingA <= 1)   return "28 AWG or heavier";
+  if (ratingA <= 2)   return "26 AWG or heavier";
+  if (ratingA <= 5)   return "24 AWG or heavier";
+  if (ratingA <= 10)  return "20 AWG or heavier";
+  if (ratingA <= 15)  return "18 AWG or heavier";
+  if (ratingA <= 20)  return "16 AWG or heavier";
+  if (ratingA <= 25)  return "14 AWG or heavier";
+  return "12 AWG or heavier";
+}
+
 
 
 export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuilder }: ArenaViewProps) {
@@ -2100,10 +2113,13 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
     const peakCurrent = loadA * inrush;
     // Standard fuse ratings (A): 0.5, 1, 1.5, 2, 3, 4, 5, 7.5, 10, 15, 20, 25, 30
     const STANDARD_RATINGS = [0.5, 1, 1.5, 2, 3, 4, 5, 7.5, 10, 15, 20, 25, 30];
-    // Fuse should be rated at ≥125% of load but handle inrush without opening
+    // Fuse must be ≥125% of steady-state load (NEC derating) AND survive inrush
+    // without nuisance-tripping. Using 85% of peak ensures the fuse rating
+    // is above the blow-before-open threshold for typical fast-acting fuses.
     const minRating = loadA * 1.25;
     const recommended = STANDARD_RATINGS.find((r) => r >= minRating && r >= peakCurrent * 0.85) ?? STANDARD_RATINGS[STANDARD_RATINGS.length - 1];
-    const wireNote = recommended <= 1 ? "28 AWG or heavier" : recommended <= 5 ? "24 AWG or heavier" : recommended <= 15 ? "18 AWG or heavier" : "14 AWG or heavier";
+    // Wire gauge guidance keyed to fuse rating (NEC 310.15 ampacity approximation)
+    const wireNote = getWireNote(recommended);
     setFuseSizingResult(`Recommended: ${recommended} A fuse · Min wire: ${wireNote}`);
   }, [fuseSizingLoad, fuseSizingInrush]);
 
@@ -2137,7 +2153,11 @@ export default function ArenaView({ variant = "page", onNavigateBack, onOpenBuil
         state: { ...prev?.state, components }
       };
       // Persist
-      try { window.localStorage?.setItem(ARENA_STORAGE_KEY, JSON.stringify(merged)); } catch { /* ignore */ }
+      try {
+        window.localStorage?.setItem(ARENA_STORAGE_KEY, JSON.stringify(merged));
+      } catch (error) {
+        console.warn("Arena: unable to persist catalog load to localStorage", error);
+      }
       return merged;
     });
     setShowdownSelection((prev) => ({
