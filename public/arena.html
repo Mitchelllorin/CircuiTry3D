@@ -2413,6 +2413,133 @@
   color: #fbbf24;
 }
 .fcrw-slot-btn.slot-b:hover { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.6); }
+
+/* ── Component Library Panel Retraction ──────────────────────────────── */
+.panel {
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease;
+}
+.panel.lib-hidden {
+  transform: translateX(calc(-100% - 32px - var(--safe-left)));
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* Toggle button — floats to the right edge of the panel */
+.lib-toggle {
+  position: fixed;
+  top: calc(164px + var(--safe-top));
+  left: calc(16px + var(--safe-left) + 340px + 8px);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(57,255,183,0.6);
+  background: rgba(4, 20, 14, 0.94);
+  color: #39ffb7;
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 18px rgba(57,255,183,0.2), 0 4px 14px rgba(0,0,0,0.55);
+  transition: left 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s ease,
+              box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  touch-action: manipulation;
+}
+.lib-toggle:hover {
+  background: rgba(4, 40, 28, 0.98);
+  box-shadow: 0 0 26px rgba(57,255,183,0.35), 0 4px 18px rgba(0,0,0,0.6);
+  border-color: rgba(57,255,183,0.9);
+  transform: scale(1.1);
+}
+.lib-toggle:active { transform: scale(0.93); }
+.lib-toggle.panel-closed {
+  left: calc(16px + var(--safe-left));
+  border-color: rgba(57,255,183,0.35);
+  background: rgba(8, 15, 28, 0.88);
+}
+.lib-toggle.panel-closed:hover {
+  border-color: rgba(57,255,183,0.75);
+  background: rgba(4, 40, 28, 0.96);
+}
+
+/* Tooltip label shown on hover */
+.lib-toggle-tip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #39ffb7;
+  background: rgba(4, 20, 14, 0.92);
+  border: 1px solid rgba(57,255,183,0.3);
+  border-radius: 7px;
+  padding: 4px 9px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.lib-toggle:hover .lib-toggle-tip { opacity: 1; }
+
+/* Adjust toggle position for embedded (is-embedded) mode — panel top shifts */
+html.is-embedded .lib-toggle {
+  top: calc(var(--parent-clearance, 70px) + 68px + var(--safe-top));
+}
+
+/* Mobile: hide toggle button (use bottom-sheet drag handle instead) */
+@media (max-width: 700px), (pointer: coarse) {
+  .lib-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    /* Keep visible — users need it to open the panel */
+  }
+}
+
+/* ── Branded CircuiTry3D Library Header ───────────────────────────────── */
+.ct3d-lib-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(57,255,183,0.14);
+  margin-bottom: 2px;
+  flex-shrink: 0;
+}
+.ct3d-lib-brand-logo {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  gap: 1px;
+  filter: drop-shadow(0 0 6px rgba(57,255,183,0.3));
+}
+.ct3d-lib-brand-logo .ct3d-g {
+  color: #39ffb7;
+  text-shadow: 0 0 8px rgba(57,255,183,0.55);
+}
+.ct3d-lib-brand-logo .ct3d-o {
+  color: #ff8b2b;
+  text-shadow: 0 0 6px rgba(255,139,43,0.5);
+}
+.ct3d-lib-brand-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(57,255,183,0.75);
+  background: rgba(57,255,183,0.08);
+  border: 1px solid rgba(57,255,183,0.28);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
   </style>
 </head>
 <body>
@@ -2433,6 +2560,12 @@
       <a class="arena-nav-btn" href="/#/account" target="_top">Account</a>
     </nav>
   </header>
+  <!-- Component library panel toggle button -->
+  <button class="lib-toggle panel-closed" id="lib-toggle"
+          aria-label="Open component library" aria-expanded="false" aria-controls="arena-panel">
+    <span id="lib-toggle-icon" aria-hidden="true">☰</span>
+    <span class="lib-toggle-tip">Components</span>
+  </button>
   <button class="battle-fab" id="btn-battle-fab" aria-label="Run simulation test">▶ RUN TEST</button>
   <div class="hud" role="toolbar" aria-label="Arena controls">
   <button class="btn" id="btn-reset" aria-label="Reset arena (will ask for confirmation)">Reset</button>
@@ -2444,6 +2577,13 @@
   <div class="panel" id="arena-panel">
     <div class="panel-drag-handle" id="panel-drag-handle" role="button" aria-label="Resize panel" tabindex="0"></div>
     <div class="panel-resize-handle" id="panel-resize-handle" aria-hidden="true"></div>
+    <!-- CircuiTry3D Branded library header -->
+    <div class="ct3d-lib-brand" aria-label="CircuiTry3D Component Library">
+      <div class="ct3d-lib-brand-logo" aria-hidden="true">
+        <span class="ct3d-g">Circui</span><span class="ct3d-o">Try</span><span class="ct3d-g">3D</span>
+      </div>
+      <span class="ct3d-lib-brand-badge">Component Library</span>
+    </div>
     <!-- Workflow step breadcrumb -->
     <div class="workflow-steps" id="workflow-steps" aria-label="Workflow progress">
       <div class="workflow-step" id="wf-step-1" data-tip="Select a component in the Parts tab">
@@ -7734,6 +7874,57 @@
   });
 })();
 
+// ── Component library panel toggle (desktop retractable sidebar) ──────────
+(function initLibToggle() {
+  const panel    = document.getElementById("arena-panel");
+  const toggle   = document.getElementById("lib-toggle");
+  const icon     = document.getElementById("lib-toggle-icon");
+  const tip      = toggle ? toggle.querySelector(".lib-toggle-tip") : null;
+  if (!panel || !toggle) return;
+
+  // Panel always starts open so the component library is immediately visible.
+  // The toggle button lets users close it whenever they want.
+  const startOpen = true;
+
+  function applyState(open, animate) {
+    if (!animate) {
+      // Temporarily suppress animation for initial state
+      panel.style.transition  = "none";
+      toggle.style.transition = "none";
+      requestAnimationFrame(() => {
+        panel.style.transition  = "";
+        toggle.style.transition = "";
+      });
+    }
+    panel.classList.toggle("lib-hidden", !open);
+    toggle.classList.toggle("panel-closed", !open);
+    if (icon)  icon.textContent = open ? "✕" : "☰";
+    if (tip)   tip.textContent  = open ? "Close library" : "Components";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute("aria-label", open ? "Close component library" : "Open component library");
+    // Record open state on the panel element for any downstream layout needs
+    panel.dataset.libOpen = open ? "1" : "0";
+  }
+
+  let isOpen = startOpen;
+  applyState(isOpen, false);
+
+  toggle.addEventListener("click", () => {
+    isOpen = !isOpen;
+    applyState(isOpen, true);
+  });
+
+  // Keyboard: Ctrl+\ or Escape (when panel is focused) closes it
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "\\" && (e.ctrlKey || e.metaKey)) ||
+        (e.key === "Escape" && isOpen && panel.contains(document.activeElement))) {
+      isOpen = !isOpen;
+      applyState(isOpen, true);
+      toggle.focus();
+    }
+  });
+})();
+
 // ── Panel desktop resize ─────────────────────────────────────────────────
 (function initPanelResize() {
   const panel = document.getElementById("arena-panel");
@@ -7754,6 +7945,13 @@
     const delta = e.clientX - startX;
     const newWidth = Math.max(240, Math.min(520, startWidth + delta));
     panel.style.width = newWidth + "px";
+    // Keep the lib-toggle positioned right next to the panel edge
+    const libToggleEl = document.getElementById("lib-toggle");
+    if (libToggleEl && !panel.classList.contains("lib-hidden")) {
+      const safeLeft = parseInt(getComputedStyle(document.documentElement)
+        .getPropertyValue("--safe-left") || "0") || 0;
+      libToggleEl.style.left = (16 + safeLeft + newWidth + 8) + "px";
+    }
   });
   handle.addEventListener("pointerup", () => {
     dragging = false;
