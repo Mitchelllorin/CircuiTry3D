@@ -819,6 +819,117 @@
       font-style: italic;
     }
 
+    /* ── Live metrics badge ──────────────────────────────────────────────── */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #34d399;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      background: rgba(6, 78, 59, 0.35);
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .live-badge::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      animation: live-pulse 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.45; transform: scale(0.7); }
+    }
+
+    .live-badge.hidden-badge { display: none; }
+
+    /* ── Metric card live-update flash ───────────────────────────────────── */
+    @keyframes metric-live-flash {
+      0%   { background: rgba(52, 211, 153, 0.16); box-shadow: 0 0 10px rgba(52, 211, 153, 0.25); }
+      100% { background: transparent; box-shadow: none; }
+    }
+    .metric-card.live-updated {
+      animation: metric-live-flash 0.5s ease-out forwards;
+    }
+
+    /* ── Push to Failure (FUSE™ sim) ─────────────────────────────────────── */
+    .push-fail-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .push-fail-desc {
+      font-size: 11.5px;
+      color: rgba(148, 163, 184, 0.85);
+      line-height: 1.55;
+    }
+    .push-fail-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .push-fail-btn {
+      flex: 1;
+      min-width: 140px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(239, 68, 68, 0.55);
+      background: rgba(22, 6, 6, 0.88);
+      color: #fca5a5;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.12);
+    }
+    .push-fail-btn:hover {
+      background: rgba(40, 8, 8, 0.95);
+      border-color: rgba(239, 68, 68, 0.85);
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.35), 0 6px 18px rgba(0,0,0,0.4);
+    }
+    .push-fail-btn:active { transform: scale(0.97); }
+    .push-fail-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .push-fail-result {
+      padding: 10px 12px;
+      border-radius: 11px;
+      border: 1px solid rgba(136, 204, 255, 0.15);
+      background: rgba(5, 8, 20, 0.6);
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: rgba(148, 163, 184, 0.85);
+      display: none;
+    }
+    .push-fail-result.visible { display: block; }
+    .push-fail-result.result-safe    { border-color: rgba(52, 211, 153, 0.3); color: #6ee7b7; }
+    .push-fail-result.result-warn    { border-color: rgba(251, 191, 36, 0.35); color: #fde68a; }
+    .push-fail-result.result-fail    { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; background: rgba(22, 6, 6, 0.7); }
+    .push-fail-result.result-destroyed { border-color: rgba(220, 38, 38, 0.7); color: #fef2f2; background: rgba(35, 4, 4, 0.88); animation: pulse-failed 1.4s ease-in-out infinite; }
+
+    .push-fail-btn.push-fail-btn-b {
+      border-color: rgba(168, 85, 247, 0.55);
+      color: #d8b4fe;
+      background: rgba(10, 6, 20, 0.88);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.12);
+    }
+
     /* ── Composition Panel ─────────────────────────────────────────────── */
     .composition-label {
       font-size: 10px;
@@ -2549,12 +2660,12 @@
           </button>
         </div>
         <section class="panel-section">
-          <div class="section-heading" id="metrics-heading-a">Component A — Metrics</div>
+          <div class="section-heading" id="metrics-heading-a">Component A — Metrics<span class="live-badge hidden-badge" id="live-badge-a" aria-label="Metrics updating live">Live</span></div>
           <div class="abs-max-banner" id="abs-max-banner-a" role="alert">⚠ Absolute Maximum Rating exceeded</div>
           <div id="metrics-a" class="metric-grid" aria-live="polite" aria-label="Component A metrics"></div>
         </section>
         <section class="panel-section compare-only">
-          <div class="section-heading" id="metrics-heading-b">Component B — Metrics</div>
+          <div class="section-heading" id="metrics-heading-b">Component B — Metrics<span class="live-badge hidden-badge" id="live-badge-b" aria-label="Metrics updating live">Live</span></div>
           <div class="abs-max-banner" id="abs-max-banner-b" role="alert">⚠ Absolute Maximum Rating exceeded</div>
           <div id="metrics-b" class="metric-grid" aria-live="polite" aria-label="Component B metrics"></div>
         </section>
@@ -2602,6 +2713,30 @@
         <section class="panel-section compare-only">
           <div class="section-heading" id="fuse-heading-b">FUSE™ Analysis — B</div>
           <div class="failure-analysis" id="failure-b" aria-live="polite" aria-label="FUSE analysis component B"></div>
+        </section>
+
+        <!-- ── F.U.S.E. Push-to-Failure Simulator ──────────────────────── -->
+        <section class="panel-section">
+          <div class="section-heading">
+            💥 Push to Failure
+            <span class="fuse-tag" style="margin-left:4px;" title="Failure Understanding Simulation Engine">F.U.S.E.</span>
+          </div>
+          <div class="push-fail-section">
+            <p class="push-fail-desc">
+              Ramp up electrical &amp; thermal stress until a failure mode is triggered.
+              Watch the 3D component react in real time.
+            </p>
+            <div class="push-fail-controls">
+              <button class="push-fail-btn" id="btn-push-fail-a" aria-label="Push Component A to failure" disabled>
+                🔴 Push A to Fail
+              </button>
+              <button class="push-fail-btn push-fail-btn-b compare-only" id="btn-push-fail-b" aria-label="Push Component B to failure" disabled>
+                🟣 Push B to Fail
+              </button>
+            </div>
+            <div class="push-fail-result" id="push-fail-result-a" role="status" aria-live="polite"></div>
+            <div class="push-fail-result compare-only" id="push-fail-result-b" role="status" aria-live="polite"></div>
+          </div>
         </section>
 
         <!-- Fuse sizing calculator shortcut -->
@@ -4137,6 +4272,7 @@
 
         const nextGroup = buildComponent(type, nominalValue, isPrimary);
         nextGroup.position.x = COMPONENT_POSITIONS[slot];
+        nextGroup.userData.baseX = COMPONENT_POSITIONS[slot];
         nextGroup.visible = isPrimary || (state.mode === "compare" && Boolean(state.selectedB));
         scene.add(nextGroup);
 
@@ -4250,6 +4386,36 @@
         group.rotation.y += delta * (0.8 + energy * 2.8);
         group.rotation.x = Math.sin(elapsed * 0.8 + group.userData.bobOffset) * 0.2;
         group.position.y = 0.25 + Math.sin(elapsed * 1.6 + group.userData.bobOffset) * (0.12 + energy * 0.12);
+
+        // Shake animation — triggered by triggerFailureAnimation on stress/failure
+        const baseX = group.userData.baseX ?? 0;
+        const shk = group.userData.shake;
+        if (shk) {
+          shk.elapsed += delta;
+          if (shk.elapsed < shk.duration) {
+            const decay = 1 - shk.elapsed / shk.duration;
+            const amp = shk.intensity * decay;
+            const freq = 16 + shk.intensity * 14;
+            group.position.x = baseX + Math.sin(elapsed * freq) * amp + (Math.random() - 0.5) * amp * 0.4;
+            group.position.z = Math.cos(elapsed * freq * 1.35) * amp * 0.7 + (Math.random() - 0.5) * amp * 0.3;
+          } else {
+            group.userData.shake = null;
+            group.position.x = baseX;
+            group.position.z = 0;
+          }
+        } else {
+          // Smooth return to rest position after shake
+          if (Math.abs(group.position.x - baseX) > 0.001) {
+            group.position.x += (baseX - group.position.x) * Math.min(delta * 12, 1);
+          } else {
+            group.position.x = baseX;
+          }
+          if (Math.abs(group.position.z) > 0.001) {
+            group.position.z += (0 - group.position.z) * Math.min(delta * 12, 1);
+          } else {
+            group.position.z = 0;
+          }
+        }
         (group.userData.orbiters || []).forEach((orb, idx) => {
           const data = orb.userData;
           const angle = elapsed * (data.speed + energy) + idx * Math.PI * 0.75;
@@ -4290,6 +4456,30 @@
       // Delegates to FailureEngine.detectFailure which handles all component families.
       function detectFailure(component, metrics) {
         return FailureEngine.detectFailure(component, metrics);
+      }
+
+      /**
+       * Trigger the combined failure animation: apply visuals to the 3D group
+       * and start a shake effect whose intensity scales with failure severity.
+       */
+      function triggerFailureAnimation(group, failure) {
+        if (!group) return;
+        applyFailureVisuals(group, failure);
+        const severity = failure?.severity ?? 0;
+        if (severity > 0) {
+          group.userData.shake = {
+            intensity: Math.min(severity / 3, 1) * 0.22,
+            duration: 1.0 + severity * 0.75,
+            elapsed: 0,
+          };
+        } else {
+          // No failure — gentle idle jiggle to confirm test ran
+          group.userData.shake = {
+            intensity: 0.035,
+            duration: 0.45,
+            elapsed: 0,
+          };
+        }
       }
 
       // ---------- Failure Particles ----------
@@ -5717,8 +5907,20 @@
           if (input) {
             input.addEventListener("change", () => { readTestVariables(); updateWorkflowStep(3, false); });
             input.addEventListener("blur", readTestVariables);
+            // Live metrics: recompute immediately on every keystroke / slider move
+            input.addEventListener("input", () => {
+              readTestVariables();
+              clearTimeout(_liveMetricsDebounce);
+              _liveMetricsDebounce = setTimeout(updateLiveMetrics, 80);
+            });
           }
         });
+
+        // Push-to-Failure buttons
+        const pushFailBtnA = document.getElementById("btn-push-fail-a");
+        if (pushFailBtnA) pushFailBtnA.addEventListener("click", () => pushToFail("A"));
+        const pushFailBtnB = document.getElementById("btn-push-fail-b");
+        if (pushFailBtnB) pushFailBtnB.addEventListener("click", () => pushToFail("B"));
 
         const reloadBtn = document.getElementById("reload-import");
         if (reloadBtn) {
@@ -5906,6 +6108,11 @@
         if (state.showCutaway) {
           updateCutaway();
         }
+        // Enable/disable Push-to-Fail buttons based on selection
+        const pfBtnA = document.getElementById("btn-push-fail-a");
+        if (pfBtnA) pfBtnA.disabled = !state.selectedA;
+        const pfBtnB = document.getElementById("btn-push-fail-b");
+        if (pfBtnB) pfBtnB.disabled = !(state.mode === "compare" && state.selectedB);
       }
 
       function readTestVariables() {
@@ -5932,6 +6139,160 @@
         };
 
         return state.testVariables;
+      }
+
+      // ── Live Metrics (real-time update as test-variable inputs change) ──────
+
+      let _liveMetricsDebounce = null;
+
+      /**
+       * Recompute and re-render metrics for the currently selected components
+       * using the current test variables, then flash the changed cards.
+       * Called automatically on every input-event change — no Run needed.
+       */
+      function updateLiveMetrics() {
+        if (!state.components.length || !state.selectedA) return;
+
+        const metricsA = computeComponentMetrics(state.selectedA, state.testVariables);
+        renderMetricGrid("metrics-a", metricsA, { accent: "A" });
+        applyMetricHealthColors("metrics-a", metricsA, state.selectedA);
+        addToleranceSubLines("metrics-a", metricsA, state.selectedA);
+
+        let metricsB = null;
+        if (state.mode === "compare" && state.selectedB) {
+          metricsB = computeComponentMetrics(state.selectedB, state.testVariables);
+          renderMetricGrid("metrics-b", metricsB, { accent: "B" });
+          applyMetricHealthColors("metrics-b", metricsB, state.selectedB);
+          addToleranceSubLines("metrics-b", metricsB, state.selectedB);
+
+          const deltaMetrics = computeDeltaMetrics(metricsA, metricsB);
+          renderMetricGrid("metrics-delta", deltaMetrics, { accent: "delta", isDelta: true });
+        }
+
+        // Flash all updated metric cards
+        ["metrics-a", "metrics-b", "metrics-delta"].forEach((id) => {
+          const grid = document.getElementById(id);
+          if (!grid) return;
+          grid.querySelectorAll(".metric-card").forEach((card) => {
+            card.classList.remove("live-updated");
+            // Force reflow so animation re-triggers
+            void card.offsetWidth;
+            card.classList.add("live-updated");
+          });
+        });
+
+        // Show live badges
+        const badgeA = document.getElementById("live-badge-a");
+        const badgeB = document.getElementById("live-badge-b");
+        if (badgeA) badgeA.classList.remove("hidden-badge");
+        if (badgeB && state.mode === "compare") badgeB.classList.remove("hidden-badge");
+
+        // Hide empty state if metrics are now populated
+        const metricsEmpty = document.getElementById("metrics-empty-state");
+        if (metricsEmpty) metricsEmpty.style.display = "none";
+
+        updateMeshesForMetrics(metricsA, metricsB);
+      }
+
+      // ── F.U.S.E. Push-to-Failure Simulator ──────────────────────────────
+
+      /**
+       * Incrementally ramp electrical + thermal stress on the given component
+       * until a failure mode fires, then animate and report.
+       * @param {"A"|"B"} slot
+       */
+      function pushToFail(slot) {
+        const component = slot === "A" ? state.selectedA : state.selectedB;
+        if (!component) {
+          setStatus("Select a component first.");
+          return;
+        }
+
+        const resultEl = document.getElementById("push-fail-result-" + slot.toLowerCase());
+        const btnEl = document.getElementById("btn-push-fail-" + slot.toLowerCase());
+        if (btnEl) { btnEl.disabled = true; btnEl.textContent = "⏳ Running…"; }
+
+        // Ramp test: try progressively increasing multipliers until failure fires
+        const BASE = Object.assign({}, state.testVariables);
+        const voltageMultipliers = [1, 1.5, 2, 3, 5, 8, 12, 20, 30, 50];
+        const tempOffsets       = [0, 20, 40, 70, 105, 145, 200];
+
+        let failureResult = null;
+        let triggerVoltage = BASE.voltage;
+        let triggerTempC   = BASE.temperatureC;
+
+        // Walk through stress levels until a failure mode triggers
+        const findFailureStress = () => {
+          for (const vMul of voltageMultipliers) {
+            for (const tOff of tempOffsets) {
+              const testVars = Object.assign({}, BASE, {
+                voltage: BASE.voltage * vMul,
+                temperatureC: (BASE.temperatureC || 25) + tOff,
+              });
+              const metrics = computeComponentMetrics(component, testVars);
+              const failure = detectFailure(component, metrics);
+              if (failure && failure.severity >= 0.5) {
+                return { failure, voltage: testVars.voltage, tempC: testVars.temperatureC };
+              }
+            }
+          }
+          return null;
+        };
+
+        const stressResult = findFailureStress();
+        if (stressResult) {
+          failureResult  = stressResult.failure;
+          triggerVoltage = stressResult.voltage;
+          triggerTempC   = stressResult.tempC;
+        }
+
+        // Animate the 3D mesh
+        const group = slot === "A" ? (ensureComponentGroup("A", state.selectedA)) : (ensureComponentGroup("B", state.selectedB));
+        if (group) {
+          triggerFailureAnimation(group, failureResult || { severity: 0 });
+          if (failureResult && failureResult.severity >= 2.5) {
+            triggerExplosionFlash(group, 1.0);
+          }
+        }
+
+        // Show result
+        if (resultEl) {
+          resultEl.classList.remove("result-safe", "result-warn", "result-fail", "result-destroyed");
+          resultEl.classList.add("visible");
+          if (!failureResult || failureResult.severity <= 0) {
+            resultEl.classList.add("result-safe");
+            resultEl.innerHTML = "✅ <strong>" + (component.name || component.id) + "</strong> survived all stress levels. No failure mode triggered.";
+          } else {
+            const sev = failureResult.severity;
+            const cls = sev >= 2.5 ? "result-destroyed" : sev >= 1.5 ? "result-fail" : "result-warn";
+            resultEl.classList.add(cls);
+            const label = sev >= 2.5 ? "💀 DESTROYED" : sev >= 1.5 ? "🔴 CRITICAL" : sev >= 0.8 ? "🟠 WARNING" : "🟡 STRESSED";
+            const modeName = failureResult.name || (failureResult.mode && typeof failureResult.mode === "object" ? failureResult.mode.name : failureResult.mode) || "unknown failure";
+            const volStr = triggerVoltage >= 1000 ? (triggerVoltage / 1000).toFixed(1) + " kV" : triggerVoltage.toFixed(1) + " V";
+            resultEl.innerHTML =
+              label + " — <strong>" + modeName + "</strong><br>" +
+              "<span style='font-size:10.5px;opacity:0.8;'>Triggered at " + volStr + " / " + triggerTempC.toFixed(0) + "°C</span><br>" +
+              "<span style='font-size:10.5px;opacity:0.7;'>" + (failureResult.description || "") + "</span>";
+          }
+        }
+
+        // Re-render FUSE analysis with failure state
+        renderFailureAnalysis(
+          slot === "A" ? failureResult : state.lastRun?.failure?.A ?? null,
+          slot === "B" ? failureResult : state.lastRun?.failure?.B ?? null
+        );
+
+        const fuseEmpty = document.getElementById("fuse-empty-state");
+        if (fuseEmpty) fuseEmpty.style.display = "none";
+
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.textContent = slot === "A" ? "🔴 Push A to Fail" : "🟣 Push B to Fail";
+        }
+
+        setStatus("F.U.S.E. sim complete — " + (failureResult
+          ? "failure at " + triggerVoltage.toFixed(1) + "V / " + triggerTempC.toFixed(0) + "°C"
+          : "component survived all stress levels."));
       }
 
       function setImportStatus(message) {
@@ -6417,6 +6778,14 @@
           const nameB = componentB.name || componentB.id || "Component B";
           const winner = determineWinner(failureA, failureB);
           renderBattleResult(winner, nameA, nameB, failureA, failureB);
+          // Pre-switch to FUSE tab and scroll to top BEFORE showing overlay so
+          // results are visible the instant the overlay is dismissed (no scroll needed).
+          const fuseTabBtnPre = document.querySelector('.panel-tab-btn[data-tab="fuse"]');
+          if (fuseTabBtnPre) fuseTabBtnPre.click();
+          const panelScrollPre = document.querySelector(".panel-scroll");
+          if (panelScrollPre) panelScrollPre.scrollTop = 0;
+          const panel = document.getElementById("arena-panel");
+          if (panel) panel.classList.add("sheet-open");
           showBattleResultOverlay(winner, nameA, nameB, failureA, failureB);
         } else {
           // Auto-switch to Metrics tab for single-component tests
