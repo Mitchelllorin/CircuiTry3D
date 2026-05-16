@@ -183,9 +183,14 @@ export default function DataSafety() {
             complete deletion within 30 days.
           </li>
         </ol>
-        <p>
-          <Link to="/delete-account">→ Visit the dedicated Delete Account page for full instructions and a pre-filled request link.</Link>
-        </p>
+        <div className="delete-account-cta">
+          <Link to="/delete-account" className="delete-account-btn">
+            → Open Dedicated Delete Account Page
+          </Link>
+          <p className="delete-account-email-note">
+            Includes step-by-step instructions and a pre-filled deletion request email.
+          </p>
+        </div>
 
         <h2>Compliance</h2>
         <ul>
