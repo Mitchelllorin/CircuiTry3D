@@ -123,7 +123,7 @@ export default function CarCircuit() {
   };
 
   // Cycle turn signal: off → left → right → hazard → off
-  const cycleTurn = (side: 'left' | 'right') => {
+  const handleCycleTurn = (side: 'left' | 'right') => {
     setTurn((prev) => {
       if (prev === side) return 'off';        // pressing same side turns off
       if (prev === 'off') return side;
@@ -568,7 +568,7 @@ export default function CarCircuit() {
           // Alternator charges battery toward 14.2 V
           battVRef.current = Math.min(14.2, battVRef.current + 0.4 * dt);
         } else if (totalDraw > 0) {
-          // Parasitic drain — exaggerated for visible demo (full drain ~60 s at 10 A)
+          // Drain coefficient 0.003: at 10 A total draw, battery depletes from 12.6 → 10.5 V in ~60 s
           battVRef.current = Math.max(10.5, battVRef.current - totalDraw * 0.003 * dt);
         } else {
           // Slowly recover to resting voltage when nothing is on
@@ -812,13 +812,13 @@ export default function CarCircuit() {
         </button>
         <button
           style={{ ...BTN, ...(turn === 'left' ? { borderColor:'rgba(255,160,0,0.7)', color:'#ffcc44' } : {}) }}
-          onClick={() => cycleTurn('left')}
+          onClick={() => handleCycleTurn('left')}
         >
           ◄ Left Signal
         </button>
         <button
           style={{ ...BTN, ...(turn === 'right' ? { borderColor:'rgba(255,160,0,0.7)', color:'#ffcc44' } : {}) }}
-          onClick={() => cycleTurn('right')}
+          onClick={() => handleCycleTurn('right')}
         >
           Right Signal ►
         </button>

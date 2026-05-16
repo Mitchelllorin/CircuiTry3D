@@ -94,7 +94,7 @@ export default function HomeCircuit() {
   useEffect(() => { microwaveAddedRef.current = microwaveAdded; }, [microwaveAdded]);
 
   // Trip the 15A breaker — cuts all loads
-  const tripBreaker = () => {
+  const handleTripBreaker = () => {
     setBreakerTripped(true);
     setLightOn(false);
   };
@@ -622,7 +622,7 @@ export default function HomeCircuit() {
   // Auto-trip the breaker when total load exceeds 15 A (1800 W)
   useEffect(() => {
     if (live && powerW > BREAKER_WATTS) {
-      tripBreaker();
+      handleTripBreaker();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, powerW]);
