@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
 
+// US residential wiring: 15 A circuit @ 120 V = 1800 W trip threshold
+const CIRCUIT_VOLTAGE = 120;   // V AC
+const BREAKER_AMPS    = 15;    // A
+const BREAKER_WATTS   = CIRCUIT_VOLTAGE * BREAKER_AMPS; // 1800 W
+
+// Appliance wattages (realistic values)
+const W_LIGHT     = 100;
+const W_FAN       =  60;
+const W_LAMP      =  50;
+const W_TV        = 100;
+const W_MICROWAVE = 1200;
+
 const BTN: React.CSSProperties = {
   background: 'rgba(10,20,40,0.88)',
   border: '1px solid rgba(136,204,255,0.35)',
@@ -15,6 +27,12 @@ const BTN_ADD: React.CSSProperties = {
   borderColor: 'rgba(100,255,150,0.35)',
   color: '#88ffaa',
 };
+const BTN_WARN: React.CSSProperties = {
+  ...BTN,
+  borderColor: 'rgba(255,160,80,0.6)',
+  color: '#ffcc88',
+  fontWeight: 700,
+};
 
 export default function HomeCircuit() {
   // ── Core rendering refs ──────────────────────────────────────────────────
@@ -28,11 +46,12 @@ export default function HomeCircuit() {
   const controlsRef   = useRef<OrbitControlsType | null>(null);
 
   // ── Live state refs (read inside animation loop) ─────────────────────────
-  const lightOnRef    = useRef(false);
-  const overloadRef   = useRef(false);
-  const fanAddedRef   = useRef(false);
-  const lampAddedRef  = useRef(false);
-  const tvAddedRef    = useRef(false);
+  const lightOnRef         = useRef(false);
+  const breakerTrippedRef  = useRef(false);
+  const fanAddedRef        = useRef(false);
+  const lampAddedRef       = useRef(false);
+  const tvAddedRef         = useRef(false);
+  const microwaveAddedRef  = useRef(false);
 
   // ── Three.js object refs ─────────────────────────────────────────────────
   const ceilingLightRef   = useRef<any>(null);
@@ -40,51 +59,50 @@ export default function HomeCircuit() {
   const switchLeverRef    = useRef<any>(null);
   const hotWireMatRef     = useRef<any>(null);
   const neutralWireMatRef = useRef<any>(null);
+  const groundWireMatRef  = useRef<any>(null);
   const pPosRef           = useRef<Float32Array | null>(null);
   const pGeoRef           = useRef<any>(null);
   const pOffsRef          = useRef<Float32Array | null>(null);
-  const overloadLightRef  = useRef<any>(null);
-  const overloadTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const breakerLEDMatRef  = useRef<any>(null);
   const wireCurveRef      = useRef<any>(null);
   const bgColorRef        = useRef<any>(null);
 
   // add-on component refs
-  const fanGroupRef       = useRef<any>(null);
-  const fanBladesRef      = useRef<any>(null);
-  const lampGroupRef      = useRef<any>(null);
-  const lampLightRef      = useRef<any>(null);
-  const lampShadeMatRef   = useRef<any>(null);
-  const tvGroupRef        = useRef<any>(null);
-  const tvScreenMatRef    = useRef<any>(null);
+  const fanGroupRef        = useRef<any>(null);
+  const fanBladesRef       = useRef<any>(null);
+  const lampGroupRef       = useRef<any>(null);
+  const lampLightRef       = useRef<any>(null);
+  const lampShadeMatRef    = useRef<any>(null);
+  const tvGroupRef         = useRef<any>(null);
+  const tvScreenMatRef     = useRef<any>(null);
+  const microwaveGroupRef  = useRef<any>(null);
+  const microwaveMatRef    = useRef<any>(null);
 
   // ── React state ──────────────────────────────────────────────────────────
-  const [lightOn,   setLightOn]   = useState(false);
-  const [overload,  setOverload]  = useState(false);
-  const [fanAdded,  setFanAdded]  = useState(false);
-  const [lampAdded, setLampAdded] = useState(false);
-  const [tvAdded,   setTvAdded]   = useState(false);
+  const [lightOn,        setLightOn]        = useState(false);
+  const [breakerTripped, setBreakerTripped] = useState(false);
+  const [fanAdded,       setFanAdded]       = useState(false);
+  const [lampAdded,      setLampAdded]      = useState(false);
+  const [tvAdded,        setTvAdded]        = useState(false);
+  const [microwaveAdded, setMicrowaveAdded] = useState(false);
 
-  useEffect(() => { lightOnRef.current   = lightOn;   }, [lightOn]);
-  useEffect(() => { overloadRef.current  = overload;  }, [overload]);
-  useEffect(() => { fanAddedRef.current  = fanAdded;  }, [fanAdded]);
-  useEffect(() => { lampAddedRef.current = lampAdded; }, [lampAdded]);
-  useEffect(() => { tvAddedRef.current   = tvAdded;   }, [tvAdded]);
+  useEffect(() => { lightOnRef.current        = lightOn;        }, [lightOn]);
+  useEffect(() => { breakerTrippedRef.current = breakerTripped; }, [breakerTripped]);
+  useEffect(() => { fanAddedRef.current       = fanAdded;       }, [fanAdded]);
+  useEffect(() => { lampAddedRef.current      = lampAdded;      }, [lampAdded]);
+  useEffect(() => { tvAddedRef.current        = tvAdded;        }, [tvAdded]);
+  useEffect(() => { microwaveAddedRef.current = microwaveAdded; }, [microwaveAdded]);
 
-  const handleOverload = () => {
-    if (overloadRef.current) return;
-    setOverload(true);
-    overloadTimerRef.current = setTimeout(() => {
-      overloadTimerRef.current = null;
-      if (overloadLightRef.current && sceneRef.current) {
-        sceneRef.current.remove(overloadLightRef.current);
-        overloadLightRef.current = null;
-      }
-      setOverload(false);
-    }, 2200);
+  // Trip the 15A breaker — cuts all loads
+  const handleTripBreaker = () => {
+    setBreakerTripped(true);
+    setLightOn(false);
   };
-  useEffect(() => () => {
-    if (overloadTimerRef.current) clearTimeout(overloadTimerRef.current);
-  }, []);
+
+  // Reset the breaker after resolving the overload
+  const resetBreaker = () => {
+    setBreakerTripped(false);
+  };
 
   // ── Scene setup ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -183,6 +201,10 @@ export default function HomeCircuit() {
       [0x3355aa, 0x4477bb, 0x3355aa, 0x4477bb, 0x3355aa, 0x4477bb].forEach(
         (c, i) => mkBox(0.07, 0.09, 0.5, c, -3.82, 0.75 + i * 0.18, -1.5),
       );
+      // Breaker status LED: green = OK, red = tripped
+      const { mat: bLEDMat } = mkBox(0.06, 0.04, 0.06, 0x00ff44, -3.78, 0.75, -1.78,
+        { emissive: new THREE.Color(0x00ff44), emissiveIntensity: 1.4 });
+      breakerLEDMatRef.current = bLEDMat;
 
       // ── Ceiling light fixture ─────────────────────────────────────────────
       const fixtureGeo = new THREE.CylinderGeometry(0.34, 0.28, 0.16, 16);
@@ -224,11 +246,13 @@ export default function HomeCircuit() {
       scene.add(lever);
       switchLeverRef.current = lever;
 
-      // ── Wall outlets (right wall) ─────────────────────────────────────────
+      // ── Wall outlets (right wall) — NEC duplex receptacles with ground pin ──
       [-0.5, 1.5].forEach((z) => {
         mkBox(0.07, 0.14, 0.12, 0x334455, 3.94, 0.52, z);
         mkBox(0.04, 0.04, 0.06, 0x111122, 3.91, 0.55, z);
         mkBox(0.04, 0.04, 0.06, 0x111122, 3.91, 0.49, z);
+        // Ground pin hole (round, below the two slots)
+        mkBox(0.03, 0.03, 0.06, 0x0a0a1a, 3.91, 0.44, z);
       });
 
       // ── Furniture ────────────────────────────────────────────────────────
@@ -242,8 +266,11 @@ export default function HomeCircuit() {
       [[-2.4, 0.4], [-1.6, 0.4], [-2.4, 1.0], [-1.6, 1.0]].forEach(
         ([tx, tz]) => mkBox(0.06, 0.35, 0.06, 0x2a3550, tx, 0.18, tz),
       );
+      // Kitchen counter (back wall right side) — where the microwave lives
+      mkBox(1.4, 0.88, 0.6, 0x2a3040, 2.5, 0.44, -3.6);
+      mkBox(1.4, 0.05, 0.62, 0x3a4055, 2.5, 0.89, -3.6);  // counter top
 
-      // ── Wiring ───────────────────────────────────────────────────────────
+      // ── Wiring — NEC 3-conductor: Black (hot), White (neutral), Green (ground) ──
       const hotPts = [
         new THREE.Vector3(-3.84, 1.3, -1.5),
         new THREE.Vector3(-3.84, 2.88, -1.5),
@@ -255,12 +282,22 @@ export default function HomeCircuit() {
       ];
       const hotCurve = new THREE.CatmullRomCurve3(hotPts);
       wireCurveRef.current = hotCurve;
+      // White neutral — offset +5 cm in Z
       const neuCurve = new THREE.CatmullRomCurve3(
         hotPts.map((p) => new THREE.Vector3(p.x, p.y, p.z + 0.05)),
       );
+      // Green ground — runs from panel to wall outlets (ground bus to receptacles)
+      const gndPts = [
+        new THREE.Vector3(-3.84, 1.3, -1.5),
+        new THREE.Vector3(-3.84, 2.88, -1.5),
+        new THREE.Vector3(3.9, 2.88, -1.5),
+        new THREE.Vector3(3.9, 2.88, -0.5),
+        new THREE.Vector3(3.9, 0.52, -0.5),
+      ];
+      const gndCurve = new THREE.CatmullRomCurve3(gndPts);
 
-      const mkWire = (curve: any, color: number, emissive: number) => {
-        const geo = new THREE.TubeGeometry(curve, 24, 0.030, 8, false);
+      const mkWire = (curve: any, color: number, emissive: number, radius = 0.030) => {
+        const geo = new THREE.TubeGeometry(curve, 24, radius, 8, false);
         const mat = new THREE.MeshStandardMaterial({
           color,
           emissive: new THREE.Color(emissive),
@@ -269,8 +306,9 @@ export default function HomeCircuit() {
         scene.add(new THREE.Mesh(geo, mat));
         return mat;
       };
-      hotWireMatRef.current     = mkWire(hotCurve, 0x4488ff, 0x002266);
-      neutralWireMatRef.current = mkWire(neuCurve,  0x667788, 0x223344);
+      hotWireMatRef.current     = mkWire(hotCurve, 0x222222, 0x001122);       // black = hot
+      neutralWireMatRef.current = mkWire(neuCurve, 0xddddee, 0x223344, 0.026); // white = neutral
+      groundWireMatRef.current  = mkWire(gndCurve, 0x226633, 0x0d2211, 0.026); // green = ground
 
       // Current-flow particles
       const pPos = new Float32Array(20 * 3);
@@ -383,6 +421,36 @@ export default function HomeCircuit() {
       tvBase2.position.y = -0.77;
       tvGroup.add(tvBase2);
 
+      // ── Add-on: MICROWAVE (1200 W on kitchen counter) ─────────────────────
+      const mwGroup = new THREE.Group();
+      mwGroup.position.set(2.5, 0.94, -3.6);
+      mwGroup.visible = false;
+      scene.add(mwGroup);
+      microwaveGroupRef.current = mwGroup;
+
+      const mwBodyMat = new THREE.MeshStandardMaterial({ color: 0x223344 });
+      const mwBody = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.44), mwBodyMat);
+      mwBody.castShadow = true;
+      mwGroup.add(mwBody);
+
+      const mwScreenMat = new THREE.MeshStandardMaterial({
+        color: 0x001a33,
+        emissive: new THREE.Color(0x003366),
+        emissiveIntensity: 0.35,
+      });
+      const mwScreen = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.20, 0.03), mwScreenMat);
+      mwScreen.position.set(0.3, 0, 0.23);
+      mwGroup.add(mwScreen);
+      microwaveMatRef.current = mwScreenMat;
+
+      // Door glass
+      const mwDoor = new THREE.Mesh(
+        new THREE.BoxGeometry(0.54, 0.38, 0.03),
+        new THREE.MeshStandardMaterial({ color: 0x111a22, transparent: true, opacity: 0.7 }),
+      );
+      mwDoor.position.set(-0.1, 0, 0.23);
+      mwGroup.add(mwDoor);
+
       // ── Animation loop ────────────────────────────────────────────────────
       let lastTime = -1;
       const bgOff = new THREE.Color(0x1e2235);
@@ -397,13 +465,18 @@ export default function HomeCircuit() {
 
         if (controlsRef.current) controlsRef.current.update();
 
-        const on   = lightOnRef.current;
-        const fan  = fanAddedRef.current;
-        const lamp = lampAddedRef.current;
-        const tv   = tvAddedRef.current;
+        const on      = lightOnRef.current;
+        const tripped = breakerTrippedRef.current;
+        const fan     = fanAddedRef.current;
+        const lamp    = lampAddedRef.current;
+        const tv      = tvAddedRef.current;
+        const mw      = microwaveAddedRef.current;
 
-        // Background gently lightens when ceiling light is on
-        if (bgColorRef.current) bgColorRef.current.lerp(on ? bgOn : bgOff, 0.06);
+        // Circuit is live only when switch is ON and breaker has NOT tripped
+        const live = on && !tripped;
+
+        // Background gently lightens when ceiling light is live
+        if (bgColorRef.current) bgColorRef.current.lerp(live ? bgOn : bgOff, 0.06);
 
         // Switch lever tilts
         if (switchLeverRef.current) {
@@ -413,26 +486,29 @@ export default function HomeCircuit() {
 
         // Ceiling light — smooth fade to 7.0 so it dramatically illuminates the room
         if (ceilingLightRef.current) {
-          const tgt = on ? 7.0 : 0;
+          const tgt = live ? 7.0 : 0;
           ceilingLightRef.current.intensity += (tgt - ceilingLightRef.current.intensity) * 0.10;
         }
 
         // Bulb glow
         if (bulbMatRef.current) {
-          bulbMatRef.current.emissive.set(on ? 0xffffaa : 0x111100);
-          bulbMatRef.current.emissiveIntensity = on ? 3.5 : 0.3;
+          bulbMatRef.current.emissive.set(live ? 0xffffaa : 0x111100);
+          bulbMatRef.current.emissiveIntensity = live ? 3.5 : 0.3;
         }
 
-        // Wire glow — always visibly bright, pulse brighter when circuit is live
-        if (hotWireMatRef.current)     hotWireMatRef.current.emissive.set(on ? 0x0077ff : 0x002266);
-        if (neutralWireMatRef.current) neutralWireMatRef.current.emissive.set(on ? 0x336688 : 0x223344);
+        // Hot wire pulses bright when live; neutral dims; ground always green (safety always present)
+        if (hotWireMatRef.current)
+          hotWireMatRef.current.emissive.set(live ? 0x0044cc : 0x001122);
+        if (neutralWireMatRef.current)
+          neutralWireMatRef.current.emissive.set(live ? 0x4466aa : 0x223344);
+        if (groundWireMatRef.current)
+          groundWireMatRef.current.emissive.set(0x0d2211); // ground always dim green
 
-        // Overload flash
-        if (overloadRef.current && !overloadLightRef.current && sceneRef.current) {
-          const rl = new THREE.PointLight(0xff2200, 4.5, 4);
-          rl.position.set(-3.84, 1.3, -1.5);
-          sceneRef.current.add(rl);
-          overloadLightRef.current = rl;
+        // Breaker status LED: green = OK, red = tripped
+        if (breakerLEDMatRef.current) {
+          const ledColor = tripped ? 0xff2200 : 0x00ff44;
+          breakerLEDMatRef.current.color.set(ledColor);
+          breakerLEDMatRef.current.emissive.set(ledColor);
         }
 
         // Current-flow particles
@@ -440,7 +516,7 @@ export default function HomeCircuit() {
           const offs = pOffsRef.current;
           const pos  = pPosRef.current;
           for (let i = 0; i < 20; i++) {
-            if (on) offs[i] = (offs[i] + dt * 0.18) % 1.0;
+            if (live) offs[i] = (offs[i] + dt * 0.18) % 1.0;
             const pt = wireCurveRef.current.getPoint(offs[i]);
             pos[i * 3] = pt.x; pos[i * 3 + 1] = pt.y; pos[i * 3 + 2] = pt.z;
           }
@@ -450,7 +526,7 @@ export default function HomeCircuit() {
         // Fan
         if (fanGroupRef.current) {
           fanGroupRef.current.visible = fan;
-          if (fanBladesRef.current && fan && on) {
+          if (fanBladesRef.current && fan && live) {
             fanBladesRef.current.rotation.y += dt * 3.5;
           }
         }
@@ -459,11 +535,11 @@ export default function HomeCircuit() {
         if (lampGroupRef.current) {
           lampGroupRef.current.visible = lamp;
           if (lampLightRef.current) {
-            const tgt = (lamp && on) ? 2.2 : 0;
+            const tgt = (lamp && live) ? 2.2 : 0;
             lampLightRef.current.intensity += (tgt - lampLightRef.current.intensity) * 0.1;
           }
           if (lampShadeMatRef.current) {
-            lampShadeMatRef.current.emissive.set((lamp && on) ? 0x441800 : 0x110800);
+            lampShadeMatRef.current.emissive.set((lamp && live) ? 0x441800 : 0x110800);
           }
         }
 
@@ -471,9 +547,19 @@ export default function HomeCircuit() {
         if (tvGroupRef.current) {
           tvGroupRef.current.visible = tv;
           if (tvScreenMatRef.current) {
-            const tgt = (tv && on) ? 0.72 : 0.08;
+            const tgt = (tv && live) ? 0.72 : 0.08;
             tvScreenMatRef.current.emissiveIntensity +=
               (tgt - tvScreenMatRef.current.emissiveIntensity) * 0.08;
+          }
+        }
+
+        // Microwave
+        if (microwaveGroupRef.current) {
+          microwaveGroupRef.current.visible = mw;
+          if (microwaveMatRef.current) {
+            const tgt = (mw && live) ? 2.0 : 0.35;
+            microwaveMatRef.current.emissiveIntensity +=
+              (tgt - microwaveMatRef.current.emissiveIntensity) * 0.1;
           }
         }
 
@@ -522,13 +608,24 @@ export default function HomeCircuit() {
     };
   }, []);
 
-  // Derived power metrics
-  const voltage  = 120;
-  const currentA = (lightOn ? 0.83 : 0)
-    + (fanAdded  && lightOn ? 0.50 : 0)
-    + (lampAdded && lightOn ? 0.42 : 0)
-    + (tvAdded   && lightOn ? 0.83 : 0);
-  const power = currentA * voltage;
+  // Derived power metrics — use named constants for each appliance's wattage
+  const live = lightOn && !breakerTripped;
+  const powerW = (live ? W_LIGHT : 0)
+    + (fanAdded        && live ? W_FAN       : 0)
+    + (lampAdded       && live ? W_LAMP      : 0)
+    + (tvAdded         && live ? W_TV        : 0)
+    + (microwaveAdded  && live ? W_MICROWAVE : 0);
+  const currentA   = powerW / CIRCUIT_VOLTAGE;
+  const resistance = currentA > 0 ? (CIRCUIT_VOLTAGE / currentA) : Infinity;
+  const loadPct    = (powerW / BREAKER_WATTS) * 100;
+
+  // Auto-trip the breaker when total load exceeds 15 A (1800 W)
+  useEffect(() => {
+    if (live && powerW > BREAKER_WATTS) {
+      handleTripBreaker();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, powerW]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative', background: '#1e2235' }}>
@@ -537,15 +634,44 @@ export default function HomeCircuit() {
       {/* Telemetry overlay */}
       <div style={{
         position: 'absolute', top: 12, left: 12,
-        background: 'rgba(6,6,20,0.88)', border: '1px solid rgba(136,204,255,0.25)',
-        borderRadius: 8, padding: '8px 12px', color: '#88ccff', fontSize: '0.78rem', lineHeight: 1.6,
-        pointerEvents: 'none',
+        background: 'rgba(6,6,20,0.90)', border: '1px solid rgba(136,204,255,0.25)',
+        borderRadius: 8, padding: '8px 12px', color: '#88ccff', fontSize: '0.78rem', lineHeight: 1.7,
+        pointerEvents: 'none', maxWidth: 220,
       }}>
         <div style={{ fontWeight: 700, marginBottom: 3 }}>🏠 Home Circuit</div>
-        <div>Voltage: <span style={{ color: '#fff' }}>{voltage} V AC</span></div>
-        <div>Current: <span style={{ color: '#fff' }}>{currentA.toFixed(2)} A</span></div>
-        <div>Power:   <span style={{ color: power > 300 ? '#ff8888' : '#fff' }}>{power.toFixed(0)} W</span></div>
-        {overload && <div style={{ color: '#ff4444', marginTop: 3 }}>⚠ Overload!</div>}
+        <div>
+          Breaker:{' '}
+          <span style={{ color: breakerTripped ? '#ff5555' : '#55ff88' }}>
+            {breakerTripped ? `⚠ TRIPPED (${BREAKER_AMPS} A)` : `✓ ${BREAKER_AMPS} A OK`}
+          </span>
+        </div>
+        <div>Voltage: <span style={{ color: '#fff' }}>{CIRCUIT_VOLTAGE} V AC</span></div>
+        <div>
+          Current:{' '}
+          <span style={{ color: currentA > BREAKER_AMPS * 0.9 ? '#ffaa44' : '#fff' }}>
+            {currentA.toFixed(2)} A
+          </span>
+          {' '}
+          <span style={{ color: 'rgba(136,204,255,0.5)', fontSize: '0.70rem' }}>
+            ({loadPct.toFixed(0)}%)
+          </span>
+        </div>
+        <div>Power: <span style={{ color: powerW > BREAKER_WATTS * 0.85 ? '#ff8888' : '#fff' }}>{powerW.toFixed(0)} W</span></div>
+        <div>
+          Resistance:{' '}
+          <span style={{ color: '#cce8ff' }}>
+            {isFinite(resistance) ? resistance.toFixed(1) + ' Ω' : '∞ Ω'}
+          </span>
+        </div>
+        <div style={{
+          marginTop: 6, borderTop: '1px solid rgba(136,204,255,0.15)',
+          paddingTop: 5, fontSize: '0.71rem', color: 'rgba(136,204,255,0.7)', lineHeight: 1.6,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 2, color: 'rgba(136,204,255,0.9)' }}>Wire colors (NEC)</div>
+          <div><span style={{ color: '#888', fontFamily: 'monospace' }}>██</span> Black = Hot (120 V)</div>
+          <div><span style={{ color: '#dde', fontFamily: 'monospace' }}>██</span> White = Neutral (0 V)</div>
+          <div><span style={{ color: '#4a9', fontFamily: 'monospace' }}>██</span> Green = Ground (safety)</div>
+        </div>
       </div>
 
       {/* Orbit hint */}
@@ -564,36 +690,50 @@ export default function HomeCircuit() {
         position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
         display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '96vw',
       }}>
+        {/* Reset breaker — only shown when tripped */}
+        {breakerTripped && (
+          <button style={BTN_WARN} onClick={resetBreaker}>
+            🔄 Reset Breaker
+          </button>
+        )}
+
         <button
-          style={{ ...BTN, ...(lightOn ? { borderColor: 'rgba(255,255,120,0.6)', color: '#ffffaa' } : {}) }}
-          onClick={() => setLightOn((v) => !v)}
+          style={{
+            ...BTN,
+            ...(live ? { borderColor: 'rgba(255,255,120,0.6)', color: '#ffffaa' } : {}),
+            ...(breakerTripped ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
+          }}
+          onClick={() => { if (!breakerTripped) setLightOn((v) => !v); }}
         >
-          {lightOn ? '💡 Light ON' : '🔦 Toggle Light'}
+          {live ? `💡 Light ON (${W_LIGHT} W)` : `🔦 Toggle Light (${W_LIGHT} W)`}
         </button>
+
         <button
           style={{ ...BTN_ADD, ...(fanAdded ? { borderColor: 'rgba(100,200,255,0.6)', color: '#99ddff' } : {}) }}
           onClick={() => setFanAdded((v) => !v)}
         >
-          {fanAdded ? '🌀 Fan: ON' : '➕ Add Fan'}
+          {fanAdded ? `🌀 Fan: ON (${W_FAN} W)` : `➕ Add Fan (${W_FAN} W)`}
         </button>
+
         <button
           style={{ ...BTN_ADD, ...(lampAdded ? { borderColor: 'rgba(255,200,80,0.6)', color: '#ffcc66' } : {}) }}
           onClick={() => setLampAdded((v) => !v)}
         >
-          {lampAdded ? '🪔 Lamp: ON' : '➕ Add Lamp'}
+          {lampAdded ? `🪔 Lamp: ON (${W_LAMP} W)` : `➕ Add Lamp (${W_LAMP} W)`}
         </button>
+
         <button
           style={{ ...BTN_ADD, ...(tvAdded ? { borderColor: 'rgba(80,150,255,0.6)', color: '#88aaff' } : {}) }}
           onClick={() => setTvAdded((v) => !v)}
         >
-          {tvAdded ? '📺 TV: ON' : '➕ Add TV'}
+          {tvAdded ? `📺 TV: ON (${W_TV} W)` : `➕ Add TV (${W_TV} W)`}
         </button>
+
         <button
-          style={{ ...BTN, ...(overload ? { color: '#ff6666', borderColor: 'rgba(255,80,80,0.5)' } : {}) }}
-          onClick={handleOverload}
-          disabled={overload}
+          style={{ ...BTN_ADD, ...(microwaveAdded ? { borderColor: 'rgba(255,140,60,0.6)', color: '#ffaa66' } : {}) }}
+          onClick={() => setMicrowaveAdded((v) => !v)}
         >
-          {overload ? '🔥 Tripping…' : '⚡ Overload Demo'}
+          {microwaveAdded ? `📡 Microwave: ON (${W_MICROWAVE} W)` : `➕ Add Microwave (${W_MICROWAVE} W)`}
         </button>
       </div>
     </div>

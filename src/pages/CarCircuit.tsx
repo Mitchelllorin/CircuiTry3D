@@ -11,6 +11,15 @@ const BTN: React.CSSProperties = {
   fontSize: '0.82rem',
 };
 
+// Typical halogen pair ~10 A; LED pair ~2–3 A; we use 5 A as a balanced value
+const HL_AMPS   = 5;    // headlights
+const TL_AMPS   = 1;    // tail lights
+const BRK_AMPS  = 3;    // brake lights (brighter filaments)
+const HORN_AMPS = 3;    // horn relay
+const INT_AMPS  = 1;    // interior / instruments
+const TURN_AMPS = 1;    // turn signal per side
+const FUSE_AMPS = 10;   // headlight fuse rating
+
 // ── Colours ─────────────────────────────────────────────────────────────────
 const CAR   = 0x2b52a8;   // body blue (lighter)
 const DARK  = 0x1a3055;   // trim / pillars
@@ -32,45 +41,71 @@ export default function CarCircuit() {
   // ── Live refs ─────────────────────────────────────────────────────────────
   const hlOnRef    = useRef(false);
   const tlOnRef    = useRef(false);
+  const brakeOnRef = useRef(false);
   const ignOnRef   = useRef(false);
   const hornRef    = useRef(false);
   const fuseRef    = useRef(false);
+  const turnRef    = useRef<'off'|'left'|'right'|'hazard'>('off');
+
+  // Turn signal flash state (toggled in animation loop)
+  const turnFlashRef  = useRef(false);
+  const turnPhaseRef  = useRef(0);    // seconds accumulator
+  // Battery voltage lives in a ref (updated per-frame) and is synced to state every 0.5 s
+  const battVRef      = useRef(12.6);
+  const battSyncRef   = useRef(0);    // timer for display sync
 
   // ── Mesh / light refs ─────────────────────────────────────────────────────
-  const hlLMatRef   = useRef<any>(null);
-  const hlRMatRef   = useRef<any>(null);
-  const hlLLightRef = useRef<any>(null);
-  const hlRLightRef = useRef<any>(null);
-  const tlLMatRef   = useRef<any>(null);
-  const tlRMatRef   = useRef<any>(null);
-  const tlLLightRef = useRef<any>(null);
-  const tlRLightRef = useRef<any>(null);
-  const ignMatRef   = useRef<any>(null);
-  const hornMatRef  = useRef<any>(null);
-  const fuseMatRef  = useRef<any>(null);
-  const dashMatRef  = useRef<any>(null);
-  const intLightRef = useRef<any>(null);
-  const hlWireL     = useRef<any>(null);
-  const hlWireR     = useRef<any>(null);
-  const chargeWire  = useRef<any>(null);
+  const hlLMatRef    = useRef<any>(null);
+  const hlRMatRef    = useRef<any>(null);
+  const hlLLightRef  = useRef<any>(null);
+  const hlRLightRef  = useRef<any>(null);
+  const tlLMatRef    = useRef<any>(null);
+  const tlRMatRef    = useRef<any>(null);
+  const tlLLightRef  = useRef<any>(null);
+  const tlRLightRef  = useRef<any>(null);
+  // Brake lights (same mesh materials as tail lights but driven independently for brightness)
+  const brkLMatRef   = useRef<any>(null);  // duplicate material for brake
+  const brkRMatRef   = useRef<any>(null);
+  // Turn signal meshes (amber indicators, front + rear)
+  const tsFL_MatRef  = useRef<any>(null);  // turn signal front-left
+  const tsFR_MatRef  = useRef<any>(null);  // turn signal front-right
+  const tsRL_MatRef  = useRef<any>(null);  // turn signal rear-left
+  const tsRR_MatRef  = useRef<any>(null);  // turn signal rear-right
+  const tsFL_LRef    = useRef<any>(null);  // point light front-left
+  const tsFR_LRef    = useRef<any>(null);
+  const tsRL_LRef    = useRef<any>(null);
+  const tsRR_LRef    = useRef<any>(null);
+  const ignMatRef    = useRef<any>(null);
+  const hornMatRef   = useRef<any>(null);
+  const fuseMatRef   = useRef<any>(null);
+  const dashMatRef   = useRef<any>(null);
+  const intLightRef  = useRef<any>(null);
+  const hlWireL      = useRef<any>(null);
+  const hlWireR      = useRef<any>(null);
+  const chargeWire   = useRef<any>(null);
 
   const pSetsRef = useRef<Array<{
     offsets: Float32Array; positions: Float32Array; geo: any; curve: any;
   }>>([]);
 
   // ── State ─────────────────────────────────────────────────────────────────
-  const [hlOn,    setHlOn]    = useState(false);
-  const [tlOn,    setTlOn]    = useState(false);
-  const [ignOn,   setIgnOn]   = useState(false);
-  const [horn,    setHorn]    = useState(false);
-  const [fuse,    setFuse]    = useState(false);
+  const [hlOn,      setHlOn]      = useState(false);
+  const [tlOn,      setTlOn]      = useState(false);
+  const [brakeOn,   setBrakeOn]   = useState(false);
+  const [ignOn,     setIgnOn]     = useState(false);
+  const [horn,      setHorn]      = useState(false);
+  const [fuse,      setFuse]      = useState(false);
+  const [turn,      setTurn]      = useState<'off'|'left'|'right'|'hazard'>('off');
+  const [battV,     setBattV]     = useState(12.6);
   const hornTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { hlOnRef.current  = hlOn;  }, [hlOn]);
-  useEffect(() => { tlOnRef.current  = tlOn;  }, [tlOn]);
-  useEffect(() => { ignOnRef.current = ignOn; }, [ignOn]);
-  useEffect(() => { hornRef.current  = horn;  }, [horn]);
-  useEffect(() => { fuseRef.current  = fuse;  }, [fuse]);
+  useEffect(() => { hlOnRef.current    = hlOn;    }, [hlOn]);
+  useEffect(() => { tlOnRef.current    = tlOn;    }, [tlOn]);
+  useEffect(() => { brakeOnRef.current = brakeOn; }, [brakeOn]);
+  useEffect(() => { ignOnRef.current   = ignOn;   }, [ignOn]);
+  useEffect(() => { hornRef.current    = horn;    }, [horn]);
+  useEffect(() => { fuseRef.current    = fuse;    }, [fuse]);
+  useEffect(() => { turnRef.current    = turn;    }, [turn]);
 
   const handleHorn = () => {
     if (hornTimerRef.current) return;
@@ -79,11 +114,26 @@ export default function CarCircuit() {
   };
   useEffect(() => () => { if (hornTimerRef.current) clearTimeout(hornTimerRef.current); }, []);
 
+  // Blowing the fuse cuts headlights on the fused circuit
   const handleFuse = () => {
     setFuse((v) => {
       if (!v) setHlOn(false);
       return !v;
     });
+  };
+
+  // Cycle turn signal: off → left → right → hazard → off
+  const handleCycleTurn = (side: 'left' | 'right') => {
+    setTurn((prev) => {
+      if (prev === side) return 'off';        // pressing same side turns off
+      if (prev === 'off') return side;
+      if (prev === 'hazard') return 'off';
+      return 'hazard';                        // pressing opposite side = hazard
+    });
+  };
+
+  const handleHazard = () => {
+    setTurn((prev) => prev === 'hazard' ? 'off' : 'hazard');
   };
 
   // ── Scene setup ───────────────────────────────────────────────────────────
@@ -365,6 +415,22 @@ export default function CarCircuit() {
       hlRL.position.set(0.76, 0.72, -2.4);
       scene.add(hlRL); hlRLightRef.current = hlRL;
 
+      // ── FRONT TURN SIGNAL INDICATORS (amber) ────────────────────────────
+      const { mat: tsFLM } = mkBox(0.22, 0.12, 0.08, 0x553300, -1.04, 0.64, -2.35,
+        { emissive: new THREE.Color(0x221100), emissiveIntensity: 1 });
+      tsFL_MatRef.current = tsFLM;
+      const { mat: tsFRM } = mkBox(0.22, 0.12, 0.08, 0x553300,  1.04, 0.64, -2.35,
+        { emissive: new THREE.Color(0x221100), emissiveIntensity: 1 });
+      tsFR_MatRef.current = tsFRM;
+
+      const tsFLL = new THREE.PointLight(0xff8800, 0, 3);
+      tsFLL.position.set(-1.04, 0.67, -2.4);
+      scene.add(tsFLL); tsFL_LRef.current = tsFLL;
+
+      const tsFRL = new THREE.PointLight(0xff8800, 0, 3);
+      tsFRL.position.set(1.04, 0.67, -2.4);
+      scene.add(tsFRL); tsFR_LRef.current = tsFRL;
+
       // ── TAIL LIGHTS ──────────────────────────────────────────────────────
       const { mat: tlLM } = mkBox(0.44, 0.22, 0.08, 0x220000, -0.72, 0.66, 2.36,
         { emissive: new THREE.Color(0x330000), emissiveIntensity: 1 });
@@ -381,6 +447,22 @@ export default function CarCircuit() {
       tlRL.position.set(0.72, 0.70, 2.4);
       scene.add(tlRL); tlRLightRef.current = tlRL;
 
+      // ── REAR TURN SIGNAL INDICATORS (amber, inboard of tail lights) ───────
+      const { mat: tsRLM } = mkBox(0.24, 0.18, 0.08, 0x553300, -1.08, 0.66, 2.36,
+        { emissive: new THREE.Color(0x221100), emissiveIntensity: 1 });
+      tsRL_MatRef.current = tsRLM;
+      const { mat: tsRRM } = mkBox(0.24, 0.18, 0.08, 0x553300,  1.08, 0.66, 2.36,
+        { emissive: new THREE.Color(0x221100), emissiveIntensity: 1 });
+      tsRR_MatRef.current = tsRRM;
+
+      const tsRLL = new THREE.PointLight(0xff8800, 0, 3);
+      tsRLL.position.set(-1.08, 0.70, 2.4);
+      scene.add(tsRLL); tsRL_LRef.current = tsRLL;
+
+      const tsRRL = new THREE.PointLight(0xff8800, 0, 3);
+      tsRRL.position.set(1.08, 0.70, 2.4);
+      scene.add(tsRRL); tsRR_LRef.current = tsRRL;
+
       // ── WIRING ───────────────────────────────────────────────────────────
       const mkWire = (pts: any[], color: number, emissiveSeed = 0x221100) => {
         const curve = new THREE.CatmullRomCurve3(pts);
@@ -393,7 +475,7 @@ export default function CarCircuit() {
         return { curve, mat };
       };
 
-      // Battery → fuse box
+      // Battery → fuse box (red = +12V)
       mkWire([
         new THREE.Vector3(-0.64, 0.94, -1.50),
         new THREE.Vector3(-0.30, 0.72, -1.20),
@@ -416,7 +498,7 @@ export default function CarCircuit() {
       ], 0xff5555, 0x441100);
       hlWireR.current = hcRMat;
 
-      // Alternator → battery (charging)
+      // Alternator → battery (charging, yellow)
       const { curve: cc, mat: ccMat } = mkWire([
         new THREE.Vector3(0.56, 0.94, -1.50),
         new THREE.Vector3(0.0,  0.94, -1.50),
@@ -424,12 +506,12 @@ export default function CarCircuit() {
       ], 0xffcc00, 0x664400);
       chargeWire.current = ccMat;
 
-      // Ground (static, always dark grey)
+      // Ground — black wire from battery − terminal to chassis floor
       mkWire([
         new THREE.Vector3(-0.64, 0.20, -1.50),
         new THREE.Vector3(-0.64, 0.08, -1.50),
-        new THREE.Vector3(0, 0.06, 0),
-      ], 0x556677, 0x223344);
+        new THREE.Vector3(0, 0.05, 0),
+      ], 0x222222, 0x111111);
 
       // ── PARTICLES ────────────────────────────────────────────────────────
       const mkPS = (curve: any, n: number) => {
@@ -454,13 +536,52 @@ export default function CarCircuit() {
 
         if (controlsRef.current) controlsRef.current.update();
 
-        const hl   = hlOnRef.current  && !fuseRef.current;
-        const tl   = tlOnRef.current;
-        const ign  = ignOnRef.current;
-        const hrnA = hornRef.current;
-        const fuze = fuseRef.current;
+        const hl    = hlOnRef.current  && !fuseRef.current;
+        const tl    = tlOnRef.current;
+        const brk   = brakeOnRef.current;
+        const ign   = ignOnRef.current;
+        const hrnA  = hornRef.current;
+        const fuze  = fuseRef.current;
+        const ts    = turnRef.current;
 
-        // Headlights
+        // ── Turn signal flash (1.5 Hz = 0.33 s per half-cycle) ────────────
+        turnPhaseRef.current += dt;
+        if (turnPhaseRef.current > 0.33) {
+          turnPhaseRef.current -= 0.33;
+          turnFlashRef.current = !turnFlashRef.current;
+        }
+        const flash = turnFlashRef.current;
+        const tsLeft  = (ts === 'left'  || ts === 'hazard') && flash;
+        const tsRight = (ts === 'right' || ts === 'hazard') && flash;
+
+        // ── Dynamic battery voltage ────────────────────────────────────────
+        // Total current draw (used for discharge rate)
+        const hlI_  = hl  ? HL_AMPS   : 0;
+        const tlI_  = tl  ? TL_AMPS   : 0;
+        const brkI_ = brk ? BRK_AMPS  : 0;
+        const trnI_ = (ts !== 'off') ? TURN_AMPS : 0;
+        const hrnI_ = hrnA ? HORN_AMPS : 0;
+        const intI_ = ign  ? INT_AMPS  : 0;
+        const totalDraw = hlI_ + tlI_ + brkI_ + trnI_ + hrnI_ + intI_;
+
+        if (ign) {
+          // Alternator charges battery toward 14.2 V
+          battVRef.current = Math.min(14.2, battVRef.current + 0.4 * dt);
+        } else if (totalDraw > 0) {
+          // Drain coefficient 0.003: at 10 A total draw, battery depletes from 12.6 → 10.5 V in ~60 s
+          battVRef.current = Math.max(10.5, battVRef.current - totalDraw * 0.003 * dt);
+        } else {
+          // Slowly recover to resting voltage when nothing is on
+          battVRef.current += (12.6 - battVRef.current) * 0.01 * dt;
+        }
+        // Sync display state every 0.5 s
+        battSyncRef.current += dt;
+        if (battSyncRef.current > 0.5) {
+          battSyncRef.current = 0;
+          setBattV(Math.round(battVRef.current * 10) / 10);
+        }
+
+        // ── Headlights ────────────────────────────────────────────────────
         if (hlLMatRef.current) hlLMatRef.current.emissive.set(hl ? 0xffffff : 0x223344);
         if (hlRMatRef.current) hlRMatRef.current.emissive.set(hl ? 0xffffff : 0x223344);
         if (hlLLightRef.current) {
@@ -472,19 +593,35 @@ export default function CarCircuit() {
           hlRLightRef.current.intensity += (t - hlRLightRef.current.intensity) * 0.12;
         }
 
-        // Tail lights
-        if (tlLMatRef.current) tlLMatRef.current.emissive.set(tl ? 0xff3300 : 0x440000);
-        if (tlRMatRef.current) tlRMatRef.current.emissive.set(tl ? 0xff3300 : 0x440000);
+        // ── Tail lights (dim) + Brake lights (bright) ────────────────────
+        // Brake overrides tail: when braking, use bright red even without tail on
+        const tlBright = brk ? 0xff0000 : (tl ? 0xff3300 : 0x440000);
+        const tlIntens = brk ? 4.5 : (tl ? 2.0 : 0);
+        if (tlLMatRef.current) tlLMatRef.current.emissive.set(tlBright);
+        if (tlRMatRef.current) tlRMatRef.current.emissive.set(tlBright);
         if (tlLLightRef.current) {
-          const t = tl ? 2.0 : 0;
-          tlLLightRef.current.intensity += (t - tlLLightRef.current.intensity) * 0.12;
+          tlLLightRef.current.intensity += (tlIntens - tlLLightRef.current.intensity) * 0.12;
         }
         if (tlRLightRef.current) {
-          const t = tl ? 2.0 : 0;
-          tlRLightRef.current.intensity += (t - tlRLightRef.current.intensity) * 0.12;
+          tlRLightRef.current.intensity += (tlIntens - tlRLightRef.current.intensity) * 0.12;
         }
 
-        // Ignition / dashboard
+        // ── Turn signals (amber flash) ────────────────────────────────────
+        const tsLColor  = tsLeft  ? 0xff8800 : 0x221100;
+        const tsRColor  = tsRight ? 0xff8800 : 0x221100;
+        const tsLIntens = tsLeft  ? 2.5 : 0;
+        const tsRIntens = tsRight ? 2.5 : 0;
+
+        if (tsFL_MatRef.current) tsFL_MatRef.current.emissive.set(tsLColor);
+        if (tsFR_MatRef.current) tsFR_MatRef.current.emissive.set(tsRColor);
+        if (tsRL_MatRef.current) tsRL_MatRef.current.emissive.set(tsLColor);
+        if (tsRR_MatRef.current) tsRR_MatRef.current.emissive.set(tsRColor);
+        if (tsFL_LRef.current)   tsFL_LRef.current.intensity  = tsLIntens;
+        if (tsFR_LRef.current)   tsFR_LRef.current.intensity  = tsRIntens;
+        if (tsRL_LRef.current)   tsRL_LRef.current.intensity  = tsLIntens;
+        if (tsRR_LRef.current)   tsRR_LRef.current.intensity  = tsRIntens;
+
+        // ── Ignition / dashboard ──────────────────────────────────────────
         if (ignMatRef.current) ignMatRef.current.emissive.set(ign ? 0x00ff66 : 0x222222);
         if (dashMatRef.current) {
           const t = ign ? 0.65 : 0.3;
@@ -498,10 +635,11 @@ export default function CarCircuit() {
         // Horn
         if (hornMatRef.current) hornMatRef.current.emissive.set(hrnA ? 0xff6600 : 0x111111);
 
-        // Fuse box
+        // ── Fuse box ─────────────────────────────────────────────────────
+        // Blown fuse glows red; shows fuse amp rating
         if (fuseMatRef.current) fuseMatRef.current.emissive.set(fuze ? 0xff2200 : 0x000000);
 
-        // Wire glow — always visible, pulse bright when active
+        // ── Wire glow — pulses bright when circuits are active ────────────
         if (hlWireL.current) hlWireL.current.emissive.set(hl ? 0xff3311 : 0x441100);
         if (hlWireR.current) hlWireR.current.emissive.set(hl ? 0xff3311 : 0x441100);
         if (chargeWire.current) chargeWire.current.emissive.set(ign ? 0xff9900 : 0x664400);
@@ -563,19 +701,26 @@ export default function CarCircuit() {
     };
   }, []);
 
-  // Derived values
-  const bv       = ignOn ? 13.8 : 12.6;
-  const hlI      = (hlOn && !fuse) ? 8 : 0;
-  const tlI      = tlOn ? 2 : 0;
-  const hornI    = horn ? 3 : 0;
-  const intI     = ignOn ? 1 : 0;
-  const total    = hlI + tlI + hornI + intI;
+  // Derived values — use named constants so values match scene amp ratings
+  const hlI   = (hlOn && !fuse) ? HL_AMPS   : 0;
+  const tlI   = tlOn            ? TL_AMPS   : 0;
+  const brkI  = brakeOn         ? BRK_AMPS  : 0;
+  const hornI = horn             ? HORN_AMPS : 0;
+  const intI  = ignOn            ? INT_AMPS  : 0;
+  const trnI  = turn !== 'off'   ? TURN_AMPS : 0;
+  const total = hlI + tlI + brkI + hornI + intI + trnI;
+
+  const battLow  = battV < 11.8;
+  const battWarn = battV < 12.2;
+
   const circuits = [
-    hlOn && !fuse && 'Headlights (8A)',
-    tlOn && 'Tail lights (2A)',
-    horn && 'Horn (3A)',
-    ignOn && 'Interior (1A)',
-    fuse && '⚠ Fuse blown',
+    hlOn && !fuse && `Headlights (${HL_AMPS} A)`,
+    tlOn          && `Tail lights (${TL_AMPS} A)`,
+    brakeOn       && `Brake lights (${BRK_AMPS} A)`,
+    turn !== 'off' && `Turn signal ${turn} (${TURN_AMPS} A)`,
+    horn          && `Horn (${HORN_AMPS} A)`,
+    ignOn         && `Interior / instruments (${INT_AMPS} A)`,
+    fuse          && `⚠ Fuse blown (${FUSE_AMPS} A rated)`,
   ].filter(Boolean);
 
   return (
@@ -585,18 +730,39 @@ export default function CarCircuit() {
       {/* Telemetry */}
       <div style={{
         position: 'absolute', top: 12, left: 12,
-        background: 'rgba(8,8,20,0.88)', border: '1px solid rgba(136,204,255,0.25)',
+        background: 'rgba(8,8,20,0.90)', border: '1px solid rgba(136,204,255,0.25)',
         borderRadius: 8, padding: '8px 12px', color: '#88ccff', fontSize: '0.78rem', lineHeight: 1.7,
-        pointerEvents: 'none',
+        pointerEvents: 'none', maxWidth: 230,
       }}>
         <div style={{ fontWeight: 700, marginBottom: 2 }}>🚗 Car Circuit</div>
-        <div>Battery: <span style={{ color: '#fff' }}>{bv} V</span></div>
-        <div>Total draw: <span style={{ color: total > 10 ? '#ff8888' : '#fff' }}>{total} A</span></div>
+        <div>
+          Battery:{' '}
+          <span style={{ color: battLow ? '#ff5555' : battWarn ? '#ffaa44' : '#fff' }}>
+            {battV.toFixed(1)} V
+          </span>
+          {' '}
+          <span style={{ color: 'rgba(136,204,255,0.55)', fontSize: '0.70rem' }}>
+            {ignOn ? '⚡ Charging' : battLow ? '🪫 Low!' : battWarn ? '⚠ Draining' : ''}
+          </span>
+        </div>
+        <div>
+          Total draw:{' '}
+          <span style={{ color: total > 12 ? '#ff8888' : '#fff' }}>{total} A</span>
+        </div>
         {circuits.length > 0 && (
-          <div style={{ marginTop: 4, color: fuse ? '#ff6666' : '#88ccff' }}>
+          <div style={{ marginTop: 4, color: fuse ? '#ff6666' : '#88ccff', fontSize: '0.74rem', lineHeight: 1.5 }}>
             {(circuits as string[]).map((c, i) => <div key={i}>{c}</div>)}
           </div>
         )}
+        <div style={{
+          marginTop: 6, borderTop: '1px solid rgba(136,204,255,0.15)',
+          paddingTop: 5, fontSize: '0.71rem', color: 'rgba(136,204,255,0.7)', lineHeight: 1.6,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 2, color: 'rgba(136,204,255,0.9)' }}>Wire colors (SAE)</div>
+          <div><span style={{ color: '#f55', fontFamily: 'monospace' }}>██</span> Red = +12 V (power)</div>
+          <div><span style={{ color: '#fc0', fontFamily: 'monospace' }}>██</span> Yellow = Charging</div>
+          <div><span style={{ color: '#444', fontFamily: 'monospace' }}>██</span> Black = Ground (−)</div>
+        </div>
       </div>
 
       {/* Orbit hint */}
@@ -616,22 +782,51 @@ export default function CarCircuit() {
         display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '96vw',
       }}>
         <button
-          style={{ ...BTN, ...(hlOn && !fuse ? { borderColor:'rgba(255,255,120,0.6)', color:'#ffffaa' } : {}) }}
+          style={{ ...BTN, ...(ignOn ? { borderColor:'rgba(0,255,100,0.5)', color:'#88ffaa' } : {}) }}
+          onClick={() => setIgnOn((v) => !v)}
+        >
+          {ignOn ? '🔑 Engine ON' : '🔑 Ignition'}
+        </button>
+        <button
+          style={{ ...BTN, ...(hlOn && !fuse ? { borderColor:'rgba(255,255,120,0.6)', color:'#ffffaa' } : {}),
+            ...(fuse ? { opacity: 0.5 } : {}) }}
           onClick={() => { if (!fuse) setHlOn((v) => !v); }}
         >
-          💡 Headlights
+          💡 Headlights{fuse ? ' (fuse!)' : ` (${HL_AMPS} A)`}
         </button>
         <button
           style={{ ...BTN, ...(tlOn ? { borderColor:'rgba(255,80,80,0.5)', color:'#ff8888' } : {}) }}
           onClick={() => setTlOn((v) => !v)}
         >
-          🔴 Tail Lights
+          🔴 Tail Lights ({TL_AMPS} A)
         </button>
         <button
-          style={{ ...BTN, ...(ignOn ? { borderColor:'rgba(0,255,100,0.5)', color:'#88ffaa' } : {}) }}
-          onClick={() => setIgnOn((v) => !v)}
+          style={{ ...BTN, ...(brakeOn ? { borderColor:'rgba(255,40,40,0.7)', color:'#ff6666' } : {}) }}
+          onMouseDown={() => setBrakeOn(true)}
+          onMouseUp={() => setBrakeOn(false)}
+          onMouseLeave={() => setBrakeOn(false)}
+          onTouchStart={() => setBrakeOn(true)}
+          onTouchEnd={() => setBrakeOn(false)}
         >
-          🔑 Ignition
+          🛑 Brake ({BRK_AMPS} A)
+        </button>
+        <button
+          style={{ ...BTN, ...(turn === 'left' ? { borderColor:'rgba(255,160,0,0.7)', color:'#ffcc44' } : {}) }}
+          onClick={() => handleCycleTurn('left')}
+        >
+          ◄ Left Signal
+        </button>
+        <button
+          style={{ ...BTN, ...(turn === 'right' ? { borderColor:'rgba(255,160,0,0.7)', color:'#ffcc44' } : {}) }}
+          onClick={() => handleCycleTurn('right')}
+        >
+          Right Signal ►
+        </button>
+        <button
+          style={{ ...BTN, ...(turn === 'hazard' ? { borderColor:'rgba(255,160,0,0.8)', color:'#ffbb00', fontWeight: 700 } : {}) }}
+          onClick={handleHazard}
+        >
+          ⚠ Hazard
         </button>
         <button style={BTN} onClick={handleHorn}>
           {horn ? '📯 BEEP!' : '📯 Horn'}
@@ -640,7 +835,7 @@ export default function CarCircuit() {
           style={{ ...BTN, ...(fuse ? { borderColor:'rgba(255,80,80,0.5)', color:'#ff8888' } : {}) }}
           onClick={handleFuse}
         >
-          {fuse ? '🔧 Fix Fuse' : '⚡ Blow Fuse'}
+          {fuse ? `🔧 Fix Fuse (${FUSE_AMPS} A)` : `⚡ Blow Fuse (${FUSE_AMPS} A)`}
         </button>
       </div>
     </div>
