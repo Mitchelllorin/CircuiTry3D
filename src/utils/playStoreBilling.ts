@@ -279,7 +279,7 @@ let initialized = false;
 let initPromise: Promise<boolean> | null = null;
 let listenersRegistered = false;
 
-function getErrorMessage(error: unknown, fallback: string): string {
+function getErrorMessageOrFallback(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
@@ -379,7 +379,7 @@ export async function purchasePlan(
     return true;
   } catch (error) {
     dispatchPurchaseFailed({
-      error: getErrorMessage(error, `Unable to start purchase for ${sku}.`),
+      error: getErrorMessageOrFallback(error, `Unable to start purchase for ${sku}.`),
     });
     return false;
   }
@@ -427,7 +427,7 @@ export async function purchaseProUnlock(): Promise<boolean> {
     return true;
   } catch (error) {
     dispatchPurchaseFailed({
-      error: getErrorMessage(error, `Unable to start purchase for ${PRO_UNLOCK_SKU}.`),
+      error: getErrorMessageOrFallback(error, `Unable to start purchase for ${PRO_UNLOCK_SKU}.`),
     });
     return false;
   }
@@ -451,7 +451,7 @@ export async function purchasePremiumUnlock(): Promise<boolean> {
     return true;
   } catch (error) {
     dispatchPurchaseFailed({
-      error: getErrorMessage(error, `Unable to start purchase for ${PREMIUM_UNLOCK_SKU}.`),
+      error: getErrorMessageOrFallback(error, `Unable to start purchase for ${PREMIUM_UNLOCK_SKU}.`),
     });
     return false;
   }
@@ -478,7 +478,7 @@ export async function purchaseProSubscription(cycle: "monthly" | "yearly"): Prom
     return true;
   } catch (error) {
     dispatchPurchaseFailed({
-      error: getErrorMessage(error, `Unable to start purchase for ${sku}.`),
+      error: getErrorMessageOrFallback(error, `Unable to start purchase for ${sku}.`),
     });
     return false;
   }

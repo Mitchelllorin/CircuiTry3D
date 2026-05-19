@@ -72,6 +72,22 @@ function buildYearlyLabel(monthlyLabel: string, yearlyLabel?: string): string {
   return `${currencySymbol}${yearly.toFixed(2)} / yr`;
 }
 
+function buildConsumerCtaLabel(options: {
+  purchaseStatus: PurchaseStatus;
+  onAndroid: boolean;
+  supportsDirectWebCheckout: boolean;
+  actionLabel: string;
+  priceLabel?: string;
+}): string {
+  const { purchaseStatus, onAndroid, supportsDirectWebCheckout, actionLabel, priceLabel } = options;
+
+  if (purchaseStatus === "purchasing") return "Opening Google Play…";
+  if (!onAndroid && !supportsDirectWebCheckout) {
+    return actionLabel === "Subscribe" ? "Subscribe in Google Play" : "Get it on Google Play";
+  }
+  return priceLabel ? `${actionLabel} — ${priceLabel}` : actionLabel;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 /**
@@ -270,11 +286,13 @@ export default function PricingSection() {
             onClick={handlePurchasePremium}
             disabled={purchaseStatus === "purchasing"}
           >
-            {purchaseStatus === "purchasing"
-              ? "Opening Google Play…"
-              : !onAndroid && !supportsDirectWebCheckout
-              ? "Get it on Google Play"
-              : `Unlock — ${resolveTierPrice(tier)}`}
+            {buildConsumerCtaLabel({
+              purchaseStatus,
+              onAndroid,
+              supportsDirectWebCheckout,
+              actionLabel: "Unlock",
+              priceLabel: resolveTierPrice(tier),
+            })}
           </button>
         );
       }
@@ -288,11 +306,13 @@ export default function PricingSection() {
             onClick={handlePurchasePro}
             disabled={purchaseStatus === "purchasing"}
           >
-            {purchaseStatus === "purchasing"
-              ? "Opening Google Play…"
-              : !onAndroid && !supportsDirectWebCheckout
-              ? "Subscribe in Google Play"
-              : `Subscribe — ${resolveTierPrice(tier, proCycle)}`}
+            {buildConsumerCtaLabel({
+              purchaseStatus,
+              onAndroid,
+              supportsDirectWebCheckout,
+              actionLabel: "Subscribe",
+              priceLabel: resolveTierPrice(tier, proCycle),
+            })}
           </button>
         );
       }
