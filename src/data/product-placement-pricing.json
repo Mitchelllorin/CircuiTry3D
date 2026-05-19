@@ -1,0 +1,157 @@
+{
+  "currency": "USD",
+  "program": "Component Arena Product Placement",
+  "description": "Partner with CircuiTry3D to feature your electronic components in our Component Arena, reaching thousands of students, educators, and STEM enthusiasts learning circuit design.",
+  "tiers": [
+    {
+      "id": "featured",
+      "name": "Featured Component",
+      "tagline": "Get your component seen by every user",
+      "price": {
+        "monthly": 25000,
+        "annual": 250000
+      },
+      "placement": "Component library listing",
+      "features": [
+        "Branded 3D component model in Arena",
+        "Component datasheet link integration",
+        "Logo placement in component details panel",
+        "Monthly impression analytics report"
+      ],
+      "impressions": "~5,000-15,000/month estimate",
+      "limit": "Up to 5 SKUs per agreement",
+      "cta": {
+        "label": "Request Placement",
+        "type": "link",
+        "href": "mailto:partnerships@circuitry3d.net?subject=Featured%20Component%20Placement"
+      }
+    },
+    {
+      "id": "premium",
+      "name": "Premium Partner",
+      "tagline": "Premium visibility + exclusive features",
+      "price": {
+        "monthly": 50000,
+        "annual": 500000
+      },
+      "placement": "Featured carousel + component library",
+      "features": [
+        "All Featured Component benefits",
+        "Rotating homepage carousel placement",
+        "Priority sorting in component search",
+        "Interactive tutorial featuring your components",
+        "Co-branded lesson plan templates",
+        "Quarterly engagement analytics"
+      ],
+      "impressions": "~15,000-40,000/month estimate",
+      "limit": "Up to 15 SKUs per agreement",
+      "exclusive": true,
+      "exclusiveNote": "Category exclusivity available (e.g., sole capacitor manufacturer partner)",
+      "cta": {
+        "label": "Request Partnership",
+        "type": "link",
+        "href": "mailto:partnerships@circuitry3d.net?subject=Premium%20Partner%20Placement"
+      }
+    },
+    {
+      "id": "strategic",
+      "name": "Strategic Alliance",
+      "tagline": "Deep integration + co-development",
+      "price": {
+        "monthly": null,
+        "annual": null
+      },
+      "priceNote": "Custom pricing based on scope",
+      "placement": "Full platform integration",
+      "features": [
+        "All Premium Partner benefits",
+        "Custom 3D component development",
+        "Dedicated landing page for your brand",
+        "API integration for real-time inventory/pricing",
+        "Joint marketing campaigns",
+        "White-label licensing options",
+        "Direct educator outreach programs",
+        "Early access to new platform features"
+      ],
+      "impressions": "Custom metrics and KPIs",
+      "limit": "Unlimited SKUs",
+      "cta": {
+        "label": "Schedule Discovery Call",
+        "type": "link",
+        "href": "mailto:partnerships@circuitry3d.net?subject=Strategic%20Alliance%20Inquiry"
+      }
+    }
+  ],
+  "addons": [
+    {
+      "id": "tutorial-sponsorship",
+      "name": "Tutorial Sponsorship",
+      "description": "Sponsor an interactive tutorial series featuring your components",
+      "price": 75000,
+      "unit": "per tutorial series (3-5 lessons)",
+      "features": [
+        "Your components used in hands-on exercises",
+        "Brand logo in tutorial interface",
+        "Link to purchase featured components",
+        "Permanent placement in tutorial library"
+      ]
+    },
+    {
+      "id": "competition-sponsorship",
+      "name": "Competition Sponsorship",
+      "description": "Sponsor student circuit design competitions",
+      "price": 150000,
+      "unit": "per competition event",
+      "features": [
+        "Title sponsorship branding",
+        "Component kits shipped to winners",
+        "Social media promotion",
+        "Press release distribution"
+      ]
+    },
+    {
+      "id": "educator-kit",
+      "name": "Educator Kit Integration",
+      "description": "Bundle your physical components with digital CircuiTry3D access",
+      "price": null,
+      "priceNote": "Revenue share model - contact for details",
+      "features": [
+        "Physical kit matches digital components",
+        "QR code linking kit to lessons",
+        "Co-branded packaging option",
+        "Educator discount program"
+      ]
+    }
+  ],
+  "valueProposition": {
+    "targetAudience": {
+      "students": "Middle school through college-level STEM students",
+      "educators": "Science and technology teachers across 50 states",
+      "institutions": "School districts, trade schools, STEM programs",
+      "diy": "Hobbyists, makers, and self-taught learners"
+    },
+    "metrics": {
+      "platformUsers": "Growing user base of engaged learners",
+      "averageSessionTime": "15-30 minutes per session",
+      "returnRate": "High engagement from classroom deployments",
+      "demographics": "Ages 12-25, STEM-focused"
+    },
+    "benefits": [
+      "Early brand exposure to future engineers and makers",
+      "Educational association builds brand trust",
+      "Direct pipeline to component purchase decisions",
+      "Authentic engagement vs. traditional advertising"
+    ]
+  },
+  "terms": {
+    "paymentTerms": "Net 30 invoicing, quarterly or annual billing available",
+    "contractLength": "Minimum 3-month commitment for Featured, 6-month for Premium",
+    "analytics": "Monthly reports provided via email or dashboard access",
+    "cancellation": "30-day written notice for non-renewal"
+  },
+  "contact": {
+    "primary": "partnerships@circuitry3d.net",
+    "inquiry": "hello@circuitry3d.com",
+    "website": "https://circuitry3d.net"
+  }
+}
