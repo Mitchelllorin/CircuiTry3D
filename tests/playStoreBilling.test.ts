@@ -95,16 +95,18 @@ describe("playStoreBilling", () => {
     };
 
     const { module, window } = await loadPlayStoreBilling(plugin);
-    const failures: Array<{ cancelled?: boolean; error?: string }> = [];
+    const capturedFailureEvents: Array<{ cancelled?: boolean; error?: string }> = [];
 
     window.addEventListener("circuitry3d:purchaseFailed", (event) => {
-      failures.push((event as CustomEvent<{ cancelled?: boolean; error?: string }>).detail);
+      capturedFailureEvents.push(
+        (event as CustomEvent<{ cancelled?: boolean; error?: string }>).detail
+      );
     });
 
     await expect(module.purchaseProSubscription("monthly")).resolves.toBe(false);
 
     expect(plugin.purchase).not.toHaveBeenCalled();
-    expect(failures).toEqual([
+    expect(capturedFailureEvents).toEqual([
       {
         cancelled: false,
         error: "Google Play Billing is unavailable on this device.",

@@ -280,7 +280,7 @@ let initPromise: Promise<boolean> | null = null;
 let listenersRegistered = false;
 
 function getErrorMessageOrFallback(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+  return error instanceof Error ? error.message || fallback : fallback;
 }
 
 function dispatchPurchaseFailed(detail: { cancelled?: boolean; error?: string }): void {
@@ -297,7 +297,8 @@ function dispatchPurchaseFailed(detail: { cancelled?: boolean; error?: string })
 /**
  * Initialize the billing client and register purchase event listeners.
  * Safe to call multiple times — only connects once.
- * Returns false when billing could not be initialised.
+ * Returns false when not running on Android or when billing could not be
+ * initialised.
  */
 export async function initBilling(): Promise<boolean> {
   if (!isAndroidApp()) return false;

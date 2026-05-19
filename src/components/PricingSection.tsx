@@ -34,6 +34,10 @@ type ProCycle = "monthly" | "yearly";
 
 type PurchaseStatus = "idle" | "purchasing" | "failed" | "cancelled";
 
+const OPENING_GOOGLE_PLAY_LABEL = "Opening Google Play…";
+const GET_ON_GOOGLE_PLAY_LABEL = "Get it on Google Play";
+const SUBSCRIBE_IN_GOOGLE_PLAY_LABEL = "Subscribe in Google Play";
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
@@ -81,9 +85,11 @@ function buildConsumerCtaLabel(options: {
 }): string {
   const { purchaseStatus, onAndroid, supportsDirectWebCheckout, actionLabel, priceLabel } = options;
 
-  if (purchaseStatus === "purchasing") return "Opening Google Play…";
+  if (purchaseStatus === "purchasing") return OPENING_GOOGLE_PLAY_LABEL;
   if (!onAndroid && !supportsDirectWebCheckout) {
-    return actionLabel === "Subscribe" ? "Subscribe in Google Play" : "Get it on Google Play";
+    return actionLabel === "Subscribe"
+      ? SUBSCRIBE_IN_GOOGLE_PLAY_LABEL
+      : GET_ON_GOOGLE_PLAY_LABEL;
   }
   return priceLabel ? `${actionLabel} — ${priceLabel}` : actionLabel;
 }
