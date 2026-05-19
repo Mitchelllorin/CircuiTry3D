@@ -20,13 +20,13 @@ export default function Home() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<LandingMessage>) => {
-      // Only accept messages from the landing page iframe.  Checking
-      // event.source is more reliable than event.origin because some
-      // browsers/environments report a sandboxed iframe's origin as "null"
-      // even when allow-same-origin is set, which would silently block the
-      // message while event.preventDefault() has already suppressed the
-      // fallback link navigation.
-      if (event.source !== iframeRef.current?.contentWindow) {
+      // Prefer strict source matching when available, but also accept
+      // same-origin/"null" sandboxed origins for mobile browsers that may
+      // report iframe sources inconsistently.
+      const isFromLandingIframe = event.source === iframeRef.current?.contentWindow;
+      const isTrustedOrigin =
+        event.origin === window.location.origin || event.origin === "null";
+      if (!isFromLandingIframe && !isTrustedOrigin) {
         return;
       }
 
@@ -39,7 +39,11 @@ export default function Home() {
         return;
       }
 
-      const nextPath = typeof message.path === "string" && message.path.trim().length > 0 ? message.path : "/";
+      const requestedPath =
+        typeof message.path === "string" && message.path.trim().length > 0
+          ? message.path.trim()
+          : "/";
+      const nextPath = requestedPath.startsWith("/") ? requestedPath : "/";
 
       // If a Vercel demo URL is configured and the user is trying to open the
       // builder, send them to the demo deployment in a new tab instead.
