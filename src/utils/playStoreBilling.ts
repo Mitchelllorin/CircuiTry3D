@@ -276,50 +276,81 @@ function tierFromProducts(products: string[]): SubscriptionTier {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 let initialized = false;
+let initPromise: Promise<boolean> | null = null;
+let listenersRegistered = false;
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function dispatchPurchaseFailed(detail: { cancelled?: boolean; error?: string }): void {
+  window.dispatchEvent(
+    new CustomEvent("circuitry3d:purchaseFailed", {
+      detail: {
+        cancelled: detail.cancelled ?? false,
+        error: detail.error,
+      },
+    })
+  );
+}
 
 /**
  * Initialize the billing client and register purchase event listeners.
  * Safe to call multiple times — only connects once.
- * No-op when not running on Android.
+ * Returns false when billing could not be initialised.
  */
-export async function initBilling(): Promise<void> {
-  if (!isAndroidApp() || initialized) return;
+export async function initBilling(): Promise<boolean> {
+  if (!isAndroidApp()) return false;
+  if (initialized) return true;
+  if (initPromise) return initPromise;
 
-  try {
-    await BillingPluginProxy.initialize();
-    initialized = true;
+  initPromise = (async () => {
+    try {
+      await BillingPluginProxy.initialize();
 
-    await BillingPluginProxy.addListener("purchaseCompleted", (result) => {
-      if (result.success && result.products) {
-        // Handle subscription tier upgrades (including downgrades to "free")
-        const tier = tierFromProducts(result.products);
-        setStoredTier(tier);
-        window.dispatchEvent(
-          new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
-        );
-        // Handle one-time Pro unlock (legacy SKU)
-        if (result.products.includes(PRO_UNLOCK_SKU)) {
-          setProPurchased(true);
-          window.dispatchEvent(new CustomEvent("circuitry3d:proUnlocked"));
-        }
-        // Handle one-time Premium Unlock (new SKU)
-        if (result.products.includes(PREMIUM_UNLOCK_SKU)) {
-          setPremiumPurchased(true);
-          window.dispatchEvent(new CustomEvent("circuitry3d:premiumUnlocked"));
-        }
+      if (!listenersRegistered) {
+        await BillingPluginProxy.addListener("purchaseCompleted", (result) => {
+          if (result.success && result.products) {
+            // Handle subscription tier upgrades (including downgrades to "free")
+            const tier = tierFromProducts(result.products);
+            setStoredTier(tier);
+            window.dispatchEvent(
+              new CustomEvent("circuitry3d:tierChanged", { detail: { tier } })
+            );
+            // Handle one-time Pro unlock (legacy SKU)
+            if (result.products.includes(PRO_UNLOCK_SKU)) {
+              setProPurchased(true);
+              window.dispatchEvent(new CustomEvent("circuitry3d:proUnlocked"));
+            }
+            // Handle one-time Premium Unlock (new SKU)
+            if (result.products.includes(PREMIUM_UNLOCK_SKU)) {
+              setPremiumPurchased(true);
+              window.dispatchEvent(new CustomEvent("circuitry3d:premiumUnlocked"));
+            }
+          }
+        });
+
+        await BillingPluginProxy.addListener("purchaseFailed", (result) => {
+          dispatchPurchaseFailed({
+            cancelled: result.cancelled ?? false,
+            error: result.error,
+          });
+        });
+
+        listenersRegistered = true;
       }
-    });
 
-    await BillingPluginProxy.addListener("purchaseFailed", (result) => {
-      window.dispatchEvent(
-        new CustomEvent("circuitry3d:purchaseFailed", {
-          detail: { cancelled: result.cancelled ?? false, error: result.error },
-        })
-      );
-    });
-  } catch {
-    // Billing unavailable (e.g., device has no Play Services)
-  }
+      initialized = true;
+      return true;
+    } catch {
+      // Billing unavailable (e.g., device has no Play Services)
+      return false;
+    } finally {
+      initPromise = null;
+    }
+  })();
+
+  return initPromise;
 }
 
 /**
@@ -337,10 +368,19 @@ export async function purchasePlan(
   const sku = PLAN_SKUS[planId]?.[cycle];
   if (!sku) return false;
 
+  const billingReady = await initBilling();
+  if (!billingReady) {
+    dispatchPurchaseFailed({ error: "Google Play Billing is unavailable on this device." });
+    return false;
+  }
+
   try {
     await BillingPluginProxy.purchase({ sku });
     return true;
-  } catch {
+  } catch (error) {
+    dispatchPurchaseFailed({
+      error: getErrorMessage(error, `Unable to start purchase for ${sku}.`),
+    });
     return false;
   }
 }
@@ -353,6 +393,7 @@ export async function purchasePlan(
  */
 export async function restorePurchases(): Promise<SubscriptionTier> {
   if (!isAndroidApp()) return getStoredTier();
+  if (!(await initBilling())) return getStoredTier();
 
   try {
     const { purchases } = await BillingPluginProxy.restorePurchases();
@@ -376,11 +417,18 @@ export async function restorePurchases(): Promise<SubscriptionTier> {
  */
 export async function purchaseProUnlock(): Promise<boolean> {
   if (!isAndroidApp()) return false;
+  if (!(await initBilling())) {
+    dispatchPurchaseFailed({ error: "Google Play Billing is unavailable on this device." });
+    return false;
+  }
 
   try {
     await BillingPluginProxy.purchaseInApp({ sku: PRO_UNLOCK_SKU });
     return true;
-  } catch {
+  } catch (error) {
+    dispatchPurchaseFailed({
+      error: getErrorMessage(error, `Unable to start purchase for ${PRO_UNLOCK_SKU}.`),
+    });
     return false;
   }
 }
@@ -393,11 +441,18 @@ export async function purchaseProUnlock(): Promise<boolean> {
  */
 export async function purchasePremiumUnlock(): Promise<boolean> {
   if (!isAndroidApp()) return false;
+  if (!(await initBilling())) {
+    dispatchPurchaseFailed({ error: "Google Play Billing is unavailable on this device." });
+    return false;
+  }
 
   try {
     await BillingPluginProxy.purchaseInApp({ sku: PREMIUM_UNLOCK_SKU });
     return true;
-  } catch {
+  } catch (error) {
+    dispatchPurchaseFailed({
+      error: getErrorMessage(error, `Unable to start purchase for ${PREMIUM_UNLOCK_SKU}.`),
+    });
     return false;
   }
 }
@@ -413,10 +468,18 @@ export async function purchaseProSubscription(cycle: "monthly" | "yearly"): Prom
   if (!isAndroidApp()) return false;
 
   const sku = cycle === "monthly" ? SUB_MONTHLY_SKU : SUB_YEARLY_SKU;
+  if (!(await initBilling())) {
+    dispatchPurchaseFailed({ error: "Google Play Billing is unavailable on this device." });
+    return false;
+  }
+
   try {
     await BillingPluginProxy.purchase({ sku });
     return true;
-  } catch {
+  } catch (error) {
+    dispatchPurchaseFailed({
+      error: getErrorMessage(error, `Unable to start purchase for ${sku}.`),
+    });
     return false;
   }
 }
@@ -429,6 +492,7 @@ export async function purchaseProSubscription(cycle: "monthly" | "yearly"): Prom
  */
 export async function restoreProPurchases(): Promise<boolean> {
   if (!isAndroidApp()) return userHasPro();
+  if (!(await initBilling())) return userHasPro();
 
   try {
     const { purchases } = await BillingPluginProxy.restoreInAppPurchases();
@@ -451,6 +515,7 @@ export async function restoreProPurchases(): Promise<boolean> {
  */
 export async function restorePremiumPurchases(): Promise<boolean> {
   if (!isAndroidApp()) return userHasPremium();
+  if (!(await initBilling())) return userHasPremium();
 
   try {
     const { purchases } = await BillingPluginProxy.restoreInAppPurchases();
@@ -476,6 +541,7 @@ export async function restorePremiumPurchases(): Promise<boolean> {
  */
 export async function getConsumerProductPrices(): Promise<Record<string, string>> {
   if (!isAndroidApp()) return {};
+  if (!(await initBilling())) return {};
 
   const prices: Record<string, string> = {};
 
@@ -522,6 +588,19 @@ export const WEB_PAYMENT_URL: string = (import.meta.env.VITE_PAYMENT_URL ?? "").
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.circuitry3d.app";
 
+function normalizeUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "");
+}
+
+/**
+ * Returns true when a dedicated web checkout is configured.
+ * A Play Store listing URL does not count as an in-browser checkout flow.
+ */
+export function hasWebPaymentCheckout(): boolean {
+  const paymentUrl = normalizeUrl(WEB_PAYMENT_URL);
+  return paymentUrl.length > 0 && paymentUrl !== normalizeUrl(PLAY_STORE_URL);
+}
+
 /**
  * Open the web payment page in a new tab.
  *
@@ -529,7 +608,7 @@ export const PLAY_STORE_URL =
  *          false otherwise (caller can show a fallback message).
  */
 export function openWebPayment(): boolean {
-  if (!WEB_PAYMENT_URL) return false;
+  if (!hasWebPaymentCheckout()) return false;
   window.open(WEB_PAYMENT_URL, "_blank", "noopener,noreferrer");
   return true;
 }

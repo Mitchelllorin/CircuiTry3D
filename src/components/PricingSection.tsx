@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import BrandSignature from "./BrandSignature";
 import {
   initBilling,
+  hasWebPaymentCheckout,
   isAndroidApp,
   openWebPayment,
-  WEB_PAYMENT_URL,
   PLAY_STORE_URL,
   purchasePremiumUnlock,
   purchaseProSubscription,
@@ -31,6 +31,8 @@ import "../styles/pricing.css";
 
 /** Billing cycle selector for the Pro subscription tier. */
 type ProCycle = "monthly" | "yearly";
+
+type PurchaseStatus = "idle" | "purchasing" | "failed" | "cancelled";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -98,6 +100,9 @@ export default function PricingSection() {
   const [proCycle, setProCycle] = useState<ProCycle>("monthly");
   // Restore-purchases UX state
   const [restoreStatus, setRestoreStatus] = useState<"idle" | "restoring" | "done">("idle");
+  const [purchaseStatus, setPurchaseStatus] = useState<PurchaseStatus>("idle");
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const supportsDirectWebCheckout = hasWebPaymentCheckout();
 
   // ── Initialise billing & fetch live prices ──────────────────────────────────
 
@@ -110,6 +115,30 @@ export default function PricingSection() {
       setLivePrices(prices);
     })();
   }, [onAndroid]);
+
+  useEffect(() => {
+    const clearPurchaseState = () => {
+      setPurchaseStatus("idle");
+      setPurchaseError(null);
+    };
+    const handleFailedPurchase = (event: Event) => {
+      const detail = (event as CustomEvent<{ cancelled?: boolean; error?: string }>).detail;
+      setPurchaseStatus(detail?.cancelled ? "cancelled" : "failed");
+      setPurchaseError(detail?.error ?? null);
+    };
+
+    window.addEventListener("circuitry3d:tierChanged", clearPurchaseState);
+    window.addEventListener("circuitry3d:premiumUnlocked", clearPurchaseState);
+    window.addEventListener("circuitry3d:proUnlocked", clearPurchaseState);
+    window.addEventListener("circuitry3d:purchaseFailed", handleFailedPurchase);
+
+    return () => {
+      window.removeEventListener("circuitry3d:tierChanged", clearPurchaseState);
+      window.removeEventListener("circuitry3d:premiumUnlocked", clearPurchaseState);
+      window.removeEventListener("circuitry3d:proUnlocked", clearPurchaseState);
+      window.removeEventListener("circuitry3d:purchaseFailed", handleFailedPurchase);
+    };
+  }, []);
 
   // ── Price resolution helpers ───────────────────────────────────────────────
 
@@ -152,28 +181,36 @@ export default function PricingSection() {
    */
   const handleWebPurchase = useCallback((): boolean => {
     if (isAndroidApp()) return false;
-    if (WEB_PAYMENT_URL) {
+    if (supportsDirectWebCheckout) {
       openWebPayment();
     } else {
       window.open(PLAY_STORE_URL, "_blank", "noopener,noreferrer");
     }
     return true;
-  }, []);
+  }, [supportsDirectWebCheckout]);
 
   /** Handle a tap on the Premium Unlock buy button. */
   const handlePurchasePremium = useCallback(async () => {
-    if (handleWebPurchase()) return;
+    setPurchaseStatus("purchasing");
+    setPurchaseError(null);
+    if (handleWebPurchase()) {
+      setPurchaseStatus("idle");
+      return;
+    }
     const launched = await purchasePremiumUnlock();
     if (!launched) {
-      // Billing unavailable on this device — nothing more we can do here;
-      // the billing plugin's purchaseFailed event handles UI feedback on Android.
       console.warn("[Pricing] purchasePremiumUnlock: billing unavailable");
     }
   }, [handleWebPurchase]);
 
   /** Handle a tap on the Pro Subscription buy button. */
   const handlePurchasePro = useCallback(async () => {
-    if (handleWebPurchase()) return;
+    setPurchaseStatus("purchasing");
+    setPurchaseError(null);
+    if (handleWebPurchase()) {
+      setPurchaseStatus("idle");
+      return;
+    }
     const launched = await purchaseProSubscription(proCycle);
     if (!launched) {
       console.warn("[Pricing] purchaseProSubscription: billing unavailable");
@@ -229,10 +266,15 @@ export default function PricingSection() {
           <button
             type="button"
             className="pricing-cta"
-            data-cta-type="play-store"
+            data-cta-type={!onAndroid && !supportsDirectWebCheckout ? "external" : "play-store"}
             onClick={handlePurchasePremium}
+            disabled={purchaseStatus === "purchasing"}
           >
-            Unlock — {resolveTierPrice(tier)}
+            {purchaseStatus === "purchasing"
+              ? "Opening Google Play…"
+              : !onAndroid && !supportsDirectWebCheckout
+              ? "Get it on Google Play"
+              : `Unlock — ${resolveTierPrice(tier)}`}
           </button>
         );
       }
@@ -242,17 +284,31 @@ export default function PricingSection() {
           <button
             type="button"
             className="pricing-cta"
-            data-cta-type="play-store"
+            data-cta-type={!onAndroid && !supportsDirectWebCheckout ? "external" : "play-store"}
             onClick={handlePurchasePro}
+            disabled={purchaseStatus === "purchasing"}
           >
-            Subscribe — {resolveTierPrice(tier, proCycle)}
+            {purchaseStatus === "purchasing"
+              ? "Opening Google Play…"
+              : !onAndroid && !supportsDirectWebCheckout
+              ? "Subscribe in Google Play"
+              : `Subscribe — ${resolveTierPrice(tier, proCycle)}`}
           </button>
         );
       }
 
       return null;
     },
-    [isTierActive, handlePurchasePremium, handlePurchasePro, resolveTierPrice, proCycle]
+    [
+      handlePurchasePremium,
+      handlePurchasePro,
+      isTierActive,
+      onAndroid,
+      proCycle,
+      purchaseStatus,
+      resolveTierPrice,
+      supportsDirectWebCheckout,
+    ]
   );
 
   /** Render the CTA for an enterprise tier. */
@@ -310,6 +366,23 @@ export default function PricingSection() {
           <p className="pricing-section-desc">
             One-time purchase or subscription — fully managed through Google Play.
           </p>
+          {!onAndroid && !supportsDirectWebCheckout && (
+            <p className="pricing-purchase-status pricing-purchase-status--info">
+              Purchases complete in the Android app through Google Play.
+            </p>
+          )}
+          {purchaseStatus === "failed" && (
+            <p className="pricing-purchase-status pricing-purchase-status--error" role="alert">
+              {purchaseError
+                ? `Unable to start checkout: ${purchaseError}`
+                : "Unable to start checkout. Please try again."}
+            </p>
+          )}
+          {purchaseStatus === "cancelled" && (
+            <p className="pricing-purchase-status pricing-purchase-status--warning">
+              Purchase cancelled before checkout completed.
+            </p>
+          )}
         </div>
 
         {/* Pro cycle toggle — only visible above the Pro card */}

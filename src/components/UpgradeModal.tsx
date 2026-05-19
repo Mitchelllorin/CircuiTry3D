@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasProAccess, purchaseProUnlock, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
+import { userHasProAccess, purchaseProUnlock, isAndroidApp, openWebPayment, hasWebPaymentCheckout, PLAY_STORE_URL } from "../utils/playStoreBilling";
 
 interface UpgradeModalProps {
   /** Whether the modal is currently visible. */
@@ -17,6 +17,7 @@ interface UpgradeModalProps {
 export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<"idle" | "purchasing" | "success" | "failed" | "cancelled">("idle");
+  const supportsDirectWebCheckout = hasWebPaymentCheckout();
 
   // Listen for native purchase events dispatched by playStoreBilling
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       return;
     }
     // On web with a payment URL configured, open the checkout page.
-    if (!isAndroidApp() && WEB_PAYMENT_URL) {
+    if (!isAndroidApp() && supportsDirectWebCheckout) {
       openWebPayment();
       return;
     }
@@ -67,7 +68,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       setStatus("idle");
     }
     // If launched, status will update via the window events above.
-  }, []);
+  }, [supportsDirectWebCheckout]);
 
   if (!open) return null;
 
@@ -119,7 +120,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
               >
                 {status === "purchasing" ? t("common.loading") : t("upgrade.purchaseButton")}
               </button>
-            ) : WEB_PAYMENT_URL ? (
+            ) : supportsDirectWebCheckout ? (
               <button
                 style={purchaseButtonStyle}
                 onClick={handlePurchase}
@@ -275,5 +276,4 @@ const cancelledStyle: React.CSSProperties = {
   color: "#fbbf24",
   fontSize: "0.875rem",
 };
-
 

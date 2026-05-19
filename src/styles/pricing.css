@@ -800,6 +800,32 @@
   max-width: 42rem;
 }
 
+.pricing-purchase-status {
+  margin: 0.85rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--pricing-border);
+  background: rgba(8, 15, 30, 0.72);
+  color: var(--pricing-text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 42rem;
+}
+
+.pricing-purchase-status--info {
+  border-color: var(--pricing-accent-soft);
+}
+
+.pricing-purchase-status--warning {
+  border-color: rgba(250, 204, 21, 0.35);
+  color: #fde68a;
+}
+
+.pricing-purchase-status--error {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fecaca;
+}
+
 /* Consumer plan grid */
 .plan-grid--consumer {
   grid-template-columns: 1fr;

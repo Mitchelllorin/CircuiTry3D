@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { userHasProAccess, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, WEB_PAYMENT_URL, PLAY_STORE_URL } from "../utils/playStoreBilling";
+import { userHasProAccess, purchaseProUnlock, restoreProPurchases, isAndroidApp, openWebPayment, hasWebPaymentCheckout, PLAY_STORE_URL } from "../utils/playStoreBilling";
 import i18n from "../i18n";
 
 type PurchaseStatus = "idle" | "purchasing" | "restoring" | "success" | "failed" | "cancelled";
@@ -15,6 +15,7 @@ export default function Upgrade() {
   const [status, setStatus] = useState<PurchaseStatus>("idle");
   const [hasPro, setHasPro] = useState(userHasProAccess);
   const isAndroid = isAndroidApp();
+  const supportsDirectWebCheckout = hasWebPaymentCheckout();
 
   // Keep hasPro in sync with native purchase events
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function Upgrade() {
   const handlePurchase = useCallback(async () => {
     if (hasPro) return;
     // On web with a payment URL configured, open the checkout page.
-    if (!isAndroid && WEB_PAYMENT_URL) {
+    if (!isAndroid && supportsDirectWebCheckout) {
       openWebPayment();
       return;
     }
@@ -48,7 +49,7 @@ export default function Upgrade() {
       // Not on Android and no web payment URL — can't launch native flow
       setStatus("idle");
     }
-  }, [hasPro, isAndroid]);
+  }, [hasPro, isAndroid, supportsDirectWebCheckout]);
 
   const handleRestore = useCallback(async () => {
     setStatus("restoring");
@@ -106,7 +107,7 @@ export default function Upgrade() {
             )}
 
             {!isAndroid ? (
-              WEB_PAYMENT_URL ? (
+              supportsDirectWebCheckout ? (
                 <button
                   style={primaryButtonStyle}
                   onClick={handlePurchase}
