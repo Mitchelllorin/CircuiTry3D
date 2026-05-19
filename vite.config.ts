@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const envBasePath = (process.env.VITE_BASE_PATH ?? '').trim();
-  const webBasePath = envBasePath || '/';
+  const webBasePath = envBasePath || '/CircuiTry3D/';
 
   return {
     // Capacitor Android serves bundled files from app assets (no sub-path), so
