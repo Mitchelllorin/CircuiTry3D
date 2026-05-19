@@ -5141,16 +5141,6 @@ body.android-optimized .zoom-btn {
         const isMobile = Boolean(isAndroid || hasMobileUA ||
             (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
 
-        // Adjust settings for mobile
-        if (isMobile) {
-            // Reduce particle count for better performance
-            const originalParticleCount = 8;
-            // Increase touch sensitivity
-            const TOUCH_SENSITIVITY = 0.8;
-            // Reduce quality for better performance
-            const MOBILE_QUALITY_FACTOR = 0.7;
-        }
-
         const worldUpVector = new THREE.Vector3(0, 1, 0);
         const cameraDirectionVec = new THREE.Vector3();
         const cameraRightVec = new THREE.Vector3();
@@ -5417,7 +5407,7 @@ body.android-optimized .zoom-btn {
                 const bodyMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0xffdd00,
                     emissive: 0xcc8800,
-                    emissiveIntensity: 0.7,
+                    emissiveIntensity: 0.15,
                     metalness: 0.15,
                     roughness: 0.25
                 });
@@ -5429,7 +5419,7 @@ body.android-optimized .zoom-btn {
                 const ringMaterial = new THREE.MeshStandardMaterial({
                     color: 0xff8800,
                     emissive: 0xff4400,
-                    emissiveIntensity: 0.6,
+                    emissiveIntensity: 0.10,
                     metalness: 0.1,
                     roughness: 0.3
                 });
@@ -5527,11 +5517,16 @@ body.android-optimized .zoom-btn {
             }
 
             updateGlow(pulseFactor) {
+                const isSelected = (selectedComponent === this);
                 if (this.bodyMaterial) {
-                    this.bodyMaterial.emissiveIntensity = 0.5 + pulseFactor * 0.6;
+                    this.bodyMaterial.emissiveIntensity = isSelected
+                        ? 0.5 + pulseFactor * 0.6
+                        : 0.15;
                 }
                 if (this.ringMaterial) {
-                    this.ringMaterial.emissiveIntensity = 0.4 + pulseFactor * 0.5;
+                    this.ringMaterial.emissiveIntensity = isSelected
+                        ? 0.4 + pulseFactor * 0.5
+                        : 0.10;
                 }
             }
         }
@@ -8023,11 +8018,13 @@ body.android-optimized .zoom-btn {
                 
                 // Diagnostic overlay stays visible until manual dismiss
                 
-                // Cap pixel ratio on mobile to 2× — high-DPR Android devices (e.g. Pixel,
-                // Galaxy) report DPR 2.6–3.0, creating a render-buffer 3× the screen area.
-                // This exhausts GPU VRAM on constrained devices, triggering WebGL context
-                // loss and making particles invisible.  2× retains full retina sharpness.
-                renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio);
+                // Cap pixel ratio on mobile to reduce render-buffer size on high-DPR devices.
+                // Android is capped at 1.5× because System WebView devices (e.g. Pixel, Galaxy)
+                // report DPR 2.6–3.0, exhausting GPU VRAM and causing WebGL context loss.
+                // Other mobile is capped at 2× to retain retina sharpness.
+                renderer.setPixelRatio(isAndroid
+                    ? Math.min(window.devicePixelRatio, 1.5)
+                    : (isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio));
                 renderer.setSize(_vw, _vh);
                 renderer.setClearColor(0x0a0a1a, 1);
                 // Android System WebView (Capacitor) may have older GLSL compiler that
@@ -8184,9 +8181,12 @@ body.android-optimized .zoom-btn {
 
         // Track frame timing for performance optimization
         let lastFrameTime = 0;
-        const TARGET_FRAME_INTERVAL = 1000 / 60; // Target 60fps
+        // Android targets 30 fps to reduce GPU/CPU pressure on constrained WebViews;
+        // desktop and non-Android mobile stay at 60 fps.
+        const TARGET_FRAME_INTERVAL = isAndroid ? (1000 / 30) : (1000 / 60);
         let labelUpdateCounter = 0;
-        const LABEL_UPDATE_INTERVAL = 3; // Update labels every 3 frames to reduce overhead
+        // Update labels less frequently on Android to reduce DOM manipulation overhead.
+        const LABEL_UPDATE_INTERVAL = isAndroid ? 6 : 3;
         // Watchdog: tracks how many consecutive frames the flow is active but particles are absent.
         // Used to detect and recover from silent particle-creation failures on Android.
         let _flowWatchdogFrames = 0;
@@ -9675,7 +9675,9 @@ body.android-optimized .zoom-btn {
             if (w > 0 && h > 0) {
                 camera.aspect = w / h;
                 camera.updateProjectionMatrix();
-                renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio);
+                renderer.setPixelRatio(isAndroid
+                    ? Math.min(window.devicePixelRatio, 1.5)
+                    : (isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio));
                 renderer.setSize(w, h);
             }
         }
