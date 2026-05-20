@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-const INVALID_SEGMENT_PATTERN = /[^A-Za-z0-9._-]+/g;
-
 export async function ensureDir(directoryPath) {
   await fs.mkdir(directoryPath, { recursive: true });
 }
@@ -17,12 +15,35 @@ export async function pathExists(targetPath) {
 }
 
 export function normalizePreviewSegment(value, fallback = 'unknown') {
-  const normalized = String(value ?? '')
-    .trim()
-    .replace(/[/\\]+/g, '-')
-    .replace(INVALID_SEGMENT_PATTERN, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^[-.]+|[-.]+$/g, '');
+  const input = String(value ?? '').trim();
+  let normalized = '';
+  let previousWasDash = false;
+
+  for (const character of input) {
+    const isAllowed =
+      (character >= 'A' && character <= 'Z') ||
+      (character >= 'a' && character <= 'z') ||
+      (character >= '0' && character <= '9') ||
+      character === '.' ||
+      character === '_';
+    const nextCharacter = isAllowed ? character : '-';
+
+    if (nextCharacter === '-') {
+      if (!normalized || previousWasDash) {
+        previousWasDash = true;
+        continue;
+      }
+
+      normalized += '-';
+      previousWasDash = true;
+      continue;
+    }
+
+    normalized += nextCharacter;
+    previousWasDash = false;
+  }
+
+  normalized = normalized.replace(/^[-.]+/, '').replace(/[-.]+$/, '');
 
   return normalized || fallback;
 }
