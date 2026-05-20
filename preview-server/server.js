@@ -25,12 +25,12 @@ export async function startPreviewServer(options = {}) {
         res.end(JSON.stringify({ error: 'Not found.' }));
       }
     } catch (error) {
+      console.error(error);
       if (!res.writableEnded) {
         res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
         res.end(
           JSON.stringify({
             error: 'Preview server failed to process the request.',
-            details: error instanceof Error ? error.message : String(error),
           }),
         );
       }
