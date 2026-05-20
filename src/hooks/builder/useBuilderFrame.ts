@@ -124,7 +124,7 @@ export function useBuilderFrame({
           typeof (payload as { tool?: string })?.tool === "string"
             ? (payload as { tool?: string }).tool
             : undefined;
-        if (tool === "wire" || tool === "measure") {
+        if (tool === "wire" || tool === "measure" || tool === "junction") {
           onToolChange(tool);
         } else {
           onToolChange("select");

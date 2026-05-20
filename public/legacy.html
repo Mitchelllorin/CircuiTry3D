@@ -5407,7 +5407,7 @@ body.android-optimized .zoom-btn {
                 const bodyMaterial = new THREE.MeshStandardMaterial({ 
                     color: 0xffdd00,
                     emissive: 0xcc8800,
-                    emissiveIntensity: 0.15,
+                    emissiveIntensity: 0.7,
                     metalness: 0.15,
                     roughness: 0.25
                 });
@@ -5419,7 +5419,7 @@ body.android-optimized .zoom-btn {
                 const ringMaterial = new THREE.MeshStandardMaterial({
                     color: 0xff8800,
                     emissive: 0xff4400,
-                    emissiveIntensity: 0.10,
+                    emissiveIntensity: 0.6,
                     metalness: 0.1,
                     roughness: 0.3
                 });
@@ -5517,16 +5517,11 @@ body.android-optimized .zoom-btn {
             }
 
             updateGlow(pulseFactor) {
-                const isSelected = (selectedComponent === this);
                 if (this.bodyMaterial) {
-                    this.bodyMaterial.emissiveIntensity = isSelected
-                        ? 0.5 + pulseFactor * 0.6
-                        : 0.15;
+                    this.bodyMaterial.emissiveIntensity = 0.5 + pulseFactor * 0.6;
                 }
                 if (this.ringMaterial) {
-                    this.ringMaterial.emissiveIntensity = isSelected
-                        ? 0.4 + pulseFactor * 0.5
-                        : 0.10;
+                    this.ringMaterial.emissiveIntensity = 0.4 + pulseFactor * 0.5;
                 }
             }
         }
@@ -12758,6 +12753,8 @@ body.android-optimized .zoom-btn {
             }
             
             selectedComponent = null;
+            const nextTool = isWireMode ? 'wire' : (isMeasureMode ? 'measure' : (isRotateMode ? 'rotate' : 'select'));
+            notifyParentToolState(nextTool);
         }
 
         // Auto-insert a 2-terminal component in series into an existing wire.
@@ -14868,6 +14865,7 @@ Made with ? for visual learners everywhere!
             junctions.push(junction);
 
             selectJunction(junction, { startDragging: true, silent: true });
+            notifyParentToolState('junction');
 
             setStatus(`⚡ Junction node added - drag to grid position and tap to place!`);
             updateCircuitInfo();
