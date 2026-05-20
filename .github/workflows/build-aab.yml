@@ -198,6 +198,7 @@ jobs:
              "${RELEASE_DIR}/CircuiTry3D-v${{ env.VERSION_NAME }}.aab"
           RELEASE_APK="android/app/build/outputs/apk/release/app-release.apk"
           if [ ! -f "${RELEASE_APK}" ]; then
+            echo "::warning::Signed release APK not found; falling back to unsigned APK artifact."
             RELEASE_APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           fi
           cp "${RELEASE_APK}" \
