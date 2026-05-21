@@ -170,7 +170,7 @@ export const KNOWLEDGE_BASE: KnowledgeEntry[] = [
     id: "arena",
     keywords: ["arena", "test", "component test", "component arena"],
     answer:
-      "The Arena is an advanced simulation workspace for testing components with configurable inputs and full analysis output. Open it via the Arena tab in the Builder sidebar or navigate to /#/arena.",
+      "The Arena is an advanced simulation workspace for testing components with configurable inputs and full analysis output. Open it via the Arena tab in the Builder sidebar or navigate to /app?mode=arena.",
   },
   // Thévenin
   {

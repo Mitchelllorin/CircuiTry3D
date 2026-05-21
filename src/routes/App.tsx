@@ -1,5 +1,5 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from "react";
-import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Link, Outlet, useLocation, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
 import BrandSignature from "../components/BrandSignature";
@@ -16,18 +16,11 @@ import "../styles/layout.css";
 // This drastically reduces the initial JS bundle size — the Builder page
 // alone pulls in Three.js, the schematic engine, wire routing, etc.
 const Builder = lazy(() => import("../pages/Builder"));
-const Practice = lazy(() => import("../pages/Practice"));
-const Pricing = lazy(() => import("../pages/Pricing"));
-const Community = lazy(() => import("../pages/Community"));
-const Account = lazy(() => import("../pages/Account"));
-const Classroom = lazy(() => import("../pages/Classroom"));
-const Arcade = lazy(() => import("../pages/Arcade"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 const DataSafety = lazy(() => import("../pages/DataSafety"));
 const AppAccess = lazy(() => import("../pages/AppAccess"));
 const PlayStoreCompliance = lazy(() => import("../pages/PlayStoreCompliance"));
 const DeleteAccount = lazy(() => import("../pages/DeleteAccount"));
-const Textbook = lazy(() => import("../pages/Textbook"));
 const Screenshots = lazy(() => import("../pages/Screenshots"));
 const Partnerships = lazy(() => import("../pages/Partnerships"));
 const Promo = lazy(() => import("../pages/Promo"));
@@ -39,7 +32,6 @@ const Promo7 = lazy(() => import("../pages/Promo7"));
 const Promo9 = lazy(() => import("../pages/Promo9"));
 const Upgrade = lazy(() => import("../pages/Upgrade"));
 const ContactSales = lazy(() => import("../pages/ContactSales"));
-const Gallery = lazy(() => import("../pages/Gallery"));
 const EducatorPilot = lazy(() => import("../pages/EducatorPilot"));
 const OwnerAccess = lazy(() => import("../pages/OwnerAccess"));
 const TermsOfService = lazy(() => import("../pages/TermsOfService"));
@@ -65,18 +57,23 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/app" element={<Builder />} />
-            <Route path="/practice" element={<Practice />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/classroom" element={<Classroom />} />
-            <Route path="/arcade" element={<Arcade />} />
+            <Route path="/practice" element={<Navigate to="/app?mode=practice" replace />} />
+            <Route path="/troubleshoot" element={<Navigate to="/app?mode=troubleshoot" replace />} />
+            <Route path="/pricing" element={<Navigate to="/app?mode=pricing" replace />} />
+            <Route path="/community" element={<Navigate to="/app?mode=community" replace />} />
+            <Route path="/account" element={<Navigate to="/app?mode=account" replace />} />
+            <Route path="/classroom" element={<Navigate to="/app?mode=classroom" replace />} />
+            <Route path="/arcade" element={<Navigate to="/app?mode=arcade" replace />} />
+            <Route path="/wire-guide" element={<Navigate to="/app?mode=wire-guide" replace />} />
+            <Route path="/textbook" element={<Navigate to="/app?mode=textbook" replace />} />
+            <Route path="/gallery" element={<Navigate to="/app?mode=gallery" replace />} />
+            <Route path="/home-circuit" element={<Navigate to="/app?mode=home-circuit" replace />} />
+            <Route path="/car-circuit" element={<Navigate to="/app?mode=car-circuit" replace />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/data-safety" element={<DataSafety />} />
             <Route path="/app-access" element={<AppAccess />} />
             <Route path="/play-store" element={<PlayStoreCompliance />} />
             <Route path="/delete-account" element={<DeleteAccount />} />
-            <Route path="/textbook" element={<Textbook />} />
             <Route path="/screenshots" element={<Screenshots />} />
             <Route path="/partnerships" element={<Partnerships />} />
             <Route path="/promo" element={<Promo />} />
@@ -88,7 +85,6 @@ export default function App() {
             <Route path="/promo9" element={<Promo9 />} />
             <Route path="/upgrade" element={<Upgrade />} />
             <Route path="/contact-sales" element={<ContactSales />} />
-            <Route path="/gallery" element={<Gallery />} />
             <Route path="/educator-pilot" element={<EducatorPilot />} />
             <Route path="/terms" element={<TermsOfService />} />
           </Route>
