@@ -1,0 +1,157 @@
+name: Content Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_screenshots:
+        description: 'Regenerate Play Store screenshots'
+        type: boolean
+        required: false
+        default: true
+      run_component_showcase:
+        description: 'Regenerate component showcase screenshots'
+        type: boolean
+        required: false
+        default: true
+      run_promo_footage:
+        description: 'Regenerate promo footage'
+        type: boolean
+        required: false
+        default: false
+      portrait:
+        description: 'Promo footage portrait mode (412x915)'
+        type: boolean
+        required: false
+        default: false
+      footage_type:
+        description: 'Promo footage type'
+        type: choice
+        required: false
+        default: all
+        options:
+          - all
+          - cinematic
+          - educational
+      scene:
+        description: 'Promo single scene id (blank for all)'
+        type: string
+        required: false
+        default: ''
+      commit_changes:
+        description: 'Commit screenshot/component updates to main'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: '20.19.0'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        if: inputs.run_screenshots || inputs.run_component_showcase || inputs.run_promo_footage
+        run: npx playwright install chromium --with-deps
+
+      - name: Install FFmpeg
+        if: inputs.run_promo_footage
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+
+      - name: Build web app
+        if: inputs.run_screenshots || inputs.run_component_showcase || inputs.run_promo_footage
+        run: npm run build
+
+      - name: Start preview server
+        if: inputs.run_screenshots || inputs.run_component_showcase || inputs.run_promo_footage
+        run: npm run preview &
+
+      - name: Wait for preview server
+        if: inputs.run_screenshots || inputs.run_component_showcase || inputs.run_promo_footage
+        run: |
+          echo "Waiting for preview server on port 4173..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 >/dev/null 2>&1; then
+              echo "Server is ready."
+              exit 0
+            fi
+            echo "  attempt $i/30…"
+            sleep 2
+          done
+          echo "::error::Preview server did not become ready after 60 seconds."
+          exit 1
+
+      - name: Generate Play Store screenshots
+        if: inputs.run_screenshots
+        run: npm run generate-screenshots:local
+
+      - name: Generate component showcase screenshots
+        if: inputs.run_component_showcase
+        run: npm run component-showcase:local
+
+      - name: Generate promo footage
+        if: inputs.run_promo_footage
+        run: |
+          ARGS="--local --type ${{ inputs.footage_type }}"
+          if [ "${{ inputs.portrait }}" = "true" ]; then
+            ARGS="$ARGS --portrait"
+          fi
+          if [ -n "${{ inputs.scene }}" ]; then
+            ARGS="$ARGS --scene ${{ inputs.scene }}"
+          fi
+          npm run circuit-bot -- $ARGS
+
+      - name: Upload screenshots artifact
+        if: inputs.run_screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-store-screenshots
+          path: play-store-assets/screenshots/
+          if-no-files-found: warn
+
+      - name: Upload component showcase artifact
+        if: inputs.run_component_showcase
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-shots
+          path: public/component-shots/
+          if-no-files-found: warn
+
+      - name: Upload promo footage artifact
+        if: inputs.run_promo_footage
+        uses: actions/upload-artifact@v4
+        with:
+          name: promo-footage${{ inputs.portrait && '-portrait' || '' }}
+          path: promo-footage/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Commit generated screenshots and component shots
+        if: inputs.commit_changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A play-store-assets/screenshots/ public/screenshots/ public/component-shots/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No generated screenshot/component changes to commit."
+          else
+            git commit -m "chore: regenerate content pipeline assets [skip screenshots]"
+            git pull --rebase origin main
+            git push
+          fi

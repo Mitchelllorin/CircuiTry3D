@@ -1,0 +1,39 @@
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - package.json
+          - package-lock.json
+          - .github/dependabot.yml
+
+ci/cd:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/**
+          - public/**
+
+android:
+  - changed-files:
+      - any-glob-to-any-file:
+          - android/**
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tests/**
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+
+assets:
+  - changed-files:
+      - any-glob-to-any-file:
+          - play-store-assets/**
+          - public/screenshots/**
+          - public/component-shots/**
