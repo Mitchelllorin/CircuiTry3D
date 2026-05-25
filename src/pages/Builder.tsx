@@ -1944,6 +1944,11 @@ export default function Builder() {
     setHelpOpen(false);
   }, [setHelpOpen]);
 
+  const closeArenaWorkspace = useCallback(() => {
+    resetWorkspaceSurfaces();
+    setWorkspaceModeWithGlobalSync("build");
+  }, [resetWorkspaceSurfaces, setWorkspaceModeWithGlobalSync]);
+
   const openWorkspacePanelMode = useCallback(
     (mode: WorkspacePanelMode) => {
       setWorkspaceModeWithGlobalSync(mode);
@@ -3022,7 +3027,7 @@ export default function Builder() {
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        return <ArenaView variant="embedded" />;
+        return <ArenaView variant="embedded" onNavigateBack={closeArenaWorkspace} />;
       case "wire-guide":
         return (
           <WireLibrary
