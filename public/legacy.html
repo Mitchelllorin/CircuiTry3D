@@ -17594,7 +17594,7 @@ Made with ? for visual learners everywhere!
 
                 if (openWindow && (!window.parent || window.parent === window)) {
                     try {
-                        window.open('/arena?session=' + encodeURIComponent(sessionId), '_blank');
+                        window.open('/app?session=' + encodeURIComponent(sessionId), '_blank');
                     } catch (openError) {
                         console.warn('Arena export: unable to open arena window', openError);
                     }

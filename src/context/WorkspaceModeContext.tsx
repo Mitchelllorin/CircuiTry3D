@@ -2,9 +2,21 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import type { ReactNode } from "react";
 import type { WorkspaceMode } from "../components/builder/types";
 
+/**
+ * High-level UI mode flag that distinguishes Arena mode from all normal
+ * workspace modes.  Consumers that only need to know "am I in the arena?"
+ * should prefer this over inspecting `workspaceMode` directly.
+ *
+ *   "arena"     – the Component Arena is active (workspaceMode === "arena")
+ *   "workspace" – any other normal workspace mode (build, practice, …)
+ */
+export type UIMode = "workspace" | "arena";
+
 type WorkspaceModeContextValue = {
   workspaceMode: WorkspaceMode;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
+  /** Derived two-state flag: "arena" when in arena mode, "workspace" otherwise. */
+  uiMode: UIMode;
   /** Track if currently in the /app workspace route */
   isInWorkspace: boolean;
   setIsInWorkspace: (inWorkspace: boolean) => void;
@@ -31,16 +43,19 @@ export function WorkspaceModeProvider({ children }: { children: ReactNode }) {
     setOnModeChangeInternal(() => callback);
   }, []);
 
+  const uiMode: UIMode = workspaceMode === "arena" ? "arena" : "workspace";
+
   const value = useMemo<WorkspaceModeContextValue>(
     () => ({
       workspaceMode,
       setWorkspaceMode,
+      uiMode,
       isInWorkspace,
       setIsInWorkspace,
       onModeChange,
       setOnModeChange,
     }),
-    [workspaceMode, setWorkspaceMode, isInWorkspace, onModeChange, setOnModeChange]
+    [workspaceMode, setWorkspaceMode, uiMode, isInWorkspace, onModeChange, setOnModeChange]
   );
 
   return <WorkspaceModeContext.Provider value={value}>{children}</WorkspaceModeContext.Provider>;
