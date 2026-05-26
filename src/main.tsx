@@ -175,13 +175,16 @@ try {
       </HashRouter>
     </React.StrictMode>
   );
-  
+
+  // Signal the inline fallback script (index.html) that the module bundle
+  // loaded and React is mounting — this removes the initial-loader via the
+  // ctapp:ready handler registered in the plain <script> block.  We also
+  // keep a short setTimeout as a belt-and-suspenders guard.
+  document.dispatchEvent(new CustomEvent('ctapp:ready'));
   setTimeout(() => {
-    const loader = document.querySelector('.initial-loader');
-    if (loader) {
-      loader.remove();
-    }
-  }, 100);
+    const loader = document.getElementById('initial-loader');
+    if (loader) loader.remove();
+  }, 300);
 } catch (error) {
   renderFatalOverlay({
     title: "React Initialization Error",

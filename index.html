@@ -170,17 +170,71 @@
     </style>
   </head>
   <body>
-    <div id="root">
-      <div class="initial-loader">
-        <div class="loader-text">Loading</div>
-        <div class="loader-logo-orbit" aria-hidden="true">
-          <div class="loader-wordmark" aria-label="CircuiTry3D">
-            <span class="wm-circui">Circui</span><span class="wm-try">Try</span><span class="wm-3d">3D</span>
-          </div>
+    <!-- Initial loader lives OUTSIDE #root so it is unaffected by React's
+         DOM reconciliation.  A plain (non-module) script below provides a
+         safety-net timeout that removes the loader even when the JS bundle
+         fails to load (offline, 404, slow network), preventing the user from
+         being permanently stuck at "Initializing...". -->
+    <div id="initial-loader" class="initial-loader">
+      <div class="loader-text">Loading</div>
+      <div class="loader-logo-orbit" aria-hidden="true">
+        <div class="loader-wordmark" aria-label="CircuiTry3D">
+          <span class="wm-circui">Circui</span><span class="wm-try">Try</span><span class="wm-3d">3D</span>
         </div>
-        <div style="color: rgba(136, 204, 255, 0.6); font-size: 0.9rem; margin-top: 10px;">Initializing...</div>
       </div>
+      <div id="loader-status" style="color: rgba(136, 204, 255, 0.6); font-size: 0.9rem; margin-top: 10px;">Initializing...</div>
     </div>
+    <div id="root"></div>
+
+    <!-- Plain (non-module) fallback script — runs synchronously before the
+         module bundle loads, so it is always registered regardless of network
+         conditions.  Provides a "please refresh" message after 10 s when the
+         bundle is taking unusually long, and removes the loader entirely after
+         20 s so the user is never permanently stuck. -->
+    <script>
+      (function () {
+        var loaderEl = document.getElementById('initial-loader');
+        var statusEl = document.getElementById('loader-status');
+
+        // Listen for the app-ready signal dispatched by main.tsx / App.tsx.
+        document.addEventListener('ctapp:ready', function () {
+          if (loaderEl) {
+            loaderEl.style.transition = 'opacity 0.3s ease';
+            loaderEl.style.opacity = '0';
+            setTimeout(function () {
+              if (loaderEl && loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
+            }, 320);
+          }
+        }, { once: true });
+
+        // After 10 s without a ready signal, update the status text so the
+        // user knows the load is taking longer than expected.
+        var slowTimer = setTimeout(function () {
+          if (statusEl) {
+            statusEl.textContent = 'Still loading\u2026 please check your connection.';
+            statusEl.style.color = 'rgba(255, 180, 80, 0.85)';
+          }
+        }, 10000);
+
+        // After 20 s, force-remove the loader and show a refresh prompt so
+        // the user is never stuck on the loading screen indefinitely.
+        setTimeout(function () {
+          clearTimeout(slowTimer);
+          if (!loaderEl) return;
+          if (statusEl) {
+            statusEl.textContent = 'Unable to load \u2014 please refresh the page.';
+            statusEl.style.color = 'rgba(255, 100, 80, 0.9)';
+          }
+          // Add a visible refresh button
+          var btn = document.createElement('button');
+          btn.textContent = 'Refresh';
+          btn.style.cssText = 'margin-top:18px;padding:10px 28px;background:#00ff88;color:#0a0a1a;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;letter-spacing:0.06em;';
+          btn.onclick = function () { window.location.reload(); };
+          loaderEl.appendChild(btn);
+        }, 20000);
+      })();
+    </script>
+
     <script type="module" src="src/main.tsx"></script>
   </body>
 </html>
