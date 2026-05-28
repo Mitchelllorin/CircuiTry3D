@@ -6,6 +6,7 @@ export type ArenaViewProps = {
   variant?: ArenaViewVariant;
   onNavigateBack?: () => void;
   onOpenBuilder?: () => void;
+  sessionId?: string | null;
 };
 
 export type ArenaSourceComponent = {

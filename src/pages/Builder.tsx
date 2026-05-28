@@ -3027,7 +3027,13 @@ export default function Builder() {
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        return <ArenaView variant="embedded" onNavigateBack={closeArenaWorkspace} />;
+        return (
+          <ArenaView
+            variant="embedded"
+            onNavigateBack={closeArenaWorkspace}
+            sessionId={lastArenaExport?.sessionId ?? null}
+          />
+        );
       case "wire-guide":
         return (
           <WireLibrary
@@ -3085,8 +3091,10 @@ export default function Builder() {
   }, [
     activeWireProfile,
     activeWorkspacePanelMode,
+    closeArenaWorkspace,
     handleApplyWireProfile,
     handleClearWireProfile,
+    lastArenaExport?.sessionId,
     liveWireMetricsSnapshot.current,
     liveWireMetricsSnapshot.isOpenCircuit,
     liveWireMetricsSnapshot.power,
