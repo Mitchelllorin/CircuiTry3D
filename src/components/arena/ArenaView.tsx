@@ -6,6 +6,7 @@ import type { ArenaViewProps } from "./types";
 const ARENA_SESSION_STORAGE_PREFIX = "circuitry:arena-session:";
 const ARENA_LAST_SESSION_KEY = `${ARENA_SESSION_STORAGE_PREFIX}last`;
 const BASE_URL = import.meta.env.BASE_URL || "/";
+const EMPTY_ARENA_SESSION_KEY = "no-session";
 
 function getArenaBasePath(): string {
   return BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`;
@@ -16,15 +17,17 @@ function readArenaSessionId(): string | null {
     return null;
   }
 
-  const localSessionId = window.localStorage.getItem(ARENA_LAST_SESSION_KEY)?.trim();
-  if (localSessionId) {
-    return localSessionId;
-  }
-
-  const sessionSessionId = window.sessionStorage
+  const localStorageSessionId = window.localStorage
     .getItem(ARENA_LAST_SESSION_KEY)
     ?.trim();
-  return sessionSessionId || null;
+  if (localStorageSessionId) {
+    return localStorageSessionId;
+  }
+
+  const sessionStorageSessionId = window.sessionStorage
+    .getItem(ARENA_LAST_SESSION_KEY)
+    ?.trim();
+  return sessionStorageSessionId || null;
 }
 
 export default function ArenaView({
@@ -95,7 +98,7 @@ export default function ArenaView({
     <section className={containerClassName}>
       <div className="arena-workspace-shell">
         <iframe
-          key={`${activeSessionId ?? "fallback"}-${reloadToken}`}
+          key={`${activeSessionId ?? EMPTY_ARENA_SESSION_KEY}-${reloadToken}`}
           className={`arena-workspace-iframe${isLoaded ? " is-loaded" : ""}`}
           src={arenaSrc}
           title="CircuiTry3D Arena"
@@ -109,11 +112,12 @@ export default function ArenaView({
             setIsLoaded(false);
           }}
           allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+          sandbox="allow-scripts allow-same-origin allow-popups"
         />
 
         {!isLoaded && (
           <div className="arena-workspace-status" role="status" aria-live="polite">
-            Loading arena systems…
+            Loading arena systems...
           </div>
         )}
 

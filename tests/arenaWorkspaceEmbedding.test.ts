@@ -14,6 +14,7 @@ describe("Arena workspace embedding", () => {
     expect(arenaView).toContain("arena.html");
     expect(arenaView).toContain("<iframe");
     expect(arenaView).toContain("loading=\"eager\"");
+    expect(arenaView).toContain("sandbox=\"allow-scripts allow-same-origin allow-popups\"");
     expect(arenaView).toContain("Reload Arena");
   });
 });
