@@ -70,7 +70,7 @@ describe("runFuseAnalysis — nominal conditions", () => {
     const agent = makeAgent();
     const result = runFuseAnalysis(agent, DEFAULT_ENVIRONMENT);
 
-    // At 25W ambient, thermal rise = power * thermalResistanceCA
+    // At 25°C ambient, thermal rise = power * thermalResistanceCA
     expect(result.junctionTemperature).toBeGreaterThanOrEqual(DEFAULT_ENVIRONMENT.temperatureC);
     expect(result.thermalRise).toBeGreaterThanOrEqual(0);
   });
