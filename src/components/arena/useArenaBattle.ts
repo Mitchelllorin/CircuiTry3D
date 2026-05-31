@@ -4,16 +4,21 @@ import {
   createAttackLogEntry,
   getNextTurnAgentId,
 } from "./battleMath";
+import { computeStressModifier, runFuseAnalysis } from "./fuseEngine";
 import type {
   ArenaBattleAgent,
   ArenaBattleHighlight,
   ArenaBattleLogEntry,
   ArenaBattleStatus,
+  ArenaEnvironment,
+  FuseAnalysisResult,
 } from "./types";
+import { DEFAULT_ENVIRONMENT } from "./types";
 
 type UseArenaBattleOptions = {
   initialAgents: ArenaBattleAgent[];
   autoStart: boolean;
+  environment?: ArenaEnvironment;
 };
 
 type ArenaBattleState = {
@@ -24,6 +29,7 @@ type ArenaBattleState = {
   round: number;
   status: ArenaBattleStatus;
   highlight: ArenaBattleHighlight | null;
+  fuseResults: FuseAnalysisResult[];
 };
 
 function createInitialBattleState(initialAgents: ArenaBattleAgent[]): ArenaBattleState {
@@ -50,6 +56,7 @@ function createInitialBattleState(initialAgents: ArenaBattleAgent[]): ArenaBattl
     round: 0,
     status: "ready",
     highlight: null,
+    fuseResults: [],
   };
 }
 
@@ -60,6 +67,7 @@ function capBattleLog(entries: ArenaBattleLogEntry[]): ArenaBattleLogEntry[] {
 export function useArenaBattle({
   initialAgents,
   autoStart,
+  environment = DEFAULT_ENVIRONMENT,
 }: UseArenaBattleOptions) {
   const stableAgents = useMemo(() => initialAgents, [initialAgents]);
   const [state, setState] = useState(() => createInitialBattleState(stableAgents));
@@ -67,6 +75,13 @@ export function useArenaBattle({
   useEffect(() => {
     setState(createInitialBattleState(stableAgents));
   }, [stableAgents]);
+
+  // Recompute FUSE analysis whenever agents or environment changes
+  const fuseResults = useMemo<FuseAnalysisResult[]>(
+    () => state.agents.map((agent) => runFuseAnalysis(agent, environment)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.agents, environment.temperatureC, environment.humidityPercent, environment.voltageStressMultiplier],
+  );
 
   useEffect(() => {
     if (!autoStart) {
@@ -133,12 +148,24 @@ export function useArenaBattle({
           ...previous,
           status: "complete",
           winnerId: attacker.id,
+          fuseResults: previous.fuseResults,
         };
       }
 
       const targetIndex = Math.floor(Math.random() * possibleTargets.length);
       const target = possibleTargets[targetIndex] ?? possibleTargets[0];
-      const damage = computeDamage(attacker, target, Math.random());
+
+      // Apply FUSE stress modifiers — stressed components deal/take more damage
+      const attackerFuse = runFuseAnalysis(attacker, environment);
+      const targetFuse = runFuseAnalysis(target, environment);
+      const attackerStress = computeStressModifier(attackerFuse);
+      const targetStress = computeStressModifier(targetFuse);
+
+      const baseDamage = computeDamage(attacker, target, Math.random());
+      const damage = Math.max(
+        1,
+        Math.round(baseDamage * attackerStress.attackMod / targetStress.defenseMod),
+      );
       const nextRound = previous.round + 1;
 
       const nextAgents = previous.agents.map((agent) =>
@@ -153,6 +180,26 @@ export function useArenaBattle({
       const nextStatus = winnerId ? "complete" : "battling";
 
       const attackLog = createAttackLogEntry(attacker, target, damage, nextRound);
+
+      // Inject FUSE failure notice if a combatant just crossed a threshold
+      const fuseAlerts: ArenaBattleLogEntry[] = [];
+      if (attackerFuse.riskLevel === "critical" || attackerFuse.riskLevel === "failed") {
+        fuseAlerts.push({
+          id: `fuse-alert-${attacker.id}-${nextRound}`,
+          kind: "system",
+          round: nextRound,
+          message: `⚠ FUSE™: ${attacker.name} — ${attackerFuse.failureModes[0]?.name ?? attackerFuse.riskLevel.toUpperCase()}`,
+        });
+      }
+      if (targetFuse.riskLevel === "critical" || targetFuse.riskLevel === "failed") {
+        fuseAlerts.push({
+          id: `fuse-alert-${target.id}-${nextRound}`,
+          kind: "system",
+          round: nextRound,
+          message: `⚠ FUSE™: ${target.name} — ${targetFuse.failureModes[0]?.name ?? targetFuse.riskLevel.toUpperCase()}`,
+        });
+      }
+
       const resultLog =
         nextStatus === "complete"
           ? [
@@ -167,7 +214,7 @@ export function useArenaBattle({
 
       return {
         agents: nextAgents,
-        battleLog: capBattleLog([...previous.battleLog, attackLog, ...resultLog]),
+        battleLog: capBattleLog([...previous.battleLog, attackLog, ...fuseAlerts, ...resultLog]),
         currentTurnAgentId: attacker.id,
         winnerId,
         round: nextRound,
@@ -178,9 +225,10 @@ export function useArenaBattle({
           damage,
           token: nextRound,
         },
+        fuseResults: previous.fuseResults,
       };
     });
-  }, []);
+  }, [environment]);
 
   useEffect(() => {
     if (!autoStart || state.status !== "battling") {
@@ -203,6 +251,7 @@ export function useArenaBattle({
     round: state.round,
     status: state.status,
     highlight: state.highlight,
+    fuseResults,
     resetBattle,
   };
 }

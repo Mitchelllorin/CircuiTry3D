@@ -1,3 +1,4 @@
+import { findCatalogComponent } from "./catalogData";
 import type {
   ArenaBattleAgent,
   ArenaSessionPayload,
@@ -165,11 +166,29 @@ export function buildArenaRoster(
       190,
     );
 
+    // Pull rated thresholds from catalog if available, then from component properties
+    const catalogEntry = component.id ? findCatalogComponent(component.id) : null;
+    const ratedThresholds = catalogEntry?.ratedThresholds ?? {
+      maxVoltageV: readNumeric(component.properties, ["maxVoltage", "vds_max", "vce_max", "reverseVoltage"]) ?? undefined,
+      maxCurrentA: readNumeric(component.properties, ["maxCurrent", "ic_max", "id_max", "ratedCurrentA"]) ?? undefined,
+      maxPowerW: readNumeric(component.properties, ["powerRating", "powerDissipation"]) ?? undefined,
+      maxTempC: readNumeric(component.properties, ["maxTempC"]) ?? 125,
+      minTempC: readNumeric(component.properties, ["minTempC"]) ?? -40,
+      thermalResistanceCA: readNumeric(component.properties, ["thermalResistance"]) ?? undefined,
+    };
+
+    const manufacturer =
+      catalogEntry?.manufacturer ??
+      (typeof component.properties?.["manufacturer"] === "string"
+        ? component.properties["manufacturer"]
+        : null);
+
     return {
       id: component.id ?? `arena-agent-${index + 1}`,
       name:
         component.name?.trim() ||
         `${toTitleCase(componentType)} ${index + 1}`,
+      manufacturer,
       componentType,
       renderType,
       abilityName: ABILITY_BY_TYPE[componentType] ?? "Ohm Strike",
@@ -182,6 +201,7 @@ export function buildArenaRoster(
       metrics,
       componentNumber:
         component.componentNumber?.trim() || component.partNumber?.trim() || null,
+      ratedThresholds,
     };
   });
 }

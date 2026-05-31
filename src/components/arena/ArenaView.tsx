@@ -4,8 +4,9 @@ import "../../styles/arena.css";
 import { ArenaOverlay } from "./ArenaOverlay";
 import { ArenaScene } from "./ArenaScene";
 import { buildArenaRoster } from "./arenaData";
-import { loadArenaSessionPayload } from "./arenaStorage";
-import type { ArenaViewProps, ArenaViewTransitionPhase } from "./types";
+import { loadArenaSessionPayload, saveArenaSessionPayload } from "./arenaStorage";
+import type { ArenaEnvironment, ArenaViewProps, ArenaViewTransitionPhase, CatalogComponent } from "./types";
+import { DEFAULT_ENVIRONMENT } from "./types";
 import { useArenaBattle } from "./useArenaBattle";
 
 const ENTER_TRANSITION_MS = 1800;
@@ -19,6 +20,7 @@ export default function ArenaView({
   const [sessionPayload, setSessionPayload] = useState(() => loadArenaSessionPayload());
   const [transitionPhase, setTransitionPhase] =
     useState<ArenaViewTransitionPhase>("entering");
+  const [environment, setEnvironment] = useState<ArenaEnvironment>(DEFAULT_ENVIRONMENT);
 
   useEffect(() => {
     const refreshPayload = () => setSessionPayload(loadArenaSessionPayload());
@@ -55,10 +57,12 @@ export default function ArenaView({
     round,
     status,
     highlight,
+    fuseResults,
     resetBattle,
   } = useArenaBattle({
     initialAgents: arenaAgents,
     autoStart: transitionPhase === "active",
+    environment,
   });
 
   const handleExitComplete = useCallback(() => {
@@ -76,6 +80,33 @@ export default function ArenaView({
     }
     setTransitionPhase("exiting");
   }, [transitionPhase]);
+
+  const handleLoadCatalogComponent = useCallback((component: CatalogComponent) => {
+    const existing = loadArenaSessionPayload();
+    const currentComponents = existing?.components ?? [];
+
+    // Keep at most 1 existing combatant then append the new one (max 2 combatants)
+    const updatedComponents = [...currentComponents.slice(-1), {
+      id: component.id,
+      name: component.name,
+      type: component.type,
+      manufacturer: component.manufacturer,
+      properties: {
+        voltage: component.ratedThresholds?.maxVoltageV,
+        current: component.ratedThresholds?.maxCurrentA,
+        power: component.ratedThresholds?.maxPowerW,
+        resistance: component.properties.resistance,
+        capacitance: component.properties.capacitance,
+        inductance: component.properties.inductance,
+      },
+    }];
+
+    saveArenaSessionPayload({
+      ...(existing ?? { sessionName: "Arena Battle" }),
+      components: updatedComponents,
+    });
+    setSessionPayload(loadArenaSessionPayload());
+  }, []);
 
   const winnerName = useMemo(
     () => agents.find((agent) => agent.id === winnerId)?.name ?? null,
@@ -99,6 +130,10 @@ export default function ArenaView({
         agents={agents}
         battleLog={battleLog}
         currentTurnAgentId={currentTurnAgentId}
+        environment={environment}
+        fuseResults={fuseResults}
+        onEnvironmentChange={setEnvironment}
+        onLoadCatalogComponent={handleLoadCatalogComponent}
         onResetBattle={resetBattle}
         onReturnToWorkspace={handleReturnToWorkspace}
         onOpenBuilder={showOpenBuilderButton ? onOpenBuilder : undefined}
