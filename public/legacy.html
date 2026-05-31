@@ -700,11 +700,141 @@
             text-align: center;
         }
 
-        .practice-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .practice-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .practice-toolbar-controls {
+            display: flex;
+            flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .practice-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #cfd8ff;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .practice-filter-select {
+            min-width: 148px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.28);
+            background: rgba(8, 17, 34, 0.92);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .practice-preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .practice-preset-card {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background:
+                linear-gradient(180deg, rgba(25, 34, 56, 0.96), rgba(10, 15, 28, 0.98));
+            color: #ffffff;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .practice-preset-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 255, 136, 0.48);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+        }
+
+        .practice-preset-card.active {
+            border-color: #00ff88;
+            box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.28), 0 12px 24px rgba(0, 255, 136, 0.18);
+            background:
+                linear-gradient(180deg, rgba(17, 55, 41, 0.98), rgba(7, 22, 16, 0.98));
+        }
+
+        .practice-preset-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            color: #8dd6ff;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .practice-preset-title {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .practice-preset-summary {
+            margin: 0 0 10px;
+            color: #c9d3ef;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .practice-preset-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .practice-preset-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #d7e1ff;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .practice-preset-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            color: #9bb3ff;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .practice-preset-edit-note {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            background: rgba(0, 255, 136, 0.07);
+            color: #d9ffe9;
+            font-size: 11px;
+            line-height: 1.5;
         }
 
         .practice-btn {
@@ -729,6 +859,25 @@
             background: linear-gradient(135deg, #00ff88, #00cc66);
             color: #000;
             border-color: #00ff88;
+        }
+
+        @media (max-width: 640px) {
+            .practice-toolbar {
+                align-items: stretch;
+            }
+
+            .practice-toolbar-controls,
+            .practice-filter-group {
+                width: 100%;
+            }
+
+            .practice-filter-select {
+                flex: 1;
+            }
+
+            .practice-btn {
+                flex: 1;
+            }
         }
         
         .analysis-toggle {
@@ -3466,11 +3615,29 @@
 
         <!-- ── Practice tab ───────────────────────────────────────────────── -->
         <div id="content-practice" class="analysis-content" style="display:none" role="tabpanel">
-            <div class="practice-buttons">
-                <button id="btn-series"      class="practice-btn" onclick="loadPresetCircuit('series_basic')">Series</button>
-                <button id="btn-parallel"    class="practice-btn" onclick="loadPresetCircuit('parallel_basic')">Parallel</button>
-                <button id="btn-mixed"       class="practice-btn" onclick="loadPresetCircuit('mixed_circuit')">Mixed</button>
-                <button id="btn-combination" class="practice-btn" onclick="loadPresetCircuit('combination_advanced')">Advanced</button>
+            <div class="practice-toolbar">
+                <div class="practice-filter-group">
+                    <label for="practice-topology-filter">Show</label>
+                    <select
+                        id="practice-topology-filter"
+                        class="practice-filter-select"
+                        onchange="setPracticePresetFilter(this.value)"
+                    >
+                        <option value="all">All presets</option>
+                        <option value="series">Series</option>
+                        <option value="parallel">Parallel</option>
+                        <option value="combination">Combination</option>
+                    </select>
+                </div>
+                <div class="practice-toolbar-controls">
+                    <button id="btn-random" class="practice-btn secondary" onclick="generateRandomProblem()">Random Values</button>
+                    <button class="practice-btn secondary" onclick="startPracticeSequence()">Guided Sequence</button>
+                    <button class="practice-btn secondary" onclick="showPracticeModeHelp()">How To Use</button>
+                </div>
+            </div>
+            <div id="practice-preset-grid" class="practice-preset-grid"></div>
+            <div class="practice-preset-edit-note">
+                Every preset loads directly into the 3D builder fully editable — move components, change values, add branches, or rewire the circuit after loading it.
             </div>
             <div id="practice-problem-card" class="practice-problem-card" style="display:none">
                 <div id="practice-question"    class="problem-question"></div>
@@ -3478,7 +3645,7 @@
                 <ul  id="objectives-list"      style="color:#ccc;font-size:12px;padding-left:18px;margin-bottom:8px;"></ul>
             </div>
             <div id="practice-help-text" class="wire-instructions">
-                Select a circuit above to begin a guided W.I.R.E. practice problem.
+                Choose a preset card above to load a circuit you can solve and edit in the 3D builder.
             </div>
             <div id="wire-table-wrapper" class="wire-table-wrapper" style="display:none">
                 <div class="wire-table-header">
@@ -3504,11 +3671,11 @@
                 </div>
             </div>
             <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-                <button onclick="previousPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">◀ Prev</button>
+                <button id="prev-btn" onclick="previousPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">◀ Prev</button>
                 <span style="font-size:11px;color:#888;white-space:nowrap;">
                     <span id="problem-counter">0</span> / <span id="total-problems">0</span>
                 </span>
-                <button onclick="nextPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">Next ▶</button>
+                <button id="next-btn" onclick="nextPracticeStep()" class="practice-btn secondary" style="flex:1;padding:8px;font-size:11px;">Next ▶</button>
             </div>
         </div>
 
@@ -4189,8 +4356,61 @@ body.android-optimized .zoom-btn {
         let currentAnalysisTab = 'wire';
         let lastKnownValues = { voltage: 0, current: 0, resistance: Infinity, power: 0 };
         let currentPracticeCircuit = null;
+        const PRACTICE_PRESET_LIBRARY = {
+            series_basic: {
+                topology: 'series',
+                difficulty: 'Intro',
+                title: 'Series Fundamentals',
+                summary: 'One clean loop with three resistor drops and a 24 V source.',
+                tags: ['Single path', 'KVL', 'Voltage drops']
+            },
+            parallel_basic: {
+                topology: 'parallel',
+                difficulty: 'Intro',
+                title: 'Shared Rail Parallel',
+                summary: 'Three resistor branches tied to the same top and bottom rails.',
+                tags: ['Common voltage', 'KCL', 'Reciprocal resistance']
+            },
+            parallel_balanced: {
+                topology: 'parallel',
+                difficulty: 'Standard',
+                title: 'Balanced Parallel Grid',
+                summary: 'Four equal branches make it easy to compare identical branch currents.',
+                tags: ['Equal branches', 'Rail network', 'Branch current']
+            },
+            mixed_circuit: {
+                topology: 'combination',
+                difficulty: 'Standard',
+                title: 'Combination Ladder',
+                summary: 'Series resistor feeding a parallel branch box and return resistor.',
+                tags: ['R1 + (R2 || R3) + R4', 'Reduction steps', 'KVL + KCL']
+            },
+            combination_parallel_strings: {
+                topology: 'combination',
+                difficulty: 'Standard',
+                title: 'Parallel Series Strings',
+                summary: 'Two series resistor strings share the same source rails in parallel.',
+                tags: ['Series in parallel', 'Branch totals', 'Equivalent resistance']
+            },
+            combination_advanced: {
+                topology: 'combination',
+                difficulty: 'Challenge',
+                title: 'Combination Challenge',
+                summary: 'Multi-section network with a branch box and return-side LED load.',
+                tags: ['Multi-loop', 'Power checks', 'Full W.I.R.E. table']
+            }
+        };
+        const PRACTICE_PRESET_ORDER = [
+            'series_basic',
+            'parallel_basic',
+            'parallel_balanced',
+            'mixed_circuit',
+            'combination_parallel_strings',
+            'combination_advanced'
+        ];
         let currentProblemIndex = 0;
-        let practiceProblems = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced'];
+        let practiceProblems = PRACTICE_PRESET_ORDER.slice();
+        let currentPracticePresetFilter = 'all';
         
         // New features variables
         let currentFlowStyle = 'misty'; // 'misty' (electron cloud) or 'solid' (conventional)
@@ -4221,6 +4441,16 @@ body.android-optimized .zoom-btn {
                     "Validate with Kirchhoff's Current Law by summing the branch currents."
                 ].join("<br>")
             },
+            parallel_balanced: {
+                question: "Balanced parallel grid: compare one branch current with the total source current.",
+                expectedAnswer: "current",
+                description: [
+                    "<strong>Topology</strong>: Four equal 180 ohm branches share the same 18 V rails.",
+                    "<strong>Voltage</strong>: Every branch sees the full source voltage, so each branch current is found with I = E / R.",
+                    "<strong>Current</strong>: Once one branch current is known, multiply by four for the total because the branches are identical.",
+                    "<strong>Check</strong>: Confirm KCL by summing the branch currents and compare with the source power using W = I * E."
+                ].join("<br>")
+            },
             mixed_circuit: {
                 question: "Series-parallel combo: collapse the ladder and solve for I_T.",
                 expectedAnswer: "current",
@@ -4229,6 +4459,16 @@ body.android-optimized .zoom-btn {
                     "<strong>W.I.R.E.</strong>: Track resistors R1=150 ohm, R2=220 ohm, R3=330 ohm, R4=180 ohm with the 18 V supply.",
                     "<strong>Formulas</strong>: Use the 12 Ohm's Law identities (E=I*R, I=E/R, R=E/I, W=I*E, W=I^2*R, W=E^2/R).",
                     "<strong>Kirchhoff</strong>: Verify KVL around the outer loop and KCL at the branch node."
+                ].join("<br>")
+            },
+            combination_parallel_strings: {
+                question: "Combination circuit: solve each branch string current, then combine them for I_T.",
+                expectedAnswer: "current",
+                description: [
+                    "<strong>Topology</strong>: Two resistor strings are connected in parallel, so each string shares the same 24 V supply.",
+                    "<strong>Branch A</strong>: Add R1 + R2 to get the first branch resistance.",
+                    "<strong>Branch B</strong>: Add R3 + R4 to get the second branch resistance, then solve branch current with I = E / R_branch.",
+                    "<strong>Check</strong>: Add the two branch currents for total current and verify total power with W = I * E."
                 ].join("<br>")
             },
             combination_advanced: {
@@ -4268,9 +4508,17 @@ body.android-optimized .zoom-btn {
                 guide: "Parallel network: voltage is common for each branch. Compute branch currents with I = E / R, then add them for I_T before checking totals.",
                 note: "Reveal totals when you are ready to compare the branch sums with the source current and equivalent resistance."
             },
+            parallel_balanced: {
+                guide: "Balanced parallel grid: solve one branch first, reuse that result across the equal branches, then add the four branch currents for I_T.",
+                note: "Reveal totals when you want to compare identical branch currents against the source current and total power."
+            },
             mixed_circuit: {
                 guide: "Collapse the ladder by simplifying the parallel section first, add the series portions, and document each step in the table.",
                 note: "Tap Reveal totals only after updating the worksheet for every reduction you perform."
+            },
+            combination_parallel_strings: {
+                guide: "Reduce each vertical resistor string in series, solve both branch currents with the shared source voltage, then combine the branches in parallel.",
+                note: "Reveal totals after you compare the two branch string currents and confirm they add back to the source current."
             },
             combination_advanced: {
                 guide: "Work branch-by-branch: simplify parallel legs, fold them into series paths, and repeat while logging each equivalent in W.I.R.E.",
@@ -19529,6 +19777,55 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' } }
                 ]
             },
+            parallel_balanced: {
+                name: "Balanced Parallel Grid",
+                description: "18 V source feeding four equal resistor branches across shared rails.",
+                objectives: [
+                    "Observe a perfectly balanced parallel circuit where every branch has the same resistance and the same voltage.",
+                    "Use one branch calculation (I = E / R) to infer all four branch currents quickly.",
+                    "Add the branch currents to find the source current and compute total circuit power with W = I * E.",
+                    "Confirm Kirchhoff's Current Law by checking that the source current equals the sum of the four equal branches."
+                ],
+                components: [
+                    { id: 'B1', type: 'battery', position: [-12, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 18 } },
+                    { id: 'R1', type: 'resistor', position: [-4, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R2', type: 'resistor', position: [0, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R3', type: 'resistor', position: [4, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R4', type: 'resistor', position: [8, 0, 0], rotation: 1.5707963267948966, properties: { resistance: 180 } }
+                ],
+                junctions: [
+                    { id: 'J_LEFT_TOP', position: [-12, 0, 6] },
+                    { id: 'J_BRANCH_1_TOP', position: [-4, 0, 6] },
+                    { id: 'J_BRANCH_2_TOP', position: [0, 0, 6] },
+                    { id: 'J_BRANCH_3_TOP', position: [4, 0, 6] },
+                    { id: 'J_BRANCH_4_TOP', position: [8, 0, 6] },
+                    { id: 'J_LEFT_BOTTOM', position: [-12, 0, -6] },
+                    { id: 'J_BRANCH_1_BOTTOM', position: [-4, 0, -6] },
+                    { id: 'J_BRANCH_2_BOTTOM', position: [0, 0, -6] },
+                    { id: 'J_BRANCH_3_BOTTOM', position: [4, 0, -6] },
+                    { id: 'J_BRANCH_4_BOTTOM', position: [8, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_LEFT_TOP', side: 'center' } },
+                    { from: { ref: 'B1', side: 'negative' }, to: { ref: 'J_LEFT_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_LEFT_TOP', side: 'center' }, to: { ref: 'J_BRANCH_1_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_1_TOP', side: 'center' }, to: { ref: 'J_BRANCH_2_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_2_TOP', side: 'center' }, to: { ref: 'J_BRANCH_3_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_3_TOP', side: 'center' }, to: { ref: 'J_BRANCH_4_TOP', side: 'center' } },
+                    { from: { ref: 'J_LEFT_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_4_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_1_TOP', side: 'center' }, to: { ref: 'R1', side: 'right' } },
+                    { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BRANCH_1_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_2_TOP', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_2_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_3_TOP', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_3_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_4_TOP', side: 'center' }, to: { ref: 'R4', side: 'right' } },
+                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_BRANCH_4_BOTTOM', side: 'center' } }
+                ]
+            },
             mixed_circuit: {
                 name: "Series-Parallel Ladder",
                 description: "Textbook ladder: top series resistor, middle parallel branch box, bottom series return resistor.",
@@ -19573,6 +19870,49 @@ Made with ? for visual learners everywhere!
                     { from: { ref: 'J_RETURN', side: 'center' }, to: { ref: 'R4', side: 'right' } },
                     { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_SOURCE_BOTTOM', side: 'center' } },
                     { from: { ref: 'J_SOURCE_BOTTOM', side: 'center' }, to: { ref: 'B1', side: 'negative' } }
+                ]
+            },
+            combination_parallel_strings: {
+                name: "Parallel Series Strings",
+                description: "24 V source feeding two series resistor strings connected in parallel.",
+                objectives: [
+                    "Identify each branch as a series string before treating the two strings as parallel paths.",
+                    "Add the resistors in each string, solve branch current with I = E / R_branch, then compare the branch currents.",
+                    "Combine the branch currents to find source current and determine total equivalent resistance.",
+                    "Use W = I * E to verify total power and compare each branch contribution."
+                ],
+                components: [
+                    { id: 'B1', type: 'battery', position: [-12, 0, 0], rotation: 1.5707963267948966, properties: { voltage: 24 } },
+                    { id: 'R1', type: 'resistor', position: [-2, 0, 3], rotation: 1.5707963267948966, properties: { resistance: 120 } },
+                    { id: 'R2', type: 'resistor', position: [-2, 0, -3], rotation: 1.5707963267948966, properties: { resistance: 180 } },
+                    { id: 'R3', type: 'resistor', position: [6, 0, 3], rotation: 1.5707963267948966, properties: { resistance: 150 } },
+                    { id: 'R4', type: 'resistor', position: [6, 0, -3], rotation: 1.5707963267948966, properties: { resistance: 270 } }
+                ],
+                junctions: [
+                    { id: 'J_LEFT_TOP', position: [-12, 0, 6] },
+                    { id: 'J_BRANCH_A_TOP', position: [-2, 0, 6] },
+                    { id: 'J_BRANCH_B_TOP', position: [6, 0, 6] },
+                    { id: 'J_BRANCH_A_MID', position: [-2, 0, 0] },
+                    { id: 'J_BRANCH_B_MID', position: [6, 0, 0] },
+                    { id: 'J_BRANCH_A_BOTTOM', position: [-2, 0, -6] },
+                    { id: 'J_BRANCH_B_BOTTOM', position: [6, 0, -6] },
+                    { id: 'J_LEFT_BOTTOM', position: [-12, 0, -6] }
+                ],
+                wires: [
+                    { from: { ref: 'B1', side: 'positive' }, to: { ref: 'J_LEFT_TOP', side: 'center' } },
+                    { from: { ref: 'J_LEFT_TOP', side: 'center' }, to: { ref: 'J_BRANCH_A_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_A_TOP', side: 'center' }, to: { ref: 'J_BRANCH_B_TOP', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_A_TOP', side: 'center' }, to: { ref: 'R1', side: 'right' } },
+                    { from: { ref: 'R1', side: 'left' }, to: { ref: 'J_BRANCH_A_MID', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_A_MID', side: 'center' }, to: { ref: 'R2', side: 'right' } },
+                    { from: { ref: 'R2', side: 'left' }, to: { ref: 'J_BRANCH_A_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_B_TOP', side: 'center' }, to: { ref: 'R3', side: 'right' } },
+                    { from: { ref: 'R3', side: 'left' }, to: { ref: 'J_BRANCH_B_MID', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_B_MID', side: 'center' }, to: { ref: 'R4', side: 'right' } },
+                    { from: { ref: 'R4', side: 'left' }, to: { ref: 'J_BRANCH_B_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_BRANCH_A_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_B_BOTTOM', side: 'center' } },
+                    { from: { ref: 'J_LEFT_BOTTOM', side: 'center' }, to: { ref: 'J_BRANCH_A_BOTTOM', side: 'center' } },
+                    { from: { ref: 'B1', side: 'negative' }, to: { ref: 'J_LEFT_BOTTOM', side: 'center' } }
                 ]
             },
             combination_advanced: {
@@ -19803,6 +20143,93 @@ Made with ? for visual learners everywhere!
             }
         }
 
+        function escapePracticeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderPracticePresetLibrary() {
+            const presetGrid = document.getElementById('practice-preset-grid');
+            if (!presetGrid || typeof PRESET_CIRCUITS === 'undefined') {
+                return;
+            }
+
+            const filter = currentPracticePresetFilter || 'all';
+            const visiblePresetKeys = PRACTICE_PRESET_ORDER.filter((presetKey) => {
+                const meta = PRACTICE_PRESET_LIBRARY[presetKey];
+                return meta && (filter === 'all' || meta.topology === filter);
+            });
+
+            presetGrid.innerHTML = visiblePresetKeys.map((presetKey) => {
+                const meta = PRACTICE_PRESET_LIBRARY[presetKey];
+                const preset = PRESET_CIRCUITS[presetKey];
+                if (!meta || !preset) {
+                    return '';
+                }
+
+                const chips = (meta.tags || [])
+                    .map((tag) => `<span class="practice-preset-chip">${escapePracticeHtml(tag)}</span>`)
+                    .join('');
+
+                const activeClass = currentPracticeCircuit === presetKey ? ' active' : '';
+
+                return `
+                    <button
+                        type="button"
+                        class="practice-preset-card${activeClass}"
+                        data-preset-key="${presetKey}"
+                        onclick="selectPracticePreset('${presetKey}')"
+                    >
+                        <span class="practice-preset-eyebrow">${escapePracticeHtml(meta.topology)} • ${escapePracticeHtml(meta.difficulty)}</span>
+                        <span class="practice-preset-title">${escapePracticeHtml(meta.title || preset.name)}</span>
+                        <p class="practice-preset-summary">${escapePracticeHtml(meta.summary || preset.description)}</p>
+                        <div class="practice-preset-chips">${chips}</div>
+                        <div class="practice-preset-footer">
+                            <span>${escapePracticeHtml(preset.name)}</span>
+                            <span>Load &amp; Edit →</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function syncPracticePresetSelection(presetName) {
+            const filterSelect = document.getElementById('practice-topology-filter');
+            if (filterSelect) {
+                filterSelect.value = currentPracticePresetFilter || 'all';
+            }
+
+            document.querySelectorAll('.practice-preset-card').forEach((card) => {
+                card.classList.toggle('active', card.dataset.presetKey === presetName);
+            });
+
+            const randomBtn = document.getElementById('btn-random');
+            if (randomBtn) {
+                randomBtn.classList.toggle('active', presetName === 'random');
+            }
+        }
+
+        function setPracticePresetFilter(filterValue) {
+            const normalizedFilter = ['all', 'series', 'parallel', 'combination'].includes(filterValue)
+                ? filterValue
+                : 'all';
+            currentPracticePresetFilter = normalizedFilter;
+            renderPracticePresetLibrary();
+            syncPracticePresetSelection(currentPracticeCircuit);
+        }
+
+        function selectPracticePreset(presetName) {
+            const presetIndex = practiceProblems.indexOf(presetName);
+            if (presetIndex !== -1) {
+                currentProblemIndex = presetIndex;
+            }
+            loadPresetCircuit(presetName);
+        }
+
         function loadPresetCircuit(presetName) {
             // Guard: scene and renderer must be ready before any Three.js operations.
             if (!scene || !renderer) {
@@ -19825,11 +20252,17 @@ Made with ? for visual learners everywhere!
                 parallel_product_sum: 'parallel_basic',
                 textbook_parallel_basic: 'parallel_basic',
                 textbook_parallel_three: 'parallel_basic',
+                textbook_parallel_balanced: 'parallel_balanced',
+                parallel_balanced_grid: 'parallel_balanced',
+                parallel_equal_branches: 'parallel_balanced',
                 combo_sp: 'mixed_circuit',
                 combo_simple: 'mixed_circuit',
                 combo_parallel_first: 'mixed_circuit',
                 textbook_combo_basic: 'mixed_circuit',
                 textbook_combo_ladder: 'mixed_circuit',
+                combination_series_strings: 'combination_parallel_strings',
+                combo_parallel_strings: 'combination_parallel_strings',
+                textbook_combo_strings: 'combination_parallel_strings',
                 combo_double_parallel: 'combination_advanced',
                 combo_nested: 'combination_advanced',
                 textbook_combo_nested: 'combination_advanced',
@@ -19994,19 +20427,7 @@ Made with ? for visual learners everywhere!
             }
 
             renderWireWorksheetFromPreset(resolvedPresetName, preset);
-
-            document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
-            const buttonIds = {
-                'series_basic': 'btn-series',
-                'parallel_basic': 'btn-parallel', 
-                'mixed_circuit': 'btn-mixed',
-                'combination_advanced': 'btn-combination'
-            };
-            const buttonId = buttonIds[resolvedPresetName];
-            if (buttonId) {
-                const button = document.getElementById(buttonId);
-                if (button) button.classList.add('active');
-            }
+            syncPracticePresetSelection(resolvedPresetName);
 
             updatePracticeCounter();
             updateNavigationButtons();
@@ -20066,7 +20487,7 @@ Made with ? for visual learners everywhere!
 
         function generateRandomProblem() {
             // Generate a random circuit problem
-            const problemTypes = ['series_basic', 'parallel_basic', 'mixed_circuit', 'combination_advanced'];
+            const problemTypes = practiceProblems.slice();
             const randomType = problemTypes[Math.floor(Math.random() * problemTypes.length)];
             
             loadPresetCircuit(randomType);
@@ -20085,9 +20506,7 @@ Made with ? for visual learners everywhere!
             renderWireWorksheetFromActiveCircuit('Randomised Circuit');
 
             // Highlight random button
-            document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
-            const randomBtn = document.getElementById('btn-random');
-            if (randomBtn) randomBtn.classList.add('active');
+            syncPracticePresetSelection('random');
             
             // Reset practice sequence tracking
             currentPracticeCircuit = 'random';
@@ -20100,9 +20519,10 @@ Made with ? for visual learners everywhere!
 
         // Practice sequence navigation functions
         function startPracticeSequence() {
+            setPracticePresetFilter('all');
             currentProblemIndex = 0;
             loadPracticeSequenceProblem();
-            setStatus('⚡ Started practice sequence - Problem 1 of 4');
+            setStatus(`⚡ Started practice sequence - Problem 1 of ${practiceProblems.length}`);
         }
 
         function nextProblem() {
@@ -20279,9 +20699,7 @@ Made with ? for visual learners everywhere!
                 const helpTextEl = document.getElementById('practice-help-text');
                 if (practiceCardEl) practiceCardEl.style.display = 'none';
                 if (helpTextEl) helpTextEl.style.display = 'block';
-                
-                // Remove active state from practice buttons
-                document.querySelectorAll('.practice-btn').forEach(btn => btn.classList.remove('active'));
+                syncPracticePresetSelection(null);
                 
                 // Reset practice sequence
                 currentProblemIndex = 0;
@@ -20299,19 +20717,20 @@ Made with ? for visual learners everywhere!
             const help = `
 TABLE METHOD CHECKLIST
 
-1. Load a practice problem using Start Practice Sequence, the individual circuit buttons, or Random.
+1. Load a practice problem from the preset cards, use the topology filter, or tap Random Values.
 2. Scroll to the W.I.R.E. worksheet under the Practice panel.
 3. Record every given value in the table columns: W (power), I (current), R (resistance), E (voltage).
 4. Pick the matching formula:
    - Ohm's Law: E = I * R, I = E / R, R = E / I
    - Power: P = E * I, P = I * I * R, P = (E * E) / R
 5. Solve each unknown in the table, then tap Reveal totals to confirm with Kirchhoff.
-6. Press Clear entries anytime you want a fresh worksheet without reloading the circuit.
+6. Every preset stays editable after loading, so you can move components, change values, or rewire branches before checking the worksheet.
+7. Press Clear entries anytime you want a fresh worksheet without reloading the circuit.
 
 Navigation tips:
-- Start Practice Sequence walks through the four core problems in order.
+- Guided Sequence walks through the full preset library in order.
 - Use Prev / Next buttons to move through the sequence and Finish when the counter reaches the end.
-- Load individual problems to focus on one topology or use Random for new values with the same layout.
+- Use the filter to focus on series, parallel, or combination circuits, then load the preset you want to edit.
 
 Need more detail? Open the Table Method Guide in the Builder sidebar for printable worksheets and step-by-step examples.
             `;
@@ -21162,6 +21581,11 @@ Need more detail? Open the Table Method Guide in the Builder sidebar for printab
             }
         }
         // ─────────────────────────────────────────────────────────────────────
+
+        renderPracticePresetLibrary();
+        syncPracticePresetSelection(null);
+        updatePracticeCounter();
+        updateNavigationButtons();
 
         // Ensure the canvas is visible before Three.js initialises the WebGL
         // renderer.  Some Android WebViews refuse to create a context on a
