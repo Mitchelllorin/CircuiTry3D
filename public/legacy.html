@@ -1413,7 +1413,7 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             text-align: center;
             line-height: 1;
-            opacity: 0.05;
+            opacity: 0.02;
             animation: brandingFloat 6s ease-in-out infinite;
         }
         
@@ -3544,9 +3544,9 @@
                 </div>
                 <div class="logo-opacity-row">
                     <label for="branding-opacity-slider">Logo opacity</label>
-                    <input type="range" id="branding-opacity-slider" min="0" max="1" step="0.01" value="0.05"
+                    <input type="range" id="branding-opacity-slider" min="0" max="1" step="0.01" value="0.02"
                            oninput="setBrandingOpacity(parseFloat(this.value))">
-                    <span class="logo-opacity-value" id="branding-opacity-display">5%</span>
+                    <span class="logo-opacity-value" id="branding-opacity-display">2%</span>
                 </div>
             </div>
         </div>
@@ -13408,15 +13408,15 @@ body.android-optimized .zoom-btn {
             setupSubscriptionPricing();
         }
 
-        // Restore saved branding opacity preference (defaults to 0.05 if not set)
+        // Restore saved branding opacity preference (defaults to 0.02 if not set)
         (function restoreBrandingOpacity() {
             function apply() {
                 try {
                     const saved = localStorage.getItem('circuitry3d_branding_opacity');
                     const parsed = saved !== null ? parseFloat(saved) : NaN;
-                    setBrandingOpacity(Number.isFinite(parsed) ? parsed : 0.05);
+                    setBrandingOpacity(Number.isFinite(parsed) ? parsed : 0.02);
                 } catch(e) {
-                    setBrandingOpacity(0.05);
+                    setBrandingOpacity(0.02);
                 }
             }
             if (document.readyState === 'loading') {
@@ -14580,7 +14580,7 @@ body.android-optimized .zoom-btn {
             const numericValue = Number(value);
             const v = Number.isFinite(numericValue)
                 ? Math.max(0, Math.min(1, numericValue))
-                : 0.05;
+                : 0.02;
             const brandingEl = document.getElementById('branding-overlay');
             if (brandingEl) {
                 brandingEl.style.opacity = v;
@@ -19646,6 +19646,14 @@ Made with ? for visual learners everywhere!
 
                 // ── Animate and display ──────────────────────────────────────
                 fitToScreen();
+                // Keep the payoff circuit close enough to see clearly on startup.
+                // fitToScreen() uses maxDim * 2 which can push the camera out to
+                // ~48+ units for this layout; cap it at 28 so the circuit fills
+                // the viewport at a comfortable zoom level.
+                if (cameraDistance > 28) {
+                    cameraDistance = 28;
+                    updateCameraPosition();
+                }
                 // Second matrix-world update: fitToScreen() may adjust cameraTarget
                 // but does not move meshes.  This belt-and-suspenders call ensures
                 // any mesh whose dirty flag was set during wire creation (e.g. the

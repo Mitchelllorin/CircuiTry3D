@@ -1,4 +1,4 @@
-import { lazy, Suspense, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Home from "../pages/Home";
@@ -54,6 +54,14 @@ function PageFallback() {
 }
 
 export default function App() {
+  // Dispatch ctapp:ready after the first render so the initial-loader in
+  // index.html is removed precisely when React has painted its first frame.
+  // The event is also dispatched earlier in main.tsx (when the module script
+  // runs) as an additional safety net.
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent('ctapp:ready'));
+  }, []);
+
   return (
     <ThemeProvider>
     <WorkspaceModeProvider>
