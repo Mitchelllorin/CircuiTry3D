@@ -1124,9 +1124,16 @@ type QuickAddButtonProps = {
   onClick: () => void;
   disabled: boolean;
   title: string;
+  isActive?: boolean;
 };
 
-function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonProps) {
+function QuickAddButton({
+  component,
+  onClick,
+  disabled,
+  title,
+  isActive = false,
+}: QuickAddButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const thumbSrc = useComponent3DThumbnail(
     component.builderType ?? component.id,
@@ -1145,10 +1152,11 @@ function QuickAddButton({ component, onClick, disabled, title }: QuickAddButtonP
   return (
     <button
       type="button"
-      className={`quick-add-btn${component.id === "junction" ? " quick-add-btn--junction" : ""}`}
+      className={`quick-add-btn${component.id === "junction" ? " quick-add-btn--junction" : ""}${isActive ? " quick-add-btn--active" : ""}`}
       onClick={onClick}
       disabled={disabled}
       aria-disabled={disabled}
+      aria-pressed={isActive}
       title={title}
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
@@ -1313,6 +1321,8 @@ export default function Builder() {
     gridLineWidth: 1,
     gridHue: 240,
   });
+  const [activeBuilderTool, setActiveBuilderTool] =
+    useState<BuilderToolId>("select");
   const [isSimulatePulsing, setSimulatePulsing] = useState(false);
   const [activeWorkspacePanelMode, setActiveWorkspacePanelMode] =
     useState<WorkspacePanelMode | null>(null);
@@ -1566,7 +1576,7 @@ export default function Builder() {
   } = useBuilderFrame({
     appBasePath,
     onModeStateChange: handleModeStateChange,
-    onToolChange: () => {},
+    onToolChange: setActiveBuilderTool,
     onSimulationPulse: handleSimulationPulse,
     onCinematicFrame: handleCinematicFrame,
     onCinematicVideo: handleCinematicVideo,
@@ -3124,6 +3134,10 @@ export default function Builder() {
                   component={component}
                   onClick={() => handleComponentAction(component)}
                   disabled={controlsDisabled}
+                  isActive={
+                    component.action === "junction" &&
+                    activeBuilderTool === "junction"
+                  }
                   title={component.description || component.label}
                 />
               ))}
