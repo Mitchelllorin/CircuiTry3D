@@ -123,7 +123,10 @@ export default function ArenaView({
         agents={agents}
         activeAgentId={currentTurnAgentId}
         highlight={highlight}
+        fuseResults={fuseResults}
+        winnerId={winnerId}
         transitionPhase={transitionPhase}
+        variant={variant}
         onExitTransitionComplete={handleExitComplete}
       />
       <ArenaOverlay
