@@ -18,6 +18,7 @@ type OrbitControlsInstance = {
   enabled: boolean;
   enablePan: boolean;
   enableDamping: boolean;
+  dampingFactor: number;
   minDistance: number;
   maxDistance: number;
   minPolarAngle: number;
@@ -265,13 +266,17 @@ export function ArenaScene({
         camera,
         renderer.domElement,
       ) as OrbitControlsInstance;
-      controls.enablePan = false;
+      controls.enablePan = true;
       controls.enableDamping = true;
-      controls.minDistance = 8;
-      controls.maxDistance = 26;
-      controls.minPolarAngle = Math.PI / 5;
-      controls.maxPolarAngle = Math.PI / 2.05;
-      controls.target.set(0, 1.8, 0);
+      controls.dampingFactor = 0.08;
+      controls.minDistance = 3;
+      controls.maxDistance = 38;
+      // Full 360° freedom — orbit all the way over the top and down underneath.
+      // A tiny epsilon at the poles avoids the gimbal flip you get when the
+      // camera looks straight up/down the Y axis.
+      controls.minPolarAngle = 0.001;
+      controls.maxPolarAngle = Math.PI - 0.001;
+      controls.target.set(0, 1.6, 0);
 
       const ambientLight = new THREE.AmbientLight("#60a5fa", 1.6);
       scene.add(ambientLight);
@@ -295,6 +300,7 @@ export function ArenaScene({
           emissive: new THREE.Color("#0f172a"),
           metalness: 0.5,
           roughness: 0.6,
+          side: THREE.DoubleSide,
         }),
       );
       floor.rotation.x = -Math.PI / 2;
@@ -408,7 +414,13 @@ export function ArenaScene({
             : phase === "exiting"
               ? 1 - Math.min(phaseElapsed / 900, 1)
               : 1;
-        camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
+        // During the cinematic entry/exit we drive the camera along a fixed
+        // path. Once the battle is "active" we hand the camera fully over to
+        // OrbitControls — otherwise this line would yank it back to a fixed
+        // vantage every frame and free-orbit could never take hold.
+        if (phase !== "active") {
+          camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
+        }
         controls.enabled = phase === "active";
         controls.update();
 
