@@ -979,3 +979,63 @@
   border: none;
 }
 
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Workspace-embedded Arena
+   The battle plays out on a full-bleed layer that fills the main 3D
+   workspace; the controls live in the translucent WorkspaceModePanel that
+   floats over it — mirroring the practice worksheet pattern so you never
+   leave the workspace. Sits above the builder tools but below the mode bar
+   (1210) and the mode panel (1240).
+   ────────────────────────────────────────────────────────────────────────── */
+.arena-workspace-scene {
+  position: fixed;
+  inset: calc(84px + var(--builder-safe-area-top, 0px)) 0 0 0;
+  z-index: 1100;
+  overflow: hidden;
+  background: var(--arena-bg);
+}
+
+@media (max-width: 640px) {
+  .arena-workspace-scene {
+    inset: calc(72px + var(--builder-safe-area-top, 0px)) 0 0 0;
+  }
+}
+
+.arena-workspace-scene .arena-scene {
+  position: absolute;
+  inset: 0;
+}
+
+/* Controls reflow into a vertical stack for the bottom-sheet panel instead of
+   the full-screen HUD grid used by the standalone arena page. */
+.arena-panel-controls {
+  display: block;
+  inline-size: 100%;
+}
+
+.arena-panel-controls .arena-overlay {
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 14px calc(18px + var(--builder-safe-area-bottom, 0px));
+  pointer-events: auto;
+}
+
+.arena-panel-controls .arena-overlay__topbar {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.arena-panel-controls .arena-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.arena-panel-controls .arena-info-panel {
+  min-block-size: 0;
+}
