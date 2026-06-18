@@ -26,7 +26,7 @@ import {
   type EnvironmentalScenario,
   getDefaultScenario,
 } from "../data/environmentalScenarios";
-import ArenaView from "../components/arena/ArenaView";
+import ArenaWorkspaceMount from "../components/arena/ArenaWorkspaceMount";
 import { CircuitSaveModal } from "../components/builder/modals/CircuitSaveModal";
 import { CircuitLoadModal } from "../components/builder/modals/CircuitLoadModal";
 import { CircuitRecoveryBanner } from "../components/builder/modals/CircuitRecoveryBanner";
@@ -3037,7 +3037,11 @@ export default function Builder() {
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        return <ArenaView variant="embedded" onNavigateBack={closeArenaWorkspace} />;
+        // The Arena now renders full-bleed in the workspace via
+        // <ArenaWorkspaceMount> (battle behind a translucent control panel),
+        // so it is not generic panel content. The mode stays flagged as
+        // "arena" elsewhere so zoom controls hide and Escape exits.
+        return null;
       case "wire-guide":
         return (
           <WireLibrary
@@ -4210,6 +4214,10 @@ export default function Builder() {
           <span className="builder-logo-3d">3D</span>
         </span>
       </div>
+
+      {workspaceMode === "arena" && (
+        <ArenaWorkspaceMount onClose={closeArenaWorkspace} />
+      )}
 
       {activeWorkspacePanelMode && workspacePanelMeta && workspacePanelContent && (
         <WorkspaceModePanel
