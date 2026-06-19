@@ -8269,7 +8269,7 @@ body.android-optimized .zoom-btn {
                     ? Math.min(window.devicePixelRatio, 1.5)
                     : (isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio));
                 renderer.setSize(_vw, _vh);
-                renderer.setClearColor(0x0a0a1a, 1);
+                renderer.setClearColor(0x121b2e, 1);
                 // Android System WebView (Capacitor) may have older GLSL compiler that
                 // misprecises or fails to compile the ACES tone-mapping fragment shader,
                 // resulting in invisible / black materials (including current-flow particles).
@@ -8277,7 +8277,7 @@ body.android-optimized .zoom-btn {
                 // correctly on every GPU/driver combination — use it on Android to guarantee
                 // current-flow particles are always visible.
                 renderer.toneMapping = isAndroid ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = isAndroid ? 1.0 : 1.1;
+                renderer.toneMappingExposure = isAndroid ? 1.2 : 1.3;
                 // sRGB encoding removed: Three.js r128 does not support
                 // renderer.outputColorSpace.  Setting it was a no-op but caused
                 // confusion across multiple fix cycles.  If upgrading to r152+,
@@ -8315,12 +8315,12 @@ body.android-optimized .zoom-btn {
                 mouse = new THREE.Vector2();
                 
                 // Lighting - key + fill + hemisphere for richer PBR shading
-                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.0 : 1.4);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, isMobile ? 1.25 : 1.8);
                 directionalLight.position.set(10, 10, 5);
                 scene.add(directionalLight);
 
                 // Cool-blue fill light from the opposite side to soften harsh shadows
-                const fillLight = new THREE.DirectionalLight(0x8ab4f8, isMobile ? 0.3 : 0.5);
+                const fillLight = new THREE.DirectionalLight(0x8ab4f8, isMobile ? 0.55 : 0.75);
                 fillLight.position.set(-8, 4, -6);
                 scene.add(fillLight);
 
@@ -8331,8 +8331,12 @@ body.android-optimized .zoom-btn {
                 }
 
                 // HemisphereLight replaces plain AmbientLight for sky/ground gradient illumination
-                const hemisphereLight = new THREE.HemisphereLight(0x4488bb, 0x1a0a2a, isMobile ? 0.6 : 0.5);
+                const hemisphereLight = new THREE.HemisphereLight(0x88ccff, 0x2a1a3d, isMobile ? 0.95 : 0.8);
                 scene.add(hemisphereLight);
+
+                // Baseline ambient lift so unlit faces stay readable from all angles.
+                const ambientLight = new THREE.AmbientLight(0xffffff, isMobile ? 0.35 : 0.28);
+                scene.add(ambientLight);
                 
                 // Enhanced grid system — wrapped individually so a canvas-2D or
                 // geometry error does NOT prevent the animation loop from starting.
