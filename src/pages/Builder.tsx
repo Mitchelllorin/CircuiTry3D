@@ -3027,7 +3027,10 @@ export default function Builder() {
   const workspacePanelContent = useMemo(() => {
     switch (activeWorkspacePanelMode) {
       case "arena":
-        return <ArenaView variant="embedded" onNavigateBack={closeArenaWorkspace} />;
+        // The arena renders its own full-bleed 3D scene + params panel at the
+        // workspace level (see the ArenaView workspace layer below), so the
+        // generic panel intentionally renders nothing for this mode.
+        return null;
       case "wire-guide":
         return (
           <WireLibrary
@@ -4128,6 +4131,15 @@ export default function Builder() {
           style={workspaceSkinStyle}
         />
       </div>
+
+      {activeWorkspacePanelMode === "arena" && (
+        <ArenaView
+          variant="workspace"
+          panelOpen={isWorkspacePanelOpen}
+          onTogglePanel={() => setWorkspacePanelOpen((open) => !open)}
+          onNavigateBack={closeArenaWorkspace}
+        />
+      )}
 
       {isActiveCircuitBuildMode && !isOverlayActive && (
         <div className="circuit-zoom-controls" aria-label="Zoom controls">

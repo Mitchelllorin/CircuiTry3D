@@ -12,6 +12,14 @@ type ArenaSceneProps = {
   highlight: ArenaBattleHighlight | null;
   transitionPhase: ArenaViewTransitionPhase;
   onExitTransitionComplete: () => void;
+  /**
+   * When true the camera follows the workspace flow: it holds a framed preview
+   * pose while the params panel is open, then cinematically sweeps into the
+   * interactive pose (full orbit + zoom) once the panel collapses.
+   */
+  workspaceMode?: boolean;
+  /** Workspace mode only: whether the params panel is currently expanded. */
+  panelOpen?: boolean;
 };
 
 type OrbitControlsInstance = {
@@ -22,7 +30,7 @@ type OrbitControlsInstance = {
   maxDistance: number;
   minPolarAngle: number;
   maxPolarAngle: number;
-  target: { set: (x: number, y: number, z: number) => void };
+  target: import("three").Vector3;
   update: () => void;
   dispose: () => void;
 };
@@ -176,6 +184,8 @@ export function ArenaScene({
   highlight,
   transitionPhase,
   onExitTransitionComplete,
+  workspaceMode = false,
+  panelOpen = false,
 }: ArenaSceneProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -186,6 +196,8 @@ export function ArenaScene({
   const highlightRef = useRef<ArenaBattleHighlight | null>(highlight);
   const lastHighlightTokenRef = useRef<number | null>(highlight?.token ?? null);
   const onExitCompleteRef = useRef(onExitTransitionComplete);
+  const workspaceModeRef = useRef(workspaceMode);
+  const panelOpenRef = useRef(panelOpen);
 
   const healthBarAgents = useMemo(() => agents, [agents]);
   const sceneAgentSignature = useMemo(
@@ -215,6 +227,14 @@ export function ArenaScene({
   useEffect(() => {
     onExitCompleteRef.current = onExitTransitionComplete;
   }, [onExitTransitionComplete]);
+
+  useEffect(() => {
+    workspaceModeRef.current = workspaceMode;
+  }, [workspaceMode]);
+
+  useEffect(() => {
+    panelOpenRef.current = panelOpen;
+  }, [panelOpen]);
 
   useEffect(() => {
     if (!rootRef.current || !canvasRef.current) {
@@ -256,22 +276,38 @@ export function ArenaScene({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+      const isWorkspace = workspaceModeRef.current;
+
       const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
       const entryPosition = new THREE.Vector3(0, 17, 24);
       const arenaPosition = new THREE.Vector3(11, 8.5, 11);
-      camera.position.copy(entryPosition);
+      // Workspace flow poses: a framed cinematic preview held behind the open
+      // panel, and a pulled-back pose used for the exit sweep.
+      const previewPosition = new THREE.Vector3(0, 15, 21);
+      const exitPosition = new THREE.Vector3(0, 22, 32);
+      const cameraTarget = new THREE.Vector3(0, 1.8, 0);
+      camera.position.copy(isWorkspace ? previewPosition : entryPosition);
 
       controls = new OrbitControls(
         camera,
         renderer.domElement,
       ) as OrbitControlsInstance;
-      controls.enablePan = false;
       controls.enableDamping = true;
-      controls.minDistance = 8;
-      controls.maxDistance = 26;
-      controls.minPolarAngle = Math.PI / 5;
-      controls.maxPolarAngle = Math.PI / 2.05;
-      controls.target.set(0, 1.8, 0);
+      controls.target.copy(cameraTarget);
+      if (isWorkspace) {
+        // Flagship "full 3D 360°" control — the works: free orbit, deep zoom, pan.
+        controls.enablePan = true;
+        controls.minDistance = 4;
+        controls.maxDistance = 42;
+        controls.minPolarAngle = 0.05;
+        controls.maxPolarAngle = Math.PI * 0.88;
+      } else {
+        controls.enablePan = false;
+        controls.minDistance = 8;
+        controls.maxDistance = 26;
+        controls.minPolarAngle = Math.PI / 5;
+        controls.maxPolarAngle = Math.PI / 2.05;
+      }
 
       const ambientLight = new THREE.AmbientLight("#60a5fa", 1.6);
       scene.add(ambientLight);
@@ -364,7 +400,7 @@ export function ArenaScene({
       });
 
       const resize = () => {
-        if (!rootRef.current) {
+        if (!rootRef.current || !renderer) {
           return;
         }
         const width = rootRef.current.clientWidth;
@@ -379,9 +415,17 @@ export function ArenaScene({
       resizeObserver.observe(root);
 
       const tempVector = new THREE.Vector3();
+      // Reusable target for the panel-open preview: a slow cinematic sway that
+      // keeps the framed hero shot feeling alive without handing over control.
+      const previewDrift = new THREE.Vector3();
+      const previewRadius = Math.hypot(previewPosition.x, previewPosition.z);
       const attackFlashUntil = new Map<string, number>();
       let phaseStartTime = 0;
       let lastPhase = phaseRef.current;
+      // Workspace flow: latches true once the cinematic sweep into the arena
+      // finishes, after which the user holds full orbit control until the panel
+      // re-opens (which resets it) or the arena exits.
+      let workspaceSweepDone = false;
 
       const animate = (time: number) => {
         if (isDisposed) {
@@ -389,6 +433,10 @@ export function ArenaScene({
         }
 
         animationFrameId = window.requestAnimationFrame(animate);
+
+        if (!controls || !renderer) {
+          return;
+        }
 
         const phase = phaseRef.current;
         if (phase !== lastPhase) {
@@ -402,15 +450,58 @@ export function ArenaScene({
           phaseStartTime = time;
         }
         const phaseElapsed = time - phaseStartTime;
-        const cinematicT =
-          phase === "entering"
-            ? Math.min(phaseElapsed / 1800, 1)
-            : phase === "exiting"
-              ? 1 - Math.min(phaseElapsed / 900, 1)
-              : 1;
-        camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
-        controls.enabled = phase === "active";
-        controls.update();
+
+        if (workspaceModeRef.current) {
+          // Workspace flow — the camera is driven entirely by panel state.
+          if (phase === "exiting") {
+            controls.enabled = false;
+            workspaceSweepDone = false;
+            camera.position.lerp(exitPosition, 0.07);
+            camera.lookAt(cameraTarget);
+            if (!exitCompleteFired && camera.position.distanceTo(exitPosition) < 0.8) {
+              exitCompleteFired = true;
+              onExitCompleteRef.current();
+            }
+          } else if (panelOpenRef.current) {
+            // Panel open: hold a slowly swaying cinematic preview, no user
+            // control. The camera arcs ±18° around the arena and gently bobs so
+            // the framed hero shot reads as alive rather than a frozen still.
+            controls.enabled = false;
+            workspaceSweepDone = false;
+            const swayAngle = Math.sin(time * 0.00018) * 0.32;
+            previewDrift.set(
+              Math.sin(swayAngle) * previewRadius,
+              previewPosition.y + Math.sin(time * 0.0003) * 0.6,
+              Math.cos(swayAngle) * previewRadius,
+            );
+            camera.position.lerp(previewDrift, 0.04);
+            camera.lookAt(cameraTarget);
+          } else if (!workspaceSweepDone) {
+            // Panel just collapsed: cinematic sweep into the interactive pose.
+            controls.enabled = false;
+            camera.position.lerp(arenaPosition, 0.06);
+            camera.lookAt(cameraTarget);
+            if (camera.position.distanceTo(arenaPosition) < 0.4) {
+              workspaceSweepDone = true;
+              controls.enabled = true;
+              controls.update();
+            }
+          } else {
+            // Sweep complete: full orbit + zoom in the user's hands.
+            controls.enabled = true;
+            controls.update();
+          }
+        } else {
+          const cinematicT =
+            phase === "entering"
+              ? Math.min(phaseElapsed / 1800, 1)
+              : phase === "exiting"
+                ? 1 - Math.min(phaseElapsed / 900, 1)
+                : 1;
+          camera.position.lerpVectors(entryPosition, arenaPosition, cinematicT);
+          controls.enabled = phase === "active";
+          controls.update();
+        }
 
         ring.rotation.z += 0.0015;
         particles.rotation.y += 0.0011;
@@ -456,7 +547,12 @@ export function ArenaScene({
           healthBar.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
         });
 
-        if (phase === "exiting" && phaseElapsed > 950 && !exitCompleteFired) {
+        if (
+          !workspaceModeRef.current &&
+          phase === "exiting" &&
+          phaseElapsed > 950 &&
+          !exitCompleteFired
+        ) {
           exitCompleteFired = true;
           onExitCompleteRef.current();
         }

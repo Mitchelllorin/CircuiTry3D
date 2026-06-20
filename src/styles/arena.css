@@ -422,6 +422,100 @@
   font-size: 1.35rem;
 }
 
+/* ── Workspace variant: full-bleed 3D behind the collapsible params panel ── */
+.arena-view--workspace {
+  position: fixed;
+  inset: 0;
+  z-index: 1200; /* above builder iframe (--z-dropdown), below mode bar (1210) */
+  border-radius: 0;
+  /* Let pointer events fall through the container to the scene canvas and the
+     params panel; both opt back in below. The collapsed area then orbits the
+     3D scene directly. */
+  pointer-events: none;
+}
+
+.arena-view--workspace .arena-scene,
+.arena-view--workspace .workspace-mode-panel {
+  pointer-events: auto;
+}
+
+.arena-view--workspace .arena-scene__canvas {
+  cursor: grab;
+}
+
+.arena-view--workspace .arena-scene__canvas:active {
+  cursor: grabbing;
+}
+
+/* The params surface inside the panel body */
+.arena-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 16px calc(20px + var(--builder-safe-area-bottom, 0px));
+}
+
+.arena-panel__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.arena-panel__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.arena-panel__meta-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--arena-muted);
+  font-size: 0.82rem;
+}
+
+.arena-panel__meta-pills span {
+  padding: 5px 10px;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.arena-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.arena-panel .arena-button {
+  padding: 10px 14px;
+}
+
+/* Log panel reused in flow layout (no absolute grid placement) */
+.arena-log-panel--flow {
+  max-block-size: 240px;
+}
+
+.arena-winner-banner--workspace {
+  position: fixed;
+  z-index: 1220;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .arena-panel__actions {
+    inline-size: 100%;
+  }
+
+  .arena-panel__actions .arena-button {
+    flex: 1 1 auto;
+  }
+}
+
 @media (max-width: 1024px) {
   .arena-overlay {
     grid-template-columns: 1fr;
